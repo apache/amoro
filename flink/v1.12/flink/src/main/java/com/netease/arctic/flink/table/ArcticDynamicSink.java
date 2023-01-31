@@ -22,7 +22,6 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DataStreamSinkProvider;

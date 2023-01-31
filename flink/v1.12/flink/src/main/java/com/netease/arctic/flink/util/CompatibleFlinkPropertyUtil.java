@@ -116,6 +116,13 @@ public class CompatibleFlinkPropertyUtil {
     return null;
   }
 
+  /**
+   * Get log-store properties from table properties and flink options, whose prefix is
+   * {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
+   *
+   * @param tableOptions including table properties and flink options
+   * @return Properties. The keys in it have no {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
+   */
   public static Properties getLogStoreProperties(Map<String, String> tableOptions) {
     final Properties properties = new Properties();
 
@@ -130,6 +137,7 @@ public class CompatibleFlinkPropertyUtil {
               });
     }
 
+    // convert the key to support create client in writer
     if (CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT)
         .equals(LOG_STORE_STORAGE_TYPE_PULSAR)) {
       properties.put(PULSAR_SERVICE_URL.key(),

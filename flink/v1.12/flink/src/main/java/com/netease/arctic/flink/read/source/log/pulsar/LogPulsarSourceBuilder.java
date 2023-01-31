@@ -21,12 +21,9 @@ package com.netease.arctic.flink.read.source.log.pulsar;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.Boundedness;
-import org.apache.flink.connector.pulsar.source.PulsarSource;
 import org.apache.flink.connector.pulsar.source.PulsarSourceBuilder;
-import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.UniformRangeGenerator;
 import org.apache.flink.table.data.RowData;
@@ -109,8 +106,34 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
       this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
+    buildOfficial();
+    
+    // If subscription name is not set, set a random value.
+    if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
+      String uuid = UUID.randomUUID().toString();
+      LOG.warn("properties.{} has not set, using random subscription name: {}", PULSAR_SUBSCRIPTION_NAME.key(), uuid);
+      configBuilder.set(PULSAR_SUBSCRIPTION_NAME, uuid);
+    }
+    // Check builder configuration.
+    SourceConfiguration sourceConfiguration =
+        configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
 
-    // ------ copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder start -------
+    return new LogPulsarSource(
+        sourceConfiguration,
+        subscriber,
+        rangeGenerator,
+        startCursor,
+        stopCursor,
+        boundedness,
+        deserializationSchema,
+        schema,
+        tableProperties);
+  }
+
+  /**
+   * copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder#build
+   */
+  private void buildOfficial() {
     // Ensure the topic subscriber for pulsar.
     checkNotNull(subscriber, "No topic names or topic pattern are provided.");
 
@@ -173,25 +196,5 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     checkState(isSerializable(startCursor), "StartCursor isn't serializable");
     checkState(isSerializable(stopCursor), "StopCursor isn't serializable");
     checkState(isSerializable(rangeGenerator), "RangeGenerator isn't serializable");
-    // ------ copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder end -------
-    
-    // If subscription name is not set, set a random value.
-    if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
-      configBuilder.set(PULSAR_SUBSCRIPTION_NAME, UUID.randomUUID().toString());
-    }
-    // Check builder configuration.
-    SourceConfiguration sourceConfiguration =
-        configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
-
-    return new LogPulsarSource(
-        sourceConfiguration,
-        subscriber,
-        rangeGenerator,
-        startCursor,
-        stopCursor,
-        boundedness,
-        deserializationSchema,
-        schema,
-        tableProperties);
   }
 }

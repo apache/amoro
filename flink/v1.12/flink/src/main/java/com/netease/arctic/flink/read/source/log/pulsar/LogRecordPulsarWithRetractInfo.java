@@ -48,7 +48,8 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
   private final LogData<T> logData;
   private final T valueToBeSent;
 
-  public LogRecordPulsarWithRetractInfo(MessageId id, long eventTime,
+  public LogRecordPulsarWithRetractInfo(MessageId id,
+                                        long eventTime,
                                         boolean retracting,
                                         Long retractStoppingOffset,
                                         Long revertStartingOffset,
@@ -64,7 +65,8 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
     this.valueToBeSent = valueToBeSent;
   }
 
-  public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(MessageId id, long eventTime,
+  public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(MessageId id,
+                                                                long eventTime,
                                                                 Long retractStoppingOffset,
                                                                 Long revertStartingOffset,
                                                                 Long retractingEpicNo,
@@ -74,7 +76,8 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
         revertStartingOffset, retractingEpicNo, logData, valueToBeSent);
   }
 
-  public static <T> LogRecordPulsarWithRetractInfo<T> of(MessageId id, long eventTime,
+  public static <T> LogRecordPulsarWithRetractInfo<T> of(MessageId id,
+                                                         long eventTime,
                                                          LogData<T> logData) {
     return new LogRecordPulsarWithRetractInfo<>(id, eventTime, false, null,
         null, null, logData, logData.getActualValue());

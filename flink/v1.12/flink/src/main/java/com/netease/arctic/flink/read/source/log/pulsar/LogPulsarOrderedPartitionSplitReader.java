@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read.source.log.pulsar;
 
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import org.apache.flink.annotation.Internal;
@@ -30,7 +31,6 @@ import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
 import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
-import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
 import org.apache.flink.connector.pulsar.source.reader.split.PulsarOrderedPartitionSplitReader;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.table.data.RowData;
@@ -38,16 +38,12 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.Message;
-import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
-import org.apache.pulsar.client.impl.MessageIdImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
@@ -61,7 +57,6 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
   private static final Logger LOG = LoggerFactory.getLogger(LogPulsarOrderedPartitionSplitReader.class);
 
   private final LogDataJsonDeserialization<RowData> logDataJsonDeserialization;
-  private final LogSourceHelper logReadHelper;
   private final boolean logRetractionEnable;
   private final boolean logConsumerAppendOnly;
 
@@ -83,7 +78,6 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         LogRecordV1.mapFactory
     );
     this.logRetractionEnable = logRetractionEnable;
-    this.logReadHelper = logReadHelper;
     this.logConsumerAppendOnly = LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
   }
 
@@ -114,7 +108,7 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         // ---- copy from org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase end ----
         LogData<RowData> logData = logDataJsonDeserialization.deserialize(message.getData());
         if (!logData.getFlip() && filterByRowKind(logData.getActualValue())) {
-          LOG.info(
+          LOG.debug(
               "filter the rowData, because of logConsumerAppendOnly is true, and rowData={}.",
               logData.getActualValue());
           continue;
@@ -124,8 +118,6 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         if (condition == StopCursor.StopCondition.CONTINUE || condition == StopCursor.StopCondition.EXACTLY) {
           if (logData.getFlip()) {
             if (logRetractionEnable) {
-              //              logReadHelper.startRetracting(tp, logData.getUpstreamId(), logData.getEpicNo(),
-              //                  currentOffset + 1);
               break;
             } else {
               // Acknowledge message if need.
@@ -154,26 +146,10 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
     return builder.build();
   }
 
-  protected Message<byte[]> pollMessageReversely(Duration timeout) throws PulsarClientException {
-    MessageId messageId = pulsarConsumer.getLastMessageId();
-
-    MessageId next;
-    if (messageId instanceof MessageIdImpl) {
-      MessageIdImpl id = ((MessageIdImpl) messageId);
-
-    } else {
-      throw new UnsupportedOperationException();
-    }
-    return pulsarConsumer.receive(Math.toIntExact(timeout.toMillis()), TimeUnit.MILLISECONDS);
-  }
-
   /**
-   * filter the rowData only works during
-   * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
-   * is false and
-   * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
-   * is {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and
-   * rowData.rowKind != INSERT
+   * filter the rowData only works during {@link ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
+   * is false and {@link ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
+   * is {@link ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
    *
    * @param rowData the judged data
    * @return true means should be filtered.
