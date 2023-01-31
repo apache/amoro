@@ -72,7 +72,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private final boolean orderedWriter;
 
-  KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info, TableBlockerManager tableBlockerManager, Blocker block) {
+  KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info, TableBlockerManager tableBlockerManager,
+                       Blocker block) {
     this.table = table;
     this.dsSchema = info.schema();
     this.legacyTxId = table.beginTransaction(null);
