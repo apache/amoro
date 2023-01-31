@@ -287,7 +287,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new MergeWriteFactory(table, dsSchema, legacyTxId, orderedWriter);
+      return new MergeWriteFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
