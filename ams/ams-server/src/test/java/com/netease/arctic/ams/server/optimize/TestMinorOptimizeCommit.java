@@ -104,7 +104,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testKeyedTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
        tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
@@ -188,7 +190,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
@@ -241,7 +245,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testKeyedTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     Set<StructLike> partitionData = changeEqDeletes.stream().map(ContentFile::partition).collect(Collectors.toSet());
@@ -288,7 +294,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {

@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -61,6 +60,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -692,43 +692,33 @@ public class OptimizeQueueService extends IJDBCService {
               optimizeTasks = optimizePlan.plan();
             }
           } else {
+            Snapshot baseCurrentSnapshot;
+            Snapshot changeCurrentSnapshot = null;
+            ArcticTable arcticTable = tableItem.getArcticTable();
+            if (arcticTable.isKeyedTable()) {
+              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+            } else {
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+            }
             if (isOptimizeBlocked(tableIdentifier)) {
+              LOG.debug("{} optimize is blocked, continue", tableIdentifier);
               continue;
             }
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
-            optimizeTasks = optimizePlan.plan();
+            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+            optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
 
             // if no full tasks, then plan major tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              if (isOptimizeBlocked(tableIdentifier)) {
-                continue;
-              }
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning);
-              optimizeTasks = optimizePlan.plan();
+              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
 
             // if no major tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              long changeSnapshotId =
-                  UnKeyedTableUtil.getSnapshotId(tableItem.getArcticTable().asKeyedTable().changeTable());
-              if (changeSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-                LOG.debug("{} current change table is empty, skip minor optimize", tableIdentifier);
-                continue;
-              }
-              if (!tableItem.snapshotIsCurrentCache(changeSnapshotId, Constants.INNER_TABLE_CHANGE)) {
-                LOG.debug("{} current change snapshot is not cached, skip minor optimize", tableIdentifier);
-                continue;
-              }
-              if (isOptimizeBlocked(tableIdentifier)) {
-                continue;
-              }
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning);
-              if (tableItem.snapshotIsCurrentCache(changeSnapshotId, Constants.INNER_TABLE_CHANGE)) {
-                optimizeTasks = optimizePlan.plan();
-              } else {
-                LOG.warn("{} current change snapshot is changed after check blocker, skip minor optimize",
-                    tableIdentifier);
-              }
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot,
+                  changeCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
           }
 
@@ -751,11 +741,7 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
-      if (ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE)) {
-        LOG.debug("{} optimize is blocked", tableIdentifier);
-        return true;
-      }
-      return false;
+      return ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE);
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
@@ -785,7 +771,7 @@ public class OptimizeQueueService extends IJDBCService {
           // set current snapshot id
           tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentSnapshotId());
           if (tableItem.isKeyedTable()) {
-            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentSnapshotId());
+            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
           }
 
           tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());

@@ -124,6 +124,20 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
+  public List<DataFileInfo> getOptimizeDatafilesWithSnapshot(TableIdentifier tableIdentifier, String tableType,
+                                                             Snapshot snapshot) {
+    Preconditions.checkNotNull(snapshot, "snapshot should not be null");
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      if (!snapInfoCacheMapper.snapshotIsCached(tableIdentifier, tableType, snapshot.snapshotId())) {
+        throw new IllegalArgumentException("snapshot is not cached " + snapshot.snapshotId());
+      }
+      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+      return fileInfoCacheMapper.getOptimizeDatafilesWithSnapshot(tableIdentifier, tableType,
+          snapshot.sequenceNumber());
+    }
+  }
+
   public List<DataFileInfo> getChangeTableTTLDataFiles(TableIdentifier tableIdentifier, long ttl) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
@@ -146,15 +160,6 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
       return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId);
-    }
-  }
-
-  public Boolean snapshotIsCurrentCache(TableIdentifier identifier, String innerTable, long snapshotId) {
-    Preconditions.checkArgument(snapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    try (SqlSession sqlSession = getSqlSession(false)) {
-      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId) &&
-          !snapInfoCacheMapper.snapshotIsCachedAsParent(identifier, innerTable, snapshotId);
     }
   }
 

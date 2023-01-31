@@ -53,14 +53,6 @@ public interface SnapInfoCacheMapper {
       @Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("type") String tableType, @Param("snapshotId") Long snapshotId);
 
-  @Select("select count(1) >0 " +
-      "from " + TABLE_NAME +
-      " where inner_table=#{type} and table_identifier=#{tableIdentifier, typeHandler=com.netease" +
-      ".arctic.ams.server.mybatis.TableIdentifier2StringConverter} and parent_snapshot_id=#{snapshotId} ")
-  Boolean snapshotIsCachedAsParent(
-      @Param("tableIdentifier") TableIdentifier tableIdentifier,
-      @Param("type") String tableType, @Param("snapshotId") Long snapshotId);
-
   @Delete("delete from " + TABLE_NAME + " where commit_time < #{expiredTime, typeHandler=com.netease.arctic.ams" +
       ".server.mybatis.Long2TsConvertor} and table_identifier=#{tableIdentifier, typeHandler=com.netease.arctic.ams" +
       ".server.mybatis.TableIdentifier2StringConverter} and inner_table = #{type} and snapshot_id not in (select " +
