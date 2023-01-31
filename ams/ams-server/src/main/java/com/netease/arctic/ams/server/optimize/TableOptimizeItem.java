@@ -982,7 +982,7 @@ public class TableOptimizeItem extends IJDBCService {
       baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
       posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
     } catch (Exception e) {
-      LOG.error("{} failed to get from file info cache", tableIdentifier, e);
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
       return null;
     }
 
@@ -1018,7 +1018,7 @@ public class TableOptimizeItem extends IJDBCService {
       baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
       posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
     } catch (Exception e) {
-      LOG.error("{} failed to get from file info cache", tableIdentifier, e);
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
       return null;
     }
 
@@ -1061,7 +1061,7 @@ public class TableOptimizeItem extends IJDBCService {
           fileInfoCacheService.getOptimizeDatafilesWithSnapshot(tableIdentifier.buildTableIdentifier(),
               Constants.INNER_TABLE_CHANGE, changeSnapshot);
     } catch (Exception e) {
-      LOG.error("{} failed to get from file info cache", tableIdentifier, e);
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
       return null;
     }
 
