@@ -21,11 +21,13 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
+import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -48,20 +50,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
   default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+    AtomicInteger taskId = new AtomicInteger();
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withTransactionId(transactionId)
-        .buildWriter(BaseLocationKind.INSTANT) :
+            .withTransactionId(transactionId)
+            .withTaskId(taskId.incrementAndGet())
+            .withCustomHiveSubdirectory(hiveSubDir)
+            .buildWriter(BaseLocationKind.INSTANT) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-            .buildWriter(BaseLocationKind.INSTANT) ;
-
-    List<DataFile> baseDataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+            .withTaskId(taskId.incrementAndGet())
+            .withCustomHiveSubdirectory(hiveSubDir)
+            .buildWriter(BaseLocationKind.INSTANT);
+    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();
@@ -77,25 +86,35 @@ public interface TestOptimizeBase {
   default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
                                                        OptimizeType optimizeType,
                                                        long transactionId) throws IOException {
-    WriteOperationKind writeOperationKind = WriteOperationKind.MAJOR_OPTIMIZE;
+    final WriteOperationKind writeOperationKind;
     switch (optimizeType) {
       case FullMajor:
         writeOperationKind = WriteOperationKind.FULL_OPTIMIZE;
         break;
       case Major:
+        writeOperationKind = WriteOperationKind.MAJOR_OPTIMIZE;
         break;
       case Minor:
-          writeOperationKind = WriteOperationKind.MINOR_OPTIMIZE;
-          break;
+        writeOperationKind = WriteOperationKind.MINOR_OPTIMIZE;
+        break;
+      default:
+        throw new IllegalArgumentException("unknown optimize type " + optimizeType);
     }
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
+    AtomicInteger taskId = new AtomicInteger();
+    Supplier<TaskWriter<Record>> writerSupplier = () -> arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .withTransactionId(transactionId)
+            .withCustomHiveSubdirectory(hiveSubDir)
+            .withTaskId(taskId.incrementAndGet())
             .buildWriter(writeOperationKind) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+            .withCustomHiveSubdirectory(hiveSubDir)
+            .withTaskId(taskId.incrementAndGet())
             .buildWriter(writeOperationKind);
 
-    return insertBaseDataFiles(writer, arcticTable.schema());
+    return insertBaseDataFiles(writerSupplier, arcticTable.schema());
   }
 
   default Pair<Snapshot, List<DeleteFile>> insertBasePosDeleteFiles(ArcticTable arcticTable,
@@ -176,11 +195,12 @@ public interface TestOptimizeBase {
     return deleteFiles;
   }
 
-  default List<DataFile> insertBaseDataFiles(TaskWriter<Record> writer, Schema schema) throws IOException {
+  default List<DataFile> insertBaseDataFiles(Supplier<TaskWriter<Record>> writerSupplier, Schema schema) throws IOException {
     List<DataFile> baseDataFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(name="name)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = writerSupplier.get();
       for (Record record : baseRecords(i, length, schema)) {
         writer.write(record);
       }

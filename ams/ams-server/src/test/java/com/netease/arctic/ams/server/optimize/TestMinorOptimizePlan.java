@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
@@ -86,15 +87,16 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
   }
 
   protected List<DataFile> insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withChangeAction(ChangeAction.DELETE)
-        .withTransactionId(transactionId)
-        .buildWriter(ChangeLocationKind.INSTANT);
-
+    AtomicInteger taskId = new AtomicInteger();
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     // delete 1000 records in 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+          .withChangeAction(ChangeAction.DELETE)
+          .withTransactionId(transactionId)
+          .withTaskId(taskId.incrementAndGet())
+          .buildWriter(ChangeLocationKind.INSTANT);
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
@@ -114,15 +116,16 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
   }
 
   protected List<DataFile> insertChangeDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withChangeAction(ChangeAction.INSERT)
-        .withTransactionId(transactionId)
-        .buildWriter(ChangeLocationKind.INSTANT);
-
+    AtomicInteger taskId = new AtomicInteger();
     List<DataFile> changeInsertFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+          .withChangeAction(ChangeAction.INSERT)
+          .withTransactionId(transactionId)
+          .withTaskId(taskId.incrementAndGet())
+          .buildWriter(ChangeLocationKind.INSTANT);
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
