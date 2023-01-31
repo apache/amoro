@@ -19,8 +19,6 @@
 
 package org.apache.iceberg.spark.data;
 
-import java.util.List;
-import java.util.stream.Stream;
 import org.apache.iceberg.FieldMetrics;
 import org.apache.iceberg.orc.OrcValueWriter;
 import org.apache.orc.TypeDescription;
@@ -35,6 +33,9 @@ import org.apache.spark.sql.catalyst.util.ArrayData;
 import org.apache.spark.sql.catalyst.util.MapData;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.UTF8String;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 class SparkOrcValueWriters {
   private SparkOrcValueWriters() {

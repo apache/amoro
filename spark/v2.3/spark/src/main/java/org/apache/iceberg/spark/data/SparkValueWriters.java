@@ -19,12 +19,6 @@
 
 package org.apache.iceberg.spark.data;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.List;
-import java.util.UUID;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.avro.ValueWriter;
@@ -36,6 +30,13 @@ import org.apache.spark.sql.catalyst.util.MapData;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.UTF8String;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.List;
+import java.util.UUID;
 
 public class SparkValueWriters {
 
