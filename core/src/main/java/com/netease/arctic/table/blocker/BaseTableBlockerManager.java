@@ -81,7 +81,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public List<Blocker> getBlockers() {
     try {
       return client.getBlockers(tableIdentifier.buildTableIdentifier())
-          .stream().map(RenewableBlocker::of).collect(Collectors.toList());
+          .stream().map(BlockerFactory::buildBlocker).collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed to get blockers of " + tableIdentifier, e);
     }
