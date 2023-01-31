@@ -277,12 +277,6 @@ public class TableProperties {
   public static final String OWNER = "owner";
 
   /**
-   * table blocker related properties
-   */
-  public static final String TABLE_BLOCKER_TIMEOUT = "table.blocker.timeout";
-  public static final long TABLE_BLOCKER_TIMEOUT_DEFAULT = 600000;// 10 min
-
-  /**
    * Protected properties which should not be read by user.
    */
   public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
