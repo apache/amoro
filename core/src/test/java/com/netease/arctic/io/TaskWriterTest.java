@@ -110,6 +110,37 @@ public class TaskWriterTest extends TableTestBase {
     Assert.assertEquals(4, result.dataFiles().length);
   }
 
+
+  @Test
+  public void testOrderedWriterBase() throws IOException {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(3, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(4, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(5, "john", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(6, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(7, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(8, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(9, "john", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(10, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(11, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(12, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(13, "john", 0, "2022-01-01T12:00:00"));
+
+
+    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        .withOrdered()
+        .withTransactionId(1L)
+        .buildBaseWriter();
+
+    Assert.assertThrows(IllegalStateException.class, () -> {
+      for (Record record : builder.build()) {
+        writer.write(record);
+      }
+    });
+
+  }
+
   private List<Record> writeRecords() {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-01T12:00:00"));

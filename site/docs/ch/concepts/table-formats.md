@@ -53,7 +53,7 @@ Mixed format 的 auto-bucket 功能参考了论文：[Scalable, Distributed Data
 mixed streaming format 在使用上存在的限制有：
 
 - Compatibility limited — 在 Hive 和 Iceberg 的兼容写的场景下，可能出现主键唯一性破坏或冲突解决失效
-- Primary key constraint — 在主键不包含分区键的情况下，如果流数据中没有更新前像，需要使用 normalized 算子或其他方式还原数据前像，才能保障主键唯一
+- Primary key constraint — 在主键不包含分区键的情况下，如果流数据中没有更新前项，需要使用 normalized 算子或其他方式还原数据前项，才能保障主键唯一
 - Engines integrated — 目前支持 Flink 和 Spark 读写，支持 Trino 和 Impala 查询数据
 
 ### Mixed Iceberg format

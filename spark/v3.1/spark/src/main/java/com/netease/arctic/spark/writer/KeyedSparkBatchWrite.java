@@ -24,7 +24,6 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
@@ -35,6 +34,7 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.DataWriterFactory;
+import org.apache.spark.sql.connector.write.LogicalWriteInfo;
 import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructField;
@@ -62,11 +62,16 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final long txId;
   private final String hiveSubdirectory;
 
-  KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
+  private final boolean orderedWriter;
+
+  KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info) {
     this.table = table;
-    this.dsSchema = dsSchema;
+    this.dsSchema = info.schema();
     this.txId = table.beginTransaction(null);
     this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.txId);
+    this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
+        "writer.distributed-and-ordered", "false"
+    ));
   }
 
   @Override
@@ -89,12 +94,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new UpsertWrite();
   }
 
-  private abstract class BaseBatchWrite implements BatchWrite {
-    private boolean isOverwrite;
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return new MergeIntoWrite();
+  }
 
-    BaseBatchWrite(boolean isOverwrite) {
-      this.isOverwrite = isOverwrite;
-    }
+  private abstract class BaseBatchWrite implements BatchWrite {
+
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
@@ -115,13 +121,10 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private class AppendWrite extends BaseBatchWrite {
 
-    AppendWrite() {
-      super(false);
-    }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new ChangeWriteFactory(table, dsSchema, txId);
+      return new ChangeWriteFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
@@ -136,13 +139,10 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private class DynamicOverwrite extends BaseBatchWrite {
 
-    DynamicOverwrite() {
-      super(true);
-    }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -161,13 +161,12 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
-      super(true);
       this.overwriteExpr = overwriteExpr;
     }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -185,13 +184,10 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   }
 
   private class UpsertWrite extends BaseBatchWrite {
-    UpsertWrite() {
-      super(true);
-    }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new UpsertChangeFactory(table, dsSchema, txId);
+      return new UpsertChangeFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
@@ -208,11 +204,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     protected final KeyedTable table;
     protected final StructType dsSchema;
     protected final Long transactionId;
+    protected final boolean orderedWrite;
 
-    AbstractWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
+    AbstractWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
+      this.orderedWrite = orderedWrite;
     }
   }
 
@@ -220,28 +218,36 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     protected final String hiveSubdirectory;
 
-    BaseWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, String hiveSubdirectory) {
-      super(table, dsSchema, transactionId);
+
+    BaseWriterFactory(
+        KeyedTable table,
+        StructType dsSchema,
+        Long transactionId,
+        String hiveSubdirectory,
+        boolean orderedWrite) {
+      super(table, dsSchema, transactionId, orderedWrite);
       this.hiveSubdirectory = hiveSubdirectory;
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+      TaskWriters writerBuilder = TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .withHiveSubdirectory(hiveSubdirectory)
-          .newBaseWriter(true);
+          .withOrderedWriter(orderedWrite)
+          .withHiveSubdirectory(hiveSubdirectory);
+
+      TaskWriter<InternalRow> writer = writerBuilder.newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }
   }
 
   private static class ChangeWriteFactory extends AbstractWriterFactory {
 
-    ChangeWriteFactory(KeyedTable table, StructType dsSchema, long transactionId) {
-      super(table, dsSchema, transactionId);
+    ChangeWriteFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
+      super(table, dsSchema, transactionId, orderedWrite);
     }
 
     @Override
@@ -258,8 +264,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private static class UpsertChangeFactory extends AbstractWriterFactory {
 
-    UpsertChangeFactory(KeyedTable table, StructType dsSchema, long transactionId) {
-      super(table, dsSchema, transactionId);
+    UpsertChangeFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
+      super(table, dsSchema, transactionId, orderedWrite);
     }
 
     @Override
@@ -271,8 +277,46 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
+          .withOrderedWriter(orderedWrite)
           .newChangeWriter();
       return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, legacyTxId, orderedWriter);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
+    }
+  }
+
+
+  private static class MergeWriteFactory extends AbstractWriterFactory {
+
+    MergeWriteFactory(KeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
+      super(table, dsSchema, transactionId, orderedWrite);
+    }
+
+    @Override
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .withOrderedWriter(orderedWrite)
+          .newChangeWriter();
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 }

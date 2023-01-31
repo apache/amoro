@@ -17,16 +17,24 @@
  * under the License.
  */
 
-package com.netease.arctic.spark.sql.catalyst.plans
+package com.netease.arctic.spark.writer;
 
-import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
+import org.apache.spark.sql.connector.write.DataWriter;
 
-case class OverwriteArcticData(
-    table: NamedRelation,
-    query: LogicalPlan,
-    validateQuery: LogicalPlan,
-    options: Map[String, String]) extends Command {
-  override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
+import java.io.IOException;
 
+/**
+ * A data writer responsible for writing a delta of rows.
+ */
+public interface RowLevelWriter<T> extends DataWriter<T> {
+  void delete(T row) throws IOException;
+
+  void update(T updateBefore, T updateAfter) throws IOException;
+
+  void insert(T row) throws IOException;
+
+  @Override
+  default void write(T row) throws IOException {
+    insert(row);
+  }
 }
