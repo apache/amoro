@@ -18,17 +18,14 @@
 
 package com.netease.arctic.io.writer;
 
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.FileNameHandle;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Factory responsible for generating data file names for change and base location

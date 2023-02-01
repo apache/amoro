@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import org.apache.iceberg.FileFormat;
 import org.junit.Assert;

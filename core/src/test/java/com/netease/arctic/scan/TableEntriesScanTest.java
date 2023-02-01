@@ -20,7 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.io.FileNameHandle;
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.io.TableDataTestBase;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;

@@ -20,8 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.io.FileNameHandle;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.data.file.FileNameHandle;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;

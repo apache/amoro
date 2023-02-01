@@ -20,7 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.io.FileNameHandle;
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.BaseCombinedScanTask;
@@ -37,7 +37,6 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
-import org.apache.iceberg.util.TableScanUtil;
 
 import java.util.Collection;
 

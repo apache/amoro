@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.io.FileNameHandle;
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.ArcticTable;

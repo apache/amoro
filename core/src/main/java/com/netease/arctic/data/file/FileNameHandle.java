@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.io;
+package com.netease.arctic.data.file;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;

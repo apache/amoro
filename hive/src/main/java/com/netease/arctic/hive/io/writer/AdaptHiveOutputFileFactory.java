@@ -18,22 +18,17 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
-
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.netease.arctic.utils.TableFileUtils.getFileName;
 
 /**
  * For adapt hive table with partitions the dir construct is :

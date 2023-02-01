@@ -18,7 +18,7 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.io.FileNameHandle;
+import com.netease.arctic.data.file.FileNameHandle;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -177,7 +177,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     private final DataFileType type;
     private final DataTreeNode node;
 
-    public FileMeta(Long transactionId, DataFileType type, DataTreeNode node) {
+    public FileMeta(long transactionId, DataFileType type, DataTreeNode node) {
       this.transactionId = transactionId;
       this.type = type;
       this.node = node;
