@@ -19,32 +19,23 @@
 package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.BaseArcticDataReader;
-import com.netease.arctic.io.reader.DataReaderCommon;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link BaseArcticDataReader} with record type {@link Record}.
@@ -89,7 +80,6 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
         nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer);
   }
-
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
@@ -101,5 +91,4 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
   protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {
     return schema -> record -> new InternalRecordWrapper(schema.asStruct()).wrap(record);
   }
-
 }

@@ -19,11 +19,9 @@
 package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.io.reader.BaseArcticDataReader;
-import com.netease.arctic.io.reader.DataReaderCommon;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -31,18 +29,15 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Type;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * AdaptHive can read all Data.
@@ -116,40 +111,13 @@ public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataRea
   }
 
   @Override
-  public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
-    AdaptHiveArcticDeleteFilter<T> arcticDeleteFilter =
-        new AdaptHiveGenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
-            sourceNodes, structLikeCollections);
-    Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-
-    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-    return dataIterable.iterator();
-  }
-
-  @Override
-  public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
-
-    if (!equDeleteFiles.isEmpty()) {
-      AdaptHiveArcticDeleteFilter<T> arcticDeleteFilter = new AdaptHiveGenericArcticDeleteFilter(
-          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes, structLikeCollections
-      );
-
-      Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-
-      CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-      return dataIterable.iterator();
-    } else {
-      return CloseableIterator.empty();
-    }
+  protected ArcticDeleteFilter<T> createArcticDeleteFilter(
+      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
+      Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections
+  ) {
+    return new AdaptHiveGenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema,
+        primaryKeySpec, sourceNodes, structLikeCollections);
   }
 
   @Override
