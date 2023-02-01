@@ -52,7 +52,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
       throws OperationConflictException {
     try {
-      return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties));
+      return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties), true);
     } catch (OperationConflictException e) {
       throw e;
     } catch (TException e) {
@@ -84,9 +84,16 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   }
 
   private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker) {
+    return buildBlocker(blocker, false);
+  }
+
+  private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker, boolean needInit) {
     if (blocker.getProperties() != null &&
         blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null) {
-      return RenewableBlocker.of(tableIdentifier, blocker, client);
+      RenewableBlocker renewableBlocker = RenewableBlocker.of(tableIdentifier, blocker, client);
+      if (needInit) {
+        renewableBlocker.renewAsync();
+      }
     }
     throw new IllegalArgumentException("illegal blocker " + blocker);
   }

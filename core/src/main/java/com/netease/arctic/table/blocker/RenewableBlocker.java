@@ -66,7 +66,6 @@ public class RenewableBlocker implements Blocker {
     this.properties = properties;
     this.tableIdentifier = tableIdentifier;
     this.amsClient = amsClient;
-    renewAsync();
   }
 
   public static RenewableBlocker of(TableIdentifier tableIdentifier, com.netease.arctic.ams.api.Blocker blocker,
