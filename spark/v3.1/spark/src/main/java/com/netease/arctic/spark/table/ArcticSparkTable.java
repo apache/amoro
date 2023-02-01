@@ -18,17 +18,12 @@
 
 package com.netease.arctic.spark.table;
 
-import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.blocker.Blocker;
-import com.netease.arctic.table.blocker.TableBlockerManager;
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -47,7 +42,6 @@ import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 

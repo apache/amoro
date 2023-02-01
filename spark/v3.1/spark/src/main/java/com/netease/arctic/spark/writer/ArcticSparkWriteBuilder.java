@@ -55,7 +55,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
 
   private WriteMode writeMode = WriteMode.APPEND;
   private final ArcticWrite write;
-  private final ArcticCatalog catalog;
 
   public ArcticSparkWriteBuilder(ArcticTable table,
                                  LogicalWriteInfo info,
@@ -64,7 +63,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
     }
-    this.catalog = catalog;
 
     if (table.isKeyedTable()) {
       write = new KeyedSparkBatchWrite(table.asKeyedTable(), info, catalog);
