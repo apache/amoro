@@ -170,7 +170,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
         ArrayList<BlockableOperation> operations = Lists.newArrayList();
         operations.add(BlockableOperation.BATCH_WRITE);
         operations.add(BlockableOperation.OPTIMIZE);
-        Map<String, String> properties = new HashMap<> ();
+        Map<String, String> properties = new HashMap<>();
         properties.put(APPLICATION_ID, applicationId);
         try {
           this.block = tableBlockerManager.block(operations, properties);
