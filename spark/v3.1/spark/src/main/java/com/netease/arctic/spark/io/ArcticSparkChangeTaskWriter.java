@@ -7,7 +7,6 @@ import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -15,9 +14,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.catalyst.expressions.JoinedRow;
-import org.apache.spark.sql.types.StructType;
 
 /**
  * change task writer
@@ -25,11 +21,20 @@ import org.apache.spark.sql.types.StructType;
 public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
   private final Schema schema;
 
-  protected ArcticSparkChangeTaskWriter(FileFormat format,
-                                        FileAppenderFactory<InternalRow> appenderFactory,
-                                        OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                                        long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+  protected ArcticSparkChangeTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<InternalRow> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter
+  ) {
+    super(format, appenderFactory, outputFileFactory, io,
+        targetFileSize, mask, schema, spec, primaryKeySpec, orderedWriter);
     this.schema = schema;
   }
 

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trino.keyed;
 
+import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -44,7 +45,7 @@ import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
 /**
  * KeyedDeleteFilter is used to do MOR for Keyed Table
  */
-public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
+public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
   private FileIO fileIO;
 

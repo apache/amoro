@@ -288,8 +288,11 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
 
   @Override
   public String description() {
-    String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
-    return String.format("%s [filters=%s]", table, filters);
+    if (filterExpressions != null) {
+      String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
+      return String.format("%s [filters=%s]", table, filters);
+    }
+    return "";
   }
 
   @Override

@@ -29,6 +29,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 public class TestCreateKeyedTableAsSelect extends SparkTestBase {
 
   private final String database = "db_def";
@@ -154,9 +156,13 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     sql("CREATE TABLE {0}.{1} primary key(id) USING arctic PARTITIONED BY (pt)" +
         "AS SELECT * FROM {2}.{3}", database, table, database, sourceTable);
 
+    List<Object[]> expect = sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable);
+    List<Object[]> acture = sql("SELECT * FROM {0}.{1} ORDER BY id", database, table);
+    sql("SELECT * FROM {0}.{1}.change ORDER BY id", database, table);
+
     assertEquals("Should have rows matching the source table",
-        sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
-        sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
+        acture,
+        expect);
 
     Schema expectedSchema = new Schema(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),

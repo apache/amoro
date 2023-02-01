@@ -161,7 +161,7 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
     Assert.assertArrayEquals(excepts, sortRowDataCollection(actual));
   }
 
-  protected RowData[] sortRowDataCollection(Collection<RowData> records) {
+  public static RowData[] sortRowDataCollection(Collection<RowData> records) {
     return records.stream().sorted(
             Comparator
                 .comparing(

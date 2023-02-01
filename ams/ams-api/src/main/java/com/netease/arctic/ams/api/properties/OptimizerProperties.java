@@ -47,4 +47,8 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_JOB_ID = "jobId";
   public static final String OPTIMIZER_JOB_PARALLELISM = "parallelism";
 
+  // optimizer spill map properties
+  public static final String SPILLABLE_MAP_ENABLE = "spillable.map.enabled";
+  public static final String SPILLABLE_MAP_DIR = "spillable.map.dir";
+  public static final String SPILLABLE_MEMORY_LIMIT = "spillable.memory.limit";
 }

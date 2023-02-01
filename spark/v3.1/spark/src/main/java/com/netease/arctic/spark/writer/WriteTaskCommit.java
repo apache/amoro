@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.writer;
 
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
@@ -27,9 +28,11 @@ import java.util.Arrays;
 
 public class WriteTaskCommit implements WriterCommitMessage {
   private final DataFile[] taskFiles;
+  private final DeleteFile[] deleteFiles;
 
-  WriteTaskCommit(DataFile[] taskFiles) {
+  WriteTaskCommit(DataFile[] taskFiles, DeleteFile[] deleteFiles) {
     this.taskFiles = taskFiles;
+    this.deleteFiles = deleteFiles;
   }
 
   DataFile[] files() {
@@ -40,6 +43,19 @@ public class WriteTaskCommit implements WriterCommitMessage {
     if (messages.length > 0) {
       return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
           ImmutableList.copyOf(((WriteTaskCommit) message).files()) :
+          ImmutableList.of()));
+    }
+    return ImmutableList.of();
+  }
+
+  DeleteFile[] deleteFiles() {
+    return deleteFiles;
+  }
+
+  public static Iterable<DeleteFile> deleteFiles(WriterCommitMessage[] messages) {
+    if (messages.length > 0) {
+      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
+          ImmutableList.copyOf(((WriteTaskCommit) message).deleteFiles()) :
           ImmutableList.of()));
     }
     return ImmutableList.of();

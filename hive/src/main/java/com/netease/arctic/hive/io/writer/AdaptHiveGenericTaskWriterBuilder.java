@@ -67,6 +67,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private ChangeAction changeAction = ChangeAction.INSERT;
   private String customHiveSubdirectory;
   private Long targetFileSize;
+  private boolean orderedWriter = false;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -99,6 +100,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   
   public AdaptHiveGenericTaskWriterBuilder withTargetFileSize(long targetFileSize) {
     this.targetFileSize = targetFileSize;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder withOrdered() {
+    this.orderedWriter = true;
     return this;
   }
 
@@ -183,7 +189,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         new GenericAppenderFactory(schema, table.spec());
     return new GenericBaseTaskWriter(fileFormat, appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec);
+        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
   }
 
   private GenericChangeTaskWriter buildChangeWriter() {
@@ -209,12 +215,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
         new GenericAppenderFactory(changeWriteSchema, table.spec());
-    return new GenericChangeTaskWriter(fileFormat,
+    return new GenericChangeTaskWriter(
+        fileFormat,
         appenderFactory,
         new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
             table.changeTable().encryption(), partitionId, taskId, transactionId),
         table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-        changeAction);
+        changeAction, orderedWriter);
   }
 
   private void preconditions() {

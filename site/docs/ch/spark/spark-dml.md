@@ -148,8 +148,6 @@ WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 
 ### MERGE INTO
 
-支持使用 `MERGE INTO` 语句对无主键表进行更新
-
 ```sql 
 MERGE INTO prod.db.target t   -- a target table
 USING (SELECT ...) s          -- the source updates
@@ -170,5 +168,3 @@ WHEN MATCHED AND s.op = 'increment' THEN UPDATE SET t.count = t.count + 1
 WHEN NOT MATCHED THEN INSERT *
 
 ```
-
-> MERGE INTO 语法在当前版本只支持无主键表
