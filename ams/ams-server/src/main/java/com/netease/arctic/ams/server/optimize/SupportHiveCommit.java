@@ -83,7 +83,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               .map(fileByte -> (DataFile) SerializationUtils.toContentFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> FileNameHandle.parseBase(dataFile.path().toString()).transactionId())
+              .mapToLong(dataFile -> FileNameHandle.parseTransactionId(dataFile.path().toString()))
               .max()
               .orElse(0L);
 

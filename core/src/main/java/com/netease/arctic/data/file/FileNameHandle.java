@@ -18,6 +18,7 @@
 
 package com.netease.arctic.data.file;
 
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
@@ -66,84 +67,140 @@ public class FileNameHandle {
   /**
    * Flink write transactionId as 0.
    * if we get transactionId from path is 0, we set transactionId as iceberg sequenceNumber.
-   * @param path file path
+   *
+   * @param path           file path
    * @param sequenceNumber iceberg sequenceNumber
+   * @return fileMeta
+   * @throws IllegalArgumentException if is not arctic format
    */
   public static DefaultKeyedFile.FileMeta parseChange(String path, Long sequenceNumber) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    long nodeId = 1;
-    DataFileType type = null;
-    long transactionId = 0L;
     if (matcher.matches()) {
-      nodeId = Long.parseLong(matcher.group(1));
+      DataFileType type;
+      long transactionId;
+      long nodeId = Long.parseLong(matcher.group(1));
       type = DataFileType.ofShortName(matcher.group(2));
       transactionId = Long.parseLong(matcher.group(3));
       transactionId = transactionId == 0 ? sequenceNumber : transactionId;
+      DataTreeNode node = DataTreeNode.ofId(nodeId);
+      return new DefaultKeyedFile.FileMeta(transactionId, type, node);
+    } else {
+      throw new IllegalArgumentException("change path format is not illegal " + path);
     }
-    DataTreeNode node = DataTreeNode.ofId(nodeId);
-    return new DefaultKeyedFile.FileMeta(transactionId, type, node);
   }
 
   /**
-   * Path writen by hive can not be pared by arctic format. so we set it transactionId as 0.
-   * @param path file path
+   * Parse FileMeta for BaseStore.
+   * Path writen by hive can not be pared by arctic format, we set it to be FileMeta.DEFAULT_BASE_FILE_META
+   *
+   * @param path - path
+   * @return fileMeta
    */
   public static DefaultKeyedFile.FileMeta parseBase(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    long nodeId = 1;
-    DataFileType type = DataFileType.BASE_FILE;
-    long transactionId = 0L;
     if (matcher.matches()) {
-      nodeId = Long.parseLong(matcher.group(1));
-      type = DataFileType.ofShortName(matcher.group(2));
+      long nodeId = Long.parseLong(matcher.group(1));
+      DataFileType type = DataFileType.ofShortName(matcher.group(2));
       if (type == DataFileType.INSERT_FILE) {
         type = DataFileType.BASE_FILE;
       }
-      transactionId = Long.parseLong(matcher.group(3));
-    }
-    DataTreeNode node = DataTreeNode.ofId(nodeId);
-    return new DefaultKeyedFile.FileMeta(transactionId, type, node);
-  }
-
-  public static DataFileType parseFileTypeForChange(String path) {
-    String fileName = TableFileUtils.getFileName(path);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    DataFileType type;
-    if (matcher.matches()) {
-      type = DataFileType.ofShortName(matcher.group(2));
+      long transactionId = Long.parseLong(matcher.group(3));
+      DataTreeNode node = DataTreeNode.ofId(nodeId);
+      return new DefaultKeyedFile.FileMeta(transactionId, type, node);
     } else {
-      throw new IllegalArgumentException("path is illegal");
+      return DefaultKeyedFile.FileMeta.DEFAULT_BASE_FILE_META;
     }
-    return type;
-  }
-
-  public static DataFileType parseFileTypeForBase(String path) {
-    String fileName = TableFileUtils.getFileName(path);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    DataFileType type = DataFileType.BASE_FILE;
-    if (matcher.matches()) {
-      type = DataFileType.ofShortName(matcher.group(2));
-      if (type == DataFileType.INSERT_FILE) {
-        type = DataFileType.BASE_FILE;
-      }
-    }
-    return type;
   }
 
   /**
-   * parse keyed file node id from file name
-   * @param fileName fileName
+   * Parse file type for ChangeStore.
+   *
+   * @param path - path
+   * @return file type
+   * @throws IllegalArgumentException if is not arctic format
+   */
+  public static DataFileType parseFileTypeForChange(String path) {
+    String fileName = TableFileUtils.getFileName(path);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    if (matcher.matches()) {
+      return DataFileType.ofShortName(matcher.group(2));
+    } else {
+      throw new IllegalArgumentException("change path format is not illegal " + path);
+    }
+  }
+
+  /**
+   * Parse file type for BaseStore.
+   *
+   * @param path         - path
+   * @param defaultValue - return this value if is not arctic format
+   * @return file type
+   */
+  public static DataFileType parseFileTypeForBase(String path, DataFileType defaultValue) {
+    String fileName = TableFileUtils.getFileName(path);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    if (matcher.matches()) {
+      DataFileType type;
+      type = DataFileType.ofShortName(matcher.group(2));
+      if (type == DataFileType.INSERT_FILE) {
+        type = DataFileType.BASE_FILE;
+      }
+      return type;
+    } else {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Parse file type.
+   *
+   * @param path         - path
+   * @param tableType    - table type, base/change
+   * @param defaultValue - return this value if is not arctic format
+   * @return file type
+   */
+  public static DataFileType parseFileType(String path, String tableType, DataFileType defaultValue) {
+    if (Constants.INNER_TABLE_CHANGE.equals(tableType)) {
+      return parseFileTypeForChange(path);
+    } else if (Constants.INNER_TABLE_BASE.equals(tableType)) {
+      return parseFileTypeForBase(path, defaultValue);
+    } else {
+      throw new IllegalArgumentException("unknown tableType " + tableType);
+    }
+  }
+
+  /**
+   * Parse keyed file node id from file name, return node(0,0) if path is not arctic format.
+   *
+   * @param path path
    * @return node id
    */
-  public static DataTreeNode parseFileNodeFromFileName(String fileName) {
-    fileName = TableFileUtils.getFileName(fileName);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    long nodeId = 1;
+  public static DataTreeNode parseFileNodeFromFileName(String path) {
+    path = TableFileUtils.getFileName(path);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(path);
     if (matcher.matches()) {
-      nodeId = Long.parseLong(matcher.group(1));
+      long nodeId = Long.parseLong(matcher.group(1));
+      return DataTreeNode.ofId(nodeId);
+    } else {
+      return DataTreeNode.ROOT;
     }
-    return DataTreeNode.ofId(nodeId);
+  }
+
+  /**
+   * Parse transaction id from file name, return 0 if path is not arctic format.
+   *
+   * @param path path
+   * @return transactionId
+   */
+  public static long parseTransactionId(String path) {
+    String fileName = TableFileUtils.getFileName(path);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    if (matcher.matches()) {
+      return Long.parseLong(matcher.group(3));
+    } else {
+      return 0L;
+    }
   }
 }

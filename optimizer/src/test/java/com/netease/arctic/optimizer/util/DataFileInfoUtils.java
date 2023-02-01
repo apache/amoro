@@ -37,7 +37,7 @@ import java.util.List;
 
 public class DataFileInfoUtils {
   public static DataFileInfo convertToDatafileInfo(DataFile dataFile, Snapshot snapshot, ArcticTable arcticTable,
-      boolean isChange) {
+      String tableType) {
     DataFileInfo dataFileInfo = new DataFileInfo();
     dataFileInfo.setSize(dataFile.fileSizeInBytes());
     dataFileInfo.setPath((String) dataFile.path());
@@ -45,12 +45,8 @@ public class DataFileInfoUtils {
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(dataFile.recordCount());
     if (arcticTable.isKeyedTable()) {
-      DataFileType dataFileType;
-      if (isChange) {
-        dataFileType = FileNameHandle.parseFileTypeForChange(dataFile.path().toString());
-      } else {
-        dataFileType = FileNameHandle.parseFileTypeForBase(dataFile.path().toString());
-      }
+      DataFileType dataFileType =
+          FileNameHandle.parseFileType(dataFile.path().toString(), tableType, DataFileType.BASE_FILE);
       DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
       dataFileInfo.setType(dataFileType.name());
       dataFileInfo.setType(dataFileType.name());

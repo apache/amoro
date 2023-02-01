@@ -18,6 +18,7 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
@@ -73,7 +74,8 @@ public interface TestOptimizeBase {
     Snapshot snapshot = baseTable.currentSnapshot();
 
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable, false))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable,
+            Constants.INNER_TABLE_BASE))
         .collect(Collectors.toList()));
     return baseDataFiles;
   }

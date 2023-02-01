@@ -19,6 +19,7 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
@@ -142,7 +143,8 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable, true))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable,
+            Constants.INNER_TABLE_CHANGE))
         .collect(Collectors.toList());
   }
 
@@ -168,7 +170,8 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable, true))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable,
+            Constants.INNER_TABLE_CHANGE))
         .collect(Collectors.toList());
   }
 }

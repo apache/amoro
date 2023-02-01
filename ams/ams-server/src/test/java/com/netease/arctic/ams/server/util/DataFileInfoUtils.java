@@ -48,7 +48,7 @@ public class DataFileInfoUtils {
       if (isChange) {
         dataFileType = FileNameHandle.parseFileTypeForChange(dataFile.path().toString());
       } else {
-        dataFileType = FileNameHandle.parseFileTypeForBase(dataFile.path().toString());
+        dataFileType = FileNameHandle.parseFileTypeForBase(dataFile.path().toString(), DataFileType.BASE_FILE);
       }
       DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
       dataFileInfo.setType(dataFileType.name());

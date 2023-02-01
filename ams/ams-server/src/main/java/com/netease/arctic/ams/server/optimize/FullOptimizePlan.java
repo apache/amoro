@@ -288,7 +288,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
 
   private long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileNameHandle.parseBase(file.path().toString()).transactionId()).max();
+        .mapToLong(file -> FileNameHandle.parseTransactionId(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }

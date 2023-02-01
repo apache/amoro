@@ -20,8 +20,10 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.file.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
@@ -55,7 +57,7 @@ public class ConvertStructUtil {
    */
   public static com.netease.arctic.ams.api.DataFile convertToAmsDatafile(
       org.apache.iceberg.ContentFile<?> dataFile,
-      ArcticTable table) {
+      ArcticTable table, String tableType) {
     com.netease.arctic.ams.api.DataFile amsDataFile = new com.netease.arctic.ams.api.DataFile();
     amsDataFile.setFileSize(dataFile.fileSizeInBytes());
     amsDataFile.setPath(dataFile.path().toString());
@@ -73,17 +75,23 @@ public class ConvertStructUtil {
      */
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
-      DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(dataFile.path().toString());
-      validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
-      amsDataFile.setFileType(fileMeta.type().name());
-      amsDataFile.setIndex(fileMeta.node().index());
-      amsDataFile.setMask(fileMeta.node().mask());
+      // if we can't parse file type from file name, handle it as base file
+      DataFileType dataFileType =
+          FileNameHandle.parseFileType(dataFile.path().toString(), tableType, DataFileType.BASE_FILE);
+      validateArcticFileType(content, dataFile.path().toString(), dataFileType);
+      amsDataFile.setFileType(dataFileType.name());
+      DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
+      amsDataFile.setIndex(node.index());
+      amsDataFile.setMask(node.mask());
     } else if (content == FileContent.POSITION_DELETES) {
-      DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(dataFile.path().toString());
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
-      if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
-        amsDataFile.setIndex(fileMeta.node().index());
-        amsDataFile.setMask(fileMeta.node().mask());
+      // if we can't parse file type from file name, handle it as pos delete file
+      DataFileType dataFileType = FileNameHandle.parseFileType(dataFile.path().toString(), tableType,
+          DataFileType.POS_DELETE_FILE);
+      if (dataFileType == DataFileType.POS_DELETE_FILE) {
+        DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
+        amsDataFile.setIndex(node.index());
+        amsDataFile.setMask(node.mask());
       } else {
         throw new IllegalArgumentException(
             "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());

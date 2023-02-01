@@ -18,6 +18,7 @@
 
 package com.netease.arctic.scan;
 
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.data.file.FileNameHandle;
@@ -54,11 +55,10 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
       PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
       Expression expression) {
     this.baseFile = baseFile;
-    this.posDeleteFiles = posDeleteFiles == null ?
-        Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(s.path().toString());
-          return fileMeta.node().index() == baseFile.node().index() &&
-            fileMeta.node().mask() == baseFile.node().mask();
+    this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() :
+        posDeleteFiles.stream().filter(s -> {
+          DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(s.path().toString());
+          return node.index() == baseFile.node().index() && node.mask() == baseFile.node().mask();
         }).collect(Collectors.toList());
     this.spec = spec;
     this.expression = expression;
