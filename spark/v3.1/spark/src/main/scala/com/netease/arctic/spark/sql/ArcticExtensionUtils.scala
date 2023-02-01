@@ -145,6 +145,7 @@ object ArcticExtensionUtils {
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
       case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+      case _ => false
     }
   }
 
