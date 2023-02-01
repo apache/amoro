@@ -45,8 +45,7 @@ public class DataFileInfoUtils {
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(dataFile.recordCount());
     if (arcticTable.isKeyedTable()) {
-      DataFileType dataFileType =
-          FileNameHandle.parseFileType(dataFile.path().toString(), tableType, DataFileType.BASE_FILE);
+      DataFileType dataFileType = FileNameHandle.parseFileType(dataFile.path().toString(), tableType);
       DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
       dataFileInfo.setType(dataFileType.name());
       dataFileInfo.setType(dataFileType.name());

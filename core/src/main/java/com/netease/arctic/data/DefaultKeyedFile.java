@@ -44,7 +44,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     this.meta = meta;
   }
 
-  public static DefaultKeyedFile parseChange(DataFile dataFile, Long sequenceNumber) {
+  public static DefaultKeyedFile parseChange(DataFile dataFile, long sequenceNumber) {
     FileMeta fileMeta = FileNameHandle.parseChange(dataFile.path().toString(), sequenceNumber);
     return new DefaultKeyedFile(dataFile, fileMeta);
   }
@@ -172,9 +172,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   public static class FileMeta implements Serializable {
-
-    public static FileMeta DEFAULT_BASE_FILE_META = new FileMeta(0, DataFileType.BASE_FILE, DataTreeNode.ROOT);
-
     private final long transactionId;
     private final DataFileType type;
     private final DataTreeNode node;

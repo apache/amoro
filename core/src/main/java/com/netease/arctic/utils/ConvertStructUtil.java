@@ -56,11 +56,13 @@ public class ConvertStructUtil {
    * @return ams file
    */
   public static com.netease.arctic.ams.api.DataFile convertToAmsDatafile(
-      org.apache.iceberg.ContentFile<?> dataFile,
-      ArcticTable table, String tableType) {
+      org.apache.iceberg.ContentFile<?> dataFile, ArcticTable table, String tableType) {
+
+    String filePath = dataFile.path().toString();
+
     com.netease.arctic.ams.api.DataFile amsDataFile = new com.netease.arctic.ams.api.DataFile();
     amsDataFile.setFileSize(dataFile.fileSizeInBytes());
-    amsDataFile.setPath(dataFile.path().toString());
+    amsDataFile.setPath(filePath);
     amsDataFile.setPartition(partitionFields(table.spec(), dataFile.partition()));
     amsDataFile.setSpecId(table.spec().specId());
     amsDataFile.setRecordCount(dataFile.recordCount());
@@ -76,29 +78,31 @@ public class ConvertStructUtil {
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
       // if we can't parse file type from file name, handle it as base file
-      DataFileType dataFileType =
-          FileNameHandle.parseFileType(dataFile.path().toString(), tableType, DataFileType.BASE_FILE);
-      validateArcticFileType(content, dataFile.path().toString(), dataFileType);
+      DataFileType dataFileType = FileNameHandle.parseFileType(filePath, tableType);
+      validateArcticFileType(content, filePath, dataFileType);
       amsDataFile.setFileType(dataFileType.name());
-      DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
+
+      DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(filePath);
       amsDataFile.setIndex(node.index());
       amsDataFile.setMask(node.mask());
     } else if (content == FileContent.POSITION_DELETES) {
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
-      // if we can't parse file type from file name, handle it as pos delete file
-      DataFileType dataFileType = FileNameHandle.parseFileType(dataFile.path().toString(), tableType,
-          DataFileType.POS_DELETE_FILE);
+
+      DataFileType dataFileType = FileNameHandle.parseFileType(filePath, tableType);
       if (dataFileType == DataFileType.POS_DELETE_FILE) {
-        DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
+        DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(filePath);
         amsDataFile.setIndex(node.index());
         amsDataFile.setMask(node.mask());
       } else {
-        throw new IllegalArgumentException(
-            "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());
+        if (!FileNameHandle.isArcticFileFormat(filePath)) {
+          amsDataFile.setIndex(DataTreeNode.ROOT.getIndex());
+          amsDataFile.setMask(DataTreeNode.ROOT.getMask());
+        } else {
+          throw new IllegalArgumentException("iceberg file content should not be POSITION_DELETES for " + filePath);
+        }
       }
     } else {
-      throw new UnsupportedOperationException(
-          "not support file content now: " + content + ", " + dataFile.path().toString());
+      throw new UnsupportedOperationException("not support file content now: " + content + ", " + filePath);
     }
     return amsDataFile;
   }
