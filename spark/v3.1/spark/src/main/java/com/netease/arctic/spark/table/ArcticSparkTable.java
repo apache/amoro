@@ -194,17 +194,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
-    TableBlockerManager tableBlockerManager = catalog.getTableBlockerManager(arcticTable.id());
-    ArrayList<BlockableOperation> operations = Lists.newArrayList();
-    operations.add(BlockableOperation.BATCH_WRITE);
-    operations.add(BlockableOperation.OPTIMIZE);
-    Blocker block;
-    try {
-      block = tableBlockerManager.block(operations);
-    } catch (OperationConflictException e) {
-      throw new IllegalStateException("failed to block table " + arcticTable.id() + " with " + operations, e);
-    }
-    return new ArcticSparkWriteBuilder(arcticTable, info, tableBlockerManager, block);
+    return new ArcticSparkWriteBuilder(arcticTable, info, catalog);
   }
 
 

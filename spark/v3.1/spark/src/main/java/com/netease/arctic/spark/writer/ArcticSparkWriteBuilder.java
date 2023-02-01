@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
@@ -54,24 +55,21 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
 
   private WriteMode writeMode = WriteMode.APPEND;
   private final ArcticWrite write;
-  private final TableBlockerManager tableBlockerManager;
-  private final Blocker block;
+  private final ArcticCatalog catalog;
 
   public ArcticSparkWriteBuilder(ArcticTable table,
                                  LogicalWriteInfo info,
-                                 TableBlockerManager tableBlockerManager,
-                                 Blocker block) {
+                                 ArcticCatalog catalog) {
     this.options = info.options();
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
     }
-    this.tableBlockerManager = tableBlockerManager;
-    this.block = block;
+    this.catalog = catalog;
 
     if (table.isKeyedTable()) {
-      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info, tableBlockerManager, block);
+      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info, catalog);
     } else {
-      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info, tableBlockerManager, block);
+      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info);
     }
   }
 
