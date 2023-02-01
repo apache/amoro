@@ -22,6 +22,7 @@ import com.netease.arctic.hive.catalog.HiveBasedCatalogTest;
 import com.netease.arctic.hive.catalog.HiveCatalogLoaderTest;
 import com.netease.arctic.hive.catalog.IcebergHiveCatalogTest;
 import com.netease.arctic.hive.catalog.MixedHiveCatalogTest;
+import com.netease.arctic.hive.io.KeyedTimeStampTest;
 import com.netease.arctic.hive.io.TestAdaptHiveReader;
 import com.netease.arctic.hive.io.TestAdaptHiveWriter;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
@@ -52,7 +53,8 @@ import org.junit.runners.Suite;
     MixedHiveCatalogTest.class,
     CompatibleHivePropertyUtilTest.class,
     HiveSchemaUtilTest.class,
-    TestAdaptHiveReader.class
+    TestAdaptHiveReader.class,
+    KeyedTimeStampTest.class
 })
 public class ArcticHiveTestMain {
 
