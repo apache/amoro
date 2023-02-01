@@ -22,8 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,13 +43,15 @@ public class RenewableBlocker implements Blocker {
 
   public static final String CREATE_TIME_PROPERTY = "create.time";
   public static final String EXPIRATION_TIME_PROPERTY = "expiration.time";
+  public static final String BLOCKER_TIMEOUT = "blocker.timeout";
 
   private static volatile ScheduledExecutorService EXECUTOR;
 
   private final String blockerId;
   private final List<BlockableOperation> operations;
   private final long createTime;
-  private final long expirationTime;
+  private long expirationTime;
+  private final long blockerTimeout;
   private final Map<String, String> properties;
   private final TableIdentifier tableIdentifier;
   private final AmsClient amsClient;
@@ -58,25 +59,17 @@ public class RenewableBlocker implements Blocker {
   private volatile ScheduledFuture<?> renewTaskFuture;
 
   public RenewableBlocker(String blockerId, List<BlockableOperation> operations, long createTime, long expirationTime,
-                          Map<String, String> properties, TableIdentifier tableIdentifier, AmsClient amsClient) {
+                          long blockerTimeout, Map<String, String> properties, TableIdentifier tableIdentifier,
+                          AmsClient amsClient) {
+    Preconditions.checkArgument(blockerTimeout > 0, "blockerTimeout must > 0");
     this.blockerId = blockerId;
     this.operations = operations;
     this.createTime = createTime;
     this.expirationTime = expirationTime;
+    this.blockerTimeout = blockerTimeout;
     this.properties = properties;
     this.tableIdentifier = tableIdentifier;
     this.amsClient = amsClient;
-  }
-
-  public static RenewableBlocker of(TableIdentifier tableIdentifier, com.netease.arctic.ams.api.Blocker blocker,
-                                    AmsClient amsClient) {
-    Map<String, String> properties = Maps.newHashMap(blocker.getProperties());
-    long createTime = PropertyUtil.propertyAsLong(properties, CREATE_TIME_PROPERTY, 0);
-    long expirationTime = PropertyUtil.propertyAsLong(properties, EXPIRATION_TIME_PROPERTY, 0);
-    properties.remove(CREATE_TIME_PROPERTY);
-    properties.remove(EXPIRATION_TIME_PROPERTY);
-    return new RenewableBlocker(blocker.getBlockerId(), blocker.getOperations(), createTime, expirationTime,
-        properties, tableIdentifier, amsClient);
   }
 
   private static ScheduledExecutorService getExecutorService() {
@@ -91,8 +84,8 @@ public class RenewableBlocker implements Blocker {
   }
 
   public void renewAsync() {
-    long timeout = getExpirationTime() - getCreateTime();
-    long interval = timeout / 5;
+    cancelRenew();
+    long interval = this.blockerTimeout / 5;
     this.renewTaskFuture =
         getExecutorService().scheduleAtFixedRate(this::doRenew, interval, interval,
             TimeUnit.MILLISECONDS);
@@ -100,7 +93,7 @@ public class RenewableBlocker implements Blocker {
 
   private void doRenew() {
     try {
-      amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
+      this.expirationTime = amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
       LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
     } catch (NoSuchObjectException e1) {
       LOG.warn("failed to renew block {} of table {}, blocker is released, renew exit", blockerId(), e1);
@@ -115,10 +108,9 @@ public class RenewableBlocker implements Blocker {
     if (this.renewTaskFuture != null) {
       this.renewTaskFuture.cancel(true);
       LOG.info("blocker released, blocker {} of {}", blockerId(), tableIdentifier);
+      this.renewTaskFuture = null;
     }
   }
-
-
 
   @Override
   public String blockerId() {
@@ -141,6 +133,14 @@ public class RenewableBlocker implements Blocker {
 
   public long getExpirationTime() {
     return expirationTime;
+  }
+
+  public long getBlockerTimeout() {
+    return blockerTimeout;
+  }
+
+  public TableIdentifier getTableIdentifier() {
+    return tableIdentifier;
   }
 
   @Override

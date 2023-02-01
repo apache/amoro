@@ -122,8 +122,8 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-    getIface().renewBlocker(tableIdentifier, blockerId);
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    return getIface().renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override

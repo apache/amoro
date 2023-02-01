@@ -223,8 +223,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   }
 
   @Override
-  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
-    ServiceContainer.getTableBlockerService()
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+    return ServiceContainer.getTableBlockerService()
         .renew(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
   }
 

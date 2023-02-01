@@ -22,9 +22,10 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,6 @@ import java.util.stream.Collectors;
  * Base {@link TableBlockerManager} implementation.
  */
 public class BaseTableBlockerManager implements TableBlockerManager {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseTableBlockerManager.class);
 
   private final TableIdentifier tableIdentifier;
   private final AmsClient client;
@@ -52,6 +52,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
       throws OperationConflictException {
     try {
+      Preconditions.checkNotNull(properties, "properties should not be null");
       return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties), true);
     } catch (OperationConflictException e) {
       throw e;
@@ -89,8 +90,18 @@ public class BaseTableBlockerManager implements TableBlockerManager {
 
   private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker, boolean needInit) {
     if (blocker.getProperties() != null &&
-        blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null) {
-      RenewableBlocker renewableBlocker = RenewableBlocker.of(tableIdentifier, blocker, client);
+        blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null &&
+        blocker.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT) != null) {
+      Map<String, String> properties = Maps.newHashMap(blocker.getProperties());
+      long createTime = PropertyUtil.propertyAsLong(properties, RenewableBlocker.CREATE_TIME_PROPERTY, 0);
+      long expirationTime = PropertyUtil.propertyAsLong(properties, RenewableBlocker.EXPIRATION_TIME_PROPERTY, 0);
+      long blockerTimeout = PropertyUtil.propertyAsLong(properties, RenewableBlocker.BLOCKER_TIMEOUT, 0);
+      properties.remove(RenewableBlocker.CREATE_TIME_PROPERTY);
+      properties.remove(RenewableBlocker.EXPIRATION_TIME_PROPERTY);
+      properties.remove(RenewableBlocker.BLOCKER_TIMEOUT);
+      RenewableBlocker renewableBlocker =
+          new RenewableBlocker(blocker.getBlockerId(), blocker.getOperations(), createTime, expirationTime,
+              blockerTimeout, properties, tableIdentifier, client);
       if (needInit) {
         renewableBlocker.renewAsync();
       }

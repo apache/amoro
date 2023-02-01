@@ -8,6 +8,7 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.model.TableBlocker;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,7 +26,8 @@ public class TestTableBlockerService extends TableTestBase {
 
   {
     properties.put("test_key", "test_value");
-    properties.put("2", "2");
+    properties.put("2", "");
+    properties.put("3", null);
   }
 
   @Test
@@ -169,10 +171,11 @@ public class TestTableBlockerService extends TableTestBase {
   private void assertBlocker(TableBlocker block, List<BlockableOperation> operations) {
     Assert.assertEquals(operations.size(), block.getOperations().size());
     operations.forEach(operation -> Assert.assertTrue(block.getOperations().contains(operation.name())));
-    Assert.assertEquals(properties.size(), block.getProperties().size());
-    block.getProperties().forEach((key, value) -> Assert.assertEquals(properties.get(key), value));
-
+    Assert.assertEquals(properties.size() + 1, block.getProperties().size());
+    properties.forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
     long timeout = ArcticMetaStoreConf.BLOCKER_TIMEOUT.defaultValue();
+    Assert.assertEquals(timeout + "", block.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT));
+
     Assert.assertEquals(timeout, block.getExpirationTime() - block.getCreateTime());
   }
 

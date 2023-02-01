@@ -348,6 +348,7 @@ public class MockArcticMetastoreServer implements Runnable {
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
       properties.put("expiration.time", (now + 60000) + "");
+      properties.put("blocker.timeout", 60000 + "");
       Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
       blockers.put(blocker.getBlockerId(), blocker);
       return blocker;
@@ -362,8 +363,8 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-      
+    public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      return 0;
     }
 
     @Override

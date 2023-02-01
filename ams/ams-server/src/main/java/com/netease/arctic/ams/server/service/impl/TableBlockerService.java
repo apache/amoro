@@ -27,12 +27,15 @@ import com.netease.arctic.ams.server.mapper.TableBlockerMapper;
 import com.netease.arctic.ams.server.model.TableBlocker;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,7 +84,7 @@ public class TableBlockerService extends IJDBCService {
    * @throws OperationConflictException when operations have been blocked
    */
   public TableBlocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                           Map<String, String> properties)
+                           @Nonnull Map<String, String> properties)
       throws OperationConflictException {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
@@ -135,7 +138,7 @@ public class TableBlockerService extends IJDBCService {
    * @param blockerId       - blockerId
    * @throws IllegalStateException if blocker not exist
    */
-  public void renew(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+  public long renew(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
     Lock lock = getLock(tableIdentifier);
     lock.lock();
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -145,7 +148,9 @@ public class TableBlockerService extends IJDBCService {
       if (tableBlocker == null) {
         throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
       }
-      mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), now + blockerTimeout);
+      long expirationTime = now + blockerTimeout;
+      mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime);
+      return expirationTime;
     } catch (NoSuchObjectException e1) {
       LOG.error("failed to renew blocker {} for {}", blockerId, tableIdentifier, e1);
       throw e1;
@@ -244,7 +249,9 @@ public class TableBlockerService extends IJDBCService {
     tableBlocker.setCreateTime(now);
     tableBlocker.setExpirationTime(now + blockerTimeout);
     tableBlocker.setOperations(operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
-    tableBlocker.setProperties(properties);
+    HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
+    propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
+    tableBlocker.setProperties(propertiesOfTableBlocker);
     return tableBlocker;
   }
 
