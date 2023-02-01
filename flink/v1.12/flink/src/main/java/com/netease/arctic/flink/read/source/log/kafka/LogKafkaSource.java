@@ -59,7 +59,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
  *    .build();
  * }</pre>
  *
- * <p>See {@link KafkaSourceBuilder} for more details.
+ * <p>See {@link LogKafkaSourceBuilder} for more details.
  */
 public class LogKafkaSource extends KafkaSource<RowData> {
   private static final long serialVersionUID = 1L;

@@ -19,16 +19,22 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.read.FlinkKafkaConsumer;
+import com.netease.arctic.flink.read.LogKafkaConsumer;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.Projection;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
+import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DataStreamScanProvider;
@@ -43,7 +49,10 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.utils.DataTypeUtils;
+import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Types;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 
@@ -63,13 +72,36 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
+
 /**
  * A version-agnostic Kafka {@link ScanTableSource}.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
 public class KafkaDynamicSource
     implements ScanTableSource, SupportsReadingMetadata, SupportsProjectionPushDown, SupportsWatermarkPushDown {
 
+  private final Schema schema;
+  private final ReadableConfig tableOptions;
+  private final String consumerChangelogMode;
+  private final boolean logRetractionEnable;
+
+  private static final ChangelogMode ALL_KINDS = ChangelogMode.newBuilder()
+      .addContainedKind(RowKind.INSERT)
+      .addContainedKind(RowKind.UPDATE_BEFORE)
+      .addContainedKind(RowKind.UPDATE_AFTER)
+      .addContainedKind(RowKind.DELETE)
+      .build();
+  
   // --------------------------------------------------------------------------------------------
   // Mutable attributes
   // --------------------------------------------------------------------------------------------
@@ -185,11 +217,65 @@ public class KafkaDynamicSource
       @Nullable List<String> topics,
       @Nullable Pattern topicPattern,
       Properties properties,
+      String startupMode,
+      long startupTimestampMillis,
+      boolean upsertMode,
+      Schema schema,
+      ReadableConfig tableOptions,
+      String sourceName) {
+    this(
+        physicalDataType,
+        keyDecodingFormat,
+        valueDecodingFormat,
+        keyProjection,
+        valueProjection,
+        keyPrefix,
+        topics,
+        topicPattern,
+        properties,
+        toInternal(startupMode),
+        new HashMap<>(),
+        startupTimestampMillis,
+        upsertMode,
+        sourceName,
+        schema,
+        tableOptions
+    );
+  }
+
+  public static StartupMode toInternal(String startupMode) {
+    startupMode = startupMode.toLowerCase();
+    switch (startupMode) {
+      case SCAN_STARTUP_MODE_LATEST:
+        return StartupMode.LATEST;
+      case SCAN_STARTUP_MODE_EARLIEST:
+        return StartupMode.EARLIEST;
+      case SCAN_STARTUP_MODE_TIMESTAMP:
+        return StartupMode.TIMESTAMP;
+      default:
+        throw new ValidationException(String.format(
+            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, startupMode));
+    }
+  }
+  
+  public KafkaDynamicSource(
+      DataType physicalDataType,
+      @Nullable DecodingFormat<DeserializationSchema<RowData>> keyDecodingFormat,
+      DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat,
+      int[] keyProjection,
+      int[] valueProjection,
+      @Nullable String keyPrefix,
+      @Nullable List<String> topics,
+      @Nullable Pattern topicPattern,
+      Properties properties,
       StartupMode startupMode,
       Map<KafkaTopicPartition, Long> specificStartupOffsets,
       long startupTimestampMillis,
       boolean upsertMode,
-      String sourceName) {
+      String sourceName,
+      Schema schema,
+      ReadableConfig tableOptions) {
     // Format attributes
     this.physicalDataType =
         Preconditions.checkNotNull(
@@ -224,11 +310,37 @@ public class KafkaDynamicSource
     this.startupTimestampMillis = startupTimestampMillis;
     this.upsertMode = upsertMode;
     this.sourceName = sourceName;
+
+    this.schema = schema;
+    this.tableOptions = tableOptions;
+    this.consumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
+    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
+        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
   }
 
   @Override
   public ChangelogMode getChangelogMode() {
-    return valueDecodingFormat.getChangelogMode();
+    switch (consumerChangelogMode) {
+      case LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY:
+        if (logRetractionEnable) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Only %s is false when %s is %s",
+                  ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+                  ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                  LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY));
+        }
+        return insertOnly();
+      case LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS:
+        return ALL_KINDS;
+      default:
+        throw new UnsupportedOperationException(
+            String.format(
+                "As of now, %s can't support this option %s.",
+                ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
+                consumerChangelogMode
+            ));
+    }
   }
 
   @Override
@@ -343,7 +455,9 @@ public class KafkaDynamicSource
             specificStartupOffsets,
             startupTimestampMillis,
             upsertMode,
-            sourceName);
+            sourceName,
+            schema,
+            tableOptions);
     copy.producedDataType = producedDataType;
     copy.metadataKeys = metadataKeys;
     copy.watermarkStrategy = watermarkStrategy;
@@ -352,7 +466,7 @@ public class KafkaDynamicSource
 
   @Override
   public String asSummaryString() {
-    return "Kafka table source";
+    return "arctic";
   }
 
   @Override
@@ -411,7 +525,57 @@ public class KafkaDynamicSource
       DeserializationSchema<RowData> keyDeserialization,
       DeserializationSchema<RowData> valueDeserialization,
       TypeInformation<RowData> producedTypeInfo) {
-    throw new UnsupportedOperationException("cloud not create kafka consumer.");
+    final FlinkKafkaConsumer<RowData> kafkaConsumer;
+
+    final KafkaDeserializationSchemaWrapper<RowData> deserializationSchemaWrapper =
+        new KafkaDeserializationSchemaWrapper<>(valueDeserialization);
+    Schema projectedSchema = schema;
+    if (projectedFields != null) {
+      final List<Types.NestedField> columns = schema.columns();
+      projectedSchema = new Schema(Arrays.stream(projectedFields).mapToObj(columns::get).collect(Collectors.toList()));
+    }
+    if (topics != null) {
+      kafkaConsumer =
+          new LogKafkaConsumer(
+              topics,
+              deserializationSchemaWrapper,
+              properties,
+              projectedSchema,
+              tableOptions);
+    } else {
+      kafkaConsumer =
+          new LogKafkaConsumer(
+              topicPattern,
+              deserializationSchemaWrapper,
+              properties,
+              projectedSchema,
+              tableOptions);
+    }
+
+    switch (startupMode) {
+      case EARLIEST:
+        kafkaConsumer.setStartFromEarliest();
+        break;
+      case LATEST:
+        kafkaConsumer.setStartFromLatest();
+        break;
+      case GROUP_OFFSETS:
+        kafkaConsumer.setStartFromGroupOffsets();
+        break;
+      case SPECIFIC_OFFSETS:
+        kafkaConsumer.setStartFromSpecificOffsets(specificStartupOffsets);
+        break;
+      case TIMESTAMP:
+        kafkaConsumer.setStartFromTimestamp(startupTimestampMillis);
+        break;
+    }
+
+    kafkaConsumer.setCommitOffsetsOnCheckpoints(properties.getProperty("group.id") != null);
+
+    if (watermarkStrategy != null) {
+      kafkaConsumer.assignTimestampsAndWatermarks(watermarkStrategy);
+    }
+    return kafkaConsumer;
   }
 
   @Nullable

@@ -92,6 +92,7 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |properties.group.id| (none) |String|Logstore 是 kafka 并且是查询时必填，否则可不填| 读取 Kafka Topic 时使用的 group id|
 |properties.pulsar.admin.adminUrl| (none) |String|Logstore 是 pulsar 时必填，否则可不填| Pulsar admin 的 HTTP URL，如：http://my-broker.example.com:8080|
 |properties.*| (none) |String|否| Logstore的参数。<br><br>对于 Logstore 为 Kafka ('log-store.type'='kafka' 默认值)时，Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.batch.size'='16384'`，<br>完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs); <br><br>对于 Logstore 为 Pulsar ('log-store.type'='pulsar')时，Pulsar 支持的相关配置都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.pulsar.client.requestTimeoutMs'='60000'`，<br>完整的参数信息可以参考 [Flink-Pulsar-Connector文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar)|
+|log-store.kafka.compatible.enabled| false | Boolean | 否 | 兼容 Logstore Kafka 废弃的 API。当 Flink 任务（使用 >= 0.4.1 Arctic 版本）需要从低于此版本的状态恢复启动时，必须将该参数设为 true。该参数将于 0.7.0 版本删除。
 
 **注意事项**
 
