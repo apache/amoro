@@ -105,6 +105,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
       if (needInit) {
         renewableBlocker.renewAsync();
       }
+      return renewableBlocker;
     }
     throw new IllegalArgumentException("illegal blocker " + blocker);
   }
