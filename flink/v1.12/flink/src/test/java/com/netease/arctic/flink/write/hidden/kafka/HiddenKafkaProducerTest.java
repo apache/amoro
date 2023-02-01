@@ -19,8 +19,9 @@
 package com.netease.arctic.flink.write.hidden.kafka;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
+import com.netease.arctic.flink.write.hidden.BaseLogTest;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.Bytes;
 import com.netease.arctic.log.FormatVersion;
@@ -48,8 +49,8 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -123,7 +124,7 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
             topic,
             logDataJsonSerialization,
             null);
-    producer.open();
+    producer.open(null);
 
     int recoverNum = 3;
     for (int i = 0; i < recoverNum; i++) {

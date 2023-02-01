@@ -22,7 +22,6 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
@@ -36,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Properties;
+
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 
 /**
  * Flink table api that generates sink operators.
@@ -75,7 +76,7 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = KafkaOptions.getKafkaProperties(table.properties());
+    Properties producerConfig = getLogStoreProperties(table.properties());
 
     return (DataStreamSinkProvider) dataStream -> {
       DataStreamSink<?> ds = FlinkSink

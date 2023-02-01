@@ -22,7 +22,9 @@ import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Properties;
 
@@ -41,13 +43,18 @@ public interface LogMsgFactory<T> extends Serializable {
   Consumer<T> createConsumer();
 
   interface Producer<T> {
-    void open() throws Exception;
+    default void open(StreamingRuntimeContext context) throws Exception {
+      open();
+    }
+
+    default void open() throws Exception {
+    }
 
     void send(LogData<T> logData) throws Exception;
 
     void sendToAllPartitions(LogData<T> logData) throws Exception;
 
-    void flush();
+    void flush() throws IOException;
 
     void close() throws Exception;
   }
