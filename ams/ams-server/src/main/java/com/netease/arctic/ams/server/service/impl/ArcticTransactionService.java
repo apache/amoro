@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.events.CreateSnapshotEvent;
@@ -40,14 +41,14 @@ import java.util.Set;
 public class ArcticTransactionService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticTransactionService.class);
 
-  private static Set<TableIdentifier> validTableIdentifiers = new HashSet<>();
+  private static final Set<TableIdentifier> validTableIdentifiers = new HashSet<>();
   private final AmsClient metastoreClient;
 
   public ArcticTransactionService() {
     metastoreClient = ServiceContainer.getTableMetastoreHandler();
   }
 
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String signature) throws TException {
 
     if (!validTableIdentifiers.contains(tableIdentifier)) {
       throw new TException(tableIdentifier + " is not ready to allocate transactionId, try later");
@@ -58,9 +59,10 @@ public class ArcticTransactionService extends IJDBCService {
     ArcticCatalog catalog = CatalogLoader.load(metastoreClient, tableIdentifier.getCatalog());
     ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
     if (arcticTable.isKeyedTable()) {
+      // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as TransactionId
       ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
       AppendFiles appendFiles = changeTable.newAppend();
-      // TODO add summary, use fast append?
+      appendFiles.set(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
       appendFiles.commit();
       CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
       return createSnapshotEvent.sequenceNumber();

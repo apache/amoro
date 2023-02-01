@@ -30,6 +30,7 @@ import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
+import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.PartitionSpec;
@@ -172,8 +173,9 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public long beginTransaction(String signature) {
+    // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as TransactionId
     AppendFiles appendFiles = changeTable.newAppend();
-    // TODO add summary, use fast append?
+    appendFiles.set(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
     appendFiles.commit();
     CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
     return createSnapshotEvent.sequenceNumber();
