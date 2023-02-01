@@ -44,6 +44,7 @@ public class RenewableBlocker implements Blocker {
   public static final String CREATE_TIME_PROPERTY = "create.time";
   public static final String EXPIRATION_TIME_PROPERTY = "expiration.time";
   public static final String BLOCKER_TIMEOUT = "blocker.timeout";
+  public static final String APPLICATION_ID = "application.id";
 
   private static volatile ScheduledExecutorService EXECUTOR;
 

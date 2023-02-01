@@ -18,10 +18,17 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.OperationConflictException;
+import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.blocker.Blocker;
+import com.netease.arctic.table.blocker.RenewableBlocker;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -32,6 +39,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.DataWriter;
@@ -43,11 +51,16 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
+import static com.netease.arctic.table.blocker.RenewableBlocker.APPLICATION_ID;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -66,12 +79,15 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final boolean orderedWriter;
 
-  public UnkeyedSparkBatchWrite(UnkeyedTable table, LogicalWriteInfo info) {
+  private final ArcticCatalog catalog;
+
+  public UnkeyedSparkBatchWrite(UnkeyedTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
     this.table = table;
     this.dsSchema = info.schema();
     this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
         "writer.distributed-and-ordered", "true"
     ));
+    this.catalog = catalog;
   }
 
   @Override
@@ -101,20 +117,64 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private abstract class BaseBatchWrite implements BatchWrite {
 
+    protected TableBlockerManager tableBlockerManager;
+    protected Blocker block;
+
     @Override
     public void abort(WriterCommitMessage[] messages) {
-      Map<String, String> props = table.properties();
-      Tasks.foreach(files(messages))
-          .retry(PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
-          .exponentialBackoff(
-              PropertyUtil.propertyAsInt(props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
-              PropertyUtil.propertyAsInt(props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
-              PropertyUtil.propertyAsInt(props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
-              2.0 /* exponential */)
-          .throwFailureWhenFinished()
-          .run(file -> {
-            table.io().deleteFile(file.path().toString());
-          });
+      try {
+        Map<String, String> props = table.properties();
+        Tasks.foreach(files(messages))
+            .retry(PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
+            .exponentialBackoff(
+                PropertyUtil.propertyAsInt(props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
+                2.0 /* exponential */)
+            .throwFailureWhenFinished()
+            .run(file -> {
+              table.io().deleteFile(file.path().toString());
+            });
+      } finally {
+        tableBlockerManager.release(block);
+      }
+    }
+
+    public void checkBlocker(TableBlockerManager tableBlockerManager) {
+      List<String> blockerIds = tableBlockerManager.getBlockers()
+          .stream().map(Blocker::blockerId).collect(Collectors.toList());
+      if (!blockerIds.contains(block.blockerId())) {
+        throw new IllegalStateException("block is not in blockerManager");
+      }
+    }
+
+    public void getBlocker() {
+      this.tableBlockerManager = catalog.getTableBlockerManager(table.id());
+      List<Blocker> blockers = tableBlockerManager.getBlockers();
+      String applicationId =  SparkSession.getActiveSession().get().sparkContext().applicationId();
+      boolean needNewBlock = true;
+      for (Blocker blocker : blockers) {
+        if (blocker.properties().containsKey(APPLICATION_ID) &&
+            blocker.properties().get(APPLICATION_ID).equals(applicationId)) {
+          RenewableBlocker renewableBlocker = (RenewableBlocker) blocker;
+          renewableBlocker.renewAsync();
+          this.block = renewableBlocker;
+          needNewBlock = false;
+          break;
+        }
+      }
+      if (needNewBlock) {
+        ArrayList<BlockableOperation> operations = Lists.newArrayList();
+        operations.add(BlockableOperation.BATCH_WRITE);
+        operations.add(BlockableOperation.OPTIMIZE);
+        Map<String, String> properties = new HashMap<>();
+        properties.put(APPLICATION_ID, applicationId);
+        try {
+          this.block = tableBlockerManager.block(operations, properties);
+        } catch (OperationConflictException e) {
+          throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
+        }
+      }
     }
   }
 
@@ -122,16 +182,19 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      getBlocker();
       return new WriterFactory(table, dsSchema, false, transactionId, null, orderedWriter);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       AppendFiles appendFiles = table.newAppend();
       for (DataFile file : files(messages)) {
         appendFiles.appendFile(file);
       }
       appendFiles.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -139,16 +202,19 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      getBlocker();
       return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       ReplacePartitions replacePartitions = table.newReplacePartitions();
       for (DataFile file : files(messages)) {
         replacePartitions.addFile(file);
       }
       replacePartitions.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -161,11 +227,13 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      getBlocker();
       return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       OverwriteFiles overwriteFiles = table.newOverwrite();
       overwriteFiles.overwriteByRowFilter(overwriteExpr);
       overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
@@ -173,17 +241,20 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         overwriteFiles.addFile(file);
       }
       overwriteFiles.commit();
+      tableBlockerManager.release(block);
     }
   }
 
   private class UpsertWrite extends BaseBatchWrite {
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      getBlocker();
       return new DeltaUpsertWriteFactory(table, dsSchema, transactionId, orderedWriter);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       RowDelta rowDelta = table.newRowDelta();
       if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
         for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
@@ -196,6 +267,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         }
       }
       rowDelta.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -285,11 +357,13 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      getBlocker();
       return new MergeWriteFactory(table, dsSchema, transactionId, orderedWriter);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       RowDelta rowDelta = table.newRowDelta();
       if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
         for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
@@ -303,6 +377,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         }
       }
       rowDelta.commit();
+      tableBlockerManager.release(block);
     }
   }
 }
