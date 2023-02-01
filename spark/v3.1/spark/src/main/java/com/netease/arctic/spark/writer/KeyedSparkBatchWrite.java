@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark.writer;
 
-import java.util.Collection;
-import java.util.HashMap;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -50,15 +48,14 @@ import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import scala.Option;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
