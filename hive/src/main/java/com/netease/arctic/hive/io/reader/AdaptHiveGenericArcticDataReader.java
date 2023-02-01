@@ -80,6 +80,7 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
         nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer);
   }
+
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
