@@ -137,18 +137,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     checkpointState.add(context.getCheckpointId());
   }
 
-  private void initTaskWriterFactory(Long mask) {
+  private void initTaskWriterFactory(long mask) {
     if (taskWriterFactory instanceof ArcticRowDataTaskWriterFactory) {
-      if (mask != null) {
-        ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
-      }
-      ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setTransactionId(getTransactionId());
+      ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
     }
     taskWriterFactory.initialize(subTaskId, attemptId);
-  }
-
-  private Long getTransactionId() {
-    return null;
   }
 
   @VisibleForTesting
@@ -207,9 +200,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     RowData row = element.getValue();
     table.io().doAs(() -> {
       if (writer == null) {
-        // Reassign transaction id when processing the new file data to avoid the situation that there is no data
-        // written during the next checkpoint period.
-        initTaskWriterFactory(null);
         this.writer = taskWriterFactory.create();
       }
 
