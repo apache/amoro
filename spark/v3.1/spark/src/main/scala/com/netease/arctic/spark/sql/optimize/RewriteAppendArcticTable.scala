@@ -55,7 +55,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
             if (checkDuplicatesEnabled()) {
               AppendArcticData(arcticRelation, newQuery, validateQuery, options)
             } else {
-              ReplaceArcticData(arcticRelation, query, writeOptions)
+              ReplaceArcticData(arcticRelation, newQuery, options)
             }
           } else {
             a

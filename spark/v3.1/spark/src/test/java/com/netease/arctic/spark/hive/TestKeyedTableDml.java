@@ -346,4 +346,23 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(2, rows.get(1)[0]);
     Assert.assertEquals(3, rows.get(2)[0]);
   }
+
+  @Test
+  public void testInsertUpsertTableWhenCloseDuplicateCheck() {
+    sql("set `{0}` = `false`", CHECK_SOURCE_DUPLICATES_ENABLE);
+    sql("use " + catalogNameHive);
+    sql(createUpsertTableTemplate, database, upsertTable);
+    sql("insert overwrite " + database + "." + upsertTable +
+        " values (1, 'aaa', 'aaaa' ) , " +
+        "(4, 'bbb', 'bbcd'), " +
+        "(5, 'ccc', 'cbcd') ");
+    sql("insert into " + database + "." + upsertTable +
+        " values (1, 'aaa', 'dddd' ) , " +
+        "(2, 'bbb', 'bbbb'), " +
+        "(3, 'ccc', 'cccc') ");
+
+    rows = sql("select * from {0}.{1} ", database, upsertTable);
+    Assert.assertEquals(5, rows.size());
+    sql("set `{0}` = `true`", CHECK_SOURCE_DUPLICATES_ENABLE);
+  }
 }
