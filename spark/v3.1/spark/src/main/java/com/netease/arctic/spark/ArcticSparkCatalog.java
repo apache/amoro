@@ -391,11 +391,6 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   @Override
-  public void invalidateTable(Identifier ident) {
-    throw new UnsupportedOperationException("Unsupported invalidateTable.");
-  }
-
-  @Override
   public Identifier[] listTables(String[] namespace) {
     List<String> database;
     if (namespace == null || namespace.length == 0) {
