@@ -71,7 +71,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       try {
         fs.delete(toDelete, false);
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to delete file: " + path, e);
+        throw new UncheckedIOException("Fail to delete file: " + path, e);
       }
       return null;
     });
@@ -89,7 +89,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         result = false;
       }
       if (result == false) {
-        LOG.warn("File to delete file " + path + " and result is false, need to check the hdfs path");
+        LOG.warn("Fail to delete file " + path + " and file system return false, false, need to check the hdfs path");
       }
       return result;
     });
@@ -173,13 +173,13 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       FileSystem fs = getFs(srcPath);
       try {
         if (fs.rename(srcPath, dtsPath) == false) {
-          throw new IOException("Failed to rename: from " + src + " to " + dts +
-              " and result is false, need to check the hdfs path");
+          throw new IOException("Fail to rename: from " + src + " to " + dts +
+              " and file system return false, need to check the hdfs path");
         } else {
           return true;
         }
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
+        throw new UncheckedIOException("Fail to rename: from " + src + " to " + dts, e);
       }
     });
   }
@@ -197,7 +197,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       try {
         return fs.exists(filePath);
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to check file exist for " + path, e);
+        throw new UncheckedIOException("Fail to check file exist for " + path, e);
       }
     });
   }
@@ -209,13 +209,13 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       FileSystem fs = getFs(filePath);
       try {
         if (fs.mkdirs(filePath) == false) {
-          throw new IOException("Failed to mkdirs: path " + path +
-              " and result is false, need to check the hdfs path");
+          throw new IOException("Fail to mkdirs: path " + path +
+              " and file system return false,, need to check the hdfs path");
         } else {
           return true;
         }
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
+        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
       }
     });
   }
