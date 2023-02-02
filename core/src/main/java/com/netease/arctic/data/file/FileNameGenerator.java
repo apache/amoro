@@ -26,6 +26,7 @@ import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -74,6 +75,7 @@ public class FileNameGenerator {
       int partitionId,
       Long taskId,
       Long transactionId) {
+    Preconditions.checkArgument(transactionId == null || transactionId > 0, "transactionId should > 0 or = null");
     this.fileFormat = fileFormat;
     this.partitionId = partitionId;
     this.taskId = taskId;

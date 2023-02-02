@@ -288,7 +288,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHiveCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))
@@ -360,7 +360,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testHiveTable.updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))

@@ -201,11 +201,4 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     return currentChangeSnapshotId;
   }
 
-  protected String constructCustomHiveSubdirectory(long transactionId) {
-    String dir = "";
-    if (isCustomizeDir) {
-      return HiveTableUtil.newHiveSubdirectory(transactionId);
-    }
-    return dir;
-  }
 }

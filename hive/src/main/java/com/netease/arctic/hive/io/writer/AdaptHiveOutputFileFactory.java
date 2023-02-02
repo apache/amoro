@@ -83,9 +83,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionSpec = partitionSpec;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    transactionId = transactionId == null ? 0 : transactionId;
     if (hiveSubDirectory == null) {
-      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
+      this.hiveSubDirectory = transactionId != null ?
+          HiveTableUtil.newHiveSubdirectory(transactionId) : HiveTableUtil.newHiveSubdirectory();
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }

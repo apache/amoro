@@ -87,7 +87,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
 
   private List<DataFile> insertHiveDataFiles(ArcticTable arcticTable, long transactionId) throws Exception {
 
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(transactionId);
     AtomicInteger taskId = new AtomicInteger();
 
     Supplier<TaskWriter<Record>> taskWriterSupplier = () -> AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)

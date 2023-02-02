@@ -103,8 +103,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
-                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                String hiveSubdirectory = arcticTable.isKeyedTable() ?
+                    HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
 
                 Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
                 if (p == null) {

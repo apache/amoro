@@ -23,7 +23,6 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
@@ -63,8 +62,7 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private final long transactionId = IdGenerator.randomId();
-  private final String subDir = HiveTableUtil.newHiveSubdirectory(this.transactionId);
+  private final String subDir = HiveTableUtil.newHiveSubdirectory();
   protected Expression overwriteExpr = null;
   private WriteMode writeMode = null;
   private DataSourceOptions options;
@@ -100,19 +98,17 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, transactionId, subDir);
+    return new WriterFactory(table, dsSchema, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
-    private final long transactionId;
     private final String subDir;
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, long transactionId, String subDir) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, String subDir) {
       this.table = table;
       this.dsSchema = dsSchema;
-      this.transactionId = transactionId;
       this.subDir = subDir;
     }
 
@@ -120,7 +116,6 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
     public DataWriter createDataWriter(int partitionId, int attemptNumber) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withPartitionId(partitionId)
-          .withTransactionId(transactionId)
           .withTaskId(TaskContext.get().taskAttemptId())
           .withDataSourceSchema(dsSchema)
           .withSubDir(subDir)
