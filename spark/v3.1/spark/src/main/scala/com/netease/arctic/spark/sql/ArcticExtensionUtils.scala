@@ -20,13 +20,17 @@ package com.netease.arctic.spark.sql
 
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import org.apache.iceberg.spark.Spark3Util
+import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
-import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
-import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
+
+import scala.collection.JavaConverters.seqAsJavaList
 
 
 object ArcticExtensionUtils {
@@ -139,6 +143,7 @@ object ArcticExtensionUtils {
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
       case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+      case _ => false
     }
   }
 
@@ -184,6 +189,17 @@ object ArcticExtensionUtils {
       case arctic: ArcticSparkTable =>
         arctic.table().isKeyedTable
       case _ => false
+    }
+  }
+
+  def buildCatalogAndIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
+    var identifier: Seq[String] = Seq.empty[String]
+    identifier :+= originIdentifier.database.get
+    identifier :+= originIdentifier.table
+    val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
+    catalogAndIdentifier.catalog() match {
+      case a: TableCatalog => (a, catalogAndIdentifier.identifier())
+      case _ => throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
     }
   }
 }
