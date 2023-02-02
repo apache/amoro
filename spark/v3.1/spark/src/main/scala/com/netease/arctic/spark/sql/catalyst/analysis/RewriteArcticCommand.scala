@@ -58,10 +58,9 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         c.copy(properties = propertiesMap, writeOptions = optionsMap)
       case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
         if provider.get != null && provider.get.equals("arctic") =>
-          val sourceIdentifier = buildArcticIdentifier(sparkSession, sourceTable)
-          val targetIdentifier = buildArcticIdentifier(sparkSession, targetTable)
-          val sourceCatalog = buildCatalog(sourceIdentifier)
-          val table = sourceCatalog.loadTable(sourceIdentifier.identifier())
+          val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
+          val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
+          val table = sourceCatalog.loadTable(sourceIdentifier)
           var targetProperties = properties
           targetProperties += ("provider" -> "arctic")
           table match {
@@ -73,7 +72,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
               }
             case _ =>
           }
-          CreateV2Table(sourceCatalog, targetIdentifier.identifier(),
+          CreateV2Table(targetCatalog, targetIdentifier,
             table.schema(), table.partitioning(), targetProperties, ifNotExists)
       case _ => plan
     }

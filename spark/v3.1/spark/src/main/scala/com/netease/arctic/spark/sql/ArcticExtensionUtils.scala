@@ -26,7 +26,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
-import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
@@ -192,16 +192,13 @@ object ArcticExtensionUtils {
     }
   }
 
-  def buildArcticIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): CatalogAndIdentifier = {
+  def buildCatalogAndIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
     var identifier: Seq[String] = Seq.empty[String]
     identifier :+= originIdentifier.database.get
     identifier :+= originIdentifier.table
-    Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
-  }
-
-  def buildCatalog(catalogAndIdentifier: CatalogAndIdentifier): TableCatalog = {
+    val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
     catalogAndIdentifier.catalog() match {
-      case a: TableCatalog => a
+      case a: TableCatalog => (a, catalogAndIdentifier.identifier())
       case _ => throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
     }
   }
