@@ -577,7 +577,7 @@ public class FileInfoCacheService extends IJDBCService {
     List<DeleteFile> deleteFiles = new ArrayList<>();
     Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
     SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
-    snapshot.addedFiles().forEach(f -> {
+    snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
@@ -586,7 +586,7 @@ public class FileInfoCacheService extends IJDBCService {
           snapshot.timestampMillis(),
           "add"));
     });
-    snapshot.deletedFiles().forEach(f -> {
+    snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),

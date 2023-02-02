@@ -120,7 +120,7 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
   private void assertMetadataExists(Table table) {
     for (Snapshot snapshot : table.snapshots()) {
       Assert.assertTrue(testKeyedTable.io().exists(snapshot.manifestListLocation()));
-      for (ManifestFile allManifest : snapshot.allManifests()) {
+      for (ManifestFile allManifest : snapshot.allManifests(table.io())) {
         Assert.assertTrue(testKeyedTable.io().exists(allManifest.path()));
       }
     }
