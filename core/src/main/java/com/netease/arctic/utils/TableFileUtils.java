@@ -18,9 +18,6 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -31,8 +28,6 @@ import java.io.File;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TableFileUtils {
   private static final Logger LOG = LoggerFactory.getLogger(TableFileUtils.class);
