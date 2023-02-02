@@ -2,7 +2,8 @@ package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
@@ -16,8 +17,8 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
   public void testCompactSmallDataFiles() throws Exception {
 
     // sequence 0
-    IcebergContentFile smallDataFile1 = IcebergContentFile.of(insertDataFiles(10, 0), 0);
-    IcebergContentFile smallDataFile2 = IcebergContentFile.of(insertDataFiles(8, 10), 1);
+    DataFileWithSequence smallDataFile1 = new DataFileWithSequence(insertDataFiles(10, 0), 0);
+    DataFileWithSequence smallDataFile2 = new DataFileWithSequence(insertDataFiles(8, 10), 1);
 
     // 2 small data files
     NodeTask nodeTask = constructNodeTask(
@@ -42,12 +43,13 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
   @Test
   public void testCompactSmallDataFilesWithDeleteFiles() throws Exception {
     // sequence 0
-    IcebergContentFile equDeleteFile = IcebergContentFile.of(insertEqDeleteFiles(2, 6), 0);
-    IcebergContentFile smallDataFile1 = IcebergContentFile.of(insertDataFiles(10, 0), 0);
+    DeleteFileWithSequence equDeleteFile = new DeleteFileWithSequence(insertEqDeleteFiles(2, 6), 0);
+    DataFileWithSequence smallDataFile1 = new DataFileWithSequence(insertDataFiles(10, 0), 0);
 
     // sequence 1
-    IcebergContentFile posDeleteFile = IcebergContentFile.of(insertPosDeleteFiles(smallDataFile1.asDataFile(), 1, 5), 1);
-    IcebergContentFile smallDataFile2 = IcebergContentFile.of(insertDataFiles(8, 10), 1);
+    DeleteFileWithSequence
+        posDeleteFile = new DeleteFileWithSequence(insertPosDeleteFiles(smallDataFile1, 1, 5), 1);
+    DataFileWithSequence smallDataFile2 = new DataFileWithSequence(insertDataFiles(8, 10), 1);
 
     // 2 small data files, 1 positional delete file, 1 equality delete file
     NodeTask nodeTask = constructNodeTask(
@@ -73,13 +75,15 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
   public void testCompactDeleteFiles() throws Exception {
 
     // sequence 0
-    IcebergContentFile equDeleteFile1 = IcebergContentFile.of(insertEqDeleteFiles(2, 6), 0);
-    IcebergContentFile dataFile1 = IcebergContentFile.of(insertDataFiles(10, 0), 0);
-    IcebergContentFile dataFile2 = IcebergContentFile.of(insertDataFiles(8, 10), 0);
+    DeleteFileWithSequence equDeleteFile1 = new DeleteFileWithSequence(insertEqDeleteFiles(2, 6), 0);
+    DataFileWithSequence dataFile1 = new DataFileWithSequence(insertDataFiles(10, 0), 0);
+    DataFileWithSequence dataFile2 = new DataFileWithSequence(insertDataFiles(8, 10), 0);
 
     // sequence 1
-    IcebergContentFile posDeleteFile = IcebergContentFile.of(insertPosDeleteFiles(dataFile1.asDataFile(), 1, 5), 1);
-    IcebergContentFile equDeleteFile2 = IcebergContentFile.of(insertEqDeleteFiles(10, 13, 20, 23), 1);
+    DeleteFileWithSequence
+        posDeleteFile = new DeleteFileWithSequence(insertPosDeleteFiles(dataFile1, 1, 5), 1);
+    DeleteFileWithSequence
+        equDeleteFile2 = new DeleteFileWithSequence(insertEqDeleteFiles(10, 13, 20, 23), 1);
 
     // 2 data file, 2 quality delete file, 1 positional delete file
     NodeTask nodeTask = constructNodeTask(
@@ -105,12 +109,13 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
   @Test
   public void testCompactDataFiles() throws Exception {
     // sequence 0
-    IcebergContentFile dataFile1 = IcebergContentFile.of(insertDataFiles(10, 0), 0);
+    DataFileWithSequence dataFile1 = new DataFileWithSequence(insertDataFiles(10, 0), 0);
 
     // sequence 1
-    IcebergContentFile posDeleteFile = IcebergContentFile.of(insertPosDeleteFiles(dataFile1.asDataFile(), 1, 5), 1);
-    IcebergContentFile equDeleteFile = IcebergContentFile.of(insertEqDeleteFiles(2, 6, 20, 23), 1);
-    IcebergContentFile dataFile2 = IcebergContentFile.of(insertDataFiles(8, 10), 1);
+    DeleteFileWithSequence
+        posDeleteFile = new DeleteFileWithSequence(insertPosDeleteFiles(dataFile1, 1, 5), 1);
+    DeleteFileWithSequence equDeleteFile = new DeleteFileWithSequence(insertEqDeleteFiles(2, 6, 20, 23), 1);
+    DataFileWithSequence dataFile2 = new DataFileWithSequence(insertDataFiles(8, 10), 1);
 
     // 2 small data files, 1 positional delete file, 1 equality delete file
     NodeTask nodeTask = constructNodeTask(

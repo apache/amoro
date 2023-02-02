@@ -455,10 +455,8 @@ public class TableTestBase {
 
   public List<DataFile> writeChange(TableIdentifier identifier, ChangeAction action, List<Record> records) {
     KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
-    long txId = table.beginTransaction("");
     try (GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(table)
         .withChangeAction(action)
-        .withTransactionId(txId)
         .buildChangeWriter()) {
       records.forEach(d -> {
         try {

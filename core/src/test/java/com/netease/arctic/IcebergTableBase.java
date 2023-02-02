@@ -19,7 +19,8 @@
 package com.netease.arctic;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
@@ -98,35 +99,35 @@ public class IcebergTableBase {
 
     Record record = GenericRecord.create(unPartitionSchema);
 
-    IcebergContentFile avroData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence avroData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 1L)
     ), FileFormat.AVRO, unPartitionSchema), 1L);
 
-    IcebergContentFile parquetData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence parquetData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 2L)
     ), FileFormat.PARQUET, unPartitionSchema), 2L);
 
-    IcebergContentFile orcData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence orcData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 3L)
     ), FileFormat.ORC, unPartitionSchema), 3L);
 
-    IcebergContentFile eqDeleteFile = new IcebergContentFile(eqDelete(Arrays.asList(
+    DeleteFileWithSequence eqDeleteFile = new DeleteFileWithSequence(eqDelete(Arrays.asList(
         record.copy("id", 1L)
     ), FileFormat.PARQUET, unPartitionSchema), 4L);
 
-    IcebergContentFile posDeleteFile = new IcebergContentFile(posDelete(Arrays.asList(
-        PositionDelete.<Record>create().set(parquetData.asDataFile().path(), 0, record.copy("id", 2L))
+    DeleteFileWithSequence posDeleteFile = new DeleteFileWithSequence(posDelete(Arrays.asList(
+        PositionDelete.<Record>create().set(parquetData.path(), 0, record.copy("id", 2L))
     ), FileFormat.AVRO, unPartitionSchema), 5L);
 
     unPartitionAllFileTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {avroData, parquetData, orcData},
-        new IcebergContentFile[] {eqDeleteFile, posDeleteFile},
+        new DataFileWithSequence[]{avroData, parquetData, orcData},
+        new DeleteFileWithSequence[]{eqDeleteFile, posDeleteFile},
         PartitionSpec.unpartitioned(),
         null
     );
 
     unPartitionOnlyDataTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {avroData, parquetData, orcData},
+        new DataFileWithSequence[]{avroData, parquetData, orcData},
         null,
         PartitionSpec.unpartitioned(),
         null
@@ -147,38 +148,38 @@ public class IcebergTableBase {
 
     Record record = GenericRecord.create(partitionSchema);
 
-    IcebergContentFile avroData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence avroData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 1L, "name", "1")
     ), FileFormat.AVRO, partitionSchema), 1L);
 
-    IcebergContentFile parquetData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence parquetData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 2L, "name", "2")
     ), FileFormat.PARQUET, partitionSchema), 2L);
 
-    IcebergContentFile orcData = new IcebergContentFile(insert(Arrays.asList(
+    DataFileWithSequence orcData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 3L, "name", "3")
     ), FileFormat.ORC, partitionSchema), 3L);
 
-    IcebergContentFile eqDeleteFile = new IcebergContentFile(eqDelete(Arrays.asList(
+    DeleteFileWithSequence eqDeleteFile = new DeleteFileWithSequence(eqDelete(Arrays.asList(
         record.copy("id", 1L, "name", "1")
     ), FileFormat.PARQUET, partitionSchema), 4L);
 
-    IcebergContentFile posDeleteFile = new IcebergContentFile(posDelete(Arrays.asList(
+    DeleteFileWithSequence posDeleteFile = new DeleteFileWithSequence(posDelete(Arrays.asList(
         PositionDelete.<Record>create().set(
-            parquetData.asDataFile().path(),
+            parquetData.path(),
             0,
             record.copy("id", 2L, "name", "2"))
     ), FileFormat.AVRO, partitionSchema), 5L);
 
     partitionAllFileTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {avroData, parquetData, orcData},
-        new IcebergContentFile[] {eqDeleteFile, posDeleteFile},
+        new DataFileWithSequence[]{avroData, parquetData, orcData},
+        new DeleteFileWithSequence[]{eqDeleteFile, posDeleteFile},
         PartitionSpec.unpartitioned(),
         null
     );
 
     partitionOnlyDataTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {avroData, parquetData, orcData},
+        new DataFileWithSequence[]{avroData, parquetData, orcData},
         null,
         PartitionSpec.unpartitioned(),
         null

@@ -724,9 +724,8 @@ public class OptimizeIntegrationTest {
   }
 
   public void writeChange(KeyedTable table, List<Record> insertRows, List<Record> deleteRows) {
-    long txId = table.beginTransaction(System.currentTimeMillis() + "");
-    List<DataFile> insertFiles = write(insertRows, table, txId, ChangeAction.INSERT);
-    List<DataFile> deleteFiles = write(deleteRows, table, txId, ChangeAction.DELETE);
+    List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT);
+    List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE);
     AppendFiles appendFiles = table.changeTable().newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     deleteFiles.forEach(appendFiles::appendFile);
@@ -759,10 +758,9 @@ public class OptimizeIntegrationTest {
   }
 
   // TODO use new writer in 0.3.1
-  private List<DataFile> write(List<Record> rows, KeyedTable table, long txId, ChangeAction action) {
+  private List<DataFile> write(List<Record> rows, KeyedTable table, ChangeAction action) {
     if (rows != null && !rows.isEmpty()) {
       try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
-          .withTransactionId(txId)
           .withChangeAction(action)
           .buildChangeWriter()) {
         rows.forEach(row -> {

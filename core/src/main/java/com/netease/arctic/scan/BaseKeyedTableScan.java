@@ -19,6 +19,7 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.scan.expressions.BasePartitionEvaluator;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -122,7 +123,14 @@ public class BaseKeyedTableScan implements KeyedTableScan {
   }
 
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
-    return CloseableIterable.transform(planFiles(table.baseTable()), BaseArcticFileScanTask::new);
+    TableScan scan = table.baseTable().newScan();
+    if (this.expression != null) {
+      scan = scan.filter(this.expression);
+    }
+    CloseableIterable<FileScanTask> fileScanTasks = scan.planFiles();
+    return CloseableIterable.transform(fileScanTasks,
+        fileScanTask -> new BaseArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
+            fileScanTask.deletes(), fileScanTask.spec()));
   }
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
@@ -136,15 +144,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       Expression partitionExpression = new BasePartitionEvaluator(table.spec()).project(expression);
       changeTableScan.filter(partitionExpression);
     }
-    return changeTableScan.planTasks();
-  }
-
-  private CloseableIterable<FileScanTask> planFiles(UnkeyedTable internalTable) {
-    TableScan scan = internalTable.newScan();
-    if (this.expression != null) {
-      scan = scan.filter(this.expression);
-    }
-    return scan.planFiles();
+    return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }
 
   private void split() {

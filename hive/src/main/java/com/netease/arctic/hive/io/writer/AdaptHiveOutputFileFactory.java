@@ -18,21 +18,17 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
-
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.netease.arctic.utils.TableFileUtils.getFileName;
 
 /**
  * For adapt hive table with partitions the dir construct is :
@@ -54,23 +50,12 @@ import static com.netease.arctic.utils.TableFileUtils.getFileName;
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
-  public static final String SEPARATOR = "-";
-  /**
-   * start from 0
-   */
-  public static final int TRANSACTION_INDEX = 2;
-
   private final String baseLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final int partitionId;
-  private final long taskId;
-  private final long transactionId;
-
-  private final AtomicLong fileCount = new AtomicLong(0);
+  private final FileNameGenerator fileNameGenerator;
 
   public AdaptHiveOutputFileFactory(
       String baseLocation,
@@ -96,23 +81,19 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       String hiveSubDirectory) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    this.partitionId = partitionId;
-    this.taskId = taskId;
-    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
     if (hiveSubDirectory == null) {
-      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
+      this.hiveSubDirectory = transactionId != null ?
+          HiveTableUtil.newHiveSubdirectory(transactionId) : HiveTableUtil.newHiveSubdirectory();
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
+    this.fileNameGenerator = new FileNameGenerator(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, fileCount.incrementAndGet()));
+    return fileNameGenerator.fileName(key);
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
@@ -125,17 +106,4 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     OutputFile outputFile = io.newOutputFile(fileLocation);
     return encryptionManager.encrypt(outputFile);
   }
-
-  /**
-   * extract transactionId from data path name.
-   */
-  public static int parseTransactionId(CharSequence path) {
-    String fileName = getFileName(path.toString());
-    String[] values = fileName.split(SEPARATOR);
-    if (values.length <= TRANSACTION_INDEX) {
-      throw new IllegalArgumentException("path is invalid. " + path);
-    }
-    return Integer.parseInt(values[TRANSACTION_INDEX]);
-  }
-
 }

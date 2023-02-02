@@ -18,9 +18,10 @@
 
 package com.netease.arctic.scan;
 
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.data.file.FileNameGenerator;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
@@ -54,18 +55,21 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
       PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
       Expression expression) {
     this.baseFile = baseFile;
-    this.posDeleteFiles = posDeleteFiles == null ?
-        Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = TableFileUtils.parseFileMetaFromFileName(s.path().toString());
-          return fileMeta.node().index() == baseFile.node().index() &&
-            fileMeta.node().mask() == baseFile.node().mask();
+    this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() :
+        posDeleteFiles.stream().filter(s -> {
+          DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(s.path().toString());
+          return node.index() == baseFile.node().index() && node.mask() == baseFile.node().mask();
         }).collect(Collectors.toList());
     this.spec = spec;
     this.expression = expression;
   }
 
+  /**
+   * Only for iceberg wrap
+   * @param fileScanTask
+   */
   public BaseArcticFileScanTask(FileScanTask fileScanTask) {
-    this(new DefaultKeyedFile(fileScanTask.file()), fileScanTask.deletes(),
+    this(DefaultKeyedFile.parseBase(fileScanTask.file()), fileScanTask.deletes(),
         fileScanTask.spec(), fileScanTask.residual());
     this.fileScanTask = fileScanTask;
   }

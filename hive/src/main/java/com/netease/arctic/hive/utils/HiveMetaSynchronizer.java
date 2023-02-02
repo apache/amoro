@@ -242,8 +242,7 @@ public class HiveMetaSynchronizer {
           filesToDelete.stream().map(DataFile::path).collect(Collectors.toList()),
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));
       if (table.isKeyedTable()) {
-        long legacyTxId = table.asKeyedTable().beginTransaction(null);
-        long txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
+        long txId = table.asKeyedTable().beginTransaction(null);
         OverwriteBaseFiles overwriteBaseFiles = table.asKeyedTable().newOverwriteBaseFiles();
         overwriteBaseFiles.set(OverwriteHiveFiles.PROPERTIES_VALIDATE_LOCATION, "false");
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);

@@ -21,12 +21,10 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -133,13 +131,6 @@ public class TablePropertyUtil {
     });
 
     return baseTableMaxTransactionId;
-  }
-
-  public static long allocateTransactionId(KeyedTable keyedTable) {
-    ChangeTable changeTable = keyedTable.changeTable();
-    changeTable.refresh();
-    Snapshot snapshot = changeTable.currentSnapshot();
-    return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
   }
 
 

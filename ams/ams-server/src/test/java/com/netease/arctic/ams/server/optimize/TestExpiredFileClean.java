@@ -121,7 +121,7 @@ public class TestExpiredFileClean extends TableTestBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeTableFilesInfo.addAll(changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable, true))
         .collect(Collectors.toList()));
 
     return changeInsertFiles;

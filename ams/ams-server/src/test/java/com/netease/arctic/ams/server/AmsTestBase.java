@@ -199,8 +199,6 @@ public class AmsTestBase {
     //mock service
     FileInfoCacheService fileInfoCacheService = new FileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
-    ArcticTransactionService arcticTransactionService = new ArcticTransactionService();
-    when(ServiceContainer.getArcticTransactionService()).thenReturn(arcticTransactionService);
     DDLTracerService ddlTracerService = new DDLTracerService();
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
@@ -217,6 +215,9 @@ public class AmsTestBase {
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
     when(ServiceContainer.getTableMetastoreHandler()).thenReturn(amsHandler);
+
+    ArcticTransactionService arcticTransactionService = new ArcticTransactionService();
+    when(ServiceContainer.getArcticTransactionService()).thenReturn(arcticTransactionService);
 
     OptimizeQueueService optimizeQueueService = new OptimizeQueueService();
     when(ServiceContainer.getOptimizeQueueService()).thenReturn(optimizeQueueService);

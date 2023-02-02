@@ -40,14 +40,13 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
    */
   @Test
   public void testOverwriteAllPartition() {
-    long legacyTxId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(getArcticTable().asKeyedTable());
+    long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
         DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), legacyTxId, newRecords);
+    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
@@ -84,14 +83,13 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
 
   @Test
   public void testOverwritePartitionByExpression() {
-    long legacyTxId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(getArcticTable().asKeyedTable());
+    long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
         DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), legacyTxId, newRecords);
+    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.withTransactionIdForChangedPartition(txId);

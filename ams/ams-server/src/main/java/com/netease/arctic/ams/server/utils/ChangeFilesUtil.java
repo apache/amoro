@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.utils;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +32,13 @@ import java.util.List;
 public class ChangeFilesUtil {
   private static final Logger LOG = LoggerFactory.getLogger(ChangeFilesUtil.class);
 
-  public static void tryClearChangeFiles(KeyedTable keyedTable, List<PrimaryKeyedFile> changeFiles) {
+  public static void tryClearChangeFiles(KeyedTable keyedTable, List<DataFile> changeFiles) {
     try {
       if (keyedTable.primaryKeySpec().primaryKeyExisted()) {
         int step = 3000;
         for (int startIndex = 0; startIndex < changeFiles.size(); startIndex += step) {
           int end = startIndex + step;
-          List<PrimaryKeyedFile> tableFiles = subList(changeFiles, startIndex, end);
+          List<DataFile> tableFiles = subList(changeFiles, startIndex, end);
           if (tableFiles.isEmpty()) {
             break;
           }
@@ -63,7 +64,7 @@ public class ChangeFilesUtil {
     return subList;
   }
 
-  private static void deleteChangeFiles(KeyedTable keyedTable, List<PrimaryKeyedFile> changeFiles) {
+  private static void deleteChangeFiles(KeyedTable keyedTable, List<DataFile> changeFiles) {
     if (CollectionUtils.isEmpty(changeFiles)) {
       return;
     }
