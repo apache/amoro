@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.util.PropertyUtil;
@@ -151,6 +152,14 @@ public class MixedCatalogTest extends CatalogTestBase {
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+  }
+  
+  @Test
+  public void testGetTableBlockerManager() {
+    TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(TableTestHelpers.TEST_TABLE_ID);
+    Assert.assertEquals(TableTestHelpers.TEST_TABLE_ID, tableBlockerManager.tableIdentifier());
+    Assert.assertTrue(tableBlockerManager.getBlockers().isEmpty());
+    
   }
 
   protected Schema getCreateTableSchema() {

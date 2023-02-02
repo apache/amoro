@@ -53,9 +53,9 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   public SupportHiveMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                       List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
                                       Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                                      Predicate<Long> snapshotIsCached) {
+                                      long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();

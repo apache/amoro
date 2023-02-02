@@ -41,6 +41,8 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.blocker.BaseTableBlockerManager;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -295,6 +297,11 @@ public class BaseArcticCatalog implements ArcticCatalog {
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", catalogName), e);
     }
+  }
+
+  @Override
+  public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
+    return BaseTableBlockerManager.build(tableIdentifier, client);
   }
 
   public TableMetaStore getTableMetaStore() {

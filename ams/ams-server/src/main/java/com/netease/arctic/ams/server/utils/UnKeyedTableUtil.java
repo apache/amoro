@@ -32,4 +32,9 @@ public class UnKeyedTableUtil {
       return currentSnapshot.snapshotId();
     }
   }
+
+  public static Snapshot getCurrentSnapshot(UnkeyedTable internalTable) {
+    internalTable.refresh();
+    return internalTable.currentSnapshot();
+  }
 }
