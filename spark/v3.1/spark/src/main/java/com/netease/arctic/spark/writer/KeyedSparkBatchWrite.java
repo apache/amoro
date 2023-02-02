@@ -28,7 +28,6 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.blocker.Blocker;
-import com.netease.arctic.table.blocker.RenewableBlocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.curator.shaded.com.google.common.collect.Lists;
@@ -38,7 +37,6 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.DataWriter;
@@ -52,14 +50,12 @@ import org.apache.spark.sql.types.StructType;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
-import static com.netease.arctic.table.blocker.RenewableBlocker.APPLICATION_ID;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -152,31 +148,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     public void getBlocker() {
       this.tableBlockerManager = catalog.getTableBlockerManager(table.id());
-      List<Blocker> blockers = tableBlockerManager.getBlockers();
-
-      String applicationId =  SparkSession.getActiveSession().get().sparkContext().applicationId();
-      boolean needNewBlock = true;
-      for (Blocker blocker : blockers) {
-        if (blocker.properties().containsKey(APPLICATION_ID) &&
-            blocker.properties().get(APPLICATION_ID).equals(applicationId)) {
-          RenewableBlocker renewableBlocker = (RenewableBlocker) blocker;
-          renewableBlocker.renewAsync();
-          this.block = renewableBlocker;
-          needNewBlock = false;
-          break;
-        }
-      }
-      if (needNewBlock) {
-        ArrayList<BlockableOperation> operations = Lists.newArrayList();
-        operations.add(BlockableOperation.BATCH_WRITE);
-        operations.add(BlockableOperation.OPTIMIZE);
-        Map<String, String> properties = new HashMap<>();
-        properties.put(APPLICATION_ID, applicationId);
-        try {
-          this.block = tableBlockerManager.block(operations, properties);
-        } catch (OperationConflictException e) {
-          throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
-        }
+      ArrayList<BlockableOperation> operations = Lists.newArrayList();
+      operations.add(BlockableOperation.BATCH_WRITE);
+      operations.add(BlockableOperation.OPTIMIZE);
+      try {
+        this.block = tableBlockerManager.block(operations);
+      } catch (OperationConflictException e) {
+        throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
       }
     }
   }
