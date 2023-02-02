@@ -89,7 +89,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         result = false;
       }
       if (result == false) {
-        LOG.warn("Fail to delete file " + path + " and file system return false, false, need to check the hdfs path");
+        LOG.warn("Fail to delete file " + path + " and file system return false, need to check the hdfs path");
       }
       return result;
     });
