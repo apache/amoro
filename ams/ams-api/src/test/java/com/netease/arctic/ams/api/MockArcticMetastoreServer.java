@@ -33,12 +33,14 @@ import java.net.BindException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -194,6 +196,8 @@ public class MockArcticMetastoreServer implements Runnable {
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
     private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
     private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
+    private final Map<TableIdentifier, Map<String, Blocker>> tableBlockers = new HashMap<>();
+    private final AtomicLong blockerId = new AtomicLong(1L);
 
     public void cleanUp() {
       catalogs.clear();
@@ -336,9 +340,46 @@ public class MockArcticMetastoreServer implements Runnable {
       }
     }
 
-     public void updateMeta(CatalogMeta meta, String key, String value) {
+    @Override
+    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                         Map<String, String> properties)
+        throws OperationConflictException, TException {
+      Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
+      long now = System.currentTimeMillis();
+      properties.put("create.time", now + "");
+      properties.put("expiration.time", (now + 60000) + "");
+      properties.put("blocker.timeout", 60000 + "");
+      Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
+      blockers.put(blocker.getBlockerId(), blocker);
+      return blocker;
+    }
+
+    @Override
+    public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers != null) {
+        blockers.remove(blockerId);
+      }
+    }
+
+    @Override
+    public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      return 0;
+    }
+
+    @Override
+    public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers == null) {
+        return Collections.emptyList();
+      } else {
+        return new ArrayList<>(blockers.values());
+      }
+    }
+
+    public void updateMeta(CatalogMeta meta, String key, String value) {
       meta.getCatalogProperties().put(key, value);
-     }
+    }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {
