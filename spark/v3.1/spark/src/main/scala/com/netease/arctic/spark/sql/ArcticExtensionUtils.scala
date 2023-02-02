@@ -20,13 +20,11 @@ package com.netease.arctic.spark.sql
 
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
-import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -203,12 +201,8 @@ object ArcticExtensionUtils {
 
   def buildCatalog(catalogAndIdentifier: CatalogAndIdentifier): TableCatalog = {
     catalogAndIdentifier.catalog() match {
-      case arcticCatalog: ArcticSparkCatalog =>
-        arcticCatalog.asInstanceOf[ArcticSparkCatalog]
-      case arcticCatalog: ArcticSparkSessionCatalog[_] =>
-        arcticCatalog.asInstanceOf[ArcticSparkSessionCatalog[_]]
-      case _ =>
-        throw new UnsupportedOperationException("Only support arctic catalog")
+      case a: TableCatalog => a
+      case _ => throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
     }
   }
 }

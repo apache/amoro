@@ -28,6 +28,9 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
+import scala.collection.{JavaConverters, mutable}
+import scala.concurrent.JavaConversions
+
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
  * @param sparkSession
@@ -57,8 +60,8 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         if provider.get != null && provider.get.equals("arctic") =>
           val sourceIdentifier = buildArcticIdentifier(sparkSession, sourceTable)
           val targetIdentifier = buildArcticIdentifier(sparkSession, targetTable)
-          val arcticCatalog = buildCatalog(sourceIdentifier)
-          val table = arcticCatalog.loadTable(sourceIdentifier.identifier())
+          val sourceCatalog = buildCatalog(sourceIdentifier)
+          val table = sourceCatalog.loadTable(sourceIdentifier.identifier())
           var targetProperties = properties
           targetProperties += ("provider" -> "arctic")
           table match {
@@ -70,7 +73,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
               }
             case _ =>
           }
-          CreateV2Table(arcticCatalog, targetIdentifier.identifier(),
+          CreateV2Table(sourceCatalog, targetIdentifier.identifier(),
             table.schema(), table.partitioning(), targetProperties, ifNotExists)
       case _ => plan
     }
