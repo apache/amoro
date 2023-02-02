@@ -31,6 +31,8 @@ import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -41,6 +43,8 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticHadoopFileIO.class);
+
   private final TableMetaStore tableMetaStore;
 
   public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
@@ -83,6 +87,9 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         result = fs.delete(toDelete, recursive);
       } catch (IOException e) {
         result = false;
+      }
+      if (result == false) {
+        LOG.warn("File to delete file " + path + " and result is false, need to check the hdfs path");
       }
       return result;
     });
@@ -165,7 +172,12 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       Path dtsPath = new Path(dts);
       FileSystem fs = getFs(srcPath);
       try {
-        return fs.rename(srcPath, dtsPath);
+        if (fs.rename(srcPath, dtsPath) == false) {
+          throw new IOException("Failed to rename: from " + src + " to " + dts +
+              " and result is false, need to check the hdfs path");
+        } else {
+          return true;
+        }
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
       }
@@ -196,7 +208,12 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       Path filePath = new Path(path);
       FileSystem fs = getFs(filePath);
       try {
-        return fs.mkdirs(filePath);
+        if (fs.mkdirs(filePath) == false) {
+          throw new IOException("Failed to mkdirs: path " + path +
+              " and result is false, need to check the hdfs path");
+        } else {
+          return true;
+        }
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
       }
