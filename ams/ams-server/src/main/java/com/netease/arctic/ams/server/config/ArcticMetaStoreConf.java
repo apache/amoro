@@ -217,4 +217,10 @@ public class ArcticMetaStoreConf {
           .intType()
           .defaultValue(30)
           .withDescription("session timeout in minute");
+
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("arctic.ams.blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
 }

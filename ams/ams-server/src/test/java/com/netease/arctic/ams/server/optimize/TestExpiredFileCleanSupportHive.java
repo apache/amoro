@@ -21,9 +21,11 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -37,6 +39,8 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
@@ -82,11 +86,16 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   }
 
   private List<DataFile> insertHiveDataFiles(ArcticTable arcticTable, long transactionId) throws Exception {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withTransactionId(transactionId)
-        .buildWriter(HiveLocationKind.INSTANT);
 
-    List<DataFile> dataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
+    AtomicInteger taskId = new AtomicInteger();
+
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+        .withTransactionId(transactionId)
+        .withTaskId(taskId.incrementAndGet())
+        .withCustomHiveSubdirectory(hiveSubDir)
+        .buildWriter(HiveLocationKind.INSTANT);
+    List<DataFile> dataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

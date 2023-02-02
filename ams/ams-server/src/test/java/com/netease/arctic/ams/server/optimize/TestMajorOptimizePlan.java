@@ -81,7 +81,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
@@ -117,7 +117,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
@@ -134,7 +134,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
@@ -154,7 +154,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
@@ -171,7 +171,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
@@ -191,7 +191,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
@@ -223,7 +223,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testNoPartitionTable,
         new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
@@ -259,7 +259,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,
         new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());

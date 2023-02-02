@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -45,6 +46,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -58,6 +60,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -512,7 +515,7 @@ public class OptimizeQueueService extends IJDBCService {
                   // no task have planned
                   if (!isHaveTask) {
                     LOG.debug("The queue {} has retry {} times, no task have planned",
-                        optimizeQueue.getOptimizeQueueMeta().queueId,
+                        optimizeQueue.getOptimizeQueueMeta().getQueueId(),
                         retryTime);
                   }
                 } catch (Throwable t) {
@@ -689,20 +692,38 @@ public class OptimizeQueueService extends IJDBCService {
               optimizeTasks = optimizePlan.plan();
             }
           } else {
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
-            optimizeTasks = optimizePlan.plan();
+            Snapshot baseCurrentSnapshot;
+            Snapshot changeCurrentSnapshot = null;
+            ArcticTable arcticTable = tableItem.getArcticTable();
+            if (arcticTable.isKeyedTable()) {
+              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+            } else {
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+            }
+            if (isOptimizeBlocked(tableIdentifier)) {
+              LOG.debug("{} optimize is blocked, continue", tableIdentifier);
+              continue;
+            }
+            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+            optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
 
-            // if no full tasks, then plan minor tasks
+            // if no full tasks, then plan major tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning);
-              optimizeTasks = optimizePlan.plan();
+              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
 
             // if no major tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning);
-              optimizeTasks = optimizePlan.plan();
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot,
+                  changeCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
+          }
+          
+          if (optimizePlan == null) {
+            continue;
           }
 
           initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
@@ -721,6 +742,10 @@ public class OptimizeQueueService extends IJDBCService {
       }
 
       return Collections.emptyList();
+    }
+
+    private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
+      return ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE);
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
@@ -750,7 +775,7 @@ public class OptimizeQueueService extends IJDBCService {
           // set current snapshot id
           tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentSnapshotId());
           if (tableItem.isKeyedTable()) {
-            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentSnapshotId());
+            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
           }
 
           tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
