@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io.writer;
 
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -46,7 +46,7 @@ public class CommonOutputFileFactory implements OutputFileFactory {
   private final PartitionSpec partitionSpec;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final FileNameHandle fileNameHandle;
+  private final FileNameGenerator fileNameGenerator;
 
   public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
                            FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
@@ -55,11 +55,11 @@ public class CommonOutputFileFactory implements OutputFileFactory {
     this.partitionSpec = partitionSpec;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    this.fileNameHandle = new FileNameHandle(format, partitionId, taskId, transactionId);
+    this.fileNameGenerator = new FileNameGenerator(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return fileNameHandle.fileName(key);
+    return fileNameGenerator.fileName(key);
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {

@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
  * </ul>
  * 
  */
-public class FileNameHandle {
+public class FileNameGenerator {
 
   private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-.*";
   private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
@@ -69,7 +69,7 @@ public class FileNameHandle {
   private final String operationId = IdGenerator.randomId() + "";
   private final AtomicLong fileCount = new AtomicLong(0);
 
-  public FileNameHandle(
+  public FileNameGenerator(
       FileFormat fileFormat,
       int partitionId,
       Long taskId,

@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -46,11 +46,11 @@ public class DataFileInfoUtils {
     if (arcticTable.isKeyedTable()) {
       DataFileType dataFileType;
       if (isChange) {
-        dataFileType = FileNameHandle.parseFileTypeForChange(dataFile.path().toString());
+        dataFileType = FileNameGenerator.parseFileTypeForChange(dataFile.path().toString());
       } else {
-        dataFileType = FileNameHandle.parseFileTypeForBase(dataFile.path().toString());
+        dataFileType = FileNameGenerator.parseFileTypeForBase(dataFile.path().toString());
       }
-      DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString());
+      DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString());
       dataFileInfo.setType(dataFileType.name());
       dataFileInfo.setType(dataFileType.name());
       dataFileInfo.setIndex(node.index());
@@ -73,7 +73,7 @@ public class DataFileInfoUtils {
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(deleteFile.recordCount());
     dataFileInfo.setType(DataFileType.POS_DELETE_FILE.name());
-    DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString());
+    DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString());
     dataFileInfo.setIndex(node.getIndex());
     dataFileInfo.setMask(node.getMask());
     dataFileInfo.setCommitTime(snapshot.timestampMillis());

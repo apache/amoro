@@ -25,7 +25,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
@@ -404,7 +404,7 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return FileNameHandle.parseFileNodeFromFileName(contentFile.path().toString());
+        return FileNameGenerator.parseFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
@@ -412,7 +412,7 @@ public class BaseOptimizeCommit {
 
     return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtils::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(FileNameHandle.parseFileNodeFromFileName(posDeleteFile.path().toString())))
+            newFileNodes.contains(FileNameGenerator.parseFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 

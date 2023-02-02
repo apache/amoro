@@ -27,7 +27,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -332,6 +332,6 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
   private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable) throws Exception {
     List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, OptimizeType.Major, 3);
     return dataFiles.stream().collect(Collectors.groupingBy(
-        dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
+        dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
   }
 }

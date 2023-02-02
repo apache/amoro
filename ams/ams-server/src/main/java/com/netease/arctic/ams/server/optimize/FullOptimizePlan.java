@@ -28,7 +28,7 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -219,12 +219,12 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()))
+            .map(dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString())))
+                baseFileNodes.contains(FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
         if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
@@ -288,7 +288,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
 
   private long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileNameHandle.parseTransactionId(file.path().toString())).max();
+        .mapToLong(file -> FileNameGenerator.parseTransactionId(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }

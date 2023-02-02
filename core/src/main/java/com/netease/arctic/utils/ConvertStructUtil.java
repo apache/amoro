@@ -20,12 +20,10 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -78,23 +76,23 @@ public class ConvertStructUtil {
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
       // if we can't parse file type from file name, handle it as base file
-      DataFileType dataFileType = FileNameHandle.parseFileType(filePath, tableType);
+      DataFileType dataFileType = FileNameGenerator.parseFileType(filePath, tableType);
       validateArcticFileType(content, filePath, dataFileType);
       amsDataFile.setFileType(dataFileType.name());
 
-      DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(filePath);
+      DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(filePath);
       amsDataFile.setIndex(node.index());
       amsDataFile.setMask(node.mask());
     } else if (content == FileContent.POSITION_DELETES) {
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
 
-      DataFileType dataFileType = FileNameHandle.parseFileType(filePath, tableType);
+      DataFileType dataFileType = FileNameGenerator.parseFileType(filePath, tableType);
       if (dataFileType == DataFileType.POS_DELETE_FILE) {
-        DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(filePath);
+        DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(filePath);
         amsDataFile.setIndex(node.index());
         amsDataFile.setMask(node.mask());
       } else {
-        if (!FileNameHandle.isArcticFileFormat(filePath)) {
+        if (!FileNameGenerator.isArcticFileFormat(filePath)) {
           amsDataFile.setIndex(DataTreeNode.ROOT.getIndex());
           amsDataFile.setMask(DataTreeNode.ROOT.getMask());
         } else {

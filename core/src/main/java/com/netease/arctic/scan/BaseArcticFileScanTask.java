@@ -21,7 +21,7 @@ package com.netease.arctic.scan;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
@@ -57,7 +57,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.baseFile = baseFile;
     this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() :
         posDeleteFiles.stream().filter(s -> {
-          DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(s.path().toString());
+          DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(s.path().toString());
           return node.index() == baseFile.node().index() && node.mask() == baseFile.node().mask();
         }).collect(Collectors.toList());
     this.spec = spec;

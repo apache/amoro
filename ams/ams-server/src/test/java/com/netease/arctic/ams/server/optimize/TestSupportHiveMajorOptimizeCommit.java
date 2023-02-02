@@ -27,7 +27,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -309,7 +309,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtils.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileNameHandle.parseFileNodeFromFileName(baseFile.path().toString());
+      DataTreeNode dataTreeNode = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -381,7 +381,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtils.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileNameHandle.parseFileNodeFromFileName(baseFile.path().toString());
+      DataTreeNode dataTreeNode = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -583,6 +583,6 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
                                                             OptimizeType optimizeType) throws IOException {
     List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, optimizeType, 3);
     return dataFiles.stream().collect(Collectors.groupingBy(
-        dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
+        dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
   }
 }

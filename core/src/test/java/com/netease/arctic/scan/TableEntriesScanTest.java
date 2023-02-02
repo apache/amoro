@@ -20,7 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.TableDataTestBase;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -45,7 +45,7 @@ public class TableEntriesScanTest extends TableDataTestBase {
     for (IcebergFileEntry entry : dataFileScan.entries()) {
       cnt++;
       DataFile file = (DataFile) entry.getFile();
-      DataFileType dataFileType = FileNameHandle.parseFileTypeForChange(file.path().toString());
+      DataFileType dataFileType = FileNameGenerator.parseFileTypeForChange(file.path().toString());
       if (dataFileType == DataFileType.INSERT_FILE) {
         Assert.assertEquals(1, entry.getSequenceNumber());
       } else if (dataFileType == DataFileType.EQ_DELETE_FILE) {
@@ -112,7 +112,7 @@ public class TableEntriesScanTest extends TableDataTestBase {
     for (IcebergFileEntry entry : dataFileScan.entries()) {
       cnt++;
       DataFile file = (DataFile) entry.getFile();
-      DataFileType dataFileType = FileNameHandle.parseFileTypeForChange(file.path().toString());
+      DataFileType dataFileType = FileNameGenerator.parseFileTypeForChange(file.path().toString());
       if (dataFileType == DataFileType.INSERT_FILE) {
         Assert.assertEquals(1, entry.getSequenceNumber());
       } else if (dataFileType == DataFileType.EQ_DELETE_FILE) {

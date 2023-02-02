@@ -28,7 +28,7 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -247,7 +247,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
 
     public long getLegacyTransactionId() {
       if (legacyTransactionId == -1) {
-        legacyTransactionId = FileNameHandle.parseChange(dataFileInfo.getPath(),
+        legacyTransactionId = FileNameGenerator.parseChange(dataFileInfo.getPath(),
             dataFileInfo.getSequence()).transactionId();
       }
       return legacyTransactionId;
@@ -339,12 +339,12 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
         sourceNodes = Collections.singletonList(subTree.getNode());
       }
       Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-          .map(dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()))
+          .map(dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))
           .collect(Collectors.toSet());
       List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
           .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
           .filter(deleteFile ->
-              baseFileNodes.contains(FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString())))
+              baseFileNodes.contains(FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString())))
           .collect(Collectors.toList());
       // if no insert files and no eq-delete file, skip
       if (CollectionUtils.isEmpty(insertFiles) && CollectionUtils.isEmpty(deleteFiles)) {

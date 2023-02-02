@@ -18,7 +18,7 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.data.file.FileNameHandle;
+import com.netease.arctic.data.file.FileNameGenerator;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -45,12 +45,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   public static DefaultKeyedFile parseChange(DataFile dataFile, long sequenceNumber) {
-    FileMeta fileMeta = FileNameHandle.parseChange(dataFile.path().toString(), sequenceNumber);
+    FileMeta fileMeta = FileNameGenerator.parseChange(dataFile.path().toString(), sequenceNumber);
     return new DefaultKeyedFile(dataFile, fileMeta);
   }
 
   public static DefaultKeyedFile parseBase(DataFile dataFile) {
-    FileMeta fileMeta = FileNameHandle.parseBase(dataFile.path().toString());
+    FileMeta fileMeta = FileNameGenerator.parseBase(dataFile.path().toString());
     return new DefaultKeyedFile(dataFile, fileMeta);
   }
 
