@@ -97,7 +97,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       ConfigOptions.key("log-store.kafka.compatible.enabled")
           .booleanType()
           .defaultValue(false)
-          .withDescription("Flag hidden kafka read compatible with old API enable or not." +
+          .withDescription("Flag hidden kafka reading compatible with legacy Kafka Source API enable or not" +
+              " when restoring Flink application from a checkpoint." +
               " If a task should be restored from checkpoint which made in Arctic version less than 0.4.1");
 
   public static final ConfigOption<String> ARCTIC_LOG_CONSUMER_CHANGELOG_MODE =

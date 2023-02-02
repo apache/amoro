@@ -267,8 +267,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     }
 
     LOG.info("build log source");
-    if (useOldAPI(arcticTable)) {
-      return createOldLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
+    if (adaptLegacySourc(arcticTable)) {
+      return createLegacyLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
           startupTimestampMillis, arcticTable, schema);
     }
     return new LogDynamicSource(
@@ -283,7 +283,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         arcticTable);
   }
 
-  private ScanTableSource createOldLogDynamicSource(DataType physicalDataType,
+  private ScanTableSource createLegacyLogDynamicSource(DataType physicalDataType,
                                                     int[] valueProjection,
                                                     Properties properties,
                                                     Context context,
@@ -342,11 +342,11 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
    * Return true only if {@link ArcticValidator#ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE} is true and
    * {@link LOG_STORE_TYPE} is kafka.
    */
-  private static boolean useOldAPI(ArcticTable arcticTable) {
-    boolean useOldAPI = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
+  private static boolean adaptLegacySourc(ArcticTable arcticTable) {
+    boolean legacySourceEnabled = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(),
         ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.defaultValue());
-    if (useOldAPI) {
+    if (legacySourceEnabled) {
       String logType = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
           LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT).toLowerCase();
       if (!Objects.equals(LOG_STORE_STORAGE_TYPE_KAFKA, logType)) {
