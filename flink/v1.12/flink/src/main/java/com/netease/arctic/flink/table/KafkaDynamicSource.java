@@ -460,6 +460,7 @@ public class KafkaDynamicSource
             tableOptions);
     copy.producedDataType = producedDataType;
     copy.metadataKeys = metadataKeys;
+    copy.projectedFields = projectedFields;
     copy.watermarkStrategy = watermarkStrategy;
     return copy;
   }

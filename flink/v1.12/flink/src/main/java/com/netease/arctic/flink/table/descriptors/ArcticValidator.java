@@ -92,6 +92,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .defaultValue(false)
           .withDescription("Flag hidden kafka read retraction enable or not.");
 
+  @Deprecated
   public static final ConfigOption<Boolean> ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE =
       ConfigOptions.key("log-store.kafka.compatible.enabled")
           .booleanType()
