@@ -28,6 +28,9 @@ import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.blocker.BaseTableBlockerManager;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
@@ -35,6 +38,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -176,6 +180,11 @@ public class BaseIcebergCatalog implements ArcticCatalog {
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", meta.getCatalogName()), e);
     }
+  }
+
+  @Override
+  public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
+    return BaseTableBlockerManager.build(tableIdentifier, client);
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {

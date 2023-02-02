@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 /**
  * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return records
  * after filtering with {@link ArcticDeleteFilter}.
+ *
  * @param <T> to indicate the record data type.
  */
 public abstract class BaseArcticDataReader<T> {
@@ -113,7 +114,7 @@ public abstract class BaseArcticDataReader<T> {
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
     ArcticDeleteFilter<T> arcticDeleteFilter =
-        new GenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
+        createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
             sourceNodes, structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
@@ -129,9 +130,9 @@ public abstract class BaseArcticDataReader<T> {
         .map(ArcticFileScanTask::file).collect(Collectors.toList());
 
     if (!equDeleteFiles.isEmpty()) {
-      ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes, structLikeCollections
-      );
+      ArcticDeleteFilter<T> arcticDeleteFilter =
+          createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
+              sourceNodes, structLikeCollections);
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
@@ -144,6 +145,15 @@ public abstract class BaseArcticDataReader<T> {
     } else {
       return CloseableIterator.empty();
     }
+  }
+
+  protected ArcticDeleteFilter<T> createArcticDeleteFilter(
+      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
+      Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections
+  ) {
+    return new GenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema,
+        primaryKeySpec, sourceNodes, structLikeCollections);
   }
 
   protected CloseableIterable<T> newParquetIterable(

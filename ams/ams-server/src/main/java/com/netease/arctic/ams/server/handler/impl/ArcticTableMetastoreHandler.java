@@ -21,12 +21,16 @@ package com.netease.arctic.ams.server.handler.impl;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
+import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.server.model.TableBlocker;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -40,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -200,5 +205,33 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     }
     return ServiceContainer.getArcticTransactionService().allocateTransactionId(tableIdentifier,
         transactionSignature);
+  }
+
+  @Override
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                       Map<String, String> properties)
+      throws OperationConflictException {
+    TableBlocker block = ServiceContainer.getTableBlockerService()
+        .block(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), operations, properties);
+    return block.buildBlocker();
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    ServiceContainer.getTableBlockerService()
+        .release(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
+  }
+
+  @Override
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+    return ServiceContainer.getTableBlockerService()
+        .renew(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    return ServiceContainer.getTableBlockerService()
+        .getBlockers(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
+        .stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
   }
 }

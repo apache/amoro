@@ -68,10 +68,13 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | log-store.enabled                  | false            | 是否开启 Logstore                        |
-| log-store.type                     | kafka            | Logstore 的类型，当前仅支持 Kafka            |
-| log-store.address                  | NULL             | 当 log-store.enabled=true 时必填，Logstore 的地址                           |
+| log-store.type                     | kafka            | Logstore 的类型，当前支持 'kafka'、'pulsar'            |
+| log-store.address                  | NULL             | 当 log-store.enabled=true 时必填，Logstore 的地址。对于 Kafka，为 kafka bootstrap servers地址；对于 Pulsar，为 Pulsar Service url，如: 'pulsar://localhost:6650'|
 | log-store.topic                    | NULL             | 当 log-store.enabled=true 时必填，Logstore 使用的 topic                      
-| log-store.consistency-guarantee.enabled   | false            | 标记是否开启一致性保证                       |
+| log-store.consistency-guarantee.enabled   | false     | 标记是否开启一致性保证，目前 log-store.type=plusar 时不支持开启一致性保证 |
+| properties.pulsar.admin.adminUrl   | NULL             | Logstore 是 pulsar 时必填，否则可不填。Pulsar admin 的 HTTP URL，如：http://my-broker.example.com:8080|
+| properties.XXX                     | NULL             | Logstore的参数。<br><br>对于 Logstore 为 Kafka ('log-store.type'='kafka' 默认值)时，Kafka Consumer/Producer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.batch.size'='16384'`，<br>完整的参数信息可以参考 [Kafka consumer 配置](https://kafka.apache.org/documentation/#consumerconfigs)、[kafka producer 配置](https://kafka.apache.org/documentation/#producerconfigs)；<br><br>对于 Logstore 为 Pulsar ('log-store.type'='pulsar')时，Pulsar 支持的相关配置都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.pulsar.client.requestTimeoutMs'='60000'`，<br>完整的参数信息可以参考 [Flink-Pulsar-Connector文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar)
+
 
 ### Watermark 相关配置
 

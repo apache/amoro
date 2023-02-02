@@ -61,6 +61,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   private final DDLTracerService ddlTracerService;
 
   private final AdaptHiveService adaptHiveService;
+  private final TableBlockerService tableBlockerService;
 
   public JDBCMetaService() {
     super();
@@ -68,6 +69,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     this.transactionService = ServiceContainer.getArcticTransactionService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
     this.adaptHiveService = ServiceContainer.getAdaptHiveService();
+    this.tableBlockerService = ServiceContainer.getTableBlockerService();
   }
 
   @Override
@@ -142,6 +144,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         transactionService.delete(tableIdentifier.buildTableIdentifier());
         ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
         adaptHiveService.removeTableCache(tableIdentifier);
+        tableBlockerService.clearBlockers(tableIdentifier);
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);

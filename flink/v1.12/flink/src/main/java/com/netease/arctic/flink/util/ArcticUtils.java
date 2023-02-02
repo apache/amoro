@@ -26,7 +26,9 @@ import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
 import com.netease.arctic.flink.write.AutomaticLogWriter;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
+import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
+import com.netease.arctic.flink.write.hidden.pulsar.HiddenPulsarFactory;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
@@ -52,8 +54,13 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 /**
  * An util that loads arctic table, build arctic log writer and so on.
@@ -103,14 +110,11 @@ public class ArcticUtils {
 
     if (arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_LOG)) {
       if (!streamEnable) {
-        throw new ValidationException(
-            "emit to kafka was set, but no kafka config be found, please set kafka config first");
+        throw new ValidationException("emit to log was set, but 'log-store.enabled' is false");
       }
       return true;
     } else if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
-      LOG.info("arctic emit mode is auto, and the arctic table {} is {}",
-          ENABLE_LOG_STORE,
-          streamEnable);
+      LOG.info("arctic emit mode is auto, and the arctic table {} is {}", ENABLE_LOG_STORE, streamEnable);
       return streamEnable;
     }
 
@@ -150,7 +154,7 @@ public class ArcticUtils {
             FlinkSchemaUtil.convert(tableSchema),
             producerConfig,
             topic,
-            new HiddenKafkaFactory<>(),
+            buildLogMsgFactory(properties),
             LogRecordV1.fieldGetterFactory,
             IdGenerator.generateUpstreamId(),
             helper,
@@ -164,13 +168,32 @@ public class ArcticUtils {
           FlinkSchemaUtil.convert(tableSchema),
           producerConfig,
           topic,
-          new HiddenKafkaFactory<>(),
+          buildLogMsgFactory(properties),
           LogRecordV1.fieldGetterFactory,
           IdGenerator.generateUpstreamId(),
           helper);
     }
     throw new UnsupportedOperationException("don't support log version '" + version +
         "'. only support 'v1' or empty");
+  }
+
+  public static <T> LogMsgFactory<T> buildLogMsgFactory(Map<String, String> tableProperties) {
+    String logType = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_TYPE,
+        LOG_STORE_STORAGE_TYPE_DEFAULT);
+    LogMsgFactory<T> factory;
+    switch (logType) {
+      case LOG_STORE_STORAGE_TYPE_KAFKA:
+        factory = new HiddenKafkaFactory<>();
+        break;
+      case LOG_STORE_STORAGE_TYPE_PULSAR:
+        factory = new HiddenPulsarFactory<>(
+            CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_ADDRESS, null));
+        break;
+      default:
+        throw new UnsupportedOperationException("only support 'kafka' or 'pulsar' now, but input is " + logType);
+    }
+    LOG.info("build log msg factory: {}", factory.getClass());
+    return factory;
   }
 
   public static boolean arcticFileWriterEnable(String arcticEmitMode) {

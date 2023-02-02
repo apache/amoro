@@ -21,11 +21,11 @@ package com.netease.arctic.ams.server.model;
 import java.util.Map;
 
 public class OptimizeQueueMeta {
-  public int queueId;
-  public String name;
-  public String container;
+  private int queueId;
+  private String name;
+  private String container;
   private String schedulingPolicy;
-  public Map<String, String> properties;
+  private Map<String, String> properties;
 
   public int getQueueId() {
     return queueId;

@@ -28,7 +28,6 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
-import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -37,8 +36,6 @@ import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -46,11 +43,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseArcticOptimizePlan.class);
 
   protected final List<DataFileInfo> baseTableFileList;
   protected final List<DataFileInfo> changeTableFileList;
@@ -66,26 +61,25 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   protected final Map<String, List<DeleteFile>> partitionPosDeleteFiles = new LinkedHashMap<>();
 
   // for base table or unKeyed table
-  protected long currentBaseSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  private final long currentBaseSnapshotId;
   // for change table
-  protected long currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
-  // for check iceberg base table current snapshot whether cached in file cache
-  protected Predicate<Long> snapshotIsCached;
+  protected final long currentChangeSnapshotId;
 
   public BaseArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                 List<DataFileInfo> baseTableFileList,
                                 List<DataFileInfo> changeTableFileList,
                                 List<DataFileInfo> posDeleteFileList,
                                 Map<String, Boolean> partitionTaskRunning,
-                                int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
+                                int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
     this.baseTableFileList = baseTableFileList;
     this.changeTableFileList = changeTableFileList;
     this.posDeleteFileList = posDeleteFileList;
-    this.snapshotIsCached = snapshotIsCached;
     this.isCustomizeDir = false;
     this.fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
         TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
+    this.currentChangeSnapshotId = changeSnapshotId;
+    this.currentBaseSnapshotId = baseSnapshotId;
   }
 
   protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
@@ -181,31 +175,7 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     return optimizeTask;
   }
 
-  private boolean baseTableCacheAll() {
-    if (arcticTable.isKeyedTable()) {
-      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
-          !snapshotIsCached.test(currentBaseSnapshotId)) {
-        LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", currentBaseSnapshotId);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   public boolean tableNeedPlan() {
-    if (arcticTable.isKeyedTable()) {
-      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
-      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
-    } else {
-      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
-    }
-
-    if (!baseTableCacheAll()) {
-      return false;
-    }
-
     return tableChanged();
   }
 

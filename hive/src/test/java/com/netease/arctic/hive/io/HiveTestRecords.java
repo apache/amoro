@@ -110,4 +110,32 @@ public class HiveTestRecords {
         COLUMN_NAME_D, new BigDecimal("102"), COLUMN_NAME_NAME, "jake")));
     return builder.build();
   }
+
+  public static List<Record> testRecords() {
+    GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
+
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 1,
+        COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 1, 12, 0, 0),
+        COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
+            LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
+        COLUMN_NAME_D, new BigDecimal("101"), COLUMN_NAME_NAME, "jake")));
+    builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 2,
+        COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 2, 12, 0, 0),
+        COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
+            LocalDateTime.of(2022, 1, 2, 12, 0, 0), ZoneOffset.UTC),
+        COLUMN_NAME_D, new BigDecimal("102"), COLUMN_NAME_NAME, "sam")));
+    builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 3,
+        COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 3, 12, 0, 0),
+        COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
+            LocalDateTime.of(2022, 1, 3, 12, 0, 0), ZoneOffset.UTC),
+        COLUMN_NAME_D, new BigDecimal("103"), COLUMN_NAME_NAME, "mack")));
+    builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 4,
+        COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 4, 12, 0, 0),
+        COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
+            LocalDateTime.of(2022, 1, 4, 12, 0, 0), ZoneOffset.UTC),
+        COLUMN_NAME_D, new BigDecimal("104"), COLUMN_NAME_NAME, "mack")));
+
+    return builder.build();
+  }
 }

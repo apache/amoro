@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -38,6 +37,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 public class TestOptimizeWrite extends SparkTestBase {
 
@@ -75,33 +76,10 @@ public class TestOptimizeWrite extends SparkTestBase {
     sql("drop database " + database);
   }
 
-  /**
-   * no shuffle.
-   * source[3partition] -> sink[2partition]
-   * 6 file
-   */
-  @Test
-  public void testModeIsNone() {
-    sql("create table {0}.{1} ( \n" +
-            " id int , \n" +
-            " column1 string , \n " +
-            " column2 string, \n" +
-            " primary key (id) \n" +
-            ") using arctic \n" +
-            " partitioned by ( column1 ) \n" +
-            " TBLPROPERTIES(''write.distribution-mode'' = ''none'') "
-        , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
-        database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
-    Assert.assertEquals(
-        6,
-        baseTableSize(identifier));
-  }
 
   /**
-   * shuffle auto
+   * 6 rows write to 2 partition, bucket=1, expect result 2 files.
+   * each partition contain 1 file, each file contain 3 rows.
    */
   @Test
   public void testPrimaryKeyPartitionedTable() {
@@ -125,34 +103,12 @@ public class TestOptimizeWrite extends SparkTestBase {
         Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
   }
 
-  @Test
-  public void testPartitionedTableWithoutPrimaryKey() {
-    sql("create table {0}.{1} ( \n" +
-            " id int , \n" +
-            " column1 string , \n " +
-            " column2 string, \n" +
-            " primary key (id) \n" +
-            ") using arctic \n" +
-            " partitioned by ( column1 ) \n" +
-            " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
-            "''write.distribution.hash-mode'' = ''partition-key'')"
-        , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
-        database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
-    Assert.assertEquals(
-        4,
-        Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
-  }
-
   /**
-   * shuffle by primary key
-   * source[3partition] -> shuffle %1 primary key[1partition] -> sink[2partition]
-   * write 2 file
+   * 6 input rows, write to 2 partitions, bucket = 2, expect 4 files.
+   * each partition contain 3 rows, split into 2 files.
    */
   @Test
-  public void testPrimaryKeyTableWithoutPartition() {
+  public void testKeyedPartitionedTableWithFileSplitNum() {
     sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
@@ -160,44 +116,13 @@ public class TestOptimizeWrite extends SparkTestBase {
             " primary key (id) \n" +
             ") using arctic \n" +
             " partitioned by ( column1 ) \n" +
-            " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
-            "''write.distribution.hash-mode'' = ''primary-key''," +
-            "''base.file-index.hash-bucket'' = ''1'')"
-        , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
-        database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
-    Assert.assertEquals(
-        2,
-        Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
-  }
-
-  /**
-   * shuffle by primary key
-   * source[3partition] -> shuffle %2 primary key -> sink[2partition]
-   * write 4 file
-   */
-  @Test
-  public void testPrimaryKeyTableFileSplitNum() {
-    sql("create table {0}.{1} ( \n" +
-            " id int , \n" +
-            " column1 string , \n " +
-            " column2 string, \n" +
-            " primary key (id) \n" +
-            ") using arctic \n" +
-            " partitioned by ( column1 ) \n" +
-            " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
-            "''write.distribution.hash-mode'' = ''primary-key''," +
+            " TBLPROPERTIES(" +
             "''base.file-index.hash-bucket'' = ''2'')"
         , database, sinkTable);
     sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
-    // Assert.assertEquals(
-    //     4,
-    //     Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
     Assert.assertEquals(4,
         baseTableSize(identifier));
   }
@@ -213,5 +138,24 @@ public class TestOptimizeWrite extends SparkTestBase {
     StructLikeMap<List<DataFile>> dfMap = partitionFiles(base);
     return dfMap.values().stream().map(List::size)
         .reduce(0, Integer::sum).longValue();
+  }
+
+
+  @Test
+  public void testUnkeyedTablePartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " column1 string , \n " +
+        " column2 string \n" +
+        ") using arctic \n" +
+        " partitioned by ( column1 ) \n" , database, sinkTable);
+    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+        database, sinkTable, sourceTable);
+
+    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(2,
+        baseTableSize(identifier));
+
   }
 }

@@ -20,11 +20,13 @@ package com.netease.arctic.flink.write.hidden;
 
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.table.data.RowData;
 import org.apache.kafka.common.utils.Utils;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -42,19 +44,22 @@ public class ArcticLogPartitioner<T> implements Serializable {
     this.helper = shuffleHelper;
   }
 
-  public int partition(LogData<T> logData, int[] partitions) {
+  /**
+   * @param <P> Partition type, which is int for Kafka, but String for Pulsar
+   */
+  public <P> P partition(LogData<T> logData, List<P> partitions) {
     checkNotNull(logData, "record is null");
-    checkArgument(ArrayUtils.isNotEmpty(partitions), "Partitions of the target topic is empty.");
+    checkArgument(CollectionUtils.isNotEmpty(partitions), "Partitions of the target topic is empty.");
 
-    int partition;
+    P partition;
     if (helper == null || !helper.isPrimaryKeyExist()) {
       int nextValue = nextValue();
-      int part = Utils.toPositive(nextValue) % partitions.length;
-      partition = partitions[part];
+      int part = Utils.toPositive(nextValue) % partitions.size();
+      partition = partitions.get(part);
     } else {
       helper.open();
       long hash = helper.hashKeyValue((RowData) logData.getActualValue());
-      partition = partitions[(int) (hash % partitions.length)];
+      partition = partitions.get((int) (hash % partitions.size()));
     }
     return partition;
   }
