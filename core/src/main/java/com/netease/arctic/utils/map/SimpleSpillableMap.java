@@ -41,9 +41,9 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
-  private SerializationUtils.SimpleSerializer<K> keySerializer;
+  private final SerializationUtils.SimpleSerializer<K> keySerializer;
 
-  private SerializationUtils.SimpleSerializer<T> valueSerializer;
+  private final SerializationUtils.SimpleSerializer<T> valueSerializer;
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
                                @Nullable String backendBaseDir,
