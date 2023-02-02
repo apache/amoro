@@ -75,7 +75,6 @@ public class FileNameGenerator {
       int partitionId,
       Long taskId,
       Long transactionId) {
-    Preconditions.checkArgument(transactionId == null || transactionId > 0, "transactionId should > 0 or = null");
     this.fileFormat = fileFormat;
     this.partitionId = partitionId;
     this.taskId = taskId;
