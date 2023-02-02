@@ -76,9 +76,9 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
                            List<DataFileInfo> changeTableFileList,
                            List<DataFileInfo> posDeleteFileList,
                            Map<String, Boolean> partitionTaskRunning,
-                           int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
+                           int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, changeTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime, changeSnapshotId, baseSnapshotId);
   }
 
   @Override

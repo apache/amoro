@@ -19,6 +19,8 @@
 package com.netease.arctic;
 
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -27,6 +29,7 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@link AmsClient} implementation using client pool.
@@ -104,5 +107,27 @@ public class PooledAmsClient implements AmsClient {
   @Override
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
     return getIface().allocateTransactionId(tableIdentifier, transactionSignature);
+  }
+
+  @Override
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                       Map<String, String> properties)
+      throws TException {
+    return getIface().block(tableIdentifier, operations, properties);
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    getIface().releaseBlocker(tableIdentifier, blockerId);
+  }
+
+  @Override
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    return getIface().renewBlocker(tableIdentifier, blockerId);
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+    return getIface().getBlockers(tableIdentifier);
   }
 }

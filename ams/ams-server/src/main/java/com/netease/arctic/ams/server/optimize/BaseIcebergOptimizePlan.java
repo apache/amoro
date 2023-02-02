@@ -204,10 +204,6 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
     return currentSnapshotId;
   }
 
-  public long getCurrentChangeSnapshotId() {
-    throw new IllegalArgumentException("Native iceberg don't have change snapshot");
-  }
-
   private long getTargetSize() {
     return PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.SELF_OPTIMIZING_TARGET_SIZE,

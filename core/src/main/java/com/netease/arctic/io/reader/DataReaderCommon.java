@@ -24,7 +24,7 @@ import java.util.function.BiFunction;
 
 public class DataReaderCommon {
 
-  protected static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
+  public static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
       BiFunction<Type, Object, Object> convertConstant) {
     Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
     Map<Integer, Object> idToConstant = new HashMap<>();

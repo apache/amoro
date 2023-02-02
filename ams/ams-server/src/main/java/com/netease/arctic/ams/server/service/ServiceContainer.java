@@ -40,6 +40,7 @@ import com.netease.arctic.ams.server.service.impl.QuotaService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
+import com.netease.arctic.ams.server.service.impl.TableBlockerService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
 import com.netease.arctic.ams.server.terminal.TerminalManager;
@@ -87,6 +88,8 @@ public class ServiceContainer {
   private static volatile TerminalManager terminalManager;
 
   public static volatile  PlatformFileInfoService platformFileInfoService;
+  
+  public static volatile TableBlockerService tableBlockerService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -360,5 +363,16 @@ public class ServiceContainer {
       }
     }
     return platformFileInfoService;
+  }
+
+  public static TableBlockerService getTableBlockerService() {
+    if (tableBlockerService == null) {
+      synchronized (ServiceContainer.class) {
+        if (tableBlockerService == null) {
+          tableBlockerService = new TableBlockerService(ArcticMetaStore.conf);
+        }
+      }
+    }
+    return tableBlockerService;
   }
 }

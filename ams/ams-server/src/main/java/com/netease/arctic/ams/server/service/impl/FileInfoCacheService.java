@@ -37,6 +37,7 @@ import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
+import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
@@ -59,6 +60,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.util.PropertyUtil;
@@ -119,6 +121,20 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getOptimizeDatafiles(tableIdentifier, tableType);
+    }
+  }
+
+  public List<DataFileInfo> getOptimizeDatafilesWithSnapshot(TableIdentifier tableIdentifier, String tableType,
+                                                             Snapshot snapshot) {
+    Preconditions.checkNotNull(snapshot, "snapshot should not be null");
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      if (!snapInfoCacheMapper.snapshotIsCached(tableIdentifier, tableType, snapshot.snapshotId())) {
+        throw new IllegalArgumentException("snapshot is not cached " + snapshot.snapshotId());
+      }
+      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+      return fileInfoCacheMapper.getOptimizeDatafilesWithSnapshot(tableIdentifier, tableType,
+          snapshot.sequenceNumber());
     }
   }
 

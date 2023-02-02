@@ -617,8 +617,8 @@ public class ArcticMetaStore {
     for (int i = 0; i < optimizeGroups.size(); i++) {
       JSONObject optimizeGroup = optimizeGroups.getJSONObject(i);
       OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
-      optimizeQueueMeta.name = optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_NAME);
-      optimizeQueueMeta.container = optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER);
+      optimizeQueueMeta.setName(optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_NAME));
+      optimizeQueueMeta.setContainer(optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
 
       //init schedule policy
       String schedulePolicy =
@@ -646,20 +646,20 @@ public class ArcticMetaStore {
                 optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
       }
       if (optimizeGroup.containsKey(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES)) {
-        optimizeQueueMeta.properties =
-            optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+        optimizeQueueMeta.setProperties(
+            optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class));
       }
       boolean updated = false;
       for (OptimizeQueueMeta meta : optimizeQueueMetas) {
-        if (meta.name.equals(optimizeQueueMeta.name)) {
-          optimizeQueueMeta.queueId = meta.queueId;
+        if (meta.getName().equals(optimizeQueueMeta.getName())) {
+          optimizeQueueMeta.setQueueId(meta.getQueueId());
           ServiceContainer.getOptimizeQueueService().updateQueue(optimizeQueueMeta);
           updated = true;
           break;
         }
       }
       if (!updated) {
-        if (optimizeQueueMeta.queueId == 0) {
+        if (optimizeQueueMeta.getQueueId() == 0) {
           optimizeQueueMeta.setQueueId(1);
         }
         ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);

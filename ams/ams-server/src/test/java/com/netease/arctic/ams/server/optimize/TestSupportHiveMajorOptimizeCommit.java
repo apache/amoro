@@ -80,7 +80,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -151,7 +151,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -233,7 +233,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
@@ -301,7 +301,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -373,7 +373,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
@@ -444,7 +444,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -527,7 +527,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
