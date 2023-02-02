@@ -20,6 +20,7 @@ package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
@@ -65,16 +66,16 @@ public class MinorExecutor extends BaseExecutor {
     List<DeleteFile> targetFiles = new ArrayList<>();
     LOG.info("Start processing arctic table minor optimize task: {}", task);
 
-    Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
+    Map<DataTreeNode, List<PrimaryKeyedFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     KeyedTable keyedTable = table.asKeyedTable();
 
     AtomicLong insertCount = new AtomicLong();
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
     Types.StructType recordStruct = requiredSchema.asStruct();
-    for (Map.Entry<DataTreeNode, List<DataFile>> nodeFileEntry : dataFileMap.entrySet()) {
+    for (Map.Entry<DataTreeNode, List<PrimaryKeyedFile>> nodeFileEntry : dataFileMap.entrySet()) {
       DataTreeNode treeNode = nodeFileEntry.getKey();
-      List<DataFile> dataFiles = nodeFileEntry.getValue();
+      List<PrimaryKeyedFile> dataFiles = nodeFileEntry.getValue();
       dataFiles.addAll(task.deleteFiles());
       List<DeleteFile> posDeleteList = deleteFileMap.get(treeNode);
 
@@ -139,14 +140,14 @@ public class MinorExecutor extends BaseExecutor {
 
   }
 
-  private CloseableIterator<Record> openTask(List<DataFile> dataFiles, List<DeleteFile> posDeleteList,
+  private CloseableIterator<Record> openTask(List<PrimaryKeyedFile> dataFiles, List<DeleteFile> posDeleteList,
                                              Schema requiredSchema, Set<DataTreeNode> sourceNodes) {
     if (CollectionUtils.isEmpty(dataFiles)) {
       return CloseableIterator.empty();
     }
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
-        .map(file -> new BaseArcticFileScanTask(new DefaultKeyedFile(file), posDeleteList, table.spec()))
+        .map(file -> new BaseArcticFileScanTask(file, posDeleteList, table.spec()))
         .collect(Collectors.toList());
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();

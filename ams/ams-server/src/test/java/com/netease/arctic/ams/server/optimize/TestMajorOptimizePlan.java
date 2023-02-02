@@ -66,7 +66,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -98,7 +98,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -208,7 +208,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -240,7 +240,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -281,7 +281,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asUnkeyedTable().currentSnapshot();
 
     baseDataFilesInfo = dataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable, false))
         .collect(Collectors.toList());
 
     return dataFiles;

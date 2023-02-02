@@ -77,14 +77,14 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
           // tasks in partition
           if (task.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtils::toInternalTableFile)
+                .map(SerializationUtils::toContentFile)
                 .forEach(minorAddFiles::add);
 
             minorDeleteFiles.addAll(selectDeletedFiles(task));
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
           } else {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtils::toInternalTableFile)
+                .map(SerializationUtils::toContentFile)
                 .forEach(majorAddFiles::add);
             majorDeleteFiles.addAll(selectDeletedFiles(task));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
@@ -248,15 +248,15 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     if (CollectionUtils.isNotEmpty(optimizeTask.getInsertFiles())) {
       // small data files
       for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
-        deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile).asDataFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile));
       }
     } else {
       // delete files
       for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
-        deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile));
       }
       for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
-        deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile).asDeleteFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile));
       }
     }
 
@@ -267,18 +267,18 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
     // data files
     for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
-      deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile).asDataFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile));
     }
     for (ByteBuffer baseFile : optimizeTask.getBaseFiles()) {
-      deletedFiles.add(SerializationUtils.toIcebergContentFile(baseFile).asDataFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(baseFile));
     }
 
     // delete files
     for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
-      deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile));
     }
     for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
-      deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile).asDeleteFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile));
     }
 
     return deletedFiles;

@@ -120,7 +120,6 @@ public class TableDataTestBase extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = getArcticTable().asKeyedTable().changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
@@ -135,7 +134,6 @@ public class TableDataTestBase extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = getArcticTable().asKeyedTable().changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }

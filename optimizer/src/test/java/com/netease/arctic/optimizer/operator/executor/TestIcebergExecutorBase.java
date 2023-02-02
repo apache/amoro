@@ -27,9 +27,15 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.DataFile;
@@ -58,14 +64,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
@@ -209,18 +207,13 @@ public class TestIcebergExecutorBase {
     return builder.build();
   }
 
-  protected NodeTask constructNodeTask(List<IcebergContentFile> dataFiles, List<IcebergContentFile> smallDataFiles,
-      List<IcebergContentFile> posDeleteFiles, List<IcebergContentFile> equDeleteFiles, OptimizeType optimizeType) {
-    NodeTask nodeTask = new NodeTask();
+  protected NodeTask constructNodeTask(List<ContentFileWithSequence<?>> dataFiles,
+      List<ContentFileWithSequence<?>> smallDataFiles,
+      List<ContentFileWithSequence<?>> posDeleteFiles, List<ContentFileWithSequence<?>> equDeleteFiles, OptimizeType optimizeType) {
+    NodeTask nodeTask = new NodeTask(dataFiles, smallDataFiles, equDeleteFiles, posDeleteFiles, false);
     nodeTask.setTableIdentifier(icebergTable.id());
     nodeTask.setTaskId(new OptimizeTaskId(optimizeType, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
-
-    dataFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.BASE_FILE));
-    smallDataFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.INSERT_FILE));
-    posDeleteFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.POS_DELETE_FILE));
-    equDeleteFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.ICEBERG_EQ_DELETE_FILE));
-
     return nodeTask;
   }
 

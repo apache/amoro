@@ -20,17 +20,25 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TableFileUtils;
+import org.apache.iceberg.BaseCombinedScanTask;
+import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
+
+import java.util.Collection;
 
 public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalScan {
 
@@ -38,9 +46,53 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private StructLikeMap<Long> fromPartitionTransactionId;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Expression dataFilter;
+  private Long snapshotId;
+  private boolean includeColumnStats;
 
   public BaseChangeTableIncrementalScan(ChangeTable table) {
     this.table = table;
+  }
+
+  @Override
+  public Table table() {
+    return table;
+  }
+
+  @Override
+  public TableScan useSnapshot(long snapshotId) {
+    this.snapshotId = snapshotId;
+    return this;
+  }
+
+  @Override
+  public TableScan asOfTime(long timestampMillis) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan option(String property, String value) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan project(Schema schema) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan caseSensitive(boolean caseSensitive) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan includeColumnStats() {
+    this.includeColumnStats = true;
+    return this;
+  }
+
+  @Override
+  public TableScan select(Collection<String> columns) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -51,6 +103,26 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       dataFilter = Expressions.and(expr, dataFilter);
     }
     return this;
+  }
+
+  @Override
+  public Expression filter() {
+    return dataFilter;
+  }
+
+  @Override
+  public TableScan ignoreResiduals() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan appendsBetween(long fromSnapshotId, long toSnapshotId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableScan appendsAfter(long fromSnapshotId) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -66,35 +138,80 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   }
 
   @Override
-  public CloseableIterable<ArcticFileScanTask> planTasks() {
-    return planTasks(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+  public CloseableIterable<FileScanTask> planFiles() {
+    return planFiles(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
   }
 
-  public CloseableIterable<ArcticFileScanTask> planTasks(PartitionDataFilter shouldKeepFile,
-                                                         PartitionDataFilter shouldKeepFileWithLegacyTxId) {
+  private CloseableIterable<FileScanTask> planFiles(PartitionDataFilter shouldKeepFile,
+      PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
       return CloseableIterable.empty();
     }
-    TableEntriesScan manifestReader = TableEntriesScan.builder(table)
+    TableEntriesScan.Builder builder = TableEntriesScan.builder(table)
         .withAliveEntry(true)
         .withDataFilter(dataFilter)
-        .includeFileContent(FileContent.DATA)
-        .build();
+        .includeFileContent(FileContent.DATA);
+    if (snapshotId != null) {
+      builder.useSnapshot(snapshotId);
+    }
+    if (includeColumnStats) {
+      builder.includeColumnStats();
+    }
+    TableEntriesScan manifestReader = builder.build();
+
     CloseableIterable<IcebergFileEntry> filteredEntry = CloseableIterable.filter(manifestReader.entries(), entry -> {
       StructLike partition = entry.getFile().partition();
       long sequenceNumber = entry.getSequenceNumber();
       Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);
       if (shouldKeep == null) {
         String filePath = entry.getFile().path().toString();
-        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, TableFileUtils.parseFileTidFromFileName(filePath));
+        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameGenerator.parseChange(filePath,
+            sequenceNumber).transactionId());
       } else {
         return shouldKeep;
       }
     });
     return CloseableIterable.transform(filteredEntry, e ->
-        new BaseArcticFileScanTask(new DefaultKeyedFile((DataFile) e.getFile()), null, table.spec(), null));
+        new BaseArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
+            null, table.spec(), null));
+  }
+
+  @Override
+  public CloseableIterable<CombinedScanTask> planTasks() {
+    CloseableIterable<FileScanTask> fileScanTasks = planFiles();
+    return CloseableIterable.transform(fileScanTasks, s -> new BaseCombinedScanTask(s));
+  }
+
+  @Override
+  public Schema schema() {
+    return table.schema();
+  }
+
+  @Override
+  public Snapshot snapshot() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean isCaseSensitive() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public long targetSplitSize() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int splitLookback() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public long splitOpenFileCost() {
+    throw new UnsupportedOperationException();
   }
 
   private Boolean shouldKeepFile(StructLike partition, long txId) {

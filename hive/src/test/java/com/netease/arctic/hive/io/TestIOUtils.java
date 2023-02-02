@@ -157,7 +157,7 @@ public class TestIOUtils {
   private static CloseableIterator<Record> readParquet(Schema schema, DataFile[] dataFiles, Expression expression,
       ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec){
     List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BaseArcticFileScanTask(
-        new DefaultKeyedFile(s),
+        DefaultKeyedFile.parseBase(s),
         null,
         partitionSpec,
         expression

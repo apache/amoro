@@ -22,13 +22,14 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -57,22 +58,37 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
+  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(UnkeyedTable unkeyedTable) throws IOException {
     AtomicInteger taskId = new AtomicInteger();
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
-    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> arcticTable.isKeyedTable() ?
-        AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-            .withTransactionId(transactionId)
-            .withTaskId(taskId.incrementAndGet())
-            .withCustomHiveSubdirectory(hiveSubDir)
-            .buildWriter(BaseLocationKind.INSTANT) :
-        AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () ->
+        AdaptHiveGenericTaskWriterBuilder.builderFor(unkeyedTable)
             .withTaskId(taskId.incrementAndGet())
             .withCustomHiveSubdirectory(hiveSubDir)
             .buildWriter(BaseLocationKind.INSTANT);
-    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
-    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
-        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, unkeyedTable.schema());
+    AppendFiles baseAppend = unkeyedTable.newAppend();
+    baseDataFiles.forEach(baseAppend::appendFile);
+    baseAppend.commit();
+
+    unkeyedTable.refresh();
+    Snapshot snapshot = unkeyedTable.currentSnapshot();
+
+    return Pair.of(snapshot, baseDataFiles);
+  }
+
+  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(KeyedTable keyedTable, long transactionId)
+      throws IOException {
+    AtomicInteger taskId = new AtomicInteger();
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(transactionId);
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () ->
+        AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
+            .withTransactionId(transactionId)
+            .withTaskId(taskId.incrementAndGet())
+            .withCustomHiveSubdirectory(hiveSubDir)
+            .buildWriter(BaseLocationKind.INSTANT);
+    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, keyedTable.schema());
+    UnkeyedTable baseTable = keyedTable.asKeyedTable().baseTable();
     AppendFiles baseAppend = baseTable.newAppend();
     baseDataFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
@@ -134,7 +150,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))));
+              FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
@@ -176,7 +192,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))));
+              FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

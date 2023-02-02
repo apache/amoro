@@ -22,6 +22,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -79,10 +80,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
         for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
           BaseOptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
-              .map(fileByte -> (DataFile) SerializationUtils.toInternalTableFile(fileByte))
+              .map(fileByte -> (DataFile) SerializationUtils.toContentFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> TableFileUtils.parseFileTidFromFileName(dataFile.path().toString()))
+              .mapToLong(dataFile -> FileNameGenerator.parseTransactionId(dataFile.path().toString()))
               .max()
               .orElse(0L);
 
@@ -102,8 +103,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
-                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                String hiveSubdirectory = arcticTable.isKeyedTable() ?
+                    HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
 
                 Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
                 if (p == null) {

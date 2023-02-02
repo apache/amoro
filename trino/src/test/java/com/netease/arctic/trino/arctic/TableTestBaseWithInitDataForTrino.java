@@ -61,6 +61,13 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", 5, "name$name", "mary", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
+    return builder.build();
+  }
+
+  protected List<Record> changeSparkInsertRecords() {
+    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
+
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", 6, "name$name", "mack", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     return builder.build();
@@ -79,11 +86,11 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
   protected DeleteFile deleteFileOfPositionDelete;
 
   protected void initData() throws IOException {
-
+    long currentSequenceNumber  = testKeyedTable.beginTransaction(null);
     //write base
     {
       GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(1L).buildBaseWriter();
+          .withTransactionId(currentSequenceNumber).buildBaseWriter();
 
       for (Record record : baseRecords()) {
         writer.write(record);
@@ -99,7 +106,7 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
     // write position delete
     {
       SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(4L).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
+          .withTransactionId(currentSequenceNumber).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
       writer.delete(dataFileForPositionDelete.path().toString(), 0);
       DeleteFile posDeleteFiles = writer.complete().stream().findAny().get();
       this.deleteFileOfPositionDelete = posDeleteFiles;
@@ -109,29 +116,45 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
     //write change insert
     {
       GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(2L).buildChangeWriter();
+          .buildChangeWriter();
       for (Record record : changeInsertRecords()) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
       AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
               .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
 
+    //begin spark insert
+    currentSequenceNumber = testKeyedTable.beginTransaction(null);
+
     //write change delete
     {
       GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(3L).withChangeAction(ChangeAction.DELETE).buildChangeWriter();
+          .withChangeAction(ChangeAction.DELETE).buildChangeWriter();
       for (Record record : changeDeleteRecords()) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
       AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
+          .forEach(changeAppend::appendFile);
+      changeAppend.commit();
+    }
+
+    //spark insert
+    {
+      GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+          .withTransactionId(currentSequenceNumber)
+          .buildChangeWriter();
+      for (Record record : changeSparkInsertRecords()) {
+        writer.write(record);
+      }
+      WriteResult result = writer.complete();
+      AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
+      Arrays.stream(result.dataFiles())
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }

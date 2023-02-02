@@ -77,7 +77,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
   @Test
   public void testRewriteKeyedPartitionTable() throws TException {
     KeyedTable table = testKeyedHiveTable;
-    testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
+    long txId = testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
     Map<String, String> partitionAndLocations = Maps.newHashMap();
 
     // ================== init partitions files
@@ -91,7 +91,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
 
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     initDataFiles.forEach(overwriteBaseFiles::addFile);
-    overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(table));
+    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
     overwriteBaseFiles.commit();
 
     applyUpdateHiveFiles(partitionAndLocations, s -> false, initFiles);

@@ -43,7 +43,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(),
+            testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
@@ -67,7 +68,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -101,7 +102,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -129,10 +130,10 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHive() throws IOException {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))
         .collect(Collectors.toList()));
 
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
@@ -152,10 +153,10 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testHiveTable.updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))
         .collect(Collectors.toList()));
 
     SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
@@ -176,7 +177,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable
+                , false))
         .collect(Collectors.toList()));
 
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
@@ -200,7 +202,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable
+                , false))
         .collect(Collectors.toList()));
 
     SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,

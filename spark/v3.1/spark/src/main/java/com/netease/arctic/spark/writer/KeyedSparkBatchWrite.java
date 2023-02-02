@@ -69,7 +69,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final KeyedTable table;
   private final StructType dsSchema;
 
-  private final long legacyTxId;
   private final long txId;
   private final String hiveSubdirectory;
 
@@ -79,9 +78,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   KeyedSparkBatchWrite(KeyedTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
     this.table = table;
     this.dsSchema = info.schema();
-    this.legacyTxId = table.beginTransaction(null);
-    this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
-    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.legacyTxId);
+    this.txId = table.beginTransaction(null);
+    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.txId);
     this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
         "writer.distributed-and-ordered", "false"
     ));
@@ -165,7 +163,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new ChangeWriteFactory(table, dsSchema, legacyTxId, orderedWriter);
+      return new ChangeWriteFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
@@ -186,7 +184,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new BaseWriterFactory(table, dsSchema, legacyTxId, hiveSubdirectory, orderedWriter);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -213,7 +211,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new BaseWriterFactory(table, dsSchema, legacyTxId, hiveSubdirectory, orderedWriter);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -237,7 +235,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new UpsertChangeFactory(table, dsSchema, legacyTxId, orderedWriter);
+      return new UpsertChangeFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
@@ -340,7 +338,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new MergeWriteFactory(table, dsSchema, legacyTxId, orderedWriter);
+      return new MergeWriteFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override

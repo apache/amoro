@@ -111,11 +111,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
   }
 
   private FlinkBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    if (table.isKeyedTable()) {
-      Preconditions.checkNotNull(transactionId);
-    } else {
-      Preconditions.checkArgument(transactionId == null);
-    }
+    Preconditions.checkArgument(transactionId == null);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -163,7 +159,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
-    Preconditions.checkNotNull(transactionId);
+    Preconditions.checkArgument(transactionId == null);
 
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
