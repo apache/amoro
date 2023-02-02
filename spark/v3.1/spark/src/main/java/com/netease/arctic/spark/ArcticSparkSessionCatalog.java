@@ -50,7 +50,7 @@ import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATAL
  * @param <T> CatalogPlugin class to avoid casting to TableCatalog and SupportsNamespaces.
  */
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    implements StagingTableCatalog, SupportsNamespaces, CatalogExtension {
+    implements SupportsNamespaces, CatalogExtension {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkSessionCatalog.class);
   private static final String[] DEFAULT_NAMESPACE = new String[]{"default"};
 
@@ -143,29 +143,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
       // delegate to the session catalog
       return getSessionCatalog().createTable(ident, schema, partitions, properties);
     }
-  }
-
-  @Override
-  public StagedTable stageCreate(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties)
-      throws TableAlreadyExistsException, NoSuchNamespaceException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
-  }
-
-  @Override
-  public StagedTable stageReplace(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties)
-      throws NoSuchNamespaceException, NoSuchTableException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
-  }
-
-  @Override
-  public StagedTable stageCreateOrReplace(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties) throws NoSuchNamespaceException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
   }
 
   @Override

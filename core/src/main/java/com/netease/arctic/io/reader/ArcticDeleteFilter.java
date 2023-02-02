@@ -304,13 +304,7 @@ public abstract class ArcticDeleteFilter<T> {
                 .build();
 
       case PARQUET:
-        Parquet.ReadBuilder builder = Parquet.read(input)
-                .project(deleteSchema)
-                .reuseContainers()
-                .createReaderFunc(fileSchema ->
-                        GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
-
-        return builder.build();
+        return openParquet(input, deleteSchema, idToConstant);
 
       case ORC:
       default:
@@ -318,6 +312,17 @@ public abstract class ArcticDeleteFilter<T> {
                 "Cannot read deletes, %s is not a supported format: %s",
                 deleteFile.format().name(), deleteFile.path()));
     }
+  }
+
+  protected CloseableIterable<Record> openParquet(
+      InputFile input, Schema deleteSchema, Map<Integer, Object> idToConstant) {
+    Parquet.ReadBuilder builder = Parquet.read(input)
+        .project(deleteSchema)
+        .reuseContainers()
+        .createReaderFunc(fileSchema ->
+            GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
+
+    return builder.build();
   }
 
   private CloseableIterable<T> applyPosDeletes(CloseableIterable<T> records) {

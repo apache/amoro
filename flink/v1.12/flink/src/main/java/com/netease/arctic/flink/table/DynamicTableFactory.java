@@ -63,6 +63,7 @@ import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidato
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_BOOTSTRAP_SERVERS;
@@ -228,7 +229,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     validateSourceTopic(tableOptions);
 
-    final Properties properties = getKafkaProperties(arcticTable.properties());
+    final Properties properties = getLogStoreProperties(arcticTable.properties());
 
     // add topic-partition discovery
     final Optional<Long> partitionDiscoveryInterval =

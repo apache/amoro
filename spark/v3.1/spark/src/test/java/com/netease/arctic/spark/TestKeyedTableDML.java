@@ -70,6 +70,7 @@ public class TestKeyedTableDML extends SparkTestBase {
         " options ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table);
+    sql("refresh table {0}.{1}", database, table);
     keyedTable = loadTable(TableIdentifier.of(catalogNameArctic, database, table)).asKeyedTable();
   }
 
