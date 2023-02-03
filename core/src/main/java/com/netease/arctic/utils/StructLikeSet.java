@@ -41,7 +41,7 @@ public class StructLikeSet implements Closeable {
   }
 
   private static final Integer _V = 0;
-  private StructLikeBaseMap<Integer> structLikeMap;
+  private final StructLikeBaseMap<Integer> structLikeMap;
 
   private StructLikeSet(Types.StructType type) {
     this.structLikeMap =  StructLikeMemoryMap.create(type);

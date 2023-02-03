@@ -15,7 +15,7 @@ public class TestSimpleSpilledMap {
   @Before
   public void createMap() {
     SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
-        null, new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator());
+        null, new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
     map = spillableMap.new SimpleSpilledMap(
         SerializationUtils.createJavaSimpleSerializer(),
         SerializationUtils.createJavaSimpleSerializer(), null);
