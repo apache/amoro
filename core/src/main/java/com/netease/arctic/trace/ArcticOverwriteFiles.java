@@ -160,7 +160,7 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
     public ArcticUpdate.Builder<ArcticOverwriteFiles> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
         traceTable(tracer);
       }
       return this;

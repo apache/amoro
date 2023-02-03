@@ -69,16 +69,10 @@ ArcticTable table = ArcticUtils.load(tableLoader);
 // }});
 Schema schema = table.schema();
 
-RowType flinkUserSchema = FlinkSchemaUtil.convert(schema);
-
-JsonRowDataDeserializationSchema deserializationSchema =
-    new JsonRowDataDeserializationSchema(
-        flinkUserSchema,
-        InternalTypeInfo.of(flinkUserSchema), false, false, TimestampFormat.ISO_8601);
-
 List<String> topics = new ArrayList<>();
 topics.add("topic_name");
 
+// -----------Hidden Kafka--------------
 // 配置 kafka consumer 参数。详见 https://kafka.apache.org/documentation/#consumerconfigs
 Properties properties = new Properties();
 properties.put("group.id", groupId);
@@ -88,17 +82,31 @@ Configuration configuration = new Configuration();
 // 开启保证数据一致性的低延迟读
 configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
 
-LogKafkaConsumer kafkaConsumer = new LogKafkaConsumer(
-            topics,
-            new KafkaDeserializationSchemaWrapper<>(deserializationSchema),
-            properties,
-            schema,
-            configuration
-        );
-// 配置读的起始位置
-kafkaConsumer.setStartFromEarliest();
+LogKafkaSource source = LogKafkaSource.builder(schema, configuration)
+    .setTopics(topics)
+    .setStartingOffsets(OffsetsInitializer.earliest())
+    .setProperties(properties)
+    .build();
+// -----------Hidden Kafka--------------
 
-DataStream<RowData> stream = env.addSource(kafkaConsumer);
+// -----------Hidden Pulsar--------------
+Map<String, String> tableProperties = new HashMap<>();
+tableProperties.put(TableProperties.LOG_STORE_ADDRESS, logPulsarHelper.op().serviceUrl());
+tableProperties.put(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), 
+    String.valueOf(logRetractionEnabled));
+
+Properties properties = new Properties();
+properties.put(PULSAR_ADMIN_URL.key(), logPulsarHelper.op().adminUrl());
+properties.put(PULSAR_SUBSCRIPTION_NAME.key(), "log-source");
+    
+LogPulsarSource source = LogPulsarSource.builder(schema, tableProperties)
+    .setProperties(properties)
+    .setTopics(topic)
+    .setStartCursor(StartCursor.earliest())
+    .build();
+// -----------Hidden Pulsar--------------
+
+DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Log Source");
 // 打印读出的所有数据
 stream.print();
 

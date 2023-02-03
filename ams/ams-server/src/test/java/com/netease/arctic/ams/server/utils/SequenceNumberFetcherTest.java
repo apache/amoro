@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.utils;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestBase;
+import com.netease.arctic.utils.SequenceNumberFetcher;
 import jline.internal.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;

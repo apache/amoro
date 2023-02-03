@@ -51,6 +51,7 @@ public class GenericTaskWriters {
     private int partitionId = 0;
     private int taskId = 0;
     private ChangeAction changeAction = ChangeAction.INSERT;
+    private boolean orderedWriter = false;
 
     Builder(KeyedTable table) {
       this.table = table;
@@ -76,22 +77,30 @@ public class GenericTaskWriters {
       return this;
     }
 
+    public Builder withOrdered() {
+      this.orderedWriter = true;
+      return this;
+    }
+
     public GenericBaseTaskWriter buildBaseWriter() {
-      preconditions();
+      writeBasePreconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
           TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
-      return new GenericBaseTaskWriter(fileFormat, new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
+      return new GenericBaseTaskWriter(
+          fileFormat,
+          new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
           new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
-          table.io(), fileSizeBytes, mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
+          table.io(), fileSizeBytes, mask, table.baseTable().schema(),
+          table.spec(), table.primaryKeySpec(), orderedWriter);
     }
 
     public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-      preconditions();
+      writeBasePreconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
@@ -109,7 +118,6 @@ public class GenericTaskWriters {
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
-      preconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.CHANGE_FILE_FORMAT,
           TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
@@ -117,15 +125,16 @@ public class GenericTaskWriters {
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
-      return new GenericChangeTaskWriter(fileFormat,
+      return new GenericChangeTaskWriter(
+          fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
           new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
               table.changeTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-          changeAction);
+          changeAction, orderedWriter);
     }
 
-    private void preconditions() {
+    private void writeBasePreconditions() {
       if (table.isKeyedTable()) {
         Preconditions.checkNotNull(transactionId);
       } else {

@@ -18,14 +18,15 @@
 
 package com.netease.arctic.io;
 
-import java.util.List;
-import java.util.concurrent.Callable;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 
-public class ArcticFileIoDummy implements ArcticFileIO{
+import java.util.List;
+import java.util.concurrent.Callable;
+
+public class ArcticFileIoDummy implements ArcticFileIO {
 
   private FileIO fileIO;
 

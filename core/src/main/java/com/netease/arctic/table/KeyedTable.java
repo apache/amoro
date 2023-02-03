@@ -66,8 +66,7 @@ public interface KeyedTable extends ArcticTable {
   /**
    * Allocate a new transaction id from this table
    *
-   * @param signature signature for this request. Requests with the same signature will get the same transaction id.
-   *                  Requests with signature NULL will always get different transaction id.
+   * @param signature signature for this request, signature can be null.
    * @return a new transaction id
    */
   long beginTransaction(String signature);

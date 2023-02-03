@@ -41,16 +41,6 @@ public interface PrimaryKeyedFile extends DataFile {
   Long transactionId();
 
   /**
-   * Returns the minimum {@link ChangedLsn} within file
-   */
-  ChangedLsn minLsn();
-
-  /**
-   * Return the maximum {@link ChangedLsn} within file
-   */
-  ChangedLsn maxLsn();
-
-  /**
    * File information summary for logging
    */
   default String fileInfo() {

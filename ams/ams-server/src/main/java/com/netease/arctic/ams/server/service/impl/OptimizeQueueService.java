@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -27,6 +28,7 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeQueueMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
@@ -44,6 +46,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -57,6 +60,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -71,6 +75,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -92,8 +97,6 @@ public class OptimizeQueueService extends IJDBCService {
   private final Map<Integer, OptimizeQueueWrapper> optimizeQueues = new HashMap<>();
 
   private final ReentrantLock queueOperateLock = new ReentrantLock();
-
-  private static final int MAX_POOL_TASK_CNT = 50;
 
   public OptimizeQueueService() {
     init();
@@ -362,9 +365,12 @@ public class OptimizeQueueService extends IJDBCService {
     // plan retry interval unit ms
     private final long retryInterval = 1000;
 
+    private SchedulePolicy schedulePolicy;
+
     private OptimizeQueueWrapper(OptimizeQueueMeta optimizeQueue) {
       this.optimizeQueue = new OptimizeQueueItem(optimizeQueue);
       this.tasks = new LinkedTransferQueue<>();
+      this.schedulePolicy = SchedulePolicy.getSchedulePolicy(optimizeQueue.getSchedulingPolicy());
     }
 
     public static OptimizeQueueWrapper build(OptimizeQueueMeta optimizeQueue) {
@@ -509,7 +515,7 @@ public class OptimizeQueueService extends IJDBCService {
                   // no task have planned
                   if (!isHaveTask) {
                     LOG.debug("The queue {} has retry {} times, no task have planned",
-                        optimizeQueue.getOptimizeQueueMeta().queueId,
+                        optimizeQueue.getOptimizeQueueMeta().getQueueId(),
                         retryTime);
                   }
                 } catch (Throwable t) {
@@ -617,14 +623,12 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private List<OptimizeTaskItem> plan(long currentTime) {
-      List<TableQuotaInfo> tableSort = sortTableByQuota(new ArrayList<>(tables));
+      List<TableIdentifier> tableSort = schedulePolicy.schedule(new ArrayList<>(tables));
 
       if (LOG.isDebugEnabled()) {
         LOG.debug("get sort table {}", tableSort);
       }
-      for (TableQuotaInfo tableQuotaInfo : tableSort) {
-        TableIdentifier tableIdentifier = tableQuotaInfo.getTableIdentifier();
-        LOG.debug("{} try plan, quota {}", tableIdentifier, tableQuotaInfo.getQuota());
+      for (TableIdentifier tableIdentifier : tableSort) {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
 
@@ -647,7 +651,7 @@ public class OptimizeQueueService extends IJDBCService {
             continue;
           }
 
-          if (tableItem.getTableOptimizeRuntime().isRunning()) {
+          if (tableItem.optimizeRunning()) {
             LOG.debug("{} is running continue", tableIdentifier);
 
             // add failed tasks and retry
@@ -664,12 +668,12 @@ public class OptimizeQueueService extends IJDBCService {
           BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
 
+          Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
             if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
                 tableItem.getTableOptimizeRuntime())) {
               tableItem.persistTableOptimizeRuntime();
-              LOG.debug("table {} not changed, no need plan",
-                  tableIdentifier);
+              LOG.debug("table {} not changed, no need plan", tableIdentifier);
               continue;
             }
             List<FileScanTask> fileScanTasks;
@@ -680,28 +684,46 @@ public class OptimizeQueueService extends IJDBCService {
               throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
             }
 
-            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime);
+            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime);
+              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
               optimizeTasks = optimizePlan.plan();
             }
           } else {
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime);
-            optimizeTasks = optimizePlan.plan();
+            Snapshot baseCurrentSnapshot;
+            Snapshot changeCurrentSnapshot = null;
+            ArcticTable arcticTable = tableItem.getArcticTable();
+            if (arcticTable.isKeyedTable()) {
+              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+            } else {
+              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+            }
+            if (isOptimizeBlocked(tableIdentifier)) {
+              LOG.debug("{} optimize is blocked, continue", tableIdentifier);
+              continue;
+            }
+            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+            optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
 
-            // if no full tasks, then plan minor tasks
+            // if no full tasks, then plan major tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
-              optimizeTasks = optimizePlan.plan();
+              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
 
             // if no major tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
-              optimizeTasks = optimizePlan.plan();
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot,
+                  changeCurrentSnapshot);
+              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
+          }
+          
+          if (optimizePlan == null) {
+            continue;
           }
 
           initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
@@ -722,69 +744,8 @@ public class OptimizeQueueService extends IJDBCService {
       return Collections.emptyList();
     }
 
-    private List<TableQuotaInfo> sortTableByQuota(List<TableIdentifier> tables) {
-      long currentTime = System.currentTimeMillis();
-      List<TableQuotaInfo> tableQuotaInfoList = tables.stream()
-          .map(tableIdentifier -> {
-            try {
-              return new TableQuotaInfo(tableIdentifier, evalQuotaRate(tableIdentifier, currentTime),
-                  ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier).getQuotaCache());
-            } catch (NoSuchObjectException e) {
-              LOG.error("can't find table", e);
-              return null;
-            } catch (Throwable t) {
-              LOG.error("unexpected error", t);
-              return null;
-            }
-          }).filter(Objects::nonNull).collect(Collectors.toList());
-
-      return tableQuotaInfoList.stream().sorted().collect(Collectors.toList());
-    }
-
-    private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
-      TableOptimizeItem tableItem;
-      tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableId);
-      String latestTaskPlanGroup = tableItem.getTableOptimizeRuntime().getLatestTaskPlanGroup();
-      if (StringUtils.isEmpty(latestTaskPlanGroup)) {
-        return BigDecimal.ZERO;
-      }
-
-      List<TableTaskHistory> latestTaskHistories =
-          ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestTaskPlanGroup);
-      if (CollectionUtils.isEmpty(latestTaskHistories)) {
-        return BigDecimal.ZERO;
-      }
-
-      long totalCostTime = 0;
-      long latestStartTime = 0;
-      for (TableTaskHistory latestTaskHistory : latestTaskHistories) {
-        if (latestStartTime == 0 || latestStartTime > latestTaskHistory.getStartTime()) {
-          latestStartTime = latestTaskHistory.getStartTime();
-        }
-
-        if (latestTaskHistory.getCostTime() != 0) {
-          totalCostTime = totalCostTime + latestTaskHistory.getCostTime();
-        } else {
-          totalCostTime = totalCostTime + currentTime - latestTaskHistory.getStartTime();
-        }
-      }
-
-      if (currentTime - latestStartTime == 0) {
-        return BigDecimal.valueOf(Long.MAX_VALUE);
-      }
-
-      BigDecimal currentQuota = new BigDecimal(totalCostTime)
-          .divide(new BigDecimal(currentTime - latestStartTime),
-              2,
-              RoundingMode.HALF_UP);
-
-      BigDecimal tableQuota = BigDecimal.valueOf(tableItem.getQuotaCache());
-
-      if (tableQuota.compareTo(BigDecimal.ZERO) <= 0) {
-        return BigDecimal.valueOf(Long.MAX_VALUE);
-      }
-
-      return currentQuota.divide(tableQuota, 2, RoundingMode.HALF_UP);
+    private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
+      return ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE);
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
@@ -814,11 +775,10 @@ public class OptimizeQueueService extends IJDBCService {
           // set current snapshot id
           tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentSnapshotId());
           if (tableItem.isKeyedTable()) {
-            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentSnapshotId());
+            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
           }
 
           tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-          tableItem.getTableOptimizeRuntime().setRunning(true);
           tableItem.persistTableOptimizeRuntime();
         } catch (Throwable e) {
           tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);
@@ -838,7 +798,7 @@ public class OptimizeQueueService extends IJDBCService {
 
       List<OptimizeTaskItem> toExecuteTasks = new ArrayList<>();
       try {
-        List<OptimizeTaskItem> optimizeTasksToExecute = tableItem.getOptimizeTasksToExecute(MAX_POOL_TASK_CNT);
+        List<OptimizeTaskItem> optimizeTasksToExecute = tableItem.getOptimizeTasksToExecute();
         for (OptimizeTaskItem optimizeTaskItem : optimizeTasksToExecute) {
           addIntoOptimizeQueue(optimizeTaskItem);
           toExecuteTasks.add(optimizeTaskItem);
@@ -850,6 +810,134 @@ public class OptimizeQueueService extends IJDBCService {
       }
 
       return toExecuteTasks;
+    }
+
+    /**
+     * A policy that determines how to schedule a table.
+     * Tables at the head of the list have higher optimizing priority
+     */
+    interface SchedulePolicy {
+
+      List<TableIdentifier> schedule(List<TableIdentifier> list);
+
+      static SchedulePolicy getSchedulePolicy(String schedulePolicy) {
+
+        // schedulePolicy default value is quota
+        schedulePolicy = StringUtils.isBlank(schedulePolicy) ?
+            ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA : schedulePolicy;
+        switch (schedulePolicy) {
+          case ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA: {
+            return new QuotaSchedulePolicy();
+          }
+          case ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED: {
+            return new BalancedSchedulePolicy();
+          }
+          default: throw new IllegalArgumentException(String.format("Scheduling policy only can be %s and %s",
+              ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA,
+              ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED));
+        }
+      }
+    }
+
+    /**
+     * This policy uses quota to schedule tables,
+     * so that the quota used by each table conforms to the configuration of each table as much as possible
+     */
+    static class QuotaSchedulePolicy implements SchedulePolicy {
+
+      @Override
+      public List<TableIdentifier> schedule(List<TableIdentifier> tables) {
+        long currentTime = System.currentTimeMillis();
+        List<TableQuotaInfo> tableQuotaInfoList = tables.stream()
+            .map(tableIdentifier -> {
+              try {
+                return new TableQuotaInfo(tableIdentifier, evalQuotaRate(tableIdentifier, currentTime),
+                    ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier).getQuotaCache());
+              } catch (NoSuchObjectException e) {
+                LOG.error("can't find table", e);
+                return null;
+              } catch (Throwable t) {
+                LOG.error("unexpected error", t);
+                return null;
+              }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return tableQuotaInfoList.stream().sorted().map(TableQuotaInfo::getTableIdentifier)
+            .collect(Collectors.toList());
+      }
+
+      private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
+        TableOptimizeItem tableItem;
+        tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableId);
+        String latestTaskPlanGroup = tableItem.getTableOptimizeRuntime().getLatestTaskPlanGroup();
+        if (StringUtils.isEmpty(latestTaskPlanGroup)) {
+          return BigDecimal.ZERO;
+        }
+
+        List<TableTaskHistory> latestTaskHistories =
+            ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestTaskPlanGroup);
+        if (CollectionUtils.isEmpty(latestTaskHistories)) {
+          return BigDecimal.ZERO;
+        }
+
+        long totalCostTime = 0;
+        long latestStartTime = 0;
+        for (TableTaskHistory latestTaskHistory : latestTaskHistories) {
+          if (latestStartTime == 0 || latestStartTime > latestTaskHistory.getStartTime()) {
+            latestStartTime = latestTaskHistory.getStartTime();
+          }
+
+          if (latestTaskHistory.getCostTime() != 0) {
+            totalCostTime = totalCostTime + latestTaskHistory.getCostTime();
+          } else {
+            totalCostTime = totalCostTime + currentTime - latestTaskHistory.getStartTime();
+          }
+        }
+
+        if (currentTime - latestStartTime == 0) {
+          return BigDecimal.valueOf(Long.MAX_VALUE);
+        }
+
+        BigDecimal currentQuota = new BigDecimal(totalCostTime)
+            .divide(new BigDecimal(currentTime - latestStartTime),
+                2,
+                RoundingMode.HALF_UP);
+
+        BigDecimal tableQuota = BigDecimal.valueOf(tableItem.getQuotaCache());
+
+        if (tableQuota.compareTo(BigDecimal.ZERO) <= 0) {
+          return BigDecimal.valueOf(Long.MAX_VALUE);
+        }
+
+        return currentQuota.divide(tableQuota, 2, RoundingMode.HALF_UP);
+      }
+    }
+
+    /**
+     * This policy schedules the tables according to the time since the last optimization,
+     * so that the optimization progress of each table is roughly the same
+     */
+    static class BalancedSchedulePolicy implements SchedulePolicy {
+
+      @Override
+      public List<TableIdentifier> schedule(List<TableIdentifier> tables) {
+        return tables.stream()
+            .map(tableIdentifier -> {
+              try {
+                return ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+              } catch (NoSuchObjectException e) {
+                LOG.error("can't find table", e);
+                return null;
+              } catch (Throwable t) {
+                LOG.error("unexpected error", t);
+                return null;
+              }
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparingLong(TableOptimizeItem::getLatestCommitTime))
+            .map(TableOptimizeItem::getTableIdentifier)
+            .collect(Collectors.toList());
+      }
     }
   }
 }

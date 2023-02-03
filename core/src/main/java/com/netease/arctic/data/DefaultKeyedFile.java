@@ -18,13 +18,10 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.data.file.FileNameGenerator;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.types.Conversions;
-import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -40,63 +37,30 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   private final DataFile internalFile;
 
-  private transient FileMeta meta;
-  private transient ChangedLsn minLsn;
-  private transient ChangedLsn maxLsn;
+  private final FileMeta meta;
 
-  public DefaultKeyedFile(DataFile internalFile) {
+  private DefaultKeyedFile(DataFile internalFile, FileMeta meta) {
     this.internalFile = internalFile;
+    this.meta = meta;
   }
 
-  private void parse() {
-    this.meta = FileUtil.parseFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
-    if (internalFile.lowerBounds() != null) {
-      ByteBuffer minOffsetBuffer = internalFile.lowerBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (minOffsetBuffer != null) {
-        minLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), minOffsetBuffer));
-      } else {
-        minLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
-    if (internalFile.upperBounds() != null) {
-      ByteBuffer maxOffsetBuffer = internalFile.upperBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (maxOffsetBuffer != null) {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), maxOffsetBuffer));
-      } else {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
+  public static DefaultKeyedFile parseChange(DataFile dataFile, long sequenceNumber) {
+    FileMeta fileMeta = FileNameGenerator.parseChange(dataFile.path().toString(), sequenceNumber);
+    return new DefaultKeyedFile(dataFile, fileMeta);
+  }
+
+  public static DefaultKeyedFile parseBase(DataFile dataFile) {
+    FileMeta fileMeta = FileNameGenerator.parseBase(dataFile.path().toString());
+    return new DefaultKeyedFile(dataFile, fileMeta);
   }
 
   @Override
   public Long transactionId() {
-    if (meta == null) {
-      parse();
-    }
     return meta.transactionId();
   }
 
   @Override
-  public ChangedLsn minLsn() {
-    if (minLsn == null) {
-      parse();
-    }
-    return minLsn;
-  }
-
-  @Override
-  public ChangedLsn maxLsn() {
-    if (maxLsn == null) {
-      parse();
-    }
-    return maxLsn;
-  }
-
-  @Override
   public DataFileType type() {
-    if (meta == null) {
-      parse();
-    }
     return meta.type();
   }
 
@@ -172,12 +136,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataFile copy() {
-    return new DefaultKeyedFile(internalFile.copy());
+    return new DefaultKeyedFile(internalFile.copy(), meta);
   }
 
   @Override
   public DataFile copyWithoutStats() {
-    return new DefaultKeyedFile(internalFile.copyWithoutStats());
+    return new DefaultKeyedFile(internalFile.copyWithoutStats(), meta);
   }
 
   @Override
@@ -187,9 +151,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataTreeNode node() {
-    if (meta == null) {
-      parse();
-    }
     return meta.node();
   }
 
@@ -210,12 +171,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     return Objects.hash(internalFile.path());
   }
 
-  public static class FileMeta {
+  public static class FileMeta implements Serializable {
     private final long transactionId;
     private final DataFileType type;
     private final DataTreeNode node;
 
-    public FileMeta(Long transactionId, DataFileType type, DataTreeNode node) {
+    public FileMeta(long transactionId, DataFileType type, DataTreeNode node) {
       this.transactionId = transactionId;
       this.type = type;
       this.node = node;

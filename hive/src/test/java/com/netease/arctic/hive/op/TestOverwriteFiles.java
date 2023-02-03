@@ -1,5 +1,6 @@
 package com.netease.arctic.hive.op;
 
+import java.util.ArrayList;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
@@ -9,9 +10,10 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Transaction;
@@ -28,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 
 public class TestOverwriteFiles extends HiveTableTestBase {
 
@@ -70,7 +74,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
   @Test
   public void testOverwriteKeyedPartitionTable() throws TException {
     KeyedTable table = testKeyedHiveTable;
-    testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
+    long txId = testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
     Map<String, String> partitionAndLocations = Maps.newHashMap();
 
     List<Map.Entry<String, String>> files = Lists.newArrayList(
@@ -83,13 +87,13 @@ public class TestOverwriteFiles extends HiveTableTestBase {
 
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     dataFiles.forEach(overwriteBaseFiles::addFile);
-    overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(table));
+    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
     overwriteBaseFiles.commit();
 
     applyOverwrite(partitionAndLocations, s -> false, files);
     assertHivePartitionLocations(partitionAndLocations, table);
 
-    testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
+    txId = testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
     // ================== test overwrite all partition
     files = Lists.newArrayList(
         Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
@@ -100,7 +104,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     overwriteBaseFiles = table.newOverwriteBaseFiles();
     dataFiles.forEach(overwriteBaseFiles::addFile);
     overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue());
-    overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(table));
+    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
     overwriteBaseFiles.commit();
 
     partitionAndLocations.clear();
@@ -415,6 +419,39 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     hiveTable.setTableName(testHiveTable.id().getTableName());
     hms.getClient().alter_table(testHiveTable.id().getDatabase(), "new_table", hiveTable);
   }
+  @Test
+  public void testCleanOrphanFileWhenCommit() throws TException {
+    List<Map.Entry<String, String>> orphanFiles = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/orphan-a1.parquet"),
+        Maps.immutableEntry("name=aaa", "/test_path/partition2/orphan-a2.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition3/orphan-a3.parquet")
+    );
+    UnkeyedTable table = testHiveTable;
+    table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
+    AppendFiles appendFiles = table.newAppend();
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);
+    orphanDataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+
+    List<Map.Entry<String, String>> files = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet"),
+        Maps.immutableEntry("name=ccc", "/test_path/partition3/data-a3.parquet")
+    );
+    List<DataFile> dataFiles = dataFileBuilder.buildList(files);
+
+    OverwriteFiles overwriteFiles = table.newOverwrite();
+    overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+    dataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+
+    List<String> exceptedFiles = new ArrayList<>();
+    exceptedFiles.add("data-a1.parquet");
+    exceptedFiles.add("data-a2.parquet");
+    exceptedFiles.add("data-a3.parquet");
+    asserFilesName(exceptedFiles, table);
+  }
 
   private void applyOverwrite(
       Map<String, String> partitionAndLocations,
@@ -426,7 +463,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     deleteLocations.forEach(partitionAndLocations::remove);
 
     addFiles.forEach(kv -> {
-      String partLocation = FileUtil.getFileDir(kv.getValue());
+      String partLocation = TableFileUtils.getFileDir(kv.getValue());
       partitionAndLocations.put(
           kv.getKey(),
           partLocation

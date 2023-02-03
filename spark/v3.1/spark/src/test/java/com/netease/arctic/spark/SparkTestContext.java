@@ -18,18 +18,19 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -39,9 +40,6 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.AppendFiles;
@@ -126,7 +124,7 @@ public class SparkTestContext extends ExternalResource {
     }
 
     System.out.println("======================== start AMS  ========================= ");
-    FileUtils.deleteQuietly(testBaseDir);
+    org.apache.commons.io.FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
     AmsClientPools.cleanAll();
@@ -185,14 +183,14 @@ public class SparkTestContext extends ExternalResource {
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
-    sparkConfigs.put("spark.executor.heartbeatInterval", "300s");
+    sparkConfigs.put("spark.executor.heartbeatInterval", "500s");
     sparkConfigs.put("spark.cores.max", "6");
     sparkConfigs.put("spark.executor.cores", "2");
     sparkConfigs.put("spark.default.parallelism", "12");
-    sparkConfigs.put("spark.network.timeout", "500s");
+    sparkConfigs.put("spark.network.timeout", "600s");
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
-    sparkConfigs.put("spark.testing.memory", "471859200");
+    sparkConfigs.put("spark.testing.memory", "943718400");
     sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
     sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "true");
 
@@ -201,7 +199,7 @@ public class SparkTestContext extends ExternalResource {
 
     SparkConf sparkconf = new SparkConf()
         .setAppName("test")
-        .setMaster("local");
+        .setMaster("local[2]");
 
     sparkConfigs.forEach(sparkconf::set);
 
@@ -304,9 +302,7 @@ public class SparkTestContext extends ExternalResource {
 
   public static void writeChange(TableIdentifier identifier, ChangeAction action, List<Record> rows) {
     KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
-    long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
-        .withTransactionId(txId)
         .withChangeAction(action)
         .buildChangeWriter()) {
       rows.forEach(row -> {
@@ -377,12 +373,13 @@ public class SparkTestContext extends ExternalResource {
       return ImmutableList.of();
     }
     result.show();
-    this.rows = rows.stream()
+    List<Object[]> rs = rows.stream()
         .map(row -> IntStream.range(0, row.size())
             .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
             .toArray(Object[]::new)
         ).collect(Collectors.toList());
-    return this.rows;
+    this.rows = rs;
+    return rs;
   }
 
   protected void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
@@ -474,9 +471,13 @@ public class SparkTestContext extends ExternalResource {
 
   public List<DataFile> writeHive(ArcticTable table, LocationKind locationKind, List<Record> records)
       throws IOException {
+    Long txId = null;
+    if (table.isKeyedTable()) {
+      txId = table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    }
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
+        .withTransactionId(txId);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record : records) {
@@ -484,11 +485,10 @@ public class SparkTestContext extends ExternalResource {
     }
     DataFile[] dataFiles = changeWrite.complete().dataFiles();
     if (table.isKeyedTable()) {
-      table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(keyedTable));
+      overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
@@ -511,7 +511,7 @@ public class SparkTestContext extends ExternalResource {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
+              FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
@@ -568,6 +568,41 @@ public class SparkTestContext extends ExternalResource {
         }
       });
     }
+  }
+
+  protected void assertEqualsMergeRows(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
+    Assert.assertEquals(context + ": number of results should match", expectedRows.size(), actualRows.size());
+    for (int row = 0; row < expectedRows.size(); row += 1) {
+      Object[] expected = expectedRows.get(row);
+      Object[] actual = actualRows.get(row);
+      Assert.assertEquals("Number of columns should match", expected.length, actual.length);
+      for (int col = 0; col < actualRows.get(row).length; col += 1) {
+        String newContext = String.format("%s: row %d col %d", context, row + 1, col + 1);
+        assertEquals(newContext, expected, actual);
+      }
+    }
+  }
+
+  private void assertEquals(String context, Object[] expectedRow, Object[] actualRow) {
+    Assert.assertEquals("Number of columns should match", expectedRow.length, actualRow.length);
+    for (int col = 0; col < actualRow.length; col += 1) {
+      Object expectedValue = expectedRow[col];
+      Object actualValue = actualRow[col];
+      if (expectedValue != null && expectedValue.getClass().isArray()) {
+        String newContext = String.format("%s (nested col %d)", context, col + 1);
+        if (expectedValue instanceof byte[]) {
+          Assert.assertArrayEquals(newContext, (byte[]) expectedValue, (byte[]) actualValue);
+        } else {
+          assertEquals(newContext, (Object[]) expectedValue, (Object[]) actualValue);
+        }
+      } else if (expectedValue != ANY) {
+        Assert.assertEquals(context + " contents should match", expectedValue, actualValue);
+      }
+    }
+  }
+
+  protected Object[] row(Object... values) {
+    return values;
   }
 
   protected interface Action {

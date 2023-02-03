@@ -42,9 +42,9 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
     LogDataJsonSerialization<UserPojo> logDataJsonSerialization =
         new LogDataJsonSerialization<>(userSchema, fieldGetterFactory);
     UserPojo subUserPojo = new UserPojo();
-    subUserPojo.objects = new Object[]{false, 2, 987654321L};
+    subUserPojo.objects = new Object[] {false, 2, 987654321L};
     UserPojo userPojo = new UserPojo();
-    userPojo.objects = new Object[]{
+    userPojo.objects = new Object[] {
         // boolean
         true,
         // int
@@ -65,20 +65,22 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
         Instant.parse("2022-12-13T13:33:44.98765432Z"),
         "ssss_string",
         // uuid
-        new byte[]{1},
+        new byte[] {1},
         // fixed
-        new byte[]{'1'},
+        new byte[] {'1'},
         // binary
-        new byte[]{2},
+        new byte[] {2},
         BigDecimal.valueOf(111.111),
-        new GenericArrayData(new Long[]{123L, 234L, null, 345L}, 4, false),
-        new GenericArrayData(new int[]{123, 234, 0, 345}, 4, true),
-        new GenericArrayData(new UserPojo[]{subUserPojo}, 1, false),
-        new GenericMapData(new HashMap<Long, String>() {{
-          put(1123L, "Str_123");
-          put(1124L, "Str_123");
-          put(1125L, "Str_123");
-        }})
+        new GenericArrayData(new Long[] {123L, 234L, null, 345L}, 4, false),
+        new GenericArrayData(new int[] {123, 234, 0, 345}, 4, true),
+        new GenericArrayData(new UserPojo[] {subUserPojo}, 1, false),
+        new GenericMapData(new HashMap<Long, String>() {
+          {
+            put(1123L, "Str_123");
+            put(1124L, "Str_123");
+            put(1125L, "Str_123");
+          }
+        })
     };
     LogData<UserPojo> logData = new LogDataUser(
         FormatVersion.FORMAT_VERSION_V1.asBytes(),
@@ -93,7 +95,15 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
 
     Assert.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
-    String expected = "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_struct\":{\"f_sub_boolean\":false,\"f_sub_int\":2,\"f_sub_long\":987654321},\"f_float\":123.45,\"f_double\":123.456789,\"f_date\":\"2022-11-11\",\"f_time\":\"13:23:23.098766545\",\"f_timestamp_local\":\"2022-12-12 13:14:14.987654234\",\"f_timestamp_tz\":\"2022-12-13T13:33:44.98765432Z\",\"f_string\":\"ssss_string\",\"f_uuid\":\"AQ==\",\"f_fixed\":\"MQ==\",\"f_binary\":\"Ag==\",\"f_decimal\":111.111,\"f_list\":[123,234,null,345],\"f_list2\":[123,234,0,345],\"f_list3\":[{\"f_sub_boolean\":false,\"f_sub_int\":2,\"f_sub_long\":987654321}],\"f_map\":{\"1123\":\"Str_123\",\"1124\":\"Str_123\",\"1125\":\"Str_123\"}}";
+    String expected =
+        "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_struct\":{\"f_sub_boolean\":false,\"f_sub_int\":2," +
+            "\"f_sub_long\":987654321},\"f_float\":123.45,\"f_double\":123.456789,\"f_date\":\"2022-11-11\"," +
+            "\"f_time\":\"13:23:23.098766545\",\"f_timestamp_local\":\"2022-12-12 13:14:14.987654234\"," +
+            "\"f_timestamp_tz\":\"2022-12-13T13:33:44.98765432Z\",\"f_string\":\"ssss_string\"," +
+            "\"f_uuid\":\"AQ==\",\"f_fixed\":\"MQ==\",\"f_binary\":\"Ag==\",\"f_decimal\":111.111," +
+            "\"f_list\":[123,234,null,345],\"f_list2\":[123,234,0,345],\"f_list3\":[{\"f_sub_boolean\":false," +
+            "\"f_sub_int\":2,\"f_sub_long\":987654321}],\"f_map\":{\"1123\":\"Str_123\",\"1124\":\"Str_123\"," +
+            "\"1125\":\"Str_123\"}}";
     assertEquals(expected, actualJson);
 
     LogDataJsonDeserialization<UserPojo> logDataJsonDeserialization =
@@ -110,6 +120,5 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
     assertEquals(expected.getFlip(), actual.getFlip());
     assertEquals(expected.getChangeActionByte(), actual.getChangeActionByte());
     assertEquals(expected.getActualValue().toString(), actual.getActualValue().toString());
-
   }
 }

@@ -22,6 +22,8 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.optimizer.OptimizerConfig;
@@ -65,7 +67,7 @@ public class MajorExecutor extends BaseExecutor {
     LOG.info("Start processing arctic table major optimize task: {}", task);
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
-    List<DataFile> dataFiles = task.dataFiles();
+    List<PrimaryKeyedFile> dataFiles = task.dataFiles();
     dataFiles.addAll(task.deleteFiles());
     targetFiles = table.io().doAs(() -> {
       CloseableIterator<Record> recordIterator =
@@ -98,16 +100,20 @@ public class MajorExecutor extends BaseExecutor {
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
-    while (recordIterator.hasNext()) {
-      checkIfTimeout(writer);
+    try {
+      while (recordIterator.hasNext()) {
+        checkIfTimeout(writer);
 
-      Record baseRecord = recordIterator.next();
-      writer.write(baseRecord);
-      insertCount++;
-      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-        LOG.info("task {} insert records number {} and data sampling {}",
-            task.getTaskId(), insertCount, baseRecord);
+        Record baseRecord = recordIterator.next();
+        writer.write(baseRecord);
+        insertCount++;
+        if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
+          LOG.info("task {} insert records number {} and data sampling {}",
+              task.getTaskId(), insertCount, baseRecord);
+        }
       }
+    } finally {
+      recordIterator.close();
     }
 
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
@@ -115,7 +121,7 @@ public class MajorExecutor extends BaseExecutor {
     return Arrays.asList(writer.complete().dataFiles());
   }
 
-  private CloseableIterator<Record> openTask(List<DataFile> dataFiles,
+  private CloseableIterator<Record> openTask(List<PrimaryKeyedFile> dataFiles,
                                              Map<DataTreeNode, List<DeleteFile>> deleteFileMap,
                                              Schema requiredSchema, Set<DataTreeNode> sourceNodes) {
     if (CollectionUtils.isEmpty(dataFiles)) {
@@ -130,17 +136,16 @@ public class MajorExecutor extends BaseExecutor {
 
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema, primaryKeySpec,
-            table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
-            IdentityPartitionConverters::convertConstant, sourceNodes, false);
+        table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
+        IdentityPartitionConverters::convertConstant, sourceNodes, false, structLikeCollections);
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {
-          DefaultKeyedFile defaultKeyedFile = new DefaultKeyedFile(file);
-          if (defaultKeyedFile.type() == DataFileType.EQ_DELETE_FILE) {
-            return new BaseArcticFileScanTask(defaultKeyedFile, null, table.spec());
+          if (file.type() == DataFileType.EQ_DELETE_FILE) {
+            return new BaseArcticFileScanTask(file, null, table.spec());
           } else {
-            return new BaseArcticFileScanTask(defaultKeyedFile,
-                deleteFileMap.get(defaultKeyedFile.node()), table.spec());
+            return new BaseArcticFileScanTask(file,
+                deleteFileMap.get(file.node()), table.spec());
           }
         })
         .collect(Collectors.toList());

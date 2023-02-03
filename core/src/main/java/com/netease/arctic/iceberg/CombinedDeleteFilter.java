@@ -18,12 +18,15 @@
 
 package com.netease.arctic.iceberg;
 
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseableIterableWrapper;
+import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.utils.map.StructLikeBaseMap;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -73,8 +76,8 @@ public abstract class CombinedDeleteFilter<T> {
   private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
       .accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
-  private final List<IcebergContentFile> posDeletes;
-  private final List<IcebergContentFile> eqDeletes;
+  private final List<DeleteFileWithSequence> posDeletes;
+  private final List<DeleteFileWithSequence> eqDeletes;
   private final Schema requiredSchema;
   private Map<String, Set<Long>> positionMap;
   private final Accessor<StructLike> posAccessor;
@@ -85,22 +88,32 @@ public abstract class CombinedDeleteFilter<T> {
   private Set<Integer> deleteIds = new HashSet<>();
   private final Set<String> pathSets;
 
-  private Predicate<T> eqPredicate;
+  private CloseablePredicate<T> eqPredicate;
   private final Schema deleteSchema;
 
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
+
+  protected CombinedDeleteFilter(CombinedIcebergScanTask task,
+                                 Schema tableSchema,
+                                 Schema requestedSchema,
+                                 StructLikeCollections structLikeCollections) {
+    this(task, tableSchema, requestedSchema);
+    this.structLikeCollections = structLikeCollections;
+  }
+
   protected CombinedDeleteFilter(CombinedIcebergScanTask task, Schema tableSchema, Schema requestedSchema) {
-    ImmutableList.Builder<IcebergContentFile> posDeleteBuilder = ImmutableList.builder();
-    ImmutableList.Builder<IcebergContentFile> eqDeleteBuilder = ImmutableList.builder();
-    for (IcebergContentFile delete : task.getDeleteFiles()) {
+    ImmutableList.Builder<DeleteFileWithSequence> posDeleteBuilder = ImmutableList.builder();
+    ImmutableList.Builder<DeleteFileWithSequence> eqDeleteBuilder = ImmutableList.builder();
+    for (DeleteFileWithSequence delete : task.getDeleteFiles()) {
       switch (delete.content()) {
         case POSITION_DELETES:
           posDeleteBuilder.add(delete);
           break;
         case EQUALITY_DELETES:
           if (deleteIds.isEmpty()) {
-            deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
+            deleteIds = ImmutableSet.copyOf(delete.equalityFieldIds());
           } else {
-            Preconditions.checkArgument(deleteIds.equals(ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds())),
+            Preconditions.checkArgument(deleteIds.equals(ImmutableSet.copyOf(delete.equalityFieldIds())),
                 "Equality delete files have different delete fields");
           }
           eqDeleteBuilder.add(delete);
@@ -111,7 +124,7 @@ public abstract class CombinedDeleteFilter<T> {
     }
 
     this.pathSets =
-        task.getDataFiles().stream().map(s -> s.asDataFile().path().toString()).collect(Collectors.toSet());
+        task.getDataFiles().stream().map(s -> s.path().toString()).collect(Collectors.toSet());
 
     this.posDeletes = posDeleteBuilder.build();
     this.eqDeletes = eqDeleteBuilder.build();
@@ -147,7 +160,7 @@ public abstract class CombinedDeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records)), eqPredicate);
   }
 
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
@@ -161,7 +174,7 @@ public abstract class CombinedDeleteFilter<T> {
       }
     };
 
-    return remainingRowsFilter.filter(records);
+    return new CloseableIterableWrapper<>(remainingRowsFilter.filter(records), eqPredicate);
   }
 
   private Predicate<T> applyEqDeletes() {
@@ -182,13 +195,14 @@ public abstract class CombinedDeleteFilter<T> {
         CloseableIterable.concat(
             Iterables.transform(
                 eqDeletes, s -> CloseableIterable.transform(
-                    openDeletes(s.asDeleteFile(), deleteSchema),
+                    openDeletes(s, deleteSchema),
                     r -> new RecordWithLsn(s.getSequenceNumber(), r)))),
         RecordWithLsn::recordCopy);
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
 
-    StructLikeMap<Long> structLikeMap = StructLikeMap.create(pkSchema.asStruct());
+    StructLikeBaseMap<Long> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
+
     //init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it = getArcticFileIo() == null ? deletes.iterator()
@@ -219,7 +233,8 @@ public abstract class CombinedDeleteFilter<T> {
       return deleteLsn.compareTo(dataLSN) > 0;
     };
 
-    this.eqPredicate = isInDeleteSet;
+    CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
+    this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
 
@@ -258,8 +273,7 @@ public abstract class CombinedDeleteFilter<T> {
     // if there are fewer deletes than a reasonable number to keep in memory, use a set
     if (positionMap == null) {
       positionMap = new HashMap<>();
-      List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes.stream()
-              .map(IcebergContentFile::asDeleteFile).collect(Collectors.toList()),
+      List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes,
           this::openPosDeletes);
       CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
       while (iterator.hasNext()) {

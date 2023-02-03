@@ -45,7 +45,7 @@ public class SimpleUnkeyedUpsertDataWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new WriteTaskDeleteFilesCommit(result.deleteFiles(), result.dataFiles());
+    return new WriteTaskCommit(result.dataFiles(), result.deleteFiles());
   }
 
   @Override

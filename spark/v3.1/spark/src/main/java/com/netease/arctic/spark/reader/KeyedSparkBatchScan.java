@@ -193,8 +193,11 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
 
   @Override
   public String description() {
-    String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
-    return String.format("%s [filters=%s]", table, filters);
+    if (filterExpressions != null) {
+      String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
+      return String.format("%s [filters=%s]", table, filters);
+    }
+    return "";
   }
 
   @Override

@@ -18,7 +18,9 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.enumerator.ContinuousSplitPlannerImplTest;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
@@ -26,6 +28,7 @@ import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.GenericRowData;
@@ -33,8 +36,9 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.Assert;
@@ -86,18 +90,29 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
 
     long snapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
     writeUpdate();
+
     testKeyedTable.changeTable().refresh();
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
 
-    CloseableIterable<FileScanTask> changeTasks =
-        testKeyedTable.changeTable().newScan().appendsBetween(snapshotId, nowSnapshotId)
-            .planFiles();
-    CloseableIterator<FileScanTask> iterator = changeTasks.iterator();
+    TableEntriesScan entriesScan = TableEntriesScan.builder(testKeyedTable.changeTable())
+        .useSnapshot(nowSnapshotId)
+        .includeFileContent(FileContent.DATA)
+        .build();
+    Snapshot snapshot = testKeyedTable.changeTable().snapshot(snapshotId);
+    long fromSequence = snapshot.sequenceNumber();
+
+    CloseableIterator<IcebergFileEntry> iterator = entriesScan.entries().iterator();
     Set<ArcticFileScanTask> appendLogTasks = new HashSet<>();
     Set<ArcticFileScanTask> deleteLogTasks = new HashSet<>();
     while (iterator.hasNext()) {
-      FileScanTask fileScanTask = iterator.next();
-      BaseArcticFileScanTask task = new BaseArcticFileScanTask(fileScanTask);
+      IcebergFileEntry entry = iterator.next();
+      if (entry.getSequenceNumber() <= fromSequence) {
+        continue;
+      }
+      DefaultKeyedFile keyedFile =
+          DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
+      BaseArcticFileScanTask task =
+          new BaseArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
       if (task.fileType().equals(DataFileType.INSERT_FILE)) {
         appendLogTasks.add(task);
       } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
@@ -119,6 +134,41 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
       actual.add(rowData);
     }
     assertArrayEquals(excepts2(), actual);
+
+  }
+
+  @Test
+  public void testReadNodesUpMoved() throws IOException {
+    writeUpdateWithSpecifiedMaskOne();
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+
+    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
+        new Configuration(),
+        testKeyedTable.schema(),
+        testKeyedTable.schema(),
+        testKeyedTable.primaryKeySpec(),
+        null,
+        true,
+        testKeyedTable.io()
+    );
+
+    List<RowData> actual = new ArrayList<>();
+    arcticSplits.forEach(split -> {
+      LOG.info("ArcticSplit {}.", split);
+      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+      while (dataIterator.hasNext()) {
+        RowData rowData = dataIterator.next();
+        LOG.info("{}", rowData);
+        actual.add(rowData);
+      }
+    });
+
+    List<RowData> excepts = exceptsCollection();
+    excepts.addAll(generateRecords());
+    RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
+        .collect(Collectors.toList())
+        .toArray(new RowData[excepts.size()]);
+    assertArrayEquals(array, actual);
   }
 
   protected void assertArrayEquals(RowData[] excepts, List<RowData> actual) {
@@ -143,14 +193,40 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
     writeUpdate(input, testKeyedTable);
   }
 
-  protected void writeUpdate(List<RowData> input, KeyedTable table) throws IOException {
-    //write change update
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), false);
+  protected void writeUpdateWithSpecifiedMaskOne() throws IOException {
+    List<RowData> excepts = generateRecords();
+
+    writeUpdateWithSpecifiedMask(excepts, testKeyedTable, 1);
+  }
+
+  protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask) throws IOException {
+    // write change update
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false, mask);
 
     for (RowData record : input) {
       taskWriter.write(record);
     }
     commit(table, taskWriter.complete(), false);
+  }
+
+  protected void writeUpdate(List<RowData> input, KeyedTable table) throws IOException {
+    //write change update
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false);
+
+    for (RowData record : input) {
+      taskWriter.write(record);
+    }
+    commit(table, taskWriter.complete(), false);
+  }
+
+  protected List<RowData> generateRecords() {
+    List<RowData> excepts = new ArrayList<>();
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 7, StringData.fromString("syan"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 2, StringData.fromString("daniel"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 7, StringData.fromString("syan"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 7, StringData.fromString("syan2"), TimestampData.fromLocalDateTime(ldt)));
+    return excepts;
   }
 
   protected List<RowData> updateRecords() {

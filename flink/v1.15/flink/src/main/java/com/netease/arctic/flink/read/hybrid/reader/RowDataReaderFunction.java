@@ -27,6 +27,7 @@ import com.netease.arctic.flink.read.source.FlinkArcticDataReader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.NodeFilter;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
@@ -38,6 +39,7 @@ import java.util.Collections;
 
 import static com.netease.arctic.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
 import static com.netease.arctic.utils.SchemaUtil.changeWriteSchema;
+import static com.netease.arctic.utils.SchemaUtil.fillUpIdentifierFields;
 
 /**
  * This Function accept a {@link ArcticSplit} and produces an {@link DataIterator} of {@link RowData}.
@@ -50,7 +52,15 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   private final boolean caseSensitive;
   private final ArcticFileIO io;
   private final PrimaryKeySpec primaryKeySpec;
+  /**
+   * The accurate selected columns size if the arctic source projected
+   */
   private final int columnSize;
+  /**
+   * The index of the arctic file offset field in the read schema
+   * Refer to {@link this#wrapArcticFileOffsetColumnMeta}
+   */
+  private final int arcticFileOffsetIndex;
 
   public RowDataReaderFunction(
       ReadableConfig config, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
@@ -58,13 +68,14 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     super(new ArrayPoolDataIteratorBatcher<>(config, new RowDataRecordFactory(
         FlinkSchemaUtil.convert(readSchema(tableSchema, projectedSchema)))));
     this.tableSchema = tableSchema;
-    this.readSchema = readSchema(tableSchema, projectedSchema);
+    this.readSchema = fillUpReadSchema(tableSchema, projectedSchema);
     this.primaryKeySpec = primaryKeySpec;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
     this.io = io;
-    // Add file offset column after readSchema. Refer to this#wrapArcticFileOffsetColumnMeta
-    this.columnSize = readSchema.columns().size();
+    // Add file offset column after readSchema.
+    this.arcticFileOffsetIndex = readSchema.columns().size();
+    this.columnSize = projectedSchema == null ? readSchema.columns().size() : projectedSchema.columns().size();
   }
 
   @Override
@@ -78,7 +89,8 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
       return new DataIterator<>(
           rowDataReader,
           split.asSnapshotSplit().insertTasks(),
-          rowData -> Long.MIN_VALUE);
+          rowData -> Long.MIN_VALUE,
+          this::removeArcticMetaColumn);
     } else if (split.isChangelogSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
           new FlinkArcticDataReader(
@@ -103,7 +115,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   }
 
   long arcticFileOffset(RowData rowData) {
-    return rowData.getLong(columnSize);
+    return rowData.getLong(arcticFileOffsetIndex);
   }
 
   /**
@@ -117,6 +129,23 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     RowData rowData = trans.row();
     rowData.setRowKind(convertToFlinkRowKind(trans.changeAction()));
     return rowData;
+  }
+
+  /**
+   * If the projected schema is not null, this method will check and fill up the identifierFields of the tableSchema and
+   * the projected schema.
+   * <p>
+   * projectedSchema may not include the primary keys, but the {@link NodeFilter} must filter the record with
+   * the value of the primary keys. So the Arctic reader function schema must include the primary keys.
+   * </p>
+   *
+   * @param tableSchema     table schema
+   * @param projectedSchema projected schema
+   * @return a new Schema on which include the identifier fields.
+   */
+  private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema) {
+    Preconditions.checkNotNull(tableSchema, "Table schema can't be null");
+    return projectedSchema == null ? tableSchema : fillUpIdentifierFields(tableSchema, projectedSchema);
   }
 
   private static Schema readSchema(Schema tableSchema, Schema projectedSchema) {

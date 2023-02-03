@@ -20,9 +20,10 @@ Flink Connector 包括：
 
 | Connector Version | Flink Version | Dependent Iceberg Version | 下载                                                                                                                         |
 | ----------------- |---------------|  ----------------- |----------------------------------------------------------------------------------------------------------------------------|
-| 0.4.0             | 1.12.x        | 0.12.0            | [flink-1.12-0.4.0-rc2](https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-flink-runtime-1.12-0.4.0.jar) |
-| 0.4.0             | 1.14.x        | 0.12.0            | [flink-1.14-0.4.0-rc2](https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-flink-runtime-1.14-0.4.0.jar) |
-| 0.4.0             | 1.15.x        | 0.12.0            | [flink-1.15-0.4.0-rc2](https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-flink-runtime-1.15-0.4.0.jar) |
+| 0.4.0             | 1.12.x        | 0.13.2            | [flink-1.12-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.12-0.4.0.jar) |
+| 0.4.0             | 1.14.x        | 0.13.2            | [flink-1.14-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.14-0.4.0.jar) |
+| 0.4.0             | 1.15.x        | 0.13.2            | [flink-1.15-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.15-0.4.0.jar) |
+
 Kafka 作为 Logstore 版本说明：
 
 | Connector Version | Flink Version | Kafka Versions |
@@ -34,7 +35,7 @@ Kafka 作为 Logstore 版本说明：
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
 
-`mvn clean package -Pflink-1.14 -DskipTests`
+`mvn clean package -pl ':arctic-flink-runtime-1.14' -am -DskipTests`
 
 Flink Runtime Jar 存放在 `flink/v1.14/flink-runtime/target` 目录。
 

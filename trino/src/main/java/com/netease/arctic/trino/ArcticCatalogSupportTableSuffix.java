@@ -33,6 +33,7 @@ import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -148,6 +149,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public void refresh() {
     arcticCatalog.refresh();
+  }
+
+  @Override
+  public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
+    return arcticCatalog.getTableBlockerManager(tableIdentifier);
   }
 
   public TableMetaStore getTableMetaStore() {

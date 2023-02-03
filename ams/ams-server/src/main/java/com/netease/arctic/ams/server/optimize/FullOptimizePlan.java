@@ -28,12 +28,12 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -63,9 +63,9 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                           List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
                           Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                          Predicate<Long> snapshotIsCached) {
+                          long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, Collections.emptyList(), posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime, TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
   }
 
   @Override
@@ -177,8 +177,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
           null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
-          constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
-              getMaxTransactionId(fileList) : IdGenerator.randomId()));
+          constructCustomHiveSubdirectory(fileList));
 
       long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
               TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -208,8 +207,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
-        constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
-            getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
+        constructCustomHiveSubdirectory(allBaseFiles));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitSubTree(subTrees, new CanSplitFileTree());
@@ -219,12 +217,12 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
+            .map(dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
+                baseFileNodes.contains(FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
         if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
@@ -288,7 +286,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
 
   private long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileUtil.parseFileTidFromFileName(file.path().toString())).max();
+        .mapToLong(file -> FileNameGenerator.parseTransactionId(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }
@@ -312,6 +310,18 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
       }
       List<DataFile> baseFiles = fileTree.getBaseFiles();
       return baseFiles.isEmpty();
+    }
+  }
+
+  private String constructCustomHiveSubdirectory(List<DataFile> fileList) {
+    if (isCustomizeDir) {
+      if (arcticTable.isKeyedTable()) {
+        return HiveTableUtil.newHiveSubdirectory(getMaxTransactionId(fileList));
+      } else {
+        return HiveTableUtil.newHiveSubdirectory();
+      }
+    } else {
+      return "";
     }
   }
 }

@@ -28,11 +28,11 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
@@ -76,9 +76,9 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
                            List<DataFileInfo> changeTableFileList,
                            List<DataFileInfo> posDeleteFileList,
                            Map<String, Boolean> partitionTaskRunning,
-                           int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
+                           int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, changeTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime, changeSnapshotId, baseSnapshotId);
   }
 
   @Override
@@ -247,7 +247,8 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
 
     public long getLegacyTransactionId() {
       if (legacyTransactionId == -1) {
-        legacyTransactionId = FileUtil.parseFileTidFromFileName(dataFileInfo.getPath());
+        legacyTransactionId = FileNameGenerator.parseChange(dataFileInfo.getPath(),
+            dataFileInfo.getSequence()).transactionId();
       }
       return legacyTransactionId;
     }
@@ -338,12 +339,12 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
         sourceNodes = Collections.singletonList(subTree.getNode());
       }
       Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-          .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
+          .map(dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))
           .collect(Collectors.toSet());
       List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
           .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
           .filter(deleteFile ->
-              baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
+              baseFileNodes.contains(FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString())))
           .collect(Collectors.toList());
       // if no insert files and no eq-delete file, skip
       if (CollectionUtils.isEmpty(insertFiles) && CollectionUtils.isEmpty(deleteFiles)) {

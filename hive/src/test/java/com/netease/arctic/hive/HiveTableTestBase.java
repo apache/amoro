@@ -18,8 +18,11 @@
 
 package com.netease.arctic.hive;
 
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
+import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -28,12 +31,12 @@ import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -85,6 +88,11 @@ public class HiveTableTestBase extends TableTestBase {
   public static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
+  public static final TableIdentifier HIVE_TS_PK_TABLE_ID =
+      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_ts_hive_table");
+  public static final TableIdentifier UN_PARTITION_HIVE_TS_PK_TABLE_ID =
+      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_un_partition_ts_hive_table");
+
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, COLUMN_NAME_ID, Types.IntegerType.get()),
       Types.NestedField.required(2, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
@@ -96,12 +104,18 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final PartitionSpec HIVE_SPEC =
       PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity(COLUMN_NAME_NAME).build();
 
+  protected static final PrimaryKeySpec TS_PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(HIVE_TABLE_SCHEMA)
+      .addColumn("op_time").build();
+
   public static ArcticHiveCatalog hiveCatalog;
   public UnkeyedHiveTable testHiveTable;
   public KeyedHiveTable testKeyedHiveTable;
 
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
+
+  protected KeyedHiveTable testPartitionTSKeyedHiveTable;
+  protected KeyedHiveTable testUnPartitionTSKeyedHiveTable;
 
   @BeforeClass
   public static void startMetastore() throws Exception {
@@ -168,6 +182,15 @@ public class HiveTableTestBase extends TableTestBase {
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
+    testPartitionTSKeyedHiveTable = (KeyedHiveTable) hiveCatalog
+        .newTableBuilder(HIVE_TS_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withPartitionSpec(HIVE_SPEC)
+        .withPrimaryKeySpec(TS_PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+    testUnPartitionTSKeyedHiveTable = (KeyedHiveTable) hiveCatalog
+        .newTableBuilder(UN_PARTITION_HIVE_TS_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withPrimaryKeySpec(TS_PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
   }
 
   @After
@@ -183,6 +206,12 @@ public class HiveTableTestBase extends TableTestBase {
 
     hiveCatalog.dropTable(UN_PARTITION_HIVE_PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
+
+    hiveCatalog.dropTable(HIVE_TS_PK_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(HIVE_TS_PK_TABLE_ID.buildTableIdentifier());
+
+    hiveCatalog.dropTable(UN_PARTITION_HIVE_TS_PK_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_TS_PK_TABLE_ID.buildTableIdentifier());
   }
 
 
@@ -240,5 +269,23 @@ public class HiveTableTestBase extends TableTestBase {
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
     }
+  }
+
+  public static void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
+    TableIdentifier identifier = table.id();
+    final String database = identifier.getDatabase();
+    final String tableName = identifier.getTableName();
+
+    List<Partition> partitions = hms.getClient().listPartitions(
+        database,
+        tableName,
+        (short) -1);
+
+    List<String> fileNameList = new ArrayList<> ();
+    for (Partition p : partitions) {
+      fileNameList.addAll(table.io().list(p.getSd().
+          getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    }
+    Assert.assertEquals(exceptedFiles, fileNameList);
   }
 }

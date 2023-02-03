@@ -18,9 +18,6 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,30 +25,27 @@ public class FileUtilTest {
 
   @Test
   public void getFileName() {
-    String fileName = FileUtil.getFileName("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
+    String fileName = TableFileUtils.getFileName("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
         "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
     Assert.assertEquals("00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet", fileName);
   }
 
   @Test
   public void getFileDir() {
-    String fileDir = FileUtil.getFileDir("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
+    String fileDir = TableFileUtils.getFileDir("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
         "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", fileDir);
+    Assert.assertEquals(
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26",
+        fileDir);
   }
 
   @Test
-  public void testParseFileName() {
-    String fileName =
-        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet";
-    DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(fileName);
-    Assert.assertEquals(DataFileType.INSERT_FILE, fileMeta.type());
-    Assert.assertEquals(DataTreeNode.of(3,1), fileMeta.node());
-    Assert.assertEquals(2, fileMeta.transactionId());
-
-    Assert.assertEquals(DataFileType.INSERT_FILE, FileUtil.parseFileTypeFromFileName(fileName));
-    Assert.assertEquals(DataTreeNode.of(3,1), FileUtil.parseFileNodeFromFileName(fileName));
-    Assert.assertEquals(2, FileUtil.parseFileTidFromFileName(fileName));
+  public void testGetUriPath() {
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs://localhost:8888/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("file://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs:/a/b/c"));
+    Assert.assertEquals("a/b/c", TableFileUtils.getUriPath("a/b/c"));
   }
-
 }

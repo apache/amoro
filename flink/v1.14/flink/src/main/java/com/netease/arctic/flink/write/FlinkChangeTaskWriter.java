@@ -47,7 +47,8 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
                                OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
                                long mask, Schema schema, RowType flinkSchema, PartitionSpec spec,
                                PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+    super(format, appenderFactory, outputFileFactory, io, targetFileSize,
+        mask, schema, spec, primaryKeySpec, false);
     this.wrapper = new RowDataWrapper(flinkSchema, schema.asStruct());
   }
 

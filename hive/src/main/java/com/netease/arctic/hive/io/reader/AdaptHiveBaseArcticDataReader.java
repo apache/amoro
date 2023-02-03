@@ -20,11 +20,16 @@ package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.io.reader.BaseArcticDataReader;
+import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Type;
@@ -32,11 +37,37 @@ import org.apache.iceberg.types.Type;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * AdaptHive can read all Data.
  */
 public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataReader<T> {
+
+  public AdaptHiveBaseArcticDataReader(
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer,
+      StructLikeCollections structLikeCollections) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer,
+        structLikeCollections);
+  }
+
   public AdaptHiveBaseArcticDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
@@ -80,6 +111,16 @@ public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataRea
   }
 
   @Override
+  protected ArcticDeleteFilter<T> createArcticDeleteFilter(
+      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
+      Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections
+  ) {
+    return new AdaptHiveGenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema,
+        primaryKeySpec, sourceNodes, structLikeCollections);
+  }
+
+  @Override
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
@@ -97,5 +138,54 @@ public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataRea
     }
 
     return builder.build();
+  }
+
+  private class AdaptHiveGenericArcticDeleteFilter extends AdaptHiveArcticDeleteFilter<T> {
+
+    protected Function<T, StructLike> asStructLike;
+
+    protected AdaptHiveGenericArcticDeleteFilter(
+        KeyedTableScanTask keyedTableScanTask,
+        Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
+      this.asStructLike = AdaptHiveBaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+    }
+
+    protected AdaptHiveGenericArcticDeleteFilter(
+        KeyedTableScanTask keyedTableScanTask,
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec,
+        Set<DataTreeNode> sourceNodes,
+        StructLikeCollections structLikeCollections) {
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
+          sourceNodes, structLikeCollections);
+      this.asStructLike = AdaptHiveBaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+    }
+
+    protected AdaptHiveGenericArcticDeleteFilter(
+        KeyedTableScanTask keyedTableScanTask,
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec,
+        Set<DataTreeNode> sourceNodes) {
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
+      this.asStructLike = AdaptHiveBaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+    }
+
+    @Override
+    protected StructLike asStructLike(T record) {
+      return asStructLike.apply(record);
+    }
+
+    @Override
+    protected InputFile getInputFile(String location) {
+      return fileIO.newInputFile(location);
+    }
+
+    @Override
+    protected ArcticFileIO getArcticFileIo() {
+      return fileIO;
+    }
   }
 }

@@ -23,15 +23,16 @@ import com.netease.arctic.ams.api.JobType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,26 +57,30 @@ public abstract class BaseExecutor implements Executor {
   protected final OptimizerConfig config;
   protected double factor = 0.9;
 
+  protected final StructLikeCollections structLikeCollections;
+
   public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
     this.task = task;
     this.table = table;
     this.startTime = startTime;
     this.config = config;
+    this.structLikeCollections = new StructLikeCollections(Boolean.parseBoolean(config.getEnableSpillMap()),
+          config.getMaxInMemorySizeInBytes(), config.getRocksDBBasePath());
   }
 
-  protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
+  protected Map<DataTreeNode, List<PrimaryKeyedFile>> groupDataFilesByNode(List<PrimaryKeyedFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
-        FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
+        dataFile.node())));
   }
 
-  protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<DeleteFile> deleteFiles) {
+  protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<? extends DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
-        FileUtil.parseFileNodeFromFileName(deleteFile.path().toString()))));
+        FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
-  protected long getMaxTransactionId(List<DataFile> dataFiles) {
+  protected long getMaxTransactionId(List<PrimaryKeyedFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileUtil.parseFileTidFromFileName(file.path().toString())).max();
+        .mapToLong(PrimaryKeyedFile::transactionId).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }
@@ -89,7 +94,7 @@ public abstract class BaseExecutor implements Executor {
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();
     for (ContentFile<?> targetFile : targetFiles) {
       totalFileSize += targetFile.fileSizeInBytes();
-      baseFileBytesList.add(SerializationUtil.toByteBuffer(targetFile));
+      baseFileBytesList.add(SerializationUtils.toByteBuffer(targetFile));
     }
 
     OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();

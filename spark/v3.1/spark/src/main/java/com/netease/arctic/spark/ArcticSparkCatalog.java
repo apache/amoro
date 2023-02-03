@@ -24,7 +24,6 @@ import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -145,7 +144,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
-    return ArcticSparkTable.ofArcticTable(table);
+    return ArcticSparkTable.ofArcticTable(table, catalog);
   }
 
   private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
@@ -197,7 +196,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
             .withProperties(properties);
       }
       ArcticTable table = builder.create();
-      return ArcticSparkTable.ofArcticTable(table);
+      return ArcticSparkTable.ofArcticTable(table, catalog);
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException(ident);
     }
@@ -269,10 +268,10 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
     if (table.isUnkeyedTable()) {
       alterUnKeyedTable(table.asUnkeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table);
+      return ArcticSparkTable.ofArcticTable(table, catalog);
     } else if (table.isKeyedTable()) {
       alterKeyedTable(table.asKeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table);
+      return ArcticSparkTable.ofArcticTable(table, catalog);
     }
     throw new UnsupportedOperationException("Unsupported alter table");
   }
@@ -389,11 +388,6 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   @Override
   public void renameTable(Identifier from, Identifier to) {
     throw new UnsupportedOperationException("Unsupported renameTable.");
-  }
-
-  @Override
-  public void invalidateTable(Identifier ident) {
-    throw new UnsupportedOperationException("Unsupported invalidateTable.");
   }
 
   @Override

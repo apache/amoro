@@ -33,12 +33,14 @@ import java.net.BindException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -100,6 +102,10 @@ public class MockArcticMetastoreServer implements Runnable {
 
   public static String getHadoopSite() {
     return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
+  }
+
+  public String getServerUrl() {
+    return "thrift://127.0.0.1:" + port;
   }
 
   public String getUrl() {
@@ -188,28 +194,26 @@ public class MockArcticMetastoreServer implements Runnable {
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
 
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
-    private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
-    private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
+    private final Map<TableIdentifier, Map<String, Blocker>> tableBlockers = new HashMap<>();
+    private final AtomicLong blockerId = new AtomicLong(1L);
 
     public void cleanUp() {
       catalogs.clear();
       tables.clear();
       databases.clear();
       tableCommitMetas.clear();
-      tableTxId.clear();
-      tableCurrentTxId.clear();
     }
 
     public void createCatalog(CatalogMeta catalogMeta) {
       catalogs.add(catalogMeta);
     }
 
-    public Map<TableIdentifier, List<TableCommitMeta>> getTableCommitMetas() {
-      return tableCommitMetas;
+    public void dropCatalog(String catalogName) {
+      catalogs.removeIf(catalogMeta -> catalogMeta.getCatalogName().equals(catalogName));
     }
 
-    public Long getTableCurrentTxId(TableIdentifier tableIdentifier) {
-      return tableCurrentTxId.get(tableIdentifier);
+    public Map<TableIdentifier, List<TableCommitMeta>> getTableCommitMetas() {
+      return tableCommitMetas;
     }
 
     @Override
@@ -236,10 +240,10 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void createDatabase(String catalogName, String database) throws TException {
       databases.computeIfAbsent(catalogName, c -> new ArrayList<>());
+      if (databases.get(catalogName).contains(database)) {
+        throw new AlreadyExistsException("database exist");
+      }
       databases.computeIfPresent(catalogName, (c, dbList) -> {
-        if (dbList.contains(database)) {
-          throw new IllegalStateException("database exist");
-        }
         List<String> newList = new ArrayList<>(dbList);
         newList.add(database);
         return newList;
@@ -307,30 +311,49 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-      synchronized (lock) {
-        long currentTxId = tableCurrentTxId.containsKey(tableIdentifier) ? tableCurrentTxId.get(tableIdentifier) : 0;
-        if (transactionSignature == null || transactionSignature.isEmpty()) {
-          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
-          return currentTxId + 1;
-        }
-        Map<String, Long> signMap = tableTxId.get(tableIdentifier);
-        if (signMap != null && signMap.containsKey(transactionSignature)) {
-          return signMap.get(transactionSignature);
-        } else {
-          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
-          if (signMap == null) {
-            signMap = new HashMap<>();
-          }
-          signMap.put(transactionSignature, currentTxId + 1);
-          tableTxId.put(tableIdentifier, signMap);
-          return currentTxId + 1;
-        }
+      throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
+    }
+
+    @Override
+    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                         Map<String, String> properties)
+        throws OperationConflictException, TException {
+      Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
+      long now = System.currentTimeMillis();
+      properties.put("create.time", now + "");
+      properties.put("expiration.time", (now + 60000) + "");
+      properties.put("blocker.timeout", 60000 + "");
+      Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
+      blockers.put(blocker.getBlockerId(), blocker);
+      return blocker;
+    }
+
+    @Override
+    public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers != null) {
+        blockers.remove(blockerId);
       }
     }
 
-     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
-     }
+    @Override
+    public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      return 0;
+    }
+
+    @Override
+    public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers == null) {
+        return Collections.emptyList();
+      } else {
+        return new ArrayList<>(blockers.values());
+      }
+    }
+
+    public void updateMeta(CatalogMeta meta, String key, String value) {
+      meta.getCatalogProperties().put(key, value);
+    }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {

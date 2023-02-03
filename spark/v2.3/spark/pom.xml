@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.4.0</version>
+        <version>0.4.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -296,7 +296,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19</version>
                 <configuration>
                     <includes>
                         <include>**/ArcticSparkMainTest</include>

@@ -30,6 +30,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
 import com.netease.arctic.optimizer.exception.TimeoutException;
@@ -40,7 +41,7 @@ import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -218,7 +219,29 @@ public class BaseTaskExecutor implements Serializable {
   }
 
   private NodeTask constructTask(ArcticTable table, OptimizeTask task, int attemptId) {
-    NodeTask nodeTask = new NodeTask();
+    NodeTask nodeTask;
+    if (TableTypeUtil.isIcebergTableFormat(table)) {
+      List<ContentFileWithSequence<?>> base =
+          task.getBaseFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> insert =
+          task.getInsertFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> eqDelete =
+          task.getDeleteFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> posDelete =
+          task.getPosDeleteFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
+      nodeTask = new NodeTask(base,insert, eqDelete, posDelete, false);
+    } else {
+      List<ContentFileWithSequence<?>> base =
+          task.getBaseFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> insert =
+          task.getInsertFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> eqDelete =
+          task.getDeleteFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
+      List<ContentFileWithSequence<?>> posDelete =
+          task.getPosDeleteFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
+      nodeTask = new NodeTask(base,insert, eqDelete, posDelete, true);
+    }
+
     if (CollectionUtils.isNotEmpty(task.getSourceNodes())) {
       nodeTask.setSourceNodes(
           task.getSourceNodes().stream().map(BaseTaskExecutor::toTreeNode).collect(Collectors.toSet()));
@@ -226,34 +249,6 @@ public class BaseTaskExecutor implements Serializable {
     nodeTask.setTableIdentifier(toTableIdentifier(task.getTableIdentifier()));
     nodeTask.setTaskId(task.getTaskId());
     nodeTask.setAttemptId(attemptId);
-
-    if (TableTypeUtil.isIcebergTableFormat(table)) {
-      for (ByteBuffer file : task.getBaseFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.BASE_FILE);
-      }
-      for (ByteBuffer file : task.getInsertFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.INSERT_FILE);
-      }
-      for (ByteBuffer file : task.getDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.EQ_DELETE_FILE);
-      }
-      for (ByteBuffer file : task.getPosDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.POS_DELETE_FILE);
-      }
-    } else {
-      for (ByteBuffer file : task.getBaseFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.BASE_FILE);
-      }
-      for (ByteBuffer file : task.getInsertFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.INSERT_FILE);
-      }
-      for (ByteBuffer file : task.getDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.EQ_DELETE_FILE);
-      }
-      for (ByteBuffer file : task.getPosDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
-      }
-    }
 
     Map<String, String> properties = task.getProperties();
     if (properties != null) {

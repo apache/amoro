@@ -55,6 +55,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,6 +78,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> cachedTables = new ConcurrentHashMap<>();
+  private final Set<TableIdentifier> invalidTables = Collections.synchronizedSet(new HashSet<>());
 
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
@@ -242,6 +244,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
       } catch (Throwable t) {
         LOG.error("failed to load  " + tableIdentifier, t);
+        invalidTables.add(tableIdentifier);
       }
     }
 
@@ -326,9 +329,15 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
             TableProperties.TABLE_CREATE_TIME_DEFAULT);
         newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
         addTableIntoCache(newTableItem, arcticTable.properties(), true);
+        // remove recover table if it is present
+        invalidTables.remove(toAddTable);
         success++;
       } catch (Throwable t) {
-        LOG.error("failed to load  " + toAddTable, t);
+        // avoid printing too many error logs
+        if (!invalidTables.contains(toAddTable)) {
+          LOG.error("failed to load  " + toAddTable, t);
+          invalidTables.add(toAddTable);
+        }
       }
     }
     LOG.info("try add {} new tables, success {}, {}", toAddTables.size(), success, toAddTables);
@@ -427,6 +436,20 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           getMapper(sqlSession, OptimizeHistoryMapper.class);
 
       return optimizeHistoryMapper.selectOptimizeHistory(identifier);
+    }
+  }
+
+  @Override
+  public Long getLatestCommitTime(TableIdentifier identifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeHistoryMapper optimizeHistoryMapper =
+          getMapper(sqlSession, OptimizeHistoryMapper.class);
+
+      Timestamp latestCommitTime = optimizeHistoryMapper.latestCommitTime(identifier);
+      if (latestCommitTime == null) {
+        return 0L;
+      }
+      return latestCommitTime.getTime();
     }
   }
 

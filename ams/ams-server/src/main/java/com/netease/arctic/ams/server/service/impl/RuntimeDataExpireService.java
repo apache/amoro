@@ -37,6 +37,7 @@ public class RuntimeDataExpireService {
   private final IMetaService metaService;
   private final IOptimizeService optimizeService;
   private final ITableTaskHistoryService tableTaskHistoryService;
+  private final TableBlockerService tableBlockerService;
 
   // 1 days
   Long txDataExpireInterval = 24 * 60 * 60 * 1000L;
@@ -51,6 +52,7 @@ public class RuntimeDataExpireService {
     this.metaService = ServiceContainer.getMetaService();
     this.tableTaskHistoryService = ServiceContainer.getTableTaskHistoryService();
     this.optimizeService = ServiceContainer.getOptimizeService();
+    this.tableBlockerService = ServiceContainer.getTableBlockerService();
   }
 
   public void doExpire() {
@@ -85,6 +87,16 @@ public class RuntimeDataExpireService {
             System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
       } catch (Exception e) {
         LOG.error("failed to expire and clear optimize_history table", e);
+      }
+    });
+
+    // expire and clean table_blocker
+    tableMetadata.forEach(meta -> {
+      TableIdentifier identifier = meta.getTableIdentifier();
+      try {
+        tableBlockerService.expireBlockers(identifier);
+      } catch (Exception e) {
+        LOG.error("failed to expire and clear table_blocker {}", identifier, e);
       }
     });
   }

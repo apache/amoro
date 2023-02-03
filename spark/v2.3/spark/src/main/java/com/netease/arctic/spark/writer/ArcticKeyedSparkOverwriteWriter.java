@@ -63,7 +63,6 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private final KeyedTable table;
   private final StructType dsSchema;
-  private final long legacyTxId;
   private final long txId;
   private final String subDir;
   protected Expression overwriteExpr = null;
@@ -79,8 +78,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
     }
     this.table = table;
     this.dsSchema = dsSchema;
-    this.legacyTxId = table.beginTransaction(null);
-    this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
+    this.txId = table.beginTransaction(null);
     this.subDir = HiveTableUtil.newHiveSubdirectory(this.txId);
   }
 
@@ -106,7 +104,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, legacyTxId, subDir);
+    return new WriterFactory(table, dsSchema, txId, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {

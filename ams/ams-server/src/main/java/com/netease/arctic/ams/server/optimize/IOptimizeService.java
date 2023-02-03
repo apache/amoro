@@ -72,6 +72,13 @@ public interface IOptimizeService {
   List<OptimizeHistory> getOptimizeHistory(TableIdentifier tableIdentifier);
 
   /**
+   * Get the latest commit time of a table
+   * @param identifier
+   * @return
+   */
+  Long getLatestCommitTime(TableIdentifier identifier);
+
+  /**
    * Get max optimize history id.
    * @return max optimize history id
    */

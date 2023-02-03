@@ -89,7 +89,7 @@ public class FlinkTestBase extends TableTestBase {
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
       MiniClusterResource.createWithClassloaderCheckDisabled();
-  
+
   public static boolean IS_LOCAL = true;
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
 
@@ -313,12 +313,16 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
                                                              boolean base) {
+    return createKeyedTaskWriter(keyedTable, rowType, base, 3);
+  }
+
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
+                                                             boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
-    taskWriterFactory.setTransactionId(transactionId);
-    taskWriterFactory.setMask(3);
+    taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
   }

@@ -67,7 +67,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_
 import static com.netease.arctic.table.TableProperties.LOCATION;
 
 public class TestWatermark extends FlinkTestBase {
-  public static final Logger LOG = LoggerFactory.getLogger(TestJoin.class);
+  public static final Logger LOG = LoggerFactory.getLogger(TestWatermark.class);
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -108,7 +108,7 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
         ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
           RowKind.INSERT, 2L, 123, StringData.fromString("a"), StringData.fromString("a"),
@@ -156,7 +156,7 @@ public class TestWatermark extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
         ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
           RowKind.INSERT, 2L, 123, StringData.fromString("a"), StringData.fromString("a"),

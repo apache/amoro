@@ -37,6 +37,7 @@ import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
+import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
@@ -59,6 +60,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.util.PropertyUtil;
@@ -119,6 +121,20 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getOptimizeDatafiles(tableIdentifier, tableType);
+    }
+  }
+
+  public List<DataFileInfo> getOptimizeDatafilesWithSnapshot(TableIdentifier tableIdentifier, String tableType,
+                                                             Snapshot snapshot) {
+    Preconditions.checkNotNull(snapshot, "snapshot should not be null");
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      if (!snapInfoCacheMapper.snapshotIsCached(tableIdentifier, tableType, snapshot.snapshotId())) {
+        throw new IllegalArgumentException("snapshot is not cached " + snapshot.snapshotId());
+      }
+      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+      return fileInfoCacheMapper.getOptimizeDatafilesWithSnapshot(tableIdentifier, tableType,
+          snapshot.sequenceNumber());
     }
   }
 
@@ -188,7 +204,7 @@ public class FileInfoCacheService extends IJDBCService {
       } catch (Exception e) {
         LOG.warn(
             String.format("load table error when sync file info cache:%s.%s.%s",
-            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+                identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
             e);
       }
 
@@ -293,7 +309,7 @@ public class FileInfoCacheService extends IJDBCService {
       List<CacheFileInfo> fileInfos = new ArrayList<>();
       List<DataFile> addFiles = new ArrayList<>();
       List<DataFile> deleteFiles = new ArrayList<>();
-      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
+      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, tableType, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
         CacheFileInfo cacheFileInfo = CacheFileInfo.convert(amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
@@ -375,11 +391,11 @@ public class FileInfoCacheService extends IJDBCService {
     }
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
     deleteFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
 
@@ -501,9 +517,11 @@ public class FileInfoCacheService extends IJDBCService {
         cache.setProducer(tableCommitMeta.getCommitMetaProducer().name());
         long fileSize = 0L;
         int fileCount = 0;
-        for (DataFile file : tableChange.getAddFiles()) {
-          fileSize += file.getFileSize();
-          fileCount++;
+        if (CollectionUtils.isNotEmpty(tableChange.getAddFiles())) {
+          for (DataFile file : tableChange.getAddFiles()) {
+            fileSize += file.getFileSize();
+            fileCount++;
+          }
         }
         if (CollectionUtils.isNotEmpty(tableChange.getDeleteFiles())) {
           for (DataFile file : tableChange.getDeleteFiles()) {

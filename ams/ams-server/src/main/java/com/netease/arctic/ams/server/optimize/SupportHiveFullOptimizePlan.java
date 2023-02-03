@@ -23,10 +23,10 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -39,7 +39,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveFullOptimizePlan.class);
@@ -52,9 +51,9 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   public SupportHiveFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                       List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
                                       Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                                      Predicate<Long> snapshotIsCached) {
+                                     long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();
@@ -80,7 +79,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         LOG.info("table {} has in not hive location files", arcticTable.id());
         break;
       } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
-        DataTreeNode node = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
+        DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
         if (nodeSmallFileCount.get(node) != null) {
           nodeHaveTwoSmallFiles = true;
           LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",

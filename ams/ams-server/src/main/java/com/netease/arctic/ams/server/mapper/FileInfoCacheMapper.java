@@ -96,6 +96,41 @@ public interface FileInfoCacheMapper {
           @Param("tableIdentifier") TableIdentifier tableIdentifier,
           @Param("innerTable") String innerTable);
 
+  /**
+   * Get files with snapshot, like Time Travel.
+   * These files should:
+   * - file's add_snapshot_sequence <= this_snapshot_sequence
+   * - is not deleted or is deleted by older snapshot (file's delete_snapshot_sequence > this_snapshot_sequence)
+   *
+   * @param tableIdentifier -
+   * @param innerTable      -
+   * @param sequence        - sequence of this snapshot
+   * @return files of this snapshot
+   */
+  @Select("select file_path, file_type, file_size, file_mask, file_index, record_count, spec_id, partition_name," +
+      " commit_time, add_snapshot_sequence from " + TABLE_NAME + " where table_identifier = #{tableIdentifier," +
+      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and" +
+      " inner_table = #{innerTable} and add_snapshot_sequence <= #{sequence} and (delete_snapshot_id is null or" +
+      " delete_snapshot_id in (select snapshot_id from snapshot_info_cache where table_identifier =" +
+      " #{tableIdentifier,typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and" +
+      " inner_table = #{innerTable} and snapshot_sequence > #{sequence}))")
+  @Results({
+      @Result(column = "file_path", property = "path"),
+      @Result(column = "file_type", property = "type"),
+      @Result(column = "file_size", property = "size"),
+      @Result(column = "file_mask", property = "mask"),
+      @Result(column = "file_index", property = "index"),
+      @Result(column = "record_count", property = "recordCount"),
+      @Result(column = "spec_id", property = "specId"),
+      @Result(column = "partition_name", property = "partition"),
+      @Result(column = "commit_time", property = "commitTime",
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "add_snapshot_sequence", property = "sequence")
+  })
+  List<DataFileInfo> getOptimizeDatafilesWithSnapshot(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("innerTable") String innerTable, @Param("sequence") long sequence);
+
   @Delete("delete from " + TABLE_NAME + " where delete_snapshot_id is not null and commit_time <  #{expiredTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
   void expireCache(@Param("expiredTime") long expiredTime);
@@ -145,8 +180,8 @@ public interface FileInfoCacheMapper {
           @Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("partition") String partition);
 
   @Select("select file_path, file_type, file_size, file_mask, file_index, record_count, spec_id, partition_name, " +
-      "commit_time from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
-      ".ams.server.mybatis.TableIdentifier2StringConverter} and " +
+      "commit_time, add_snapshot_sequence from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
       "commit_time <= #{ttl, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
       "and inner_table = #{innerTable} and " +
       "delete_snapshot_id is null  ")
@@ -160,7 +195,8 @@ public interface FileInfoCacheMapper {
       @Result(column = "spec_id", property = "specId"),
       @Result(column = "partition_name", property = "partition"),
       @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<DataFileInfo> getChangeTableTTLDataFiles(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                                 @Param("innerTable") String innerTable,

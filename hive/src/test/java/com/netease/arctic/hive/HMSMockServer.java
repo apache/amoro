@@ -18,15 +18,6 @@
 
 package com.netease.arctic.hive;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -51,6 +42,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -93,6 +94,7 @@ public class HMSMockServer {
   private HiveClientPool clientPool;
   private int port;
   private HiveMetaStoreClient client;
+  private boolean started = false;
 
   public HMSMockServer() {
     this(new File("hive_warehouse"));
@@ -100,9 +102,6 @@ public class HMSMockServer {
 
   public HMSMockServer(File file) {
     this.hiveLocalDir = file;
-    // if (file.exists()){
-    //
-    // }
     int port = new Random().nextInt(4000);
     this.port = port + 24000;
     this.hiveConf = newHiveConf(this.port);
@@ -141,6 +140,7 @@ public class HMSMockServer {
       System.setProperty(HiveConf.ConfVars.METASTOREURIS.varname, hiveConf.getVar(HiveConf.ConfVars.METASTOREURIS));
 
       this.clientPool = new HiveClientPool(1, hiveConf);
+      started = true;
     } catch (Exception e) {
       throw new RuntimeException("Cannot start TestHiveMetastore", e);
     }
@@ -169,16 +169,34 @@ public class HMSMockServer {
     }
     if (baseHandler != null) {
       baseHandler.shutdown();
+      clearHMSTxnHandlerStaticResource();
     }
-    METASTORE_THREADS_SHUTDOWN.invoke();
 
     if (client != null) {
       client.close();
     }
+    started = false;
 
     LOG.info("-------------------------------------------------------------------------");
     LOG.info("    HiveMetastoreServer finished");
     LOG.info("-------------------------------------------------------------------------");
+  }
+
+  private void clearHMSTxnHandlerStaticResource() {
+    try {
+      // Clear the static connection pool resource in org.apache.hadoop.hive.metastore.txn.TxnHandler
+      // in case using the old connection pool in the new Hive Metastore server.
+      Class<?> handlerClass = Class.forName("org.apache.hadoop.hive.metastore.txn.TxnHandler");
+      Field coonPoolField = handlerClass.getDeclaredField("connPool");
+      coonPoolField.setAccessible(true);
+      coonPoolField.set(null, null);
+    } catch (Exception e) {
+      LOG.warn("Fail to clear static resource in HMS TxnHandler", e);
+    }
+  }
+
+  public boolean isStarted() {
+    return started;
   }
 
   public HiveConf hiveConf() {

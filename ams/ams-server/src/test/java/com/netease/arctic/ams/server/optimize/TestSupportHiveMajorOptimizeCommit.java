@@ -26,12 +26,11 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.ContentFile;
@@ -57,7 +56,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -81,7 +80,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -95,7 +94,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -141,7 +140,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 2L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(),
+            testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -151,7 +151,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -165,7 +165,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -213,7 +213,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -233,7 +233,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
@@ -247,7 +247,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -288,10 +288,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHiveCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -301,15 +301,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testHiveTable, tasks.get(0).getTaskId().getType());
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
-      ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
+      ContentFile<?> baseFile = SerializationUtils.toInternalTableFile(task.getBaseFiles().get(0));
+      DataTreeNode dataTreeNode = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -317,7 +317,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       optimizeRuntime.setNewFileCnt(targetFiles.size());
       optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-      optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+      optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
       return new OptimizeTaskItem(task, optimizeRuntime);
@@ -360,10 +360,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testHiveTable.updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable, false))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -373,15 +373,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testHiveTable, tasks.get(0).getTaskId().getType());
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
-      ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
+      ContentFile<?> baseFile = SerializationUtils.toInternalTableFile(task.getBaseFiles().get(0));
+      DataTreeNode dataTreeNode = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -389,7 +389,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       optimizeRuntime.setNewFileCnt(targetFiles.size());
       optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-      optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+      optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
       return new OptimizeTaskItem(task, optimizeRuntime);
@@ -433,7 +433,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable
+                , false))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -443,7 +444,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id());
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
@@ -457,7 +458,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -504,7 +505,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable
+                ,false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -525,7 +527,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id());
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
@@ -539,7 +541,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -580,9 +582,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable,
                                                             OptimizeType optimizeType) throws IOException {
     List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, optimizeType, 3);
-    return dataFiles.stream().collect(Collectors.groupingBy(dataFile -> {
-      DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
-      return keyedFile.node().toAmsTreeNode();
-    }));
+    return dataFiles.stream().collect(Collectors.groupingBy(
+        dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
   }
 }

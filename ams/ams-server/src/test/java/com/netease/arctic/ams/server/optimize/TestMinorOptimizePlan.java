@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
@@ -56,7 +57,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -75,7 +76,8 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     changeTableFilesInfo.addAll(changeDeleteFilesInfo);
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.changeTable().currentSnapshot().snapshotId(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -85,15 +87,16 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
   }
 
   protected List<DataFile> insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withChangeAction(ChangeAction.DELETE)
-        .withTransactionId(transactionId)
-        .buildWriter(ChangeLocationKind.INSTANT);
-
+    AtomicInteger taskId = new AtomicInteger();
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     // delete 1000 records in 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+          .withChangeAction(ChangeAction.DELETE)
+          .withTransactionId(transactionId)
+          .withTaskId(taskId.incrementAndGet())
+          .buildWriter(ChangeLocationKind.INSTANT);
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
@@ -107,21 +110,22 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable, false))
         .collect(Collectors.toList());
     return changeDeleteFiles;
   }
 
   protected List<DataFile> insertChangeDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withChangeAction(ChangeAction.INSERT)
-        .withTransactionId(transactionId)
-        .buildWriter(ChangeLocationKind.INSTANT);
-
+    AtomicInteger taskId = new AtomicInteger();
     List<DataFile> changeInsertFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+          .withChangeAction(ChangeAction.INSERT)
+          .withTransactionId(transactionId)
+          .withTaskId(taskId.incrementAndGet())
+          .buildWriter(ChangeLocationKind.INSTANT);
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
@@ -135,7 +139,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable, true))
         .collect(Collectors.toList());
 
     return changeInsertFiles;

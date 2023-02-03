@@ -27,8 +27,8 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -76,7 +76,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -104,7 +104,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testKeyedTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
        tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
@@ -121,7 +123,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       finalTargetFiles.addAll(task.getInsertFiles());
@@ -160,7 +162,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -188,7 +190,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
@@ -201,7 +205,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       finalTargetFiles.addAll(task.getInsertFiles());
@@ -241,7 +245,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testKeyedTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     Set<StructLike> partitionData = changeEqDeletes.stream().map(ContentFile::partition).collect(Collectors.toSet());
@@ -288,7 +294,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis(),
+        testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
@@ -323,7 +331,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
   private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<DataFile> dataFiles) throws Exception {
     List<DeleteFile> deleteFiles = insertOptimizeTargetDeleteFiles(testKeyedTable, dataFiles, 5);
     return deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->  {
-      DataTreeNode dataTreeNode = FileUtil.parseFileNodeFromFileName(deleteFile.path().toString());
+      DataTreeNode dataTreeNode = FileNameGenerator.parseFileNodeFromFileName(deleteFile.path().toString());
       return new TreeNode(dataTreeNode.mask(), dataTreeNode.index());
     }));
   }

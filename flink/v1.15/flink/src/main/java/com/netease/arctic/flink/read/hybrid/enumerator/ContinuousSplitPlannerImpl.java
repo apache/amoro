@@ -22,11 +22,12 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.annotation.Internal;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.TableScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,13 +77,19 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
       long snapshotId = changeSnapshot.snapshotId();
-      TableScan tableScan = table.changeTable().newScan();
+      TableEntriesScan entriesScan = TableEntriesScan.builder(table.changeTable())
+          .useSnapshot(snapshotId)
+          .includeFileContent(FileContent.DATA)
+          .build();
 
+      Long fromSequence = null;
       if (fromChangeSnapshotId != Long.MIN_VALUE) {
-        tableScan = tableScan.appendsBetween(fromChangeSnapshotId, snapshotId);
+        Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
+        fromSequence = snapshot.sequenceNumber();
       }
 
-      List<ArcticSplit> arcticChangeSplit = planChangeTable(tableScan, splitCount);
+      List<ArcticSplit> arcticChangeSplit =
+          planChangeTable(entriesScan, fromSequence, table.changeTable().spec(), splitCount);
       return new ContinuousEnumerationResult(
           arcticChangeSplit,
           lastPosition,

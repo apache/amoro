@@ -71,10 +71,10 @@ public class TableProperties {
    */
   public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
-  
+
   public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
-  
+
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
   public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
 
@@ -108,11 +108,11 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL = "self-optimizing.major.trigger.interval";
   public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
-  
+
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
   public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
-  
-  
+
+
   /**
    * deprecated table optimize related properties
    */
@@ -225,11 +225,19 @@ public class TableProperties {
 
   /**
    * table read related properties
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
    */
+  @Deprecated
   public static final String READ_DISTRIBUTION_MODE = "read.distribution-mode";
   public static final String READ_DISTRIBUTION_MODE_NONE = "none";
   public static final String READ_DISTRIBUTION_MODE_HASH = "hash";
-  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_HASH;
+  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_NONE;
+  /**
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
+   */
+  @Deprecated
   public static final String READ_DISTRIBUTION_HASH_MODE = "read.distribution.hash-mode";
   public static final String READ_DISTRIBUTION_HASH_PARTITION = "partition-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
@@ -254,7 +262,9 @@ public class TableProperties {
   public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
-  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
+  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = LOG_STORE_STORAGE_TYPE_KAFKA;
 
   public static final String LOG_STORE_ADDRESS = "log-store.address";
 
@@ -265,6 +275,8 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
+  
+  public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
 

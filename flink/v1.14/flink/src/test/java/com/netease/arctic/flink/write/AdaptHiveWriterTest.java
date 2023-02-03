@@ -26,17 +26,6 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.WriteOperationKind;
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -56,6 +45,17 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public class AdaptHiveWriterTest extends HiveTableTestBase {
 
   @BeforeClass
@@ -73,8 +73,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
     {
       FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
           .buildFor(testKeyedHiveTable)
-          .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()))
-          .withTransactionId(1L);
+          .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
 
       Assert.assertTrue(builder.buildWriter(ChangeLocationKind.INSTANT) instanceof FlinkChangeTaskWriter);
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
@@ -172,8 +171,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
   public void testWrite(ArcticTable table, LocationKind locationKind, List<RowData> records, String pathFeature) throws IOException {
     FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
         .buildFor(table)
-        .withFlinkSchema(FlinkSchemaUtil.convert(table.schema()))
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
+        .withFlinkSchema(FlinkSchemaUtil.convert(table.schema()));
 
     TaskWriter<RowData> changeWrite = builder.buildWriter(locationKind);
     for (RowData record: records) {

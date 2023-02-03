@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.ErrorMessage;
-import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
@@ -39,7 +38,6 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
-import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -47,7 +45,6 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
-import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
@@ -66,12 +63,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,13 +114,12 @@ public class TableOptimizeItem extends IJDBCService {
   private final AmsClient metastoreClient;
   private volatile double quotaCache;
   private volatile String groupNameCache;
-  private final Predicate<Long> snapshotIsCached = new Predicate<Long>() {
-    @Override
-    public boolean apply(@Nullable Long snapshotId) {
-      return fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(),
-          Constants.INNER_TABLE_BASE, snapshotId);
-    }
-  };
+
+  /**
+   * -1: not initialized
+   * 0: not committed
+   */
+  private volatile long latestCommitTime = -1L;
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -254,6 +249,13 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public double getQuotaCache() {
     return quotaCache;
+  }
+
+  public long getLatestCommitTime() {
+    if (latestCommitTime == -1L) {
+      latestCommitTime = ServiceContainer.getOptimizeService().getLatestCommitTime(tableIdentifier);
+    }
+    return latestCommitTime;
   }
 
   public String getGroupNameCache() {
@@ -423,6 +425,7 @@ public class TableOptimizeItem extends IJDBCService {
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
       tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
+      Map<String, Boolean> partitionIsRunning = generatePartitionRunning();
       if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
         List<FileScanTask> fileScanTasks;
         try (CloseableIterable<FileScanTask> filesIterable = arcticTable.asUnkeyedTable().newScan().planFiles()) {
@@ -430,7 +433,8 @@ public class TableOptimizeItem extends IJDBCService {
         } catch (IOException e) {
           throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
         }
-        IcebergFullOptimizePlan fullPlan = getIcebergFullPlan(fileScanTasks, -1, System.currentTimeMillis());
+        IcebergFullOptimizePlan fullPlan =
+            getIcebergFullPlan(fileScanTasks, -1, System.currentTimeMillis(), partitionIsRunning);
         List<BaseOptimizeTask> fullTasks = fullPlan.plan();
         // pending for full optimize
         if (CollectionUtils.isNotEmpty(fullTasks)) {
@@ -438,7 +442,7 @@ public class TableOptimizeItem extends IJDBCService {
               TableOptimizeRuntime.OptimizeStatus.Pending, fullTasks, OptimizeType.FullMajor);
         } else {
           IcebergMinorOptimizePlan minorPlan =
-              getIcebergMinorPlan(fileScanTasks, -1, System.currentTimeMillis());
+              getIcebergMinorPlan(fileScanTasks, -1, System.currentTimeMillis(), partitionIsRunning);
           List<BaseOptimizeTask> minorTasks = minorPlan.plan();
           // pending for minor optimize
           if (CollectionUtils.isNotEmpty(minorTasks)) {
@@ -450,23 +454,35 @@ public class TableOptimizeItem extends IJDBCService {
           }
         }
       } else {
-        FullOptimizePlan fullPlan = getFullPlan(-1, System.currentTimeMillis());
-        List<BaseOptimizeTask> fullTasks = fullPlan.plan();
+        Snapshot baseCurrentSnapshot;
+        Snapshot changeCurrentSnapshot = null;
+        if (getArcticTable().isKeyedTable()) {
+          changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(getArcticTable().asKeyedTable().changeTable());
+          baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(getArcticTable().asKeyedTable().baseTable());
+        } else {
+          baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(getArcticTable().asUnkeyedTable());
+        }
+        FullOptimizePlan fullPlan =
+            getFullPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseCurrentSnapshot);
+        List<BaseOptimizeTask> fullTasks = fullPlan == null ? Collections.emptyList() : fullPlan.plan();
         // pending for full optimize
         if (CollectionUtils.isNotEmpty(fullTasks)) {
           tryUpdateOptimizeInfo(
               TableOptimizeRuntime.OptimizeStatus.Pending, fullTasks, OptimizeType.FullMajor);
         } else {
-          MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
-          List<BaseOptimizeTask> majorTasks = majorPlan.plan();
+          MajorOptimizePlan majorPlan =
+              getMajorPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseCurrentSnapshot);
+          List<BaseOptimizeTask> majorTasks = majorPlan == null ? Collections.emptyList() : majorPlan.plan();
           // pending for major optimize
           if (CollectionUtils.isNotEmpty(majorTasks)) {
             tryUpdateOptimizeInfo(
                 TableOptimizeRuntime.OptimizeStatus.Pending, majorTasks, OptimizeType.Major);
           } else {
             if (isKeyedTable()) {
-              MinorOptimizePlan minorPlan = getMinorPlan(-1, System.currentTimeMillis());
-              List<BaseOptimizeTask> minorTasks = minorPlan.plan();
+              MinorOptimizePlan minorPlan =
+                  getMinorPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseCurrentSnapshot,
+                      changeCurrentSnapshot);
+              List<BaseOptimizeTask> minorTasks = minorPlan == null ? Collections.emptyList() : minorPlan.plan();
               if (CollectionUtils.isNotEmpty(minorTasks)) {
                 tryUpdateOptimizeInfo(
                     TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks, OptimizeType.Minor);
@@ -611,12 +627,10 @@ public class TableOptimizeItem extends IJDBCService {
 
       try {
         // persist partition optimize time
-        tableOptimizeRuntime.setRunning(false);
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
         LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
-        tableOptimizeRuntime.setRunning(true);
       }
 
       tasksLock.lock();
@@ -636,7 +650,6 @@ public class TableOptimizeItem extends IJDBCService {
         for (OptimizeTaskItem optimizeTaskItem : removedList) {
           optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
         }
-        tableOptimizeRuntime.setRunning(true);
         LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
             t);
         sqlSession.rollback(true);
@@ -701,6 +714,9 @@ public class TableOptimizeItem extends IJDBCService {
         // persist optimize task history
         OptimizeHistory record = buildOptimizeRecord(tasks, commitTime);
         optimizeHistoryMapper.insertOptimizeHistory(record);
+
+        // update the latest commit time in memory
+        latestCommitTime = Math.max(latestCommitTime, commitTime);
       } catch (Throwable t) {
         LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
@@ -708,12 +724,10 @@ public class TableOptimizeItem extends IJDBCService {
 
       try {
         // persist partition optimize time
-        tableOptimizeRuntime.setRunning(false);
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
         LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
-        tableOptimizeRuntime.setRunning(true);
       }
 
       tasksLock.lock();
@@ -733,7 +747,6 @@ public class TableOptimizeItem extends IJDBCService {
         for (OptimizeTaskItem optimizeTaskItem : removedList) {
           optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
         }
-        tableOptimizeRuntime.setRunning(true);
         LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
             t);
         sqlSession.rollback(true);
@@ -830,17 +843,15 @@ public class TableOptimizeItem extends IJDBCService {
    * GetOptimizeTasksToExecute
    * include Init, Failed.
    *
-   * @param maxCnt - max task cnt to pool
    * @return List of OptimizeTaskItem
    */
-  public List<OptimizeTaskItem> getOptimizeTasksToExecute(int maxCnt) {
+  public List<OptimizeTaskItem> getOptimizeTasksToExecute() {
     // lock for conflict with add new tasks, because files with be removed from OptimizeTask after tasks added
     tasksLock.lock();
     try {
       return optimizeTasks.values().stream()
           .filter(taskItem -> taskItem.canExecute(this::optimizeMaxRetry))
           .sorted(Comparator.comparingLong(o -> o.getOptimizeTask().getCreateTime()))
-          .limit(maxCnt)
           .collect(Collectors.toList());
     } finally {
       tasksLock.unlock();
@@ -851,12 +862,17 @@ public class TableOptimizeItem extends IJDBCService {
    * If task execute timeout, set it to be Failed.
    */
   public void checkTaskExecuteTimeout() {
-    optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
-        .forEach(task -> {
-          task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
-              System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
-          LOG.error("{} execute timeout, change to Failed", task.getTaskId());
-        });
+    tasksLock.lock();
+    try {
+      optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
+          .forEach(task -> {
+            task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
+                System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
+            LOG.error("{} execute timeout, change to Failed", task.getTaskId());
+          });
+    } finally {
+      tasksLock.unlock();
+    }
   }
 
   /**
@@ -901,7 +917,6 @@ public class TableOptimizeItem extends IJDBCService {
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
         clearOptimizeTasks();
-        tableOptimizeRuntime.setRunning(false);
       }
     }
 
@@ -951,19 +966,32 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public FullOptimizePlan getFullPlan(int queueId, long currentTime) {
-    List<DataFileInfo> baseTableFiles =
-        fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-    List<DataFileInfo> baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
-    baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
-    List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+  public FullOptimizePlan getFullPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+                                      Snapshot baseSnapshot) {
+    if (baseSnapshot == null) {
+      LOG.debug("{} base table is empty, skip full optimize", tableIdentifier);
+      return null;
+    }
+    List<DataFileInfo> baseFiles;
+    List<DataFileInfo> posDeleteFiles;
+    try {
+      List<DataFileInfo> baseTableFiles =
+          fileInfoCacheService.getOptimizeDatafilesWithSnapshot(tableIdentifier.buildTableIdentifier(),
+              Constants.INNER_TABLE_BASE, baseSnapshot);
+      baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
+      baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
+      posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+    } catch (Exception e) {
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
+      return null;
+    }
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveFullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
     } else {
       return new FullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
     }
   }
 
@@ -974,19 +1002,32 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public MajorOptimizePlan getMajorPlan(int queueId, long currentTime) {
-    List<DataFileInfo> baseTableFiles =
-        fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-    List<DataFileInfo> baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
-    baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
-    List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+  public MajorOptimizePlan getMajorPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+                                        Snapshot baseSnapshot) {
+    if (baseSnapshot == null) {
+      LOG.debug("{} base table is empty, skip major optimize", tableIdentifier);
+      return null;
+    }
+    List<DataFileInfo> baseFiles;
+    List<DataFileInfo> posDeleteFiles;
+    try {
+      List<DataFileInfo> baseTableFiles =
+          fileInfoCacheService.getOptimizeDatafilesWithSnapshot(tableIdentifier.buildTableIdentifier(),
+              Constants.INNER_TABLE_BASE, baseSnapshot);
+      baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
+      baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
+      posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+    } catch (Exception e) {
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
+      return null;
+    }
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveMajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
     } else {
       return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
     }
   }
 
@@ -997,18 +1038,36 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public MinorOptimizePlan getMinorPlan(int queueId, long currentTime) {
-    List<DataFileInfo> baseTableFiles =
-        fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-    List<DataFileInfo> baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
-    baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
-    List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+  public MinorOptimizePlan getMinorPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+                                        Snapshot baseSnapshot, Snapshot changeSnapshot) {
+    if (changeSnapshot == null) {
+      LOG.debug("{} change table is empty, skip minor optimize", tableIdentifier);
+      return null;
+    }
+    List<DataFileInfo> baseFiles = Collections.emptyList();
+    List<DataFileInfo> posDeleteFiles = Collections.emptyList();
+    List<DataFileInfo> changeTableFiles;
+    try {
+      if (baseSnapshot != null) {
+        List<DataFileInfo> baseTableFiles =
+            fileInfoCacheService.getOptimizeDatafilesWithSnapshot(tableIdentifier.buildTableIdentifier(),
+                Constants.INNER_TABLE_BASE, baseSnapshot);
+        baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
+        baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
+        posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+      }
 
-    List<DataFileInfo> changeTableFiles =
-        fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
+      changeTableFiles =
+          fileInfoCacheService.getOptimizeDatafilesWithSnapshot(tableIdentifier.buildTableIdentifier(),
+              Constants.INNER_TABLE_CHANGE, changeSnapshot);
+    } catch (Exception e) {
+      LOG.warn("{} failed to get from file info cache", tableIdentifier, e);
+      return null;
+    }
 
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
-        generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+        partitionIsRunning, queueId, currentTime, changeSnapshot.snapshotId(),
+        baseSnapshot == null ? TableOptimizeRuntime.INVALID_SNAPSHOT_ID : baseSnapshot.snapshotId());
   }
 
   /**
@@ -1019,10 +1078,11 @@ public class TableOptimizeItem extends IJDBCService {
    * @return -
    */
   public IcebergFullOptimizePlan getIcebergFullPlan(List<FileScanTask> fileScanTasks,
-                                                     int queueId,
-                                                     long currentTime) {
+                                                    int queueId,
+                                                    long currentTime,
+                                                    Map<String, Boolean> partitionIsRunning) {
     return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
-        generatePartitionRunning(), queueId, currentTime);
+        partitionIsRunning, queueId, currentTime);
   }
 
   /**
@@ -1034,9 +1094,10 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public IcebergMinorOptimizePlan getIcebergMinorPlan(List<FileScanTask> fileScanTasks,
                                                       int queueId,
-                                                      long currentTime) {
+                                                      long currentTime,
+                                                      Map<String, Boolean> partitionIsRunning) {
     return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
-        generatePartitionRunning(), queueId, currentTime);
+        partitionIsRunning, queueId, currentTime);
   }
 
   /**
@@ -1046,6 +1107,14 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public TableOptimizeRuntime getTableOptimizeRuntime() {
     return tableOptimizeRuntime;
+  }
+
+  /**
+   * check whether table has optimize task
+   * @return -
+   */
+  public boolean optimizeRunning() {
+    return CollectionUtils.isNotEmpty(getOptimizeTasks());
   }
 
   /**
@@ -1065,7 +1134,7 @@ public class TableOptimizeItem extends IJDBCService {
         .collect(Collectors.toList());
   }
 
-  private Map<String, Boolean> generatePartitionRunning() {
+  public Map<String, Boolean> generatePartitionRunning() {
     Map<String, Boolean> result = new HashMap<>();
     for (OptimizeTaskItem optimizeTask : getOptimizeTasks()) {
       String partition = optimizeTask.getOptimizeTask().getPartition();

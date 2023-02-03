@@ -25,8 +25,10 @@ import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,23 +59,28 @@ public class TestArcticTransactionService {
     Schema schema = new Schema(
         Types.NestedField.required(1, "id", Types.IntegerType.get())
     );
+    PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(schema)
+        .addColumn("id").build();
     AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, tableName),
-        schema).create();
+        schema).withPrimaryKeySpec(primaryKeySpec).create();
   }
 
   @Test
   public void testTransaction() throws InterruptedException {
     ArcticTransactionService transactionService = ServiceContainer.getArcticTransactionService();
     TableIdentifier identifier = new TableIdentifier(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, tableName);
-    CountDownLatch latch = new CountDownLatch(10);
+    transactionService.validTable(identifier);
+    CountDownLatch latch = new CountDownLatch(3);
     Set<Long> txIds = new HashSet<>();
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 3; i++) {
       new Thread(() -> {
         try {
           long txId = transactionService.allocateTransactionId(identifier, "");
           txIds.add(txId);
           Assert.assertTrue(txId > 0);
+        } catch (TException exception) {
+          Assert.fail(exception.getMessage());
         } finally {
           latch.countDown();
         }
@@ -81,11 +88,6 @@ public class TestArcticTransactionService {
 
     }
     latch.await();
-    Assert.assertEquals(10, txIds.size());
-    long hasSignTxId = transactionService.allocateTransactionId(identifier, "sign");
-    for (int i = 0; i < 3; i++) {
-      long txId = transactionService.allocateTransactionId(identifier, "sign");
-      Assert.assertEquals(hasSignTxId, txId);
-    }
+    Assert.assertEquals(3, txIds.size());
   }
 }

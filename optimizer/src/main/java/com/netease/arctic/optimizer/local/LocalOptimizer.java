@@ -85,7 +85,22 @@ public class LocalOptimizer implements StatefulOptimizer {
     JSONObject containerProperties = containerInfo.getJSONObject(OptimizerProperties.CONTAINER_PROPERTIES);
     JSONObject groupProperties = groupInfo.getJSONObject(OptimizerProperties.OPTIMIZER_GROUP_PROPERTIES);
 
-    //add compact execute config
+    // spill map config
+    Boolean enableSpillMap = groupProperties.getBoolean(OptimizerProperties.SPILLABLE_MAP_ENABLE);
+    String backendBaseDir = groupProperties.getString(OptimizerProperties.SPILLABLE_MAP_DIR);
+    Long maxDeleteMemorySize = groupProperties.getLong(OptimizerProperties.SPILLABLE_MEMORY_LIMIT);
+    String spillMapCmd = "";
+    if (enableSpillMap != null) {
+      spillMapCmd = spillMapCmd + " -es " + enableSpillMap;
+    }
+    if (backendBaseDir != null) {
+      spillMapCmd = spillMapCmd + " -rp " + backendBaseDir;
+    }
+    if (maxDeleteMemorySize != null) {
+      spillMapCmd = spillMapCmd + " -mm " + maxDeleteMemorySize;
+    }
+
+    // add compact execute config
     String amsUrl;
     if (systemInfo.containsKey(OptimizerProperties.HA_ENABLE) && systemInfo.getBoolean(OptimizerProperties.HA_ENABLE)) {
       amsUrl = String.format("zookeeper://%s/%s", systemInfo.getString(OptimizerProperties.ZOOKEEPER_SERVER).trim(),
@@ -101,11 +116,11 @@ public class LocalOptimizer implements StatefulOptimizer {
         OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL_DEFAULT;
     int memory = groupProperties.getInteger("memory");
 
-    //start compact job
+    // start compact job
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
-    String cmd = String.format("%s/bin/localOptimize.sh %s %s %s %s %s %s", arcticHome, memory, amsUrl,
-        groupInfo.get("id"),
-        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID));
+    String cmd = String.format("%s/bin/localOptimize.sh -m %s -a %s -q %s -p %s -hb %s -id %s",
+        arcticHome, memory, amsUrl, groupInfo.get("id"),
+        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID)) + spillMapCmd;
     LOG.info("starting compact job use command:" + cmd);
     Runtime runtime = Runtime.getRuntime();
     try {
