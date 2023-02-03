@@ -49,7 +49,9 @@ import org.apache.iceberg.RewriteManifests;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
@@ -291,6 +293,16 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public LocationProvider locationProvider() {
     return icebergTable.locationProvider();
+  }
+
+  @Override
+  public List<StatisticsFile> statisticsFiles() {
+    return icebergTable.statisticsFiles();
+  }
+
+  @Override
+  public Map<String, SnapshotRef> refs() {
+    return icebergTable.refs();
   }
 
   @Override

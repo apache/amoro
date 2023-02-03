@@ -85,7 +85,7 @@
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
 
-        <iceberg.version>1.0.0</iceberg.version>
+        <iceberg.version>1.1.0</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>

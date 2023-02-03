@@ -333,7 +333,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         DataWriter<Record> writer = appenderFactory
             .newDataWriter(outputFile, FileFormat.PARQUET, partitionData);
         for (Record record : baseRecords(1, 100, opTime)) {
-          writer.add(record);
+          writer.write(record);
         }
         writer.close();
         return writer.toDataFile();

@@ -37,7 +37,9 @@ import org.apache.iceberg.RewriteManifests;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
@@ -407,6 +409,16 @@ public class TracedTransaction implements Transaction {
     @Override
     public LocationProvider locationProvider() {
       return transactionTable.locationProvider();
+    }
+
+    @Override
+    public List<StatisticsFile> statisticsFiles() {
+      return transactionTable.statisticsFiles();
+    }
+
+    @Override
+    public Map<String, SnapshotRef> refs() {
+      return transactionTable.refs();
     }
 
     @Override
