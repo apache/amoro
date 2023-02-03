@@ -27,6 +27,10 @@ import com.netease.arctic.utils.ObjectSizeCalculator;
 public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeWrapper> {
   @Override
   public long sizeEstimate(StructLikeWrapper structLikeWrapper) {
+    if (structLikeWrapper == null) {
+      return 0;
+    }
+
     return ObjectSizeCalculator.getObjectSize(structLikeWrapper.get());
   }
 }

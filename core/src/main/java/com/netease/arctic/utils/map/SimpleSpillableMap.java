@@ -37,7 +37,7 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private final SizeEstimator<T> valueSizeEstimator;
   private Map<K, T> memoryMap;
   private Optional<SimpleSpilledMap<K, T>> diskBasedMap = Optional.empty();
-  private Long currentInMemoryMapSize;
+  private long currentInMemoryMapSize;
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 

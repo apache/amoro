@@ -18,8 +18,6 @@
 
 package com.netease.arctic.utils.map;
 
-import org.openjdk.jol.info.GraphLayout;
-
 /**
  * An interface to estimate the size of payload in memory.
  * @param <T>
