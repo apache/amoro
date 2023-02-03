@@ -267,7 +267,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     }
 
     LOG.info("build log source");
-    if (adaptLegacySourc(arcticTable)) {
+    if (adaptLegacySource(arcticTable)) {
       return createLegacyLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
           startupTimestampMillis, arcticTable, schema);
     }
@@ -342,7 +342,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
    * Return true only if {@link ArcticValidator#ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE} is true and
    * {@link LOG_STORE_TYPE} is kafka.
    */
-  private static boolean adaptLegacySourc(ArcticTable arcticTable) {
+  private static boolean adaptLegacySource(ArcticTable arcticTable) {
     boolean legacySourceEnabled = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(),
         ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.defaultValue());
