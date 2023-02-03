@@ -93,7 +93,7 @@ public class TestKeyed extends FlinkTestBase {
   @Parameterized.Parameter(1)
   public boolean kafkaLegacyEnable;
 
-  @Parameterized.Parameters(name = "isHive = {0}, kafkaLegacyEnable = {2}")
+  @Parameterized.Parameters(name = "isHive = {0}, kafkaLegacyEnable = {1}")
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][]{
