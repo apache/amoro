@@ -81,7 +81,7 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
     upstreamEpicStartOffsets.putIfAbsent(key, offset);
   }
 
-  public void updateState(LogRecordWithRetractInfo<RowData> record) {
+  public void updateState(LogRecordKafkaWithRetractInfo<RowData> record) {
     if (record.isRetracting()) {
       setCurrentOffset(record.offset() - 1);
       revertStartOffset = record.getRevertStartingOffset();
