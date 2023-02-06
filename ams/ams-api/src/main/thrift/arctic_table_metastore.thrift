@@ -143,6 +143,7 @@ service ArcticTableMetastore {
     void releaseBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
     
     i64 renewBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+        throws(1: arctic_commons.NoSuchObjectException e)
     
     list<Blocker> getBlockers(1:arctic_commons.TableIdentifier tableIdentifier)
 }
