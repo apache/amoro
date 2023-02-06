@@ -21,9 +21,12 @@ package com.netease.arctic.flink.util;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -144,6 +147,12 @@ public class CompatibleFlinkPropertyUtil {
           CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_ADDRESS, null));
     }
     return properties;
+  }
+
+  public static List<String> getLogTopic(Map<String, String> tableProperties) {
+    Configuration conf = new Configuration();
+    conf.setString(KafkaOptions.TOPIC.key(), tableProperties.get(TableProperties.LOG_STORE_MESSAGE_TOPIC));
+    return conf.get(KafkaOptions.TOPIC);
   }
 
   public static boolean hasPrefix(Map<String, String> tableOptions, String prefix) {

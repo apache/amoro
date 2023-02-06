@@ -87,8 +87,6 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOP
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopicPattern;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopics;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
 
 /**
@@ -253,44 +251,30 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         KafkaSourceOptions.PARTITION_DISCOVERY_INTERVAL_MS.key(),
         partitionDiscoveryInterval.orElse(-1L).toString());
 
-    final DataType physicalDataType =
-        catalogTable.getSchema().toPhysicalRowDataType();
+    final DataType physicalDataType = catalogTable.getSchema().toPhysicalRowDataType();
 
     final int[] valueProjection = createValueFormatProjection(tableOptions, physicalDataType);
-
-    String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
-    long startupTimestampMillis = 0L;
-    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
-          String.format("'%s' should be set in '%s' mode",
-              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
-    }
 
     LOG.info("build log source");
     if (adaptLegacySource(arcticTable)) {
       return createLegacyLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
-          startupTimestampMillis, arcticTable, schema);
+          arcticTable, schema);
     }
     return new LogDynamicSource(
         valueProjection,
-        getSourceTopics(tableOptions),
-        getSourceTopicPattern(tableOptions),
         properties,
-        startupMode,
-        startupTimestampMillis,
         schema,
         tableOptions,
         arcticTable);
   }
 
   private ScanTableSource createLegacyLogDynamicSource(DataType physicalDataType,
-                                                    int[] valueProjection,
-                                                    Properties properties,
-                                                    Context context,
-                                                    ReadableConfig tableOptions,
-                                                    long startupTimestampMillis,
-                                                    ArcticTable arcticTable,
-                                                    Schema schema) {
+                                                       int[] valueProjection,
+                                                       Properties properties,
+                                                       Context context,
+                                                       ReadableConfig tableOptions,
+                                                       ArcticTable arcticTable,
+                                                       Schema schema) {
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     final Optional<DecodingFormat<DeserializationSchema<RowData>>> keyDecodingFormat =
         getKeyDecodingFormat(helper);
@@ -299,7 +283,12 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final int[] keyProjection = createKeyFormatProjection(tableOptions, physicalDataType);
     final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
     String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
-
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
+          String.format("'%s' should be set in '%s' mode",
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+    }
     LOG.info("create log source with deprecated API");
     return new KafkaDynamicSource(
         physicalDataType,
