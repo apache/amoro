@@ -55,6 +55,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -495,10 +497,10 @@ public class LogKafkaSourceBuilder {
     // Check required configs.
     checkNotNull(
         props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
-        String.format("Property %s is required but not provided", ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
+        String.format("Property %s is required but not provided", LOG_STORE_ADDRESS));
     // Check required settings.
     checkNotNull(
         subscriber,
-        "No subscribe mode is specified, should be one of topics, topic pattern and partition set.");
+        String.format("No topic is specified, '%s' should be set.", LOG_STORE_MESSAGE_TOPIC));
   }
 }

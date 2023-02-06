@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.read.source.log.kafka;
 
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -55,6 +54,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -387,11 +388,11 @@ public class LogKafkaSourceBuilder {
   }
 
   private void convertArcticProperties() {
-    if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
+    if (tableProperties.containsKey(LOG_STORE_ADDRESS)) {
       props.put(KafkaOptions.PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
-          TableProperties.LOG_STORE_ADDRESS));
+          LOG_STORE_ADDRESS));
     }
-    if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
+    if (tableProperties.containsKey(LOG_STORE_MESSAGE_TOPIC)) {
       setTopics(getLogTopic(tableProperties));
     }
 
@@ -494,10 +495,10 @@ public class LogKafkaSourceBuilder {
     // Check required configs.
     checkNotNull(
         props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
-        String.format("Property %s is required but not provided", ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
+        String.format("Property %s is required but not provided", LOG_STORE_ADDRESS));
     // Check required settings.
     checkNotNull(
         subscriber,
-        "No subscribe mode is specified, should be one of topics, topic pattern and partition set.");
+        String.format("No topic is specified, '%s' should be set.", LOG_STORE_MESSAGE_TOPIC));
   }
 }

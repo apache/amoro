@@ -240,8 +240,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
 
-    validateSourceTopic(tableOptions);
-
     final Properties properties = getLogStoreProperties(arcticTable.properties());
 
     // add topic-partition discovery

@@ -68,7 +68,6 @@ import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOpt
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKeyFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.validateSourceTopic;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
@@ -239,8 +238,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     CatalogTable catalogTable = context.getCatalogTable();
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
-
-    validateSourceTopic(tableOptions);
 
     final Properties properties = getKafkaProperties(arcticTable.properties());
 
