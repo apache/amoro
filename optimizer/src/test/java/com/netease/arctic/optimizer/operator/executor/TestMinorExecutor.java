@@ -19,6 +19,7 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
@@ -29,7 +30,6 @@ import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
-import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.AppendFiles;
