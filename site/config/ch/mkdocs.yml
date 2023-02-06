@@ -75,6 +75,7 @@ nav:
     - Flink DataStream: flink/flink-ds.md
     - Using Kafka as Logstore: flink/hidden-kafka.md
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
+    - Upgrading Arctic Flink: flink/upgrading-arctic-flink.md
   - Spark Integration:
     - Getting Started: spark/spark-get-started.md
     - Spark DDL: spark/spark-ddl.md
