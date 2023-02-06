@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.source.log.kafka;
 
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
@@ -26,7 +29,9 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.NoStopping
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -37,11 +42,20 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -85,9 +99,10 @@ public class LogKafkaSourceBuilder {
     this.stoppingOffsetsInitializer = new NoStoppingOffsetsInitializer();
     this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
     this.deserializationSchema = null;
-    this.props = new Properties();
+    this.props = getLogStoreProperties(tableProperties);
     this.schema = schema;
     this.tableProperties = tableProperties;
+    convertArcticProperties();
   }
 
   /**
@@ -281,7 +296,7 @@ public class LogKafkaSourceBuilder {
    * org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord} for LogKafkaSource.
    *
    * @param recordDeserializer the deserializer for Kafka {@link
-   *     org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord}.
+   *                           org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord}.
    * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setDeserializer(
@@ -370,6 +385,51 @@ public class LogKafkaSourceBuilder {
         props,
         schema,
         tableProperties);
+  }
+
+  private void convertArcticProperties() {
+    if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
+      props.put(PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
+          TableProperties.LOG_STORE_ADDRESS));
+    }
+    if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
+      setTopics(getLogTopic(tableProperties));
+    }
+
+    props.putIfAbsent("properties.key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    props.putIfAbsent("properties.value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    props.putIfAbsent("properties.key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    props.putIfAbsent("properties.value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+
+    setStartupMode();
+  }
+
+  private void setStartupMode() {
+    String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
+        SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
+          tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
+          String.format("'%s' should be set in '%s' mode",
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
+    }
+
+    switch (startupMode) {
+      case SCAN_STARTUP_MODE_EARLIEST:
+        setStartingOffsets(OffsetsInitializer.earliest());
+        break;
+      case SCAN_STARTUP_MODE_LATEST:
+        setStartingOffsets(OffsetsInitializer.latest());
+        break;
+      case SCAN_STARTUP_MODE_TIMESTAMP:
+        setStartingOffsets(OffsetsInitializer.timestamp(startupTimestampMillis));
+        break;
+      default:
+        throw new ValidationException(String.format(
+            "%s only support '%s', '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+    }
   }
 
   // ------------- private helpers  --------------
