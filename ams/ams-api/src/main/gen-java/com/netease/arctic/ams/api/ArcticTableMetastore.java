@@ -44,7 +44,7 @@ public class ArcticTableMetastore {
 
     public void releaseBlocker(com.netease.arctic.ams.api.TableIdentifier tableIdentifier, java.lang.String blockerId) throws org.apache.thrift.TException;
 
-    public long renewBlocker(com.netease.arctic.ams.api.TableIdentifier tableIdentifier, java.lang.String blockerId) throws org.apache.thrift.TException;
+    public long renewBlocker(com.netease.arctic.ams.api.TableIdentifier tableIdentifier, java.lang.String blockerId) throws com.netease.arctic.ams.api.NoSuchObjectException, org.apache.thrift.TException;
 
     public java.util.List<Blocker> getBlockers(com.netease.arctic.ams.api.TableIdentifier tableIdentifier) throws org.apache.thrift.TException;
 
@@ -458,7 +458,7 @@ public class ArcticTableMetastore {
       return;
     }
 
-    public long renewBlocker(com.netease.arctic.ams.api.TableIdentifier tableIdentifier, java.lang.String blockerId) throws org.apache.thrift.TException
+    public long renewBlocker(com.netease.arctic.ams.api.TableIdentifier tableIdentifier, java.lang.String blockerId) throws com.netease.arctic.ams.api.NoSuchObjectException, org.apache.thrift.TException
     {
       send_renewBlocker(tableIdentifier, blockerId);
       return recv_renewBlocker();
@@ -472,12 +472,15 @@ public class ArcticTableMetastore {
       sendBase("renewBlocker", args);
     }
 
-    public long recv_renewBlocker() throws org.apache.thrift.TException
+    public long recv_renewBlocker() throws com.netease.arctic.ams.api.NoSuchObjectException, org.apache.thrift.TException
     {
       renewBlocker_result result = new renewBlocker_result();
       receiveBase(result, "renewBlocker");
       if (result.isSetSuccess()) {
         return result.success;
+      }
+      if (result.e != null) {
+        throw result.e;
       }
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "renewBlocker failed: unknown result");
     }
@@ -1014,7 +1017,7 @@ public class ArcticTableMetastore {
         prot.writeMessageEnd();
       }
 
-      public java.lang.Long getResult() throws org.apache.thrift.TException {
+      public java.lang.Long getResult() throws com.netease.arctic.ams.api.NoSuchObjectException, org.apache.thrift.TException {
         if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
@@ -1509,8 +1512,12 @@ public class ArcticTableMetastore {
 
       public renewBlocker_result getResult(I iface, renewBlocker_args args) throws org.apache.thrift.TException {
         renewBlocker_result result = new renewBlocker_result();
-        result.success = iface.renewBlocker(args.tableIdentifier, args.blockerId);
-        result.setSuccessIsSet(true);
+        try {
+          result.success = iface.renewBlocker(args.tableIdentifier, args.blockerId);
+          result.setSuccessIsSet(true);
+        } catch (com.netease.arctic.ams.api.NoSuchObjectException e) {
+          result.e = e;
+        }
         return result;
       }
     }
@@ -2510,7 +2517,11 @@ public class ArcticTableMetastore {
             byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
             org.apache.thrift.TSerializable msg;
             renewBlocker_result result = new renewBlocker_result();
-            if (e instanceof org.apache.thrift.transport.TTransportException) {
+            if (e instanceof com.netease.arctic.ams.api.NoSuchObjectException) {
+              result.e = (com.netease.arctic.ams.api.NoSuchObjectException) e;
+              result.setEIsSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.thrift.transport.TTransportException) {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
@@ -15143,15 +15154,18 @@ public class ArcticTableMetastore {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("renewBlocker_result");
 
     private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.I64, (short)0);
+    private static final org.apache.thrift.protocol.TField E_FIELD_DESC = new org.apache.thrift.protocol.TField("e", org.apache.thrift.protocol.TType.STRUCT, (short)1);
 
     private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new renewBlocker_resultStandardSchemeFactory();
     private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new renewBlocker_resultTupleSchemeFactory();
 
     public long success; // required
+    public @org.apache.thrift.annotation.Nullable com.netease.arctic.ams.api.NoSuchObjectException e; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-      SUCCESS((short)0, "success");
+      SUCCESS((short)0, "success"),
+      E((short)1, "e");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -15169,6 +15183,8 @@ public class ArcticTableMetastore {
         switch(fieldId) {
           case 0: // SUCCESS
             return SUCCESS;
+          case 1: // E
+            return E;
           default:
             return null;
         }
@@ -15217,6 +15233,8 @@ public class ArcticTableMetastore {
       java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
+      tmpMap.put(_Fields.E, new org.apache.thrift.meta_data.FieldMetaData("e", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, com.netease.arctic.ams.api.NoSuchObjectException.class)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(renewBlocker_result.class, metaDataMap);
     }
@@ -15225,11 +15243,13 @@ public class ArcticTableMetastore {
     }
 
     public renewBlocker_result(
-      long success)
+      long success,
+      com.netease.arctic.ams.api.NoSuchObjectException e)
     {
       this();
       this.success = success;
       setSuccessIsSet(true);
+      this.e = e;
     }
 
     /**
@@ -15238,6 +15258,9 @@ public class ArcticTableMetastore {
     public renewBlocker_result(renewBlocker_result other) {
       __isset_bitfield = other.__isset_bitfield;
       this.success = other.success;
+      if (other.isSetE()) {
+        this.e = new com.netease.arctic.ams.api.NoSuchObjectException(other.e);
+      }
     }
 
     public renewBlocker_result deepCopy() {
@@ -15248,6 +15271,7 @@ public class ArcticTableMetastore {
     public void clear() {
       setSuccessIsSet(false);
       this.success = 0;
+      this.e = null;
     }
 
     public long getSuccess() {
@@ -15273,6 +15297,31 @@ public class ArcticTableMetastore {
       __isset_bitfield = org.apache.thrift.EncodingUtils.setBit(__isset_bitfield, __SUCCESS_ISSET_ID, value);
     }
 
+    @org.apache.thrift.annotation.Nullable
+    public com.netease.arctic.ams.api.NoSuchObjectException getE() {
+      return this.e;
+    }
+
+    public renewBlocker_result setE(@org.apache.thrift.annotation.Nullable com.netease.arctic.ams.api.NoSuchObjectException e) {
+      this.e = e;
+      return this;
+    }
+
+    public void unsetE() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean isSetE() {
+      return this.e != null;
+    }
+
+    public void setEIsSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
     public void setFieldValue(_Fields field, @org.apache.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
       case SUCCESS:
@@ -15280,6 +15329,14 @@ public class ArcticTableMetastore {
           unsetSuccess();
         } else {
           setSuccess((java.lang.Long)value);
+        }
+        break;
+
+      case E:
+        if (value == null) {
+          unsetE();
+        } else {
+          setE((com.netease.arctic.ams.api.NoSuchObjectException)value);
         }
         break;
 
@@ -15291,6 +15348,9 @@ public class ArcticTableMetastore {
       switch (field) {
       case SUCCESS:
         return getSuccess();
+
+      case E:
+        return getE();
 
       }
       throw new java.lang.IllegalStateException();
@@ -15305,6 +15365,8 @@ public class ArcticTableMetastore {
       switch (field) {
       case SUCCESS:
         return isSetSuccess();
+      case E:
+        return isSetE();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -15333,6 +15395,15 @@ public class ArcticTableMetastore {
           return false;
       }
 
+      boolean this_present_e = true && this.isSetE();
+      boolean that_present_e = true && that.isSetE();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
       return true;
     }
 
@@ -15341,6 +15412,10 @@ public class ArcticTableMetastore {
       int hashCode = 1;
 
       hashCode = hashCode * 8191 + org.apache.thrift.TBaseHelper.hashCode(success);
+
+      hashCode = hashCode * 8191 + ((isSetE()) ? 131071 : 524287);
+      if (isSetE())
+        hashCode = hashCode * 8191 + e.hashCode();
 
       return hashCode;
     }
@@ -15359,6 +15434,16 @@ public class ArcticTableMetastore {
       }
       if (isSetSuccess()) {
         lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.valueOf(isSetE()).compareTo(other.isSetE());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetE()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.e, other.e);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -15386,6 +15471,14 @@ public class ArcticTableMetastore {
 
       sb.append("success:");
       sb.append(this.success);
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
+      }
       first = false;
       sb.append(")");
       return sb.toString();
@@ -15440,6 +15533,15 @@ public class ArcticTableMetastore {
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
+            case 1: // E
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.e = new com.netease.arctic.ams.api.NoSuchObjectException();
+                struct.e.read(iprot);
+                struct.setEIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
             default:
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -15458,6 +15560,11 @@ public class ArcticTableMetastore {
         if (struct.isSetSuccess()) {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
           oprot.writeI64(struct.success);
+          oprot.writeFieldEnd();
+        }
+        if (struct.e != null) {
+          oprot.writeFieldBegin(E_FIELD_DESC);
+          struct.e.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -15481,19 +15588,30 @@ public class ArcticTableMetastore {
         if (struct.isSetSuccess()) {
           optionals.set(0);
         }
-        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetE()) {
+          optionals.set(1);
+        }
+        oprot.writeBitSet(optionals, 2);
         if (struct.isSetSuccess()) {
           oprot.writeI64(struct.success);
+        }
+        if (struct.isSetE()) {
+          struct.e.write(oprot);
         }
       }
 
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, renewBlocker_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(1);
+        java.util.BitSet incoming = iprot.readBitSet(2);
         if (incoming.get(0)) {
           struct.success = iprot.readI64();
           struct.setSuccessIsSet(true);
+        }
+        if (incoming.get(1)) {
+          struct.e = new com.netease.arctic.ams.api.NoSuchObjectException();
+          struct.e.read(iprot);
+          struct.setEIsSet(true);
         }
       }
     }
