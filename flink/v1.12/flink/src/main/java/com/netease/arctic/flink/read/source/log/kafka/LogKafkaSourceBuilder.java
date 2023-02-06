@@ -28,7 +28,6 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.NoStopping
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializer;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
@@ -57,6 +56,7 @@ import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTo
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * The @builder class for {@link LogKafkaSource} to make it easier for the users to construct a {@link
@@ -389,8 +389,7 @@ public class LogKafkaSourceBuilder {
 
   private void convertArcticProperties() {
     if (tableProperties.containsKey(LOG_STORE_ADDRESS)) {
-      props.put(KafkaOptions.PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
-          LOG_STORE_ADDRESS));
+      props.put(BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(LOG_STORE_ADDRESS));
     }
     if (tableProperties.containsKey(LOG_STORE_MESSAGE_TOPIC)) {
       setTopics(getLogTopic(tableProperties));
@@ -494,7 +493,7 @@ public class LogKafkaSourceBuilder {
   private void sanityCheck() {
     // Check required configs.
     checkNotNull(
-        props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
+        props.getProperty(BOOTSTRAP_SERVERS_CONFIG),
         String.format("Property %s is required but not provided", LOG_STORE_ADDRESS));
     // Check required settings.
     checkNotNull(

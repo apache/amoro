@@ -139,13 +139,7 @@ public class CompatibleFlinkPropertyUtil {
                 properties.put(subKey, value);
               });
     }
-
-    // convert the key to support create client in writer
-    if (CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT)
-        .equals(LOG_STORE_STORAGE_TYPE_PULSAR)) {
-      properties.put(PULSAR_SERVICE_URL.key(),
-          CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_ADDRESS, null));
-    }
+    
     return properties;
   }
 

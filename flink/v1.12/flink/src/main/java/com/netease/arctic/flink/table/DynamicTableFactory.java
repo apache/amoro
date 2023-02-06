@@ -179,8 +179,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
 
-    final String topic = options.get(TableProperties.LOG_STORE_MESSAGE_TOPIC);
-
     ArcticTableLoader tableLoader = createTableLoader(
         new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
         internalCatalogName, internalCatalogBuilder, options);
@@ -189,7 +187,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     return new ArcticDynamicSink(
         catalogTable,
         tableLoader,
-        topic,
         table.isKeyedTable()
     );
   }
