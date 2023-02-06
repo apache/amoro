@@ -73,7 +73,7 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
   @Override
   public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
     try {
-      return tableMetaStore.doAs(() -> clientPool().run(action));
+      return tableMetaStore.doAs(() -> clientPool().run(action, true));
     } catch (RuntimeException e) {
       throw throwTException(e);
     }
