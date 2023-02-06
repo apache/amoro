@@ -20,9 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -116,6 +114,20 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
+    if (this.transactionId != null && !this.partitionTransactionId.isEmpty()) {
+      throw new IllegalArgumentException(
+          "withTransactionIdForChangedPartition() and withTransactionId() can't be used simultaneously");
+    }
+    if (this.transactionId == null && this.partitionTransactionId.isEmpty()) {
+      throw new IllegalArgumentException(
+          "withTransactionIdForChangedPartition() or withTransactionId() must be invoked");
+    }
+    // dynamicPartition indicate that the transactionId should be applied to the changed partitions
+    boolean dynamicPartition = this.transactionId != null;
+    StructLikeMap<Long> changedPartitionTransactionId = null;
+    if (dynamicPartition) {
+      changedPartitionTransactionId = StructLikeMap.create(transaction.table().spec().partitionType());
+    }
 
     UnkeyedTable baseTable = keyedTable.baseTable();
 
@@ -127,16 +139,16 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
-
-      for (DataFile d : this.addFiles) {
-        overwriteFiles.addFile(d);
-        setMaxTransactionId(d.partition(), partitionMaxTxId);
+      if (dynamicPartition) {
+        for (DataFile d : this.addFiles) {
+          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+        }
+        for (DataFile d : this.deleteFiles) {
+          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+        }
       }
-
-      for (DataFile d : this.deleteFiles) {
-        overwriteFiles.deleteFile(d);
-        setMaxTransactionId(d.partition(), partitionMaxTxId);
-      }
+      this.addFiles.forEach(overwriteFiles::addFile);
+      this.deleteFiles.forEach(overwriteFiles::deleteFile);
       if (transactionId != null && transactionId > 0) {
         overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
       }
@@ -155,13 +167,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        for (DeleteFile d : this.addDeleteFiles) {
-          setMaxTransactionId(d.partition(), partitionMaxTxId);
+        if (dynamicPartition) {
+          for (DeleteFile d : this.addDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
         }
 
-        for (DataFile d : this.deleteFiles) {
-          setMaxTransactionId(d.partition(), partitionMaxTxId);
-        }
         addDeleteFiles.forEach(rowDelta::addDeletes);
         if (MapUtils.isNotEmpty(properties)) {
           properties.forEach(rowDelta::set);
@@ -173,12 +184,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        for (DeleteFile d : this.addDeleteFiles) {
-          setMaxTransactionId(d.partition(), partitionMaxTxId);
-        }
-
-        for (DeleteFile d : this.deleteDeleteFiles) {
-          setMaxTransactionId(d.partition(), partitionMaxTxId);
+        if (dynamicPartition) {
+          for (DeleteFile d : this.addDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
+          for (DeleteFile d : this.deleteDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),
             Collections.emptySet(), new HashSet<>(addDeleteFiles));
@@ -190,21 +202,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     // step3: set max transaction id
-    if (keyedTable.spec().isUnpartitioned()) {
-      StructLike partitionData = TablePropertyUtil.EMPTY_STRUCT;
-      Long newMaxId = this.partitionTransactionId.get(partitionData);
-      Long maxTransactionId = max(newMaxId, partitionMaxTxId.get(partitionData));
-      
-      if (maxTransactionId != null) {
-        partitionMaxTxId.put(partitionData, maxTransactionId);
-      }
+    if (dynamicPartition) {
+      partitionMaxTxId.putAll(changedPartitionTransactionId);
     } else {
-      this.partitionTransactionId.forEach((pd, txId) -> {
-        if (partitionMaxTxId.containsKey(pd)) {
-          long maxTransactionId = partitionMaxTxId.get(pd);
-          partitionMaxTxId.put(pd, Math.max(maxTransactionId, txId));
-        }
-      });
+      partitionMaxTxId.putAll(this.partitionTransactionId);
     }
 
     return partitionMaxTxId;
@@ -225,26 +226,5 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     } catch (IOException e) {
       throw new IllegalStateException("failed when apply delete expression when overwrite files", e);
     }
-  }
-  
-  private void setMaxTransactionId(StructLike partitionData, StructLikeMap<Long> partitionMaxTxId) {
-    if (keyedTable.spec().isUnpartitioned()) {
-      partitionData = TablePropertyUtil.EMPTY_STRUCT;
-    }
-    Long partitionTxId = partitionTransactionId.get(partitionData);
-    Long maxTxId = max(partitionTxId, this.transactionId);
-    if (maxTxId != null) {
-      partitionMaxTxId.put(partitionData, maxTxId);
-    }
-  }
-
-  private Long max(Long a, Long b) {
-    if (a == null) {
-      return b;
-    }
-    if (b == null) {
-      return a;
-    }
-    return Math.max(a, b);
   }
 }
