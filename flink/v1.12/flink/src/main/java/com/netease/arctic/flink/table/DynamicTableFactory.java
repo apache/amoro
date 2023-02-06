@@ -27,21 +27,28 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.kafka.source.KafkaSourceOptions;
+import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ObjectIdentifier;
 import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.utils.TableSchemaUtils;
+import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -60,19 +67,26 @@ import java.util.Set;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL_OPTION;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FIELDS_PREFIX;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_GROUP_ID;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_TOPIC_PARTITION_DISCOVERY;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SINK_PARTITIONER;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOPIC;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getKafkaProperties;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopicPattern;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopics;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
@@ -219,10 +233,11 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(ArcticValidator.ARCTIC_DATABASE);
     options.add(ArcticValidator.DIM_TABLE_ENABLE);
     options.add(METASTORE_URL_OPTION);
+    options.add(ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE);
     return options;
   }
 
-  private LogDynamicSource createLogSource(ArcticTable arcticTable, Context context, ReadableConfig tableOptions) {
+  private ScanTableSource createLogSource(ArcticTable arcticTable, Context context, ReadableConfig tableOptions) {
     CatalogTable catalogTable = context.getCatalogTable();
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
@@ -252,7 +267,12 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     }
 
     LOG.info("build log source");
-    return new LogDynamicSource(valueProjection,
+    if (adaptLegacySource(arcticTable)) {
+      return createLegacyLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
+          startupTimestampMillis, arcticTable, schema);
+    }
+    return new LogDynamicSource(
+        valueProjection,
         getSourceTopics(tableOptions),
         getSourceTopicPattern(tableOptions),
         properties,
@@ -263,4 +283,89 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         arcticTable);
   }
 
+  private ScanTableSource createLegacyLogDynamicSource(DataType physicalDataType,
+                                                    int[] valueProjection,
+                                                    Properties properties,
+                                                    Context context,
+                                                    ReadableConfig tableOptions,
+                                                    long startupTimestampMillis,
+                                                    ArcticTable arcticTable,
+                                                    Schema schema) {
+    FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
+    final Optional<DecodingFormat<DeserializationSchema<RowData>>> keyDecodingFormat =
+        getKeyDecodingFormat(helper);
+    final DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat = getValueDecodingFormat(helper);
+
+    final int[] keyProjection = createKeyFormatProjection(tableOptions, physicalDataType);
+    final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
+    String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
+
+    LOG.info("create log source with deprecated API");
+    return new KafkaDynamicSource(
+        physicalDataType,
+        keyDecodingFormat.orElse(null),
+        valueDecodingFormat,
+        keyProjection,
+        valueProjection,
+        keyPrefix,
+        KafkaOptions.getSourceTopics(tableOptions),
+        KafkaOptions.getSourceTopicPattern(tableOptions),
+        properties,
+        startupMode,
+        startupTimestampMillis,
+        false,
+        schema,
+        tableOptions,
+        arcticTable.name());
+  }
+
+  private static Optional<DecodingFormat<DeserializationSchema<RowData>>> getKeyDecodingFormat(
+      FactoryUtil.TableFactoryHelper helper) {
+    final Optional<DecodingFormat<DeserializationSchema<RowData>>> keyDecodingFormat =
+        helper.discoverOptionalDecodingFormat(
+            DeserializationFormatFactory.class, KEY_FORMAT);
+    keyDecodingFormat.ifPresent(
+        format -> {
+          if (!format.getChangelogMode().containsOnly(RowKind.INSERT)) {
+            throw new ValidationException(
+                String.format(
+                    "A key format should only deal with INSERT-only records. " +
+                        "But %s has a changelog mode of %s.",
+                    helper.getOptions().get(KEY_FORMAT),
+                    format.getChangelogMode()));
+          }
+        });
+    return keyDecodingFormat;
+  }
+
+  /**
+   * Return true only if {@link ArcticValidator#ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE} is true and
+   * {@link LOG_STORE_TYPE} is kafka.
+   */
+  private static boolean adaptLegacySource(ArcticTable arcticTable) {
+    boolean legacySourceEnabled = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
+        ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(),
+        ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.defaultValue());
+    if (legacySourceEnabled) {
+      String logType = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
+          LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT).toLowerCase();
+      if (!Objects.equals(LOG_STORE_STORAGE_TYPE_KAFKA, logType)) {
+        LOG.warn("{} option only take effect for {} = {}.",
+            ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(), LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private static DecodingFormat<DeserializationSchema<RowData>> getValueDecodingFormat(
+      FactoryUtil.TableFactoryHelper helper) {
+    return helper.discoverOptionalDecodingFormat(
+            DeserializationFormatFactory.class, FactoryUtil.FORMAT)
+        .orElseGet(
+            () ->
+                helper.discoverDecodingFormat(
+                    DeserializationFormatFactory.class, VALUE_FORMAT));
+  }
 }
