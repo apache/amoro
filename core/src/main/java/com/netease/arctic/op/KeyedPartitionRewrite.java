@@ -70,19 +70,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     addFiles.forEach(f -> {
       StructLike pd = f.partition();
-      Long maxTxId = max(partitionMaxTxId.get(pd), transactionId);
-      partitionMaxTxId.put(pd, maxTxId);
+      partitionMaxTxId.put(pd, transactionId);
     });
     return partitionMaxTxId;
-  }
-
-  private Long max(Long a, Long b) {
-    if (a == null) {
-      return b;
-    }
-    if (b == null) {
-      return a;
-    }
-    return Math.max(a, b);
   }
 }
