@@ -37,7 +37,7 @@ public interface TableMetadataMapper {
 
   @Select("select table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, delta_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties from " + TABLE_NAME)
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id from " + TABLE_NAME)
   @Results({
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
@@ -55,7 +55,8 @@ public interface TableMetadataMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+          typeHandler = Map2StringConverter.class),
+      @Result(property = "currentTxId", column = "current_tx_id")
   })
   List<TableMetadata> listTableMetas();
 

@@ -160,7 +160,7 @@ public class TableMetadata implements Serializable {
 
   private Map<String, String> properties;
 
-  private Long currentTxId;
+  private long currentTxId;
 
   private volatile TableMetaStore metaStore;
 
@@ -300,11 +300,11 @@ public class TableMetadata implements Serializable {
     this.krbPrincipal = krbPrincipal;
   }
 
-  public Long getCurrentTxId() {
+  public long getCurrentTxId() {
     return currentTxId;
   }
 
-  public void setCurrentTxId(Long currentTxId) {
+  public void setCurrentTxId(long currentTxId) {
     this.currentTxId = currentTxId;
   }
 }
