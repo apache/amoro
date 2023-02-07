@@ -102,7 +102,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     this.schema = schema;
     this.tableProperties = tableProperties;
     this.setProperties(getLogStoreProperties(tableProperties));
-    convertArcticProperties();
+    setupPulsarProperties();
   }
 
   public LogPulsarSourceBuilder setProperties(Properties properties) {
@@ -110,7 +110,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     return this;
   }
 
-  private void convertArcticProperties() {
+  private void setupPulsarProperties() {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
       this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
@@ -118,10 +118,10 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
       setTopics(getLogTopic(tableProperties));
     }
 
-    setStartupMode();
+    setuptartupMode();
   }
 
-  private void setStartupMode() {
+  private void setuptartupMode() {
     String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
         SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
     long startupTimestampMillis = 0L;
