@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -28,7 +27,6 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.trace.SnapshotSummary;
-import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.thrift.TException;
@@ -68,20 +66,6 @@ public class ArcticTransactionService extends IJDBCService {
       return createSnapshotEvent.sequenceNumber();
     } else {
       throw new TException(tableIdentifier + " is not keyed table");
-    }
-  }
-
-  public void delete(TableIdentifier tableIdentifier) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-      mapper.deleteTableTx(tableIdentifier);
-    }
-  }
-
-  public void expire(TableIdentifier identifier, long time) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-      mapper.expire(identifier, time);
     }
   }
   
