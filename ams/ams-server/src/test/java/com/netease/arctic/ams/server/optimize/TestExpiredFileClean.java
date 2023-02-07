@@ -18,10 +18,10 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;

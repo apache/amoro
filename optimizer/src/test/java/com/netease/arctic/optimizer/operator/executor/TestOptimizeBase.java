@@ -18,12 +18,12 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.UnkeyedTable;
