@@ -86,14 +86,14 @@ public class LogKafkaSourceBuilder {
   private Boundedness boundedness;
   private KafkaRecordDeserializationSchema<RowData> deserializationSchema;
   // The configurations.
-  protected Properties props;
+  protected Properties kafkaProperties;
 
   private Schema schema;
   private Map<String, String> tableProperties;
 
   /**
    * @param schema          read schema, only contains the selected fields
-   * @param tableProperties arctic table properties with sql hints
+   * @param tableProperties arctic table properties, maybe include Flink SQL hints.
    */
   LogKafkaSourceBuilder(Schema schema, Map<String, String> tableProperties) {
     this.subscriber = null;
@@ -101,10 +101,10 @@ public class LogKafkaSourceBuilder {
     this.stoppingOffsetsInitializer = new NoStoppingOffsetsInitializer();
     this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
     this.deserializationSchema = null;
-    this.props = getLogStoreProperties(tableProperties);
+    this.kafkaProperties = getLogStoreProperties(tableProperties);
     this.schema = schema;
     this.tableProperties = tableProperties;
-    convertArcticProperties();
+    setupKafkaProperties();
   }
 
   /**
@@ -339,7 +339,7 @@ public class LogKafkaSourceBuilder {
    * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setProperty(String key, String value) {
-    props.setProperty(key, value);
+    kafkaProperties.setProperty(key, value);
     return this;
   }
 
@@ -366,7 +366,7 @@ public class LogKafkaSourceBuilder {
    * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setProperties(Properties props) {
-    this.props.putAll(props);
+    this.kafkaProperties.putAll(props);
     return this;
   }
 
@@ -384,29 +384,29 @@ public class LogKafkaSourceBuilder {
         stoppingOffsetsInitializer,
         boundedness,
         deserializationSchema,
-        props,
+        kafkaProperties,
         schema,
         tableProperties);
   }
 
-  private void convertArcticProperties() {
+  private void setupKafkaProperties() {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-      props.put(BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(
+      kafkaProperties.put(BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(
           TableProperties.LOG_STORE_ADDRESS));
     }
     if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
       setTopics(getLogTopic(tableProperties));
     }
 
-    props.putIfAbsent("properties.key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    props.putIfAbsent("properties.value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    props.putIfAbsent("properties.key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    props.putIfAbsent("properties.value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    kafkaProperties.putIfAbsent("properties.key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent("properties.value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent("properties.key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    kafkaProperties.putIfAbsent("properties.value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
-    setStartupMode();
+    setupStartupMode();
   }
 
-  private void setStartupMode() {
+  private void setupStartupMode() {
     String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
         SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
     long startupTimestampMillis = 0L;
@@ -471,24 +471,24 @@ public class LogKafkaSourceBuilder {
     // If the client id prefix is not set, reuse the consumer group id as the client id prefix.
     maybeOverride(
         KafkaSourceOptions.CLIENT_ID_PREFIX.key(),
-        props.getProperty(ConsumerConfig.GROUP_ID_CONFIG),
+        kafkaProperties.getProperty(ConsumerConfig.GROUP_ID_CONFIG),
         false);
   }
 
   private boolean maybeOverride(String key, String value, boolean override) {
     boolean overridden = false;
-    String userValue = props.getProperty(key);
+    String userValue = kafkaProperties.getProperty(key);
     if (userValue != null) {
       if (override) {
         LOG.warn(
             String.format(
                 "Property %s is provided but will be overridden from %s to %s",
                 key, userValue, value));
-        props.setProperty(key, value);
+        kafkaProperties.setProperty(key, value);
         overridden = true;
       }
     } else {
-      props.setProperty(key, value);
+      kafkaProperties.setProperty(key, value);
     }
     return overridden;
   }
@@ -496,7 +496,7 @@ public class LogKafkaSourceBuilder {
   private void sanityCheck() {
     // Check required configs.
     checkNotNull(
-        props.getProperty(BOOTSTRAP_SERVERS_CONFIG),
+        kafkaProperties.getProperty(BOOTSTRAP_SERVERS_CONFIG),
         String.format("Property %s is required but not provided", LOG_STORE_ADDRESS));
     // Check required settings.
     checkNotNull(
