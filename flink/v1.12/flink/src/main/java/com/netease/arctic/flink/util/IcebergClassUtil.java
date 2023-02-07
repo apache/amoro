@@ -45,6 +45,7 @@ import org.apache.iceberg.util.ThreadPools;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +78,7 @@ public class IcebergClassUtil {
       Constructor<?> c = clazz.getDeclaredConstructor(TableLoader.class, boolean.class, Map.class, Integer.class);
       c.setAccessible(true);
       return (OneInputStreamOperator<WriteResult, Void>) c.newInstance(
-        tableLoader, replacePartitions, null, ThreadPools.WORKER_THREAD_POOL_SIZE);
+        tableLoader, replacePartitions, new HashMap<>(), ThreadPools.WORKER_THREAD_POOL_SIZE);
     } catch (NoSuchMethodException | IllegalAccessException |
         InvocationTargetException | InstantiationException e) {
       throw new RuntimeException(e);

@@ -174,8 +174,6 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private Schema projectedSchema;
     private List<Expression> filters;
     private long limit = -1L;
-
-    //    includeColumnStats, exposeLocality, planParallelism, maxPlanningSnapshotCount,
     private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
     private boolean exposeLocality;
     private Integer planParallelism =
