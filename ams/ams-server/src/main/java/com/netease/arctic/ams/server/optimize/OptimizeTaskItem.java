@@ -319,7 +319,7 @@ public class OptimizeTaskItem extends IJDBCService {
       try {
         internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
         optimizeRuntime.getTargetFiles().forEach(file -> {
-          ContentFile<?> contentFile = SerializationUtils.toInternalTableFile(file);
+          ContentFile<?> contentFile = SerializationUtils.toContentFile(file);
           if (contentFile.content() == FileContent.DATA) {
             internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
                 DataFileType.BASE_FILE.name(), 1, SerializationUtils.byteBufferToByteArray(file));
