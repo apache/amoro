@@ -51,7 +51,7 @@ public class UpdateTool extends IJDBCService {
             ServiceContainer.getArcticTransactionService().validTable(tableIdentifier.buildTableIdentifier());
           }
         } catch (Throwable t) {
-          LOG.error("failed to update transactionId of {}, ignore and continue", tableIdentifier);
+          LOG.error("failed to update transactionId of {}, ignore and continue", tableIdentifier, t);
         }
       }
     }
