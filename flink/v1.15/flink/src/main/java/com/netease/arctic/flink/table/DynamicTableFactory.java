@@ -25,6 +25,7 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
@@ -69,6 +70,7 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createVal
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
@@ -84,6 +86,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.SINK_PARTITIONER;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.VALUE_FORMAT;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink}
@@ -278,10 +281,18 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String startupMode = tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
+      startupTimestampMillis = Preconditions.checkNotNull(
+          tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
           String.format("'%s' should be set in '%s' mode",
               ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
+
+    String logStoreAddress = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
+        TableProperties.LOG_STORE_ADDRESS, null);
+    if (logStoreAddress != null) {
+      properties.putIfAbsent(BOOTSTRAP_SERVERS_CONFIG, logStoreAddress);
+    }
+
     LOG.info("create log source with deprecated API");
     return new KafkaDynamicSource(
         physicalDataType,
@@ -290,7 +301,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         keyProjection,
         valueProjection,
         keyPrefix,
-        KafkaConnectorOptionsUtil.getSourceTopics(tableOptions),
+        getLogTopic(arcticTable.properties()),
         KafkaConnectorOptionsUtil.getSourceTopicPattern(tableOptions),
         properties,
         startupMode,

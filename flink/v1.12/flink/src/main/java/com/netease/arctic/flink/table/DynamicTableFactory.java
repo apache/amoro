@@ -72,6 +72,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
@@ -87,7 +88,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOP
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink}
@@ -284,6 +285,21 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
           String.format("'%s' should be set in '%s' mode",
               SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
+    properties.putIfAbsent("key.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    properties.putIfAbsent("value.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    properties.putIfAbsent("key.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    properties.putIfAbsent("value.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+
+    String logStoreAddress = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
+        TableProperties.LOG_STORE_ADDRESS, null);
+    if (logStoreAddress != null) {
+      properties.putIfAbsent(BOOTSTRAP_SERVERS_CONFIG, logStoreAddress);
+    }
+
     LOG.info("create log source with deprecated API");
     return new KafkaDynamicSource(
         physicalDataType,
@@ -292,7 +308,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         keyProjection,
         valueProjection,
         keyPrefix,
-        KafkaOptions.getSourceTopics(tableOptions),
+        getLogTopic(arcticTable.properties()),
         KafkaOptions.getSourceTopicPattern(tableOptions),
         properties,
         startupMode,
