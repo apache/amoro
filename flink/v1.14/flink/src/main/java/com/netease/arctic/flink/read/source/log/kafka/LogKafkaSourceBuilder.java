@@ -398,10 +398,14 @@ public class LogKafkaSourceBuilder {
       setTopics(getLogTopic(tableProperties));
     }
 
-    kafkaProperties.putIfAbsent("properties.key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProperties.putIfAbsent("properties.value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProperties.putIfAbsent("properties.key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    kafkaProperties.putIfAbsent("properties.value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    kafkaProperties.putIfAbsent("properties.key.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent("properties.value.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent("properties.key.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    kafkaProperties.putIfAbsent("properties.value.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
     setupStartupMode();
   }
