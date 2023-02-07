@@ -61,9 +61,11 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.util.PropertyUtil;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FileInfoCacheService extends IJDBCService {
 
@@ -570,7 +573,9 @@ public class FileInfoCacheService extends IJDBCService {
     }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      List<TransactionsOfTable> transactions = snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      return transactions.stream().filter(t -> t.getFileCount() > 0 || t.getFileSize() > 0)
+          .collect(Collectors.toList());
     }
   }
 
