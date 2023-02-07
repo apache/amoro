@@ -57,8 +57,8 @@ import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogSt
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * The @builder class for {@link LogKafkaSource} to make it easier for the users to construct a {@link
@@ -391,7 +391,7 @@ public class LogKafkaSourceBuilder {
 
   private void convertArcticProperties() {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-      props.put(PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
+      props.put(BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(
           TableProperties.LOG_STORE_ADDRESS));
     }
     if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
@@ -496,7 +496,7 @@ public class LogKafkaSourceBuilder {
   private void sanityCheck() {
     // Check required configs.
     checkNotNull(
-        props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
+        props.getProperty(BOOTSTRAP_SERVERS_CONFIG),
         String.format("Property %s is required but not provided", LOG_STORE_ADDRESS));
     // Check required settings.
     checkNotNull(

@@ -25,7 +25,6 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
@@ -177,8 +176,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
 
-    final String topic = options.get(TableProperties.LOG_STORE_MESSAGE_TOPIC);
-
     ArcticTableLoader tableLoader = createTableLoader(
         new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
         internalCatalogName, internalCatalogBuilder, options);
@@ -187,7 +184,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     return new ArcticDynamicSink(
         catalogTable,
         tableLoader,
-        topic,
         table.isKeyedTable()
     );
   }

@@ -48,18 +48,15 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
 
   private final ArcticTableLoader tableLoader;
   private final CatalogTable flinkTable;
-  private final String topic;
   private final boolean primaryKeyExisted;
   private boolean overwrite = false;
 
   ArcticDynamicSink(
       CatalogTable flinkTable,
       ArcticTableLoader tableLoader,
-      String topic,
       boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
-    this.topic = topic;
     this.primaryKeyExisted = primaryKeyExisted;
   }
 
@@ -77,15 +74,12 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = getKafkaProperties(table.properties());
 
     return (DataStreamSinkProvider) dataStream -> {
       DataStreamSink<?> ds = FlinkSink
           .forRowData(dataStream)
           .table(table)
           .flinkSchema(flinkTable.getSchema())
-          .producerConfig(producerConfig)
-          .topic(topic)
           .tableLoader(tableLoader)
           .overwrite(overwrite)
           .build();
