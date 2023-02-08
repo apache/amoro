@@ -150,6 +150,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
     String newFilePath = TableFileUtils.getNewFilePath(hiveLocation, oldFilePath);
 
     if (!arcticTable.io().exists(newFilePath)) {
+      if (!arcticTable.io().exists(hiveLocation)) {
+        LOG.debug("{} hive location {} does not exist and need to mkdir before rename", arcticTable.id(), hiveLocation);
+        arcticTable.io().mkdirs(hiveLocation);
+      }
       arcticTable.io().rename(oldFilePath, newFilePath);
       LOG.debug("{} move file from {} to {}", arcticTable.id(), oldFilePath, newFilePath);
     }
