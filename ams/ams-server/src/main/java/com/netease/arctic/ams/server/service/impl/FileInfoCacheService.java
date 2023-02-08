@@ -538,6 +538,10 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier) {
+    return getTxExcludeOptimize(identifier, true);
+  }
+
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier, boolean ignoreEmptyTransaction) {
     if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
       List<TransactionsOfTable> result = new ArrayList<>();
       ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
@@ -571,8 +575,12 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
       List<TransactionsOfTable> transactions = snapInfoCacheMapper.getTxExcludeOptimize(identifier);
-      return transactions.stream().filter(t -> t.getFileCount() > 0 || t.getFileSize() > 0)
-          .collect(Collectors.toList());
+      if (ignoreEmptyTransaction) {
+        return transactions.stream().filter(t -> t.getFileCount() > 0 || t.getFileSize() > 0)
+            .collect(Collectors.toList());
+      } else {
+        return transactions;
+      }
     }
   }
 
