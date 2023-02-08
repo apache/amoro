@@ -57,6 +57,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final StructLikeMap<Long> partitionTransactionId;
 
   private Long transactionId;
+  // dynamic indicate that the transactionId should be applied to the changed partitions
+  private Boolean dynamic;
   private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
@@ -95,13 +97,32 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionId(StructLike partitionData, long transactionId) {
+  /**
+   * Update max TransactionId for partition
+   *
+   * @param partitionData - partition
+   * @param transactionId - max transactionId
+   * @return this for chain
+   */
+  public OverwriteBaseFiles updateMaxTransactionId(StructLike partitionData, long transactionId) {
+    Preconditions.checkArgument(this.dynamic == null || !this.dynamic,
+        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
     this.partitionTransactionId.put(partitionData, transactionId);
+    this.dynamic = false;
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionIdForChangedPartition(long transactionId) {
+  /**
+   * Update max TransactionId for changed partitions
+   *
+   * @param transactionId - max transactionId
+   * @return this for chain
+   */
+  public OverwriteBaseFiles updateMaxTransactionIdDynamically(long transactionId) {
+    Preconditions.checkArgument(this.dynamic == null || this.dynamic,
+        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
     this.transactionId = transactionId;
+    this.dynamic = true;
     return this;
   }
 
@@ -114,18 +135,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
-    if (this.transactionId != null && !this.partitionTransactionId.isEmpty()) {
-      throw new IllegalArgumentException(
-          "withTransactionIdForChangedPartition() and withTransactionId() can't be used simultaneously");
-    }
-    if (this.transactionId == null && this.partitionTransactionId.isEmpty()) {
-      throw new IllegalArgumentException(
-          "withTransactionIdForChangedPartition() or withTransactionId() must be invoked");
-    }
-    // dynamicPartition indicate that the transactionId should be applied to the changed partitions
-    boolean dynamicPartition = this.transactionId != null;
+    Preconditions.checkState(this.dynamic != null,
+        "updateMaxTransactionId() or updateMaxTransactionIdDynamically() must be invoked");
+
     StructLikeMap<Long> changedPartitionTransactionId = null;
-    if (dynamicPartition) {
+    if (this.dynamic) {
       changedPartitionTransactionId = StructLikeMap.create(transaction.table().spec().partitionType());
     }
 
@@ -139,7 +153,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
-      if (dynamicPartition) {
+      if (this.dynamic) {
         for (DataFile d : this.addFiles) {
           changedPartitionTransactionId.put(d.partition(), this.transactionId);
         }
@@ -167,7 +181,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        if (dynamicPartition) {
+        if (this.dynamic) {
           for (DeleteFile d : this.addDeleteFiles) {
             changedPartitionTransactionId.put(d.partition(), this.transactionId);
           }
@@ -184,7 +198,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        if (dynamicPartition) {
+        if (this.dynamic) {
           for (DeleteFile d : this.addDeleteFiles) {
             changedPartitionTransactionId.put(d.partition(), this.transactionId);
           }
@@ -202,7 +216,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     // step3: set max transaction id
-    if (dynamicPartition) {
+    if (this.dynamic) {
       partitionMaxTxId.putAll(changedPartitionTransactionId);
     } else {
       partitionMaxTxId.putAll(this.partitionTransactionId);
