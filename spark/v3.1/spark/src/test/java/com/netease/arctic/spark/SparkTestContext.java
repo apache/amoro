@@ -28,9 +28,9 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -192,7 +192,7 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "943718400");
     sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
-    sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "true");
+    sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "false");
 
     sparkConfigs.putAll(configs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));

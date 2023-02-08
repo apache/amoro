@@ -102,7 +102,7 @@ public class DistributionAndOrderingUtil {
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     }
-    return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket);
+    return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket - 1);
   }
 
   /**
