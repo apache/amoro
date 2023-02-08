@@ -35,10 +35,7 @@ import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.
 public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
   private static final long serialVersionUID = -1L;
 
-  private final String serviceUrl;
-
-  public HiddenPulsarFactory(String serviceUrl) {
-    this.serviceUrl = serviceUrl;
+  public HiddenPulsarFactory() {
   }
 
   @Override
@@ -48,7 +45,7 @@ public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
       LogDataJsonSerialization<T> logDataJsonSerialization,
       ShuffleHelper helper) {
     checkNotNull(topic);
-    SinkConfiguration conf = toSinkConf(producerConfig, serviceUrl);
+    SinkConfiguration conf = toSinkConf(producerConfig);
 
     return new HiddenPulsarProducer<>(
         conf,

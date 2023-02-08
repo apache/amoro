@@ -21,9 +21,12 @@ package com.netease.arctic.flink.util;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -123,7 +126,7 @@ public class CompatibleFlinkPropertyUtil {
    * @param tableOptions including table properties and flink options
    * @return Properties. The keys in it have no {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
    */
-  public static Properties getLogStoreProperties(Map<String, String> tableOptions) {
+  public static Properties fetchLogstorePrefixProperties(Map<String, String> tableOptions) {
     final Properties properties = new Properties();
 
     if (hasPrefix(tableOptions, TableProperties.LOG_STORE_PROPERTIES_PREFIX)) {
@@ -136,14 +139,14 @@ public class CompatibleFlinkPropertyUtil {
                 properties.put(subKey, value);
               });
     }
-
-    // convert the key to support create client in writer
-    if (CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT)
-        .equals(LOG_STORE_STORAGE_TYPE_PULSAR)) {
-      properties.put(PULSAR_SERVICE_URL.key(),
-          CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_ADDRESS, null));
-    }
+    
     return properties;
+  }
+
+  public static List<String> getLogTopic(Map<String, String> tableProperties) {
+    Configuration conf = new Configuration();
+    conf.setString(KafkaOptions.TOPIC.key(), tableProperties.get(TableProperties.LOG_STORE_MESSAGE_TOPIC));
+    return conf.get(KafkaOptions.TOPIC);
   }
 
   public static boolean hasPrefix(Map<String, String> tableOptions, String prefix) {
