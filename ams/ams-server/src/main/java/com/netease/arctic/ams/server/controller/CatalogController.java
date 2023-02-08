@@ -364,7 +364,7 @@ public class CatalogController extends RestBaseController {
       catalogMetadataService.updateCatalog(catalogMeta);
       CatalogUtil.removeCatalogCache(catalogMeta.getCatalogName());
       TerminalManager manager = ServiceContainer.getTerminalManager();
-      manager.removeSessionById();
+      manager.cleanSession();
     } catch (Exception e) {
       LOG.error("Failed to update catalog!", e);
       ctx.json(new ErrorResponse(e.getMessage()));
