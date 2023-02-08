@@ -195,7 +195,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
 
-  class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
+  class ArcticHiveTableBuilder extends ArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));

@@ -21,14 +21,12 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -142,9 +140,9 @@ public class MajorExecutor extends BaseExecutor {
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {
           if (file.type() == DataFileType.EQ_DELETE_FILE) {
-            return new BaseArcticFileScanTask(file, null, table.spec());
+            return new BasicArcticFileScanTask(file, null, table.spec());
           } else {
-            return new BaseArcticFileScanTask(file,
+            return new BasicArcticFileScanTask(file,
                 deleteFileMap.get(file.node()), table.spec());
           }
         })

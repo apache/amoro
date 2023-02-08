@@ -13,6 +13,6 @@ public class TableTypeUtil {
    * @return Whether iceberg table format
    */
   public static boolean isIcebergTableFormat(ArcticTable arcticTable) {
-    return arcticTable instanceof BaseIcebergCatalog.BaseIcebergTable;
+    return arcticTable instanceof BaseIcebergCatalog.BasicIcebergTable;
   }
 }

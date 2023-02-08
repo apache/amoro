@@ -33,7 +33,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
@@ -251,7 +251,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     Table icebergTable = tableMetadata.getMetaStore().doAs(()
         -> tables.load(tableMetadata.getBaseLocation()));
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetadata.getMetaStore());
-    return new BaseUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
+    return new BasicUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
   }
 
   public static class Key {

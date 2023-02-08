@@ -26,7 +26,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
@@ -124,7 +124,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
       if (tableNameResolve.isBase()) {
         return keyedTable.baseTable();
       } else {
-        return new ChangeTableWithExternalSchemas((BaseUnkeyedTable) keyedTable.changeTable());
+        return new ChangeTableWithExternalSchemas((BasicUnkeyedTable) keyedTable.changeTable());
       }
     }
     return arcticCatalog.loadTable(tableIdentifier);
@@ -162,9 +162,9 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {
 
-    private final BaseUnkeyedTable table;
+    private final BasicUnkeyedTable table;
 
-    public ChangeTableWithExternalSchemas(BaseUnkeyedTable table) {
+    public ChangeTableWithExternalSchemas(BasicUnkeyedTable table) {
       this.table = table;
     }
 

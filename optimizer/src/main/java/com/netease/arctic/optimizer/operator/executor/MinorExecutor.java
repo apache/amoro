@@ -19,7 +19,6 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -27,14 +26,13 @@ import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -147,7 +145,7 @@ public class MinorExecutor extends BaseExecutor {
     }
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
-        .map(file -> new BaseArcticFileScanTask(file, posDeleteList, table.spec()))
+        .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
         .collect(Collectors.toList());
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();

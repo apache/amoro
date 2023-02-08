@@ -27,7 +27,7 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
@@ -111,8 +111,8 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
       }
       DefaultKeyedFile keyedFile =
           DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
-      BaseArcticFileScanTask task =
-          new BaseArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
+      BasicArcticFileScanTask task =
+          new BasicArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
       if (task.fileType().equals(DataFileType.INSERT_FILE)) {
         appendLogTasks.add(task);
       } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {

@@ -174,7 +174,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       }
     });
     return CloseableIterable.transform(filteredEntry, e ->
-        new BaseArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
+        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
             null, table.spec(), null));
   }
 
