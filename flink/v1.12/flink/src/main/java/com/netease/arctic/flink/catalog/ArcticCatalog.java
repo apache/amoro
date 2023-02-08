@@ -30,7 +30,6 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -240,23 +239,6 @@ public class ArcticCatalog extends AbstractCatalog {
       tableProperties.putIfAbsent(FactoryUtil.FORMAT.key(), tableProperties.getOrDefault(
           TableProperties.LOG_STORE_DATA_FORMAT,
           TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT));
-      if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
-        tableProperties.putIfAbsent(KafkaOptions.TOPIC.key(),
-            tableProperties.get(TableProperties.LOG_STORE_MESSAGE_TOPIC));
-      }
-
-      if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-        tableProperties.putIfAbsent(KafkaOptions.PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
-            TableProperties.LOG_STORE_ADDRESS));
-      }
-      tableProperties.putIfAbsent("properties.key.serializer",
-          "org.apache.kafka.common.serialization.ByteArraySerializer");
-      tableProperties.putIfAbsent("properties.value.serializer",
-          "org.apache.kafka.common.serialization.ByteArraySerializer");
-      tableProperties.putIfAbsent("properties.key.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-      tableProperties.putIfAbsent("properties.value.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     }
   }
 

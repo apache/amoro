@@ -37,9 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Properties;
-
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 
 
 /**
@@ -51,18 +48,15 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
 
   private final ArcticTableLoader tableLoader;
   private final CatalogTable flinkTable;
-  private final String topic;
   private final boolean primaryKeyExisted;
   private boolean overwrite = false;
 
   ArcticDynamicSink(
       CatalogTable flinkTable,
       ArcticTableLoader tableLoader,
-      String topic,
       boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
-    this.topic = topic;
     this.primaryKeyExisted = primaryKeyExisted;
   }
 
@@ -80,7 +74,6 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = getKafkaProperties(table.properties());
 
     return new DataStreamSinkProvider() {
       @Override
@@ -91,8 +84,6 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
             .context(providerContext)
             .table(table)
             .flinkSchema(flinkTable.getSchema())
-            .producerConfig(producerConfig)
-            .topic(topic)
             .tableLoader(tableLoader)
             .overwrite(overwrite)
             .build();
