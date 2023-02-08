@@ -78,7 +78,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean deleteFileWith(String path, boolean recursive) {
+  public boolean deleteFileWithResult(String path, boolean recursive) {
     return tableMetaStore.doAs(() -> {
       Path toDelete = new Path(path);
       FileSystem fs = getFs(toDelete);
