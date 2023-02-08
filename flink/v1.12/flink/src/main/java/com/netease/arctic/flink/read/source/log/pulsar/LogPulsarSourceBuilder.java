@@ -18,7 +18,9 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.pulsar.source.PulsarSourceBuilder;
@@ -26,16 +28,26 @@ import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.SplitRangeGenerator;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static java.lang.Boolean.FALSE;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_CONSUMER_NAME;
@@ -89,11 +101,51 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     super();
     this.schema = schema;
     this.tableProperties = tableProperties;
+    this.setProperties(fetchLogstorePrefixProperties(tableProperties));
+    setupPulsarProperties();
   }
 
   public LogPulsarSourceBuilder setProperties(Properties properties) {
     configBuilder.set(properties);
     return this;
+  }
+
+  private void setupPulsarProperties() {
+    if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
+      this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
+    }
+    if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
+      setTopics(getLogTopic(tableProperties));
+    }
+
+    setupStartupMode();
+  }
+
+  private void setupStartupMode() {
+    String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
+        SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
+          tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
+          String.format("'%s' should be set in '%s' mode",
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
+    }
+    switch (startupMode) {
+      case SCAN_STARTUP_MODE_EARLIEST:
+        this.setStartCursor(StartCursor.earliest());
+        break;
+      case SCAN_STARTUP_MODE_LATEST:
+        this.setStartCursor(StartCursor.latest());
+        break;
+      case SCAN_STARTUP_MODE_TIMESTAMP:
+        this.setStartCursor(StartCursor.fromPublishTime(startupTimestampMillis));
+        break;
+      default:
+        throw new ValidationException(String.format(
+            "%s only support '%s', '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+    }
   }
 
   /**
@@ -103,9 +155,6 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
    */
   @SuppressWarnings("java:S3776")
   public LogPulsarSource build() {
-    if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-      this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
-    }
     buildOfficial();
 
     // If subscription name is not set, set a random value.

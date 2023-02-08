@@ -71,7 +71,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
@@ -87,9 +88,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOP
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopicPattern;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getSourceTopics;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink}
@@ -181,8 +180,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
 
-    final String topic = options.get(TableProperties.LOG_STORE_MESSAGE_TOPIC);
-
     ArcticTableLoader tableLoader = createTableLoader(
         new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
         internalCatalogName, internalCatalogBuilder, options);
@@ -191,7 +188,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     return new ArcticDynamicSink(
         catalogTable,
         tableLoader,
-        topic,
         table.isKeyedTable()
     );
   }
@@ -242,9 +238,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
 
-    validateSourceTopic(tableOptions);
-
-    final Properties properties = getLogStoreProperties(arcticTable.properties());
+    final Properties properties = fetchLogstorePrefixProperties(arcticTable.properties());
 
     // add topic-partition discovery
     final Optional<Long> partitionDiscoveryInterval =
@@ -253,44 +247,30 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         KafkaSourceOptions.PARTITION_DISCOVERY_INTERVAL_MS.key(),
         partitionDiscoveryInterval.orElse(-1L).toString());
 
-    final DataType physicalDataType =
-        catalogTable.getSchema().toPhysicalRowDataType();
+    final DataType physicalDataType = catalogTable.getSchema().toPhysicalRowDataType();
 
     final int[] valueProjection = createValueFormatProjection(tableOptions, physicalDataType);
-
-    String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
-    long startupTimestampMillis = 0L;
-    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
-          String.format("'%s' should be set in '%s' mode",
-              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
-    }
 
     LOG.info("build log source");
     if (adaptLegacySource(arcticTable)) {
       return createLegacyLogDynamicSource(physicalDataType, valueProjection, properties, context, tableOptions,
-          startupTimestampMillis, arcticTable, schema);
+          arcticTable, schema);
     }
     return new LogDynamicSource(
         valueProjection,
-        getSourceTopics(tableOptions),
-        getSourceTopicPattern(tableOptions),
         properties,
-        startupMode,
-        startupTimestampMillis,
         schema,
         tableOptions,
         arcticTable);
   }
 
   private ScanTableSource createLegacyLogDynamicSource(DataType physicalDataType,
-                                                    int[] valueProjection,
-                                                    Properties properties,
-                                                    Context context,
-                                                    ReadableConfig tableOptions,
-                                                    long startupTimestampMillis,
-                                                    ArcticTable arcticTable,
-                                                    Schema schema) {
+                                                       int[] valueProjection,
+                                                       Properties properties,
+                                                       Context context,
+                                                       ReadableConfig tableOptions,
+                                                       ArcticTable arcticTable,
+                                                       Schema schema) {
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     final Optional<DecodingFormat<DeserializationSchema<RowData>>> keyDecodingFormat =
         getKeyDecodingFormat(helper);
@@ -299,6 +279,26 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final int[] keyProjection = createKeyFormatProjection(tableOptions, physicalDataType);
     final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
     String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
+          String.format("'%s' should be set in '%s' mode",
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+    }
+    properties.putIfAbsent("key.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    properties.putIfAbsent("value.serializer",
+        "org.apache.kafka.common.serialization.ByteArraySerializer");
+    properties.putIfAbsent("key.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+    properties.putIfAbsent("value.deserializer",
+        "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+
+    String logStoreAddress = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
+        TableProperties.LOG_STORE_ADDRESS, null);
+    if (logStoreAddress != null) {
+      properties.putIfAbsent(BOOTSTRAP_SERVERS_CONFIG, logStoreAddress);
+    }
 
     LOG.info("create log source with deprecated API");
     return new KafkaDynamicSource(
@@ -308,7 +308,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         keyProjection,
         valueProjection,
         keyPrefix,
-        KafkaOptions.getSourceTopics(tableOptions),
+        getLogTopic(arcticTable.properties()),
         KafkaOptions.getSourceTopicPattern(tableOptions),
         properties,
         startupMode,
