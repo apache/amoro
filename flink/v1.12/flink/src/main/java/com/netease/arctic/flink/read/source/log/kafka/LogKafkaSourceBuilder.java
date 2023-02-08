@@ -51,7 +51,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -99,7 +99,7 @@ public class LogKafkaSourceBuilder {
     this.stoppingOffsetsInitializer = new NoStoppingOffsetsInitializer();
     this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
     this.deserializationSchema = null;
-    this.kafkaProperties = getLogStoreProperties(tableProperties);
+    this.kafkaProperties = fetchLogstorePrefixProperties(tableProperties);
     this.schema = schema;
     this.tableProperties = tableProperties;
     setupKafkaProperties();

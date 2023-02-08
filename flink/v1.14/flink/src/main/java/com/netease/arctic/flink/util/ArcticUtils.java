@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
@@ -157,7 +157,7 @@ public class ArcticUtils {
     Preconditions.checkNotNull(topic, String.format("Topic should be specified. It can be set by '%s'",
         LOG_STORE_MESSAGE_TOPIC));
 
-    producerConfig = combineArcticProperties(properties, producerConfig);
+    producerConfig = combineTableAndUnderlyingLogstoreProperties(properties, producerConfig);
 
     String version = properties.getOrDefault(LOG_STORE_DATA_VERSION, LOG_STORE_DATA_VERSION_DEFAULT);
     if (LOG_STORE_DATA_VERSION_DEFAULT.equals(version)) {
@@ -190,14 +190,21 @@ public class ArcticUtils {
         "'. only support 'v1' or empty");
   }
 
-  private static Properties combineArcticProperties(Map<String, String> tableProperties,
+  /**
+   * Extract and combine the properties for underlying log store queue.
+   * @param tableProperties arctic table properties
+   * @param producerConfig can be set by java API
+   * @return properties with tableProperties and producerConfig which has higher priority.
+   */
+  private static Properties combineTableAndUnderlyingLogstoreProperties(Map<String, String> tableProperties,
                                                     Properties producerConfig) {
     Properties finalProp;
-    Properties props = getLogStoreProperties(tableProperties);
+    Properties underlyingLogStoreProps = fetchLogstorePrefixProperties(tableProperties);
     if (producerConfig == null) {
-      finalProp = props;
+      finalProp = underlyingLogStoreProps;
     } else {
-      props.stringPropertyNames().forEach(k -> producerConfig.putIfAbsent(k, props.get(k)));
+      underlyingLogStoreProps.stringPropertyNames()
+          .forEach(k -> producerConfig.putIfAbsent(k, underlyingLogStoreProps.get(k)));
       finalProp = producerConfig;
     }
 

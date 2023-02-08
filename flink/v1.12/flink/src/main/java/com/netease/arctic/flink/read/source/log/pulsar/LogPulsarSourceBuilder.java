@@ -46,7 +46,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static java.lang.Boolean.FALSE;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
@@ -101,7 +101,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     super();
     this.schema = schema;
     this.tableProperties = tableProperties;
-    this.setProperties(getLogStoreProperties(tableProperties));
+    this.setProperties(fetchLogstorePrefixProperties(tableProperties));
     setupPulsarProperties();
   }
 
@@ -118,10 +118,10 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
       setTopics(getLogTopic(tableProperties));
     }
 
-    setuptartupMode();
+    setupStartupMode();
   }
 
-  private void setuptartupMode() {
+  private void setupStartupMode() {
     String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
         SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
     long startupTimestampMillis = 0L;

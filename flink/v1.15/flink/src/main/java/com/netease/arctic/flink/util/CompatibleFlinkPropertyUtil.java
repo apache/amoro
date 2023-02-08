@@ -121,7 +121,7 @@ public class CompatibleFlinkPropertyUtil {
    * @param tableOptions including table properties and flink options
    * @return Properties. The keys in it have no {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
    */
-  public static Properties getLogStoreProperties(Map<String, String> tableOptions) {
+  public static Properties fetchLogstorePrefixProperties(Map<String, String> tableOptions) {
     final Properties properties = new Properties();
 
     if (hasPrefix(tableOptions, TableProperties.LOG_STORE_PROPERTIES_PREFIX)) {
