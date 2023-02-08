@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
+import com.netease.arctic.ams.server.terminal.TerminalManager;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -362,6 +363,9 @@ public class CatalogController extends RestBaseController {
       CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
       catalogMetadataService.updateCatalog(catalogMeta);
       CatalogUtil.removeCatalogCache(catalogMeta.getCatalogName());
+      String terminalId = ctx.cookie("JSESSIONID");
+      TerminalManager manager = ServiceContainer.getTerminalManager();
+      manager.removeSessionById(terminalId, catalogMeta.getCatalogName(), catalogMeta);
     } catch (Exception e) {
       LOG.error("Failed to update catalog!", e);
       ctx.json(new ErrorResponse(e.getMessage()));

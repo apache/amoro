@@ -139,6 +139,12 @@ public class TerminalManager {
     return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
+  public void removeSessionById(String terminalId, String catalog, CatalogMeta catalogMeta) {
+    TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
+    String sessionId = getSessionId(terminalId, metaStore, catalog);
+    sessionMap.remove(sessionId);
+  }
+
   /**
    * get execution result.
    */
