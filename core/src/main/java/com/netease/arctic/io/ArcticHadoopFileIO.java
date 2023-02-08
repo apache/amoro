@@ -78,7 +78,8 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean deleteFileWithResult(String path, boolean recursive) {
+  public boolean deleteFileWith
+  (String path, boolean recursive) {
     return tableMetaStore.doAs(() -> {
       Path toDelete = new Path(path);
       FileSystem fs = getFs(toDelete);
@@ -88,7 +89,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       } catch (IOException e) {
         result = false;
       }
-      if (!result ) {
+      if (!result) {
         LOG.warn("Fail to delete file " + path + " and file system return false, need to check the hdfs path");
       }
       return result;
