@@ -134,9 +134,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
-    applyDeleteExpression();
     Preconditions.checkState(this.dynamic != null,
         "updateMaxTransactionId() or updateMaxTransactionIdDynamically() must be invoked");
+    applyDeleteExpression();
 
     StructLikeMap<Long> changedPartitionTransactionId = null;
     if (this.dynamic) {
