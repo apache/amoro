@@ -88,7 +88,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       } catch (IOException e) {
         result = false;
       }
-      if (result == false) {
+      if (!result ) {
         LOG.warn("Fail to delete file " + path + " and file system return false, need to check the hdfs path");
       }
       return result;
@@ -172,7 +172,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       Path dtsPath = new Path(dts);
       FileSystem fs = getFs(srcPath);
       try {
-        if (fs.rename(srcPath, dtsPath) == false) {
+        if (!fs.rename(srcPath, dtsPath)) {
           throw new IOException("Fail to rename: from " + src + " to " + dts +
               " and file system return false, need to check the hdfs path");
         }
@@ -207,7 +207,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       Path filePath = new Path(path);
       FileSystem fs = getFs(filePath);
       try {
-        if (fs.mkdirs(filePath) == false) {
+        if (!fs.mkdirs(filePath)) {
           throw new IOException("Fail to mkdirs: path " + path +
               " and file system return false,, need to check the hdfs path");
         }
