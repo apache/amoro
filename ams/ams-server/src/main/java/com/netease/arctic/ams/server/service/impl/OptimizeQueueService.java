@@ -31,7 +31,7 @@ import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeQueueMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
@@ -666,7 +666,7 @@ public class OptimizeQueueService extends IJDBCService {
           }
 
           AbstractOptimizePlan optimizePlan;
-          List<BaseOptimizeTask> optimizeTasks;
+          List<BasicOptimizeTask> optimizeTasks;
 
           Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
@@ -750,7 +750,7 @@ public class OptimizeQueueService extends IJDBCService {
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
                                           AbstractOptimizePlan optimizePlan,
-                                          List<BaseOptimizeTask> optimizeTasks,
+                                          List<BasicOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
         TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
@@ -787,7 +787,7 @@ public class OptimizeQueueService extends IJDBCService {
       }
     }
 
-    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BaseOptimizeTask> optimizeTasks) {
+    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BasicOptimizeTask> optimizeTasks) {
       try {
         tableItem.addNewOptimizeTasks(optimizeTasks);
       } catch (Throwable t) {

@@ -21,7 +21,7 @@ package com.netease.arctic.ams.server.optimize;
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -126,8 +126,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> result;
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> result;
 
     FileTree treeRoot = partitionFileTree.get(partition);
     result = collectKeyedTableTasks(partition, treeRoot);
@@ -315,8 +315,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
         tableId(), getOptimizeType(), addCnt, baseOptimizeFiles.size(), partitionFileTree.size());
   }
 
-  private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 

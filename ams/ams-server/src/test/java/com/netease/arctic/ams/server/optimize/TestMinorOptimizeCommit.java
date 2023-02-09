@@ -21,8 +21,8 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.TreeNode;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
@@ -107,7 +107,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(),
         testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
     Set<StructLike> partitionData = new HashSet<>();
@@ -116,7 +116,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     }
     AtomicInteger i = new AtomicInteger();
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       List<DeleteFile> targetFiles = resultFiles.get(i.getAndIncrement());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -136,7 +136,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -193,12 +193,12 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(),
         testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
     AtomicInteger i = new AtomicInteger();
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       List<DeleteFile> targetFiles = resultFiles.get(i.getAndIncrement());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -218,7 +218,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testNoPartitionTable, partitionTasks);
+    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testNoPartitionTable, partitionTasks);
     optimizeCommit.commit(testNoPartitionTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -248,12 +248,12 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(),
         testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
 
     Set<StructLike> partitionData = changeEqDeletes.stream().map(ContentFile::partition).collect(Collectors.toSet());
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -275,7 +275,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       Assert.assertNull(oldMaxTxId.get(partitionDatum));
     }
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
     StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
@@ -297,10 +297,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(),
         testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -320,7 +320,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
     Assert.assertNull(oldMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testNoPartitionTable, partitionTasks);
+    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testNoPartitionTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
     Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();
