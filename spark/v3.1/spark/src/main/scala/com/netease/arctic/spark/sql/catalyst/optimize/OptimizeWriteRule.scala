@@ -39,6 +39,9 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
     }
   }
 
+  // do optimize write for insert overwrite. insert into.
+  // update will not enable optimize write for reason that we should
+  // write update_before and update_after in same time.
   def optimizeWritePlan(plan: LogicalPlan): LogicalPlan = plan transformDown {
     case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _)
       if isArcticRelation(r) =>
