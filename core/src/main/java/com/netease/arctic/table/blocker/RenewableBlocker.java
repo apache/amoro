@@ -28,12 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Renewable {@link Blocker} implementation.
@@ -95,13 +93,6 @@ public class RenewableBlocker implements Blocker {
 
   private void doRenew() {
     try {
-      Set<String> validBlockers = amsClient.getBlockers(tableIdentifier.buildTableIdentifier())
-          .stream()
-          .map(com.netease.arctic.ams.api.Blocker::getBlockerId)
-          .collect(Collectors.toSet());
-      if (!validBlockers.contains(blockerId())) {
-        cancelRenew();
-      }
       this.expirationTime = amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
       LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
     } catch (NoSuchObjectException e) {
