@@ -255,6 +255,20 @@
                                         <include>
                                             org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
                                         </include>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
+                                        </include>
+                                    </includes>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.spark.sql.execution.datasources</pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources
+                                    </shadedPattern>
+                                    <includes>
+                                        <include>
+                                            org.apache.spark.sql.execution.datasources.SparkExpressionConverter*
+                                        </include>
                                     </includes>
                                 </relocation>
                                 <relocation>
@@ -338,6 +352,9 @@
                                         </include>
                                         <include>
                                             org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering*
+                                        </include>
+                                        <include>
+                                            org.apache.spark.sql.catalyst.plans.logical.SortOrderParserUtil*
                                         </include>
                                     </includes>
                                 </relocation>
