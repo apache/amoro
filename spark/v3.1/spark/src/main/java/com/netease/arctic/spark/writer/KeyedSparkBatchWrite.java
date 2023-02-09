@@ -218,7 +218,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       checkBlocker(tableBlockerManager);
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-      overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
+      overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
 
       for (DataFile file : files(messages)) {
