@@ -109,9 +109,10 @@ public class TablePropertyUtil {
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
           propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID) == null) ?
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT :
-          Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
-      baseTableMaxTransactionId.put(partitionKey, maxTxId);
+          null : Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
+      if (maxTxId != null) {
+        baseTableMaxTransactionId.put(partitionKey, maxTxId);
+      }
     });
 
     return baseTableMaxTransactionId;

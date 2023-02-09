@@ -242,9 +242,13 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       Long fromTransactionId = fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
       return legacyTxId > fromTransactionId;
     } else {
-      Long partitionTransactionId = fromPartitionLegacyTransactionId.getOrDefault(partition,
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-      return legacyTxId > partitionTransactionId;
+      if (!fromPartitionLegacyTransactionId.containsKey(partition)) {
+        // if fromPartitionLegacyTransactionId not contains this partition, return all files of this partition
+        return true;
+      } else {
+        Long partitionTransactionId = fromPartitionLegacyTransactionId.get(partition);
+        return legacyTxId > partitionTransactionId;
+      }
     }
   }
 

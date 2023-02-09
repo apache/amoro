@@ -50,7 +50,7 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
-        .withTransactionIdForChangedPartition(txId)
+        .updateMaxTransactionIdDynamically(txId)
         .commit();
     // overwrite all partition and add new data file
 
@@ -92,7 +92,7 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
     List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
-    overwrite.withTransactionIdForChangedPartition(txId);
+    overwrite.updateMaxTransactionIdDynamically(txId);
     overwrite.overwriteByRowFilter(
         Expressions.or(
             Expressions.or(
