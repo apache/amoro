@@ -71,7 +71,7 @@
         <root.dir>${project.basedir}</root.dir>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
@@ -410,7 +410,6 @@
                     <configuration>
                         <configLocation>style/arctic-checkstyle.xml</configLocation>
                         <suppressionsLocation>style/suppressions.xml</suppressionsLocation>
-                        <encoding>UTF-8</encoding>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <violationSeverity>warning</violationSeverity>

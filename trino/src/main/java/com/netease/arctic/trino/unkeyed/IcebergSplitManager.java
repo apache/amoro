@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.TableNameResolve;
 import io.airlift.units.Duration;
+import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorSplitSource;
 import io.trino.plugin.iceberg.IcebergTableHandle;
 import io.trino.spi.connector.ConnectorSession;
@@ -39,6 +40,7 @@ import org.apache.iceberg.TableScan;
 import javax.inject.Inject;
 
 import static io.trino.plugin.iceberg.IcebergSessionProperties.getDynamicFilteringWaitTimeout;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getMinimumAssignedSplitWeight;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -49,11 +51,16 @@ public class IcebergSplitManager implements ConnectorSplitManager {
 
   private final ArcticTransactionManager transactionManager;
   private final TypeManager typeManager;
+  private final TrinoFileSystemFactory fileSystemFactory;
 
   @Inject
-  public IcebergSplitManager(ArcticTransactionManager transactionManager, TypeManager typeManager) {
+  public IcebergSplitManager(
+      ArcticTransactionManager transactionManager,
+      TypeManager typeManager,
+      TrinoFileSystemFactory fileSystemFactory) {
     this.transactionManager = requireNonNull(transactionManager, "transactionManager is null");
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
+    this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
   }
 
   @Override
@@ -61,7 +68,6 @@ public class IcebergSplitManager implements ConnectorSplitManager {
       ConnectorTransactionHandle transaction,
       ConnectorSession session,
       ConnectorTableHandle handle,
-      SplitSchedulingStrategy splitSchedulingStrategy,
       DynamicFilter dynamicFilter,
       Constraint constraint) {
     IcebergTableHandle table = (IcebergTableHandle) handle;
@@ -81,6 +87,8 @@ public class IcebergSplitManager implements ConnectorSplitManager {
         .useSnapshot(table.getSnapshotId().get());
     TableNameResolve resolve = new TableNameResolve(table.getTableName());
     IcebergSplitSource splitSource = new IcebergSplitSource(
+        fileSystemFactory,
+        session,
         table,
         tableScan,
         table.getMaxScannedFileSize(),
@@ -89,6 +97,7 @@ public class IcebergSplitManager implements ConnectorSplitManager {
         constraint,
         typeManager,
         table.isRecordScannedFiles(),
+        getMinimumAssignedSplitWeight(session),
         resolve.withSuffix() ? !resolve.isBase() : false);
 
     return new ClassLoaderSafeConnectorSplitSource(splitSource, Thread.currentThread().getContextClassLoader());
