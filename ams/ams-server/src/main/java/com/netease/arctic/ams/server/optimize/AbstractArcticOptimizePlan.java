@@ -29,7 +29,6 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -45,7 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
+public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
 
   protected final List<DataFileInfo> baseTableFileList;
   protected final List<DataFileInfo> changeTableFileList;
@@ -65,12 +64,12 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  public BaseArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                List<DataFileInfo> baseTableFileList,
-                                List<DataFileInfo> changeTableFileList,
-                                List<DataFileInfo> posDeleteFileList,
-                                Map<String, Boolean> partitionTaskRunning,
-                                int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
+  public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                    List<DataFileInfo> baseTableFileList,
+                                    List<DataFileInfo> changeTableFileList,
+                                    List<DataFileInfo> posDeleteFileList,
+                                    Map<String, Boolean> partitionTaskRunning,
+                                    int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
     this.baseTableFileList = baseTableFileList;
     this.changeTableFileList = changeTableFileList;

@@ -38,8 +38,8 @@ import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.optimize.BaseIcebergOptimizePlan;
-import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
+import com.netease.arctic.ams.server.optimize.AbstractIcebergOptimizePlan;
+import com.netease.arctic.ams.server.optimize.AbstractOptimizePlan;
 import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -665,12 +665,12 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
-          BaseOptimizePlan optimizePlan;
+          AbstractOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
 
           Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
-            if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
+            if (!AbstractIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
                 tableItem.getTableOptimizeRuntime())) {
               tableItem.persistTableOptimizeRuntime();
               LOG.debug("table {} not changed, no need plan", tableIdentifier);
@@ -749,7 +749,7 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
-                                          BaseOptimizePlan optimizePlan,
+                                          AbstractOptimizePlan optimizePlan,
                                           List<BaseOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {

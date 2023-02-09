@@ -40,7 +40,7 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
 
-public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalScan {
+public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalScan {
 
   private final ChangeTable table;
   private StructLikeMap<Long> fromPartitionTransactionId;
@@ -49,7 +49,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private Long snapshotId;
   private boolean includeColumnStats;
 
-  public BaseChangeTableIncrementalScan(ChangeTable table) {
+  public ChangeTableBasicIncrementalScan(ChangeTable table) {
     this.table = table;
   }
 

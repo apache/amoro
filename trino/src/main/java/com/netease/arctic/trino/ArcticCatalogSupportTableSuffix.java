@@ -21,7 +21,7 @@ package com.netease.arctic.trino;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BaseArcticCatalog;
+import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -157,7 +157,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   public TableMetaStore getTableMetaStore() {
-    return ((BaseArcticCatalog) arcticCatalog).getTableMetaStore();
+    return ((BasicArcticCatalog) arcticCatalog).getTableMetaStore();
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {

@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
-public abstract class BaseExecutor implements Executor {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseExecutor.class);
+public abstract class AbstractExecutor implements Executor {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractExecutor.class);
   protected static final int SAMPLE_DATA_INTERVAL = 100000;
 
   protected final NodeTask task;
@@ -59,7 +59,7 @@ public abstract class BaseExecutor implements Executor {
 
   protected final StructLikeCollections structLikeCollections;
 
-  public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
+  public AbstractExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
     this.task = task;
     this.table = table;
     this.startTime = startTime;

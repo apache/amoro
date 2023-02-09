@@ -55,17 +55,17 @@ import java.util.stream.Collectors;
 /**
  * only used for native iceberg
  */
-public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseIcebergOptimizePlan.class);
+public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractIcebergOptimizePlan.class);
 
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   protected List<FileScanTask> fileScanTasks;
   protected SequenceNumberFetcher sequenceNumberFetcher;
 
-  public BaseIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                 List<FileScanTask> fileScanTasks,
-                                 Map<String, Boolean> partitionTaskRunning,
-                                 int queueId, long currentTime) {
+  public AbstractIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                     List<FileScanTask> fileScanTasks,
+                                     Map<String, Boolean> partitionTaskRunning,
+                                     int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
     this.fileScanTasks = fileScanTasks;
   }

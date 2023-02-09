@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MajorOptimizePlan extends BaseArcticOptimizePlan {
+public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MajorOptimizePlan.class);
 
   // partition -> need major optimize files

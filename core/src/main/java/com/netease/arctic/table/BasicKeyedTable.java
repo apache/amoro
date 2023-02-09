@@ -26,8 +26,8 @@ import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
-import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
 import com.netease.arctic.scan.BasicKeyedTableScan;
+import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -216,7 +216,7 @@ public class BasicKeyedTable implements KeyedTable {
 
     @Override
     public ChangeTableIncrementalScan newChangeScan() {
-      return new BaseChangeTableIncrementalScan(this);
+      return new ChangeTableBasicIncrementalScan(this);
     }
   }
 }

@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public abstract class BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizePlan.class);
+public abstract class AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizePlan.class);
 
   protected final ArcticTable arcticTable;
   protected final TableOptimizeRuntime tableOptimizeRuntime;
@@ -54,9 +54,9 @@ public abstract class BaseOptimizePlan {
   // After plan files, current partitions of table will be set.
   protected final Set<String> currentPartitions = new HashSet<>();
 
-  public BaseOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                          Map<String, Boolean> partitionTaskRunning,
-                          int queueId, long currentTime) {
+  public AbstractOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                              Map<String, Boolean> partitionTaskRunning,
+                              int queueId, long currentTime) {
     this.arcticTable = arcticTable;
     this.tableOptimizeRuntime = tableOptimizeRuntime;
     this.queueId = queueId;

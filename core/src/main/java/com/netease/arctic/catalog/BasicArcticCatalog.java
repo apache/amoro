@@ -78,10 +78,10 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PU
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 /**
- * Base {@link ArcticCatalog} implementation.
+ * Basic {@link ArcticCatalog} implementation.
  */
-public class BaseArcticCatalog implements ArcticCatalog {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseArcticCatalog.class);
+public class BasicArcticCatalog implements ArcticCatalog {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicArcticCatalog.class);
 
   protected AmsClient client;
   protected CatalogMeta catalogMeta;

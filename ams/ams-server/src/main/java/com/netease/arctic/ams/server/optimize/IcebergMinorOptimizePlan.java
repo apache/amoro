@@ -44,7 +44,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
+public class IcebergMinorOptimizePlan extends AbstractIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergMinorOptimizePlan.class);
 
   // partition -> FileScanTask

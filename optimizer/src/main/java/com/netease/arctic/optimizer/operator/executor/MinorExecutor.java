@@ -52,7 +52,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MinorExecutor extends BaseExecutor {
+public class MinorExecutor extends AbstractExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
   public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {

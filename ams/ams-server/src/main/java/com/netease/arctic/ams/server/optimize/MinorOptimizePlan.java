@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MinorOptimizePlan extends BaseArcticOptimizePlan {
+public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MinorOptimizePlan.class);
   private static final long INVALID_TX_ID = -1L;
 

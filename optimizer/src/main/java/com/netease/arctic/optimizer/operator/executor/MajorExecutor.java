@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MajorExecutor extends BaseExecutor {
+public class MajorExecutor extends AbstractExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MajorExecutor.class);
 
   public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {

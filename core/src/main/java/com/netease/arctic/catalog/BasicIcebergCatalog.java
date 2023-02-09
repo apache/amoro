@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
  */
-public class BaseIcebergCatalog implements ArcticCatalog {
+public class BasicIcebergCatalog implements ArcticCatalog {
 
   private CatalogMeta meta;
   private AmsClient client;

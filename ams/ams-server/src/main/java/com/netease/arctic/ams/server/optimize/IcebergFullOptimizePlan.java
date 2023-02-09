@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
+public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergFullOptimizePlan.class);
 
   protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
