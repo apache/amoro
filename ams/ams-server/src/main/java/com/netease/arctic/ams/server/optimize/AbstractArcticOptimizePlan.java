@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -81,14 +81,14 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     this.currentBaseSnapshotId = baseSnapshotId;
   }
 
-  protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
-                                               List<DataFile> insertFiles,
-                                               List<DataFile> deleteFiles,
-                                               List<DataFile> baseFiles,
-                                               List<DeleteFile> posDeleteFiles,
-                                               TaskConfig taskConfig) {
+  protected BasicOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
+                                                List<DataFile> insertFiles,
+                                                List<DataFile> deleteFiles,
+                                                List<DataFile> baseFiles,
+                                                List<DeleteFile> posDeleteFiles,
+                                                TaskConfig taskConfig) {
     // build task
-    BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
+    BasicOptimizeTask optimizeTask = new BasicOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
     optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());

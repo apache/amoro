@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -104,13 +104,13 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
         .pack(fileScanTasks, fileScanTask -> fileScanTask.file().fileSizeInBytes());
   }
 
-  protected BaseOptimizeTask buildOptimizeTask(List<DataFile> insertFiles,
-                                               List<DataFile> baseFiles,
-                                               List<DeleteFile> eqDeleteFiles,
-                                               List<DeleteFile> posDeleteFiles,
-                                               TaskConfig taskConfig) {
+  protected BasicOptimizeTask buildOptimizeTask(List<DataFile> insertFiles,
+                                                List<DataFile> baseFiles,
+                                                List<DeleteFile> eqDeleteFiles,
+                                                List<DeleteFile> posDeleteFiles,
+                                                TaskConfig taskConfig) {
     // build task
-    BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
+    BasicOptimizeTask optimizeTask = new BasicOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
     optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());

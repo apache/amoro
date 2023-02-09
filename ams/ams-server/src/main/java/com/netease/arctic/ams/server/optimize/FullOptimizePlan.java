@@ -21,7 +21,7 @@ package com.netease.arctic.ams.server.optimize;
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -99,8 +99,8 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> result;
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
       // if Full, optimize all files in file tree.
       List<DataFile> fileList = partitionFileTree.get(partition).getBaseFiles();
@@ -168,8 +168,8 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2;
   }
 
-  private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
@@ -197,8 +197,8 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     return collector;
   }
 
-  private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 

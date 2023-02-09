@@ -20,8 +20,8 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
@@ -29,7 +29,6 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -49,7 +48,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SupportHiveCommit extends BaseOptimizeCommit {
+public class SupportHiveCommit extends CommonOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveCommit.class);
 
   protected Consumer<OptimizeTaskItem> updateTargetFiles;
@@ -78,7 +77,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
       // to hive location
       if (isPartitionMajorOptimizeSupportHive(partition, optimizeTaskItems)) {
         for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
-          BaseOptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
+          OptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
               .map(fileByte -> (DataFile) SerializationUtils.toContentFile(fileByte))
               .collect(Collectors.toList());
@@ -132,7 +131,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {
     for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
-      BaseOptimizeTask optimizeTask = optimizeTaskItem.getOptimizeTask();
+      BasicOptimizeTask optimizeTask = optimizeTaskItem.getOptimizeTask();
       boolean isMajorTaskSupportHive = optimizeTask.getTaskId().getType() == OptimizeType.Major &&
           CollectionUtils.isEmpty(optimizeTask.getPosDeleteFiles());
       if (!isMajorTaskSupportHive) {
