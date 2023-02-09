@@ -22,16 +22,14 @@ import com.google.common.collect.ImmutableList;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
-import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.trino.delete.TrinoDeleteFile;
+import com.netease.arctic.trino.delete.TrinoRow;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import com.netease.arctic.trino.unkeyed.IcebergSplit;
-import io.trino.plugin.iceberg.FileIoProvider;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.IcebergFileFormat;
-import io.trino.plugin.iceberg.delete.TrinoDeleteFile;
-import io.trino.plugin.iceberg.delete.TrinoRow;
 import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ColumnHandle;
@@ -74,7 +72,6 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
   private List<IcebergColumnHandle> requiredColumns;
   private DynamicFilter dynamicFilter;
   private TypeManager typeManager;
-  private FileIoProvider fileIoProvider;
   private AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
 
   private List<ColumnHandle> requireColumnsDummy;
@@ -97,7 +94,6 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       KeyedTableHandle table,
       DynamicFilter dynamicFilter,
       TypeManager typeManager,
-      FileIoProvider fileIoProvider,
       AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter) {
     this.expectedColumns = expectedColumns;
     this.icebergPageSourceProvider = icebergPageSourceProvider;
@@ -108,7 +104,6 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     this.requiredColumns = requiredColumns;
     this.dynamicFilter = dynamicFilter;
     this.typeManager = typeManager;
-    this.fileIoProvider = fileIoProvider;
     this.arcticDeleteFilter = arcticDeleteFilter;
 
     this.requireColumnsDummy = requiredColumns.stream().map(ColumnHandle.class::cast).collect(Collectors.toList());
@@ -268,6 +263,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
             0,
             primaryKeyedFile.fileSizeInBytes(),
             primaryKeyedFile.fileSizeInBytes(),
+            primaryKeyedFile.recordCount(),
             IcebergFileFormat.PARQUET,
             ImmutableList.of(),
             split.getPartitionSpecJson(),

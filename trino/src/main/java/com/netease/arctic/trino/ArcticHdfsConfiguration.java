@@ -18,8 +18,8 @@
 
 package com.netease.arctic.trino;
 
-import io.trino.plugin.hive.HdfsConfiguration;
-import io.trino.plugin.hive.HdfsEnvironment;
+import io.trino.hdfs.HdfsConfiguration;
+import io.trino.hdfs.HdfsContext;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import org.apache.hadoop.conf.Configuration;
 
@@ -39,7 +39,7 @@ public class ArcticHdfsConfiguration implements HdfsConfiguration {
   }
 
   @Override
-  public Configuration getConfiguration(HdfsEnvironment.HdfsContext context, URI uri) {
+  public Configuration getConfiguration(HdfsContext context, URI uri) {
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
       Configuration configuration = ((ArcticCatalogSupportTableSuffix) arcticCatalogFactory.getArcticCatalog())
           .getTableMetaStore().getConfiguration();
