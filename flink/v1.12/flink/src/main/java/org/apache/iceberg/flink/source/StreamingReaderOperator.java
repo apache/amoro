@@ -46,14 +46,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Queue;
 /**
- * The operator that reads the {@link FlinkInputSplit splits} received from the preceding {@link
- * StreamingMonitorFunction}. Contrary to the {@link StreamingMonitorFunction} which has a
- * parallelism of 1, this operator can have multiple parallelism.
- *
- * <p>As soon as a split descriptor is received, it is put in a queue, and use {@link
- * MailboxExecutor} read the actual data of the split. This architecture allows the separation of
- * the reading thread from the one split processing the checkpoint barriers, thus removing any
- * potential back-pressure.
+ * Copy from iceberg {@link org.apache.iceberg.flink.source.StreamingReaderOperator}.
+ * change MailboxExecutor import for adapt Flink 1.12 version.
  */
 
 public class StreamingReaderOperator extends AbstractStreamOperator<RowData>

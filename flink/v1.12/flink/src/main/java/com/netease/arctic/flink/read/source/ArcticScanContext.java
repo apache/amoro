@@ -174,12 +174,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private Schema projectedSchema;
     private List<Expression> filters;
     private long limit = -1L;
-    private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
     private boolean exposeLocality;
     private Integer planParallelism =
         FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
     private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
     private String scanStartupMode;
+    private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
 
     private Builder() {
     }
@@ -264,11 +264,6 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
-    public Builder includeColumnStats(boolean newIncludeColumnStats) {
-      this.includeColumnStats = newIncludeColumnStats;
-      return this;
-    }
-
     public Builder exposeLocality(boolean newExposeLocality) {
       this.exposeLocality = newExposeLocality;
       return this;
@@ -286,6 +281,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public Builder scanStartupMode(String scanStartupMode) {
       this.scanStartupMode = scanStartupMode;
+      return this;
+    }
+
+    public Builder includeColumnStats(boolean newIncludeColumnStats) {
+      this.includeColumnStats = newIncludeColumnStats;
       return this;
     }
 
@@ -322,11 +322,28 @@ public class ArcticScanContext extends ScanContext implements Serializable {
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
           String.format("only support %s, %s when %s is %s",
               SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
-      return new ArcticScanContext(caseSensitive, snapshotId, startingStrategy, startSnapshotTimestamp,
-          startSnapshotId, endSnapshotId, asOfTimestamp, splitSize, splitLookback,
-          splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-          filters, limit, includeColumnStats, exposeLocality, planParallelism,
-          maxPlanningSnapshotCount, scanStartupMode);
+      return new ArcticScanContext(
+          caseSensitive,
+          snapshotId,
+          startingStrategy,
+          startSnapshotTimestamp,
+          startSnapshotId,
+          endSnapshotId,
+          asOfTimestamp,
+          splitSize,
+          splitLookback,
+          splitOpenFileCost,
+          isStreaming,
+          monitorInterval,
+          nameMapping,
+          projectedSchema,
+          filters,
+          limit,
+          includeColumnStats,
+          exposeLocality,
+          planParallelism,
+          maxPlanningSnapshotCount,
+          scanStartupMode);
     }
   }
 }

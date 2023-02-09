@@ -35,7 +35,8 @@ import java.util.Map;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
- * Copy from Iceberg. only change line 68 and expand the modifier.
+ * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}.
+ * only change line 79 and expand the modifier.
  * Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
@@ -438,12 +439,27 @@ public class ScanContext implements Serializable {
     }
 
     public ScanContext build() {
-      return new ScanContext(caseSensitive, snapshotId, startingStrategy,
-          startSnapshotTimestamp,startSnapshotId,
-          endSnapshotId, asOfTimestamp, splitSize, splitLookback,
-          splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-          filters, limit, includeColumnStats,
-          exposeLocality, planParallelism, maxPlanningSnapshotCount);
+      return new ScanContext(
+          caseSensitive,
+          snapshotId,
+          startingStrategy,
+          startSnapshotTimestamp,
+          startSnapshotId,
+          endSnapshotId,
+          asOfTimestamp,
+          splitSize,
+          splitLookback,
+          splitOpenFileCost,
+          isStreaming,
+          monitorInterval,
+          nameMapping,
+          projectedSchema,
+          filters,
+          limit,
+          includeColumnStats,
+          exposeLocality,
+          planParallelism,
+          maxPlanningSnapshotCount);
     }
   }
 }

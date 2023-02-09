@@ -321,11 +321,28 @@ public class ArcticScanContext extends ScanContext implements Serializable {
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
           String.format("only support %s, %s when %s is %s",
               SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
-      return new ArcticScanContext(caseSensitive, snapshotId, startingStrategy, startSnapshotTimestamp,
-        startSnapshotId, endSnapshotId, asOfTimestamp, splitSize, splitLookback,
-        splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-        filters, limit, includeColumnStats, exposeLocality, planParallelism,
-        maxPlanningSnapshotCount, scanStartupMode);
+      return new ArcticScanContext(
+          caseSensitive,
+          snapshotId,
+          startingStrategy,
+          startSnapshotTimestamp,
+          startSnapshotId,
+          endSnapshotId,
+          asOfTimestamp,
+          splitSize,
+          splitLookback,
+          splitOpenFileCost,
+          isStreaming,
+          monitorInterval,
+          nameMapping,
+          projectedSchema,
+          filters,
+          limit,
+          includeColumnStats,
+          exposeLocality,
+          planParallelism,
+          maxPlanningSnapshotCount,
+          scanStartupMode);
     }
   }
 }

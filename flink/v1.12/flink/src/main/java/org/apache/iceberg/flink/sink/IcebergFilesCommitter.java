@@ -63,8 +63,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copy from iceberg.
- * remove IcebergFilesCommitterMetrics to adapt flink 1.12 module.
+ * Copy from iceberg {@link org.apache.iceberg.flink.sink.IcebergFilesCommitter}.
+ * adapt IcebergFilesCommitterMetrics for flink 1.12 module.
  */
 public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
     implements OneInputStreamOperator<WriteResult, Void>, BoundedOneInput {
@@ -88,7 +88,6 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
   private final boolean replacePartitions;
   private final Map<String, String> snapshotProperties;
 
-
   // A sorted map to maintain the completed data files for each pending checkpointId (which have not
   // been committed to iceberg table). We need a sorted map here because there's possible that few
   // checkpoints snapshot failed, for example: the 1st checkpoint have 2 data files <1, <file0,
@@ -105,6 +104,7 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
   // It will have an unique identifier for one job.
   private transient String flinkJobId;
   private transient Table table;
+  private transient IcebergFilesCommitterMetrics committerMetrics;
   private transient ManifestOutputFileFactory manifestOutputFileFactory;
   private transient long maxCommittedCheckpointId;
   private transient int continuousEmptyCheckpoints;
@@ -144,6 +144,7 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
     // Open the table loader and load the table.
     this.tableLoader.open();
     this.table = tableLoader.loadTable();
+    this.committerMetrics = new IcebergFilesCommitterMetrics(super.metrics, table.name());
 
     maxContinuousEmptyCommits =
       PropertyUtil.propertyAsInt(table.properties(), MAX_CONTINUOUS_EMPTY_COMMITS, 10);
@@ -214,6 +215,8 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
 
     // Clear the local buffer for current checkpoint.
     writeResultsOfCurrentCkpt.clear();
+    committerMetrics.checkpointDuration(
+        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNano));
   }
 
   @Override
@@ -255,6 +258,7 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
 
     CommitSummary summary = new CommitSummary(pendingResults);
     commitPendingResult(pendingResults, summary, newFlinkJobId, checkpointId);
+    committerMetrics.updateCommitSummary(summary);
     pendingMap.clear();
     deleteCommittedManifests(manifests, newFlinkJobId, checkpointId);
   }
@@ -378,6 +382,7 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
         table.name(),
         durationMs,
         summary);
+    committerMetrics.commitDuration(durationMs);
   }
 
   @Override
