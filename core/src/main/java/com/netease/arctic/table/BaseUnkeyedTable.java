@@ -39,6 +39,7 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
+import org.apache.iceberg.IncrementalAppendScan;
 import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
@@ -102,6 +103,11 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public TableScan newScan() {
     return icebergTable.newScan();
+  }
+
+  @Override
+  public IncrementalAppendScan newIncrementalAppendScan() {
+    return icebergTable.newIncrementalAppendScan();
   }
 
   @Override

@@ -276,7 +276,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
       Snapshot snapshot = snapshots.pop();
       int minTxIdInSnapshot = Integer.MAX_VALUE;
       int maxTxIdInSnapshot = -1;
-      for (DataFile addedFile : snapshot.addedFiles()) {
+      for (DataFile addedFile : snapshot.addedDataFiles(keyedTable.io())) {
         String path = addedFile.path().toString();
         Assert.assertFalse(paths.contains(path));
         paths.add(path);
