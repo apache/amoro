@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.terminal.local;
 
-import java.util.HashMap;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
