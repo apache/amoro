@@ -109,7 +109,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
 
     // 1. group files by partition
     Map<StructLike, Collection<ArcticFileScanTask>> partitionedFiles =
-        groupFilesByPartition(changeFileList, baseFileList);
+        table.io().doAs(() -> groupFilesByPartition(changeFileList, baseFileList));
     LOG.info("planning table {} need plan partition size {}", table.id(), partitionedFiles.size());
     partitionedFiles.forEach(this::partitionPlan);
     LOG.info("planning table {} partitionPlan end", table.id());
