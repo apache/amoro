@@ -47,8 +47,8 @@ public class LoginController {
   public static void login(Context ctx) {
     // ok
     JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (postBody.get("user").equals(ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_USERNAME)) && (postBody.get(
-        "password").equals(ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_PASSWORD)))) {
+    if (ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_USERNAME).equals(postBody.get("user")) &&
+        (ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_PASSWORD).equals(postBody.get("password")))) {
       ctx.sessionAttribute(
           "user",
           new SessionInfo(
