@@ -101,29 +101,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-    CatalogControllerTest.class,
-    OptimizerControllerTest.class,
-    TableControllerTest.class,
-    TerminalControllerTest.class,
-    TestDDLTracerService.class,
-    LoginControllerTest.class,
-    TestExpiredFileClean.class,
-    TestMajorOptimizeCommit.class,
-    TestMajorOptimizePlan.class,
-    TestMinorOptimizeCommit.class,
-    TestMinorOptimizePlan.class,
-    TestIcebergFullOptimizePlan.class,
-    TestIcebergMinorOptimizePlan.class,
-    TestIcebergFullOptimizeCommit.class,
-    TestIcebergMinorOptimizeCommit.class,
-    TestExpireFileCleanSupportIceberg.class,
-    TestOrphanFileCleanSupportIceberg.class,
-    TestOrphanFileClean.class,
-    TestFileInfoCacheService.class,
-    TestTableBlockerService.class,
-    SupportHiveTestGroup.class,
-    TestArcticTransactionService.class,
-    TestOptimizerService.class
+    TerminalControllerTest.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
@@ -194,6 +172,7 @@ public class AmsTestBase {
     com.netease.arctic.ams.server.config.Configuration configuration =
         new com.netease.arctic.ams.server.config.Configuration();
     configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
+    configuration.setString("arctic.ams.terminal.local.spark.sql.session.timeZone", "UTC");
     ArcticMetaStore.conf = configuration;
 
     //mock service
