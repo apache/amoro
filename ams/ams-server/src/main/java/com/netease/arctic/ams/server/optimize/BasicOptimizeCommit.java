@@ -20,8 +20,8 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
@@ -62,14 +62,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class BaseOptimizeCommit {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizeCommit.class);
+public class BasicOptimizeCommit {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicOptimizeCommit.class);
   protected final ArcticTable arcticTable;
   protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
   protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
-  public BaseOptimizeCommit(ArcticTable arcticTable,
-                            Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
+  public BasicOptimizeCommit(ArcticTable arcticTable,
+                             Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
     this.arcticTable = arcticTable;
     this.optimizeTasksToCommit = optimizeTasksToCommit;
   }
@@ -110,7 +110,7 @@ public class BaseOptimizeCommit {
             minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
 
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
-            if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
+            if (maxTransactionId != BasicOptimizeTask.INVALID_TRANSACTION_ID) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
                 maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
               } else {
@@ -120,7 +120,7 @@ public class BaseOptimizeCommit {
             }
 
             long minTransactionId = task.getOptimizeTask().getMinChangeTransactionId();
-            if (minTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
+            if (minTransactionId != BasicOptimizeTask.INVALID_TRANSACTION_ID) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
                 minTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, minTransactionId);
               } else {
@@ -387,8 +387,8 @@ public class BaseOptimizeCommit {
 
   private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem,
                                                         Set<ContentFile<?>> addPosDeleteFiles) {
-    BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
-    BaseOptimizeTaskRuntime optimizeTaskRuntime = taskItem.getOptimizeRuntime();
+    BasicOptimizeTask optimizeTask = taskItem.getOptimizeTask();
+    OptimizeTaskRuntime optimizeTaskRuntime = taskItem.getOptimizeRuntime();
     switch (optimizeTask.getTaskId().getType()) {
       case FullMajor:
       case Major:
@@ -400,7 +400,7 @@ public class BaseOptimizeCommit {
     return new HashSet<>();
   }
 
-  private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
+  private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BasicOptimizeTask optimizeTask,
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
@@ -416,8 +416,8 @@ public class BaseOptimizeCommit {
         .collect(Collectors.toSet());
   }
 
-  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
-                                                                     BaseOptimizeTaskRuntime optimizeTaskRuntime) {
+  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BasicOptimizeTask optimizeTask,
+                                                                     OptimizeTaskRuntime optimizeTaskRuntime) {
     // add base deleted files
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet());

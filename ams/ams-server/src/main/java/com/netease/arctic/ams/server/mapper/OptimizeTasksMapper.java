@@ -18,8 +18,8 @@
 
 package com.netease.arctic.ams.server.mapper;
 
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import com.netease.arctic.ams.server.mybatis.Map2StringConverter;
@@ -68,7 +68,7 @@ public interface OptimizeTasksMapper {
       @Result(property = "sourceNodes", column = "source_nodes",
           typeHandler = ListOfTreeNode2StringConverter.class)
   })
-  List<BaseOptimizeTask> selectAllOptimizeTasks();
+  List<BasicOptimizeTask> selectAllOptimizeTasks();
 
   @Insert("insert into " + TABLE_NAME + " (" +
       " trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
@@ -127,8 +127,8 @@ public interface OptimizeTasksMapper {
       " #{optimizeTaskRuntime.newFileCnt}," +
       " #{optimizeTaskRuntime.costTime}" +
       " )")
-  void insertOptimizeTask(@Param("optimizeTask") BaseOptimizeTask optimizeTask,
-                          @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+  void insertOptimizeTask(@Param("optimizeTask") BasicOptimizeTask optimizeTask,
+                          @Param("optimizeTaskRuntime") OptimizeTaskRuntime optimizeTaskRuntime);
 
   @Delete("delete from " + TABLE_NAME + " where trace_id = #{traceId}")
   void deleteOptimizeTask(@Param("traceId") String traceId);

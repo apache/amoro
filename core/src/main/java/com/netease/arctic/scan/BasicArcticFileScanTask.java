@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Base implementation of {@link ArcticFileScanTask}
+ * Basic implementation of {@link ArcticFileScanTask}
  */
-public class BaseArcticFileScanTask implements ArcticFileScanTask {
+public class BasicArcticFileScanTask implements ArcticFileScanTask {
 
   private final PrimaryKeyedFile baseFile;
 
@@ -47,11 +47,11 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
 
   private FileScanTask fileScanTask;
 
-  public BaseArcticFileScanTask(PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec) {
+  public BasicArcticFileScanTask(PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec) {
     this(baseFile, posDeleteFiles, spec, Expressions.alwaysTrue());
   }
 
-  public BaseArcticFileScanTask(
+  public BasicArcticFileScanTask(
       PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
       Expression expression) {
     this.baseFile = baseFile;
@@ -68,7 +68,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
    * Only for iceberg wrap
    * @param fileScanTask
    */
-  public BaseArcticFileScanTask(FileScanTask fileScanTask) {
+  public BasicArcticFileScanTask(FileScanTask fileScanTask) {
     this(DefaultKeyedFile.parseBase(fileScanTask.file()), fileScanTask.deletes(),
         fileScanTask.spec(), fileScanTask.residual());
     this.fileScanTask = fileScanTask;

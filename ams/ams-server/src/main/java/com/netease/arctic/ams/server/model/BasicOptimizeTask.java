@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.api.OptimizeTask;
 
-public class BaseOptimizeTask extends OptimizeTask {
+public class BasicOptimizeTask extends OptimizeTask {
   public static final int INVALID_TRANSACTION_ID = -1;
 
   protected String taskCommitGroup;
@@ -43,7 +43,7 @@ public class BaseOptimizeTask extends OptimizeTask {
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
   private long minChangeTransactionId = INVALID_TRANSACTION_ID;
 
-  public BaseOptimizeTask() {
+  public BasicOptimizeTask() {
   }
 
   public String getTaskCommitGroup() {

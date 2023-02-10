@@ -32,20 +32,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Base {@link TableBlockerManager} implementation.
+ * Basic {@link TableBlockerManager} implementation.
  */
-public class BaseTableBlockerManager implements TableBlockerManager {
+public class BasicTableBlockerManager implements TableBlockerManager {
 
   private final TableIdentifier tableIdentifier;
   private final AmsClient client;
 
-  public BaseTableBlockerManager(TableIdentifier tableIdentifier, AmsClient client) {
+  public BasicTableBlockerManager(TableIdentifier tableIdentifier, AmsClient client) {
     this.tableIdentifier = tableIdentifier;
     this.client = client;
   }
 
   public static TableBlockerManager build(TableIdentifier tableIdentifier, AmsClient amsClient) {
-    return new BaseTableBlockerManager(tableIdentifier, amsClient);
+    return new BasicTableBlockerManager(tableIdentifier, amsClient);
   }
 
   @Override

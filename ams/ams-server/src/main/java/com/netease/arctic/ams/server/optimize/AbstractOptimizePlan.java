@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public abstract class BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizePlan.class);
+public abstract class AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizePlan.class);
 
   protected final ArcticTable arcticTable;
   protected final TableOptimizeRuntime tableOptimizeRuntime;
@@ -54,9 +54,9 @@ public abstract class BaseOptimizePlan {
   // After plan files, current partitions of table will be set.
   protected final Set<String> currentPartitions = new HashSet<>();
 
-  public BaseOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                          Map<String, Boolean> partitionTaskRunning,
-                          int queueId, long currentTime) {
+  public AbstractOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                              Map<String, Boolean> partitionTaskRunning,
+                              int queueId, long currentTime) {
     this.arcticTable = arcticTable;
     this.tableOptimizeRuntime = tableOptimizeRuntime;
     this.queueId = queueId;
@@ -69,7 +69,7 @@ public abstract class BaseOptimizePlan {
     return arcticTable.id();
   }
 
-  public List<BaseOptimizeTask> plan() {
+  public List<BasicOptimizeTask> plan() {
     long startTime = System.nanoTime();
 
     if (!tableNeedPlan()) {
@@ -83,7 +83,7 @@ public abstract class BaseOptimizePlan {
       return Collections.emptyList();
     }
 
-    List<BaseOptimizeTask> results = collectTasks(currentPartitions);
+    List<BasicOptimizeTask> results = collectTasks(currentPartitions);
 
     long endTime = System.nanoTime();
     LOG.debug("{} ==== {} plan tasks cost {} ns, {} ms", tableId(), getOptimizeType(), endTime - startTime,
@@ -92,8 +92,8 @@ public abstract class BaseOptimizePlan {
     return results;
   }
 
-  protected List<BaseOptimizeTask> collectTasks(Set<String> partitions) {
-    List<BaseOptimizeTask> results = new ArrayList<>();
+  protected List<BasicOptimizeTask> collectTasks(Set<String> partitions) {
+    List<BasicOptimizeTask> results = new ArrayList<>();
 
     List<String> skippedPartitions = new ArrayList<>();
     for (String partition : partitions) {
@@ -110,7 +110,7 @@ public abstract class BaseOptimizePlan {
         continue;
       }
 
-      List<BaseOptimizeTask> optimizeTasks = collectTask(partition);
+      List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
       LOG.debug("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
           getOptimizeType());
       results.addAll(optimizeTasks);
@@ -182,7 +182,7 @@ public abstract class BaseOptimizePlan {
    * @param partition target partition
    * @return tasks of given partition
    */
-  protected abstract List<BaseOptimizeTask> collectTask(String partition);
+  protected abstract List<BasicOptimizeTask> collectTask(String partition);
 
   protected abstract OptimizeType getOptimizeType();
 }

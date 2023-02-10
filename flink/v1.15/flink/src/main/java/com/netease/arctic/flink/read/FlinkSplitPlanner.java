@@ -24,7 +24,7 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
@@ -151,7 +151,7 @@ public class FlinkSplitPlanner {
           }
           DefaultKeyedFile keyedFile =
               DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
-          BaseArcticFileScanTask task = new BaseArcticFileScanTask(keyedFile, null, spec, null);
+          BasicArcticFileScanTask task = new BasicArcticFileScanTask(keyedFile, null, spec, null);
 
           if (task.fileType().equals(DataFileType.INSERT_FILE)) {
             taskMap(Collections.singleton(task), true, transactionTasks);

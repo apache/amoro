@@ -18,16 +18,12 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import com.netease.arctic.catalog.BaseArcticCatalog;
+import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.PartitionSpec;
@@ -38,13 +34,18 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 
-public class TestBaseArcticCatalog extends BaseArcticCatalog {
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class TestBasicArcticCatalog extends BasicArcticCatalog {
 
     private String location;
 
     private HadoopCatalog catalog;
 
-    public TestBaseArcticCatalog(String location) {
+    public TestBasicArcticCatalog(String location) {
         this.location = location;
         Configuration conf = new Configuration();
         this.catalog = new HadoopCatalog(conf, location);
