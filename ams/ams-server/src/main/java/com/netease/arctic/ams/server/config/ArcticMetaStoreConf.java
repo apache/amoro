@@ -188,7 +188,7 @@ public class ArcticMetaStoreConf {
    * config key prefix of terminal
    */
   public static final String TERMINAL_PREFIX = "arctic.ams.terminal.";
-  public static final String SPARK_CONF = "spark.sql";
+  public static final String SPARK_CONF = "spark.";
   public static final ConfigOption<String> TERMINAL_BACKEND =
       ConfigOptions.key("arctic.ams.terminal.backend")
           .stringType()
