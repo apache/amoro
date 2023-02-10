@@ -20,7 +20,7 @@ package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseIcebergDataReader;
+import com.netease.arctic.io.reader.AbstractIcebergDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.FileScanTask;
@@ -37,9 +37,9 @@ import java.util.function.BiFunction;
 /**
  * AdaptHive can read all Data.
  */
-public abstract class AdaptHiveBaseIcebergDataReader<T> extends BaseIcebergDataReader<T> {
+public abstract class AbstractAdaptHiveIcebergDataReader<T> extends AbstractIcebergDataReader<T> {
 
-  public AdaptHiveBaseIcebergDataReader(
+  public AbstractAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -52,7 +52,7 @@ public abstract class AdaptHiveBaseIcebergDataReader<T> extends BaseIcebergDataR
         convertConstant, reuseContainer, structLikeCollections);
   }
 
-  public AdaptHiveBaseIcebergDataReader(
+  public AbstractAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -63,7 +63,7 @@ public abstract class AdaptHiveBaseIcebergDataReader<T> extends BaseIcebergDataR
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
   }
 
-  public AdaptHiveBaseIcebergDataReader(
+  public AbstractAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,

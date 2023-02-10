@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  *
  * @param <T> to indicate the record data type.
  */
-public abstract class BaseArcticDataReader<T> {
+public abstract class AbstractArcticDataReader<T> {
 
   protected final ArcticFileIO fileIO;
   protected final Schema tableSchema;
@@ -63,7 +63,7 @@ public abstract class BaseArcticDataReader<T> {
   protected final boolean reuseContainer;
   protected StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  public BaseArcticDataReader(
+  public AbstractArcticDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -79,7 +79,7 @@ public abstract class BaseArcticDataReader<T> {
     this.structLikeCollections = structLikeCollections;
   }
 
-  public BaseArcticDataReader(
+  public AbstractArcticDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -92,7 +92,7 @@ public abstract class BaseArcticDataReader<T> {
         convertConstant, null, reuseContainer);
   }
 
-  public BaseArcticDataReader(
+  public AbstractArcticDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -189,7 +189,7 @@ public abstract class BaseArcticDataReader<T> {
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -201,7 +201,7 @@ public abstract class BaseArcticDataReader<T> {
         StructLikeCollections structLikeCollections) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
           sourceNodes, structLikeCollections);
-      this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -211,7 +211,7 @@ public abstract class BaseArcticDataReader<T> {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override

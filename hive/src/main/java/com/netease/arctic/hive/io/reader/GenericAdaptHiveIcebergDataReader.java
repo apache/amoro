@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class GenericAdaptHiveIcebergDataReader extends AdaptHiveBaseIcebergDataReader<Record> {
+public class GenericAdaptHiveIcebergDataReader extends AbstractAdaptHiveIcebergDataReader<Record> {
 
   public GenericAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,

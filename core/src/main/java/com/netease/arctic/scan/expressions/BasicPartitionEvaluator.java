@@ -31,11 +31,11 @@ import org.apache.iceberg.expressions.UnboundPredicate;
 import java.util.List;
 
 
-public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
+public class BasicPartitionEvaluator extends Projections.ProjectionEvaluator {
 
   private final PartitionSpec spec;
 
-  public BasePartitionEvaluator(PartitionSpec spec) {
+  public BasicPartitionEvaluator(PartitionSpec spec) {
     this.spec = spec;
   }
 

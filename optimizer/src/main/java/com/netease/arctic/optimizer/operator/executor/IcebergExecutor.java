@@ -52,7 +52,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public class IcebergExecutor extends BaseExecutor {
+public class IcebergExecutor extends AbstractExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
 

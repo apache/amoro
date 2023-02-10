@@ -22,14 +22,13 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -45,7 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
+public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
 
   protected final List<DataFileInfo> baseTableFileList;
   protected final List<DataFileInfo> changeTableFileList;
@@ -65,12 +64,12 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  public BaseArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                List<DataFileInfo> baseTableFileList,
-                                List<DataFileInfo> changeTableFileList,
-                                List<DataFileInfo> posDeleteFileList,
-                                Map<String, Boolean> partitionTaskRunning,
-                                int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
+  public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                    List<DataFileInfo> baseTableFileList,
+                                    List<DataFileInfo> changeTableFileList,
+                                    List<DataFileInfo> posDeleteFileList,
+                                    Map<String, Boolean> partitionTaskRunning,
+                                    int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
     this.baseTableFileList = baseTableFileList;
     this.changeTableFileList = changeTableFileList;
@@ -82,14 +81,14 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     this.currentBaseSnapshotId = baseSnapshotId;
   }
 
-  protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
-                                               List<DataFile> insertFiles,
-                                               List<DataFile> deleteFiles,
-                                               List<DataFile> baseFiles,
-                                               List<DeleteFile> posDeleteFiles,
-                                               TaskConfig taskConfig) {
+  protected BasicOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
+                                                List<DataFile> insertFiles,
+                                                List<DataFile> deleteFiles,
+                                                List<DataFile> baseFiles,
+                                                List<DeleteFile> posDeleteFiles,
+                                                TaskConfig taskConfig) {
     // build task
-    BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
+    BasicOptimizeTask optimizeTask = new BasicOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
     optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());
