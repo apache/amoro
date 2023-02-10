@@ -97,19 +97,19 @@ public class BaseKeyedTableScan implements KeyedTableScan {
   public CloseableIterable<CombinedScanTask> planTasks() {
     // base file
     CloseableIterable<ArcticFileScanTask> baseFileList;
-    baseFileList = table.io().doAs(this::planBaseFiles);
+    baseFileList = planBaseFiles();
 
     // change file
     CloseableIterable<ArcticFileScanTask> changeFileList;
     if (table.primaryKeySpec().primaryKeyExisted()) {
-      changeFileList = table.io().doAs(this::planChangeFiles);
+      changeFileList = planChangeFiles();
     } else {
       changeFileList = CloseableIterable.empty();
     }
 
     // 1. group files by partition
     Map<StructLike, Collection<ArcticFileScanTask>> partitionedFiles =
-        table.io().doAs(() -> groupFilesByPartition(changeFileList, baseFileList));
+        groupFilesByPartition(changeFileList, baseFileList);
     LOG.info("planning table {} need plan partition size {}", table.id(), partitionedFiles.size());
     partitionedFiles.forEach(this::partitionPlan);
     LOG.info("planning table {} partitionPlan end", table.id());
