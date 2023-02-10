@@ -19,8 +19,7 @@
 
 package com.netease.arctic.spark
 
-import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, ResolveMergeIntoTableReferences, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
@@ -36,8 +35,6 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     }
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
-    extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoTableReferences(spark) }
-    extensions.injectResolutionRule { spark => RewriteMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
     // iceberg analyzer rules
