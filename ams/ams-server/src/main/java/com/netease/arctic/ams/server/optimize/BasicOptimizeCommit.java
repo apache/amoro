@@ -62,14 +62,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class CommonOptimizeCommit {
-  private static final Logger LOG = LoggerFactory.getLogger(CommonOptimizeCommit.class);
+public class BasicOptimizeCommit {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicOptimizeCommit.class);
   protected final ArcticTable arcticTable;
   protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
   protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
-  public CommonOptimizeCommit(ArcticTable arcticTable,
-                              Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
+  public BasicOptimizeCommit(ArcticTable arcticTable,
+                             Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
     this.arcticTable = arcticTable;
     this.optimizeTasksToCommit = optimizeTasksToCommit;
   }

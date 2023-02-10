@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SupportHiveCommit extends CommonOptimizeCommit {
+public class SupportHiveCommit extends BasicOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveCommit.class);
 
   protected Consumer<OptimizeTaskItem> updateTargetFiles;
