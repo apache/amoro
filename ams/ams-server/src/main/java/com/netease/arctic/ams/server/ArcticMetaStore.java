@@ -125,6 +125,8 @@ public class ArcticMetaStore {
             systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
     config.put(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key(),
             systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key()));
+    config.put(ArcticMetaStoreConf.OPTIMIZE_CHECK_STATUS_INTERVAL.key(),
+        systemConfig.getLong(ArcticMetaStoreConf.OPTIMIZE_CHECK_STATUS_INTERVAL.key()));
     config.put(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key(),
             systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key()));
     config.put(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key(),

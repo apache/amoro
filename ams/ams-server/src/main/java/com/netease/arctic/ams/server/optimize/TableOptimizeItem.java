@@ -428,7 +428,7 @@ public class TableOptimizeItem extends IJDBCService {
       return;
     }
     if (planning.get()) {
-      // if the table is planning, should not update the optimizing status 
+      // if the table is planning, should not update the optimizing status
       return;
     }
     if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
@@ -1166,6 +1166,10 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
     }
+  }
+
+  public void tryDisableSelfOptimizing() {
+    ServiceContainer.getOptimizeService().disableSelfOptimizing(getArcticTable());
   }
 
   private boolean isMinorOptimizing() {

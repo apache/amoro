@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.netease.arctic.AmsClient;
+import com.google.common.collect.Iterables;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
@@ -49,9 +49,11 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import java.util.concurrent.Executors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +69,11 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class OptimizeService extends IJDBCService implements IOptimizeService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeService.class);
@@ -77,19 +82,17 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
-  private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> cachedTables = new ConcurrentHashMap<>();
-  private final Set<TableIdentifier> invalidTables = Collections.synchronizedSet(new HashSet<>());
+  private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> optimizeTables = new ConcurrentHashMap<>();
+  private final Set<TableIdentifier> unOptimizeTables = Collections.synchronizedSet(new HashSet<>());
 
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
-  private final AmsClient metastoreClient;
   private volatile boolean inited = false;
 
   public OptimizeService() {
     super();
     optimizeQueueService = ServiceContainer.getOptimizeQueueService();
     metaService = ServiceContainer.getMetaService();
-    metastoreClient = ServiceContainer.getTableMetastoreHandler();
     init();
   }
 
@@ -130,13 +133,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       if (checkTasks == null) {
         checkTasks = new ScheduledTasks<>(ThreadPool.Type.OPTIMIZE_CHECK);
       }
-      List<TableIdentifier> validTables = refreshAndListTables();
+      List<TableIdentifier> optimizingTables = refreshAndListTables();
       checkTasks.checkRunningTask(
-          new HashSet<>(validTables),
+          new HashSet<>(optimizingTables),
           identifier -> checkInterval,
           OptimizeCheckTask::new,
           false);
-      LOG.info("Schedule Optimize Checker finished with {} valid tables", validTables.size());
+      LOG.info("Schedule Optimize Checker finished with {} optimizing tables", optimizingTables.size());
     } catch (Throwable t) {
       LOG.error("unexpected error when checkOptimizeCheckTasks", t);
     }
@@ -144,7 +147,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public List<TableIdentifier> listCachedTables() {
-    return new ArrayList<>(cachedTables.keySet());
+    return new ArrayList<>(optimizeTables.keySet());
   }
 
   @Override
@@ -152,25 +155,32 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     LOG.info("refresh tables");
     if (!inited) {
       LOG.info("OptimizeService init not completed, not refresh");
-      return new ArrayList<>(cachedTables.keySet());
+      return new ArrayList<>(optimizeTables.keySet());
     }
+    long startTimestamp = System.currentTimeMillis();
     Set<TableIdentifier> tableIdentifiers =
         new HashSet<>(com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog());
     List<TableIdentifier> toAddTables = tableIdentifiers.stream()
-        .filter(t -> !cachedTables.containsKey(t))
+        .filter(t -> !optimizeTables.containsKey(t))
         .collect(Collectors.toList());
-    List<TableIdentifier> toRemoveTables = cachedTables.keySet().stream()
+    List<TableIdentifier> toRemoveTables = getValidTables().stream()
         .filter(t -> !tableIdentifiers.contains(t))
         .collect(Collectors.toList());
 
     addNewTables(toAddTables);
     clearRemovedTables(toRemoveTables);
 
-    return new ArrayList<>(cachedTables.keySet());
+    LOG.info("Refresh tables complete, cost {} ms", System.currentTimeMillis() - startTimestamp);
+    return new ArrayList<>(optimizeTables.keySet());
   }
 
-  private void clearTableCache(TableIdentifier tableIdentifier) {
-    TableOptimizeItem tableItem = cachedTables.remove(tableIdentifier);
+  /**
+   * clean self-optimizing table and related tasks
+   * @param tableIdentifier Arctic table identifier
+   * @param pureDelete whether delete history records
+   */
+  private void clearTableCache(TableIdentifier tableIdentifier, boolean pureDelete) {
+    TableOptimizeItem tableItem = optimizeTables.remove(tableIdentifier);
     optimizeQueueService.release(tableIdentifier);
     try {
       deleteTableOptimizeRuntime(tableIdentifier);
@@ -182,17 +192,19 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     } catch (Throwable t) {
       LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
-    try {
-      deleteOptimizeRecord(tableIdentifier);
-      deleteOptimizeTaskHistory(tableIdentifier);
-    } catch (Throwable t) {
-      LOG.debug("failed to delete " + tableIdentifier + " optimize(task) history, ignore", t);
+    if (pureDelete) {
+      try {
+        deleteOptimizeRecord(tableIdentifier);
+        deleteOptimizeTaskHistory(tableIdentifier);
+      } catch (Throwable t) {
+        LOG.debug("failed to delete " + tableIdentifier + " optimize(task) history, ignore", t);
+      }
     }
   }
 
   private void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
                                  boolean persistRuntime) {
-    cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
+    optimizeTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
       String groupName = CompatiblePropertyUtil.propertyAsString(properties,
           TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
@@ -211,10 +223,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public TableOptimizeItem getTableOptimizeItem(TableIdentifier tableIdentifier) throws NoSuchObjectException {
-    TableOptimizeItem tableOptimizeItem = cachedTables.get(tableIdentifier);
+    TableOptimizeItem tableOptimizeItem = optimizeTables.get(tableIdentifier);
     if (tableOptimizeItem == null) {
       refreshAndListTables();
-      TableOptimizeItem reloadTableOptimizeItem = cachedTables.get(tableIdentifier);
+      TableOptimizeItem reloadTableOptimizeItem = optimizeTables.get(tableIdentifier);
       if (reloadTableOptimizeItem == null) {
         throw new NoSuchObjectException("can't find table " + tableIdentifier);
       }
@@ -237,22 +249,31 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
     // load tables from catalog
     Set<TableIdentifier> tableIdentifiers = com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog();
+    ExecutorService svc = Executors.newFixedThreadPool(loadTablePoolSize());
+    Tasks.foreach(tableIdentifiers)
+        .suppressFailureWhenFinished()
+        .noRetry()
+        .executeWith(svc)
+        .run(tableIdentifier -> {
+          List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
 
-    Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
-    for (TableIdentifier tableIdentifier : tableIdentifiers) {
-      List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
-      try {
-        TableMetadata tableMetadata = buildTableMetadata(icebergCatalogMap, tableIdentifier);
-        TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
-        TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
-        arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
-            .initOptimizeTasks(tableOptimizeTasks);
-        addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
-      } catch (Throwable t) {
-        LOG.error("failed to load  " + tableIdentifier, t);
-        invalidTables.add(tableIdentifier);
-      }
-    }
+          ArcticCatalog arcticCatalog =
+              com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog());
+          ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+          TableMetadata tableMetadata = buildTableMetadata(arcticCatalog, arcticTable);
+          if (CompatiblePropertyUtil.propertyAsBoolean(tableMetadata.getProperties(),
+              TableProperties.ENABLE_SELF_OPTIMIZING,
+              TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
+            TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
+            TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
+            arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
+                .initOptimizeTasks(tableOptimizeTasks);
+            addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
+          } else {
+            unOptimizeTables.add(tableIdentifier);
+          }
+        });
+    svc.shutdown();
 
     if (!optimizeTasks.isEmpty()) {
       LOG.warn("clear optimize tasks {}", optimizeTasks.keySet());
@@ -271,31 +292,22 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private TableMetadata buildTableMetadata(Map<String, ArcticCatalog> icebergCatalogMap,
-                                           TableIdentifier tableIdentifier) {
+  private TableMetadata buildTableMetadata(ArcticCatalog arcticCatalog, ArcticTable arcticTable) {
+    TableIdentifier tableIdentifier = arcticTable.id();
     TableMetadata tableMetadata = new TableMetadata();
-    if (icebergCatalogMap.get(tableIdentifier.getCatalog()) != null) {
-      ArcticTable arcticTable = icebergCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
+    if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
       tableMetadata.setTableIdentifier(tableIdentifier);
       tableMetadata.setProperties(arcticTable.properties());
     } else {
-      ArcticCatalog arcticCatalog =
-          CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
-      if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
-        ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
-        tableMetadata.setTableIdentifier(tableIdentifier);
-        tableMetadata.setProperties(arcticTable.properties());
-        icebergCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
-      } else {
-        tableMetadata = metaService.loadTableMetadata(tableIdentifier);
-      }
+      tableMetadata = metaService.loadTableMetadata(tableIdentifier);
     }
+
     return tableMetadata;
   }
 
   private void initOptimizeTasksIntoOptimizeQueue() {
     ArrayListMultimap<Integer, OptimizeTaskItem> multiMap = ArrayListMultimap.create();
-    cachedTables.values().stream().flatMap(t -> t.getOptimizeTasks().stream())
+    optimizeTables.values().stream().flatMap(t -> t.getOptimizeTasks().stream())
         .filter(t -> OptimizeStatusUtil.in(t.getOptimizeStatus(), OptimizeStatus.Pending))
         .forEach(t -> multiMap.put(t.getOptimizeTask().getQueueId(), t));
     for (Integer queueId : multiMap.keySet()) {
@@ -323,30 +335,17 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       return;
     }
 
-    Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
-    int success = 0;
-    for (TableIdentifier toAddTable : toAddTables) {
-      try {
-        TableMetadata tableMetadata = buildTableMetadata(icebergCatalogMap, toAddTable);
-        ArcticCatalog catalog = CatalogLoader.load(metastoreClient, toAddTable.getCatalog());
-        ArcticTable arcticTable = catalog.loadTable(toAddTable);
-        TableOptimizeItem newTableItem = new TableOptimizeItem(arcticTable, tableMetadata);
-        long createTime = PropertyUtil.propertyAsLong(tableMetadata.getProperties(), TableProperties.TABLE_CREATE_TIME,
-            TableProperties.TABLE_CREATE_TIME_DEFAULT);
-        newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
-        addTableIntoCache(newTableItem, arcticTable.properties(), true);
-        // remove recover table if it is present
-        invalidTables.remove(toAddTable);
-        success++;
-      } catch (Throwable t) {
-        // avoid printing too many error logs
-        if (!invalidTables.contains(toAddTable)) {
-          LOG.error("failed to load  " + toAddTable, t);
-          invalidTables.add(toAddTable);
-        }
-      }
-    }
-    LOG.info("try add {} new tables, success {}, {}", toAddTables.size(), success, toAddTables);
+    ExecutorService svc = Executors.newFixedThreadPool(loadTablePoolSize());
+    Tasks.foreach(toAddTables)
+        .suppressFailureWhenFinished()
+        .noRetry()
+        .executeWith(svc)
+        .run(toAddTable ->
+            enableSelfOptimizing(com.netease.arctic.ams.server.utils.CatalogUtil
+                .getArcticCatalog(toAddTable.getCatalog())
+                .loadTable(toAddTable))
+        );
+    svc.shutdown();
   }
 
   @Override
@@ -358,8 +357,52 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       LOG.info("OptimizeService init not completed, can't add new tables");
       return;
     }
-    toRemoveTables.forEach(this::clearTableCache);
+    toRemoveTables.forEach(tableIdentifier -> clearTableCache(tableIdentifier, true));
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
+  }
+
+  private int loadTablePoolSize() {
+    return Math.max(2, Runtime.getRuntime().availableProcessors());
+  }
+
+  @Override
+  public void enableSelfOptimizing(ArcticTable table) {
+    ArcticCatalog arcticCatalog =
+        com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(table.id().getCatalog());
+    TableMetadata tableMetadata = buildTableMetadata(arcticCatalog, table);
+    if (!CompatiblePropertyUtil.propertyAsBoolean(
+        tableMetadata.getProperties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING,
+        TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
+      unOptimizeTables.add(table.id());
+      return;
+    }
+
+    TableOptimizeItem newTableItem = new TableOptimizeItem(table, tableMetadata);
+    long createTime =
+        PropertyUtil.propertyAsLong(
+            tableMetadata.getProperties(),
+            TableProperties.TABLE_CREATE_TIME,
+            TableProperties.TABLE_CREATE_TIME_DEFAULT);
+    newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
+    addTableIntoCache(newTableItem, tableMetadata.getProperties(), true);
+    LOG.info("Enable self-optimizing table: {}", table.id());
+  }
+
+  @Override
+  public void disableSelfOptimizing(ArcticTable table) {
+    TableIdentifier tableIdentifier = table.id();
+    if (CompatiblePropertyUtil.propertyAsBoolean(
+        table.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING,
+        TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
+      unOptimizeTables.remove(tableIdentifier);
+      return;
+    }
+
+    clearTableCache(tableIdentifier, false);
+    unOptimizeTables.add(tableIdentifier);
+    LOG.info("Disable self-optimizing table: {}", tableIdentifier);
   }
 
   private Map<TableIdentifier, List<OptimizeTaskItem>> loadOptimizeTasks() {
@@ -433,6 +476,11 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private void deleteOptimizeTaskHistory(TableIdentifier tableIdentifier) {
     ServiceContainer.getTableTaskHistoryService().deleteTaskHistory(tableIdentifier);
+  }
+
+  private Set<TableIdentifier> getValidTables() {
+    return StreamSupport.stream(Iterables.concat(optimizeTables.keySet(), unOptimizeTables).spliterator(), false)
+        .collect(Collectors.toSet());
   }
 
   @Override
