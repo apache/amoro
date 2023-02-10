@@ -209,7 +209,7 @@ optimize_group:
 ```
 
 ### 配置 Terminal 
-Terminal 在 AMS 中的内存中执行的情况下，可以配置 Spark 相关参数
+Terminal 在 local 模式执行的情况下，可以配置 Spark 相关参数
 ```shell
 arctic.ams.terminal.backend: local
 arctic.ams.terminal.local.spark.driver.extraJavaOptions:  -Duser.timezone=UTC
