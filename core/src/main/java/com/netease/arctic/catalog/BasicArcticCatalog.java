@@ -30,9 +30,9 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicKeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -41,7 +41,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.table.blocker.BaseTableBlockerManager;
+import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
@@ -78,10 +78,10 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PU
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 /**
- * Base {@link ArcticCatalog} implementation.
+ * Basic {@link ArcticCatalog} implementation.
  */
-public class BaseArcticCatalog implements ArcticCatalog {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseArcticCatalog.class);
+public class BasicArcticCatalog implements ArcticCatalog {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicArcticCatalog.class);
 
   protected AmsClient client;
   protected CatalogMeta catalogMeta;
@@ -192,16 +192,16 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
+    BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
+    ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, client);
-    return new BaseKeyedTable(tableMeta, tableLocation,
+    return new BasicKeyedTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
   }
 
@@ -222,7 +222,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
-    return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
+    return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
   }
 
@@ -287,7 +287,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
-    return new BaseArcticTableBuilder(identifier, schema);
+    return new ArcticTableBuilder(identifier, schema);
   }
 
   @Override
@@ -301,7 +301,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
-    return BaseTableBlockerManager.build(tableIdentifier, client);
+    return BasicTableBlockerManager.build(tableIdentifier, client);
   }
 
   public TableMetaStore getTableMetaStore() {
@@ -395,7 +395,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     });
   }
 
-  protected class BaseArcticTableBuilder implements TableBuilder {
+  protected class ArcticTableBuilder implements TableBuilder {
     protected TableIdentifier identifier;
     protected Schema schema;
     protected PartitionSpec partitionSpec;
@@ -404,7 +404,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     protected PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     protected String location;
 
-    public BaseArcticTableBuilder(TableIdentifier identifier, Schema schema) {
+    public ArcticTableBuilder(TableIdentifier identifier, Schema schema) {
       Preconditions.checkArgument(identifier.getCatalog().equals(catalogMeta.getCatalogName()),
           "Illegal table id:%s for catalog:%s", identifier.toString(), catalogMeta.getCatalogName());
       this.identifier = identifier;
@@ -608,7 +608,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
 
-      BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
+      BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
               tableMetaStore.getConfiguration()),
           fileIO, client);
@@ -620,11 +620,11 @@ public class BaseArcticCatalog implements ArcticCatalog {
           throw new IllegalStateException("create change table failed", e);
         }
       });
-      ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
+      ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
               tableMetaStore.getConfiguration()),
           fileIO, client);
-      return new BaseKeyedTable(meta, tableLocation,
+      return new BasicKeyedTable(meta, tableLocation,
           primaryKeySpec, client, baseTable, changeTable);
     }
 
@@ -642,7 +642,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
+      return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client);
     }
 

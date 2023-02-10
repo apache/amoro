@@ -20,10 +20,9 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.scan.expressions.BasePartitionEvaluator;
-import com.netease.arctic.table.BaseKeyedTable;
+import com.netease.arctic.scan.expressions.BasicPartitionEvaluator;
+import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
@@ -54,12 +53,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Base implementation of {@link KeyedTableScan}, including the merge-on-read plan logical
+ * Basic implementation of {@link KeyedTableScan}, including the merge-on-read plan logical
  */
-public class BaseKeyedTableScan implements KeyedTableScan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseKeyedTableScan.class);
+public class BasicKeyedTableScan implements KeyedTableScan {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicKeyedTableScan.class);
 
-  private final BaseKeyedTable table;
+  private final BasicKeyedTable table;
   List<NodeFileScanTask> splitTasks = new ArrayList<>();
   private final Map<StructLike, List<NodeFileScanTask>> fileScanTasks = new HashMap<>();
   private final int lookBack;
@@ -67,7 +66,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
   private final long splitSize;
   private Expression expression;
 
-  public BaseKeyedTableScan(BaseKeyedTable table) {
+  public BasicKeyedTableScan(BasicKeyedTable table) {
     this.table = table;
     openFileCost = PropertyUtil.propertyAsLong(table.properties(),
         TableProperties.SPLIT_OPEN_FILE_COST, TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
@@ -129,7 +128,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     }
     CloseableIterable<FileScanTask> fileScanTasks = scan.planFiles();
     return CloseableIterable.transform(fileScanTasks,
-        fileScanTask -> new BaseArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
+        fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
             fileScanTask.deletes(), fileScanTask.spec()));
   }
 
@@ -141,7 +140,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     if (expression != null) {
       //Only push down filters related to partition
-      Expression partitionExpression = new BasePartitionEvaluator(table.spec()).project(expression);
+      Expression partitionExpression = new BasicPartitionEvaluator(table.spec()).project(expression);
       changeTableScan.filter(partitionExpression);
     }
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);

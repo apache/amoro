@@ -21,7 +21,7 @@ package com.netease.arctic.hive.io.reader;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseArcticDataReader;
+import com.netease.arctic.io.reader.AbstractArcticDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
@@ -38,9 +38,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of {@link BaseArcticDataReader} with record type {@link Record}.
+ * Implementation of {@link AbstractArcticDataReader} with record type {@link Record}.
  */
-public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataReader<Record> {
+public class AdaptHiveGenericArcticDataReader extends AbstractAdaptHiveArcticDataReader<Record> {
 
   public AdaptHiveGenericArcticDataReader(
       ArcticFileIO fileIO,

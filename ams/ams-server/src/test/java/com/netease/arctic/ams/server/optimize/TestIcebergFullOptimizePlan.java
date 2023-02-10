@@ -1,6 +1,6 @@
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -33,7 +33,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    List<BasicOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
   }
 
@@ -55,7 +55,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
         new TableOptimizeRuntime(icebergPartitionTable.id()),
         fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    List<BasicOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
   }
 
@@ -81,7 +81,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    List<BasicOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals((int) Math.ceil(1.0 * dataFiles.size() / fragmentRatio), tasks.size());
   }
 }

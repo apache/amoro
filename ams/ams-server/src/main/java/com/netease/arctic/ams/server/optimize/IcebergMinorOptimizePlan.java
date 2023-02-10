@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.table.ArcticTable;
@@ -44,7 +44,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
+public class IcebergMinorOptimizePlan extends AbstractIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergMinorOptimizePlan.class);
 
   // partition -> FileScanTask
@@ -140,8 +140,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   }
 
   @Override
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
@@ -154,8 +154,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     return collector;
   }
 
-  private List<BaseOptimizeTask> collectSmallDataFileTask(String partition, TaskConfig taskPartitionConfig) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectSmallDataFileTask(String partition, TaskConfig taskPartitionConfig) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     List<FileScanTask> smallFileScanTasks = partitionSmallDataFilesTask.get(partition);
     if (CollectionUtils.isEmpty(smallFileScanTasks)) {
       return collector;
@@ -184,8 +184,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     return collector;
   }
 
-  private List<BaseOptimizeTask> collectDeleteFileTask(String partition, TaskConfig taskPartitionConfig) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectDeleteFileTask(String partition, TaskConfig taskPartitionConfig) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     Set<DeleteFile> needOptimizeDeleteFiles = partitionDeleteFiles.get(partition);
     if (CollectionUtils.isEmpty(needOptimizeDeleteFiles)) {
       return collector;

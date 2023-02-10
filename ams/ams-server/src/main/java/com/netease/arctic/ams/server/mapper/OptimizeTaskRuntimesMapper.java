@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.mapper;
 
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
@@ -59,7 +59,7 @@ public interface OptimizeTaskRuntimesMapper {
           typeHandler = Long2TsConvertor.class),
       @Result(property = "errorMessage.failReason", column = "fail_reason")
   })
-  List<BaseOptimizeTaskRuntime> selectAllOptimizeTaskRuntimes();
+  List<OptimizeTaskRuntime> selectAllOptimizeTaskRuntimes();
 
   @Update("update " + TABLE_NAME + " set" +
       " status = #{optimizeTaskRuntime.status}," +
@@ -85,5 +85,5 @@ public interface OptimizeTaskRuntimesMapper {
       " cost_time = #{optimizeTaskRuntime.costTime}" +
       " where trace_id = #{optimizeTaskRuntime.optimizeTaskId.traceId}")
   void updateOptimizeTaskRuntime(
-      @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+      @Param("optimizeTaskRuntime") OptimizeTaskRuntime optimizeTaskRuntime);
 }

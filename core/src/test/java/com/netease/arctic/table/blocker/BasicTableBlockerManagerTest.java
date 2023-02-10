@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BaseTableBlockerManagerTest extends TableTestBase {
+public class BasicTableBlockerManagerTest extends TableTestBase {
 
   private static final List<BlockableOperation> OPERATIONS = new ArrayList<>();
 
@@ -20,15 +20,15 @@ public class BaseTableBlockerManagerTest extends TableTestBase {
     OPERATIONS.add(BlockableOperation.BATCH_WRITE);
   }
 
-  public BaseTableBlockerManagerTest() {
+  public BasicTableBlockerManagerTest() {
     super(TableFormat.MIXED_ICEBERG, true, true);
   }
 
   @Test
   public void testBlockAndRelease() throws OperationConflictException {
     TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertTrue(tableBlockerManager instanceof BaseTableBlockerManager);
-    BaseTableBlockerManager blockerManager = (BaseTableBlockerManager) tableBlockerManager;
+    Assert.assertTrue(tableBlockerManager instanceof BasicTableBlockerManager);
+    BasicTableBlockerManager blockerManager = (BasicTableBlockerManager) tableBlockerManager;
 
     Blocker block = blockerManager.block(OPERATIONS);
 

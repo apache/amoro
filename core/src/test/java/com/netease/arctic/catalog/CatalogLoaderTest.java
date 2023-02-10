@@ -46,7 +46,7 @@ public class CatalogLoaderTest {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BaseIcebergCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicIcebergCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
@@ -59,7 +59,7 @@ public class CatalogLoaderTest {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BaseIcebergCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicIcebergCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
@@ -72,7 +72,7 @@ public class CatalogLoaderTest {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BaseArcticCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicArcticCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
@@ -84,7 +84,7 @@ public class CatalogLoaderTest {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BaseArcticCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicArcticCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
