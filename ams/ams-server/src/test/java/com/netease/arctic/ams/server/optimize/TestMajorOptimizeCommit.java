@@ -119,7 +119,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -183,7 +183,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -253,7 +253,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
     optimizeCommit.commit(baseSnapshotId);
 
@@ -318,7 +318,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
     testKeyedTable.asKeyedTable().baseTable().newDelete().deleteFile(baseDataFiles.get(0)).commit();
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
     optimizeCommit.commit(baseSnapshotId);
 

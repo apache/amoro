@@ -614,7 +614,7 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksClear(CommonOptimizeCommit optimizeCommit) {
+  private void optimizeTasksClear(BasicOptimizeCommit optimizeCommit) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
 
@@ -661,7 +661,7 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksCommitted(CommonOptimizeCommit optimizeCommit,
+  private void optimizeTasksCommitted(BasicOptimizeCommit optimizeCommit,
                                       long commitTime) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
@@ -925,14 +925,14 @@ public class TableOptimizeItem extends IJDBCService {
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
-        CommonOptimizeCommit optimizeCommit;
+        BasicOptimizeCommit optimizeCommit;
         if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
           optimizeCommit = new IcebergOptimizeCommit(getArcticTable(true), tasksToCommit);
         } else if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),
               tasksToCommit, OptimizeTaskItem::persistTargetFiles);
         } else {
-          optimizeCommit = new CommonOptimizeCommit(getArcticTable(true), tasksToCommit);
+          optimizeCommit = new BasicOptimizeCommit(getArcticTable(true), tasksToCommit);
         }
 
         boolean committed = optimizeCommit.commit(tableOptimizeRuntime.getCurrentSnapshotId());

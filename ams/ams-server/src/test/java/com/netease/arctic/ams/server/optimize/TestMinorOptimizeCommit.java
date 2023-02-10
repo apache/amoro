@@ -136,7 +136,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -218,7 +218,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testNoPartitionTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testNoPartitionTable, partitionTasks);
     optimizeCommit.commit(testNoPartitionTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -275,7 +275,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       Assert.assertNull(oldMaxTxId.get(partitionDatum));
     }
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
     StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
@@ -320,7 +320,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
     Assert.assertNull(oldMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
 
-    CommonOptimizeCommit optimizeCommit = new CommonOptimizeCommit(testNoPartitionTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testNoPartitionTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
     Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();

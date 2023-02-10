@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class IcebergOptimizeCommit extends CommonOptimizeCommit {
+public class IcebergOptimizeCommit extends BasicOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergOptimizeCommit.class);
 
   public IcebergOptimizeCommit(ArcticTable arcticTable,
