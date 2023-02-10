@@ -40,7 +40,7 @@ public class OptimizeCheckTask implements ScheduledTasks.Task {
     try {
       tableOptimize = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
     } catch (Throwable t) {
-      LOG.info("optimize checker failed to get table " + tableIdentifier, t);
+      LOG.warn("optimize checker failed to get table " + tableIdentifier, t);
       return;
     }
     try {
@@ -48,11 +48,12 @@ public class OptimizeCheckTask implements ScheduledTasks.Task {
     } catch (Exception e) {
       LOG.error("unexpected check error " + tableOptimize.getTableIdentifier(), e);
     }
-    LOG.info("{} optimize checker total cost {} ms", tableIdentifier, System.currentTimeMillis() - startTime);
+    LOG.debug("{} optimize checker total cost {} ms", tableIdentifier, System.currentTimeMillis() - startTime);
   }
 
   private void check(TableOptimizeItem tableOptimize) {
-    LOG.info("{} start check", tableOptimize.getTableIdentifier());
+    LOG.debug("{} start check", tableOptimize.getTableIdentifier());
+    tableOptimize.tryDisableSelfOptimizing();
     tableOptimize.checkTaskExecuteTimeout();
     tableOptimize.checkOptimizeGroup();
     tableOptimize.clearFailedTasks();
