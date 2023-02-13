@@ -18,6 +18,8 @@
 
 package com.netease.arctic.ams.server.terminal.local;
 
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.terminal.SparkContextUtil;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
@@ -47,14 +49,16 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   SparkSession context = null;
 
+  Configuration conf = null;
+
   @Override
   public void initialize(Configuration properties) {
-
+    conf = properties;
   }
 
   @Override
   public TerminalSession create(TableMetaStore metaStore, Configuration configuration) {
-    SparkSession context = lazyInitContext();
+    SparkSession context = lazyInitContext(conf);
     SparkSession session = context.cloneSession();
     List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
     List<String> initializeLogs = Lists.newArrayList();
@@ -79,7 +83,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     logs.add(key + "  " + value);
   }
 
-  protected synchronized SparkSession lazyInitContext() {
+  protected synchronized SparkSession lazyInitContext(Configuration conf) {
     if (context == null) {
       SparkConf sparkconf = new SparkConf()
           .setAppName("spark-local-context")
@@ -89,6 +93,13 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       sparkconf.set("spark.network.timeout", "200s");
       sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
           "," + IcebergSparkSessionExtensions.class.getName());
+      for (String key : conf.keySet()) {
+        if (!key.startsWith(ArcticMetaStoreConf.SPARK_CONF)) {
+          continue;
+        }
+        String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
+        sparkconf.set(key, value);
+      }
       context = SparkSession
           .builder()
           .config(sparkconf)
