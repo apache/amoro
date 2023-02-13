@@ -139,7 +139,7 @@ public class TerminalManager {
     return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
-  public void cleanSession() {
+  public synchronized void cleanSession() {
     sessionMap.clear();
   }
 
