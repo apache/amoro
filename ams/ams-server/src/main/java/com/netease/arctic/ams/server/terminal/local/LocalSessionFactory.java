@@ -48,6 +48,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   );
 
   SparkSession context = null;
+  SparkSession nativeIcebergSession = null;
 
   Configuration conf = null;
 
@@ -58,9 +59,10 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
   @Override
   public TerminalSession create(TableMetaStore metaStore, Configuration configuration) {
-    SparkSession context = lazyInitContext(conf);
-    SparkSession session = context.cloneSession();
+    Boolean isNativeIceberg = configuration.get(SessionConfigOptions.IS_NATIVE_ICEBERG);
     List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
+    SparkSession context = lazyInitContext(conf, metaStore, isNativeIceberg, catalogs.get(0));
+    SparkSession session = context.cloneSession();
     List<String> initializeLogs = Lists.newArrayList();
     initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
 
@@ -83,30 +85,53 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     logs.add(key + "  " + value);
   }
 
-  protected synchronized SparkSession lazyInitContext(Configuration conf) {
-    if (context == null) {
-      SparkConf sparkconf = new SparkConf()
-          .setAppName("spark-local-context")
-          .setMaster("local");
-      sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
-      sparkconf.set("spark.executor.heartbeatInterval", "100s");
-      sparkconf.set("spark.network.timeout", "200s");
-      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
-          "," + IcebergSparkSessionExtensions.class.getName());
-      for (String key : conf.keySet()) {
-        if (!key.startsWith(ArcticMetaStoreConf.SPARK_CONF)) {
-          continue;
-        }
-        String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
-        sparkconf.set(key, value);
+  protected synchronized SparkSession lazyInitContext(Configuration conf, TableMetaStore metaStore,
+                                                      Boolean isNativeIceberg, String catalog) {
+    if (!isNativeIceberg) {
+      if (context == null) {
+        SparkConf sparkConf = buildSparkBasicConf(conf);
+        context = SparkSession
+            .builder()
+            .config(sparkConf)
+            .getOrCreate();
+        context.sparkContext().setLogLevel("WARN");
       }
-      context = SparkSession
-          .builder()
-          .config(sparkconf)
-          .getOrCreate();
-      context.sparkContext().setLogLevel("WARN");
+
+      return context;
+    } else {
+      if (nativeIcebergSession == null) {
+        SparkConf sparkConf = buildSparkBasicConf(conf);
+        org.apache.hadoop.conf.Configuration configuration = metaStore.getConfiguration();
+        for (Map.Entry<String, String> next : configuration) {
+          sparkConf.set("spark.sql.catalog." + catalog + ".hadoop." + next.getKey(), next.getValue());
+        }
+        nativeIcebergSession = SparkSession
+            .builder()
+            .config(sparkConf)
+            .getOrCreate();
+        nativeIcebergSession.sparkContext().setLogLevel("WARN");
+      }
+      return nativeIcebergSession;
     }
 
-    return context;
+  }
+
+  public SparkConf buildSparkBasicConf(Configuration conf) {
+    SparkConf sparkconf = new SparkConf()
+        .setAppName("spark-local-context")
+        .setMaster("local");
+    sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
+    sparkconf.set("spark.executor.heartbeatInterval", "100s");
+    sparkconf.set("spark.network.timeout", "200s");
+    sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
+        "," + IcebergSparkSessionExtensions.class.getName());
+    for (String key : conf.keySet()) {
+      if (!key.startsWith(ArcticMetaStoreConf.SPARK_CONF)) {
+        continue;
+      }
+      String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
+      sparkconf.set(key, value);
+    }
+    return sparkconf;
   }
 }
