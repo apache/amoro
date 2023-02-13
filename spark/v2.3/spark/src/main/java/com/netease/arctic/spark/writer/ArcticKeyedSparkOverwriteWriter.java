@@ -25,7 +25,6 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -172,7 +171,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private void overwriteByFilter(WriterCommitMessage[] messages, Expression overwriteExpr) {
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
+    overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
 
     for (DataFile file : files(messages)) {
       overwriteBaseFiles.addFile(file);

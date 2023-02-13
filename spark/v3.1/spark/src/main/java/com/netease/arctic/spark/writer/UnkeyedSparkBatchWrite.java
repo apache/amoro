@@ -79,7 +79,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     this.table = table;
     this.dsSchema = info.schema();
     this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
-        "writer.distributed-and-ordered", "true"
+        "writer.distributed-and-ordered", "false"
     ));
     this.catalog = catalog;
   }

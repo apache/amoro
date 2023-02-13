@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class IcebergOptimizeCommit extends BaseOptimizeCommit {
+public class IcebergOptimizeCommit extends BasicOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergOptimizeCommit.class);
 
   public IcebergOptimizeCommit(ArcticTable arcticTable,
@@ -231,7 +231,7 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
   }
 
   private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem) {
-    BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
+    BasicOptimizeTask optimizeTask = taskItem.getOptimizeTask();
     switch (optimizeTask.getTaskId().getType()) {
       case FullMajor:
         return selectMajorOptimizeDeletedFiles(optimizeTask);
@@ -242,7 +242,7 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     return new HashSet<>();
   }
 
-  private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
+  private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BasicOptimizeTask optimizeTask) {
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
 
     if (CollectionUtils.isNotEmpty(optimizeTask.getInsertFiles())) {
@@ -263,7 +263,7 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     return deletedFiles;
   }
 
-  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
+  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BasicOptimizeTask optimizeTask) {
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
     // data files
     for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {

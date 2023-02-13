@@ -26,8 +26,8 @@ import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
-import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
-import com.netease.arctic.scan.BaseKeyedTableScan;
+import com.netease.arctic.scan.BasicKeyedTableScan;
+import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -45,9 +45,9 @@ import org.apache.thrift.TException;
 import java.util.Map;
 
 /**
- * Base implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
+ * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
  */
-public class BaseKeyedTable implements KeyedTable {
+public class BasicKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
   protected final AmsClient client;
@@ -56,7 +56,7 @@ public class BaseKeyedTable implements KeyedTable {
   protected final ChangeTable changeTable;
   protected TableMeta tableMeta;
 
-  public BaseKeyedTable(
+  public BasicKeyedTable(
       TableMeta tableMeta, String tableLocation,
       PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
     this.tableMeta = tableMeta;
@@ -155,7 +155,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public KeyedTableScan newScan() {
-    return new BaseKeyedTableScan(this);
+    return new BasicKeyedTableScan(this);
   }
 
   @Override
@@ -196,9 +196,9 @@ public class BaseKeyedTable implements KeyedTable {
     return new KeyedPartitionRewrite(this);
   }
 
-  public static class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {
+  public static class BasicInternalTable extends BasicUnkeyedTable implements BaseTable {
 
-    public BaseInternalTable(
+    public BasicInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
@@ -206,7 +206,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   }
 
-  public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
+  public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
@@ -216,7 +216,7 @@ public class BaseKeyedTable implements KeyedTable {
 
     @Override
     public ChangeTableIncrementalScan newChangeScan() {
-      return new BaseChangeTableIncrementalScan(this);
+      return new ChangeTableBasicIncrementalScan(this);
     }
   }
 }

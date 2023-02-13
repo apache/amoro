@@ -28,9 +28,9 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -488,7 +488,7 @@ public class SparkTestContext extends ExternalResource {
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
+      overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();

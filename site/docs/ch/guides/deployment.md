@@ -207,6 +207,14 @@ optimize_group:
     container: external
     properties:
 ```
+
+### 配置 Terminal 
+Terminal 在 local 模式执行的情况下，可以配置 Spark 相关参数
+```shell
+arctic.ams.terminal.backend: local
+arctic.ams.terminal.local.spark.sql.session.timeZone: UTC
+arctic.ams.terminal.local.spark.sql.iceberg.handle-timestamp-without-timezone=false
+```
 ## 启动 AMS
 进入到目录 arctic-x.y.z ， 执行 bin/ams.sh start 启动 AMS。
 ```shell

@@ -31,15 +31,15 @@ import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeQueueMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.optimize.BaseIcebergOptimizePlan;
-import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
+import com.netease.arctic.ams.server.optimize.AbstractIcebergOptimizePlan;
+import com.netease.arctic.ams.server.optimize.AbstractOptimizePlan;
 import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -669,12 +669,12 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
-          BaseOptimizePlan optimizePlan;
-          List<BaseOptimizeTask> optimizeTasks;
+          AbstractOptimizePlan optimizePlan;
+          List<BasicOptimizeTask> optimizeTasks;
 
           Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
-            if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
+            if (!AbstractIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
                 tableItem.getTableOptimizeRuntime())) {
               tableItem.persistTableOptimizeRuntime();
               LOG.debug("table {} not changed, no need plan", tableIdentifier);
@@ -762,8 +762,8 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
-                                          BaseOptimizePlan optimizePlan,
-                                          List<BaseOptimizeTask> optimizeTasks,
+                                          AbstractOptimizePlan optimizePlan,
+                                          List<BasicOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
         TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
@@ -800,7 +800,7 @@ public class OptimizeQueueService extends IJDBCService {
       }
     }
 
-    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BaseOptimizeTask> optimizeTasks) {
+    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BasicOptimizeTask> optimizeTasks) {
       try {
         tableItem.addNewOptimizeTasks(optimizeTasks);
       } catch (Throwable t) {

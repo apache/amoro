@@ -18,8 +18,17 @@
 
 package com.netease.arctic.spark.hive;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.spark.SparkTestBase;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.types.StructType;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -80,11 +89,18 @@ public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
     sql("insert overwrite {0}.{1} values \n" +
         "(4, ''aaa'',  ''2021-1-1''), \n " +
         "(5, ''bbb'',  ''2021-1-2''), \n " +
-        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table);
+        "(6, ''ccc'',  ''2021-1-2''), \n " +
+        "(7, ''ccc'',  ''2021-1-2''), \n " +
+        "(8, ''ccc'',  ''2021-1-2''), \n " +
+        "(9, ''ccc'',  ''2021-1-2''), \n " +
+        "(10, ''ccc'',  ''2021-1-2''), \n " +
+        "(11, ''ccc'',  ''2021-1-2''), \n " +
+        "(12, ''ccc'',  ''2021-1-2''), \n " +
+        "(13, ''ccc'',  ''2021-1-2'') \n " , database, table);
 
     rows = sql("select * from {0}.{1}", database, table);
-    Assert.assertEquals(3, rows.size());
-    assertContainIdSet(rows, 0, 4, 5, 6);
+    Assert.assertEquals(10, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
@@ -94,8 +110,8 @@ public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
 
     sql("use spark_catalog");
     rows = sql("select * from {0}.{1}", database, table);
-    Assert.assertEquals(3, rows.size());
-    assertContainIdSet(rows, 0, 4, 5, 6);
+    Assert.assertEquals(10, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
   }
 
   @Test
@@ -137,6 +153,35 @@ public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
     rows = sql("select * from {0}.{1}", database, table2);
     Assert.assertEquals(3, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6);
+  }
+
+  @Test
+  public void testInsertOverwriteFromView() {
+    ArcticTable t = loadTable(catalogNameHive, database, table);
+    List<Row> sources = Lists.newArrayList(
+        RowFactory.create(4, "aaa", "2021-1-2"),
+        RowFactory.create(5, "aaa", "2021-1-3"),
+        RowFactory.create(6, "aaa", "2021-1-2"),
+        RowFactory.create(7, "aaa", "2021-1-3"),
+        RowFactory.create(8, "aaa", "2021-1-2"),
+        RowFactory.create(9, "aaa", "2021-1-3"),
+        RowFactory.create(10, "aaa", "2021-1-2"),
+        RowFactory.create(11, "aaa", "2021-1-3"),
+        RowFactory.create( 12, "aaa", "2021-1-2")
+    );
+    StructType schema = SparkSchemaUtil.convert(new Schema(
+        Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
+        Types.NestedField.of(2, false, "data", Types.StringType.get()),
+        Types.NestedField.of(3, false, "dt", Types.StringType.get())
+    ));
+    Dataset<Row> row = spark.createDataFrame(sources, schema);
+    row = row.repartition(1);
+    row.registerTempTable("view");
+
+    sql("insert overwrite {0}.{1} select * from view", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    Assert.assertEquals(9, rows.size());
+
   }
 
 }

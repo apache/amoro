@@ -46,7 +46,7 @@ import java.util.function.Function;
  * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
  * @param <T> to indicate the record data type.
  */
-public abstract class BaseIcebergDataReader<T> {
+public abstract class AbstractIcebergDataReader<T> {
 
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
@@ -58,7 +58,7 @@ public abstract class BaseIcebergDataReader<T> {
   protected final boolean reuseContainer;
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  public BaseIcebergDataReader(
+  public AbstractIcebergDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer, StructLikeCollections structLikeCollections) {
@@ -67,7 +67,7 @@ public abstract class BaseIcebergDataReader<T> {
     this.structLikeCollections = structLikeCollections;
   }
 
-  public BaseIcebergDataReader(
+  public AbstractIcebergDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
@@ -75,7 +75,7 @@ public abstract class BaseIcebergDataReader<T> {
         caseSensitive, convertConstant, null, reuseContainer);
   }
 
-  public BaseIcebergDataReader(
+  public AbstractIcebergDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       Set<DataTreeNode> sourceNodes, boolean reuseContainer) {

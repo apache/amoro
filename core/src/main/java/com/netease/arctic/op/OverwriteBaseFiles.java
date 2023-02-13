@@ -20,9 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -59,6 +57,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final StructLikeMap<Long> partitionTransactionId;
 
   private Long transactionId;
+  // dynamic indicate that the transactionId should be applied to the changed partitions
+  private Boolean dynamic;
   private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
@@ -97,13 +97,32 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionId(StructLike partitionData, long transactionId) {
+  /**
+   * Update max TransactionId for partition
+   *
+   * @param partitionData - partition
+   * @param transactionId - max transactionId
+   * @return this for chain
+   */
+  public OverwriteBaseFiles updateMaxTransactionId(StructLike partitionData, long transactionId) {
+    Preconditions.checkArgument(this.dynamic == null || !this.dynamic,
+        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
     this.partitionTransactionId.put(partitionData, transactionId);
+    this.dynamic = false;
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionIdForChangedPartition(long transactionId) {
+  /**
+   * Update max TransactionId for changed partitions
+   *
+   * @param transactionId - max transactionId
+   * @return this for chain
+   */
+  public OverwriteBaseFiles updateMaxTransactionIdDynamically(long transactionId) {
+    Preconditions.checkArgument(this.dynamic == null || this.dynamic,
+        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
     this.transactionId = transactionId;
+    this.dynamic = true;
     return this;
   }
 
@@ -115,9 +134,15 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
+    Preconditions.checkState(this.dynamic != null,
+        "updateMaxTransactionId() or updateMaxTransactionIdDynamically() must be invoked");
     applyDeleteExpression();
 
-    StructLike partitionData = TablePropertyUtil.EMPTY_STRUCT;
+    StructLikeMap<Long> changedPartitionTransactionId = null;
+    if (this.dynamic) {
+      changedPartitionTransactionId = StructLikeMap.create(transaction.table().spec().partitionType());
+    }
+
     UnkeyedTable baseTable = keyedTable.baseTable();
 
     // step1: overwrite data files
@@ -128,18 +153,16 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
-
-      for (DataFile d : this.addFiles) {
-        overwriteFiles.addFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-        partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
+      if (this.dynamic) {
+        for (DataFile d : this.addFiles) {
+          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+        }
+        for (DataFile d : this.deleteFiles) {
+          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+        }
       }
-
-      for (DataFile d : this.deleteFiles) {
-        overwriteFiles.deleteFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-        partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
-      }
+      this.addFiles.forEach(overwriteFiles::addFile);
+      this.deleteFiles.forEach(overwriteFiles::deleteFile);
       if (transactionId != null && transactionId > 0) {
         overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
       }
@@ -158,15 +181,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-          partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
+        if (this.dynamic) {
+          for (DeleteFile d : this.addDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
         }
 
-        for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-          partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
-        }
         addDeleteFiles.forEach(rowDelta::addDeletes);
         if (MapUtils.isNotEmpty(properties)) {
           properties.forEach(rowDelta::set);
@@ -178,14 +198,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
 
-        for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-          partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
-        }
-
-        for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
-          partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
+        if (this.dynamic) {
+          for (DeleteFile d : this.addDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
+          for (DeleteFile d : this.deleteDeleteFiles) {
+            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          }
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),
             Collections.emptySet(), new HashSet<>(addDeleteFiles));
@@ -197,19 +216,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     // step3: set max transaction id
-    if (keyedTable.spec().isUnpartitioned()) {
-      long maxTransactionId = partitionMaxTxId.get(partitionData) == null ?
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : partitionMaxTxId.get(partitionData);
-      partitionMaxTxId.put(partitionData, Math.max(maxTransactionId,
-          this.partitionTransactionId.getOrDefault(partitionData,
-              TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT)));
+    if (this.dynamic) {
+      partitionMaxTxId.putAll(changedPartitionTransactionId);
     } else {
-      this.partitionTransactionId.forEach((pd, txId) -> {
-        if (partitionMaxTxId.containsKey(pd)) {
-          long maxTransactionId = partitionMaxTxId.get(pd);
-          partitionMaxTxId.put(pd, Math.max(maxTransactionId, txId));
-        }
-      });
+      partitionMaxTxId.putAll(this.partitionTransactionId);
     }
 
     return partitionMaxTxId;
@@ -230,14 +240,5 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     } catch (IOException e) {
       throw new IllegalStateException("failed when apply delete expression when overwrite files", e);
     }
-  }
-
-  private long getPartitionMaxTxId(StructLike partitionData) {
-    long txId =
-        partitionTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-    if (this.transactionId != null) {
-      txId = Math.max(txId, this.transactionId);
-    }
-    return txId;
   }
 }

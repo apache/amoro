@@ -40,7 +40,7 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
 
-public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalScan {
+public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalScan {
 
   private final ChangeTable table;
   private StructLikeMap<Long> fromPartitionTransactionId;
@@ -49,7 +49,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private Long snapshotId;
   private boolean includeColumnStats;
 
-  public BaseChangeTableIncrementalScan(ChangeTable table) {
+  public ChangeTableBasicIncrementalScan(ChangeTable table) {
     this.table = table;
   }
 
@@ -174,7 +174,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       }
     });
     return CloseableIterable.transform(filteredEntry, e ->
-        new BaseArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
+        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
             null, table.spec(), null));
   }
 
@@ -242,9 +242,13 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       Long fromTransactionId = fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
       return legacyTxId > fromTransactionId;
     } else {
-      Long partitionTransactionId = fromPartitionLegacyTransactionId.getOrDefault(partition,
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-      return legacyTxId > partitionTransactionId;
+      if (!fromPartitionLegacyTransactionId.containsKey(partition)) {
+        // if fromPartitionLegacyTransactionId not contains this partition, return all files of this partition
+        return true;
+      } else {
+        Long partitionTransactionId = fromPartitionLegacyTransactionId.get(partition);
+        return legacyTxId > partitionTransactionId;
+      }
     }
   }
 

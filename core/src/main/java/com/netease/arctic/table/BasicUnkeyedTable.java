@@ -68,9 +68,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
+ * Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
  */
-public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
+public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
@@ -78,7 +78,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   private final AmsClient client;
 
-  public BaseUnkeyedTable(
+  public BasicUnkeyedTable(
       TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
       AmsClient client) {
     this.tableIdentifier = tableIdentifier;
@@ -87,7 +87,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
     this.client = client;
   }
 
-  public BaseUnkeyedTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO) {
+  public BasicUnkeyedTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
     this.arcticFileIO = arcticFileIO;

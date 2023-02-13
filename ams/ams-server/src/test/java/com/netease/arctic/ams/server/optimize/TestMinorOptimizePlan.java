@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
@@ -80,7 +80,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
         keyedTableScanResult.getChangeFiles(),
         new HashMap<>(), 1, System.currentTimeMillis(),
         testKeyedTable.changeTable().currentSnapshot().snapshotId(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());

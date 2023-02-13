@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -49,7 +49,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class MinorOptimizePlan extends BaseArcticOptimizePlan {
+public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MinorOptimizePlan.class);
   private final List<ArcticFileScanTask> changeFileScanTasks;
 
@@ -106,8 +106,8 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   }
 
   @Override
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> result;
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> result;
 
     result = collectKeyedTableTasks(partition);
 
@@ -191,12 +191,12 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     return maxTransactionIdLimit;
   }
 
-  private List<BaseOptimizeTask> collectKeyedTableTasks(String partition) {
+  private List<BasicOptimizeTask> collectKeyedTableTasks(String partition) {
     FileTree treeRoot = partitionFileTree.get(partition);
     if (treeRoot == null) {
       return Collections.emptyList();
     }
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 

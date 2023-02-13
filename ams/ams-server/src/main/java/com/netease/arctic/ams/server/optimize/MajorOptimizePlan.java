@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class MajorOptimizePlan extends BaseArcticOptimizePlan {
+public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MajorOptimizePlan.class);
 
   public MajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
@@ -81,8 +81,8 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
     return false;
   }
 
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> result;
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> result;
     FileTree treeRoot = partitionFileTree.get(partition);
     if (treeRoot == null) {
       return Collections.emptyList();
@@ -127,8 +127,8 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
     return dataFile.fileSizeInBytes() < getSmallFileSize(arcticTable.properties());
   }
 
-  private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  private List<BasicOptimizeTask> collectUnKeyedTableTasks(String partition) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
@@ -156,12 +156,12 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
     return collector;
   }
 
-  private List<BaseOptimizeTask> collectKeyedTableTasks(String partition) {
+  private List<BasicOptimizeTask> collectKeyedTableTasks(String partition) {
     FileTree treeRoot = partitionFileTree.get(partition);
     if (treeRoot == null) {
       return Collections.emptyList();
     }
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,

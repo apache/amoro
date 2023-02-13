@@ -21,7 +21,7 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -59,8 +59,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseArcticOptimizePlan.class);
+public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractArcticOptimizePlan.class);
 
   protected final List<FileScanTask> baseFileScanTasks;
   // Whether to customize the directory
@@ -76,7 +76,7 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  public BaseArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+  public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                 List<FileScanTask> baseFileScanTasks,
                                 Map<String, Boolean> partitionTaskRunning,
                                 int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
@@ -87,14 +87,14 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     this.currentBaseSnapshotId = baseSnapshotId;
   }
 
-  protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
-                                               List<DataFile> insertFiles,
-                                               List<DataFile> deleteFiles,
-                                               List<DataFile> baseFiles,
-                                               List<DeleteFile> posDeleteFiles,
-                                               TaskConfig taskConfig) {
+  protected BasicOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
+                                                List<DataFile> insertFiles,
+                                                List<DataFile> deleteFiles,
+                                                List<DataFile> baseFiles,
+                                                List<DeleteFile> posDeleteFiles,
+                                                TaskConfig taskConfig) {
     // build task
-    BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
+    BasicOptimizeTask optimizeTask = new BasicOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
     optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());

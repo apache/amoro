@@ -62,7 +62,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     }
 
     Preconditions.checkNotNull(transactionId, "transaction-Id must be set.");
-    Preconditions.checkArgument(transactionId >= -1, "transaction-Id must >= -1.");
+    Preconditions.checkArgument(transactionId > 0, "transaction-Id must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
@@ -70,9 +70,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     addFiles.forEach(f -> {
       StructLike pd = f.partition();
-      long txId = partitionMaxTxId.getOrDefault(pd, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-      txId = Math.max(txId, transactionId);
-      partitionMaxTxId.put(pd, txId);
+      partitionMaxTxId.put(pd, transactionId);
     });
     return partitionMaxTxId;
   }

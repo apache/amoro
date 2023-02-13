@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
@@ -55,17 +55,17 @@ import java.util.stream.Collectors;
 /**
  * only used for native iceberg
  */
-public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseIcebergOptimizePlan.class);
+public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractIcebergOptimizePlan.class);
 
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   protected List<FileScanTask> fileScanTasks;
   protected SequenceNumberFetcher sequenceNumberFetcher;
 
-  public BaseIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                 List<FileScanTask> fileScanTasks,
-                                 Map<String, Boolean> partitionTaskRunning,
-                                 int queueId, long currentTime) {
+  public AbstractIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                     List<FileScanTask> fileScanTasks,
+                                     Map<String, Boolean> partitionTaskRunning,
+                                     int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
     this.fileScanTasks = fileScanTasks;
   }
@@ -104,13 +104,13 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
         .pack(fileScanTasks, fileScanTask -> fileScanTask.file().fileSizeInBytes());
   }
 
-  protected BaseOptimizeTask buildOptimizeTask(List<DataFile> insertFiles,
-                                               List<DataFile> baseFiles,
-                                               List<DeleteFile> eqDeleteFiles,
-                                               List<DeleteFile> posDeleteFiles,
-                                               TaskConfig taskConfig) {
+  protected BasicOptimizeTask buildOptimizeTask(List<DataFile> insertFiles,
+                                                List<DataFile> baseFiles,
+                                                List<DeleteFile> eqDeleteFiles,
+                                                List<DeleteFile> posDeleteFiles,
+                                                TaskConfig taskConfig) {
     // build task
-    BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
+    BasicOptimizeTask optimizeTask = new BasicOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
     optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());

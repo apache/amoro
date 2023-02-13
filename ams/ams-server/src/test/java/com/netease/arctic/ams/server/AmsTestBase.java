@@ -194,6 +194,7 @@ public class AmsTestBase {
     com.netease.arctic.ams.server.config.Configuration configuration =
         new com.netease.arctic.ams.server.config.Configuration();
     configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
+    configuration.setString("arctic.ams.terminal.local.spark.sql.session.timeZone", "UTC");
     ArcticMetaStore.conf = configuration;
 
     //mock service
