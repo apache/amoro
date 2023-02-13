@@ -140,7 +140,7 @@ public class TerminalManager {
   }
 
   public synchronized void cleanSession(String catalogName) {
-    for(String key : sessionMap.keySet()) {
+    for (String key : sessionMap.keySet()) {
       if (key.endsWith("-" + catalogName)) {
         sessionMap.remove(key);
       }
