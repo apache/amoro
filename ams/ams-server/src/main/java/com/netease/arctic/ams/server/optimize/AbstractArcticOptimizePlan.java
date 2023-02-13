@@ -68,8 +68,6 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
 
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
-  // partition -> position delete file
-  protected final Map<String, List<DeleteFile>> partitionPosDeleteFiles = new LinkedHashMap<>();
 
   // for base table or unKeyed table
   private final long currentBaseSnapshotId;

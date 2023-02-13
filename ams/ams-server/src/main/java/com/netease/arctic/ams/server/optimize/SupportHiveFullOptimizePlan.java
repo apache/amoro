@@ -66,7 +66,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   protected boolean partitionNeedPlan(String partitionToPath) {
     long current = System.currentTimeMillis();
 
-    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
     Map<DataTreeNode, Long> nodeSmallFileCount = new HashMap<>();
     boolean nodeHaveTwoSmallFiles = false;

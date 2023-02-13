@@ -62,7 +62,7 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   public boolean partitionNeedPlan(String partitionToPath) {
     long current = System.currentTimeMillis();
 
-    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
     List<DataFile> smallFiles = filterSmallFiles(baseFiles);
 
