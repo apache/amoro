@@ -139,8 +139,12 @@ public class TerminalManager {
     return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
-  public synchronized void cleanSession() {
-    sessionMap.clear();
+  public synchronized void cleanSession(String catalogName) {
+    for(String key : sessionMap.keySet()) {
+      if (key.endsWith("-" + catalogName)) {
+        sessionMap.remove(key);
+      }
+    }
   }
 
   /**
