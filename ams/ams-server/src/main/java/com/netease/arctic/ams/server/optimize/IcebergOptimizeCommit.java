@@ -213,17 +213,30 @@ public class IcebergOptimizeCommit extends BasicOptimizeCommit {
         return null;
       }).filter(Objects::nonNull).collect(Collectors.toSet());
 
-      // rewrite DataFiles, the useless DeleteFiles will be deleted by the Iceberg MergingSnapshotProducer
-      RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
+      // rewrite DataFiles
+      RewriteFiles rewriteDataFiles = baseArcticTable.newRewrite();
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-        rewriteFiles.validateFromSnapshot(baseSnapshotId);
+        rewriteDataFiles.validateFromSnapshot(baseSnapshotId);
         long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
-        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
+        rewriteDataFiles.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
       } else {
-        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles);
+        rewriteDataFiles.rewriteFiles(deleteDataFiles, addDataFiles);
       }
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      rewriteFiles.commit();
+      rewriteDataFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+      rewriteDataFiles.commit();
+
+      // remove DeleteFiles additional, because DeleteFiles maybe not existed
+      if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
+        RewriteFiles rewriteDeleteFiles = baseArcticTable.newRewrite();
+        rewriteDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        rewriteDeleteFiles.rewriteFiles(Collections.emptySet(), deleteDeleteFiles,
+            Collections.emptySet(), Collections.emptySet());
+        try {
+          rewriteDeleteFiles.commit();
+        } catch (ValidationException e) {
+          LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+        }
+      }
 
       LOG.info("{} major optimize committed, delete {} files [{} Delete files], " +
               "add {} new files",

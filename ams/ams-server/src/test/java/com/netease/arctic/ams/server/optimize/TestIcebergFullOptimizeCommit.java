@@ -46,10 +46,8 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
         .planFiles()) {
       filesIterable.forEach(fileScanTask -> {
-        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-          oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-        }
+        oldDataFilesPath.add((String) fileScanTask.file().path());
+        fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
       });
     }
 
@@ -108,6 +106,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
+        .set(org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE, "full")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
@@ -116,10 +115,8 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     Set<String> oldDeleteFilesPath = new HashSet<>();
     try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan().planFiles()) {
       filesIterable.forEach(fileScanTask -> {
-        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-          oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-        }
+        oldDataFilesPath.add((String) fileScanTask.file().path());
+        fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
       });
     }
 
