@@ -213,13 +213,16 @@ public class IcebergOptimizeCommit extends BasicOptimizeCommit {
         return null;
       }).filter(Objects::nonNull).collect(Collectors.toSet());
 
-      // rewrite DataFiles
+      // rewrite DataFiles, the useless DeleteFiles will be deleted by the Iceberg MergingSnapshotProducer
       RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
         rewriteFiles.validateFromSnapshot(baseSnapshotId);
+        long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
+        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
+      } else {
+        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles);
       }
-      rewriteFiles.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
+      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       rewriteFiles.commit();
 
       LOG.info("{} major optimize committed, delete {} files [{} Delete files], " +
