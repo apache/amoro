@@ -53,7 +53,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
                           List<FileScanTask> baseFileScanTasks,
                           Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
                           long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, baseFileScanTasks,
+    super(arcticTable, tableOptimizeRuntime, Collections.emptyList(), baseFileScanTasks,
         partitionTaskRunning, queueId, currentTime, TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
   }
 
