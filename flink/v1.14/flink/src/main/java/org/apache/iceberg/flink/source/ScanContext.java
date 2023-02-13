@@ -36,54 +36,99 @@ import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
  * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}.
- * only change line 79 and expand the modifier.
+ * only change line 115 and expand the modifier.
  * Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Retrieve the full data of the specified snapshot by ID,
+   * used for batch scan mode
+   */
   public static final ConfigOption<Long> SNAPSHOT_ID =
       ConfigOptions.key("snapshot-id").longType().defaultValue(null);
 
+  /**
+   * Set if column names are case-sensitive
+   */
   public static final ConfigOption<Boolean> CASE_SENSITIVE =
       ConfigOptions.key("case-sensitive").booleanType().defaultValue(false);
 
+  /**
+   * Retrieve the full data of the specified snapshot at the given timestamp,
+   * used for batch scan mode
+   */
   public static final ConfigOption<Long> AS_OF_TIMESTAMP =
       ConfigOptions.key("as-of-timestamp").longType().defaultValue(null);
 
+  /**
+   * Starting strategy for streaming execution
+   */
   public static final ConfigOption<StreamingStartingStrategy> STARTING_STRATEGY =
       ConfigOptions.key("starting-strategy")
       .enumType(StreamingStartingStrategy.class)
       .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT);
 
+  /**
+   * Specific the snapshot timestamp that streaming job starts from
+   */
   public static final ConfigOption<Long> START_SNAPSHOT_TIMESTAMP =
       ConfigOptions.key("start-snapshot-timestamp").longType().defaultValue(null);
 
+  /**
+   * Specific the snapshot id that streaming job starts from
+   */
   public static final ConfigOption<Long> START_SNAPSHOT_ID =
       ConfigOptions.key("start-snapshot-id").longType().defaultValue(null);
 
+  /**
+   * Specific the snapshot id that streaming job to end
+   */
   public static final ConfigOption<Long> END_SNAPSHOT_ID =
       ConfigOptions.key("end-snapshot-id").longType().defaultValue(null);
 
+  /**
+   * Specific the target size when combining data input splits
+   */
   public static final ConfigOption<Long> SPLIT_SIZE =
       ConfigOptions.key("split-size").longType().defaultValue(null);
 
+  /**
+   * Specify the number of bins to consider when combining input splits
+   */
   public static final ConfigOption<Integer> SPLIT_LOOKBACK =
       ConfigOptions.key("split-lookback").intType().defaultValue(null);
 
+  /**
+   * The estimated cost to open a file,
+   * used as a minimum weight when combining splits.
+   */
   public static final ConfigOption<Long> SPLIT_FILE_OPEN_COST =
       ConfigOptions.key("split-file-open-cost").longType().defaultValue(null);
 
+  /**
+   * Set if job is bounded or unbounded
+   */
   public static final ConfigOption<Boolean> STREAMING =
       ConfigOptions.key("streaming").booleanType().defaultValue(true);
 
+  /**
+   * Specify the time interval for consecutively monitoring newly committed data files
+   */
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
       ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10));
 
+  /**
+   * Set if loads the column stats with each file
+   */
   public static final ConfigOption<Boolean> INCLUDE_COLUMN_STATS =
       ConfigOptions.key("include-column-stats").booleanType().defaultValue(false);
 
+  /**
+   * Specify the max planning snapshot count
+   */
   public static final ConfigOption<Integer> MAX_PLANNING_SNAPSHOT_COUNT =
       ConfigOptions.key("max-planning-snapshot-count").intType().defaultValue(Integer.MAX_VALUE);
 
@@ -100,7 +145,6 @@ public class ScanContext implements Serializable {
   protected final Long splitOpenFileCost;
   protected final boolean isStreaming;
   protected final Duration monitorInterval;
-  protected final int maxPlanningSnapshotCount;
 
   protected final String nameMapping;
   protected final Schema schema;
@@ -108,6 +152,7 @@ public class ScanContext implements Serializable {
   protected final long limit;
   protected final boolean includeColumnStats;
   protected final Integer planParallelism;
+  protected final int maxPlanningSnapshotCount;
 
   protected ScanContext(
       boolean caseSensitive,
@@ -142,7 +187,6 @@ public class ScanContext implements Serializable {
     this.splitOpenFileCost = splitOpenFileCost;
     this.isStreaming = isStreaming;
     this.monitorInterval = monitorInterval;
-    this.maxPlanningSnapshotCount = maxPlanningSnapshotCount;
 
     this.nameMapping = nameMapping;
     this.schema = schema;
@@ -151,6 +195,7 @@ public class ScanContext implements Serializable {
     this.includeColumnStats = includeColumnStats;
     this.exposeLocality = exposeLocality;
     this.planParallelism = planParallelism;
+    this.maxPlanningSnapshotCount = maxPlanningSnapshotCount;
 
     validate();
   }
