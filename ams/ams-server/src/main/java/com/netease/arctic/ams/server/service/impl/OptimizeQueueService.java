@@ -52,7 +52,9 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -65,7 +67,9 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -695,9 +699,14 @@ public class OptimizeQueueService extends IJDBCService {
             Snapshot baseCurrentSnapshot;
             Snapshot changeCurrentSnapshot = null;
             ArcticTable arcticTable = tableItem.getArcticTable();
+            StructLikeMap<Long> partitionMaxTransactionId = null;
+            StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
             if (arcticTable.isKeyedTable()) {
-              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
               baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+              partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+              legacyPartitionMaxTransactionId =
+                  TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
             } else {
               baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
             }
@@ -705,19 +714,23 @@ public class OptimizeQueueService extends IJDBCService {
               LOG.debug("{} optimize is blocked, continue", tableIdentifier);
               continue;
             }
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+            List<FileScanTask> baseFiles = tableItem.planBaseFiles(baseCurrentSnapshot);
+            optimizePlan =
+                tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseFiles, baseCurrentSnapshot);
             optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
 
             // if no full tasks, then plan major tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
+              optimizePlan =
+                  tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseFiles, baseCurrentSnapshot);
               optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
 
-            // if no major tasks and keyed table, then plan minor tasks
+            // if no major/full tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot,
-                  changeCurrentSnapshot);
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseFiles,
+                  baseCurrentSnapshot, changeCurrentSnapshot, partitionMaxTransactionId,
+                  legacyPartitionMaxTransactionId);
               optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
           }

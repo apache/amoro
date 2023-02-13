@@ -557,7 +557,7 @@ public class OptimizeIntegrationTest {
     ));
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 7);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 12, 4);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 10, 4);
 
     // Step6: insert change data
     writeChange(table, Lists.newArrayList(

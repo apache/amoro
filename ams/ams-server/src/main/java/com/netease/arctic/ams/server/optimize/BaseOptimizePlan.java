@@ -72,6 +72,7 @@ public abstract class BaseOptimizePlan {
   public List<BaseOptimizeTask> plan() {
     long startTime = System.nanoTime();
 
+    // TODO to remove
     if (!tableNeedPlan()) {
       LOG.debug("{} === skip {} plan", tableId(), getOptimizeType());
       return Collections.emptyList();

@@ -188,7 +188,7 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
     return optimizeTask;
   }
 
-  public boolean tableNeedPlan() {
+  protected boolean tableNeedPlan() {
     this.currentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
     return true;
   }

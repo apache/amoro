@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
@@ -30,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +49,10 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   protected final Set<String> excludeLocations = new HashSet<>();
 
   public SupportHiveFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                      List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
-                                      Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                                     List<FileScanTask> baseFileScanTasks,
+                                     Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
                                      long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, baseTableFileList, posDeleteFileList,
+    super(arcticTable, tableOptimizeRuntime, baseFileScanTasks,
         partitionTaskRunning, queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
@@ -67,8 +67,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     long current = System.currentTimeMillis();
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
-    List<DataFile> baseFiles = new ArrayList<>();
-    partitionFileTree.get(partitionToPath).collectBaseFiles(baseFiles);
+    List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
     Map<DataTreeNode, Long> nodeSmallFileCount = new HashMap<>();
     boolean nodeHaveTwoSmallFiles = false;
     boolean notInHiveFile = false;
