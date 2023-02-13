@@ -212,8 +212,6 @@ optimize_group:
 Terminal 在 local 模式执行的情况下，可以配置 Spark 相关参数
 ```shell
 arctic.ams.terminal.backend: local
-arctic.ams.terminal.local.spark.driver.extraJavaOptions:  -Duser.timezone=UTC
-arctic.ams.terminal.local.spark.executor.extraJavaOptions:  -Duser.timezone=UTC
 arctic.ams.terminal.local.spark.sql.session.timeZone: UTC
 arctic.ams.terminal.local.spark.sql.iceberg.handle-timestamp-without-timezone=false
 ```
