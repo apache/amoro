@@ -401,30 +401,22 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     }
   }
 
-  protected static class ShouldSplitFileTree implements Predicate<FileTree> {
+  protected static class SplitIfNoFileExists implements Predicate<FileTree> {
 
-    public ShouldSplitFileTree() {
+    public SplitIfNoFileExists() {
     }
 
     /**
-     * file tree can't split:
-     * - root node is leaf node
-     * - root node contains any files
+     * file tree can split if:
+     * - root node isn't leaf node
+     * - and no file exists in the root node
      *
      * @param fileTree - file tree to split
      * @return true if this fileTree need split
      */
     @Override
     public boolean test(FileTree fileTree) {
-      // root node is leaf node, can't split
-      if (fileTree.getLeft() == null && fileTree.getRight() == null) {
-        return false;
-      }
-      // root node contains any files, can't split
-      if (!fileTree.isRootEmpty()) {
-        return false;
-      }
-      return true;
+      return !fileTree.isLeaf() && fileTree.isRootEmpty();
     }
   }
 

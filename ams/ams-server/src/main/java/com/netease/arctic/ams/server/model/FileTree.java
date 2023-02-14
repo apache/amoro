@@ -220,6 +220,10 @@ public class FileTree {
   public boolean isRootEmpty() {
     return baseFiles.isEmpty() && insertFiles.isEmpty() && deleteFiles.isEmpty() && posDeleteFiles.isEmpty();
   }
+  
+  public boolean isLeaf() {
+    return left == null && right == null;
+  }
 
   /**
    * Complete this binary tree to make every subTree of this Tree As a Full Binary Tree(FBT), if any data exists in this

@@ -187,7 +187,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
         constructCustomHiveSubdirectory(allBaseFiles));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
-    treeRoot.splitFileTree(subTrees, new ShouldSplitFileTree());
+    treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());
     for (FileTree subTree : subTrees) {
       List<DataFile> baseFiles = new ArrayList<>();
       subTree.collectBaseFiles(baseFiles);
