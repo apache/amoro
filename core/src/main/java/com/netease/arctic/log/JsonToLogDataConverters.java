@@ -181,20 +181,19 @@ public class JsonToLogDataConverters<T> implements Serializable {
     Types.NestedField elementField = list.field(list.elementId());
     JsonToLogDataConverter<T> elementConverter = createConverter(elementField.type());
     Type elementType = elementField.type();
-    final Class<?> elementClass;
-    if (elementType.typeId() == Type.TypeID.STRUCT) {
-      elementClass = factory.getActualValueClass();
-    } else {
-      elementClass = elementField.type().typeId().javaClass();
-    }
 
     return (jsonNode, context) -> {
       final ArrayNode node = (ArrayNode) jsonNode;
-      final Object[] array = (Object[]) Array.newInstance(elementClass, node.size());
+      Object[] array = null;
       for (int i = 0; i < node.size(); i++) {
         final JsonNode innerNode = node.get(i);
         Object value = elementConverter.convert(innerNode, context);
-        array[i] = convertSecondTimeIfNecessary(elementType, value);
+        Object flinkValue = convertSecondTimeIfNecessary(elementType, value);
+        if (array == null) {
+          Class<?> flinkValueClass = flinkValue.getClass();
+          array = (Object[]) Array.newInstance(flinkValueClass, node.size());
+        }
+        array[i] = flinkValue;
       }
       return arrayFactory.create(array);
     };
