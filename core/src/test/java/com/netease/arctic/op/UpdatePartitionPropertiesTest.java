@@ -74,6 +74,6 @@ public class UpdatePartitionPropertiesTest extends TableTestBase {
     getArcticTable().asUnkeyedTable().updatePartitionProperties(null).remove(p0, "key").commit();
     partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.size());
-    Assert.assertEquals(null, partitionProperties.get(p0).get("key"));
+    Assert.assertNull(partitionProperties.get(p0).get("key"));
   }
 }
