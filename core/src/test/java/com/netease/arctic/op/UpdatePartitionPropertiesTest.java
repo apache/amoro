@@ -60,4 +60,20 @@ public class UpdatePartitionPropertiesTest extends TableTestBase {
     Assert.assertEquals(1, partitionProperties.size());
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
+
+  @Test
+  public void testRemovePartitionProperties() {
+    StructLikeMap<Map<String, String>> partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    Assert.assertEquals(0, partitionProperties.size());
+    StructLike p0 = TestHelpers.Row.of(1200);
+    getArcticTable().asUnkeyedTable().updatePartitionProperties(null).set(p0, "key", "value").commit();
+    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    Assert.assertEquals(1, partitionProperties.size());
+    Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
+
+    getArcticTable().asUnkeyedTable().updatePartitionProperties(null).remove(p0, "key").commit();
+    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    Assert.assertEquals(1, partitionProperties.size());
+    Assert.assertEquals(null, partitionProperties.get(p0).get("key"));
+  }
 }

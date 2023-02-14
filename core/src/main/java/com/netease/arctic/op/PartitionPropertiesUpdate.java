@@ -21,6 +21,7 @@ package com.netease.arctic.op;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.commons.compress.utils.Sets;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
@@ -75,13 +76,8 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     Preconditions.checkArgument(setPropertiesForPartition == null ||
             !setPropertiesForPartition.containsKey(key),
         "Cannot remove and update the same key: %s", key);
-    Set<String> properties = removeProperties.get(partitionData);
-    if (properties != null) {
-      properties.remove(key);
-      if (properties.isEmpty()) {
-        removeProperties.remove(partitionData);
-      }
-    }
+    Set<String> properties = removeProperties.computeIfAbsent(partitionData, k -> Sets.newHashSet());
+    properties.add(key);
     return this;
   }
 
