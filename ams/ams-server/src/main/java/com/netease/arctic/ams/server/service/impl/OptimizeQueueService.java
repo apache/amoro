@@ -577,6 +577,16 @@ public class OptimizeQueueService extends IJDBCService {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
 
+          Map<String, String> properties = tableItem.getArcticTable(true).properties();
+          int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
+
+          // queue was updated
+          if (optimizeQueue.getOptimizeQueueMeta().getQueueId() != queueId) {
+            releaseTable(tableIdentifier);
+            ServiceContainer.getOptimizeQueueService().getQueue(queueId).bindTable(tableIdentifier);
+            continue;
+          }
+
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
           if (!(Boolean.parseBoolean(PropertyUtil
@@ -602,8 +612,6 @@ public class OptimizeQueueService extends IJDBCService {
 
           List<BaseOptimizeTask> optimizeTasks;
           BaseOptimizePlan optimizePlan;
-          Map<String, String> properties = tableItem.getArcticTable(false).properties();
-          int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
