@@ -78,9 +78,9 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), keyedTableScanResult.getBaseFiles(),
         keyedTableScanResult.getChangeFiles(),
-        new HashMap<>(), 1, System.currentTimeMillis(),
+        1, System.currentTimeMillis(),
         testKeyedTable.changeTable().currentSnapshot().snapshotId(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());

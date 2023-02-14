@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -34,10 +33,8 @@ import org.apache.iceberg.FileScanTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,10 +46,10 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
 
   public SupportHiveMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                       List<FileScanTask> baseFileScanTasks,
-                                      Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                                      int queueId, long currentTime,
                                       long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, baseFileScanTasks,
-        partitionTaskRunning, queueId, currentTime, baseSnapshotId);
+        queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.hiveLocation = (((SupportHive) arcticTable).hiveLocation());
@@ -75,13 +72,11 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     if (partitionNeedPlan) {
       // check small data file count
       if (checkSmallFileCount(smallFiles)) {
-        partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
         return true;
       }
 
       // check major optimize interval
       if (checkMajorOptimizeInterval(current, partitionToPath)) {
-        partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
         return true;
       }
     }

@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
@@ -46,10 +45,10 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
 
   public MajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<FileScanTask> baseFileScanTasks,
-                           Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                           int queueId, long currentTime,
                            long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, Collections.emptyList(), baseFileScanTasks,
-        partitionTaskRunning, queueId, currentTime, TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
+        queueId, currentTime, TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
   }
 
   @Override
@@ -66,13 +65,11 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     if (baseFiles.size() >= 2) {
       // check small data file count
       if (checkSmallFileCount(baseFiles)) {
-        partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
         return true;
       }
 
       // check major optimize interval
       if (checkMajorOptimizeInterval(current, partitionToPath)) {
-        partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
         return true;
       }
     }
@@ -94,11 +91,6 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return result;
-  }
-
-  @Override
-  protected boolean tableChanged() {
-    return true;
   }
 
   protected boolean checkMajorOptimizeInterval(long current, String partitionToPath) {
@@ -132,7 +124,7 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, getOptimizeType(), createTime, "");
 
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partition);
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partition);
@@ -165,7 +157,7 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, getOptimizeType(), createTime, "");
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new ShouldSplitFileTree());

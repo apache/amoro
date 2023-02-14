@@ -51,8 +51,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         new TableOptimizeRuntime(testKeyedHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -86,8 +86,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveFullOptimizePlan supportHiveFullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         new TableOptimizeRuntime(testKeyedHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveFullOptimizePlan.plan();
+         1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveFullOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -122,8 +122,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveFullOptimizePlan supportHiveFullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         new TableOptimizeRuntime(testKeyedHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveFullOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveFullOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -143,8 +143,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testHiveTable);
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
         new TableOptimizeRuntime(testHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(1, tasks.size());
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -167,8 +167,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testHiveTable);
     SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         new TableOptimizeRuntime(testHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(1, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -190,8 +190,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testUnPartitionKeyedHiveTable);
     SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
         new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -216,8 +216,8 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testUnPartitionKeyedHiveTable);
     SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id()), baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());

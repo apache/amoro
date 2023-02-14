@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
@@ -47,10 +46,9 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<FileScanTask> baseFileScanTasks,
                            List<ArcticFileScanTask> changeFileScanTasks,
-                           Map<String, Boolean> partitionTaskRunning,
                            int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, changeFileScanTasks, baseFileScanTasks,
-        partitionTaskRunning, queueId, currentTime, changeSnapshotId, baseSnapshotId);
+        queueId, currentTime, changeSnapshotId, baseSnapshotId);
   }
 
   @Override
@@ -64,7 +62,6 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
       if (deleteFiles.size() >= CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
           TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
           TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT)) {
-        partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
         return true;
       }
     }
@@ -74,7 +71,6 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
         CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
             TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
             TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT)) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
       return true;
     }
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
@@ -101,20 +97,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
-  protected boolean tableChanged() {
-    return changeTableChanged();
-  }
-
-  @Override
   protected boolean baseFileShouldOptimize(DataFile baseFile, String partition) {
     return true;
-  }
-
-  private boolean changeTableChanged() {
-    long lastChangeSnapshotId = tableOptimizeRuntime.getCurrentChangeSnapshotId();
-    LOG.debug("{} ==== {} currentChangeSnapshotId={}, lastChangeSnapshotId={}", tableId(), getOptimizeType(),
-        currentChangeSnapshotId, lastChangeSnapshotId);
-    return currentChangeSnapshotId != lastChangeSnapshotId;
   }
 
   private List<BasicOptimizeTask> collectKeyedTableTasks(String partition) {

@@ -104,6 +104,8 @@ public class TableOptimizeItem extends IJDBCService {
   private final ReentrantLock tableLock = new ReentrantLock();
   private final ReentrantLock tasksCommitLock = new ReentrantLock();
   private final AtomicBoolean waitCommit = new AtomicBoolean(false);
+  // flag to avoid concurrent plan
+  private final AtomicBoolean planning = new AtomicBoolean(false);
 
   private final Map<OptimizeTaskId, OptimizeTaskItem> optimizeTasks = new LinkedHashMap<>();
 
@@ -422,82 +424,100 @@ public class TableOptimizeItem extends IJDBCService {
         .propertyAsBoolean(getArcticTable(false).properties(), TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
       tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
-    } else {
-      Map<String, Boolean> partitionIsRunning = generatePartitionRunning();
-      if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
-        List<FileScanTask> fileScanTasks;
-        try (CloseableIterable<FileScanTask> filesIterable = arcticTable.asUnkeyedTable().newScan().planFiles()) {
-          fileScanTasks = Lists.newArrayList(filesIterable);
-        } catch (IOException e) {
-          throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
-        }
-        IcebergFullOptimizePlan fullPlan =
-            getIcebergFullPlan(fileScanTasks, -1, System.currentTimeMillis(), partitionIsRunning);
-        List<BasicOptimizeTask> fullTasks = fullPlan.plan();
-        // pending for full optimize
-        if (CollectionUtils.isNotEmpty(fullTasks)) {
-          tryUpdateOptimizeInfo(
-              TableOptimizeRuntime.OptimizeStatus.Pending, fullTasks, OptimizeType.FullMajor);
-        } else {
-          IcebergMinorOptimizePlan minorPlan =
-              getIcebergMinorPlan(fileScanTasks, -1, System.currentTimeMillis(), partitionIsRunning);
-          List<BasicOptimizeTask> minorTasks = minorPlan.plan();
-          // pending for minor optimize
-          if (CollectionUtils.isNotEmpty(minorTasks)) {
-            tryUpdateOptimizeInfo(
-                TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks, OptimizeType.Minor);
-          } else {
-            // idle state
-            tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
-          }
-        }
+      return;
+    }
+    if (planning.get()) {
+      // if the table is planning, should not update the optimizing status 
+      return;
+    }
+    if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+      Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
+      if (currentSnapshot == null) {
+        tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
+        return;
+      }
+      List<FileScanTask> fileScanTasks;
+      TableScan tableScan = arcticTable.asUnkeyedTable().newScan();
+      tableScan = tableScan.useSnapshot(currentSnapshot.snapshotId());
+      try (CloseableIterable<FileScanTask> filesIterable = tableScan.planFiles()) {
+        fileScanTasks = Lists.newArrayList(filesIterable);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
+      }
+      IcebergFullOptimizePlan fullPlan =
+          getIcebergFullPlan(fileScanTasks, -1, System.currentTimeMillis(), currentSnapshot.snapshotId());
+      OptimizePlanResult optimizePlanResult = fullPlan.plan();
+      // pending for full optimize
+      if (!optimizePlanResult.isEmpty()) {
+        tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Pending, optimizePlanResult.getOptimizeTasks(),
+            OptimizeType.FullMajor);
       } else {
-        Snapshot baseCurrentSnapshot;
-        Snapshot changeCurrentSnapshot = null;
-        ArcticTable arcticTable = getArcticTable();
-        StructLikeMap<Long> partitionMaxTransactionId = null;
-        StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
-        if (arcticTable.isKeyedTable()) {
-          baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
-          partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
-          legacyPartitionMaxTransactionId =
-              TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
-          changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
-        } else {
-          baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
-        }
-
-        List<FileScanTask> baseFiles = planBaseFiles(baseCurrentSnapshot);
-        FullOptimizePlan fullPlan =
-            getFullPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseFiles, baseCurrentSnapshot);
-        List<BasicOptimizeTask> fullTasks = fullPlan == null ? Collections.emptyList() : fullPlan.plan();
-        // pending for full optimize
-        if (CollectionUtils.isNotEmpty(fullTasks)) {
+        IcebergMinorOptimizePlan minorPlan =
+            getIcebergMinorPlan(fileScanTasks, -1, System.currentTimeMillis(), currentSnapshot.snapshotId());
+        optimizePlanResult = minorPlan.plan();
+        // pending for minor optimize
+        if (!optimizePlanResult.isEmpty()) {
           tryUpdateOptimizeInfo(
-              TableOptimizeRuntime.OptimizeStatus.Pending, fullTasks, OptimizeType.FullMajor);
+              TableOptimizeRuntime.OptimizeStatus.Pending, optimizePlanResult.getOptimizeTasks(), OptimizeType.Minor);
         } else {
-          MajorOptimizePlan majorPlan =
-              getMajorPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseFiles, baseCurrentSnapshot);
-          List<BasicOptimizeTask> majorTasks = majorPlan == null ? Collections.emptyList() : majorPlan.plan();
-          // pending for major optimize
-          if (CollectionUtils.isNotEmpty(majorTasks)) {
-            tryUpdateOptimizeInfo(
-                TableOptimizeRuntime.OptimizeStatus.Pending, majorTasks, OptimizeType.Major);
-          } else {
-            if (isKeyedTable()) {
-              MinorOptimizePlan minorPlan =
-                  getMinorPlan(-1, System.currentTimeMillis(), partitionIsRunning, baseFiles, baseCurrentSnapshot,
-                      changeCurrentSnapshot, partitionMaxTransactionId, legacyPartitionMaxTransactionId);
-              List<BasicOptimizeTask> minorTasks = minorPlan == null ? Collections.emptyList() : minorPlan.plan();
-              if (CollectionUtils.isNotEmpty(minorTasks)) {
-                tryUpdateOptimizeInfo(
-                    TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks, OptimizeType.Minor);
-                return;
-              }
+          // idle state
+          tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
+        }
+      }
+    } else {
+      Snapshot baseCurrentSnapshot;
+      Snapshot changeCurrentSnapshot = null;
+      ArcticTable arcticTable = getArcticTable();
+      StructLikeMap<Long> partitionMaxTransactionId = null;
+      StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
+      if (arcticTable.isKeyedTable()) {
+        baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+        partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        legacyPartitionMaxTransactionId =
+            TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
+      } else {
+        baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+      }
+
+      List<FileScanTask> baseFiles = planBaseFiles(baseCurrentSnapshot);
+      FullOptimizePlan fullPlan =
+          getFullPlan(-1, System.currentTimeMillis(), baseFiles, baseCurrentSnapshot);
+      OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
+      if (fullPlan != null) {
+        optimizePlanResult = fullPlan.plan();
+      }
+      // pending for full optimize
+      if (!optimizePlanResult.isEmpty()) {
+        tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Pending, optimizePlanResult.getOptimizeTasks(),
+            OptimizeType.FullMajor);
+      } else {
+        MajorOptimizePlan majorPlan =
+            getMajorPlan(-1, System.currentTimeMillis(), baseFiles, baseCurrentSnapshot);
+        if (majorPlan != null) {
+          optimizePlanResult = majorPlan.plan();
+        }
+        // pending for major optimize
+        if (!optimizePlanResult.isEmpty()) {
+          tryUpdateOptimizeInfo(
+              TableOptimizeRuntime.OptimizeStatus.Pending, optimizePlanResult.getOptimizeTasks(), OptimizeType.Major);
+        } else {
+          if (isKeyedTable()) {
+            MinorOptimizePlan minorPlan =
+                getMinorPlan(-1, System.currentTimeMillis(), baseFiles, baseCurrentSnapshot,
+                    changeCurrentSnapshot, partitionMaxTransactionId, legacyPartitionMaxTransactionId);
+            if (minorPlan != null) {
+              optimizePlanResult = minorPlan.plan();
             }
-            // idle state
-            tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
+            if (!optimizePlanResult.isEmpty()) {
+              tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Pending,
+                  optimizePlanResult.getOptimizeTasks(),
+                  OptimizeType.Minor);
+              return;
+            }
           }
+          // idle state
+          tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
         }
       }
     }
@@ -993,7 +1013,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public FullOptimizePlan getFullPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+  public FullOptimizePlan getFullPlan(int queueId, long currentTime,
                                       List<FileScanTask> baseFiles, Snapshot baseSnapshot) {
     if (baseSnapshot == null) {
       LOG.debug("{} base table is empty, skip full optimize", tableIdentifier);
@@ -1001,10 +1021,10 @@ public class TableOptimizeItem extends IJDBCService {
     }
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveFullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
+          baseFiles, queueId, currentTime, baseSnapshot.snapshotId());
     } else {
       return new FullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
+          baseFiles, queueId, currentTime, baseSnapshot.snapshotId());
     }
   }
 
@@ -1015,7 +1035,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public MajorOptimizePlan getMajorPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+  public MajorOptimizePlan getMajorPlan(int queueId, long currentTime,
                                         List<FileScanTask> baseFiles, Snapshot baseSnapshot) {
     if (baseSnapshot == null) {
       LOG.debug("{} base table is empty, skip major optimize", tableIdentifier);
@@ -1024,10 +1044,10 @@ public class TableOptimizeItem extends IJDBCService {
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveMajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
+          baseFiles, queueId, currentTime, baseSnapshot.snapshotId());
     } else {
       return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, partitionIsRunning, queueId, currentTime, baseSnapshot.snapshotId());
+          baseFiles, queueId, currentTime, baseSnapshot.snapshotId());
     }
   }
 
@@ -1038,7 +1058,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public MinorOptimizePlan getMinorPlan(int queueId, long currentTime, Map<String, Boolean> partitionIsRunning,
+  public MinorOptimizePlan getMinorPlan(int queueId, long currentTime,
                                         List<FileScanTask> baseFiles, Snapshot baseSnapshot, Snapshot changeSnapshot,
                                         StructLikeMap<Long> partitionMaxTransactionId,
                                         StructLikeMap<Long> legacyPartitionMaxTransactionId) {
@@ -1062,7 +1082,7 @@ public class TableOptimizeItem extends IJDBCService {
     }
 
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeFiles,
-        partitionIsRunning, queueId, currentTime, changeSnapshot.snapshotId(),
+        queueId, currentTime, changeSnapshot.snapshotId(),
         baseSnapshot == null ? TableOptimizeRuntime.INVALID_SNAPSHOT_ID : baseSnapshot.snapshotId());
   }
 
@@ -1075,10 +1095,9 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public IcebergFullOptimizePlan getIcebergFullPlan(List<FileScanTask> fileScanTasks,
                                                     int queueId,
-                                                    long currentTime,
-                                                    Map<String, Boolean> partitionIsRunning) {
-    return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
-        partitionIsRunning, queueId, currentTime);
+                                                    long currentTime, long currentSnapshotId) {
+    return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks, queueId, currentTime,
+        currentSnapshotId);
   }
 
   /**
@@ -1090,10 +1109,9 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public IcebergMinorOptimizePlan getIcebergMinorPlan(List<FileScanTask> fileScanTasks,
                                                       int queueId,
-                                                      long currentTime,
-                                                      Map<String, Boolean> partitionIsRunning) {
-    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
-        partitionIsRunning, queueId, currentTime);
+                                                      long currentTime, long currentSnapshotId) {
+    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks, queueId, currentTime,
+        currentSnapshotId);
   }
 
   /**
@@ -1110,7 +1128,35 @@ public class TableOptimizeItem extends IJDBCService {
    * @return -
    */
   public boolean optimizeRunning() {
-    return CollectionUtils.isNotEmpty(getOptimizeTasks());
+    return planning.get() || CollectionUtils.isNotEmpty(getOptimizeTasks());
+  }
+
+  public boolean startPlanIfNot() {
+    return this.planning.compareAndSet(false, true);
+  }
+
+  public void finishPlan() {
+    this.planning.set(false);
+  }
+
+  public boolean tableChanged(Snapshot snapshot) {
+    if (snapshot == null) {
+      return false;
+    }
+    long lastSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
+    LOG.debug("{} ==== currentSnapshotId={}, lastSnapshotId={}", tableIdentifier,
+        snapshot.snapshotId(), lastSnapshotId);
+    return snapshot.snapshotId() != lastSnapshotId;
+  }
+
+  public boolean changeStoreChanged(Snapshot snapshot) {
+    if (snapshot == null) {
+      return false;
+    }
+    long lastChangeSnapshotId = tableOptimizeRuntime.getCurrentChangeSnapshotId();
+    LOG.debug("{} ==== currentChangeSnapshotId={}, lastChangeSnapshotId={}", tableIdentifier,
+        snapshot.snapshotId(), lastChangeSnapshotId);
+    return snapshot.snapshotId() != lastChangeSnapshotId;
   }
 
   /**
@@ -1122,16 +1168,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
     }
-  }
-
-  public Map<String, Boolean> generatePartitionRunning() {
-    Map<String, Boolean> result = new HashMap<>();
-    for (OptimizeTaskItem optimizeTask : getOptimizeTasks()) {
-      String partition = optimizeTask.getOptimizeTask().getPartition();
-      result.put(partition, true);
-    }
-
-    return result;
   }
 
   private boolean isMinorOptimizing() {

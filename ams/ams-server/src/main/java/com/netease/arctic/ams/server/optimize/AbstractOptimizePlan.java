@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,24 +43,19 @@ public abstract class AbstractOptimizePlan {
   protected final TableOptimizeRuntime tableOptimizeRuntime;
   protected final int queueId;
   protected final long currentTime;
-  protected final Map<String, Boolean> partitionTaskRunning;
   protected final String planGroup;
 
-  // partition -> optimize type(Major or Minor)
-  protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
   // We store current partitions, for the next plans to decide if any partition reach the max plan interval,
   // if not, the new added partitions will be ignored by mistake.
   // After plan files, current partitions of table will be set.
   protected final Set<String> currentPartitions = new HashSet<>();
 
   public AbstractOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                              Map<String, Boolean> partitionTaskRunning,
                               int queueId, long currentTime) {
     this.arcticTable = arcticTable;
     this.tableOptimizeRuntime = tableOptimizeRuntime;
     this.queueId = queueId;
     this.currentTime = currentTime;
-    this.partitionTaskRunning = partitionTaskRunning;
     this.planGroup = UUID.randomUUID().toString();
   }
 
@@ -69,28 +63,27 @@ public abstract class AbstractOptimizePlan {
     return arcticTable.id();
   }
 
-  public List<BasicOptimizeTask> plan() {
+  public OptimizePlanResult plan() {
     long startTime = System.nanoTime();
-
-    // TODO to remove
-    if (!tableNeedPlan()) {
-      LOG.debug("{} === skip {} plan", tableId(), getOptimizeType());
-      return Collections.emptyList();
-    }
 
     addOptimizeFiles();
 
     if (!hasFileToOptimize()) {
-      return Collections.emptyList();
+      return buildOptimizePlanResult(Collections.emptyList());
     }
 
-    List<BasicOptimizeTask> results = collectTasks(currentPartitions);
+    List<BasicOptimizeTask> tasks = collectTasks(currentPartitions);
 
     long endTime = System.nanoTime();
     LOG.debug("{} ==== {} plan tasks cost {} ns, {} ms", tableId(), getOptimizeType(), endTime - startTime,
         (endTime - startTime) / 1_000_000);
-    LOG.debug("{} {} plan get {} tasks", tableId(), getOptimizeType(), results.size());
-    return results;
+    LOG.debug("{} {} plan get {} tasks", tableId(), getOptimizeType(), tasks.size());
+    return buildOptimizePlanResult(tasks);
+  }
+
+  private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
+    return new OptimizePlanResult(this.currentPartitions, optimizeTasks, getOptimizeType(), getCurrentSnapshotId(),
+        getCurrentChangeSnapshotId(), this.planGroup);
   }
 
   protected List<BasicOptimizeTask> collectTasks(Set<String> partitions) {
@@ -98,12 +91,6 @@ public abstract class AbstractOptimizePlan {
 
     List<String> skippedPartitions = new ArrayList<>();
     for (String partition : partitions) {
-      if (anyTaskRunning(partition)) {
-        LOG.warn("{} {} any task running while collect tasks? should not arrive here, partitionPath={}",
-            tableId(), getOptimizeType(), partition);
-        skippedPartitions.add(partition);
-        continue;
-      }
 
       // partition don't need to plan
       if (!partitionNeedPlan(partition)) {
@@ -122,11 +109,7 @@ public abstract class AbstractOptimizePlan {
     return results;
   }
 
-  protected boolean anyTaskRunning(String partition) {
-    return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
-  }
-
-  public long getSmallFileSize(Map<String, String> properties) {
+  protected long getSmallFileSize(Map<String, String> properties) {
     if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO) &&
         properties.containsKey(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD)) {
       return Long.parseLong(properties.get(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD));
@@ -139,25 +122,11 @@ public abstract class AbstractOptimizePlan {
     }
   }
 
-  public abstract long getCurrentSnapshotId();
+  protected abstract long getCurrentSnapshotId();
 
-  public long getCurrentChangeSnapshotId() {
-    throw new IllegalArgumentException("Only Arctic Table has change snapshot");
+  protected long getCurrentChangeSnapshotId() {
+    return TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   }
-
-  public Set<String> getCurrentPartitions() {
-    return currentPartitions;
-  }
-
-  public Map<String, OptimizeType> getPartitionOptimizeType() {
-    return partitionOptimizeType;
-  }
-
-  /**
-   * check whether table need plan, can skip some step
-   * @return whether table need plan, if true, table try to plan, otherwise skip.
-   */
-  protected abstract boolean tableNeedPlan();
 
   /**
    * check whether partition need to plan
@@ -174,12 +143,14 @@ public abstract class AbstractOptimizePlan {
 
   /**
    * check whether table has files need to optimize after addOptimizeFiles
+   *
    * @return whether table has files need to optimize, if true, table try to plan, otherwise skip.
    */
   protected abstract boolean hasFileToOptimize();
 
   /**
    * collect tasks of given partition
+   *
    * @param partition target partition
    * @return tasks of given partition
    */

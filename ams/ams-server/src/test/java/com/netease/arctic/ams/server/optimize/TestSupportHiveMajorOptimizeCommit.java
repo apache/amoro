@@ -43,7 +43,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,8 +82,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -156,8 +155,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -241,8 +240,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedHiveTable);
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -311,8 +310,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testHiveTable);
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -385,8 +384,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testHiveTable);
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -458,8 +457,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testUnPartitionKeyedHiveTable);
     SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =
@@ -543,8 +542,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<FileScanTask> baseFiles = planBaseFiles(testUnPartitionKeyedHiveTable);
     SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles =

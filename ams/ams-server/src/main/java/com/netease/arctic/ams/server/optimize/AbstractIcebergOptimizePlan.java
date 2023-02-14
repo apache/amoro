@@ -25,7 +25,6 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
-import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
@@ -38,8 +37,6 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.BinPacking;
 import org.apache.iceberg.util.PropertyUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -56,28 +53,17 @@ import java.util.stream.Collectors;
  * only used for native iceberg
  */
 public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractIcebergOptimizePlan.class);
 
-  protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  protected final long currentSnapshotId;
   protected List<FileScanTask> fileScanTasks;
   protected SequenceNumberFetcher sequenceNumberFetcher;
 
   public AbstractIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                      List<FileScanTask> fileScanTasks,
-                                     Map<String, Boolean> partitionTaskRunning,
-                                     int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+                                     int queueId, long currentTime, long currentSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, queueId, currentTime);
     this.fileScanTasks = fileScanTasks;
-  }
-
-  public static boolean tableChanged(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime) {
-    long arcticCurrentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
-    LOG.debug("{} ==== currentSnapshotId={}, lastSnapshotId={}", arcticTable.id(),
-        arcticCurrentSnapshotId, tableOptimizeRuntime.getCurrentSnapshotId());
-    long lastSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
-    boolean isChanged = arcticCurrentSnapshotId != lastSnapshotId;
-    tableOptimizeRuntime.setCurrentSnapshotId(arcticCurrentSnapshotId);
-    return isChanged;
+    this.currentSnapshotId = currentSnapshotId;
   }
 
   protected List<FileScanTask> filterRepeatFileScanTask(Collection<FileScanTask> fileScanTasks) {
@@ -188,11 +174,6 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
     return optimizeTask;
   }
 
-  protected boolean tableNeedPlan() {
-    this.currentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
-    return true;
-  }
-
   protected SequenceNumberFetcher seqNumberFetcher() {
     if (null == sequenceNumberFetcher) {
       sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), currentSnapshotId);
@@ -200,7 +181,8 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
     return sequenceNumberFetcher;
   }
 
-  public long getCurrentSnapshotId() {
+  @Override
+  protected long getCurrentSnapshotId() {
     return currentSnapshotId;
   }
 

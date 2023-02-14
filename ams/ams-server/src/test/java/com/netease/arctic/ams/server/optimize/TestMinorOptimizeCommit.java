@@ -45,7 +45,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -105,10 +104,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
        tableOptimizeRuntime, keyedTableScanResult.getBaseFiles(), keyedTableScanResult.getChangeFiles(),
-        new HashMap<>(), 1, System.currentTimeMillis(),
+        1, System.currentTimeMillis(),
         testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan().getOptimizeTasks();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
     Set<StructLike> partitionData = new HashSet<>();
@@ -190,10 +189,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, keyedTableScanResult.getBaseFiles(), keyedTableScanResult.getChangeFiles(),
-        new HashMap<>(), 1, System.currentTimeMillis(),
+        1, System.currentTimeMillis(),
         testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan().getOptimizeTasks();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
     AtomicInteger i = new AtomicInteger();
@@ -244,10 +243,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, keyedTableScanResult.getBaseFiles(), keyedTableScanResult.getChangeFiles(),
-        new HashMap<>(), 1, System.currentTimeMillis(),
+        1, System.currentTimeMillis(),
         testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan().getOptimizeTasks();
 
     Set<StructLike> partitionData = changeEqDeletes.stream().map(ContentFile::partition).collect(Collectors.toSet());
 
@@ -292,10 +291,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testNoPartitionTable.id());
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, keyedTableScanResult.getBaseFiles(), keyedTableScanResult.getChangeFiles(),
-        new HashMap<>(), 1, System.currentTimeMillis(),
+        1, System.currentTimeMillis(),
         testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan();
+    List<BasicOptimizeTask> tasks = minorOptimizePlan.plan().getOptimizeTasks();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());

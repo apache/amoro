@@ -49,11 +49,9 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   protected final Set<String> excludeLocations = new HashSet<>();
 
   public SupportHiveFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                     List<FileScanTask> baseFileScanTasks,
-                                     Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                                     List<FileScanTask> baseFileScanTasks, int queueId, long currentTime,
                                      long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, baseFileScanTasks,
-        partitionTaskRunning, queueId, currentTime, baseSnapshotId);
+    super(arcticTable, tableOptimizeRuntime, baseFileScanTasks, queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();
@@ -98,13 +96,11 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
     // check full optimize interval
     if (checkFullOptimizeInterval(current, partitionToPath) && partitionNeedPlan) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 

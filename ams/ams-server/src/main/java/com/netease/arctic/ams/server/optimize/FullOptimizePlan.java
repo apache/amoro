@@ -50,11 +50,10 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(FullOptimizePlan.class);
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                          List<FileScanTask> baseFileScanTasks,
-                          Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                          List<FileScanTask> baseFileScanTasks, int queueId, long currentTime,
                           long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, Collections.emptyList(), baseFileScanTasks,
-        partitionTaskRunning, queueId, currentTime, TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
+    super(arcticTable, tableOptimizeRuntime, Collections.emptyList(), baseFileScanTasks, queueId, currentTime,
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID, baseSnapshotId);
   }
 
   @Override
@@ -63,13 +62,11 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath)) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
     // check full optimize interval
     if (checkFullOptimizeInterval(current, partitionToPath)) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
@@ -92,11 +89,6 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return result;
-  }
-
-  @Override
-  protected boolean tableChanged() {
-    return true;
   }
 
   @Override
@@ -158,7 +150,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
       String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-          null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
+          null, commitGroup, planGroup, getOptimizeType(), createTime,
           constructCustomHiveSubdirectory(baseFiles));
 
       long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
@@ -191,7 +183,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     List<DataFile> allBaseFiles = new ArrayList<>();
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
+        null, commitGroup, planGroup, getOptimizeType(), createTime,
         constructCustomHiveSubdirectory(allBaseFiles));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

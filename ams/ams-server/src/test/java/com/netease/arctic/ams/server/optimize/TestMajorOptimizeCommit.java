@@ -102,8 +102,8 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
@@ -171,8 +171,8 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
@@ -238,8 +238,8 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+         1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
@@ -303,8 +303,8 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseFiles,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan();
+         1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {

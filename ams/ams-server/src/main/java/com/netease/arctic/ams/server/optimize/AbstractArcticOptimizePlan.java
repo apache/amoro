@@ -89,9 +89,8 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                 List<ArcticFileScanTask> changeFileScanTasks,
                                 List<FileScanTask> baseFileScanTasks,
-                                Map<String, Boolean> partitionTaskRunning,
                                 int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+    super(arcticTable, tableOptimizeRuntime, queueId, currentTime);
     this.baseFileScanTasks = baseFileScanTasks;
     this.changeFileScanTasks = changeFileScanTasks;
     this.isCustomizeDir = false;
@@ -232,12 +231,10 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
         return;
       }
       String partition = changeTable.spec().partitionToPath(file.partition());
-      if (!anyTaskRunning(partition)) {
-        putChangeFileIntoFileTree(partition, file, file.type(), transactionId);
-        markChangeTransactionId(partition, transactionId);
+      putChangeFileIntoFileTree(partition, file, file.type(), transactionId);
+      markChangeTransactionId(partition, transactionId);
 
-        addCnt.getAndIncrement();
-      }
+      addCnt.getAndIncrement();
     });
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
@@ -277,10 +274,6 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
       String partition = baseTable.spec().partitionToPath(baseFile.partition());
 
       currentPartitions.add(partition);
-      // TODO remove this
-      if (anyTaskRunning(partition)) {
-        return;
-      }
       if (!baseFileShouldOptimize(baseFile, partition)) {
         return;
       }
@@ -372,10 +365,6 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     return insertFiles;
   }
 
-  protected boolean tableNeedPlan() {
-    return tableChanged();
-  }
-
   /**
    * check whether node task need to build
    * @param posDeleteFiles pos-delete files in node
@@ -384,19 +373,19 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
    */
   protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
 
-  protected abstract boolean tableChanged();
-
   protected abstract boolean baseFileShouldOptimize(DataFile baseFile, String partition);
 
   protected boolean hasFileToOptimize() {
     return !partitionFileTree.isEmpty();
   }
 
-  public long getCurrentSnapshotId() {
+  @Override
+  protected long getCurrentSnapshotId() {
     return currentBaseSnapshotId;
   }
 
-  public long getCurrentChangeSnapshotId() {
+  @Override
+  protected long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
   }
 
