@@ -82,7 +82,6 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  // partition -> maxBaseTableTransactionId
   protected long changeTableMaxTransactionId;
   protected final Map<String, Long> changeTableMinTransactionId = new HashMap<>();
 
