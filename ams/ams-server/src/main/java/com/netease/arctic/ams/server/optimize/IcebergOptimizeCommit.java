@@ -225,7 +225,7 @@ public class IcebergOptimizeCommit extends BasicOptimizeCommit {
       rewriteDataFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       rewriteDataFiles.commit();
 
-      // remove DeleteFiles additional, because DeleteFiles maybe not existed
+      // remove DeleteFiles additional
       if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
         RewriteFiles rewriteDeleteFiles = baseArcticTable.newRewrite();
         rewriteDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
@@ -234,6 +234,8 @@ public class IcebergOptimizeCommit extends BasicOptimizeCommit {
         try {
           rewriteDeleteFiles.commit();
         } catch (ValidationException e) {
+          // Iceberg will drop DeleteFiles that are older than the min Data sequence number. So some DeleteFiles
+          // maybe already dropped in the last commit, the exception can be ignored.
           LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
         }
       }
