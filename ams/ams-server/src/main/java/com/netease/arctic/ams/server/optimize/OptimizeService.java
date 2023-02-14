@@ -114,6 +114,12 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   @Override
+  public boolean isInited() {
+    LOG.info("OptimizeService inited {}", inited);
+    return inited;
+  }
+
+  @Override
   public synchronized void checkOptimizeCheckTasks(long checkInterval) {
     try {
       LOG.info("Schedule Optimize Checker");
