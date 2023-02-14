@@ -173,11 +173,11 @@ public class BasicOptimizeCommit {
         return false;
       } else {
         LOG.error("unexpected commit error " + arcticTable.id(), e);
-        throw new Exception("unexpected commit error ", e);
+        return false;
       }
     } catch (Throwable t) {
       LOG.error("unexpected commit error " + arcticTable.id(), t);
-      throw new Exception("unexpected commit error ", t);
+      return false;
     }
   }
 

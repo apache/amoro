@@ -629,7 +629,7 @@ public class TableOptimizeItem extends IJDBCService {
         // persist partition optimize time
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
-        LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
+        LOG.warn("failed to persist tableOptimizeRuntime after commit failed, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
       }
 
@@ -659,6 +659,8 @@ public class TableOptimizeItem extends IJDBCService {
 
       sqlSession.commit(true);
     }
+
+    updateTableOptimizeStatus();
   }
 
   private void optimizeTasksCommitted(BasicOptimizeCommit optimizeCommit,
@@ -940,6 +942,7 @@ public class TableOptimizeItem extends IJDBCService {
           long commitTime = System.currentTimeMillis();
           optimizeTasksCommitted(optimizeCommit, commitTime);
         } else {
+          LOG.warn("{} commit failed, clear optimize tasks", tableIdentifier);
           optimizeTasksClear(optimizeCommit);
         }
       } else {
