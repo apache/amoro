@@ -27,6 +27,8 @@ import java.util.List;
 
 public interface IOptimizeService {
 
+  boolean isInited();
+
   /**
    * Check optimize check tasks, add tasks of new tables, and clean tasks of removed table.
    */

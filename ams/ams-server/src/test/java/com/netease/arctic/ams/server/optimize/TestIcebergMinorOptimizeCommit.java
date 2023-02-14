@@ -64,9 +64,9 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
     icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles();
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BasicOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergNoPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
 
     List<DataFile> resultDataFiles = insertOptimizeTargetDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     List<DeleteFile> resultDeleteFiles = insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), resultDataFiles);
@@ -128,9 +128,9 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
 
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BasicOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
 
     List<DataFile> resultDataFiles = insertOptimizeTargetDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     List<DeleteFile> resultDeleteFiles = insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), resultDataFiles);
