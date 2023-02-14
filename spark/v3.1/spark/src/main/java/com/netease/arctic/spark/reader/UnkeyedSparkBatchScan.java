@@ -123,7 +123,8 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     if (table.currentSnapshot() == null) {
       return new Stats(0L, 0L);
     }
-    if (!table.spec().isUnpartitioned() && filterExpressions.isEmpty()) {
+    if (!table.spec().isUnpartitioned() &&
+        (filterExpressions == null || filterExpressions.isEmpty())) {
       LOG.debug("using table metadata to estimate table statistics");
       long totalRecords =
           PropertyUtil.propertyAsLong(
