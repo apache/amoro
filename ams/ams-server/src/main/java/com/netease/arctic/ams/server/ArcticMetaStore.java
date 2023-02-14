@@ -289,7 +289,7 @@ public class ArcticMetaStore {
   }
 
   public static boolean isStarted() {
-    return server != null && server.isServing();
+    return server != null && server.isServing() && ServiceContainer.getOptimizeService().isInited();
   }
 
   public static void failover() {

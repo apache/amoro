@@ -8,8 +8,9 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -56,6 +57,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -98,16 +100,19 @@ public class OptimizeIntegrationTest {
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withZone())
   );
-  
+
   private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
       .day("op_time").build();
 
   @ClassRule
-  public static TemporaryFolder tempFolder = new TemporaryFolder();
+  public static TestHMS TEST_HMS = new TestHMS();
+
+  @ClassRule
+  public static TemporaryFolder TEMP_DIR = new TemporaryFolder();
 
   @BeforeClass
   public static void beforeClass() {
-    String rootPath = tempFolder.getRoot().getAbsolutePath();
+    String rootPath = TEMP_DIR.getRoot().getAbsolutePath();
     CATALOG_DIR = rootPath + "/arctic/warehouse";
     ICEBERG_CATALOG_DIR = rootPath + "/iceberg/warehouse";
     LOG.info("TEMP folder {}", rootPath);
@@ -152,46 +157,7 @@ public class OptimizeIntegrationTest {
 
     TableIdentifier tb = table.id();
     long startId = getOptimizeHistoryStartId();
-
-    // Step 1: insert data
-    writeBase(table, Lists.newArrayList(
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord( 4, "bbb", quickDateWithZone(3)),
-        newRecord(5, "eee", quickDateWithZone(4)),
-        newRecord( 6, "ddd", quickDateWithZone(4))
-    ));
-
-    // Step 2: insert data
-    writeBase(table, Lists.newArrayList(
-        newRecord(7, "fff", quickDateWithZone(3)),
-        newRecord(8, "ggg", quickDateWithZone(3)),
-        newRecord(9, "hhh", quickDateWithZone(4)),
-        newRecord(10, "iii", quickDateWithZone(4))
-    ));
-    // wait Major Optimize result
-    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
-
-    // Step 3: insert data
-    writeBase(table, Lists.newArrayList(
-        newRecord(11, "jjj", quickDateWithZone(3)),
-        newRecord(12, "kkk", quickDateWithZone(3)),
-        newRecord(13, "lll", quickDateWithZone(4)),
-        newRecord(14, "mmm", quickDateWithZone(4))
-    ));
-    // wait Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 2);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
-  }
-
-  @Test
-  public void testNoPkPartitionTableOptimizing() {
-    createNoPkPartitionArcticTable(TB_4);
-    assertTableExist(TB_4);
-    UnkeyedTable table = catalog(CATALOG).loadTable(TB_4).asUnkeyedTable();
-
-    TableIdentifier tb = table.id();
-    long startId = getOptimizeHistoryStartId();
+    int offset = 1;
 
     // Step 1: insert data
     writeBase(table, Lists.newArrayList(
@@ -209,8 +175,9 @@ public class OptimizeIntegrationTest {
         newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
     // Step 3: insert data
     writeBase(table, Lists.newArrayList(
@@ -220,8 +187,52 @@ public class OptimizeIntegrationTest {
         newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 2);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+  }
+
+  @Test
+  public void testNoPkPartitionTableOptimizing() {
+    createNoPkPartitionArcticTable(TB_4);
+    assertTableExist(TB_4);
+    UnkeyedTable table = catalog(CATALOG).loadTable(TB_4).asUnkeyedTable();
+
+    TableIdentifier tb = table.id();
+    long startId = getOptimizeHistoryStartId();
+    int offset = 1;
+
+    // Step 1: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord(6, "ddd", quickDateWithZone(4))
+    ));
+
+    // Step 2: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3)),
+        newRecord(9, "hhh", quickDateWithZone(4)),
+        newRecord(10, "iii", quickDateWithZone(4))
+    ));
+    // wait Major Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
+
+    // Step 3: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(11, "jjj", quickDateWithZone(3)),
+        newRecord(12, "kkk", quickDateWithZone(3)),
+        newRecord(13, "lll", quickDateWithZone(4)),
+        newRecord(14, "mmm", quickDateWithZone(4))
+    ));
+    // wait Major Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
   }
 
   @Test
@@ -276,16 +287,14 @@ public class OptimizeIntegrationTest {
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
 
-    int size = assertContainIdSet(readRecords(table), 0, 4);
-    Assert.assertEquals(1, size);
+    assertContainIdSet(readRecords(table), 4);
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 8, 1);
 
-    size = assertContainIdSet(readRecords(table), 0, 4);
-    Assert.assertEquals(1, size);
+    assertContainIdSet(readRecords(table), 4);
   }
 
   @Test
@@ -313,8 +322,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    int size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
-    Assert.assertEquals(6, size);
+    assertContainIdSet(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 2: insert delete file and Minor Optimize
     insertEqDeleteFiles(table, Lists.newArrayList(
@@ -324,8 +332,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    size = assertContainIdSet(readRecords(table), 0, 2, 3, 4, 5, 6);
-    Assert.assertEquals(5, size);
+    assertContainIdSet(readRecords(table), 2, 3, 4, 5, 6);
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
@@ -343,8 +350,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
-    size = assertContainIdSet(readRecords(table), 0, 4, 5, 6);
-    Assert.assertEquals(3, size);
+    assertContainIdSet(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
     // Step 4: insert 1 delete and full optimize
@@ -363,8 +369,7 @@ public class OptimizeIntegrationTest {
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 4, 1);
 
-    size = assertContainIdSet(readRecords(table), 0, 5, 6, 7, 8);
-    Assert.assertEquals(4, size);
+    assertContainIdSet(readRecords(table), 5, 6, 7, 8);
   }
 
   @Test
@@ -392,8 +397,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    int size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
-    Assert.assertEquals(6, size);
+    assertContainIdSet(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 1: insert 2 data file and Minor Optimize
     insertDataFile(table, Lists.newArrayList(
@@ -404,9 +408,8 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6, 7, 8);
-    Assert.assertEquals(8, size);
-    
+    assertContainIdSet(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8);
+
   }
 
   @Test
@@ -434,8 +437,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    int size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
-    Assert.assertEquals(6, size);
+    assertContainIdSet(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 2: insert delete file and Minor Optimize
     insertEqDeleteFiles(table, Lists.newArrayList(
@@ -445,8 +447,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    size = assertContainIdSet(readRecords(table), 0, 2, 3, 4, 5, 6);
-    Assert.assertEquals(5, size);
+    assertContainIdSet(readRecords(table), 2, 3, 4, 5, 6);
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
@@ -464,8 +465,7 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
-    size = assertContainIdSet(readRecords(table), 0, 4, 5, 6);
-    Assert.assertEquals(3, size);
+    assertContainIdSet(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
     // Step 4: insert 1 delete and full optimize
@@ -484,8 +484,7 @@ public class OptimizeIntegrationTest {
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 4, 1);
 
-    size = assertContainIdSet(readRecords(table), 0, 5, 6, 7, 8);
-    Assert.assertEquals(4, size);
+    assertContainIdSet(readRecords(table), 5, 6, 7, 8);
   }
 
   private void testKeyedTableContinueOptimizing(KeyedTable table) {
@@ -495,6 +494,7 @@ public class OptimizeIntegrationTest {
     emptyCommit(table);
     emptyCommit(table);
     long startId = getOptimizeHistoryStartId();
+    int offset = 1;
     // Step1: insert change data
     writeChange(table, Lists.newArrayList(
         newRecord(3, "aaa", quickDateWithZone(3)),
@@ -506,8 +506,9 @@ public class OptimizeIntegrationTest {
     amsEnvironment.syncTableFileCache(tb, Constants.INNER_TABLE_CHANGE);
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
-    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 4);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6);
 
     // Step2: insert change data
     writeChange(table, Lists.newArrayList(
@@ -518,10 +519,11 @@ public class OptimizeIntegrationTest {
     ), null);
 
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 2);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 8, 4);
-    optimizeHistory = waitOptimizeResult(tb, startId + 3);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 8, 4);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
     // Step3: delete change data
     writeChange(table, null, Lists.newArrayList(
@@ -529,8 +531,9 @@ public class OptimizeIntegrationTest {
         newRecord(8, "ggg", quickDateWithZone(3))
     ));
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 4);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 2);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 9, 10);
 
     // Step4: update change data
     writeChange(table, Lists.newArrayList(
@@ -541,10 +544,11 @@ public class OptimizeIntegrationTest {
         newRecord(10, "ggg", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 5);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 6, 4);
-    optimizeHistory = waitOptimizeResult(tb, startId + 6);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 6, 2);
+    assertContainIdSet(readRecords(table), 3, 4, 5, 6, 9, 10);
 
     // Step5: delete all change data
     writeChange(table, null, Lists.newArrayList(
@@ -556,18 +560,20 @@ public class OptimizeIntegrationTest {
         newRecord(10, "iii_new", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 7);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 10, 4);
+    assertContainIdSet(readRecords(table));
 
     // Step6: insert change data
     writeChange(table, Lists.newArrayList(
         newRecord(11, "jjj", quickDateWithZone(3))
     ), null);
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
-    optimizeHistory = waitOptimizeResult(tb, startId + 8);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
-    optimizeHistory = waitOptimizeResult(tb, startId + 9);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 3, 1);
+    assertContainIdSet(readRecords(table), 11);
   }
 
   private void assertOptimizeHistory(OptimizeHistory optimizeHistory,
@@ -640,7 +646,7 @@ public class OptimizeIntegrationTest {
     return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,
         ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
   }
-  
+
   private void updateProperties(Table table, String key, String value) {
     UpdateProperties updateProperties = table.updateProperties();
     updateProperties.set(key, value);
@@ -731,7 +737,7 @@ public class OptimizeIntegrationTest {
     deleteFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
   }
-  
+
   public void emptyCommit(KeyedTable table) {
     AppendFiles appendFiles = table.changeTable().newAppend();
     appendFiles.commit();
@@ -757,12 +763,11 @@ public class OptimizeIntegrationTest {
     return Collections.emptyList();
   }
 
-  // TODO use new writer in 0.3.1
   private List<DataFile> write(List<Record> rows, KeyedTable table, ChangeAction action) {
     if (rows != null && !rows.isEmpty()) {
-      try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
+      try (TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
           .withChangeAction(action)
-          .buildChangeWriter()) {
+          .buildWriter(WriteOperationKind.APPEND)) {
         rows.forEach(row -> {
           try {
             writer.write(row);
@@ -859,7 +864,8 @@ public class OptimizeIntegrationTest {
     return newFiles;
   }
 
-  private DeleteFile insertEqDeleteFiles(Table table, List<Record> records, StructLike partitionData) throws IOException {
+  private DeleteFile insertEqDeleteFiles(Table table, List<Record> records, StructLike partitionData)
+      throws IOException {
     DeleteFile result = writeEqDeleteFile(table, records, partitionData);
 
     RowDelta rowDelta = table.newRowDelta();
@@ -867,16 +873,28 @@ public class OptimizeIntegrationTest {
     rowDelta.commit();
     return result;
   }
-  
-  private CloseableIterable<Record> readRecords(Table table) {
-    return IcebergGenerics.read(table).select("id").build();
+
+  private List<Record> readRecords(Table table) {
+    List<Record> result = new ArrayList<>();
+    try (CloseableIterable<Record> records = IcebergGenerics.read(table).select("id").build()) {
+      for (Record record : records) {
+        result.add(record);
+      }
+    } catch (IOException e) {
+      LOG.warn("{} failed to close reader", table.name(), e);
+    }
+    return result;
   }
 
-  public static int assertContainIdSet(CloseableIterable<Record> rows, int idIndex, Object... idList) {
+  private List<Record> readRecords(KeyedTable keyedTable) {
+    return DataTestHelpers.readKeyedTable(keyedTable, null);
+  }
+
+  public static void assertContainIdSet(List<Record> rows, Object... idList) {
     Set<Object> idSet = org.glassfish.jersey.internal.guava.Sets.newHashSet();
     int cnt = 0;
     for (Record r : rows) {
-      idSet.add(r.get(idIndex));
+      idSet.add(r.get(0));
       cnt++;
     }
     for (Object id : idList) {
@@ -884,9 +902,9 @@ public class OptimizeIntegrationTest {
         throw new AssertionError("assert id contain " + id + ", but not found");
       }
     }
-    return cnt;
+    Assert.assertEquals(cnt, idList.length);
   }
-  
+
   private long getDataFileSize(Table table) {
     table.refresh();
     try (CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles()) {
