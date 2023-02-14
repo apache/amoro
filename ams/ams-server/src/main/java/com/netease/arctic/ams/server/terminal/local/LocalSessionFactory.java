@@ -48,7 +48,6 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   );
 
   SparkSession context = null;
-  SparkSession nativeIcebergSession = null;
 
   Configuration conf = null;
 
@@ -61,7 +60,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   public TerminalSession create(TableMetaStore metaStore, Configuration configuration) {
     Boolean isNativeIceberg = configuration.get(SessionConfigOptions.IS_NATIVE_ICEBERG);
     List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
-    SparkSession context = lazyInitContext(conf, metaStore, isNativeIceberg, catalogs.get(0));
+    SparkSession context = lazyInitContext(conf);
     SparkSession session = context.cloneSession();
     List<String> initializeLogs = Lists.newArrayList();
     initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
@@ -69,6 +68,12 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     Map<String, String> finallyConf = Maps.newLinkedHashMap();
     sparkConf.put(REFRESH_CATALOG_BEFORE_USAGE, "true");
+    if (isNativeIceberg) {
+      org.apache.hadoop.conf.Configuration metaConf = metaStore.getConfiguration();
+      for (Map.Entry<String, String> next : metaConf) {
+        session.conf().set("spark.sql.catalog." + catalogs.get(0) + ".hadoop." + next.getKey(), next.getValue());
+      }
+    }
     for (String key : sparkConf.keySet()) {
       if (STATIC_SPARK_CONF.contains(key)) {
         continue;
@@ -85,53 +90,30 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     logs.add(key + "  " + value);
   }
 
-  protected synchronized SparkSession lazyInitContext(Configuration conf, TableMetaStore metaStore,
-                                                      Boolean isNativeIceberg, String catalog) {
-    if (!isNativeIceberg) {
-      if (context == null) {
-        SparkConf sparkConf = buildSparkBasicConf(conf);
-        context = SparkSession
-            .builder()
-            .config(sparkConf)
-            .getOrCreate();
-        context.sparkContext().setLogLevel("WARN");
-      }
-
-      return context;
-    } else {
-      if (nativeIcebergSession == null) {
-        SparkConf sparkConf = buildSparkBasicConf(conf);
-        org.apache.hadoop.conf.Configuration configuration = metaStore.getConfiguration();
-        for (Map.Entry<String, String> next : configuration) {
-          sparkConf.set("spark.sql.catalog." + catalog + ".hadoop." + next.getKey(), next.getValue());
+  protected synchronized SparkSession lazyInitContext(Configuration conf) {
+    if (context == null) {
+      SparkConf sparkconf = new SparkConf()
+          .setAppName("spark-local-context")
+          .setMaster("local");
+      sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
+      sparkconf.set("spark.executor.heartbeatInterval", "100s");
+      sparkconf.set("spark.network.timeout", "200s");
+      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
+          "," + IcebergSparkSessionExtensions.class.getName());
+      for (String key : conf.keySet()) {
+        if (!key.startsWith(ArcticMetaStoreConf.SPARK_CONF)) {
+          continue;
         }
-        nativeIcebergSession = SparkSession
-            .builder()
-            .config(sparkConf)
-            .getOrCreate();
-        nativeIcebergSession.sparkContext().setLogLevel("WARN");
+        String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
+        sparkconf.set(key, value);
       }
-      return nativeIcebergSession;
+      context = SparkSession
+          .builder()
+          .config(sparkconf)
+          .getOrCreate();
+      context.sparkContext().setLogLevel("WARN");
     }
 
-  }
-
-  public SparkConf buildSparkBasicConf(Configuration conf) {
-    SparkConf sparkconf = new SparkConf()
-        .setAppName("spark-local-context")
-        .setMaster("local");
-    sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
-    sparkconf.set("spark.executor.heartbeatInterval", "100s");
-    sparkconf.set("spark.network.timeout", "200s");
-    sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
-        "," + IcebergSparkSessionExtensions.class.getName());
-    for (String key : conf.keySet()) {
-      if (!key.startsWith(ArcticMetaStoreConf.SPARK_CONF)) {
-        continue;
-      }
-      String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
-      sparkconf.set(key, value);
-    }
-    return sparkconf;
+    return context;
   }
 }
