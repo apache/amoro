@@ -30,7 +30,7 @@ import java.util.Set;
  * Plan result for Optimize
  */
 public class OptimizePlanResult {
-  public final static OptimizePlanResult EMPTY =
+  public static final OptimizePlanResult EMPTY =
       new OptimizePlanResult(Collections.emptySet(), Collections.emptyList(), null, -1, -1, null);
   private final Set<String> affectPartitions;
   private final List<BasicOptimizeTask> optimizeTasks;
