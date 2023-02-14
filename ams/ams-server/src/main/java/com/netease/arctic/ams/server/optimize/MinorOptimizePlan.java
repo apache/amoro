@@ -131,7 +131,7 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
         commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
-    treeRoot.collectSubTree(subTrees, new ShouldSplitFileTree());
+    treeRoot.splitFileTree(subTrees, new ShouldSplitFileTree());
     for (FileTree subTree : subTrees) {
       List<DataFile> insertFiles = new ArrayList<>();
       List<DataFile> deleteFiles = new ArrayList<>();

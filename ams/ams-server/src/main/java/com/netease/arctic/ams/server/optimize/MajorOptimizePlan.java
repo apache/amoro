@@ -168,7 +168,7 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
         null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
-    treeRoot.collectSubTree(subTrees, new ShouldSplitFileTree());
+    treeRoot.splitFileTree(subTrees, new ShouldSplitFileTree());
     for (FileTree subTree : subTrees) {
       List<DataFile> baseFiles = new ArrayList<>();
       subTree.collectBaseFiles(baseFiles);

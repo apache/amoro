@@ -23,7 +23,6 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 
@@ -84,13 +83,13 @@ public class FileTree {
    * @param collector - collect result
    * @param canSplit  - if this tree can split
    */
-  public void collectSubTree(List<FileTree> collector, Predicate<FileTree> canSplit) {
+  public void splitFileTree(List<FileTree> collector, Predicate<FileTree> canSplit) {
     if (canSplit.test(this)) {
       if (left != null) {
-        left.collectSubTree(collector, canSplit);
+        left.splitFileTree(collector, canSplit);
       }
       if (right != null) {
-        right.collectSubTree(collector, canSplit);
+        right.splitFileTree(collector, canSplit);
       }
     } else {
       collector.add(this);
