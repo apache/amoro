@@ -24,6 +24,8 @@ import io.javalin.http.Context;
 
 import java.util.LinkedHashMap;
 
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.LOGIN_PASSWORD;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.LOGIN_USERNAME;
 import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD;
 import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME;
 
@@ -41,6 +43,8 @@ public class SettingController extends RestBaseController {
       // hidden password and username
       result.replace(MYBATIS_CONNECTION_PASSWORD.key(), MASK_STRING);
       result.replace(MYBATIS_CONNECTION_USER_NAME.key(), MASK_STRING);
+      result.replace(LOGIN_USERNAME.key(), MASK_STRING);
+      result.replace(LOGIN_PASSWORD.key(), MASK_STRING);
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
       e.printStackTrace();

@@ -169,6 +169,10 @@ ams:
   # Kyuubi config
   arctic.ams.terminal.backend: kyuubi
   arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/
+  
+  # login config
+  login.username: admin
+  login.password: admin
 
 # extension properties for like system
 extension_properties:
