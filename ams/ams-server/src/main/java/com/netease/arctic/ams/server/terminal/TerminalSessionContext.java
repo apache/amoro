@@ -48,6 +48,7 @@ public class TerminalSessionContext {
   private final TerminalSessionFactory factory;
   private final Configuration sessionConfiguration;
   private volatile TerminalSession session;
+  private boolean needClose = false;
 
   private volatile long lastExecutionTime = System.currentTimeMillis();
 
@@ -76,6 +77,14 @@ public class TerminalSessionContext {
 
   public boolean isIdleStatus() {
     return isStatusReadyToExecute(status.get());
+  }
+
+  public void needClose() {
+    this.needClose = true;
+  }
+
+  public boolean isNeedClose() {
+    return this.needClose;
   }
 
   private boolean isStatusReadyToExecute(ExecutionStatus status) {

@@ -142,7 +142,8 @@ public class TerminalManager {
   public synchronized void cleanSession(String catalogName) {
     for (String key : sessionMap.keySet()) {
       if (key.endsWith("-" + catalogName)) {
-        sessionMap.remove(key);
+        TerminalSessionContext terminalSessionContext = sessionMap.get(key);
+        terminalSessionContext.needClose();
       }
     }
   }
@@ -336,7 +337,7 @@ public class TerminalManager {
           TerminalSessionContext sessionContext = sessionMap.get(sessionId);
           if (sessionContext.isIdleStatus()) {
             long idleTime = System.currentTimeMillis() - sessionContext.lastExecutionTime();
-            if (idleTime > timeoutInMillis) {
+            if (idleTime > timeoutInMillis || sessionContext.isNeedClose()) {
               sessionToRelease.add(sessionContext);
             }
           }
