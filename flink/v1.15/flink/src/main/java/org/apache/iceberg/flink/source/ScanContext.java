@@ -84,7 +84,7 @@ public class ScanContext implements Serializable {
 
   public static final ConfigOption<Long> SPLIT_FILE_OPEN_COST =
       ConfigOptions.key("split-file-open-cost").longType().defaultValue(null)
-        .withDescription("The estimated cost to open a file, used as a minimum weight when combining splits.");
+        .withDescription("The estimated cost to open a file, used as a minimum weight when combining splits");
 
   public static final ConfigOption<Boolean> STREAMING =
       ConfigOptions.key("streaming").booleanType().defaultValue(true)
