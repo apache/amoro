@@ -27,6 +27,8 @@ import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -52,6 +54,7 @@ import java.util.regex.Pattern;
  * 
  */
 public class FileNameGenerator {
+  private static final Logger LOG = LoggerFactory.getLogger(FileNameGenerator.class);
 
   private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-.*";
   private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
@@ -164,7 +167,11 @@ public class FileNameGenerator {
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matcher.matches()) {
       DataFileType type;
-      type = DataFileType.ofShortName(matcher.group(2));
+      try {
+        type = DataFileType.ofShortName(matcher.group(2));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(e.getMessage() + " file path " + path);
+      }
       if (type == DataFileType.INSERT_FILE) {
         type = DataFileType.BASE_FILE;
       }
