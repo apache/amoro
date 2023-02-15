@@ -88,15 +88,16 @@ public class AmsEnvironment {
     outputToFile(rootPath + "/conf/config.yaml", getAmsConfig());
     System.setProperty(ArcticMetaStoreConf.ARCTIC_HOME.key(), rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
-    AtomicBoolean starterExit = new AtomicBoolean(false);
+    AtomicBoolean amsExit = new AtomicBoolean(false);
 
-    new Thread(() -> {
+    Thread amsRunner = new Thread(() -> {
       int retry = 10;
       try {
         while (true) {
           try {
             LOG.info("start ams");
             System.setProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(), randomPort() + "");
+            // when AMS is successfully running, this thread will wait here
             ArcticMetaStore.main(new String[] {});
             break;
           } catch (TTransportException e) {
@@ -117,21 +118,28 @@ public class AmsEnvironment {
       } catch (Throwable t) {
         LOG.error("start ams failed", t);
       } finally {
-        starterExit.set(true);
+        amsExit.set(true);
       }
-    }, "ams-starter").start();
+    }, "ams-runner");
+    amsRunner.start();
 
-    while (!starterExit.get()) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
+    while (true) {
+      if (amsExit.get()) {
+        LOG.error("ams exit");
         break;
       }
       if (ArcticMetaStore.isStarted()) {
+        LOG.info("ams start");
+        break;
+      }
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        LOG.warn("interrupt ams");
+        amsRunner.interrupt();
         break;
       }
     }
-    LOG.info("ams start");
   }
   
   public List<TableIdentifier> refreshTables() {
@@ -193,6 +201,10 @@ public class AmsEnvironment {
     properties.put("table-formats", "MIXED_ICEBERG");
     localCatalog.setCatalogProperties(properties);
     ServiceContainer.getCatalogMetadataService().addCatalog(localCatalog);
+  }
+  
+  public void createCatalog() {
+    
   }
 
   private void stopAms() {

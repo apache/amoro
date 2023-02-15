@@ -65,6 +65,11 @@ public interface TerminalSessionFactory {
         .stringType()
         .noDefaultValue();
 
+    public static ConfigOption<Boolean> IS_NATIVE_ICEBERG = ConfigOptions
+        .key("is-native-iceberg")
+        .booleanType()
+        .noDefaultValue();
+
     public static ConfigOption<String> catalogConnector(String catalog) {
       return ConfigOptions.key("session.catalog." + catalog + ".connector")
           .stringType()
