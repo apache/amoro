@@ -189,12 +189,15 @@ public class JsonToLogDataConverters<T> implements Serializable {
         final JsonNode innerNode = node.get(i);
         Object value = elementConverter.convert(innerNode, context);
         Object flinkValue = convertSecondTimeIfNecessary(elementType, value);
-        if (array == null) {
-          Class<?> flinkValueClass = flinkValue.getClass();
-          array = (Object[]) Array.newInstance(flinkValueClass, node.size());
+        if (flinkValue != null) {
+          if (array == null) {
+            Class<?> flinkValueClass = flinkValue.getClass();
+            array = (Object[]) Array.newInstance(flinkValueClass, node.size());
+          }
+          array[i] = flinkValue;
         }
-        array[i] = flinkValue;
       }
+      array = array == null ? new Object[node.size()] : array;
       return arrayFactory.create(array);
     };
   }

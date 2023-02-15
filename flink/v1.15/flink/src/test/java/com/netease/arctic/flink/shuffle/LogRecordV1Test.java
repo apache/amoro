@@ -70,10 +70,11 @@ public class LogRecordV1Test extends BaseFormatTest {
     rowData.setField(3,
         new GenericArrayData(
             new StringData[] {
-                StringData.fromString("a"),
+                null,
                 StringData.fromString("b"),
+                null,
                 StringData.fromString("c"),
-                StringData.fromString("d")}));
+                null}));
     LogData<RowData> logData = new LogRecordV1(
         FormatVersion.FORMAT_VERSION_V1,
         IdGenerator.generateUpstreamId(),
@@ -88,7 +89,50 @@ public class LogRecordV1Test extends BaseFormatTest {
     Assert.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
     String expected =
-        "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_list_string\":[\"a\",\"b\",\"c\",\"d\"]}";
+        "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_list_string\":[null,\"b\",null,\"c\",null]}";
+    assertEquals(expected, actualJson);
+
+    LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
+        new LogDataJsonDeserialization<>(
+            userSchema,
+            LogRecordV1.factory,
+            LogRecordV1.arrayFactory,
+            LogRecordV1.mapFactory);
+    LogData<RowData> result = logDataJsonDeserialization.deserialize(bytes);
+    Assert.assertNotNull(result);
+    check(logData, result);
+  }
+
+  @Test
+  public void testLogDataSerializeNullList() throws IOException {
+
+    LogDataJsonSerialization<RowData> logDataJsonSerialization =
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+    GenericRowData rowData = new GenericRowData(4);
+    rowData.setField(0, true);
+    rowData.setField(1, 1);
+    rowData.setField(2, 123456789L);
+    rowData.setField(3,
+        new GenericArrayData(
+            new StringData[] {
+                null,
+                null,
+                null}));
+    LogData<RowData> logData = new LogRecordV1(
+        FormatVersion.FORMAT_VERSION_V1,
+        IdGenerator.generateUpstreamId(),
+        123455L,
+        false,
+        ChangeAction.INSERT,
+        rowData
+    );
+
+    byte[] bytes = logDataJsonSerialization.serialize(logData);
+
+    Assert.assertNotNull(bytes);
+    String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
+    String expected =
+        "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_list_string\":[null,null,null]}";
     assertEquals(expected, actualJson);
 
     LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
