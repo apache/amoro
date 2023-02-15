@@ -39,28 +39,37 @@ import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_PROPERTIES_PREFIX;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
  * An util that loads arctic table, build arctic log writer and so on.
@@ -135,8 +144,8 @@ public class ArcticUtils {
    * @return ArcticLogWriter
    */
   public static ArcticLogWriter buildArcticLogWriter(Map<String, String> properties,
-                                                     Properties producerConfig,
-                                                     String topic,
+                                                     @Nullable Properties producerConfig,
+                                                     @Nullable String topic,
                                                      TableSchema tableSchema,
                                                      String arcticEmitMode,
                                                      ShuffleHelper helper,
@@ -146,6 +155,16 @@ public class ArcticUtils {
       return null;
     }
 
+    if (topic == null) {
+      topic = CompatibleFlinkPropertyUtil.propertyAsString(properties, LOG_STORE_MESSAGE_TOPIC, null);
+    }
+    Preconditions.checkNotNull(topic, String.format("Topic should be specified. It can be set by '%s'",
+        LOG_STORE_MESSAGE_TOPIC));
+
+    producerConfig = combineTableAndUnderlyingLogstoreProperties(properties, producerConfig);
+    String logType = CompatibleFlinkPropertyUtil.propertyAsString(properties, LOG_STORE_TYPE,
+        LOG_STORE_STORAGE_TYPE_DEFAULT);
+
     String version = properties.getOrDefault(LOG_STORE_DATA_VERSION, LOG_STORE_DATA_VERSION_DEFAULT);
     if (LOG_STORE_DATA_VERSION_DEFAULT.equals(version)) {
       if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
@@ -154,7 +173,7 @@ public class ArcticUtils {
             FlinkSchemaUtil.convert(tableSchema),
             producerConfig,
             topic,
-            buildLogMsgFactory(properties),
+            buildLogMsgFactory(logType),
             LogRecordV1.fieldGetterFactory,
             IdGenerator.generateUpstreamId(),
             helper,
@@ -168,7 +187,7 @@ public class ArcticUtils {
           FlinkSchemaUtil.convert(tableSchema),
           producerConfig,
           topic,
-          buildLogMsgFactory(properties),
+          buildLogMsgFactory(logType),
           LogRecordV1.fieldGetterFactory,
           IdGenerator.generateUpstreamId(),
           helper);
@@ -177,17 +196,65 @@ public class ArcticUtils {
         "'. only support 'v1' or empty");
   }
 
-  public static <T> LogMsgFactory<T> buildLogMsgFactory(Map<String, String> tableProperties) {
+  /**
+   * Extract and combine the properties for underlying log store queue.
+   * @param tableProperties arctic table properties
+   * @param producerConfig can be set by java API
+   * @return properties with tableProperties and producerConfig which has higher priority.
+   */
+  private static Properties combineTableAndUnderlyingLogstoreProperties(Map<String, String> tableProperties,
+                                                    Properties producerConfig) {
+    Properties finalProp;
+    Properties underlyingLogStoreProps = fetchLogstorePrefixProperties(tableProperties);
+    if (producerConfig == null) {
+      finalProp = underlyingLogStoreProps;
+    } else {
+      underlyingLogStoreProps.stringPropertyNames()
+          .forEach(k -> producerConfig.putIfAbsent(k, underlyingLogStoreProps.get(k)));
+      finalProp = producerConfig;
+    }
+    
+    String logStoreAddress = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties,
+        LOG_STORE_ADDRESS, null);
+    
     String logType = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_TYPE,
         LOG_STORE_STORAGE_TYPE_DEFAULT);
+    if (logType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)) {
+      finalProp.putIfAbsent("key.serializer",
+          "org.apache.kafka.common.serialization.ByteArraySerializer");
+      finalProp.putIfAbsent("value.serializer",
+          "org.apache.kafka.common.serialization.ByteArraySerializer");
+      finalProp.putIfAbsent("key.deserializer",
+          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+      finalProp.putIfAbsent("value.deserializer",
+          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+
+      if (logStoreAddress != null) {
+        finalProp.putIfAbsent(BOOTSTRAP_SERVERS_CONFIG, logStoreAddress);
+      }
+
+      Preconditions.checkArgument(finalProp.containsKey(BOOTSTRAP_SERVERS_CONFIG), String.format("%s should be set",
+          LOG_STORE_ADDRESS));
+    } else {
+      if (logStoreAddress != null) {
+        finalProp.putIfAbsent(PULSAR_SERVICE_URL.key(), logStoreAddress);
+      }
+
+      Preconditions.checkArgument(finalProp.containsKey(PULSAR_SERVICE_URL.key()), String.format("%s should be set",
+          LOG_STORE_ADDRESS));
+    }
+
+    return finalProp;
+  }
+
+  public static <T> LogMsgFactory<T> buildLogMsgFactory(String logType) {
     LogMsgFactory<T> factory;
     switch (logType) {
       case LOG_STORE_STORAGE_TYPE_KAFKA:
         factory = new HiddenKafkaFactory<>();
         break;
       case LOG_STORE_STORAGE_TYPE_PULSAR:
-        factory = new HiddenPulsarFactory<>(
-            CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_ADDRESS, null));
+        factory = new HiddenPulsarFactory<>();
         break;
       default:
         throw new UnsupportedOperationException("only support 'kafka' or 'pulsar' now, but input is " + logType);

@@ -69,42 +69,13 @@ ArcticTable table = ArcticUtils.load(tableLoader);
 // }});
 Schema schema = table.schema();
 
-List<String> topics = new ArrayList<>();
-topics.add("topic_name");
-
 // -----------Hidden Kafka--------------
-// 配置 kafka consumer 参数。详见 https://kafka.apache.org/documentation/#consumerconfigs
-Properties properties = new Properties();
-properties.put("group.id", groupId);
-properties.put("properties.bootstrap.servers", "broker1:port1, broker2:port2 ...");
+LogKafkaSource source = LogKafkaSource.builder(schema, table.properties()).build();
 
-Configuration configuration = new Configuration();
-// 开启保证数据一致性的低延迟读
-configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
-
-LogKafkaSource source = LogKafkaSource.builder(schema, configuration)
-    .setTopics(topics)
-    .setStartingOffsets(OffsetsInitializer.earliest())
-    .setProperties(properties)
-    .build();
-// -----------Hidden Kafka--------------
+or
 
 // -----------Hidden Pulsar--------------
-Map<String, String> tableProperties = new HashMap<>();
-tableProperties.put(TableProperties.LOG_STORE_ADDRESS, logPulsarHelper.op().serviceUrl());
-tableProperties.put(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), 
-    String.valueOf(logRetractionEnabled));
-
-Properties properties = new Properties();
-properties.put(PULSAR_ADMIN_URL.key(), logPulsarHelper.op().adminUrl());
-properties.put(PULSAR_SUBSCRIPTION_NAME.key(), "log-source");
-    
-LogPulsarSource source = LogPulsarSource.builder(schema, tableProperties)
-    .setProperties(properties)
-    .setTopics(topic)
-    .setStartCursor(StartCursor.earliest())
-    .build();
-// -----------Hidden Pulsar--------------
+LogPulsarSource source = LogPulsarSource.builder(schema, table.properties()).build();
 
 DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Log Source");
 // 打印读出的所有数据

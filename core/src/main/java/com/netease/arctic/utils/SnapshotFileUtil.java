@@ -46,25 +46,25 @@ public class SnapshotFileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotFileUtil.class);
 
   public static void getSnapshotFiles(
-      ArcticTable table, Snapshot snapshot,
+      ArcticTable table, String innerTable, Snapshot snapshot,
       List<com.netease.arctic.ams.api.DataFile> addFiles,
       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
     Preconditions.checkNotNull(addFiles, "Add files to delete can not be null");
     Preconditions.checkNotNull(deleteFiles, "Delete files to delete can not be null");
 
     for (DataFile file : snapshot.addedFiles()) {
-      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
     for (DataFile file : snapshot.deletedFiles()) {
-      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
 
     table.io().doAs(() -> {
       List<DeleteFile> addIcebergFiles = new ArrayList<>();
       List<DeleteFile> deleteIcebergFiles = new ArrayList<>();
       getDeleteFiles(table, snapshot, addIcebergFiles, deleteIcebergFiles);
-      addIcebergFiles.forEach(e -> addFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table)));
-      deleteIcebergFiles.forEach(e -> deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table)));
+      addIcebergFiles.forEach(e -> addFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table, innerTable)));
+      deleteIcebergFiles.forEach(e -> deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table, innerTable)));
       return null;
     });
 

@@ -206,6 +206,9 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
   @Override
   public void close() throws IOException {
     close = true;
+    if (current != null) {
+      current.close();
+    }
   }
 
   protected void closeWithSuppression(Throwable throwable) {

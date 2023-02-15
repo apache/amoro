@@ -23,7 +23,7 @@ import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -117,7 +117,7 @@ public class TaskReaderTest extends TableDataTestBase {
     Table changeTable = getArcticTable().asKeyedTable().changeTable();
     CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().planFiles();
     CloseableIterable<ArcticFileScanTask> arcticFileScanTasks = CloseableIterable.transform(
-        fileScanTasks, BaseArcticFileScanTask::new
+        fileScanTasks, BasicArcticFileScanTask::new
     );
     Schema schema = changeTable.schema();
     List<Types.NestedField> columns = new ArrayList<>(schema.columns());
@@ -151,7 +151,7 @@ public class TaskReaderTest extends TableDataTestBase {
     Table changeTable = getArcticTable().asKeyedTable().changeTable();
     CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().planFiles();
     CloseableIterable<ArcticFileScanTask> arcticFileScanTasks = CloseableIterable.transform(
-        fileScanTasks, BaseArcticFileScanTask::new
+        fileScanTasks, BasicArcticFileScanTask::new
     );
     Schema schema = changeTable.schema();
     List<Types.NestedField> columns = new ArrayList<>(schema.columns());

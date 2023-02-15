@@ -83,7 +83,7 @@ public class GenericTaskWriters {
     }
 
     public GenericBaseTaskWriter buildBaseWriter() {
-      preconditions();
+      writeBasePreconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
@@ -100,7 +100,7 @@ public class GenericTaskWriters {
     }
 
     public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-      preconditions();
+      writeBasePreconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
@@ -118,7 +118,6 @@ public class GenericTaskWriters {
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
-      preconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.CHANGE_FILE_FORMAT,
           TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
@@ -135,7 +134,7 @@ public class GenericTaskWriters {
           changeAction, orderedWriter);
     }
 
-    private void preconditions() {
+    private void writeBasePreconditions() {
       if (table.isKeyedTable()) {
         Preconditions.checkNotNull(transactionId);
       } else {

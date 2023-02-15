@@ -40,26 +40,6 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
-      if isArcticCatalog(catalog) =>
-      var propertiesMap: Map[String, String] = props
-      var optionsMap: Map[String, String] = options
-      if (options.contains("primary.keys")) {
-        propertiesMap += ("primary.keys" -> options("primary.keys"))
-      }
-      if (propertiesMap.contains("primary.keys")) {
-        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
-      }
-
-      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
-      CreateTableAsSelectExec(
-        catalog, ident, parts, query, planLater(query),
-        propertiesMap, writeOptions, ifNotExists) :: Nil
-
-    case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-      if provider.get != null && provider.get.equals("arctic") =>
-      CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
-
     case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists)
       if isArcticCatalog(catalog) =>
       val writeOptions = new CaseInsensitiveStringMap(options.asJava)

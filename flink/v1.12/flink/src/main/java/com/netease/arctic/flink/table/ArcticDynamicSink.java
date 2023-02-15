@@ -34,9 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Properties;
-
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
 
 /**
  * Flink table api that generates sink operators.
@@ -47,18 +44,15 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
 
   private final ArcticTableLoader tableLoader;
   private final CatalogTable flinkTable;
-  private final String topic;
   private final boolean primaryKeyExisted;
   private boolean overwrite = false;
 
   ArcticDynamicSink(
       CatalogTable flinkTable,
       ArcticTableLoader tableLoader,
-      String topic,
       boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
-    this.topic = topic;
     this.primaryKeyExisted = primaryKeyExisted;
   }
 
@@ -76,15 +70,12 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = getLogStoreProperties(table.properties());
 
     return (DataStreamSinkProvider) dataStream -> {
       DataStreamSink<?> ds = FlinkSink
           .forRowData(dataStream)
           .table(table)
           .flinkSchema(flinkTable.getSchema())
-          .producerConfig(producerConfig)
-          .topic(topic)
           .tableLoader(tableLoader)
           .overwrite(overwrite)
           .build();

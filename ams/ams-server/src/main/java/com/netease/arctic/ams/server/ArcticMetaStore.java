@@ -48,6 +48,7 @@ import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UpdateTool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -139,6 +140,13 @@ public class ArcticMetaStore {
             systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key()));
     config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key(),
             systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
+
+    config.put(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
+        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
+            ArcticMetaStoreConf.LOGIN_USERNAME.defaultValue()));
+    config.put(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
+        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
+            ArcticMetaStoreConf.LOGIN_PASSWORD.defaultValue()));
 
     //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
@@ -288,7 +296,7 @@ public class ArcticMetaStore {
   }
 
   public static boolean isStarted() {
-    return server != null && server.isServing();
+    return server != null && server.isServing() && ServiceContainer.getOptimizeService().isInited();
   }
 
   public static void failover() {
@@ -327,6 +335,7 @@ public class ArcticMetaStore {
         AmsRestServer.startRestServer(httpPort);
         startSyncDDl();
         syncAndExpiredFileInfoCache();
+        new UpdateTool().executeAsync();
         if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
           checkLeader();
         }

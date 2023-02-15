@@ -95,8 +95,7 @@ public class RenewableBlocker implements Blocker {
     try {
       this.expirationTime = amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
       LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
-    } catch (NoSuchObjectException e1) {
-      LOG.warn("failed to renew block {} of table {}, blocker is released, renew exit", blockerId(), e1);
+    } catch (NoSuchObjectException e) {
       cancelRenew();
     } catch (Throwable t) {
       LOG.warn("failed to renew block {} of table {}, ignore", blockerId(),

@@ -89,6 +89,8 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * AbstractFetcher}.
  *
  * @param <T> The type of records produced by this data source
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
 @Deprecated

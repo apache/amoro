@@ -82,10 +82,10 @@ case class AlterArcticTableDropPartitionExec(
     table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
+          val txId = arctic.table().asKeyedTable().beginTransaction(null)
           val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(expression)
-          overwriteBaseFiles.withTransactionIdForChangedPartition(
-            TablePropertyUtil.allocateTransactionId(arctic.table().asKeyedTable()))
+          overwriteBaseFiles.updateMaxTransactionIdDynamically(txId)
           overwriteBaseFiles.commit()
         } else {
           val overwriteFiles = arctic.table().asUnkeyedTable().newOverwrite()

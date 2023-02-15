@@ -21,7 +21,7 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.api.common.RuntimeExecutionMode;
@@ -271,18 +271,18 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     }
 
     Set<String> paths = new HashSet<>();
-    int maxTxId = -1;
+    long maxTxId = -1;
     while (!snapshots.isEmpty()) {
       Snapshot snapshot = snapshots.pop();
-      int minTxIdInSnapshot = Integer.MAX_VALUE;
-      int maxTxIdInSnapshot = -1;
+      long minTxIdInSnapshot = Integer.MAX_VALUE;
+      long maxTxIdInSnapshot = -1;
       for (DataFile addedFile : snapshot.addedFiles()) {
         String path = addedFile.path().toString();
         Assert.assertFalse(paths.contains(path));
         paths.add(path);
         LOG.info("add file: {}", addedFile.path());
 
-        int txId = AdaptHiveOutputFileFactory.parseTransactionId(path);
+        long txId = FileNameGenerator.parseChange(path, snapshot.sequenceNumber()).transactionId();
         minTxIdInSnapshot = Math.min(minTxIdInSnapshot, txId);
         maxTxIdInSnapshot = Math.max(maxTxIdInSnapshot, txId);
       }

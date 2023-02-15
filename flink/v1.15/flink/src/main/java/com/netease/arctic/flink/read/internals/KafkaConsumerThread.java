@@ -61,6 +61,8 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * <p>Implementation Note: This code is written to be reusable in later versions of the
  * KafkaConsumer. Because Kafka is not maintaining binary compatibility, we use a "call bridge" as
  * an indirection to the KafkaConsumer calls that change signature.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
 @Deprecated

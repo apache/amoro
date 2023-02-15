@@ -25,7 +25,6 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -63,7 +62,6 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private final KeyedTable table;
   private final StructType dsSchema;
-  private final long legacyTxId;
   private final long txId;
   private final String subDir;
   protected Expression overwriteExpr = null;
@@ -79,8 +77,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
     }
     this.table = table;
     this.dsSchema = dsSchema;
-    this.legacyTxId = table.beginTransaction(null);
-    this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
+    this.txId = table.beginTransaction(null);
     this.subDir = HiveTableUtil.newHiveSubdirectory(this.txId);
   }
 
@@ -106,7 +103,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, legacyTxId, subDir);
+    return new WriterFactory(table, dsSchema, txId, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
@@ -174,7 +171,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private void overwriteByFilter(WriterCommitMessage[] messages, Expression overwriteExpr) {
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
+    overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
 
     for (DataFile file : files(messages)) {
       overwriteBaseFiles.addFile(file);

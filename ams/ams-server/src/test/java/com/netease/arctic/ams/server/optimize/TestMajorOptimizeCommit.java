@@ -21,18 +21,21 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.TreeNode;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
@@ -46,6 +49,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -67,17 +71,17 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testMajorOptimizeCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
@@ -95,14 +99,15 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     testKeyedTable.updateProperties().
         set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
-        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        tableOptimizeRuntime, baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
-    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -119,7 +124,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -135,17 +140,17 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testEmptyTargetFilesMajorOptimizeCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> baseInsertResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> baseInsertResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = baseInsertResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, baseInsertResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, baseInsertResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
@@ -163,13 +168,14 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     testKeyedTable.updateProperties().
         set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
-        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        tableOptimizeRuntime, baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -183,7 +189,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -201,17 +207,17 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testMajorOptimizeRepeatCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
@@ -229,14 +235,15 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     testKeyedTable.updateProperties().
         set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
-        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        tableOptimizeRuntime, baseFiles,
+         1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
-    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -253,7 +260,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
     optimizeCommit.commit(baseSnapshotId);
 
@@ -273,17 +280,17 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testMajorOptimizeConflictCommit() throws Exception {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
@@ -293,14 +300,15 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     testKeyedTable.updateProperties().
         set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
-        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        tableOptimizeRuntime, baseFiles,
+         1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
-    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable, baseFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -318,7 +326,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
     testKeyedTable.asKeyedTable().baseTable().newDelete().deleteFile(baseDataFiles.get(0)).commit();
-    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
     optimizeCommit.commit(baseSnapshotId);
 
@@ -329,11 +337,22 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     }
   }
 
-  private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable) throws Exception {
-    List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, OptimizeType.Major, 3);
-    return dataFiles.stream().collect(Collectors.groupingBy(dataFile ->  {
-      DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
-      return keyedFile.node().toAmsTreeNode();
-    }));
+  private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable, List<FileScanTask> baseFiles)
+      throws Exception {
+    long maxTransactionId = getMaxTransactionId(baseFiles);
+    List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, OptimizeType.Major, maxTransactionId);
+    return dataFiles.stream().collect(Collectors.groupingBy(
+        dataFile -> FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
+  }
+
+  protected long getMaxTransactionId(List<FileScanTask> baseFiles) {
+    OptionalLong maxTransactionId = baseFiles.stream()
+        .map(baseFile -> FileNameGenerator.parseTransactionId(baseFile.file().path().toString()))
+        .mapToLong(Long::longValue).max();
+    if (maxTransactionId.isPresent()) {
+      return maxTransactionId.getAsLong();
+    }
+
+    return 0;
   }
 }

@@ -194,13 +194,12 @@ public class AmsTestBase {
     com.netease.arctic.ams.server.config.Configuration configuration =
         new com.netease.arctic.ams.server.config.Configuration();
     configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
+    configuration.setString("arctic.ams.terminal.local.spark.sql.session.timeZone", "UTC");
     ArcticMetaStore.conf = configuration;
 
     //mock service
     FileInfoCacheService fileInfoCacheService = new FileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
-    ArcticTransactionService arcticTransactionService = new ArcticTransactionService();
-    when(ServiceContainer.getArcticTransactionService()).thenReturn(arcticTransactionService);
     DDLTracerService ddlTracerService = new DDLTracerService();
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
@@ -217,6 +216,9 @@ public class AmsTestBase {
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
     when(ServiceContainer.getTableMetastoreHandler()).thenReturn(amsHandler);
+
+    ArcticTransactionService arcticTransactionService = new ArcticTransactionService();
+    when(ServiceContainer.getArcticTransactionService()).thenReturn(arcticTransactionService);
 
     OptimizeQueueService optimizeQueueService = new OptimizeQueueService();
     when(ServiceContainer.getOptimizeQueueService()).thenReturn(optimizeQueueService);

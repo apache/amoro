@@ -36,6 +36,8 @@ import java.util.Properties;
 /**
  * This thread is an extent of {@link KafkaConsumerThread} added an abstract method
  * {@link KafkaConsumerThread#reSeekPartitionOffsets()} to reSeek the offset of kafka topic partitions.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
 public class LogKafkaConsumerThread<T> extends KafkaConsumerThread<T> {

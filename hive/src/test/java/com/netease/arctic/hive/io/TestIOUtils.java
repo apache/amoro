@@ -25,7 +25,7 @@ import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
@@ -156,8 +156,8 @@ public class TestIOUtils {
 
   private static CloseableIterator<Record> readParquet(Schema schema, DataFile[] dataFiles, Expression expression,
       ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec){
-    List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BaseArcticFileScanTask(
-        new DefaultKeyedFile(s),
+    List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BasicArcticFileScanTask(
+        DefaultKeyedFile.parseBase(s),
         null,
         partitionSpec,
         expression

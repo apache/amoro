@@ -20,6 +20,8 @@ package com.netease.arctic.optimizer.util;
 
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
@@ -27,7 +29,7 @@ import org.apache.iceberg.PartitionSpec;
 
 public class ContentFileUtil {
 
-  public static ContentFile<?> buildContentFile(DataFileInfo dataFileInfo,
+  public static ContentFileWithSequence<?> buildContentFile(DataFileInfo dataFileInfo,
                                                 PartitionSpec partitionSpec,
                                                 String fileFormat) {
     ContentFile<?> contentFile;
@@ -69,6 +71,6 @@ public class ContentFileUtil {
       }
     }
 
-    return contentFile;
+    return WrapFileWithSequenceNumberHelper.wrap(contentFile, dataFileInfo.sequence);
   }
 }

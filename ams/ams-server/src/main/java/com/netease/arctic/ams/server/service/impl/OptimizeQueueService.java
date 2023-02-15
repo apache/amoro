@@ -26,20 +26,24 @@ import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTask;
-import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeQueueMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.optimize.BaseIcebergOptimizePlan;
-import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
+import com.netease.arctic.ams.server.optimize.AbstractIcebergOptimizePlan;
+import com.netease.arctic.ams.server.optimize.FullOptimizePlan;
+import com.netease.arctic.ams.server.optimize.IcebergFullOptimizePlan;
+import com.netease.arctic.ams.server.optimize.IcebergMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.MajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.MinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.OptimizePlanResult;
 import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -53,6 +57,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -61,10 +66,12 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -665,76 +672,31 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
-          BaseOptimizePlan optimizePlan;
-          List<BaseOptimizeTask> optimizeTasks;
+          OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
+          if (tableItem.startPlanIfNot()) {
+            try {
+              if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
+                optimizePlanResult = planNativeIcebergTable(tableItem, currentTime);
+              } else {
+                optimizePlanResult = planArcticTable(tableItem, currentTime);
+              }
+            } finally {
+              tableItem.finishPlan();
+            }
+          }
 
-          Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
-          if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
-            if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
-                tableItem.getTableOptimizeRuntime())) {
-              tableItem.persistTableOptimizeRuntime();
-              LOG.debug("table {} not changed, no need plan", tableIdentifier);
-              continue;
-            }
-            List<FileScanTask> fileScanTasks;
-            try (CloseableIterable<FileScanTask> filesIterable = 
-                     tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles()) {
-              fileScanTasks = Lists.newArrayList(filesIterable);
-            } catch (IOException e) {
-              throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
-            }
+          if (!optimizePlanResult.isEmpty()) {
+            initTableOptimizeRuntime(tableItem, optimizePlanResult);
+            LOG.debug("{} after plan get {} tasks", tableItem.getTableIdentifier(),
+                optimizePlanResult.getOptimizeTasks().size());
 
-            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
-            optimizeTasks = optimizePlan.plan();
-            // if no major tasks, then plan minor tasks
-            if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
-              optimizeTasks = optimizePlan.plan();
-            }
-          } else {
-            Snapshot baseCurrentSnapshot;
-            Snapshot changeCurrentSnapshot = null;
-            ArcticTable arcticTable = tableItem.getArcticTable();
-            if (arcticTable.isKeyedTable()) {
-              changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
-              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+            List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, optimizePlanResult.getOptimizeTasks());
+            if (!toExecuteTasks.isEmpty()) {
+              LOG.info("{} after plan put {} tasks into queue", tableItem.getTableIdentifier(), toExecuteTasks.size());
+              return toExecuteTasks;
             } else {
-              baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+              LOG.debug("{} after plan put no tasks into queue, try next table", tableItem.getTableIdentifier());
             }
-            if (isOptimizeBlocked(tableIdentifier)) {
-              LOG.debug("{} optimize is blocked, continue", tableIdentifier);
-              continue;
-            }
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
-            optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
-
-            // if no full tasks, then plan major tasks
-            if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot);
-              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
-            }
-
-            // if no major tasks and keyed table, then plan minor tasks
-            if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning, baseCurrentSnapshot,
-                  changeCurrentSnapshot);
-              optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
-            }
-          }
-          
-          if (optimizePlan == null) {
-            continue;
-          }
-
-          initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
-          LOG.debug("{} after plan get {} tasks", tableItem.getTableIdentifier(), optimizeTasks.size());
-
-          List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, optimizeTasks);
-          if (!toExecuteTasks.isEmpty()) {
-            LOG.info("{} after plan put {} tasks into queue", tableItem.getTableIdentifier(), toExecuteTasks.size());
-            return toExecuteTasks;
-          } else {
-            LOG.debug("{} after plan put no tasks into queue, try next table", tableItem.getTableIdentifier());
           }
         } catch (Throwable e) {
           LOG.error(tableIdentifier + " plan failed, continue", e);
@@ -744,50 +706,133 @@ public class OptimizeQueueService extends IJDBCService {
       return Collections.emptyList();
     }
 
+    private OptimizePlanResult planNativeIcebergTable(TableOptimizeItem tableItem, long currentTime) {
+      TableIdentifier tableIdentifier = tableItem.getArcticTable().id();
+      int queueId = optimizeQueue.getOptimizeQueueMeta().getQueueId();
+      ArcticTable arcticTable = tableItem.getArcticTable(true);
+      Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
+      if (currentSnapshot == null) {
+        return OptimizePlanResult.EMPTY;
+      }
+      if (!tableItem.tableChanged(currentSnapshot)) {
+        tableItem.persistTableOptimizeRuntime();
+        LOG.debug("table {} not changed, no need plan", tableIdentifier);
+        return OptimizePlanResult.EMPTY;
+      }
+      List<FileScanTask> fileScanTasks;
+      TableScan tableScan = arcticTable.asUnkeyedTable().newScan();
+      tableScan = tableScan.useSnapshot(currentSnapshot.snapshotId());
+      try (CloseableIterable<FileScanTask> filesIterable = tableScan.planFiles()) {
+        fileScanTasks = Lists.newArrayList(filesIterable);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
+      }
+
+      IcebergFullOptimizePlan fullPlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime,
+          currentSnapshot.snapshotId());
+      OptimizePlanResult optimizePlanResult = fullPlan.plan();
+      // if no major tasks, then plan minor tasks
+      if (optimizePlanResult.isEmpty()) {
+        IcebergMinorOptimizePlan minorPlan =
+            tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime, currentSnapshot.snapshotId());
+        optimizePlanResult = minorPlan.plan();
+      }
+      return optimizePlanResult;
+    }
+
+    private OptimizePlanResult planArcticTable(TableOptimizeItem tableItem, long currentTime) {
+      TableIdentifier tableIdentifier = tableItem.getArcticTable().id();
+      int queueId = optimizeQueue.getOptimizeQueueMeta().getQueueId();
+      
+      Snapshot baseCurrentSnapshot;
+      Snapshot changeCurrentSnapshot = null;
+      ArcticTable arcticTable = tableItem.getArcticTable();
+      StructLikeMap<Long> partitionMaxTransactionId = null;
+      StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
+      if (arcticTable.isKeyedTable()) {
+        baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
+        partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        legacyPartitionMaxTransactionId =
+            TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
+      } else {
+        baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asUnkeyedTable());
+      }
+      if (isOptimizeBlocked(tableIdentifier)) {
+        LOG.debug("{} optimize is blocked, continue", tableIdentifier);
+        return OptimizePlanResult.EMPTY;
+      }
+      List<FileScanTask> baseFiles = tableItem.planBaseFiles(baseCurrentSnapshot);
+
+      OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
+      FullOptimizePlan fullPlan = tableItem.getFullPlan(queueId, currentTime, baseFiles, baseCurrentSnapshot);
+      // full/major plan not check the table changed, since it will change the table itself
+      if (fullPlan != null) {
+        optimizePlanResult = fullPlan.plan();
+      }
+
+      // if no full tasks, then plan major tasks
+      if (optimizePlanResult.isEmpty()) {
+        MajorOptimizePlan majorPlan =
+            tableItem.getMajorPlan(queueId, currentTime, baseFiles, baseCurrentSnapshot);
+        if (majorPlan != null) {
+          optimizePlanResult = majorPlan.plan();
+        }
+      }
+
+      // if no major/full tasks and keyed table, then plan minor tasks
+      if (tableItem.isKeyedTable() && optimizePlanResult.isEmpty()) {
+        if (!tableItem.changeStoreChanged(changeCurrentSnapshot)) {
+          LOG.debug("table {} ChangeStore not changed, no need plan", tableIdentifier);
+          return OptimizePlanResult.EMPTY;
+        }
+        MinorOptimizePlan minorPlan = tableItem.getMinorPlan(queueId, currentTime, baseFiles,
+            baseCurrentSnapshot, changeCurrentSnapshot, partitionMaxTransactionId,
+            legacyPartitionMaxTransactionId);
+        if (minorPlan != null) {
+          optimizePlanResult = minorPlan.plan();
+        }
+      }
+      return optimizePlanResult;
+    }
+
     private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
       return ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE);
     }
 
-    private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
-                                          BaseOptimizePlan optimizePlan,
-                                          List<BaseOptimizeTask> optimizeTasks,
-                                          Map<String, OptimizeType> partitionOptimizeType) {
-      if (CollectionUtils.isNotEmpty(optimizeTasks)) {
-        TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
-        try {
-          // set latest optimize time
-          for (String currentPartition : optimizePlan.getCurrentPartitions()) {
-            if (partitionOptimizeType.get(currentPartition) != null) {
-              switch (partitionOptimizeType.get(currentPartition)) {
-                case Minor:
-                  tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
-                  break;
-                case Major:
-                  tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
-                  break;
-                case FullMajor:
-                  tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
-                  break;
-              }
-            }
+    private void initTableOptimizeRuntime(TableOptimizeItem tableItem, OptimizePlanResult planResult) {
+      TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
+      try {
+        // set latest optimize time
+        for (String currentPartition : planResult.getAffectPartitions()) {
+          switch (planResult.getOptimizeType()) {
+            case Minor:
+              tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
+              break;
+            case Major:
+              tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
+              break;
+            case FullMajor:
+              tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
+              break;
           }
-
-          // set current snapshot id
-          tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentSnapshotId());
-          if (tableItem.isKeyedTable()) {
-            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
-          }
-
-          tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-          tableItem.persistTableOptimizeRuntime();
-        } catch (Throwable e) {
-          tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);
-          throw e;
         }
+
+        // set current snapshot id
+        tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(planResult.getSnapshotId());
+        if (tableItem.isKeyedTable()) {
+          tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(planResult.getChangeSnapshotId());
+        }
+
+        tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(planResult.getTaskPlanGroup());
+        tableItem.persistTableOptimizeRuntime();
+      } catch (Throwable e) {
+        tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);
+        throw e;
       }
     }
 
-    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BaseOptimizeTask> optimizeTasks) {
+    private List<OptimizeTaskItem> addTask(TableOptimizeItem tableItem, List<BasicOptimizeTask> optimizeTasks) {
       try {
         tableItem.addNewOptimizeTasks(optimizeTasks);
       } catch (Throwable t) {

@@ -1,8 +1,8 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.TableProperties;
@@ -46,10 +46,8 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
         .planFiles()) {
       filesIterable.forEach(fileScanTask -> {
-        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-          oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-        }
+        oldDataFilesPath.add((String) fileScanTask.file().path());
+        fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
       });
     }
 
@@ -61,13 +59,13 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
 
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergNoPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
 
     List<DataFile> resultFiles = insertOptimizeTargetDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -108,6 +106,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
+        .set(org.apache.iceberg.TableProperties.DEFAULT_WRITE_METRICS_MODE, "full")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
@@ -116,10 +115,8 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     Set<String> oldDeleteFilesPath = new HashSet<>();
     try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan().planFiles()) {
       filesIterable.forEach(fileScanTask -> {
-        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-          oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-        }
+        oldDataFilesPath.add((String) fileScanTask.file().path());
+        fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
       });
     }
 
@@ -130,13 +127,13 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
 
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
 
     List<DataFile> resultFiles = insertOptimizeTargetDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
-      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      OptimizeTaskRuntime optimizeRuntime = new OptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
