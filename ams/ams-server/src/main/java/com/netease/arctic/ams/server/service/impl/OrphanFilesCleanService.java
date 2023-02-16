@@ -42,7 +42,6 @@ import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -299,22 +298,22 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
       Set<String> baseValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
-      Log.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
+      LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
       Set<String> changeValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
-      Log.info("{} get {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
+      LOG.info("{} get {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
       validFiles.addAll(changeValidFiles);
     } else {
       Set<String> baseValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
-      Log.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
+      LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
     }
 
-    Log.info("{} get {} valid files", arcticTable.id(), validFiles.size());
+    LOG.info("{} get {} valid files", arcticTable.id(), validFiles.size());
 
     // add hive location to exclude
     Set<String> hiveValidLocations = HiveLocationUtils.getHiveLocation(arcticTable);
-    Log.info("{} get {} valid locations in the Hive", arcticTable.id(), hiveValidLocations.size());
+    LOG.info("{} get {} valid locations in the Hive", arcticTable.id(), hiveValidLocations.size());
     validFiles.addAll(hiveValidLocations);
 
     return validFiles;
