@@ -10,7 +10,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class TestIcebergFullOptimizePlan extends TestIcebergBase {
@@ -31,9 +30,9 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BasicOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergNoPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(1, tasks.size());
   }
 
@@ -53,9 +52,9 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BasicOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(1, tasks.size());
   }
 
@@ -79,9 +78,9 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BasicOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergNoPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals((int) Math.ceil(1.0 * dataFiles.size() / fragmentRatio), tasks.size());
   }
 }

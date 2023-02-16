@@ -65,7 +65,7 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
 
   @Test
   public void orphanDataFileClean() throws IOException {
-    insertTableBaseDataFiles(testKeyedTable, 1L);
+    insertTableBaseDataFiles(testKeyedTable);
 
     String baseOrphanFilePath = testKeyedTable.baseTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
@@ -90,7 +90,7 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
 
   @Test
   public void orphanMetadataFileClean() throws IOException {
-    insertTableBaseDataFiles(testKeyedTable, 1L);
+    insertTableBaseDataFiles(testKeyedTable);
 
     String baseOrphanFilePath = testKeyedTable.baseTable().location() + File.separator + "metadata" +
         File.separator + "orphan.avro";
