@@ -37,7 +37,7 @@ public class LogKafkaRecordEmitter extends KafkaRecordEmitter<RowData> {
       SourceOutput<RowData> output,
       KafkaPartitionSplitState splitState)
       throws Exception {
-    LogRecordWithRetractInfo<RowData> element = (LogRecordWithRetractInfo) consumerRecord;
+    LogRecordKafkaWithRetractInfo<RowData> element = (LogRecordKafkaWithRetractInfo) consumerRecord;
     output.collect(element.getActualValue(), element.timestamp());
     ((LogKafkaPartitionSplitState) splitState).updateState(element);
   }

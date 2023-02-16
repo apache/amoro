@@ -18,10 +18,10 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
-import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
+import com.netease.arctic.flink.util.kafka.KafkaConfigGenerate;
+import com.netease.arctic.flink.util.kafka.KafkaContainerTest;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
-import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.kafka.LogRecordKafkaWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.log.FormatVersion;
@@ -61,12 +61,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.createRowData;
 import static org.junit.Assert.assertEquals;
 
 public class LogKafkaPartitionSplitReaderTest {
@@ -185,16 +185,16 @@ public class LogKafkaPartitionSplitReaderTest {
       String splitId = recordsBySplitIds.nextSplit();
       while (splitId != null) {
         // Collect the records in this split.
-        List<LogRecordWithRetractInfo<RowData>> splitFetch = new ArrayList<>();
+        List<LogRecordKafkaWithRetractInfo<RowData>> splitFetch = new ArrayList<>();
         ConsumerRecord<byte[], byte[]> record;
         boolean hasFlip = false;
         while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
-          LOG.info("read: {}, offset: {}", ((LogRecordWithRetractInfo) record).getLogData().getActualValue(),
+          LOG.info("read: {}, offset: {}", ((LogRecordKafkaWithRetractInfo) record).getLogData().getActualValue(),
               record.offset());
-          if (((LogRecordWithRetractInfo<?>) record).isRetracting()) {
+          if (((LogRecordKafkaWithRetractInfo<?>) record).isRetracting()) {
             hasFlip = true;
           }
-          splitFetch.add((LogRecordWithRetractInfo<RowData>) record);
+          splitFetch.add((LogRecordKafkaWithRetractInfo<RowData>) record);
         }
         if (hasFlip) {
           flipCount++;
@@ -269,11 +269,11 @@ public class LogKafkaPartitionSplitReaderTest {
 
   private boolean verifyConsumed(
       final KafkaPartitionSplit split,
-      final Collection<LogRecordWithRetractInfo<RowData>> consumed,
+      final Collection<LogRecordKafkaWithRetractInfo<RowData>> consumed,
       final int valueOffsetDiffInOrderedRead) {
     long currentOffset = -1;
 
-    for (LogRecordWithRetractInfo<RowData> record : consumed) {
+    for (LogRecordKafkaWithRetractInfo<RowData> record : consumed) {
       if (record.isRetracting()) {
         assertEquals(record.offset(), record.getActualValue().getInt(1));
       } else {
