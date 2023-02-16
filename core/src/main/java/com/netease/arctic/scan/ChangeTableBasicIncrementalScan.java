@@ -20,7 +20,11 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.BaseCombinedScanTask;
@@ -59,7 +63,7 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   @Override
-  public TableScan useSnapshot(long snapshotId) {
+  public ChangeTableIncrementalScan useSnapshot(long snapshotId) {
     this.snapshotId = snapshotId;
     return this;
   }
@@ -139,11 +143,19 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
 
   @Override
   public CloseableIterable<FileScanTask> planFiles() {
-    return planFiles(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+    return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
+        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(((DataFile) fileWithSequence),
+            fileWithSequence.getSequenceNumber()), null, table.spec(), null)
+    );
   }
 
-  private CloseableIterable<FileScanTask> planFiles(PartitionDataFilter shouldKeepFile,
-      PartitionDataFilter shouldKeepFileWithLegacyTxId) {
+  @Override
+  public CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence() {
+    return planFilesWithSequence(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+  }
+
+  private CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence(PartitionDataFilter shouldKeepFile,
+                                                    PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
@@ -173,9 +185,8 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
         return shouldKeep;
       }
     });
-    return CloseableIterable.transform(filteredEntry, e ->
-        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
-            null, table.spec(), null));
+    return CloseableIterable.transform(filteredEntry,
+        e -> WrapFileWithSequenceNumberHelper.wrap(e.getFile(), e.getSequenceNumber()));
   }
 
   @Override

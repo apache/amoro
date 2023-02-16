@@ -26,22 +26,22 @@ public class TaskConfig {
   private final OptimizeType optimizeType;
   private final String partition;
   @Nullable
-  private final Long maxTransactionId;
-  private final Long minTransactionId;
+  private final Long maxChangeSequence;
+  private final Long minChangeSequence;
   private final String commitGroup;
   private final String planGroup;
   private final long createTime;
   private final String customHiveSubdirectory;
 
-  public TaskConfig(String partition, @Nullable Long maxTransactionId,
-                    @Nullable Long minTransactionId,
+  public TaskConfig(String partition, @Nullable Long maxChangeSequence,
+                    @Nullable Long minChangeSequence,
                     String commitGroup, String planGroup,
                     OptimizeType optimizeType, long createTime,
                     @Nullable String customHiveSubdirectory) {
     this.optimizeType = optimizeType;
     this.partition = partition;
-    this.maxTransactionId = maxTransactionId;
-    this.minTransactionId = minTransactionId;
+    this.maxChangeSequence = maxChangeSequence;
+    this.minChangeSequence = minChangeSequence;
     this.commitGroup = commitGroup;
     this.planGroup = planGroup;
     this.createTime = createTime;
@@ -57,13 +57,13 @@ public class TaskConfig {
   }
 
   @javax.annotation.Nullable
-  public Long getMaxTransactionId() {
-    return maxTransactionId;
+  public Long getMaxChangeSequence() {
+    return maxChangeSequence;
   }
 
   @javax.annotation.Nullable
-  public Long getMinTransactionId() {
-    return minTransactionId;
+  public Long getMinChangeSequence() {
+    return minChangeSequence;
   }
 
   public String getCommitGroup() {

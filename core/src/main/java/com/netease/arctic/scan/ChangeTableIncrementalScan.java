@@ -18,7 +18,9 @@
 
 package com.netease.arctic.scan;
 
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 public interface ChangeTableIncrementalScan extends TableScan {
@@ -41,4 +43,9 @@ public interface ChangeTableIncrementalScan extends TableScan {
    * @return this for method chaining
    */
   ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
+  
+  @Override
+  ChangeTableIncrementalScan useSnapshot(long snapshotId);
+
+  CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence();
 }
