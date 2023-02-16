@@ -36,7 +36,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
  * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}.
- * only change line 79 and expand the modifier.
+ * only change line 115 and expand the modifier.
  * Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
@@ -44,48 +44,63 @@ public class ScanContext implements Serializable {
   private static final long serialVersionUID = 1L;
 
   public static final ConfigOption<Long> SNAPSHOT_ID =
-      ConfigOptions.key("snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("snapshot-id").longType().defaultValue(null)
+        .withDescription("Retrieve the full data of the specified snapshot by ID, used for batch scan mode");
 
   public static final ConfigOption<Boolean> CASE_SENSITIVE =
-      ConfigOptions.key("case-sensitive").booleanType().defaultValue(false);
+      ConfigOptions.key("case-sensitive").booleanType().defaultValue(false)
+        .withDescription("Set if column names are case-sensitive");
 
   public static final ConfigOption<Long> AS_OF_TIMESTAMP =
-      ConfigOptions.key("as-of-timestamp").longType().defaultValue(null);
+      ConfigOptions.key("as-of-timestamp").longType().defaultValue(null)
+        .withDescription("Retrieve the full data of the specified snapshot at the given timestamp, " +
+          "used for batch scan mode");
 
   public static final ConfigOption<StreamingStartingStrategy> STARTING_STRATEGY =
       ConfigOptions.key("starting-strategy")
       .enumType(StreamingStartingStrategy.class)
-      .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT);
+      .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT)
+        .withDescription("Specific the starting strategy for streaming execution");
 
   public static final ConfigOption<Long> START_SNAPSHOT_TIMESTAMP =
-      ConfigOptions.key("start-snapshot-timestamp").longType().defaultValue(null);
+      ConfigOptions.key("start-snapshot-timestamp").longType().defaultValue(null)
+        .withDescription("Specific the snapshot timestamp that streaming job starts from");
 
   public static final ConfigOption<Long> START_SNAPSHOT_ID =
-      ConfigOptions.key("start-snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("start-snapshot-id").longType().defaultValue(null)
+        .withDescription("Specific the snapshot id that streaming job starts from");
 
   public static final ConfigOption<Long> END_SNAPSHOT_ID =
-      ConfigOptions.key("end-snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("end-snapshot-id").longType().defaultValue(null)
+        .withDescription("Specific the snapshot id that streaming job to end");
 
   public static final ConfigOption<Long> SPLIT_SIZE =
-      ConfigOptions.key("split-size").longType().defaultValue(null);
+      ConfigOptions.key("split-size").longType().defaultValue(null)
+        .withDescription("Specific the target size when combining data input splits");
 
   public static final ConfigOption<Integer> SPLIT_LOOKBACK =
-      ConfigOptions.key("split-lookback").intType().defaultValue(null);
+      ConfigOptions.key("split-lookback").intType().defaultValue(null)
+        .withDescription("Specify the number of bins to consider when combining input splits");
 
   public static final ConfigOption<Long> SPLIT_FILE_OPEN_COST =
-      ConfigOptions.key("split-file-open-cost").longType().defaultValue(null);
+      ConfigOptions.key("split-file-open-cost").longType().defaultValue(null)
+        .withDescription("The estimated cost to open a file, used as a minimum weight when combining splits");
 
   public static final ConfigOption<Boolean> STREAMING =
-      ConfigOptions.key("streaming").booleanType().defaultValue(true);
+      ConfigOptions.key("streaming").booleanType().defaultValue(true)
+        .withDescription("Set if job is bounded or unbounded");
 
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
-      ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10));
+      ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10))
+        .withDescription("Specify the time interval for consecutively monitoring newly committed data files");
 
   public static final ConfigOption<Boolean> INCLUDE_COLUMN_STATS =
-      ConfigOptions.key("include-column-stats").booleanType().defaultValue(false);
+      ConfigOptions.key("include-column-stats").booleanType().defaultValue(false)
+        .withDescription("Set if loads the column stats with each file");
 
   public static final ConfigOption<Integer> MAX_PLANNING_SNAPSHOT_COUNT =
-      ConfigOptions.key("max-planning-snapshot-count").intType().defaultValue(Integer.MAX_VALUE);
+      ConfigOptions.key("max-planning-snapshot-count").intType().defaultValue(Integer.MAX_VALUE)
+        .withDescription("Specify the max planning snapshot count");
 
   protected final boolean caseSensitive;
   protected final boolean exposeLocality;
@@ -109,12 +124,27 @@ public class ScanContext implements Serializable {
   protected final Integer planParallelism;
   protected final int maxPlanningSnapshotCount;
 
-  protected ScanContext(boolean caseSensitive, Long snapshotId, StreamingStartingStrategy startingStrategy,
-      Long startSnapshotTimestamp, Long startSnapshotId, Long endSnapshotId,
-      Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
-      boolean isStreaming, Duration monitorInterval, String nameMapping,
-      Schema schema, List<Expression> filters, long limit, boolean includeColumnStats,
-      boolean exposeLocality, Integer planParallelism, int maxPlanningSnapshotCount) {
+  protected ScanContext(
+      boolean caseSensitive,
+      Long snapshotId,
+      StreamingStartingStrategy startingStrategy,
+      Long startSnapshotTimestamp,
+      Long startSnapshotId,
+      Long endSnapshotId,
+      Long asOfTimestamp,
+      Long splitSize,
+      Integer splitLookback,
+      Long splitOpenFileCost,
+      boolean isStreaming,
+      Duration monitorInterval,
+      String nameMapping,
+      Schema schema,
+      List<Expression> filters,
+      long limit,
+      boolean includeColumnStats,
+      boolean exposeLocality,
+      Integer planParallelism,
+      int maxPlanningSnapshotCount) {
     this.caseSensitive = caseSensitive;
     this.snapshotId = snapshotId;
     this.startingStrategy = startingStrategy;
