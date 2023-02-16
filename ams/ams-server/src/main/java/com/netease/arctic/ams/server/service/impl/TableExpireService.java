@@ -132,7 +132,8 @@ public class TableExpireService implements ITableExpireService {
               return null;
             }
 
-            // get valid files in the change store which shouldn't physically delete when expire the snapshot in the base store
+            // get valid files in the change store which shouldn't physically delete when expire the snapshot
+            // in the base store
             Set<String> baseExclude = ContentFileUtil.getAllContentFilePath(changeTable);
             baseExclude.addAll(finalHiveLocation);
             expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
@@ -145,7 +146,8 @@ public class TableExpireService implements ITableExpireService {
                     System.currentTimeMillis() - changeDataTTL);
             deleteChangeFile(keyedArcticTable, changeDataFiles);
 
-            // get valid files in the base store which shouldn't physically delete when expire the snapshot in the change store
+            // get valid files in the base store which shouldn't physically delete when expire the snapshot
+            // in the change store
             Set<String> changeExclude = ContentFileUtil.getAllContentFilePath(baseTable);
             changeExclude.addAll(finalHiveLocation);
             expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
