@@ -626,6 +626,10 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
 
       try {
+        // reset snapshot id in table runtime, because the tasks were cleared rather than committed.
+        // So need to plan again.
+        tableOptimizeRuntime.setCurrentSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+        tableOptimizeRuntime.setCurrentChangeSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
         // persist partition optimize time
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
