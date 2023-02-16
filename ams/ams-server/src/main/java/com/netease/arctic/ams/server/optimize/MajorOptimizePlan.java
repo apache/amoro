@@ -119,16 +119,18 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     return dataFile.fileSizeInBytes() < getSmallFileSize(arcticTable.properties());
   }
 
+  protected TaskConfig getTaskConfig(String partition) {
+    return new TaskConfig(getOptimizeType(), partition, UUID.randomUUID().toString(), planGroup,
+        System.currentTimeMillis());
+  }
+
   private List<BasicOptimizeTask> collectUnKeyedTableTasks(String partition) {
     List<BasicOptimizeTask> collector = new ArrayList<>();
-    String commitGroup = UUID.randomUUID().toString();
-    long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, getOptimizeType(), createTime, "");
+    TaskConfig taskPartitionConfig = getTaskConfig(partition);
 
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partition);
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partition);
-    if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
+    if (nodeTaskNeedBuild(partition, posDeleteFiles, baseFiles)) {
       // for unkeyed table, tasks can be bin-packed
       long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
           TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -154,10 +156,7 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
       return Collections.emptyList();
     }
     List<BasicOptimizeTask> collector = new ArrayList<>();
-    String commitGroup = UUID.randomUUID().toString();
-    long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, getOptimizeType(), createTime, "");
+    TaskConfig taskPartitionConfig = getTaskConfig(partition);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());
@@ -168,7 +167,7 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
         List<DeleteFile> posDeleteFiles = new ArrayList<>();
         subTree.collectPosDeleteFiles(posDeleteFiles);
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
-        if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
+        if (nodeTaskNeedBuild(partition, posDeleteFiles, baseFiles)) {
           collector.add(buildOptimizeTask(sourceNodes,
               Collections.emptyList(), Collections.emptyList(), baseFiles, posDeleteFiles, taskPartitionConfig));
         }
@@ -180,11 +179,13 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
 
   /**
    * check whether node task need to build
+   * 
+   * @param partition partition
    * @param posDeleteFiles pos-delete files in node
    * @param baseFiles base files in node
    * @return whether the node task need to build. If true, build task, otherwise skip.
    */
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return baseFiles.size() >= 2;
   }
 }

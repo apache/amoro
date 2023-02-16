@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
@@ -72,7 +73,8 @@ import static com.netease.arctic.TableTestBase.writePosDeleteFile;
 
 public class AbstractOptimizingTest {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingTest.class);
-  private static final long TIMEOUT = 30_000;
+  private static final long WAIT_SUCCESS_TIMEOUT = 30_000;
+  private static final long CHECK_TIMEOUT = 1_000;
 
   protected static OffsetDateTime ofDateWithZone(int year, int mon, int day, int hour) {
     LocalDateTime dateTime = LocalDateTime.of(year, mon, day, hour, 0);
@@ -110,6 +112,12 @@ public class AbstractOptimizingTest {
   }
 
   protected static void updateProperties(Table table, String key, String value) {
+    UpdateProperties updateProperties = table.updateProperties();
+    updateProperties.set(key, value);
+    updateProperties.commit();
+  }
+
+  protected static void updateProperties(ArcticTable table, String key, String value) {
     UpdateProperties updateProperties = table.updateProperties();
     updateProperties.set(key, value);
     updateProperties.commit();
@@ -164,9 +172,15 @@ public class AbstractOptimizingTest {
     appendFiles.commit();
   }
 
-  protected static void writeBase(UnkeyedTable table, List<Record> insertRows) {
-    List<DataFile> insertFiles = write(table, insertRows);
-    AppendFiles appendFiles = table.newAppend();
+  protected static void writeBase(ArcticTable table, List<Record> insertRows) {
+    UnkeyedTable baseTable;
+    if (table.isUnkeyedTable()) {
+      baseTable = table.asUnkeyedTable();
+    } else {
+      baseTable = table.asKeyedTable().baseTable();
+    }
+    List<DataFile> insertFiles = write(baseTable, insertRows);
+    AppendFiles appendFiles = baseTable.newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
   }
@@ -231,6 +245,18 @@ public class AbstractOptimizingTest {
     assertRecordValues(actualRows, 0, expectIds);
   }
 
+  protected static void assertIdRange(List<Record> actualRows, int from, int to) {
+    assertRecordValues(actualRows, 0, range(from,to).toArray());
+  }
+
+  protected static List<Integer> range(int from, int to) {
+    List<Integer> ids = new ArrayList<>();
+    for (int i = from; i <= to; i++) {
+      ids.add(i);
+    }
+    return ids;
+  }
+
   protected static void assertNames(List<Record> actualRows, Object... expectNames) {
     assertRecordValues(actualRows, 1, expectNames);
   }
@@ -280,7 +306,7 @@ public class AbstractOptimizingTest {
               optimizeHistory.stream().map(OptimizeHistory::getRecordId).max(Comparator.naturalOrder()).get());
           return Status.RUNNING;
         }
-      }, TIMEOUT);
+      }, WAIT_SUCCESS_TIMEOUT);
     } catch (TimeoutException e) {
       throw new IllegalStateException("wait optimize result timeout expectRecordId " + expectRecordId, e);
     }
@@ -291,6 +317,23 @@ public class AbstractOptimizingTest {
     } else {
       return null;
     }
+  }
+
+  protected static void assertOptimizeHangUp(TableIdentifier tableIdentifier, long notExpectRecordId) {
+    try {
+      Thread.sleep(CHECK_TIMEOUT);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException("waiting result was interrupted");
+    }
+    List<OptimizeHistory> optimizeHistory =
+        ServiceContainer.getOptimizeService().getOptimizeHistory(tableIdentifier);
+    if (optimizeHistory == null || optimizeHistory.isEmpty()) {
+      return;
+    }
+    Optional<OptimizeHistory> any =
+        optimizeHistory.stream().filter(p -> p.getRecordId() >= notExpectRecordId).findAny();
+    any.ifPresent(h -> LOG.error("{} get unexpected optimize history {} {}", tableIdentifier, notExpectRecordId, h));
+    Assert.assertFalse("optimize is not stopped", any.isPresent());
   }
 
   protected static boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout)
@@ -308,7 +351,7 @@ public class AbstractOptimizingTest {
         try {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
-          e.printStackTrace();
+          throw new IllegalStateException("waiting result was interrupted");
         }
       } else {
         return true;

@@ -1,6 +1,7 @@
 package com.netease.arctic.ams.server;
 
 import com.netease.arctic.ams.server.optimize.IcebergHadoopOptimizingTest;
+import com.netease.arctic.ams.server.optimize.MixedHiveOptimizingTest;
 import com.netease.arctic.ams.server.optimize.MixedIcebergOptimizingTest;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -20,6 +21,7 @@ import org.apache.iceberg.Tables;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -97,17 +99,11 @@ public class OptimizingIntegrationTest {
     catalogsCache.clear();
   }
 
-  private void assertTableExist(TableIdentifier tableIdentifier) {
-    List<TableIdentifier> tableIdentifiers = amsEnvironment.refreshTables();
-    Assert.assertTrue(tableIdentifiers.contains(tableIdentifier));
-  }
-
   @Test
   public void testPkTableOptimizing() {
     ArcticTable arcticTable = createArcticTable(TB_2, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(TB_2);
-    MixedIcebergOptimizingTest testCase =
-        new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testKeyedTableContinueOptimizing();
   }
 
@@ -115,8 +111,7 @@ public class OptimizingIntegrationTest {
   public void testPkPartitionTableOptimizing() {
     ArcticTable arcticTable = createArcticTable(TB_1, PRIMARY_KEY, SPEC);
     assertTableExist(TB_1);
-    MixedIcebergOptimizingTest testCase =
-        new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testKeyedTableContinueOptimizing();
   }
 
@@ -124,8 +119,7 @@ public class OptimizingIntegrationTest {
   public void testNoPkTableOptimizing() {
     ArcticTable arcticTable = createArcticTable(TB_3, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned());
     assertTableExist(TB_3);
-    MixedIcebergOptimizingTest testCase =
-        new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testNoPkTableOptimizing();
   }
 
@@ -133,8 +127,7 @@ public class OptimizingIntegrationTest {
   public void testNoPkPartitionTableOptimizing() {
     ArcticTable arcticTable = createArcticTable(TB_4, PrimaryKeySpec.noPrimaryKey(), SPEC);
     assertTableExist(TB_4);
-    MixedIcebergOptimizingTest testCase =
-        new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testNoPkPartitionTableOptimizing();
   }
 
@@ -142,8 +135,7 @@ public class OptimizingIntegrationTest {
   public void testIcebergTableFullOptimize() throws IOException {
     Table table = createIcebergTable(TB_5, PartitionSpec.unpartitioned());
     assertTableExist(TB_5);
-    IcebergHadoopOptimizingTest testCase =
-        new IcebergHadoopOptimizingTest(TB_5, table, getOptimizeHistoryStartId());
+    IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_5, table, getOptimizeHistoryStartId());
     testCase.testIcebergTableFullOptimize();
   }
 
@@ -151,8 +143,7 @@ public class OptimizingIntegrationTest {
   public void testIcebergTableOptimizing() throws IOException {
     Table table = createIcebergTable(TB_6, PartitionSpec.unpartitioned());
     assertTableExist(TB_6);
-    IcebergHadoopOptimizingTest testCase =
-        new IcebergHadoopOptimizingTest(TB_6, table, getOptimizeHistoryStartId());
+    IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_6, table, getOptimizeHistoryStartId());
     testCase.testIcebergTableOptimizing();
   }
 
@@ -160,8 +151,7 @@ public class OptimizingIntegrationTest {
   public void testPartitionIcebergTableOptimizing() throws IOException {
     Table table = createIcebergTable(TB_7, SPEC);
     assertTableExist(TB_7);
-    IcebergHadoopOptimizingTest testCase =
-        new IcebergHadoopOptimizingTest(TB_7, table, getOptimizeHistoryStartId());
+    IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_7, table, getOptimizeHistoryStartId());
     testCase.testPartitionIcebergTableOptimizing();
   }
 
@@ -169,17 +159,28 @@ public class OptimizingIntegrationTest {
   public void testV1IcebergTableOptimizing() throws IOException {
     Table table = createIcebergV1Table(TB_8, PartitionSpec.unpartitioned());
     assertTableExist(TB_8);
-    IcebergHadoopOptimizingTest testCase =
-        new IcebergHadoopOptimizingTest(TB_8, table, getOptimizeHistoryStartId());
+    IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_8, table, getOptimizeHistoryStartId());
     testCase.testV1IcebergTableOptimizing();
   }
 
   @Test
-  public void testHivePkTableOptimizing() {
+  public void testHiveKeyedTableMajorOptimizeNotMove() throws TException, IOException {
     createHiveArcticTable(TB_9, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(TB_9);
     KeyedTable table = catalog(HIVE_CATALOG).loadTable(TB_9).asKeyedTable();
-    // TODO
+    MixedHiveOptimizingTest testCase =
+        new MixedHiveOptimizingTest(table, TEST_HMS.getHiveClient(), getOptimizeHistoryStartId());
+    testCase.testHiveKeyedTableMajorOptimizeNotMove();
+  }
+
+  @Test
+  public void testHiveKeyedTableMajorOptimizeAndMove() throws TException, IOException {
+    createHiveArcticTable(TB_10, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    assertTableExist(TB_10);
+    KeyedTable table = catalog(HIVE_CATALOG).loadTable(TB_10).asKeyedTable();
+    MixedHiveOptimizingTest testCase =
+        new MixedHiveOptimizingTest(table, TEST_HMS.getHiveClient(), getOptimizeHistoryStartId());
+    testCase.testHiveKeyedTableMajorOptimizeAndMove();
   }
 
   private static long getOptimizeHistoryStartId() {
@@ -232,5 +233,10 @@ public class OptimizingIntegrationTest {
 
     return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,
         ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
+  }
+
+  private void assertTableExist(TableIdentifier tableIdentifier) {
+    List<TableIdentifier> tableIdentifiers = amsEnvironment.refreshTables();
+    Assert.assertTrue(tableIdentifiers.contains(tableIdentifier));
   }
 }

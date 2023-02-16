@@ -78,11 +78,6 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
-    throw new UnsupportedOperationException("Minor optimize not check with this method");
-  }
-
-  @Override
   protected OptimizeType getOptimizeType() {
     return OptimizeType.Minor;
   }
@@ -110,9 +105,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxSequence,
-        changeTableMinSequence.get(partition),
-        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
+    TaskConfig taskPartitionConfig = new TaskConfig(OptimizeType.Minor, partition, commitGroup, planGroup, createTime,
+        changeTableMaxSequence, changeTableMinSequence.get(partition));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());

@@ -107,10 +107,11 @@ public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 4, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   public void testV1IcebergTableOptimizing() throws IOException {
@@ -145,6 +146,7 @@ public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8);
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   public void testPartitionIcebergTableOptimizing() throws IOException {
@@ -211,10 +213,12 @@ public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 4, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
+
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   public void testIcebergTableFullOptimize() throws IOException {
@@ -272,6 +276,8 @@ public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 8, 1);
 
     assertIds(readRecords(table), 4);
+
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
 

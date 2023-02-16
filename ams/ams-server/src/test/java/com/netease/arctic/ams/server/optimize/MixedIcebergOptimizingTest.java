@@ -120,9 +120,10 @@ public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
-    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 3, 1);
     assertIds(readRecords(table), 11);
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   public void testNoPkPartitionTableOptimizing() {
@@ -158,9 +159,11 @@ public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
         newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   public void testNoPkTableOptimizing() {
@@ -196,9 +199,11 @@ public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
         newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+
+    assertOptimizeHangUp(tb, startId + offset);
   }
 
   private Record newRecord(Object... val) {

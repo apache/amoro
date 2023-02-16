@@ -80,7 +80,7 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  protected long changeTableMaxSequence;
+  protected Long changeTableMaxSequence;
   protected final Map<String, Long> changeTableMinSequence = new HashMap<>();
 
   public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
@@ -183,7 +183,13 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) +
         optimizeTask.getPosDeleteFiles().size() + "");
-    properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, taskConfig.getCustomHiveSubdirectory());
+    String customHiveSubdirectory = taskConfig.getCustomHiveSubdirectory();
+    if (customHiveSubdirectory != null) {
+      properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, customHiveSubdirectory);
+    }
+    if (taskConfig.isMoveFilesToHiveLocation()) {
+      properties.put(OptimizeTaskProperties.MOVE_FILES_TO_HIVE_LOCATION, true + "");
+    }
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -359,14 +365,6 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     return insertFiles;
   }
 
-  /**
-   * check whether node task need to build
-   * @param posDeleteFiles pos-delete files in node
-   * @param baseFiles base files in node
-   * @return whether the node task need to build. If true, build task, otherwise skip.
-   */
-  protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
-
   protected abstract boolean baseFileShouldOptimize(DataFile baseFile, String partition);
 
   protected boolean hasFileToOptimize() {
@@ -384,7 +382,7 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   }
 
   private void markChangeSequence(String partition, long fileTid) {
-    if (this.changeTableMaxSequence < fileTid) {
+    if (this.changeTableMaxSequence == null || this.changeTableMaxSequence < fileTid) {
       this.changeTableMaxSequence = fileTid;
     }
     Long tid = changeTableMinSequence.get(partition);
