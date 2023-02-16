@@ -22,10 +22,10 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
-import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
@@ -297,14 +297,14 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
   private static Set<String> getValidDataFiles(ArcticTable arcticTable) {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
-      Set<String> baseValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
+      Set<String> baseValidFiles = UnKeyedTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
       LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
-      Set<String> changeValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
+      Set<String> changeValidFiles = UnKeyedTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
       LOG.info("{} get {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
       validFiles.addAll(changeValidFiles);
     } else {
-      Set<String> baseValidFiles = ContentFileUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
+      Set<String> baseValidFiles = UnKeyedTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
       LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
     }

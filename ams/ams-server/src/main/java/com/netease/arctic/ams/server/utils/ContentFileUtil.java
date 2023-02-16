@@ -49,7 +49,6 @@ import java.util.Set;
  * Tools for handling the ContentFile which in Iceberg
  */
 public class ContentFileUtil {
-  private static final Logger LOG = LoggerFactory.getLogger(ContentFileUtil.class);
 
   public static ContentFileWithSequence<?> buildContentFile(DataFileInfo dataFileInfo,
                                                 PartitionSpec partitionSpec,
@@ -94,33 +93,5 @@ public class ContentFileUtil {
     }
 
     return WrapFileWithSequenceNumberHelper.wrap(contentFile, dataFileInfo.sequence);
-  }
-
-  public static Set<String> getAllContentFilePath(UnkeyedTable innerTable) {
-    Set<String> validFilesPath = new HashSet<>();
-
-    Table manifestTable =
-        MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) innerTable).operations(),
-            innerTable.name(), metadataTableName(innerTable.name(), MetadataTableType.ALL_ENTRIES),
-            MetadataTableType.ALL_ENTRIES);
-    try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
-      for (Record entry : entries) {
-        ManifestEntryFields.Status status =
-            ManifestEntryFields.Status.of((int) entry.get(ManifestEntryFields.STATUS.fieldId()));
-        if (status == ManifestEntryFields.Status.ADDED || status == ManifestEntryFields.Status.EXISTING) {
-          GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
-          String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-          validFilesPath.add(TableFileUtils.getUriPath(filePath));
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("close manifest file error", e);
-    }
-
-    return validFilesPath;
-  }
-
-  private static String metadataTableName(String tableName, MetadataTableType type) {
-    return tableName + (tableName.contains("/") ? "#" : ".") + type;
   }
 }

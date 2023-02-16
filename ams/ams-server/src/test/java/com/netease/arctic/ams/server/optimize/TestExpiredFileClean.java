@@ -22,7 +22,7 @@ import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
-import com.netease.arctic.ams.server.utils.ContentFileUtil;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -116,7 +116,7 @@ public class TestExpiredFileClean extends TableTestBase {
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
-    Set<String> exclude = ContentFileUtil.getAllContentFilePath(testKeyedTable.baseTable());
+    Set<String> exclude = UnKeyedTableUtil.getAllContentFilePath(testKeyedTable.baseTable());
     insertChangeDataFiles(2);
     TableExpireService.expireSnapshots(testKeyedTable.changeTable(), System.currentTimeMillis(), exclude);
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));

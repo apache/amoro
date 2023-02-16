@@ -27,6 +27,7 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -134,7 +135,7 @@ public class TableExpireService implements ITableExpireService {
 
             // get valid files in the change store which shouldn't physically delete when expire the snapshot
             // in the base store
-            Set<String> baseExclude = ContentFileUtil.getAllContentFilePath(changeTable);
+            Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
             baseExclude.addAll(finalHiveLocation);
             expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
             long baseCleanedTime = System.currentTimeMillis();
@@ -148,7 +149,7 @@ public class TableExpireService implements ITableExpireService {
 
             // get valid files in the base store which shouldn't physically delete when expire the snapshot
             // in the change store
-            Set<String> changeExclude = ContentFileUtil.getAllContentFilePath(baseTable);
+            Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
             changeExclude.addAll(finalHiveLocation);
             expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
             return null;

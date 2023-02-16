@@ -24,12 +24,19 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.io.writer.GenericChangeTaskWriter;
+import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.utils.TableFileUtils;
+import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +46,9 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService.DATA_FOLDER_NAME;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -85,6 +94,42 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     }
     for (FileScanTask task : testKeyedTable.changeTable().newScan().planFiles()) {
       Assert.assertTrue(testKeyedTable.io().exists(task.file().path().toString()));
+    }
+  }
+
+  @Test
+  public void orphanChangeDataFileInBaseClean() throws IOException {
+    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+        .withTransactionId(1L).buildChangeWriter();
+    for (Record record : baseRecords(1, 10, testKeyedTable.schema())) {
+      writer.write(record);
+    }
+    Set<String> pathAll = new HashSet<>();
+    Set<String> fileInBaseStore = new HashSet<>();
+    Set<String> fileOnlyInChangeLocation = new HashSet<>();
+    WriteResult result = writer.complete();
+    AppendFiles appendFiles = testKeyedTable.asKeyedTable().baseTable().newAppend();
+
+    for (int i = 0; i < result.dataFiles().length; i++) {
+      DataFile dataFile = result.dataFiles()[i];
+      pathAll.add(TableFileUtils.getUriPath(dataFile.path().toString()));
+      if (i == 0) {
+        appendFiles.appendFile(dataFile).commit();
+        fileInBaseStore.add(TableFileUtils.getUriPath(dataFile.path().toString()));
+      } else {
+        fileOnlyInChangeLocation.add(TableFileUtils.getUriPath(dataFile.path().toString()));
+      }
+    }
+    for (String s : pathAll) {
+      Assert.assertTrue(testKeyedTable.io().exists(s));
+    }
+
+    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
+    for (String s : fileInBaseStore) {
+      Assert.assertTrue(testKeyedTable.io().exists(s));
+    }
+    for (String s : fileOnlyInChangeLocation) {
+      Assert.assertFalse(testKeyedTable.io().exists(s));
     }
   }
 
