@@ -28,6 +28,7 @@ public interface ChangeTableIncrementalScan extends TableScan {
   /**
    * Config this scan to read data from {@code partitionTransactionId} exclusive to
    * the current Transaction inclusive.
+   *
    * @param partitionTransactionId from TransactionId for each partition
    * @return this for method chaining
    */
@@ -39,13 +40,20 @@ public interface ChangeTableIncrementalScan extends TableScan {
    * the current Transaction inclusive.
    * For partitions set both TransactionId and LegacyTransactionId, LegacyTransactionId will
    * be ignored.
+   *
    * @param partitionTransactionId from TransactionId for each partition
    * @return this for method chaining
    */
   ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
-  
+
+  /**
+   * Plan the {@link ContentFileWithSequence files with sequence} that will be read by this scan.
+   * The sequence is the sequence for each file from iceberg metadata.
+   *
+   * @return an Iterable of files with sequence that are required by this scan
+   */
+  CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence();
+
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
-
-  CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence();
 }

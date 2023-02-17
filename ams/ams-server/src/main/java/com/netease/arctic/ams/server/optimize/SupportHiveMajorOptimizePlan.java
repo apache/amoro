@@ -142,7 +142,7 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   @Override
   protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     if (notMoveToHiveLocation(partition)) {
-      // if not move to hive location, no need to optimize, to avoid keeping optimizing
+      // if not move to hive location, no need to optimize for only 1 base file, to avoid continuous optimizing
       return baseFiles.size() >= 2;
     } else {
       return true;

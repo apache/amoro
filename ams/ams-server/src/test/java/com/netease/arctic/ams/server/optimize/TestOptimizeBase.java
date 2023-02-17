@@ -26,7 +26,6 @@ import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -48,7 +47,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -259,11 +258,9 @@ public interface TestOptimizeBase {
         keyedTable.changeTable().newChangeScan()
             .fromTransaction(partitionMaxTransactionId)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId);
-    List<ContentFileWithSequence<?>> changeFiles = new ArrayList<>();
+    List<ContentFileWithSequence<?>> changeFiles;
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
-      for (ContentFileWithSequence<?> file : files) {
-        changeFiles.add(file);
-      }
+      changeFiles = Lists.newArrayList(files);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
     }

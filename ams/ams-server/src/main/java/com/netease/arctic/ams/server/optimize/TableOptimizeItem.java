@@ -1072,11 +1072,9 @@ public class TableOptimizeItem extends IJDBCService {
             .fromTransaction(partitionMaxTransactionId)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());
-    List<ContentFileWithSequence<?>> changeFiles = new ArrayList<>();
+    List<ContentFileWithSequence<?>> changeFiles;
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
-      for (ContentFileWithSequence<?> file : files) {
-        changeFiles.add(file);
-      }
+      changeFiles = Lists.newArrayList(files);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
     }
