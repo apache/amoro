@@ -100,6 +100,7 @@
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.75</fastjson.version>
+        <jackson.version>2.14.2</jackson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
     </properties>

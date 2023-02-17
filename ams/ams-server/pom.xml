@@ -36,6 +36,7 @@
     <properties>
         <powermock.version>2.0.2</powermock.version>
         <fastjson.version>1.2.75</fastjson.version>
+        <jackson.version>2.14.2</jackson.version>
         <netty.version>4.1.56.Final</netty.version>
         <websocket.version>9.4.46.v20220331</websocket.version>
         <jetty.verison>9.4.46.v20220331</jetty.verison>
@@ -265,6 +266,12 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>${fastjson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
