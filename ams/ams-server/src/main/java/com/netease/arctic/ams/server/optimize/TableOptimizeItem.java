@@ -672,6 +672,7 @@ public class TableOptimizeItem extends IJDBCService {
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
 
+      TableOptimizeRuntime oldTableRuntime = tableOptimizeRuntime.clone();
       try {
         // reset snapshot id in table runtime, because the tasks were cleared rather than committed.
         // So need to plan again.
@@ -680,8 +681,10 @@ public class TableOptimizeItem extends IJDBCService {
         // persist partition optimize time
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
-        LOG.warn("failed to persist tableOptimizeRuntime after commit failed, ignore. " + getTableIdentifier(), t);
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to persist tableOptimizeRuntime after commit failed, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
+        return;
       }
 
       tasksLock.lock();
@@ -701,9 +704,11 @@ public class TableOptimizeItem extends IJDBCService {
         for (OptimizeTaskItem optimizeTaskItem : removedList) {
           optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
         }
-        LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
             t);
         sqlSession.rollback(true);
+        return;
       } finally {
         tasksLock.unlock();
       }
