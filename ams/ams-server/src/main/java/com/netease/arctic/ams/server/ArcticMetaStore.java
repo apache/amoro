@@ -346,14 +346,17 @@ public class ArcticMetaStore {
   private static void syncAndExpiredFileInfoCache() {
     Thread t = new Thread(() -> {
       while (server.isServing()) {
+        ThreadPool.getSyncFileInfoCachePool().submit(() -> {
+          try {
+            FileInfoCacheService.SyncAndExpireFileCacheTask task =
+                new FileInfoCacheService.SyncAndExpireFileCacheTask();
+            task.doTask();
+          } catch (Exception e) {
+            LOG.error("sync and expired file info cache error", e);
+          }
+        });
         try {
-          FileInfoCacheService.SyncAndExpireFileCacheTask task =
-              new FileInfoCacheService.SyncAndExpireFileCacheTask();
-          task.doTask();
-        } catch (Exception e) {
-          LOG.error("sync and expired file info cache error", e);
-        }
-        try {
+          ThreadPool.getSyncFileInfoCachePool().awaitTermination(Long.MAX_VALUE, TimeUnit.HOURS);
           Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
