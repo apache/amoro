@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read;
 
+import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.flink.read.hybrid.reader.ReaderFunction;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
@@ -61,9 +62,14 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.junit.After;
@@ -319,6 +325,78 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
 
     LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+  }
+
+  @Test
+  public void testArcticSourceEnumeratorWithChangeExpired() throws Exception {
+    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
+    KeyedTable table = testCatalog
+      .newTableBuilder(tableId, TABLE_SCHEMA)
+      .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+      .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+      .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+      .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(table, false);
+    List<RowData> changeData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : changeData) {
+      taskWriter.write(record);
+    }
+
+    List<DataFile> changeDataFiles = new ArrayList<>();
+    WriteResult result = taskWriter.complete();
+    changeDataFiles.addAll(Arrays.asList(result.dataFiles()));
+    commit(table, result, false);
+
+    for (DataFile dataFile : changeDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+    }
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
+
+    LOG.info("=== first Assert begin ===");
+    Assert.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
+
+    // expire changeTable snapshots
+    DeleteFiles deleteFiles = table.changeTable().newDelete();
+    for (DataFile dataFile : changeDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      deleteFiles.deleteFile(dataFile);
+    }
+    deleteFiles.commit();
+
+    LOG.info("commit empty snapshot");
+    AppendFiles changeAppend = table.changeTable().newAppend();
+    changeAppend.commit();
+    Thread.sleep(ScanContext.MONITOR_INTERVAL.defaultValue().toMillis() * 2);
+
+    TableExpireService.expireSnapshots(table.changeTable(), System.currentTimeMillis(), new HashSet<>());
+
     writeUpdate(updateRecords(), table);
     writeUpdate(updateRecords(), table);
 

@@ -63,6 +63,12 @@ public class ArcticEnumeratorOffset {
     this.snapshotTimestampMs = snapshotTimestamp;
   }
 
+  public boolean isEmpty() {
+    return (changeSnapshotId == null && snapshotTimestampMs == null) ||
+      (changeSnapshotId != null && changeSnapshotId == Long.MIN_VALUE &&
+        snapshotTimestampMs != null && snapshotTimestampMs == Long.MIN_VALUE);
+  }
+
   @Override
   public int hashCode() {
     return Objects.hashCode(
