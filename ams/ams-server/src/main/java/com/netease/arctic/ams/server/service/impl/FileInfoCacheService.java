@@ -68,7 +68,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class FileInfoCacheService extends IJDBCService {
 
@@ -579,8 +580,9 @@ public class FileInfoCacheService extends IJDBCService {
     private void syncCache() {
       LOG.info("start execute syncCache");
       List<TableMetadata> tableMetadata = metaService.listTables();
+      List<Future> futures = new ArrayList<>();
       tableMetadata.forEach(meta -> {
-        ThreadPool.getSyncFileInfoCachePool().submit(() -> {
+        futures.add(ThreadPool.getSyncFileInfoCachePool().submit(() -> {
           if (meta.getTableIdentifier() == null) {
             return;
           }
@@ -605,13 +607,19 @@ public class FileInfoCacheService extends IJDBCService {
                 "SyncAndExpireFileCacheTask sync cache error " + tableIdentifier.catalog + tableIdentifier.database +
                     tableIdentifier.tableName, e);
           }
-        });
+        }));
       });
-      try {
-        ThreadPool.getSyncFileInfoCachePool().awaitTermination(Long.MAX_VALUE, TimeUnit.HOURS);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+      Iterator<Future> iterator = futures.iterator();
+      while (iterator.hasNext()) {
+        try {
+          iterator.next().get();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+          LOG.error("sync file cache error", e);
+        }
       }
+      LOG.info("end execute syncCache");
     }
 
     private void doSync(TableIdentifier tableIdentifier, String innerTable) {
