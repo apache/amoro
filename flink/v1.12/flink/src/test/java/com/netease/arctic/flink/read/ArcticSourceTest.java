@@ -597,6 +597,32 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     return rowData;
   }
 
+  private static void expireSnapshots(UnkeyedTable arcticInternalTable,
+                                      long olderThan,
+                                      Set<String> exclude) {
+    LOG.debug("start expire snapshots, the exclude is {}", exclude);
+    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
+    final AtomicInteger deleteFiles = new AtomicInteger(0);
+    Set<String> parentDirectory = new HashSet<>();
+    arcticInternalTable.expireSnapshots()
+      .retainLast(1).expireOlderThan(olderThan)
+      .deleteWith(file -> {
+        try {
+          if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
+            arcticInternalTable.io().deleteFile(file);
+          }
+          parentDirectory.add(new Path(file).getParent().toString());
+          deleteFiles.incrementAndGet();
+        } catch (Throwable t) {
+          LOG.warn("failed to delete file " + file, t);
+        } finally {
+          toDeleteFiles.incrementAndGet();
+        }
+      }).cleanExpiredFiles(true).commit();
+    parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
+  }
+
   private ArcticSource<RowData> initArcticSource(boolean isStreaming) {
     return initArcticSource(isStreaming, SCAN_STARTUP_MODE_EARLIEST);
   }
@@ -679,33 +705,6 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
   private ArcticTableLoader initLoader() {
     return ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
   }
-
-  private static void expireSnapshots(UnkeyedTable arcticInternalTable,
-                                      long olderThan,
-                                      Set<String> exclude) {
-    LOG.debug("start expire snapshots, the exclude is {}", exclude);
-    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
-    final AtomicInteger deleteFiles = new AtomicInteger(0);
-    Set<String> parentDirectory = new HashSet<>();
-    arcticInternalTable.expireSnapshots()
-      .retainLast(1).expireOlderThan(olderThan)
-      .deleteWith(file -> {
-        try {
-          if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
-            arcticInternalTable.io().deleteFile(file);
-          }
-          parentDirectory.add(new Path(file).getParent().toString());
-          deleteFiles.incrementAndGet();
-        } catch (Throwable t) {
-          LOG.warn("failed to delete file " + file, t);
-        } finally {
-          toDeleteFiles.incrementAndGet();
-        }
-      }).cleanExpiredFiles(true).commit();
-    parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
-    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
-  }
-  
 
   private static class WatermarkAwareFailWrapper {
 

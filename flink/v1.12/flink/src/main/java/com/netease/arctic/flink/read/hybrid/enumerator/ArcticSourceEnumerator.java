@@ -176,13 +176,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     }
     if (!enumerationResult.isEmpty()) {
       splitAssigner.onDiscoveredSplits(enumerationResult.splits());
-//      enumeratorPosition.set(enumerationResult.toOffset());
-//      LOG.info("=== enumerationResult is not Empty ===");
-//      LOG.info("enumerationResult.toOffset(): {}", enumerationResult.toOffset());
     }
     if (!enumerationResult.toOffset().isEmpty()) {
-      LOG.info("=== enumerationResult.toOffset() is not Empty ===");
-      LOG.info("enumerationResult.toOffset(): {}", enumerationResult.toOffset());
       enumeratorPosition.set(enumerationResult.toOffset());
     }
 
