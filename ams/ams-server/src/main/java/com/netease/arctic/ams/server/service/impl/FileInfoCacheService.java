@@ -493,9 +493,11 @@ public class FileInfoCacheService extends IJDBCService {
         cache.setProducer(tableCommitMeta.getCommitMetaProducer().name());
         long fileSize = 0L;
         int fileCount = 0;
-        for (DataFile file : tableChange.getAddFiles()) {
-          fileSize += file.getFileSize();
-          fileCount++;
+        if (CollectionUtils.isNotEmpty(tableChange.getAddFiles())) {
+          for (DataFile file : tableChange.getAddFiles()) {
+            fileSize += file.getFileSize();
+            fileCount++;
+          }
         }
         cache.setFileSize(fileSize);
         cache.setFileCount(fileCount);

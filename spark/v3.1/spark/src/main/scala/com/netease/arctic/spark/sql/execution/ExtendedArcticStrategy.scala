@@ -18,40 +18,24 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.catalyst.plans.MigrateToArcticLogicalPlan
-import com.netease.arctic.spark.writer.WriteMode
-import org.apache.spark.sql.catalyst.analysis.ResolvedTable
-import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticTable
+import com.netease.arctic.spark.sql.catalyst.plans._
+import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
+import org.apache.spark.sql.catalyst.expressions.PredicateHelper
+import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-import org.apache.spark.sql.execution.datasources.v2.CreateTableAsSelectExec
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
+import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
-import scala.collection.JavaConverters
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
+case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
-      var propertiesMap: Map[String, String] = props
-      var optionsMap: Map[String, String] = options
-      if (options.contains("primary.keys")) {
-        propertiesMap += ("primary.keys" -> options("primary.keys"))
-      }
-      if(propertiesMap.contains("primary.keys")) {
-        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
-      }
-
-      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
-      CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
-        propertiesMap, writeOptions, ifNotExists) :: Nil
-
-    case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-      if provider.get != null && provider.get.equals("arctic") =>
-        CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
-
-    case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
+    case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended)
+      if isArcticTable(r.table) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
       }
@@ -59,9 +43,18 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
 
     case MigrateToArcticLogicalPlan(command) =>
       println("create migrate to arctic command logical")
-      MigrateToArcticExec(command)::Nil
+      MigrateToArcticExec(command) :: Nil
+
+    case ReplaceArcticData(d: DataSourceV2Relation, query, options) =>
+      AppendDataExec(
+        d.table.asWritable, new CaseInsensitiveStringMap(options
+          .asJava), planLater(query), refreshCache(d)) :: Nil
 
     case _ => Nil
+  }
+
+  private def refreshCache(r: NamedRelation)(): Unit = {
+    spark.sharedState.cacheManager.recacheByPlan(spark, r)
   }
 
 }
