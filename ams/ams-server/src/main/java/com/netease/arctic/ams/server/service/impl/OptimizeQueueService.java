@@ -377,7 +377,7 @@ public class OptimizeQueueService extends IJDBCService {
           String location =
               task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
 
-          if (location != null) {
+          if (StringUtils.isNotEmpty(location)) {
             try {
               ArcticTable arcticTable = ServiceContainer.getOptimizeService()
                   .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();

@@ -354,7 +354,7 @@ public class ArcticMetaStore {
           LOG.error("sync and expired file info cache error", e);
         }
         try {
-          Thread.sleep(5 * 60 * 1000);
+          Thread.sleep(ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.TABLE_FILE_INFO_CACHE_INTERVAL));
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
           return;
