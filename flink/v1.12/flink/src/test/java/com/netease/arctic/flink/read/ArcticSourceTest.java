@@ -381,8 +381,6 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     JobClient jobClient = clientAndIterator.client;
 
     List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
-
-    LOG.info("=== first Assert begin ===");
     Assert.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
 
     // expire changeTable snapshots
