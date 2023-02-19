@@ -706,6 +706,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     return ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
   }
 
+
   private static class WatermarkAwareFailWrapper {
 
     private static WatermarkFailoverTestOperator op;
