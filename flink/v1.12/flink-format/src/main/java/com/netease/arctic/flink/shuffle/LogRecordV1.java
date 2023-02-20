@@ -353,20 +353,16 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
       for (int i = 0; i < objects.length; i++) {
         Object obj = objects[i];
         Type type = fieldTypes[i];
-        obj = wrapIntoNullableConvert(type, obj);
+        obj = convertIfNecessary(type, obj);
         row.setField(i, obj);
       }
       return row;
     }
 
-    public Object wrapIntoNullableConvert(Type primitiveType, Object object) {
-      if (object == null) {
+    public Object convertIfNecessary(Type primitiveType, Object obj) {
+      if (obj == null) {
         return null;
       }
-      return convertIfNecessary(primitiveType, object);
-    }
-
-    public Object convertIfNecessary(Type primitiveType, Object obj) {
       switch (primitiveType.typeId()) {
         case STRING:
           obj = StringData.fromString(obj.toString());
