@@ -25,7 +25,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Objects;
  * The enumerator offset indicate the snapshot id of the change table, or the timestamp of snapshot.
  */
 public class ArcticEnumeratorOffset {
-  public static final ArcticEnumeratorOffset EMPTY = of(Long.MIN_VALUE, Long.MIN_VALUE);
+  public static final ArcticEnumeratorOffset EMPTY = empty();
 
   /**
    * use Long.MIN_VALUE to indicate the earliest offset
@@ -39,12 +39,12 @@ public class ArcticEnumeratorOffset {
     this.snapshotTimestampMs = snapshotTimestampMs;
   }
 
-  public static ArcticEnumeratorOffset of(long changeSnapshotId, Long snapshotTimestampMs) {
+  public static ArcticEnumeratorOffset of(Long changeSnapshotId, Long snapshotTimestampMs) {
     return new ArcticEnumeratorOffset(changeSnapshotId, snapshotTimestampMs);
   }
 
   public static ArcticEnumeratorOffset empty() {
-    return new ArcticEnumeratorOffset(null, null);
+    return new ArcticEnumeratorOffset(Long.MIN_VALUE, Long.MIN_VALUE);
   }
 
   public Long changeSnapshotId() {
@@ -64,9 +64,7 @@ public class ArcticEnumeratorOffset {
   }
 
   public boolean isEmpty() {
-    return (changeSnapshotId == null && snapshotTimestampMs == null) ||
-      (changeSnapshotId != null && changeSnapshotId == Long.MIN_VALUE &&
-        snapshotTimestampMs != null && snapshotTimestampMs == Long.MIN_VALUE);
+    return (changeSnapshotId == null && snapshotTimestampMs == null) || equals(EMPTY);
   }
 
   @Override
