@@ -108,6 +108,6 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
   }
 
   protected TaskWriter<RowData> createTaskWriter(KeyedTable keyedTable, boolean base) {
-    return createKeyedTaskWriter(keyedTable, ROW_TYPE, base);
+    return createKeyedTaskWriter(keyedTable, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), base);
   }
 }
