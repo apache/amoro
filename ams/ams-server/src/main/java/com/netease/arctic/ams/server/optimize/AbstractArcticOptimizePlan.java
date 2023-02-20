@@ -80,8 +80,8 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   // for change table
   protected final long currentChangeSnapshotId;
 
-  protected Long changeTableMaxSequence;
-  protected final Map<String, Long> changeTableMinSequence = new HashMap<>();
+  protected Long changeStoreToSequence;
+  protected final Map<String, Long> changeStoreFromSequence = new HashMap<>();
 
   public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                     List<ContentFileWithSequence<?>> changeFiles,
@@ -170,12 +170,12 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
               new TreeNode(node.getMask(), node.getIndex()))
           .collect(Collectors.toList()));
     }
-    if (taskConfig.getMaxChangeSequence() != null) {
-      optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxChangeSequence());
+    if (taskConfig.getToSequence() != null) {
+      optimizeTask.setToSequence(taskConfig.getToSequence());
     }
 
-    if (taskConfig.getMinChangeSequence() != null) {
-      optimizeTask.setMinChangeTransactionId(taskConfig.getMinChangeSequence());
+    if (taskConfig.getFromSequence() != null) {
+      optimizeTask.setFromSequence(taskConfig.getFromSequence());
     }
 
     // table ams url
@@ -234,7 +234,7 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
       }
       String partition = changeTable.spec().partitionToPath(file.partition());
       putChangeFileIntoFileTree(partition, file);
-      markChangeSequence(partition, file.getSequenceNumber());
+      markChangeStoreSequence(partition, file.getSequenceNumber());
 
       addCnt.getAndIncrement();
     });
@@ -381,15 +381,15 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     return currentChangeSnapshotId;
   }
 
-  private void markChangeSequence(String partition, long fileTid) {
-    if (this.changeTableMaxSequence == null || this.changeTableMaxSequence < fileTid) {
-      this.changeTableMaxSequence = fileTid;
+  private void markChangeStoreSequence(String partition, long sequence) {
+    if (this.changeStoreToSequence == null || this.changeStoreToSequence < sequence) {
+      this.changeStoreToSequence = sequence;
     }
-    Long tid = changeTableMinSequence.get(partition);
-    if (tid == null) {
-      changeTableMinSequence.put(partition, fileTid);
-    } else if (fileTid < tid) {
-      changeTableMinSequence.put(partition, fileTid);
+    Long fromSequence = changeStoreFromSequence.get(partition);
+    if (fromSequence == null) {
+      changeStoreFromSequence.put(partition, sequence);
+    } else if (sequence < fromSequence) {
+      changeStoreFromSequence.put(partition, sequence);
     }
   }
 

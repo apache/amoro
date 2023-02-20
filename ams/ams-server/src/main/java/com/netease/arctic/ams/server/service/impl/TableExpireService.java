@@ -30,8 +30,6 @@ import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -173,8 +171,8 @@ public class TableExpireService implements ITableExpireService {
       return;
     }
 
-    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
-    if (MapUtils.isEmpty(baseMaxTransactionId)) {
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
+    if (MapUtils.isEmpty(partitionOptimizedSequence)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;
     }
@@ -191,14 +189,14 @@ public class TableExpireService implements ITableExpireService {
       List<DataFileInfo> partitionDataFiles =
           partitionDataFileMap.get(changeDataFiles.get(0).getPartition());
 
-      Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
+      Long optimizedSequence = partitionOptimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= optimizedSequence)
             .collect(Collectors.toList()));
       }
     } else {
-      baseMaxTransactionId.forEach((key, value) -> {
+      partitionOptimizedSequence.forEach((key, value) -> {
         List<DataFileInfo> partitionDataFiles =
             partitionDataFileMap.get(keyedTable.baseTable().spec().partitionToPath(key));
 

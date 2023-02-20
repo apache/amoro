@@ -33,13 +33,13 @@ public class TaskConfig {
   @Nullable
   private final String customHiveSubdirectory;
   @Nullable
-  private final Long maxChangeSequence;
+  private final Long toSequence;
   @Nullable
-  private final Long minChangeSequence;
+  private final Long fromSequence;
 
   private TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
-                    boolean moveFilesToHiveLocation, @Nullable String customHiveSubdirectory,
-                    @Nullable Long maxChangeSequence, @Nullable Long minChangeSequence) {
+                     boolean moveFilesToHiveLocation, @Nullable String customHiveSubdirectory,
+                     @Nullable Long toSequence, @Nullable Long fromSequence) {
     this.optimizeType = optimizeType;
     this.partition = partition;
     this.commitGroup = commitGroup;
@@ -47,8 +47,8 @@ public class TaskConfig {
     this.createTime = createTime;
     this.moveFilesToHiveLocation = moveFilesToHiveLocation;
     this.customHiveSubdirectory = customHiveSubdirectory;
-    this.maxChangeSequence = maxChangeSequence;
-    this.minChangeSequence = minChangeSequence;
+    this.toSequence = toSequence;
+    this.fromSequence = fromSequence;
   }
 
   public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
@@ -58,9 +58,9 @@ public class TaskConfig {
   }
 
   public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
-                    @Nullable Long maxChangeSequence, @Nullable Long minChangeSequence) {
+                    @Nullable Long toSequence, @Nullable Long fromSequence) {
     this(optimizeType, partition, commitGroup, planGroup, createTime, false, null,
-        maxChangeSequence, minChangeSequence);
+        toSequence, fromSequence);
   }
 
   public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup,
@@ -78,13 +78,13 @@ public class TaskConfig {
   }
 
   @javax.annotation.Nullable
-  public Long getMaxChangeSequence() {
-    return maxChangeSequence;
+  public Long getToSequence() {
+    return toSequence;
   }
 
   @javax.annotation.Nullable
-  public Long getMinChangeSequence() {
-    return minChangeSequence;
+  public Long getFromSequence() {
+    return fromSequence;
   }
 
   public String getCommitGroup() {
@@ -118,8 +118,8 @@ public class TaskConfig {
         ", createTime=" + createTime +
         ", moveFilesToHiveLocation=" + moveFilesToHiveLocation +
         ", customHiveSubdirectory='" + customHiveSubdirectory + '\'' +
-        ", maxChangeSequence=" + maxChangeSequence +
-        ", minChangeSequence=" + minChangeSequence +
+        ", maxChangeSequence=" + toSequence +
+        ", minChangeSequence=" + fromSequence +
         '}';
   }
 }

@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -93,8 +94,8 @@ public class BasicOptimizeCommit {
 
       // collect files
       PartitionSpec spec = arcticTable.spec();
-      StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
-      StructLikeMap<Long> minTransactionIds = StructLikeMap.create(spec.partitionType());
+      StructLikeMap<Long> toSequenceOfPartitions = StructLikeMap.create(spec.partitionType());
+      StructLikeMap<Long> fromSequenceOfPartitions = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
         for (OptimizeTaskItem task : entry.getValue()) {
           if (checkFileCount(task)) {
@@ -109,23 +110,21 @@ public class BasicOptimizeCommit {
 
             minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
 
-            long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
-            if (maxTransactionId != BasicOptimizeTask.INVALID_TRANSACTION_ID) {
+            long toSequence = task.getOptimizeTask().getToSequence();
+            if (toSequence != BasicOptimizeTask.INVALID_SEQUENCE) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
-                maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
+                toSequenceOfPartitions.put(TablePropertyUtil.EMPTY_STRUCT, toSequence);
               } else {
-                maxTransactionIds.putIfAbsent(
-                    ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
+                toSequenceOfPartitions.putIfAbsent(ArcticDataFiles.data(spec, entry.getKey()), toSequence);
               }
             }
 
-            long minTransactionId = task.getOptimizeTask().getMinChangeTransactionId();
-            if (minTransactionId != BasicOptimizeTask.INVALID_TRANSACTION_ID) {
+            long fromSequence = task.getOptimizeTask().getFromSequence();
+            if (fromSequence != BasicOptimizeTask.INVALID_SEQUENCE) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
-                minTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, minTransactionId);
+                fromSequenceOfPartitions.put(TablePropertyUtil.EMPTY_STRUCT, fromSequence);
               } else {
-                minTransactionIds.putIfAbsent(
-                    ArcticDataFiles.data(spec, entry.getKey()), minTransactionId);
+                fromSequenceOfPartitions.putIfAbsent(ArcticDataFiles.data(spec, entry.getKey()), fromSequence);
               }
             }
             
@@ -141,7 +140,7 @@ public class BasicOptimizeCommit {
       }
 
       // commit minor optimize content
-      minorCommit(arcticTable, minorAddFiles, minorDeleteFiles, maxTransactionIds, minTransactionIds);
+      minorCommit(arcticTable, minorAddFiles, minorDeleteFiles, toSequenceOfPartitions, fromSequenceOfPartitions);
 
       // commit major optimize content
       majorCommit(arcticTable, majorAddFiles, majorDeleteFiles, baseSnapshotId);
@@ -213,8 +212,8 @@ public class BasicOptimizeCommit {
   private void minorCommit(ArcticTable arcticTable,
                            Set<ContentFile<?>> minorAddFiles,
                            Set<ContentFile<?>> minorDeleteFiles,
-                           StructLikeMap<Long> maxTransactionIds,
-                           StructLikeMap<Long> minTransactionIds) {
+                           StructLikeMap<Long> toSequenceOfPartitions,
+                           StructLikeMap<Long> fromSequenceOfPartitions) {
     UnkeyedTable baseArcticTable;
     if (arcticTable.isKeyedTable()) {
       baseArcticTable = arcticTable.asKeyedTable().baseTable();
@@ -227,15 +226,15 @@ public class BasicOptimizeCommit {
       overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
       AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
-      StructLikeMap<Long> oldPartitionMaxIds =
-          TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      StructLikeMap<Long> partitionOptimizedSequence =
+          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
       minorAddFiles.forEach(contentFile -> {
-        // if partition min transactionId isn't bigger than max transactionId in partitionProperty,
+        // if partition from sequence isn't bigger than optimized sequence in partitionProperty,
         // the partition files is expired
-        Long oldTransactionId = oldPartitionMaxIds.getOrDefault(contentFile.partition(), -1L);
-        Long newMinTransactionId = minTransactionIds.getOrDefault(contentFile.partition(), Long.MAX_VALUE);
-        if (oldTransactionId >= newMinTransactionId) {
-          maxTransactionIds.remove(contentFile.partition());
+        Long optimizedSequence = partitionOptimizedSequence.getOrDefault(contentFile.partition(), -1L);
+        Long fromSequence = fromSequenceOfPartitions.getOrDefault(contentFile.partition(), Long.MAX_VALUE);
+        if (optimizedSequence >= fromSequence) {
+          toSequenceOfPartitions.remove(contentFile.partition());
           return;
         }
 
@@ -257,12 +256,12 @@ public class BasicOptimizeCommit {
       });
 
       if (arcticTable.spec().isUnpartitioned()) {
-        if (maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-          overwriteBaseFiles.updateMaxTransactionId(TablePropertyUtil.EMPTY_STRUCT,
-              maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT));
+        if (toSequenceOfPartitions.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
+          overwriteBaseFiles.updateOptimizedSequence(TablePropertyUtil.EMPTY_STRUCT,
+              toSequenceOfPartitions.get(TablePropertyUtil.EMPTY_STRUCT));
         }
       } else {
-        maxTransactionIds.forEach(overwriteBaseFiles::updateMaxTransactionId);
+        toSequenceOfPartitions.forEach(overwriteBaseFiles::updateOptimizedSequence);
       }
       overwriteBaseFiles.commit();
 
@@ -283,16 +282,16 @@ public class BasicOptimizeCommit {
           arcticTable.id(), minorDeleteFiles.size(), deletedPosDeleteFile.get(), minorAddFiles.size(),
           addedPosDeleteFile.get());
     } else {
-      if (MapUtils.isNotEmpty(maxTransactionIds)) {
-        StructLikeMap<Long> oldPartitionMaxIds =
-            TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      if (MapUtils.isNotEmpty(toSequenceOfPartitions)) {
+        StructLikeMap<Long> partitionOptimizedSequence =
+            TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
         UpdatePartitionProperties updatePartitionProperties =
             baseArcticTable.updatePartitionProperties(null);
-        maxTransactionIds.forEach((partition, txId) -> {
-          long oldTransactionId = oldPartitionMaxIds.getOrDefault(partition, -1L);
-          long maxTransactionId = Math.max(txId, oldTransactionId);
-          updatePartitionProperties.set(partition, TableProperties.PARTITION_MAX_TRANSACTION_ID,
-              String.valueOf(maxTransactionId));
+        toSequenceOfPartitions.forEach((partition, toSequence) -> {
+          long optimizedSequence = partitionOptimizedSequence.getOrDefault(partition, -1L);
+          long maxSequence = Math.max(toSequence, optimizedSequence);
+          updatePartitionProperties.set(partition, TableProperties.PARTITION_OPTIMIZED_SEQUENCE,
+              String.valueOf(maxSequence));
         });
         updatePartitionProperties.commit();
       }

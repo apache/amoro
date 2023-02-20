@@ -38,7 +38,7 @@ public class TableProperties {
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
-  public static final String PARTITION_MAX_TRANSACTION_ID = "max-txId";
+  public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
 
   public static final String LOCATION = "location";
 
@@ -291,7 +291,7 @@ public class TableProperties {
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     READ_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     READ_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
@@ -300,7 +300,7 @@ public class TableProperties {
 
 
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     WRITE_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);

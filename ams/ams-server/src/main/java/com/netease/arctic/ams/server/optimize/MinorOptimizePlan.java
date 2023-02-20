@@ -106,7 +106,7 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(OptimizeType.Minor, partition, commitGroup, planGroup, createTime,
-        changeTableMaxSequence, changeTableMinSequence.get(partition));
+        changeStoreToSequence, changeStoreFromSequence.get(partition));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());

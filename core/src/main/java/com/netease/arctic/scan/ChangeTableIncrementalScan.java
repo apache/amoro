@@ -26,13 +26,13 @@ import org.apache.iceberg.util.StructLikeMap;
 public interface ChangeTableIncrementalScan extends TableScan {
 
   /**
-   * Config this scan to read data from {@code partitionTransactionId} exclusive to
-   * the current Transaction inclusive.
+   * Config this scan to read data from {@code partitionSequence} exclusive to
+   * the current sequence inclusive.
    *
-   * @param partitionTransactionId from TransactionId for each partition
+   * @param partitionSequence - sequence for each partition
    * @return this for method chaining
    */
-  ChangeTableIncrementalScan fromTransaction(StructLikeMap<Long> partitionTransactionId);
+  ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence);
 
 
   /**

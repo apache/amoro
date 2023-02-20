@@ -252,11 +252,11 @@ public interface TestOptimizeBase {
   }
 
   default List<ContentFileWithSequence<?>> planChangeFiles(KeyedTable keyedTable,
-                                                           StructLikeMap<Long> partitionMaxTransactionId,
+                                                           StructLikeMap<Long> partitionOptimizedSequence,
                                                            StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         keyedTable.changeTable().newChangeScan()
-            .fromTransaction(partitionMaxTransactionId)
+            .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     List<ContentFileWithSequence<?>> changeFiles;
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
@@ -269,11 +269,11 @@ public interface TestOptimizeBase {
 
   default KeyedTableScanResult planKeyedTableFiles(KeyedTable keyedTable) {
     List<FileScanTask> baseFiles = planBaseFiles(keyedTable.baseTable());
-    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
     List<ContentFileWithSequence<?>> changeFiles =
-        planChangeFiles(keyedTable, partitionMaxTransactionId, legacyPartitionMaxTransactionId);
+        planChangeFiles(keyedTable, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
     return new KeyedTableScanResult(baseFiles, changeFiles);
   }
 

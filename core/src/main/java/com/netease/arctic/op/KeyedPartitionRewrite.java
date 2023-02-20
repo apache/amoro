@@ -20,7 +20,6 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.StructLike;
@@ -37,7 +36,7 @@ import java.util.List;
 public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
-  private Long transactionId;
+  private Long optimizedSequence;
   
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
@@ -50,19 +49,19 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  public KeyedPartitionRewrite withTransactionId(long transactionId) {
-    this.transactionId = transactionId;
+  public KeyedPartitionRewrite updateOptimizedSequenceDynamically(long sequence) {
+    this.optimizedSequence = sequence;
     return this;
   }
 
   @Override
-  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
+  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionOptimizedSequence) {
     if (this.addFiles.isEmpty()) {
-      return partitionMaxTxId;
+      return partitionOptimizedSequence;
     }
 
-    Preconditions.checkNotNull(transactionId, "transaction-Id must be set.");
-    Preconditions.checkArgument(transactionId > 0, "transaction-Id must > 0.");
+    Preconditions.checkNotNull(optimizedSequence, "optimized sequence must be set.");
+    Preconditions.checkArgument(optimizedSequence > 0, "optimized sequence must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
@@ -70,8 +69,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     addFiles.forEach(f -> {
       StructLike pd = f.partition();
-      partitionMaxTxId.put(pd, transactionId);
+      partitionOptimizedSequence.put(pd, optimizedSequence);
     });
-    return partitionMaxTxId;
+    return partitionOptimizedSequence;
   }
 }
