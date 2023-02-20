@@ -408,6 +408,76 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
   }
 
   @Test
+  public void testArcticSourceEnumeratorWithBaseExpired() throws Exception {
+    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
+    KeyedTable table = testCatalog
+      .newTableBuilder(tableId, TABLE_SCHEMA)
+      .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+      .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+      .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+      .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(table, true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+
+    List<DataFile> baseDataFiles = new ArrayList<>();
+    WriteResult result = taskWriter.complete();
+    baseDataFiles.addAll(Arrays.asList(result.dataFiles()));
+    commit(table, result, true);
+
+    for (DataFile dataFile : baseDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+    }
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+
+    // expire baseTable snapshots
+    DeleteFiles deleteFiles = table.baseTable().newDelete();
+    for (DataFile dataFile : baseDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      deleteFiles.deleteFile(dataFile);
+    }
+    deleteFiles.commit();
+
+    LOG.info("commit empty snapshot");
+    AppendFiles changeAppend = table.changeTable().newAppend();
+    changeAppend.commit();
+    Thread.sleep(ScanContext.MONITOR_INTERVAL.defaultValue().toMillis() * 2);
+
+    expireSnapshots(table.baseTable(), System.currentTimeMillis(), new HashSet<>());
+
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+  }
+
+  @Test
   public void testLatestStartupMode() throws Exception {
     ArcticSource<RowData> arcticSource = initArcticSourceWithLatest();
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -645,7 +715,8 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();
     arcticInternalTable.expireSnapshots()
-      .retainLast(1).expireOlderThan(olderThan)
+      .retainLast(1)
+      .expireOlderThan(olderThan)
       .deleteWith(file -> {
         try {
           if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
@@ -658,7 +729,9 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
         } finally {
           toDeleteFiles.incrementAndGet();
         }
-      }).cleanExpiredFiles(true).commit();
+      })
+      .cleanExpiredFiles(true)
+      .commit();
     parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
@@ -861,4 +934,3 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
   }
 
 }
-
