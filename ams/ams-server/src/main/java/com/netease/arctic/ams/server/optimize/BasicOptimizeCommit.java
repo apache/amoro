@@ -228,6 +228,7 @@ public class BasicOptimizeCommit {
       AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
       StructLikeMap<Long> partitionOptimizedSequence =
           TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
+      AtomicBoolean shouldCommit = new AtomicBoolean();
       minorAddFiles.forEach(contentFile -> {
         // if partition from sequence isn't bigger than optimized sequence in partitionProperty,
         // the partition files is expired
@@ -240,16 +241,28 @@ public class BasicOptimizeCommit {
 
         if (contentFile.content() == FileContent.DATA) {
           overwriteBaseFiles.addFile((DataFile) contentFile);
+          shouldCommit.set(true);
         } else {
           overwriteBaseFiles.addFile((DeleteFile) contentFile);
+          shouldCommit.set(true);
           addedPosDeleteFile.incrementAndGet();
         }
       });
       AtomicInteger deletedPosDeleteFile = new AtomicInteger(0);
       Set<DeleteFile> deletedPosDeleteFiles = new HashSet<>();
       minorDeleteFiles.forEach(contentFile -> {
+        // if partition from sequence isn't bigger than optimized sequence in partitionProperty,
+        // the partition files is expired
+        Long optimizedSequence = partitionOptimizedSequence.getOrDefault(contentFile.partition(), -1L);
+        Long fromSequence = fromSequenceOfPartitions.getOrDefault(contentFile.partition(), Long.MAX_VALUE);
+        if (optimizedSequence >= fromSequence) {
+          toSequenceOfPartitions.remove(contentFile.partition());
+          return;
+        }
+
         if (contentFile.content() == FileContent.DATA) {
           overwriteBaseFiles.deleteFile((DataFile) contentFile);
+          shouldCommit.set(true);
         } else {
           deletedPosDeleteFiles.add((DeleteFile) contentFile);
         }
@@ -259,11 +272,20 @@ public class BasicOptimizeCommit {
         if (toSequenceOfPartitions.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
           overwriteBaseFiles.updateOptimizedSequence(TablePropertyUtil.EMPTY_STRUCT,
               toSequenceOfPartitions.get(TablePropertyUtil.EMPTY_STRUCT));
+          shouldCommit.set(true);
         }
       } else {
-        toSequenceOfPartitions.forEach(overwriteBaseFiles::updateOptimizedSequence);
+        if (!toSequenceOfPartitions.isEmpty()) {
+          toSequenceOfPartitions.forEach(overwriteBaseFiles::updateOptimizedSequence);
+          shouldCommit.set(true);
+        }
       }
-      overwriteBaseFiles.commit();
+      // If overwriteBaseFiles changed nothing, there is no need to commit
+      if (shouldCommit.get()) {
+        overwriteBaseFiles.commit();
+      } else {
+        LOG.warn("{} skip minor optimize commit", arcticTable.id());
+      }
 
       if (CollectionUtils.isNotEmpty(deletedPosDeleteFiles)) {
         RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
