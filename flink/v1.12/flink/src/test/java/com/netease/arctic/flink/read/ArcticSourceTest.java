@@ -405,6 +405,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    testCatalog.dropTable(tableId, true);
   }
 
   @Test
@@ -475,6 +476,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    testCatalog.dropTable(tableId, true);
   }
 
   @Test
