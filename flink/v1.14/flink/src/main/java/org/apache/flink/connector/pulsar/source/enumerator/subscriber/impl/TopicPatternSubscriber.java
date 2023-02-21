@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Predicates.not;
@@ -66,7 +67,7 @@ public class TopicPatternSubscriber extends BasePulsarSubscriber {
                     .getTopics(namespace)
                     .parallelStream()
                     .filter(this::matchesSubscriptionMode)
-                    .filter(not(TopicNameUtils::isInternal))
+                    .filter(((Predicate<String>) TopicNameUtils::isInternal).negate())
                     .filter(topic -> topicPattern.matcher(topic).find())
                     .map(topic -> queryTopicMetadata(pulsarAdmin, topic))
                     .filter(Objects::nonNull)
