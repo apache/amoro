@@ -30,10 +30,11 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.DataWritingSparkTask
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.sql.sources.v2.writer.{DataSourceWriter, SupportsWriteInternalRow, WriterCommitMessage}
-
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
-case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: CatalogTable, query: SparkPlan) extends SparkPlan {
+case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: CatalogTable, query: SparkPlan)
+  extends SparkPlan {
 
   override def output: Seq[Attribute] = Nil
 
@@ -65,8 +66,8 @@ case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: Catalo
       throw AnalysisException.message(s"failed to create table ${tableDesc.identifier} not use hive catalog")
     }
     val table = arctic.createTable(tableDesc.identifier, tableDesc.schema,
-      scala.collection.JavaConversions.seqAsJavaList(tableDesc.partitionColumnNames),
-      scala.collection.JavaConversions.mapAsJavaMap(tableDesc.properties))
+      tableDesc.partitionColumnNames.asJava,
+      tableDesc.properties.asJava)
     table
   }
 

@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
+import java.util
 import org.apache.iceberg.spark.SparkFilters
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.InternalRow
@@ -29,8 +29,6 @@ import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeRefer
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types._
-
-import java.util
 import scala.collection.JavaConverters.asJavaIterableConverter
 
 case class AlterArcticTableDropPartitionExec(

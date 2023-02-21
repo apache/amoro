@@ -26,7 +26,6 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference,
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +34,7 @@ case class DescribeKeyedTableExec(table: Table,
                                   catalog: TableCatalog,
                                   ident: Identifier,
                                   isExtended: Boolean) extends V2CommandExec {
-  val outputAttrs: Seq[AttributeReference] =  Seq(
+  val outputAttrs: Seq[AttributeReference] = Seq(
     AttributeReference("col_name", StringType, nullable = false,
       new MetadataBuilder().putString("comment", "name of the column").build())(),
     AttributeReference("data_type", StringType, nullable = false,

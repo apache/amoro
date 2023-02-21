@@ -33,5 +33,5 @@ case class ArcticRowLevelWrite(table: NamedRelation,
 
   def withNewTable(newTable: NamedRelation): ArcticRowLevelWrite = copy(table = newTable)
 
-  override def outputResolved = true
+  override def outputResolved: Boolean = true
 }

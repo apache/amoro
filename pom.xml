@@ -102,6 +102,8 @@
         <fastjson.version>1.2.75</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
+        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
     </properties>
 
     <dependencyManagement>
@@ -430,6 +432,30 @@
                     </executions>
                 </plugin>
                 <plugin>
+                  <groupId>org.scalastyle</groupId>
+                  <artifactId>scalastyle-maven-plugin</artifactId>
+                  <version>${maven.plugin.scalastyle.version}</version>
+                  <configuration>
+                    <verbose>false</verbose>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <failOnWarning>false</failOnWarning>
+                    <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+                    <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                    <configLocation>style/scalastyle-config.xml</configLocation>
+                    <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
+                    <outputEncoding>UTF-8</outputEncoding>
+                    <skip>${maven.scalastyle.skip}</skip>
+                  </configuration>
+                  <executions>
+                    <execution>
+                      <goals>
+                        <goal>check</goal>
+                      </goals>
+                    </execution>
+                  </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven-dependency-plugin.version}</version>
@@ -445,6 +471,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+              <groupId>org.scalastyle</groupId>
+              <artifactId>scalastyle-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

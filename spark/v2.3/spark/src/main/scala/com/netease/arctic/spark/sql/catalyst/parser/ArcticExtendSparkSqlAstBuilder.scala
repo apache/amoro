@@ -18,36 +18,34 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser._
 import com.netease.arctic.spark.sql.parser.{ArcticSparkSqlBaseVisitor, ArcticSparkSqlParser}
+import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser._
 import com.netease.arctic.spark.sql.util.ImplicitHelper._
-import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
+import java.sql.{Date, Timestamp}
+import java.util.Locale
+import javax.xml.bind.DatatypeConverter
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.{AnalysisException, SaveMode}
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{MultiAlias, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunction, UnresolvedGenerator, UnresolvedInlineTable, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTableValuedFunction}
 import org.apache.spark.sql.catalyst.catalog._
+import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, IsNotNull, IsNull, LessThan, LessThanOrEqual, Like, ListQuery, Literal, Multiply, NamedExpression, Not, NullsFirst, NullsLast, Or, Predicate, RangeFrame, Remainder, RLike, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, Subtract, UnaryMinus, UnboundedFollowing, UnboundedPreceding, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
-import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, IsNotNull, IsNull, LessThan, LessThanOrEqual, Like, ListQuery, Literal, Multiply, NamedExpression, Not, NullsFirst, NullsLast, Or, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, Subtract, UnaryMinus, UnboundedFollowing, UnboundedPreceding, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.execution.datasources.{CreateTable, CreateTempViewUsing, DataSource}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, SaveMode}
 import org.apache.spark.unsafe.types.CalendarInterval
-
-import java.sql.{Date, Timestamp}
-import java.util.Locale
-import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
-  extends ArcticSparkSqlBaseVisitor[AnyRef] with Logging{
-  
+  extends ArcticSparkSqlBaseVisitor[AnyRef] with Logging {
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
     columns.map(c =>
       if (primary.contains(c.name)) {
@@ -86,7 +84,8 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     }
   }
 
-  override def visitCreateArcticTable(ctx: CreateArcticTableContext): LogicalPlan = withOrigin(ctx) {
+  override def visitCreateArcticTable(ctx: CreateArcticTableContext): LogicalPlan =
+    withOrigin(ctx) {
     val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
     if (external) {
       operationNotAllowed("CREATE EXTERNAL TABLE ... USING", ctx)
@@ -121,7 +120,7 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     val provider = ctx.tableProvider.qualifiedName.getText
 
     // set primary col not null
-    val fields = if(schema.isDefined) {
+    val fields = if (schema.isDefined) {
       setPrimaryKeyNotNull(schema.get.toSeq, primary)
     } else {
       Seq.empty[StructField]
@@ -138,7 +137,6 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       finalSchema = Option(StructType.apply(fields))
       partitionColumnNames = visitPartitionFieldList(ctx.partitionColumnNames)
     }
-    
     val properties = Option(ctx.tableProps).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val bucketSpec = ctx.bucketSpec().asScala.headOption.map(visitBucketSpec)
 
@@ -369,7 +367,8 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
   }
 
   override def visitSingleFunctionIdentifier(
-                                              ctx: SingleFunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
+                                              ctx: SingleFunctionIdentifierContext):
+  FunctionIdentifier = withOrigin(ctx) {
     visitFunctionIdentifier(ctx.functionIdentifier)
   }
 

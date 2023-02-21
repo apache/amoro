@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.distibutions.{BucketTransform, FieldReference, IdentityTransform}
-import com.netease.arctic.spark.distributions.{ClusteredDistribution, NamedReference, Transform, Expression => V2Expression}
+import com.netease.arctic.spark.distributions.{ClusteredDistribution, Expression => V2Expression, NamedReference, Transform}
 import com.netease.arctic.spark.source.ArcticSparkTable
 import com.netease.arctic.spark.sql.catalyst.expressions.BucketExpression
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic

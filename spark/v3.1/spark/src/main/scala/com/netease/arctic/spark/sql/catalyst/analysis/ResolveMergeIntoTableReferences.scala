@@ -22,14 +22,14 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.{caseInsensitiveResolution, withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -42,7 +42,8 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
               val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
               val condRefs = cond.references.filter(f => primarys.contains(f.name))
               if (condRefs.isEmpty) {
-                throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
+                throw new UnsupportedOperationException(s"Condition ${cond.references}. " +
+                  s"is not allowed because is not a primary key")
               }
             }
         }

@@ -22,23 +22,22 @@ import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.parser._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
+import java.util.Locale
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
 import org.apache.spark.sql.catalyst.trees.Origin
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-
-import java.util.Locale
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.util.Try
 

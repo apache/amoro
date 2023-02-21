@@ -18,20 +18,18 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
 import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.writer.WriteMode
+import java.util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
-
-import java.util
-
 
 /**
  * rewrite update table plan as append upsert data.
@@ -62,13 +60,12 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
                        assignments: Seq[Assignment],
                        condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
@@ -87,10 +84,12 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           updatedRowsQuery
         } else {
           val updatedRowsQuery = buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
-          val deleteQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_DELETE), SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
+          val deleteQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_DELETE),
+            SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
             ++ matchedRowsQuery.output.iterator,
             matchedRowsQuery)
-          val insertQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_INSERT), SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
+          val insertQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_INSERT),
+            SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
             ++ updatedRowsQuery.output.iterator,
             updatedRowsQuery)
           Union(deleteQuery, insertQuery)
@@ -109,7 +108,8 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     )
   }
 
-  protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
+  protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]):
+  Seq[AttributeReference] = {
     val nameToAttr = attrs.map(_.name).zip(attrs).toMap
     schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)()).map {
       a =>
@@ -137,7 +137,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         }
     ).toMap
     val outputWithValues = relation.output ++ output.map( a => {
-      if(assignmentMap.contains(a.name)) {
+      if (assignmentMap.contains(a.name)) {
         Alias(assignmentMap(a.name), "_arctic_after_" + a.name)()
       } else {
         Alias(a, "_arctic_after_" + a.name)()
@@ -168,14 +168,16 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     Project(outputWithValues, scanPlan)
   }
 
-  def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression =  {
+  def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation,
+                         insertPlan: LogicalPlan): Expression = {
     var i = 0
     var joinCondition: Expression = null
     val expressions = new util.ArrayList[Expression]
     while ( i < primaries.size) {
       val primary = primaries.get(i)
       val primaryAttr = r.output.find(_.name == primary).get
-      val joinAttribute = insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
+      val joinAttribute = insertPlan.output.find(_.name.
+        replace("_arctic_after_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
       expressions.add(experssion)
       i += 1

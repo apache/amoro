@@ -18,11 +18,11 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import com.netease.arctic.spark.{SparkSQLProperties, SupportSparkAdapter}
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticIcebergRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticPartitionsDynamic}
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import com.netease.arctic.spark.util.DistributionAndOrderingUtil
-import com.netease.arctic.spark.{SparkSQLProperties, SupportSparkAdapter}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._

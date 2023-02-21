@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// this file copy form apache spark
+
 package com.netease.arctic.spark.distibutions
 
 import com.netease.arctic.spark.distributions.{Expression, Literal, NamedReference, Transform}
@@ -83,9 +83,9 @@ abstract class SingleColumnTransform(ref: NamedReference) extends RewritableTran
   }
 }
 
-final case class BucketTransform(
-                                               numBuckets: Literal[Int],
-                                               columns: Seq[NamedReference]) extends RewritableTransform {
+final case class BucketTransform(numBuckets: Literal[Int],
+                                 columns: Seq[NamedReference])
+  extends RewritableTransform {
 
   override val name: String = "bucket"
 

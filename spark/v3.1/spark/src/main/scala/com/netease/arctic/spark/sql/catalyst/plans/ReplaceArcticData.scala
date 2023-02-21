@@ -34,6 +34,6 @@ case class ReplaceArcticData(
 
   def withNewTable(newTable: NamedRelation): ReplaceArcticData = copy(table = newTable)
 
-  override def outputResolved = true
+  override def outputResolved: Boolean = true
 
 }

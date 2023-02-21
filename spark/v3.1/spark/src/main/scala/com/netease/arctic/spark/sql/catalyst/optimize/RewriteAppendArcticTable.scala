@@ -18,20 +18,19 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
+import java.util
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.LongType
-
-import java.util
 
 case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -104,7 +103,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case _: ArcticSparkCatalog =>
           if (props.contains("primary.keys")) {
             val primaries = props("primary.keys").split(",")
-            val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+            val than = GreaterThan(AggregateExpression(Count(Literal(1)),
+              Complete, isDistinct = false), Cast(Literal(1), LongType))
             val alias = Alias(than, "count")()
             val attributes = query.output.filter(p => primaries.contains(p.name))
             val validateQuery = Aggregate(attributes, Seq(alias), query)
@@ -124,7 +124,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val than = GreaterThan(AggregateExpression(Count(Literal(1)),
+            Complete, isDistinct = false), Cast(Literal(1), LongType))
           val alias = Alias(than, "count")()
           val attributes = query.output.filter(p => primaries.contains(p.name))
           Aggregate(attributes, Seq(alias), query)

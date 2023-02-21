@@ -18,41 +18,39 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
 import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseVisitor, ArcticExtendSparkSqlParser}
-import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
+import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
+import java.util
+import java.util.Locale
+import javax.xml.bind.DatatypeConverter
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{GlobalTempView, LocalTempView, MultiAlias, PersistedView, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunc, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedNamespace, UnresolvedPartitionSpec, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTable, UnresolvedTableOrView, UnresolvedTableValuedFunction}
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, FunctionResource, FunctionResourceType}
+import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RangeFrame, Remainder, RLike, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, Substring, Subtract, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
-import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, Substring, Subtract, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, IntervalUtils}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils.IntervalUnit
-import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, IntervalUtils}
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
-import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
 import org.apache.spark.sql.connector.catalog.{SupportsNamespaces, TableCatalog}
-import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
+import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.random.RandomSampler
-
-import java.util
-import java.util.Locale
-import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   extends ArcticExtendSparkSqlBaseVisitor[AnyRef] with SQLConfHelper with Logging{
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
-  
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
     columns.map(c =>
       if (primary.contains(c.name)) {
@@ -80,11 +78,13 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
   }
 
-  override def visitCreateTableWithPk(ctx: ArcticExtendSparkSqlParser.CreateTableWithPkContext): LogicalPlan = withOrigin(ctx) {
+  override def visitCreateTableWithPk(ctx: ArcticExtendSparkSqlParser.CreateTableWithPkContext):
+  LogicalPlan = withOrigin(ctx) {
     visitCreateTableWithPrimaryKey(ctx.createTableWithPrimaryKey())
   }
 
-  override def visitCreateTableWithPrimaryKey(ctx: ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext): LogicalPlan = withOrigin(ctx) {
+  override def visitCreateTableWithPrimaryKey(ctx: ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext):
+  LogicalPlan = withOrigin(ctx) {
     val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
 
     val colListAndPk = visitColListAndPk(ctx.colListAndPk())
@@ -160,17 +160,16 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
     propertiesMap
   }
-  
 
   type TableClauses = (
     Seq[Transform], Seq[StructField], Option[BucketSpec], Map[String, String],
       Map[String, String], Option[String], Option[String], Option[SerdeInfo])
 
 
-  protected def visitPrimarySpecList(ctx: util.List[ArcticExtendSparkSqlParser.PrimarySpecContext]): Option[Seq[String]] = {
+  protected def visitPrimarySpecList(ctx: util.List[ArcticExtendSparkSqlParser.PrimarySpecContext]):
+  Option[Seq[String]] = {
     ctx.asScala.headOption.map(visitPrimarySpec)
   }
-  
 
   /**
    * Create a comment string.
@@ -238,12 +237,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitSingleTableIdentifier(
-                                           ctx: SingleTableIdentifierContext): TableIdentifier = withOrigin(ctx) {
+                                           ctx: SingleTableIdentifierContext):
+  TableIdentifier = withOrigin(ctx) {
     visitTableIdentifier(ctx.tableIdentifier)
   }
 
   override def visitSingleFunctionIdentifier(
-                                              ctx: SingleFunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
+                                              ctx: SingleFunctionIdentifierContext):
+  FunctionIdentifier = withOrigin(ctx) {
     visitFunctionIdentifier(ctx.functionIdentifier)
   }
 
@@ -745,7 +746,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitTransformQuerySpecification(
-                                                 ctx: TransformQuerySpecificationContext): LogicalPlan = withOrigin(ctx) {
+                                                 ctx: TransformQuerySpecificationContext):
+  LogicalPlan = withOrigin(ctx) {
     val from = OneRowRelation().optional(ctx.fromClause) {
       visitFromClause(ctx.fromClause)
     }
@@ -2507,7 +2509,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   /**
    * Create an optional location string.
    */
-  protected def visitLocationSpecList(ctx: java.util.List[ArcticExtendSparkSqlParser.LocationSpecContext]): Option[String] = {
+  protected def visitLocationSpecList(ctx: java.util.List[ArcticExtendSparkSqlParser.LocationSpecContext]):
+  Option[String] = {
     ctx.asScala.headOption.map(visitLocationSpec)
   }
 
@@ -2521,7 +2524,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   /**
    * Create an optional comment string.
    */
-  protected def visitCommentSpecList(ctx: java.util.List[ArcticExtendSparkSqlParser.CommentSpecContext]): Option[String] = {
+  protected def visitCommentSpecList(ctx: java.util.List[ArcticExtendSparkSqlParser.CommentSpecContext]):
+  Option[String] = {
     ctx.asScala.headOption.map(visitCommentSpec)
   }
 
@@ -2656,7 +2660,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Parse a list of transforms or columns.
    */
   override def visitPartitionFieldList(
-                                        ctx: PartitionFieldListContext): (Seq[Transform], Seq[StructField]) = withOrigin(ctx) {
+                                        ctx: PartitionFieldListContext):
+  (Seq[Transform], Seq[StructField]) = withOrigin(ctx) {
     val (transforms, columns) = ctx.fields.asScala.map {
       case transform: PartitionTransformContext =>
         (Some(visitPartitionTransform(transform)), None)
@@ -3043,7 +3048,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
               s"ROW FORMAT SERDE is incompatible with format '$fmt', which also specifies a serde",
               parentCtx)
         }
-      case (rfDelimited: ArcticExtendSparkSqlParser.RowFormatDelimitedContext, ffGeneric: ArcticExtendSparkSqlParser.GenericFileFormatContext) =>
+      case (rfDelimited: ArcticExtendSparkSqlParser.RowFormatDelimitedContext,
+      ffGeneric: ArcticExtendSparkSqlParser.GenericFileFormatContext) =>
         ffGeneric.identifier.getText.toLowerCase(Locale.ROOT) match {
           case "textfile" => // OK
           case fmt => operationNotAllowed(
@@ -3069,7 +3075,6 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
   }
 
-  
   protected def getSerdeInfo(
                               rowFormatCtx: Seq[RowFormatContext],
                               createFileFormatCtx: Seq[CreateFileFormatContext],
@@ -3105,7 +3110,6 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       }
     }
   }
-  
 
   /**
    * Replace a table, returning a [[ReplaceTableStatement]] logical plan.
@@ -3254,7 +3258,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Parse new column info from ADD COLUMN into a QualifiedColType.
    */
   override def visitQualifiedColTypeWithPosition(
-                                                  ctx: QualifiedColTypeWithPositionContext): QualifiedColType = withOrigin(ctx) {
+                                                  ctx: QualifiedColTypeWithPositionContext):
+  QualifiedColType = withOrigin(ctx) {
     QualifiedColType(
       name = typedVisit[Seq[String]](ctx.name),
       dataType = typedVisit[DataType](ctx.dataType),

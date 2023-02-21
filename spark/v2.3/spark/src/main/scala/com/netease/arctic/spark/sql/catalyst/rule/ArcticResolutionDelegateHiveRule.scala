@@ -21,6 +21,8 @@ package com.netease.arctic.spark.sql.catalyst.rule
 import com.netease.arctic.spark.source.ArcticSource
 import com.netease.arctic.spark.sql.execution.{CreateArcticTableCommand, DropArcticTableCommand}
 import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
+import java.util.Locale
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation, SessionCatalog}
@@ -29,14 +31,11 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{SaveMode, SparkSession}
-
-import java.util.Locale
 
 case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[LogicalPlan] {
 

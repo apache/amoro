@@ -20,16 +20,15 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
+import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
-import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
-import org.apache.spark.sql.{SparkSession, Strategy}
-
+import org.apache.spark.sql.execution.datasources.v2._
 import scala.collection.JavaConverters.seqAsJavaList
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {

@@ -19,12 +19,12 @@
 package org.apache.spark.sql.arctic.execution
 
 import com.netease.arctic.spark.writer.RowLevelWriter
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory, WriterCommitMessage}
 import org.apache.spark.util.Utils
-import org.apache.spark.{SparkEnv, TaskContext}
 
 trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serializable {
 

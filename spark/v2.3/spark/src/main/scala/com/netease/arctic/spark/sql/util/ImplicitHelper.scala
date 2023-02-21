@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.sql.util
 
-
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.types.StructType

@@ -18,10 +18,9 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import org.apache.iceberg.spark.Spark3Util
-import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
@@ -29,9 +28,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Subque
 import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
-
 import scala.collection.JavaConverters.seqAsJavaList
-
 
 object ArcticExtensionUtils {
 
@@ -192,7 +189,8 @@ object ArcticExtensionUtils {
     }
   }
 
-  def buildCatalogAndIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
+  def buildCatalogAndIdentifier(sparkSession: SparkSession,
+                                originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
     var identifier: Seq[String] = Seq.empty[String]
     identifier :+= originIdentifier.database.get
     identifier :+= originIdentifier.table

@@ -23,7 +23,6 @@ import com.netease.arctic.spark.sql.catalyst.plans
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-
 import scala.collection.JavaConverters.seqAsJavaList
 
 

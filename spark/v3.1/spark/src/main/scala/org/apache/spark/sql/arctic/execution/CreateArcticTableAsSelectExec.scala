@@ -28,7 +28,6 @@ import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 case class CreateArcticTableAsSelectExec(

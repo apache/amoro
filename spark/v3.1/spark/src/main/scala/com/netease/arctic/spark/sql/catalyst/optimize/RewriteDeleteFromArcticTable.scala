@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
 import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
@@ -46,21 +46,22 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       } else {
         pushFilter(scanBuilder, condition.get, r.output)
       }
-      val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
-      options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       ReplaceArcticData(r, query, options)
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert,
+                       scanBuilder: SupportsExtendIdentColumns,
+                       condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)

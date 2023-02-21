@@ -20,10 +20,10 @@ package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.source.ArcticSparkTable
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import org.apache.spark.sql.{SparkSession}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.optimizer.PropagateEmptyRelation.conf
-import org.apache.spark.sql.{SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.{DDLPreprocessingUtils, PartitioningUtils}
@@ -61,7 +61,8 @@ case class PreprocessArcticTableInsertionRule(spark: SparkSession) extends Rule[
     val expectedColumns = insert.table.output.filterNot(a => staticPartCols.contains(a.name))
 
     if (expectedColumns.length != query.schema.size) {
-      throw AnalysisException.message(s"${table.name()} requires that the data to be inserted have the same number of columns as the " +
+      throw AnalysisException.message(s"${table.name()} " +
+        s"requires that the data to be inserted have the same number of columns as the " +
         s"target table: target table has ${insert.table.output.size} column(s) but the " +
         s"inserted data has ${insert.query.output.length + staticPartCols.size} column(s), " +
         s"including ${staticPartCols.size} partition column(s) having constant value(s).")
