@@ -86,6 +86,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -661,9 +662,9 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksClear(BasicOptimizeCommit optimizeCommit) {
+  public void optimizeTasksClear(Boolean refreshOptimizeStatus) {
     try (SqlSession sqlSession = getSqlSession(false)) {
-      Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
+      List<OptimizeTaskItem> tasks = new ArrayList<>(optimizeTasks.values());
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
@@ -690,7 +691,7 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
-        tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
+        tasks.stream().map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
               if (removed != null) {
@@ -716,7 +717,9 @@ public class TableOptimizeItem extends IJDBCService {
       sqlSession.commit(true);
     }
 
-    updateTableOptimizeStatus();
+    if (refreshOptimizeStatus) {
+      updateTableOptimizeStatus();
+    }
   }
 
   private void optimizeTasksCommitted(BasicOptimizeCommit optimizeCommit,
@@ -934,6 +937,25 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
+   * If task execute failed after max retry, clear tasks.
+   */
+  public void clearFailedTasks() {
+    tasksLock.lock();
+    try {
+      int maxRetry = optimizeMaxRetry();
+      Optional<OptimizeTaskItem> failedTask =
+          optimizeTasks.values().stream().findAny().filter(task -> task.getOptimizeRuntime().getRetry() > maxRetry);
+
+      // if table has failed task after max retry, clear all tasks
+      if (failedTask.isPresent()) {
+        optimizeTasksClear(false);
+      }
+    } finally {
+      tasksLock.unlock();
+    }
+  }
+
+  /**
    * Get tasks which is ready to commit (only if all tasks in a table is ready).
    *
    * @return map partition -> tasks of partition
@@ -974,7 +996,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
-        clearOptimizeTasks();
+        optimizeTasksClear(true);
       }
     }
 
@@ -999,7 +1021,7 @@ public class TableOptimizeItem extends IJDBCService {
           optimizeTasksCommitted(optimizeCommit, commitTime);
         } else {
           LOG.warn("{} commit failed, clear optimize tasks", tableIdentifier);
-          optimizeTasksClear(optimizeCommit);
+          optimizeTasksClear(true);
         }
       } else {
         LOG.info("{} get no tasks to commit", tableIdentifier);
