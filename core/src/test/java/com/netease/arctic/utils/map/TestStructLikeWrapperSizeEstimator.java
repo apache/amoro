@@ -37,7 +37,8 @@ public class TestStructLikeWrapperSizeEstimator {
     StructLikeCollections structLikeCollections =
         new StructLikeCollections(true, Long.MAX_VALUE);
 
-    StructLikeBaseMap<ChangedLsn> map = structLikeCollections.createStructLikeMap(TableTestHelpers.TABLE_SCHEMA.asStruct());
+    StructLikeBaseMap<ChangedLsn> map =
+        structLikeCollections.createStructLikeMap(TableTestHelpers.TABLE_SCHEMA.asStruct());
     ChangedLsn changedLsn = ChangedLsn.of(1, 2);
     map.put(record1, changedLsn);
     long oldSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
