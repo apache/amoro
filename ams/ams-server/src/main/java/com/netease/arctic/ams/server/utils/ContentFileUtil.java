@@ -22,28 +22,10 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ManifestEntryFields;
-import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Tools for handling the ContentFile which in Iceberg
