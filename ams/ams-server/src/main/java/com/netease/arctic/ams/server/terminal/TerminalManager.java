@@ -47,6 +47,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
+
 public class TerminalManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
@@ -61,6 +63,7 @@ public class TerminalManager {
 
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
+
 
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
@@ -88,9 +91,11 @@ public class TerminalManager {
   public String executeScript(String terminalId, String catalog, String script) {
     Optional<CatalogMeta> optCatalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
     if (!optCatalogMeta.isPresent()) {
-      throw new IllegalArgumentException("catalog " + catalog + " is not validea");
+      throw new IllegalArgumentException("catalog " + catalog + " is not validate");
     }
     CatalogMeta catalogMeta = optCatalogMeta.get();
+    boolean isNativeIceberg = catalogMeta.getCatalogProperties().containsKey(TABLE_FORMATS) &&
+        catalogMeta.catalogProperties.get(TABLE_FORMATS).equalsIgnoreCase("iceberg");
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
     String catalogType = CatalogUtil.isIcebergCatalog(catalog) ? "iceberg" : "arctic";
@@ -103,6 +108,7 @@ public class TerminalManager {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
     }
+    configuration.set(SessionConfigOptions.IS_NATIVE_ICEBERG, isNativeIceberg);
     configuration.set(SessionConfigOptions.catalogProperty(catalog, "type"),
         catalogMeta.getCatalogType());
 

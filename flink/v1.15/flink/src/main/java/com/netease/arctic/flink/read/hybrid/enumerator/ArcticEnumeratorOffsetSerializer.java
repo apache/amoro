@@ -83,10 +83,6 @@ class ArcticEnumeratorOffsetSerializer implements SimpleVersionedSerializer<Arct
       snapshotTimestampMs = in.readLong();
     }
 
-    if (snapshotId != null) {
-      return ArcticEnumeratorOffset.of(snapshotId, snapshotTimestampMs);
-    } else {
-      return ArcticEnumeratorOffset.empty();
-    }
+    return ArcticEnumeratorOffset.of(snapshotId, snapshotTimestampMs);
   }
 }

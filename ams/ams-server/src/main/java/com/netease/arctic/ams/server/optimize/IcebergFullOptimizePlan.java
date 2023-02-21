@@ -49,9 +49,8 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
 
   public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                  List<FileScanTask> fileScanTasks,
-                                 Map<String, Boolean> partitionTaskRunning,
-                                 int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
+                                 int queueId, long currentTime, long currentSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, fileScanTasks, queueId, currentTime, currentSnapshotId);
   }
 
   protected void addOptimizeFiles() {
@@ -61,11 +60,9 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
       DataFile dataFile = fileScanTask.file();
       String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
       currentPartitions.add(partitionPath);
-      if (!anyTaskRunning(partitionPath)) {
-        List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
-        fileScanTasks.add(fileScanTask);
-        addCnt.getAndIncrement();
-      }
+      List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
+      fileScanTasks.add(fileScanTask);
+      addCnt.getAndIncrement();
     }
 
     LOG.debug("{} ==== {} add {} data files" + " After added, partition cnt of tree: {}",
@@ -96,7 +93,6 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
         TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
     // delete files total size reach target_size * duplicate_ratio
     if (deleteFilesTotalSize > targetSize * duplicateRatio) {
-      partitionOptimizeType.put(partitionToPath, getOptimizeType());
       LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
               "delete files totalSize is {}, target size is {}",
           tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
