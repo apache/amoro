@@ -20,6 +20,7 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.utils.ObjectSizeCalculator;
+import org.apache.iceberg.StructLike;
 
 /**
  * Size Estimator for StructLikeWrapper record payload.
@@ -30,7 +31,26 @@ public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeW
     if (structLikeWrapper == null) {
       return 0;
     }
+    StructLike structLike = structLikeWrapper.get();
+    return ObjectSizeCalculator.getObjectSize(structLikeObjects(structLike));
+  }
 
-    return ObjectSizeCalculator.getObjectSize(structLikeWrapper.get());
+  private Object[] structLikeObjects(StructLike structLike) {
+    if (structLike == null) {
+      return null;
+    }
+
+    Object[] values = new Object[structLike.size()];
+    for (int i = 0; i < values.length; i += 1) {
+      Object value = structLike.get(i, Object.class);
+
+      if (value instanceof StructLike) {
+        values[i] = structLikeObjects((StructLike) value);
+      } else {
+        values[i] = value;
+      }
+    }
+
+    return values;
   }
 }
