@@ -280,6 +280,7 @@ public class TableMetaStore implements Serializable {
                   LOG.warn("Fail to reflect UserGroupInformation", e);
                 }
               }
+              System.setProperty("sun.security.krb5.principal", krbPrincipal);
               ugi.checkTGTAndReloginFromKeytab();
             } catch (Exception e) {
               throw new RuntimeException("Re-login from keytab failed", e);
