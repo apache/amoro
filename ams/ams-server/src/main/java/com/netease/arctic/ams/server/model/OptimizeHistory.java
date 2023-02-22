@@ -42,7 +42,7 @@ public class OptimizeHistory {
 
   private int partitionCnt;
   private String partitions;
-  private String baseTableMaxTransactionId = "";
+  private String partitionOptimizedSequence = "";
 
   public OptimizeHistory() {
   }
@@ -164,12 +164,12 @@ public class OptimizeHistory {
     this.partitions = partitions;
   }
 
-  public String getBaseTableMaxTransactionId() {
-    return baseTableMaxTransactionId;
+  public String getPartitionOptimizedSequence() {
+    return partitionOptimizedSequence;
   }
 
-  public void setBaseTableMaxTransactionId(String baseTableMaxTransactionId) {
-    this.baseTableMaxTransactionId = baseTableMaxTransactionId;
+  public void setPartitionOptimizedSequence(String partitionOptimizedSequence) {
+    this.partitionOptimizedSequence = partitionOptimizedSequence;
   }
 
   public OptimizeRangeType getOptimizeRange() {
@@ -217,7 +217,7 @@ public class OptimizeHistory {
         ", snapshotInfo=" + snapshotInfo +
         ", partitionCnt=" + partitionCnt +
         ", partitions='" + partitions + '\'' +
-        ", baseTableMaxTransactionId='" + baseTableMaxTransactionId + '\'' +
+        ", partitionOptimizedSequence='" + partitionOptimizedSequence + '\'' +
         '}';
   }
 }

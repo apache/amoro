@@ -21,11 +21,11 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -47,7 +47,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -250,19 +250,17 @@ public interface TestOptimizeBase {
     }
     return baseFiles;
   }
-  
-  default List<ArcticFileScanTask> planChangeFiles(KeyedTable keyedTable, StructLikeMap<Long> partitionMaxTransactionId,
-                                                   StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+
+  default List<ContentFileWithSequence<?>> planChangeFiles(KeyedTable keyedTable,
+                                                           StructLikeMap<Long> partitionOptimizedSequence,
+                                                           StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         keyedTable.changeTable().newChangeScan()
-            .fromTransaction(partitionMaxTransactionId)
+            .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId);
-    List<ArcticFileScanTask> changeFiles = new ArrayList<>();
-    try (CloseableIterable<FileScanTask> fileScanTasks = changeTableIncrementalScan.planFiles()) {
-      for (FileScanTask fileScanTask : fileScanTasks) {
-        ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-        changeFiles.add(arcticFileScanTask);
-      }
+    List<ContentFileWithSequence<?>> changeFiles;
+    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      changeFiles = Lists.newArrayList(files);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
     }
@@ -271,20 +269,20 @@ public interface TestOptimizeBase {
 
   default KeyedTableScanResult planKeyedTableFiles(KeyedTable keyedTable) {
     List<FileScanTask> baseFiles = planBaseFiles(keyedTable.baseTable());
-    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
-    List<ArcticFileScanTask> changeFiles =
-        planChangeFiles(keyedTable, partitionMaxTransactionId, legacyPartitionMaxTransactionId);
+    List<ContentFileWithSequence<?>> changeFiles =
+        planChangeFiles(keyedTable, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
     return new KeyedTableScanResult(baseFiles, changeFiles);
   }
 
   class KeyedTableScanResult {
     private final List<FileScanTask> baseFiles;
-    private final List<ArcticFileScanTask> changeFiles;
+    private final List<ContentFileWithSequence<?>> changeFiles;
 
     public KeyedTableScanResult(List<FileScanTask> baseFiles,
-                                List<ArcticFileScanTask> changeFiles) {
+                                List<ContentFileWithSequence<?>> changeFiles) {
       this.baseFiles = baseFiles;
       this.changeFiles = changeFiles;
     }
@@ -293,7 +291,7 @@ public interface TestOptimizeBase {
       return baseFiles;
     }
 
-    public List<ArcticFileScanTask> getChangeFiles() {
+    public List<ContentFileWithSequence<?>> getChangeFiles() {
       return changeFiles;
     }
   }

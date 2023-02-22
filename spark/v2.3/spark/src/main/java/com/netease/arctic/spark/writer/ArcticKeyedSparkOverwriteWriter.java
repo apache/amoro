@@ -160,7 +160,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private void rewritePartition(WriterCommitMessage[] messages) {
     RewritePartitions rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.withTransactionId(txId);
+    rewritePartitions.updateOptimizedSequenceDynamically(txId);
 
     for (DataFile file : files(messages)) {
       rewritePartitions.addDataFile(file);
@@ -171,7 +171,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private void overwriteByFilter(WriterCommitMessage[] messages, Expression overwriteExpr) {
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-    overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
+    overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
 
     for (DataFile file : files(messages)) {
       overwriteBaseFiles.addFile(file);

@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.FileNameGenerator;
@@ -33,7 +32,6 @@ import org.apache.iceberg.FileScanTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
