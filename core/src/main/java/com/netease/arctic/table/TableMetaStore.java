@@ -94,7 +94,7 @@ public class TableMetaStore implements Serializable {
       // We must reset the private static variables in UserGroupInformation when re-login
       UGI_PRINCIPLE_FIELD = UserGroupInformation.class.getDeclaredField("keytabPrincipal");
       UGI_PRINCIPLE_FIELD.setAccessible(true);
-      UGI_KEYTAB_FIELD = UserGroupInformation.class.getDeclaredField("keytabPrincipal");
+      UGI_KEYTAB_FIELD = UserGroupInformation.class.getDeclaredField("keytabFile");
       UGI_KEYTAB_FIELD.setAccessible(true);
       UGI_REFLECT = true;
     } catch (NoSuchFieldException e) {
@@ -246,14 +246,14 @@ public class TableMetaStore implements Serializable {
         } else {
           // re-login
           synchronized (UserGroupInformation.class) {
-            String oldKeytabPrincipal = null;
             String oldKeytabFile = null;
+            String oldPrincipal = null;
             if (UGI_REFLECT) {
               try {
                 // use reflection to set private static field of UserGroupInformation for re-login
                 // to fix static field reuse bug before hadoop-common version 3.1.0
-                oldKeytabPrincipal = (String) UGI_KEYTAB_FIELD.get(null);
-                oldKeytabFile = (String) UGI_PRINCIPLE_FIELD.get(null);
+                oldKeytabFile = (String) UGI_KEYTAB_FIELD.get(null);
+                oldPrincipal = (String) UGI_PRINCIPLE_FIELD.get(null);
               } catch (IllegalAccessException e) {
                 UGI_REFLECT = false;
                 LOG.warn("Fail to reflect UserGroupInformation", e);
@@ -275,8 +275,8 @@ public class TableMetaStore implements Serializable {
 
               if (UGI_REFLECT) {
                 try {
-                  UGI_KEYTAB_FIELD.set(null, krbPrincipal);
-                  UGI_PRINCIPLE_FIELD.set(null, getConfPath(confCachePath, KEY_TAB_FILE_NAME));
+                  UGI_PRINCIPLE_FIELD.set(null, krbPrincipal);
+                  UGI_KEYTAB_FIELD.set(null, getConfPath(confCachePath, KEY_TAB_FILE_NAME));
                 } catch (IllegalAccessException e) {
                   UGI_REFLECT = false;
                   LOG.warn("Fail to reflect UserGroupInformation", e);
@@ -293,8 +293,8 @@ public class TableMetaStore implements Serializable {
             } finally {
               if (UGI_REFLECT) {
                 try {
-                  UGI_KEYTAB_FIELD.set(null, oldKeytabPrincipal);
-                  UGI_PRINCIPLE_FIELD.set(null, oldKeytabFile);
+                  UGI_PRINCIPLE_FIELD.set(null, oldPrincipal);
+                  UGI_KEYTAB_FIELD.set(null, oldKeytabFile);
                 } catch (IllegalAccessException e) {
                   UGI_REFLECT = false;
                   LOG.warn("Fail to reflect UserGroupInformation", e);
