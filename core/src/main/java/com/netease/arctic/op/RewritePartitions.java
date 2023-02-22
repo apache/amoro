@@ -16,10 +16,12 @@ public interface RewritePartitions extends PendingUpdate<StructLikeMap<Long>> {
   RewritePartitions addDataFile(DataFile file);
 
   /**
-   * set transactionId for current operation
-   * @param transactionId table transactionId
+   * Update optimized sequence for changed partitions.
+   * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.
+   *
+   * @param sequence - optimized sequence
    * @return this for method chaining
    */
-  RewritePartitions withTransactionId(long transactionId);
+  RewritePartitions updateOptimizedSequenceDynamically(long sequence);
 
 }

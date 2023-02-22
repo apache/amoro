@@ -64,8 +64,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "0");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
@@ -88,8 +88,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "1");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
@@ -109,8 +109,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "1");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);

@@ -47,9 +47,10 @@ import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
-import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -468,11 +469,11 @@ public class TableOptimizeItem extends IJDBCService {
       Snapshot baseCurrentSnapshot;
       Snapshot changeCurrentSnapshot = null;
       ArcticTable arcticTable = getArcticTable();
-      StructLikeMap<Long> partitionMaxTransactionId = null;
+      StructLikeMap<Long> partitionOptimizedSequence = null;
       StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
       if (arcticTable.isKeyedTable()) {
         baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
-        partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
         legacyPartitionMaxTransactionId =
             TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
         changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
@@ -505,7 +506,7 @@ public class TableOptimizeItem extends IJDBCService {
           if (isKeyedTable()) {
             MinorOptimizePlan minorPlan =
                 getMinorPlan(-1, System.currentTimeMillis(), baseFiles, baseCurrentSnapshot,
-                    changeCurrentSnapshot, partitionMaxTransactionId, legacyPartitionMaxTransactionId);
+                    changeCurrentSnapshot, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
             if (minorPlan != null) {
               optimizePlanResult = minorPlan.plan();
             }
@@ -855,7 +856,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (isKeyedTable()) {
       KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
-      record.setBaseTableMaxTransactionId(TablePropertyUtil.getPartitionMaxTransactionId(keyedHiveTable).toString());
+      record.setPartitionOptimizedSequence(TablePropertyUtil.getPartitionOptimizedSequence(keyedHiveTable).toString());
     } else {
       getArcticTable(true);
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
@@ -1060,23 +1061,20 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public MinorOptimizePlan getMinorPlan(int queueId, long currentTime,
                                         List<FileScanTask> baseFiles, Snapshot baseSnapshot, Snapshot changeSnapshot,
-                                        StructLikeMap<Long> partitionMaxTransactionId,
+                                        StructLikeMap<Long> partitionOptimizedSequence,
                                         StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     if (changeSnapshot == null) {
       LOG.debug("{} change table is empty, skip minor optimize", tableIdentifier);
       return null;
     }
-    TableScan changeTableIncrementalScan =
+    ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newChangeScan()
-            .fromTransaction(partitionMaxTransactionId)
+            .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());
-    List<ArcticFileScanTask> changeFiles = new ArrayList<>();
-    try (CloseableIterable<FileScanTask> fileScanTasks = changeTableIncrementalScan.planFiles()) {
-      for (FileScanTask fileScanTask : fileScanTasks) {
-        ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-        changeFiles.add(arcticFileScanTask);
-      }
+    List<ContentFileWithSequence<?>> changeFiles;
+    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      changeFiles = Lists.newArrayList(files);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
     }

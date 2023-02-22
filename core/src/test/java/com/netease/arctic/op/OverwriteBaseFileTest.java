@@ -50,25 +50,25 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
-        .updateMaxTransactionIdDynamically(txId)
+        .updateOptimizedSequenceDynamically(txId)
         .commit();
     // overwrite all partition and add new data file
 
-    StructLikeMap<Long> partitionMaxTxId =
-        TablePropertyUtil.getPartitionMaxTransactionId(getArcticTable().asKeyedTable());
+    StructLikeMap<Long> partitionOptimizedSequence =
+        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: all partition with new txId
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
 
     List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
@@ -92,7 +92,7 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
     List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
-    overwrite.updateMaxTransactionIdDynamically(txId);
+    overwrite.updateOptimizedSequenceDynamically(txId);
     overwrite.overwriteByRowFilter(
         Expressions.or(
             Expressions.or(
@@ -105,19 +105,19 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
     );
     overwrite.commit();
 
-    StructLikeMap<Long> partitionMaxTxId =
-        TablePropertyUtil.getPartitionMaxTransactionId(getArcticTable().asKeyedTable());
+    StructLikeMap<Long> partitionOptimizedSequence =
+        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new txId, 3 partition is null
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
-    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
 
     List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]

@@ -173,8 +173,8 @@ public class TableExpireService implements ITableExpireService {
       return;
     }
 
-    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
-    if (MapUtils.isEmpty(baseMaxTransactionId)) {
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
+    if (MapUtils.isEmpty(partitionOptimizedSequence)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;
     }
@@ -191,14 +191,14 @@ public class TableExpireService implements ITableExpireService {
       List<DataFileInfo> partitionDataFiles =
           partitionDataFileMap.get(changeDataFiles.get(0).getPartition());
 
-      Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
+      Long optimizedSequence = partitionOptimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= optimizedSequence)
             .collect(Collectors.toList()));
       }
     } else {
-      baseMaxTransactionId.forEach((key, value) -> {
+      partitionOptimizedSequence.forEach((key, value) -> {
         List<DataFileInfo> partitionDataFiles =
             partitionDataFileMap.get(keyedTable.baseTable().spec().partitionToPath(key));
 
