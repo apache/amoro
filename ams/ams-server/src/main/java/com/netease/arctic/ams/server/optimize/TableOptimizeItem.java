@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ErrorMessage;
@@ -129,6 +130,22 @@ public class TableOptimizeItem extends IJDBCService {
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
     this.metaRefreshTime = -1;
+    this.tableOptimizeRuntime = new TableOptimizeRuntime(tableMetadata.getTableIdentifier());
+    this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_QUOTA,
+        TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
+    this.groupNameCache = CompatiblePropertyUtil.propertyAsString(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_GROUP,
+        TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
+    this.tableIdentifier = tableMetadata.getTableIdentifier();
+    this.metastoreClient = ServiceContainer.getTableMetastoreHandler();
+    this.quotaService = ServiceContainer.getQuotaService();
+  }
+
+  @VisibleForTesting
+  public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata, long metaRefreshTime) {
+    this.arcticTable = arcticTable;
+    this.metaRefreshTime = metaRefreshTime;
     this.tableOptimizeRuntime = new TableOptimizeRuntime(tableMetadata.getTableIdentifier());
     this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
         TableProperties.SELF_OPTIMIZING_QUOTA,
@@ -707,12 +724,15 @@ public class TableOptimizeItem extends IJDBCService {
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
 
                 // set end time and cost time in optimize_task_history
-                TableTaskHistory taskHistory =
-                    taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
-                if (taskHistory != null && taskHistory.getEndTime() != 0) {
-                  taskHistory.setEndTime(endTime);
-                  taskHistory.setCostTime(endTime - taskHistory.getStartTime());
-                  taskHistoryMapper.updateTaskHistory(taskHistory);
+                List<TableTaskHistory> taskHistoryList =
+                    taskHistoryMapper.selectTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                if (CollectionUtils.isNotEmpty(taskHistoryList)) {
+                  TableTaskHistory taskHistory = taskHistoryList.get(0);
+                  if (taskHistory != null && taskHistory.getEndTime() != 0) {
+                    taskHistory.setEndTime(endTime);
+                    taskHistory.setCostTime(endTime - taskHistory.getStartTime());
+                    taskHistoryMapper.updateTaskHistory(taskHistory);
+                  }
                 }
               }
               LOG.info("{} removed", optimizeTaskId);
@@ -937,7 +957,9 @@ public class TableOptimizeItem extends IJDBCService {
     try {
       int maxRetry = optimizeMaxRetry();
       Optional<OptimizeTaskItem> failedTask =
-          optimizeTasks.values().stream().findAny().filter(task -> task.getOptimizeRuntime().getRetry() > maxRetry);
+          optimizeTasks.values().stream()
+              .filter(task -> task.getOptimizeRuntime().getRetry() > maxRetry && task.getOptimizeStatus() == OptimizeStatus.Failed)
+              .findAny();
 
       // if table has failed task after max retry, clear all tasks
       if (failedTask.isPresent()) {
