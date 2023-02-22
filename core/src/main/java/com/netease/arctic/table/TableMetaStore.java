@@ -283,7 +283,7 @@ public class TableMetaStore implements Serializable {
                 }
               }
 
-              if (oldSystemPrincipal != null && oldSystemPrincipal.equals(krbPrincipal)) {
+              if (oldSystemPrincipal != null && !oldSystemPrincipal.equals(krbPrincipal)) {
                 System.setProperty("sun.security.krb5.principal", krbPrincipal);
                 systemPrincipalChanged = true;
               }
