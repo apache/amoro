@@ -6,6 +6,7 @@ CREATE TABLE `table_blocker` (
   `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
   `create_time` datetime(3) DEFAULT NULL COMMENT 'Blocker create time',
   `expiration_time` datetime(3) DEFAULT NULL COMMENT 'Blocker expiration time',
+  `properties` mediumtext COMMENT 'Blocker properties',
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
