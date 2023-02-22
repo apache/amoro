@@ -69,7 +69,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
 
     Set<String> hiveLocation = new HashSet<>();
     if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
-      hiveLocation.add(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString()));
+      hiveLocation.add(TableFileUtils.getUriPath(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString())));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(testUnPartitionKeyedHiveTable.baseTable().snapshots()));
