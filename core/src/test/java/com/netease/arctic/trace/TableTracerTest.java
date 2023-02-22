@@ -612,7 +612,8 @@ public class TableTracerTest extends TableTestBase {
       Assert.assertEquals(icebergFile.path(), validateFile.getPath());
       Assert.assertEquals(icebergFile.fileSizeInBytes(), validateFile.getFileSize());
       Assert.assertEquals(icebergFile.recordCount(), validateFile.getRecordCount());
-      Assert.assertEquals(DataFileType.BASE_FILE.name(), validateFile.getFileType());
+      Assert.assertEquals(onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
+          validateFile.getFileType());
       Assert.assertEquals(0, validateFile.getIndex());
       Assert.assertEquals(0, validateFile.getMask());
       if (isPartitionedTable()) {

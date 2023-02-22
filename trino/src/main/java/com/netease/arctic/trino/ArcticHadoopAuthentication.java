@@ -19,7 +19,7 @@
 package com.netease.arctic.trino;
 
 import com.google.inject.Inject;
-import com.netease.arctic.catalog.BaseArcticCatalog;
+import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import io.trino.hdfs.authentication.HadoopAuthentication;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -38,7 +38,7 @@ public class ArcticHadoopAuthentication implements HadoopAuthentication {
 
   @Override
   public UserGroupInformation getUserGroupInformation() {
-    TableMetaStore tableMetaStore = ((BaseArcticCatalog) arcticCatalogFactory.getArcticCatalog())
+    TableMetaStore tableMetaStore = ((BasicArcticCatalog) arcticCatalogFactory.getArcticCatalog())
         .getTableMetaStore();
     return tableMetaStore.getUGI();
   }

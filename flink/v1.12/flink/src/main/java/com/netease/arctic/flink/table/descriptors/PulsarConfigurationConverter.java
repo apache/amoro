@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
-
 /**
  * It's used for converting Arctic log-store related properties in {@link com.netease.arctic.table.TableProperties}
  * to Flink official pulsar configuration.
@@ -37,13 +35,10 @@ public class PulsarConfigurationConverter {
 
   /**
    * @param arcticProperties The key has been trimmed of Arctic prefix
-   * @param serviceUrl       e.g. pulsar://localhost:6650
    * @return Properties with Flink Pulsar source keys
    */
-  public static SinkConfiguration toSinkConf(Properties arcticProperties, String serviceUrl) {
+  public static SinkConfiguration toSinkConf(Properties arcticProperties) {
     Configuration conf = new Configuration();
-    conf.setString(PULSAR_SERVICE_URL.key(), serviceUrl);
-
     arcticProperties.stringPropertyNames().forEach(k -> {
       String v = (String) arcticProperties.get(k);
       conf.setString(k, v);

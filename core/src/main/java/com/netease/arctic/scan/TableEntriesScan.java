@@ -63,6 +63,7 @@ public class TableEntriesScan {
   private final boolean allFileContent;
   private final boolean includeColumnStats;
   private final Set<FileContent> validFileContent;
+  private final Schema schema;
 
   private Table entriesTable;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
@@ -80,6 +81,7 @@ public class TableEntriesScan {
     private boolean aliveEntry = true;
     private boolean includeColumnStats = false;
     private final Set<FileContent> fileContents = Sets.newHashSet();
+    private Schema schema;
 
     public Builder(Table table) {
       this.table = table;
@@ -140,14 +142,19 @@ public class TableEntriesScan {
       return this;
     }
 
+    public Builder project(Schema schema) {
+      this.schema = schema;
+      return this;
+    }
+
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats);
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats, schema);
     }
   }
 
 
   public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent, boolean includeColumnStats) {
+                          Set<FileContent> validFileContent, boolean includeColumnStats, Schema schema) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -155,12 +162,16 @@ public class TableEntriesScan {
     this.validFileContent = validFileContent;
     this.snapshotId = snapshotId;
     this.includeColumnStats = includeColumnStats;
+    this.schema  = schema;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
     TableScan tableScan = getEntriesTable().newScan();
     if (snapshotId != null) {
       tableScan = tableScan.useSnapshot(snapshotId);
+    }
+    if (schema != null) {
+      tableScan = tableScan.project(schema);
     }
     CloseableIterable<FileScanTask> manifestFileScanTasks = tableScan.planFiles();
 

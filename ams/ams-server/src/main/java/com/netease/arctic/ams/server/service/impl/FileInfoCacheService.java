@@ -308,7 +308,7 @@ public class FileInfoCacheService extends IJDBCService {
       List<CacheFileInfo> fileInfos = new ArrayList<>();
       List<DataFile> addFiles = new ArrayList<>();
       List<DataFile> deleteFiles = new ArrayList<>();
-      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
+      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, tableType, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
         CacheFileInfo cacheFileInfo = CacheFileInfo.convert(amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
@@ -390,11 +390,11 @@ public class FileInfoCacheService extends IJDBCService {
     }
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
     deleteFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
 

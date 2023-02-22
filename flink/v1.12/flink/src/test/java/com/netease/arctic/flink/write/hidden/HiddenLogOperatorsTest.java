@@ -89,6 +89,7 @@ import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 
 /**
  * Hidden log operator tests.
@@ -557,9 +558,10 @@ public class HiddenLogOperatorsTest {
         properties = getPropertiesByTopic(topic);
         break;
       case LOG_STORE_STORAGE_TYPE_PULSAR:
-        logMsgFactory = new HiddenPulsarFactory(pulsarHelper.op().serviceUrl());
+        logMsgFactory = new HiddenPulsarFactory();
         properties = new Properties();
         properties.put(PULSAR_ADMIN_URL.key(), pulsarHelper.op().adminUrl());
+        properties.put(PULSAR_SERVICE_URL.key(), pulsarHelper.op().serviceUrl());
         break;
       default:
         throw new UnsupportedOperationException(type);

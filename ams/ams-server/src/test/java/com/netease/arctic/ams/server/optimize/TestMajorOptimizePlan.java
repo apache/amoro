@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -33,6 +33,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
@@ -61,27 +62,28 @@ import java.util.stream.Collectors;
 public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testKeyedTableMajorOptimize() throws IOException {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
             testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
-        new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        new TableOptimizeRuntime(testKeyedTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
@@ -93,17 +95,17 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testKeyedTableFullOptimize() throws IOException {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testKeyedTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
@@ -114,10 +116,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
+    List<FileScanTask> baseFiles = planBaseFiles(testKeyedTable);
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
-        new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
+        new TableOptimizeRuntime(testKeyedTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
@@ -131,10 +134,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   public void testUnKeyedTableMajorOptimize() {
     insertUnKeyedTableDataFiles(testTable);
 
+    List<FileScanTask> baseFiles = planBaseFiles(testTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
-        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        new TableOptimizeRuntime(testTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(2, tasks.size());
@@ -151,10 +155,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .commit();
     insertUnKeyedTableDataFiles(testTable);
 
+    List<FileScanTask> baseFiles = planBaseFiles(testTable);
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
-        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
+        new TableOptimizeRuntime(testTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(2, tasks.size());
@@ -168,10 +173,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   public void testUnKeyedTableMajorOptimizeWithPosDelete() throws Exception {
     insertUnKeyedTablePosDeleteFiles(testTable);
 
+    List<FileScanTask> baseFiles = planBaseFiles(testTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
-        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        new TableOptimizeRuntime(testTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(2, tasks.size());
@@ -188,10 +194,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .commit();
     insertUnKeyedTablePosDeleteFiles(testTable);
 
+    List<FileScanTask> baseFiles = planBaseFiles(testTable);
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
-        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
+        new TableOptimizeRuntime(testTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(2, tasks.size());
@@ -203,27 +210,28 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableMajorOptimize() throws IOException {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testNoPartitionTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
             DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testNoPartitionTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
+    List<FileScanTask> baseFiles = planBaseFiles(testNoPartitionTable);
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testNoPartitionTable,
-        new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+        new TableOptimizeRuntime(testNoPartitionTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = majorOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
@@ -235,17 +243,17 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableFullOptimize() throws IOException {
-    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable);
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     Pair<Snapshot, List<DeleteFile>> deleteResult =
-        insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
+        insertBasePosDeleteFiles(testNoPartitionTable, baseDataFiles, targetNodes);
     List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
@@ -256,10 +264,11 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
+    List<FileScanTask> baseFiles = planBaseFiles(testNoPartitionTable);
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,
-        new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
+        new TableOptimizeRuntime(testNoPartitionTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
 
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
@@ -280,7 +289,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asUnkeyedTable().currentSnapshot();
 
     baseDataFilesInfo = dataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable, false))
         .collect(Collectors.toList());
 
     return dataFiles;

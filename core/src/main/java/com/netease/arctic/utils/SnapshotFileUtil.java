@@ -32,23 +32,23 @@ public class SnapshotFileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotFileUtil.class);
 
   public static void getSnapshotFiles(
-      ArcticTable table, Snapshot snapshot,
+      ArcticTable table, String innerTable, Snapshot snapshot,
       List<com.netease.arctic.ams.api.DataFile> addFiles,
       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
     Preconditions.checkNotNull(addFiles, "Add files to delete can not be null");
     Preconditions.checkNotNull(deleteFiles, "Delete files to delete can not be null");
 
     for (DataFile file : snapshot.addedDataFiles(table.io())) {
-      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
     for (DataFile file : snapshot.removedDataFiles(table.io())) {
-      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
-    for (DeleteFile file: snapshot.addedDeleteFiles(table.io())) {
-      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+    for (DeleteFile file : snapshot.addedDeleteFiles(table.io())) {
+      addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
-    for (DeleteFile file: snapshot.removedDeleteFiles(table.io())) {
-      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
+    for (DeleteFile file : snapshot.removedDeleteFiles(table.io())) {
+      deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
 
     LOG.debug("{} snapshot get {} add files count and {} delete file count.",

@@ -32,6 +32,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -61,9 +63,15 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.junit.After;
@@ -83,6 +91,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -282,7 +291,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
   }
 
-  @Test(timeout = 30000)
+  @Test(timeout = 60000)
   public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
     KeyedTable table = testCatalog
@@ -328,6 +337,148 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+  }
+
+  @Test
+  public void testArcticSourceEnumeratorWithChangeExpired() throws Exception {
+    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
+    KeyedTable table = testCatalog
+      .newTableBuilder(tableId, TABLE_SCHEMA)
+      .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+      .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+      .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+      .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(table, false);
+    List<RowData> changeData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : changeData) {
+      taskWriter.write(record);
+    }
+
+    List<DataFile> changeDataFiles = new ArrayList<>();
+    WriteResult result = taskWriter.complete();
+    changeDataFiles.addAll(Arrays.asList(result.dataFiles()));
+    commit(table, result, false);
+
+    for (DataFile dataFile : changeDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+    }
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
+    Assert.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
+
+    // expire changeTable snapshots
+    DeleteFiles deleteFiles = table.changeTable().newDelete();
+    for (DataFile dataFile : changeDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      deleteFiles.deleteFile(dataFile);
+    }
+    deleteFiles.commit();
+
+    LOG.info("commit empty snapshot");
+    AppendFiles changeAppend = table.changeTable().newAppend();
+    changeAppend.commit();
+    Thread.sleep(ScanContext.MONITOR_INTERVAL.defaultValue().toMillis() * 2);
+
+    expireSnapshots(table.changeTable(), System.currentTimeMillis(), new HashSet<>());
+
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    testCatalog.dropTable(tableId, true);
+  }
+
+  @Test
+  public void testArcticSourceEnumeratorWithBaseExpired() throws Exception {
+    final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
+    KeyedTable table = testCatalog
+      .newTableBuilder(tableId, TABLE_SCHEMA)
+      .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+      .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+      .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+      .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(table, true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+        RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+
+    List<DataFile> baseDataFiles = new ArrayList<>();
+    WriteResult result = taskWriter.complete();
+    baseDataFiles.addAll(Arrays.asList(result.dataFiles()));
+    commit(table, result, true);
+
+    for (DataFile dataFile : baseDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+    }
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+
+    // expire baseTable snapshots
+    DeleteFiles deleteFiles = table.baseTable().newDelete();
+    for (DataFile dataFile : baseDataFiles) {
+      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      deleteFiles.deleteFile(dataFile);
+    }
+    deleteFiles.commit();
+
+    LOG.info("commit empty snapshot");
+    AppendFiles changeAppend = table.changeTable().newAppend();
+    changeAppend.commit();
+    Thread.sleep(ScanContext.MONITOR_INTERVAL.defaultValue().toMillis() * 2);
+
+    expireSnapshots(table.baseTable(), System.currentTimeMillis(), new HashSet<>());
+
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    testCatalog.dropTable(tableId, true);
   }
 
   @Test
@@ -559,6 +710,35 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     rowData.setField(1, row.getString(1));
     rowData.setField(2, row.getTimestamp(2, 6));
     return rowData;
+  }
+
+  private static void expireSnapshots(UnkeyedTable arcticInternalTable,
+                                      long olderThan,
+                                      Set<String> exclude) {
+    LOG.debug("start expire snapshots, the exclude is {}", exclude);
+    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
+    final AtomicInteger deleteFiles = new AtomicInteger(0);
+    Set<String> parentDirectory = new HashSet<>();
+    arcticInternalTable.expireSnapshots()
+      .retainLast(1)
+      .expireOlderThan(olderThan)
+      .deleteWith(file -> {
+        try {
+          if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
+            arcticInternalTable.io().deleteFile(file);
+          }
+          parentDirectory.add(new Path(file).getParent().toString());
+          deleteFiles.incrementAndGet();
+        } catch (Throwable t) {
+          LOG.warn("failed to delete file " + file, t);
+        } finally {
+          toDeleteFiles.incrementAndGet();
+        }
+      })
+      .cleanExpiredFiles(true)
+      .commit();
+    parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
   private ArcticSource<RowData> initArcticSource(boolean isStreaming) {

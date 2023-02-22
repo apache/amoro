@@ -128,7 +128,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-    preconditions();
+    writeBasePreconditions();
     UnkeyedTable baseTable = this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     FileFormat fileFormat = FileFormat.valueOf((baseTable.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
@@ -148,7 +148,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    preconditions();
+    writeBasePreconditions();
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -196,7 +196,6 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
-    preconditions();
     KeyedTable table = (KeyedTable) this.table;
 
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
@@ -224,7 +223,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         changeAction, orderedWriter);
   }
 
-  private void preconditions() {
+  private void writeBasePreconditions() {
     if (table.isKeyedTable()) {
       Preconditions.checkNotNull(transactionId);
     } else {

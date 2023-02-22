@@ -1,6 +1,6 @@
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -30,9 +30,9 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     }
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks, 1, System.currentTimeMillis(),
+        icebergNoPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(2, tasks.size());
   }
 
@@ -51,9 +51,9 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     }
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        fileScanTasks,
-        new HashMap<>(), 1, System.currentTimeMillis());
-    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+        fileScanTasks,1, System.currentTimeMillis(),
+        icebergPartitionTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    List<BasicOptimizeTask> tasks = optimizePlan.plan().getOptimizeTasks();
     Assert.assertEquals(2, tasks.size());
   }
 }

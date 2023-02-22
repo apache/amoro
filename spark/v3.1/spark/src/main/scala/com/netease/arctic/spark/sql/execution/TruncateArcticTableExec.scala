@@ -38,10 +38,10 @@ case class TruncateArcticTableExec(table: Table,
     table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
+          val txId = arctic.table().asKeyedTable().beginTransaction(null);
           val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue())
-          overwriteBaseFiles.withTransactionIdForChangedPartition(
-            TablePropertyUtil.allocateTransactionId(arctic.table().asKeyedTable()))
+          overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()
         } else {
           val overwriteFiles = arctic.table().asUnkeyedTable().newOverwrite()

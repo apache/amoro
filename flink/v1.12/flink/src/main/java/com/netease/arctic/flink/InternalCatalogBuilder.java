@@ -19,6 +19,7 @@
 package com.netease.arctic.flink;
 
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Build {@link com.netease.arctic.catalog.ArcticCatalog}.
+ * Build {@link ArcticCatalog}.
  */
 public class InternalCatalogBuilder implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogBuilder.class);
@@ -41,7 +42,7 @@ public class InternalCatalogBuilder implements Serializable {
   private String metastoreUrl;
   private Map<String, String> properties = new HashMap<>(0);
 
-  private com.netease.arctic.catalog.ArcticCatalog createBaseArcticCatalog() {
+  private ArcticCatalog createBaseArcticCatalog() {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreUrl),
         "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
     return CatalogLoader.load(metastoreUrl, properties);
@@ -62,7 +63,7 @@ public class InternalCatalogBuilder implements Serializable {
     return new InternalCatalogBuilder();
   }
 
-  public com.netease.arctic.catalog.ArcticCatalog build() {
+  public ArcticCatalog build() {
     return createBaseArcticCatalog();
   }
 

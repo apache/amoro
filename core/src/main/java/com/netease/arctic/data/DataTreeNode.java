@@ -42,6 +42,9 @@ public final class DataTreeNode implements Serializable {
   public static final DataTreeNode ROOT = new DataTreeNode(0, 0);
 
   public static DataTreeNode of(long mask, long index) {
+    if (index > mask) {
+      throw new IllegalArgumentException("index can not be greater than mask");
+    }
     return new DataTreeNode(mask, index);
   }
 

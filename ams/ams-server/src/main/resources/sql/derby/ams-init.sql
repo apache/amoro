@@ -66,8 +66,8 @@ CREATE TABLE optimize_task (
     table_name varchar(128) NOT NULL,
     partition varchar(128) DEFAULT NULL,
     task_commit_group varchar(40) DEFAULT NULL,
-    max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
-    min_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
+    to_sequence bigint NOT NULL WITH DEFAULT -1,
+    from_sequence bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
     queue_id bigint NOT NULL,
@@ -205,7 +205,7 @@ CREATE TABLE optimize_history (
     total_records bigint DEFAULT NULL,
     partition_cnt int NOT NULL,
     partitions clob(64m),
-    max_change_transaction_id clob(64m),
+    partition_optimized_sequence clob(64m),
     optimize_type varchar(10) NOT NULL,
     PRIMARY KEY (history_id)
 );

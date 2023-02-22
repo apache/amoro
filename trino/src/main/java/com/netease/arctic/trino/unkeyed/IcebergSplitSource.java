@@ -26,8 +26,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.common.io.Closer;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.trino.delete.TrinoDeleteFile;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
@@ -435,7 +435,8 @@ public class IcebergSplitSource
     Long transactionId = null;
     DataFileType dataFileType = null;
     if (isChange) {
-      PrimaryKeyedFile primaryKeyedFile = new DefaultKeyedFile(task.file());
+      ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) task;
+      PrimaryKeyedFile primaryKeyedFile = arcticFileScanTask.file();
       transactionId = primaryKeyedFile.transactionId();
       dataFileType = primaryKeyedFile.type();
     }

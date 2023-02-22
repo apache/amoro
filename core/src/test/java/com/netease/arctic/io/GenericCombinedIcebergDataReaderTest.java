@@ -24,7 +24,8 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import org.apache.iceberg.DataFile;
@@ -117,14 +118,14 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
-        new IcebergContentFile[] {new IcebergContentFile(eqDeleteFile, 2L),
-                                  new IcebergContentFile(posDeleteFile, 3L)},
+        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
+        new DeleteFileWithSequence[] {new DeleteFileWithSequence(eqDeleteFile, 2L),
+            new DeleteFileWithSequence(posDeleteFile, 3L)},
         getArcticTable().spec(), partitionData);
 
     dataScanTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
-        new IcebergContentFile[] {}, getArcticTable().spec(), partitionData);
+        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
+        new DeleteFileWithSequence[] {}, getArcticTable().spec(), partitionData);
 
     dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
         getArcticTable().schema(), null, false,

@@ -21,12 +21,12 @@ package com.netease.arctic.trino;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BaseArcticCatalog;
+import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
@@ -125,7 +125,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
       if (tableNameResolve.isBase()) {
         return keyedTable.baseTable();
       } else {
-        return new ChangeTableWithExternalSchemas((BaseUnkeyedTable) keyedTable.changeTable());
+        return new ChangeTableWithExternalSchemas((BasicUnkeyedTable) keyedTable.changeTable());
       }
     }
     return arcticCatalog.loadTable(tableIdentifier);
@@ -158,14 +158,14 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   public TableMetaStore getTableMetaStore() {
-    return ((BaseArcticCatalog) arcticCatalog).getTableMetaStore();
+    return ((BasicArcticCatalog) arcticCatalog).getTableMetaStore();
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {
 
-    private final BaseUnkeyedTable table;
+    private final BasicUnkeyedTable table;
 
-    public ChangeTableWithExternalSchemas(BaseUnkeyedTable table) {
+    public ChangeTableWithExternalSchemas(BasicUnkeyedTable table) {
       this.table = table;
     }
 

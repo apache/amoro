@@ -37,8 +37,8 @@ struct TableChange {
     2: list<DataFile> addFiles;
     3: list<DataFile> deleteFiles;
     4: i64 snapshotId;
-    5: i64 snapshotSequence;
-    6: i64 parentSnapshotId;
+    5: i64 parentSnapshotId;
+    6: i64 snapshotSequence;
 }
 
 // task commit info
@@ -143,6 +143,7 @@ service ArcticTableMetastore {
     void releaseBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
     
     i64 renewBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+        throws(1: arctic_commons.NoSuchObjectException e)
     
     list<Blocker> getBlockers(1:arctic_commons.TableIdentifier tableIdentifier)
 }

@@ -25,12 +25,12 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
-import org.apache.curator.shaded.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.relocated.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.transforms.SortOrderVisitor;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression;
@@ -102,7 +102,7 @@ public class DistributionAndOrderingUtil {
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     }
-    return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket);
+    return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket - 1);
   }
 
   /**

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
-import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -28,10 +27,9 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -129,27 +127,29 @@ public class TableExpireService implements ITableExpireService {
               LOG.warn("[{}] Base table is null: {} ", traceId, tableIdentifier);
               return null;
             }
-            List<DataFileInfo> changeFilesInfo = ServiceContainer.getFileInfoCacheService()
-                .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
-            Set<String> baseExclude = changeFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
-            baseExclude.addAll(finalHiveLocation);
-            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
-            long baseCleanedTime = System.currentTimeMillis();
-            LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
-
             UnkeyedTable changeTable = keyedArcticTable.changeTable();
             if (changeTable == null) {
               LOG.warn("[{}] Change table is null: {}", traceId, tableIdentifier);
               return null;
             }
+
+            // get valid files in the change store which shouldn't physically delete when expire the snapshot
+            // in the base store
+            Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
+            baseExclude.addAll(finalHiveLocation);
+            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
+            long baseCleanedTime = System.currentTimeMillis();
+            LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
+
             // delete ttl files
             List<DataFileInfo> changeDataFiles = ServiceContainer.getFileInfoCacheService()
                 .getChangeTableTTLDataFiles(keyedArcticTable.id().buildTableIdentifier(),
                     System.currentTimeMillis() - changeDataTTL);
             deleteChangeFile(keyedArcticTable, changeDataFiles);
-            List<DataFileInfo> baseFilesInfo = ServiceContainer.getFileInfoCacheService()
-                .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-            Set<String> changeExclude = baseFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
+
+            // get valid files in the base store which shouldn't physically delete when expire the snapshot
+            // in the change store
+            Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
             changeExclude.addAll(finalHiveLocation);
             expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
             return null;
@@ -173,8 +173,8 @@ public class TableExpireService implements ITableExpireService {
       return;
     }
 
-    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
-    if (MapUtils.isEmpty(baseMaxTransactionId)) {
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
+    if (MapUtils.isEmpty(partitionOptimizedSequence)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;
     }
@@ -191,14 +191,14 @@ public class TableExpireService implements ITableExpireService {
       List<DataFileInfo> partitionDataFiles =
           partitionDataFileMap.get(changeDataFiles.get(0).getPartition());
 
-      Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
+      Long optimizedSequence = partitionOptimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= optimizedSequence)
             .collect(Collectors.toList()));
       }
     } else {
-      baseMaxTransactionId.forEach((key, value) -> {
+      partitionOptimizedSequence.forEach((key, value) -> {
         List<DataFileInfo> partitionDataFiles =
             partitionDataFileMap.get(keyedTable.baseTable().spec().partitionToPath(key));
 
@@ -212,7 +212,7 @@ public class TableExpireService implements ITableExpireService {
 
     String fileFormat = keyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
         TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
-    List<PrimaryKeyedFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
+    List<DataFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedTable.changeTable().specs().get((int) dataFileInfo.getSpecId());
 
       if (partitionSpec == null) {
@@ -220,7 +220,7 @@ public class TableExpireService implements ITableExpireService {
         return null;
       }
       ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
-      return new DefaultKeyedFile((DataFile) contentFile);
+      return (DataFile) contentFile;
     }).filter(Objects::nonNull).collect(Collectors.toList());
 
     ChangeFilesUtil.tryClearChangeFiles(keyedTable, changeDeleteFiles);
@@ -237,7 +237,8 @@ public class TableExpireService implements ITableExpireService {
         .retainLast(1).expireOlderThan(olderThan)
         .deleteWith(file -> {
           try {
-            if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
+            String filePath = TableFileUtils.getUriPath(file);
+            if (!exclude.contains(filePath) && !exclude.contains(new Path(filePath).getParent().toString())) {
               arcticInternalTable.io().deleteFile(file);
             }
             parentDirectory.add(new Path(file).getParent().toString());

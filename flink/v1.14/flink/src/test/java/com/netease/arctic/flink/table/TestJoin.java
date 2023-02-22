@@ -176,7 +176,7 @@ public class TestJoin extends FlinkTestBase {
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
         ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
           RowKind.INSERT, 123, 1L, StringData.fromString("a")));
@@ -192,7 +192,7 @@ public class TestJoin extends FlinkTestBase {
     }
     commit(keyedTable, taskWriter.complete(), true);
 
-    writeChange(keyedTable, rowType, 1);
+    writeChange(keyedTable, rowType);
 
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
@@ -224,8 +224,8 @@ public class TestJoin extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
-  private void writeChange(KeyedTable keyedTable, RowType rowType, long tranctionId) {
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, tranctionId, false);
+  private void writeChange(KeyedTable keyedTable, RowType rowType) {
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, false);
     List<RowData> data = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
           RowKind.INSERT, 324, 5L, StringData.fromString("john")));

@@ -37,9 +37,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of {@link BaseArcticDataReader} with record type {@link Record}.
+ * Implementation of {@link AbstractArcticDataReader} with record type {@link Record}.
  */
-public class GenericArcticDataReader extends BaseArcticDataReader<Record> {
+public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
 
   public GenericArcticDataReader(
       ArcticFileIO fileIO,

@@ -40,6 +40,7 @@ import org.apache.flink.util.CloseableIterator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -64,6 +65,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOCATION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
@@ -99,13 +101,16 @@ public class TestKeyed extends FlinkTestBase {
   public boolean isHive;
   @Parameterized.Parameter(1)
   public String logType;
+  @Parameterized.Parameter(2)
+  public boolean kafkaLegacyEnable;
 
-  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}")
+  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}, kafkaLegacyEnable = {2}")
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][]{
-            {false, LOG_STORE_STORAGE_TYPE_KAFKA},
-            {false, LOG_STORE_STORAGE_TYPE_PULSAR}
+            {false, LOG_STORE_STORAGE_TYPE_KAFKA, true},
+            {false, LOG_STORE_STORAGE_TYPE_KAFKA, false},
+            {false, LOG_STORE_STORAGE_TYPE_PULSAR, false}
         });
   }
 
@@ -137,7 +142,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   private void prepareLog() {
-    topic = TestUtil.getUtMethodName(testName);
+    topic = TestUtil.getUtMethodName(testName) + isHive + kafkaLegacyEnable;
     tableProperties.clear();
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -151,6 +156,10 @@ public class TestKeyed extends FlinkTestBase {
       kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
       tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
       tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    }
+
+    if (kafkaLegacyEnable) {
+      tableProperties.put(ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(), "true");
     }
   }
 
@@ -167,6 +176,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testSinkSourceFile() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
@@ -330,6 +340,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testPartitionSinkFile() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -368,6 +379,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testFileUpsert() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
@@ -412,10 +424,9 @@ public class TestKeyed extends FlinkTestBase {
             ") */")));
   }
 
-  // Ignore this case because of ci blocking problem in Github
-  @Ignore
   @Test
   public void testFileUpsertWithSamePrimaryKey() throws Exception {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});

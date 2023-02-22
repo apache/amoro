@@ -20,12 +20,24 @@ package com.netease.arctic.flink.util;
 
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.core.execution.JobClient;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestUtil.class);
+
+  /**
+   * get ut method name without parameters.
+   */
+  public static String getUtMethodName(TestName testName) {
+    int i = testName.getMethodName().indexOf("[");
+    if (i == -1) {
+      return testName.getMethodName();
+    }
+    return testName.getMethodName().substring(0, i);
+  }
 
   public static void cancelJob(JobClient jobClient) {
     if (isJobTerminated(jobClient)) {
