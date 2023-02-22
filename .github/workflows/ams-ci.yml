@@ -58,3 +58,8 @@ jobs:
       - name: test for optimizer
         if: steps.changed-files.outputs.optimizer == 'true'
         run: mvn install -pl 'optimizer' -am -e
+
+      - name: Code coverage
+          uses: codecov/codecov-action@v3
+          with:
+            verbose: true

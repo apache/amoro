@@ -63,3 +63,8 @@ jobs:
       - name: test for flink 1.15
         if: steps.changed-files.outputs.flink1_15 == 'true'
         run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.15' -am
+
+      - name: Code coverage
+          uses: codecov/codecov-action@v3
+          with:
+            verbose: true
