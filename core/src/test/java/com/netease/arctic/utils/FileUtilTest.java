@@ -54,4 +54,13 @@ public class FileUtilTest {
     Assert.assertEquals(2, FileUtil.parseFileTidFromFileName(fileName));
   }
 
+  @Test
+  public void testGetUriPath() {
+    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs://localhost:8888/a/b/c"));
+    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("file://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("/a/b/c"));
+    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs:/a/b/c"));
+    Assert.assertEquals("a/b/c", FileUtil.getUriPath("a/b/c"));
+  }
 }
