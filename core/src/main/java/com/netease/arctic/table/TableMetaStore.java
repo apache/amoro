@@ -260,6 +260,8 @@ public class TableMetaStore implements Serializable {
               }
             }
 
+            String oldSystemPrincipal = System.getProperty("sun.security.krb5.principal");
+            boolean systemPrincipalChanged = false;
             try {
               if (!UserGroupInformation.isSecurityEnabled()) {
                 UserGroupInformation.setConfiguration(getConfiguration());
@@ -280,7 +282,11 @@ public class TableMetaStore implements Serializable {
                   LOG.warn("Fail to reflect UserGroupInformation", e);
                 }
               }
-              System.setProperty("sun.security.krb5.principal", krbPrincipal);
+
+              if (!krbPrincipal.equals(oldSystemPrincipal)) {
+                System.setProperty("sun.security.krb5.principal", krbPrincipal);
+                systemPrincipalChanged = true;
+              }
               ugi.checkTGTAndReloginFromKeytab();
             } catch (Exception e) {
               throw new RuntimeException("Re-login from keytab failed", e);
@@ -293,6 +299,9 @@ public class TableMetaStore implements Serializable {
                   UGI_REFLECT = false;
                   LOG.warn("Fail to reflect UserGroupInformation", e);
                 }
+              }
+              if (systemPrincipalChanged) {
+                System.setProperty("sun.security.krb5.principal", oldSystemPrincipal);
               }
             }
           }
