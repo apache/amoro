@@ -37,6 +37,7 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
 
   KeyedTable keyedTable;
   private Transaction tx;
+  private boolean skipEmptyCommit = false;
 
   protected final Map<String, String> properties;
 
@@ -49,6 +50,13 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     this.properties.put(key, value);
     return this;
   }
+
+  /**
+   * If this operation change nothing.
+   *
+   * @return true for nothing will be changed
+   */
+  protected abstract boolean isEmptyCommit();
 
   /**
    * Add some operation in transaction and change optimized sequence map.
@@ -64,8 +72,20 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     return apply(tx, TablePropertyUtil.getPartitionOptimizedSequence(keyedTable));
   }
 
+  /**
+   * Skip empty commit.
+   * @return this for chain
+   */
+  public PartitionTransactionOperation skipEmptyCommit() {
+    this.skipEmptyCommit = true;
+    return this;
+  }
+
 
   public void commit() {
+    if (this.skipEmptyCommit && isEmptyCommit()) {
+      return;
+    }
     this.tx = keyedTable.baseTable().newTransaction();
 
     StructLikeMap<Long> partitionOptimizedSequence = apply();

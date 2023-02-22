@@ -73,4 +73,9 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     });
     return partitionOptimizedSequence;
   }
+
+  @Override
+  protected boolean isEmptyCommit() {
+    return this.addFiles.isEmpty();
+  }
 }

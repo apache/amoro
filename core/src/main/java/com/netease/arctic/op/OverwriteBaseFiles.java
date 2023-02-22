@@ -54,6 +54,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final List<DeleteFile> deleteDeleteFiles;
   private final List<DeleteFile> addDeleteFiles;
   private Expression deleteExpression = Expressions.alwaysFalse();
+  private boolean deleteExpressionApplied = false;
   private final StructLikeMap<Long> partitionOptimizedSequence;
 
   private Long optimizedSequence;
@@ -132,6 +133,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     Preconditions.checkArgument(newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
     this.conflictDetectionFilter = newConflictDetectionFilter;
     return this;
+  }
+
+  @Override
+  protected boolean isEmptyCommit() {
+    applyDeleteExpression();
+    return deleteFiles.isEmpty() && addFiles.isEmpty() && deleteDeleteFiles.isEmpty() && addDeleteFiles.isEmpty() &&
+        partitionOptimizedSequence.isEmpty();
   }
 
   @Override
@@ -228,6 +236,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   private void applyDeleteExpression() {
+    if (this.deleteExpressionApplied) {
+      return;
+    }
     if (this.deleteExpression == null) {
       return;
     }
@@ -239,6 +250,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
             t.arcticEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
           }
       ));
+      this.deleteExpressionApplied = true;
     } catch (IOException e) {
       throw new IllegalStateException("failed when apply delete expression when overwrite files", e);
     }
