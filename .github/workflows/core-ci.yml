@@ -39,6 +39,6 @@ jobs:
         run: mvn install -pl '!trino'
 
       - name: Code coverage
-          uses: codecov/codecov-action@v3
-          with:
-            verbose: true
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true

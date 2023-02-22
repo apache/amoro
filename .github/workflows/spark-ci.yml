@@ -57,6 +57,6 @@ jobs:
         run: mvn install -pl 'spark/v3.1/spark-runtime,ams/ams-server' -am -e
 
       - name: Code coverage
-          uses: codecov/codecov-action@v3
-          with:
-            verbose: true
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true
