@@ -27,6 +27,8 @@ import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.FailoverTestUtil.FailoverType;
+import com.netease.arctic.flink.util.FailoverTestUtil.RecordCounterToFail;
 import com.netease.arctic.flink.write.FlinkSink;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -100,6 +102,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.util.FailoverTestUtil.triggerFailover;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -562,7 +565,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
   }
 
-  private void assertRecords(
+  public static void assertRecords(
       KeyedTable testFailoverTable, List<RowData> expected, Duration checkInterval, int maxCheckCount)
       throws InterruptedException {
     for (int i = 0; i < maxCheckCount; ++i) {
@@ -576,7 +579,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     equalsRecords(expected, tableRecords(testFailoverTable), testFailoverTable.schema());
   }
 
-  private boolean equalsRecords(List<RowData> expected, List<RowData> tableRecords, Schema schema) {
+  private static boolean equalsRecords(List<RowData> expected, List<RowData> tableRecords, Schema schema) {
     try {
       RowData[] expectedArray = sortRowDataCollection(expected);
       RowData[] actualArray = sortRowDataCollection(tableRecords);
@@ -624,48 +627,6 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
           RowKind.DELETE, pk + index, StringData.fromString("jo" + index + i), TimestampData.fromLocalDateTime(ldt)));
     }
     return records;
-  }
-
-  // ------------------------------------------------------------------------
-  //  test utilities
-  // ------------------------------------------------------------------------
-
-  private enum FailoverType {
-    NONE,
-    TM,
-    JM
-  }
-
-  private static void triggerFailover(
-      FailoverType type, JobID jobId, Runnable afterFailAction, MiniCluster miniCluster)
-      throws Exception {
-    switch (type) {
-      case NONE:
-        afterFailAction.run();
-        break;
-      case TM:
-        restartTaskManager(afterFailAction, miniCluster);
-        break;
-      case JM:
-        triggerJobManagerFailover(jobId, afterFailAction, miniCluster);
-        break;
-    }
-  }
-
-
-  private static void triggerJobManagerFailover(
-      JobID jobId, Runnable afterFailAction, MiniCluster miniCluster) throws Exception {
-    final HaLeadershipControl haLeadershipControl = miniCluster.getHaLeadershipControl().get();
-    haLeadershipControl.revokeJobMasterLeadership(jobId).get();
-    afterFailAction.run();
-    haLeadershipControl.grantJobMasterLeadership(jobId).get();
-  }
-
-  private static void restartTaskManager(Runnable afterFailAction, MiniCluster miniCluster)
-      throws Exception {
-    miniCluster.terminateTaskManager(0).get();
-    afterFailAction.run();
-    miniCluster.startTaskManager();
   }
 
   private List<RowData> collectRecordsFromUnboundedStream(
@@ -819,42 +780,6 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
   private ArcticTableLoader initLoader() {
     return ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
-  }
-
-  // ------------------------------------------------------------------------
-  //  mini cluster failover utilities
-  // ------------------------------------------------------------------------
-
-  private static class RecordCounterToFail {
-
-    private static AtomicInteger records;
-    private static CompletableFuture<Void> fail;
-    private static CompletableFuture<Void> continueProcessing;
-
-    private static <T> DataStream<T> wrapWithFailureAfter(DataStream<T> stream, int failAfter) {
-
-      records = new AtomicInteger();
-      fail = new CompletableFuture<>();
-      continueProcessing = new CompletableFuture<>();
-      return stream.map(
-          record -> {
-            final boolean halfOfInputIsRead = records.incrementAndGet() > failAfter;
-            final boolean notFailedYet = !fail.isDone();
-            if (notFailedYet && halfOfInputIsRead) {
-              fail.complete(null);
-              continueProcessing.get();
-            }
-            return record;
-          });
-    }
-
-    private static void waitToFail() throws ExecutionException, InterruptedException {
-      fail.get();
-    }
-
-    private static void continueProcessing() {
-      continueProcessing.complete(null);
-    }
   }
 
   private static class WatermarkAwareFailWrapper {

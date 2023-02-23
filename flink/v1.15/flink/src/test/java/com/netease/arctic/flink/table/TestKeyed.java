@@ -21,6 +21,9 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.TestUtil;
+import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
+import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
+import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,6 +42,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -58,6 +62,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
@@ -66,8 +71,11 @@ import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOCATION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_PROPERTIES_PREFIX;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.table.api.Expressions.$;
 
 @RunWith(Parameterized.class)
@@ -88,24 +96,31 @@ public class TestKeyed extends FlinkTestBase {
   private String topic;
   private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
   private Map<String, String> tableProperties = new HashMap<>();
+  @ClassRule
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
+  private static LogPulsarHelper pulsarHelper;
   @Parameterized.Parameter
   public boolean isHive;
   @Parameterized.Parameter(1)
+  public String logType;
+  @Parameterized.Parameter(2)
   public boolean kafkaLegacyEnable;
 
-  @Parameterized.Parameters(name = "isHive = {0}, kafkaLegacyEnable = {1}")
+  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}, kafkaLegacyEnable = {2}")
   public static Collection parameters() {
     return Arrays.asList(
-        new Object[][]{
-            {false, true},
-            {false, false},
-        });
+      new Object[][]{
+        {false, LOG_STORE_STORAGE_TYPE_KAFKA, true},
+        {false, LOG_STORE_STORAGE_TYPE_KAFKA, false},
+        {false, LOG_STORE_STORAGE_TYPE_PULSAR, false}
+      });
   }
 
   @BeforeClass
   public static void beforeClass() throws Exception {
     HiveTableTestBase.startMetastore();
     FlinkTestBase.prepare();
+    pulsarHelper = new LogPulsarHelper(environment);
   }
 
   @AfterClass
@@ -134,9 +149,16 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
 
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
-    tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    if (Objects.equals(logType, LOG_STORE_STORAGE_TYPE_PULSAR)) {
+      pulsarHelper.op().createTopic(topic, 1);
+      tableProperties.put(LOG_STORE_ADDRESS, pulsarHelper.op().serviceUrl());
+      tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_PULSAR);
+      tableProperties.put(LOG_STORE_PROPERTIES_PREFIX + PULSAR_ADMIN_URL.key(), pulsarHelper.op().adminUrl());
+    } else {
+      kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+      tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
+      tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    }
 
     if (kafkaLegacyEnable) {
       tableProperties.put(ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(), "true");
@@ -148,6 +170,9 @@ public class TestKeyed extends FlinkTestBase {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
     if (isHive) {
       hiveTableTestBase.clearTable();
+    }
+    if (Objects.equals(logType, LOG_STORE_STORAGE_TYPE_PULSAR)) {
+      pulsarHelper.op().deleteTopicByForce(topic);
     }
   }
 

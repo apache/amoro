@@ -70,6 +70,7 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createVal
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
@@ -238,7 +239,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
 
-    final Properties properties = getKafkaProperties(arcticTable.properties());
+    final Properties properties = fetchLogstorePrefixProperties(arcticTable.properties());
 
     // add topic-partition discovery
     final Optional<Long> partitionDiscoveryInterval =
