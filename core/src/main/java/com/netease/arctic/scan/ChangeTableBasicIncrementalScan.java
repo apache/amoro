@@ -20,9 +20,10 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.BaseCombinedScanTask;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.DataFile;
@@ -43,7 +44,7 @@ import java.util.Collection;
 public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalScan {
 
   private final ChangeTable table;
-  private StructLikeMap<Long> fromPartitionTransactionId;
+  private StructLikeMap<Long> fromPartitionSequence;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Expression dataFilter;
   private Long snapshotId;
@@ -59,7 +60,7 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   @Override
-  public TableScan useSnapshot(long snapshotId) {
+  public ChangeTableIncrementalScan useSnapshot(long snapshotId) {
     this.snapshotId = snapshotId;
     return this;
   }
@@ -126,8 +127,8 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   @Override
-  public ChangeTableIncrementalScan fromTransaction(StructLikeMap<Long> partitionMaxTransactionId) {
-    this.fromPartitionTransactionId = partitionMaxTransactionId;
+  public ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence) {
+    this.fromPartitionSequence = partitionSequence;
     return this;
   }
 
@@ -139,11 +140,19 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
 
   @Override
   public CloseableIterable<FileScanTask> planFiles() {
-    return planFiles(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+    return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
+        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(((DataFile) fileWithSequence),
+            fileWithSequence.getSequenceNumber()), null, table.spec(), null)
+    );
   }
 
-  private CloseableIterable<FileScanTask> planFiles(PartitionDataFilter shouldKeepFile,
-      PartitionDataFilter shouldKeepFileWithLegacyTxId) {
+  @Override
+  public CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence() {
+    return planFilesWithSequence(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+  }
+
+  private CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence(PartitionDataFilter shouldKeepFile,
+                                                    PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
@@ -173,9 +182,8 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
         return shouldKeep;
       }
     });
-    return CloseableIterable.transform(filteredEntry, e ->
-        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
-            null, table.spec(), null));
+    return CloseableIterable.transform(filteredEntry,
+        e -> WrapFileWithSequenceNumberHelper.wrap(e.getFile(), e.getSequenceNumber()));
   }
 
   @Override
@@ -214,21 +222,21 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
     throw new UnsupportedOperationException();
   }
 
-  private Boolean shouldKeepFile(StructLike partition, long txId) {
-    if (fromPartitionTransactionId == null || fromPartitionTransactionId.isEmpty()) {
-      // if fromPartitionTransactionId is not set or is empty, return null to check legacy transactionId
+  private Boolean shouldKeepFile(StructLike partition, long sequence) {
+    if (fromPartitionSequence == null || fromPartitionSequence.isEmpty()) {
+      // if fromPartitionSequence is not set or is empty, return null to check legacy transactionId
       return null;
     }
     if (table.spec().isUnpartitioned()) {
-      Long fromTransactionId = fromPartitionTransactionId.entrySet().iterator().next().getValue();
-      return txId > fromTransactionId;
+      Long fromSequence = fromPartitionSequence.entrySet().iterator().next().getValue();
+      return sequence > fromSequence;
     } else {
-      if (!fromPartitionTransactionId.containsKey(partition)) {
+      if (!fromPartitionSequence.containsKey(partition)) {
         // return null to check legacy transactionId
         return null;
       } else {
-        Long partitionTransactionId = fromPartitionTransactionId.get(partition);
-        return txId > partitionTransactionId;
+        Long fromSequence = fromPartitionSequence.get(partition);
+        return sequence > fromSequence;
       }
     }
   }
@@ -253,6 +261,6 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   interface PartitionDataFilter {
-    Boolean shouldKeep(StructLike partition, long transactionId);
+    Boolean shouldKeep(StructLike partition, long sequence);
   }
 }

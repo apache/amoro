@@ -141,8 +141,7 @@ public class IcebergMinorOptimizePlan extends AbstractIcebergOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null, null,
-        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
+    TaskConfig taskPartitionConfig = new TaskConfig(OptimizeType.Minor, partition, commitGroup, planGroup, createTime);
 
     collector.addAll(collectSmallDataFileTask(partition, taskPartitionConfig));
     collector.addAll(collectDeleteFileTask(partition, taskPartitionConfig));

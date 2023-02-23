@@ -98,6 +98,9 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
 
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
+    if (posDeleteFiles.isEmpty()) {
+      return false;
+    }
     long posDeleteSize = posDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
     Map<String, String> properties = arcticTable.properties();
     if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO) &&
@@ -149,9 +152,9 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
       String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
-      TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-          null, commitGroup, planGroup, getOptimizeType(), createTime,
-          constructCustomHiveSubdirectory(baseFiles));
+      TaskConfig taskPartitionConfig = new TaskConfig(getOptimizeType(), partition, commitGroup, planGroup, createTime,
+          false, constructCustomHiveSubdirectory(baseFiles)
+      );
 
       long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
               TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -182,9 +185,8 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
 
     List<DataFile> allBaseFiles = new ArrayList<>();
     treeRoot.collectBaseFiles(allBaseFiles);
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        null, commitGroup, planGroup, getOptimizeType(), createTime,
-        constructCustomHiveSubdirectory(allBaseFiles));
+    TaskConfig taskPartitionConfig = new TaskConfig(getOptimizeType(), partition, commitGroup, planGroup, createTime,
+        false, constructCustomHiveSubdirectory(allBaseFiles));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());
@@ -224,7 +226,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
         return HiveTableUtil.newHiveSubdirectory();
       }
     } else {
-      return "";
+      return null;
     }
   }
 }

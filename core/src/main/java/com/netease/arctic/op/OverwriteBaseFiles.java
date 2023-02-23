@@ -54,10 +54,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final List<DeleteFile> deleteDeleteFiles;
   private final List<DeleteFile> addDeleteFiles;
   private Expression deleteExpression = Expressions.alwaysFalse();
-  private final StructLikeMap<Long> partitionTransactionId;
+  private boolean deleteExpressionApplied = false;
+  private final StructLikeMap<Long> partitionOptimizedSequence;
 
-  private Long transactionId;
-  // dynamic indicate that the transactionId should be applied to the changed partitions
+  private Long optimizedSequence;
+  // dynamic indicate that the optimized sequence should be applied to the changed partitions
   private Boolean dynamic;
   private Expression conflictDetectionFilter = null;
 
@@ -67,7 +68,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     this.addFiles = Lists.newArrayList();
     this.deleteDeleteFiles = Lists.newArrayList();
     this.addDeleteFiles = Lists.newArrayList();
-    this.partitionTransactionId = StructLikeMap.create(table.spec().partitionType());
+    this.partitionOptimizedSequence = StructLikeMap.create(table.spec().partitionType());
   }
 
   public OverwriteBaseFiles overwriteByRowFilter(Expression expr) {
@@ -98,30 +99,32 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   /**
-   * Update max TransactionId for partition
+   * Update optimized sequence for partition.
+   * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.
    *
    * @param partitionData - partition
-   * @param transactionId - max transactionId
+   * @param sequence - optimized sequence
    * @return this for chain
    */
-  public OverwriteBaseFiles updateMaxTransactionId(StructLike partitionData, long transactionId) {
+  public OverwriteBaseFiles updateOptimizedSequence(StructLike partitionData, long sequence) {
     Preconditions.checkArgument(this.dynamic == null || !this.dynamic,
-        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
-    this.partitionTransactionId.put(partitionData, transactionId);
+        "updateOptimizedSequenceDynamically() and updateOptimizedSequence() can't be used simultaneously");
+    this.partitionOptimizedSequence.put(partitionData, sequence);
     this.dynamic = false;
     return this;
   }
 
   /**
-   * Update max TransactionId for changed partitions
+   * Update optimized sequence for changed partitions.
+   * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.
    *
-   * @param transactionId - max transactionId
+   * @param sequence - optimized sequence
    * @return this for chain
    */
-  public OverwriteBaseFiles updateMaxTransactionIdDynamically(long transactionId) {
+  public OverwriteBaseFiles updateOptimizedSequenceDynamically(long sequence) {
     Preconditions.checkArgument(this.dynamic == null || this.dynamic,
-        "updateMaxTransactionIdDynamically() and updateMaxTransactionId() can't be used simultaneously");
-    this.transactionId = transactionId;
+        "updateOptimizedSequenceDynamically() and updateOptimizedSequence() can't be used simultaneously");
+    this.optimizedSequence = sequence;
     this.dynamic = true;
     return this;
   }
@@ -133,14 +136,21 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   @Override
-  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
+  protected boolean isEmptyCommit() {
+    applyDeleteExpression();
+    return deleteFiles.isEmpty() && addFiles.isEmpty() && deleteDeleteFiles.isEmpty() && addDeleteFiles.isEmpty() &&
+        partitionOptimizedSequence.isEmpty();
+  }
+
+  @Override
+  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionOptimizedSequence) {
     Preconditions.checkState(this.dynamic != null,
-        "updateMaxTransactionId() or updateMaxTransactionIdDynamically() must be invoked");
+        "updateOptimizedSequence() or updateOptimizedSequenceDynamically() must be invoked");
     applyDeleteExpression();
 
-    StructLikeMap<Long> changedPartitionTransactionId = null;
+    StructLikeMap<Long> sequenceForChangedPartitions = null;
     if (this.dynamic) {
-      changedPartitionTransactionId = StructLikeMap.create(transaction.table().spec().partitionType());
+      sequenceForChangedPartitions = StructLikeMap.create(transaction.table().spec().partitionType());
     }
 
     UnkeyedTable baseTable = keyedTable.baseTable();
@@ -155,16 +165,16 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       }
       if (this.dynamic) {
         for (DataFile d : this.addFiles) {
-          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
         }
         for (DataFile d : this.deleteFiles) {
-          changedPartitionTransactionId.put(d.partition(), this.transactionId);
+          sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
         }
       }
       this.addFiles.forEach(overwriteFiles::addFile);
       this.deleteFiles.forEach(overwriteFiles::deleteFile);
-      if (transactionId != null && transactionId > 0) {
-        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
+      if (optimizedSequence != null && optimizedSequence > 0) {
+        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, optimizedSequence + "");
       }
 
       if (MapUtils.isNotEmpty(properties)) {
@@ -183,7 +193,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
         if (this.dynamic) {
           for (DeleteFile d : this.addDeleteFiles) {
-            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+            sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
           }
         }
 
@@ -200,10 +210,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
         if (this.dynamic) {
           for (DeleteFile d : this.addDeleteFiles) {
-            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+            sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
           }
           for (DeleteFile d : this.deleteDeleteFiles) {
-            changedPartitionTransactionId.put(d.partition(), this.transactionId);
+            sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
           }
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),
@@ -215,17 +225,20 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       }
     }
 
-    // step3: set max transaction id
+    // step3: set optimized sequence id
     if (this.dynamic) {
-      partitionMaxTxId.putAll(changedPartitionTransactionId);
+      partitionOptimizedSequence.putAll(sequenceForChangedPartitions);
     } else {
-      partitionMaxTxId.putAll(this.partitionTransactionId);
+      partitionOptimizedSequence.putAll(this.partitionOptimizedSequence);
     }
 
-    return partitionMaxTxId;
+    return partitionOptimizedSequence;
   }
 
   private void applyDeleteExpression() {
+    if (this.deleteExpressionApplied) {
+      return;
+    }
     if (this.deleteExpression == null) {
       return;
     }
@@ -237,6 +250,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
             t.arcticEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
           }
       ));
+      this.deleteExpressionApplied = true;
     } catch (IOException e) {
       throw new IllegalStateException("failed when apply delete expression when overwrite files", e);
     }

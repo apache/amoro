@@ -24,7 +24,7 @@ import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -45,7 +45,7 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<FileScanTask> baseFileScanTasks,
-                           List<ArcticFileScanTask> changeFileScanTasks,
+                           List<ContentFileWithSequence<?>> changeFileScanTasks,
                            int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, changeFileScanTasks, baseFileScanTasks,
         queueId, currentTime, changeSnapshotId, baseSnapshotId);
@@ -78,11 +78,6 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
-    throw new UnsupportedOperationException("Minor optimize not check with this method");
-  }
-
-  @Override
   protected OptimizeType getOptimizeType() {
     return OptimizeType.Minor;
   }
@@ -110,9 +105,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId,
-        changeTableMinTransactionId.get(partition),
-        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
+    TaskConfig taskPartitionConfig = new TaskConfig(OptimizeType.Minor, partition, commitGroup, planGroup, createTime,
+        changeStoreToSequence, changeStoreFromSequence.get(partition));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());

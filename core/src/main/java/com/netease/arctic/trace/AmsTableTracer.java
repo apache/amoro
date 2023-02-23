@@ -279,7 +279,7 @@ public class AmsTableTracer implements TableTracer {
       }
 
       return new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
-          snapshot.sequenceNumber(), parentSnapshotId);
+          parentSnapshotId, snapshot.sequenceNumber());
     }
   }
 
