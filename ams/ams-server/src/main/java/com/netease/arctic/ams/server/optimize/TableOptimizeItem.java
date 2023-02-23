@@ -31,6 +31,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
+import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
@@ -39,6 +40,7 @@ import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -662,7 +664,7 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  public void optimizeTasksClear(Boolean refreshOptimizeStatus) {
+  public void optimizeTasksClear(boolean refreshOptimizeStatus) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       List<OptimizeTaskItem> tasks = new ArrayList<>(optimizeTasks.values());
 
@@ -739,6 +741,8 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       OptimizeHistoryMapper optimizeHistoryMapper =
           getMapper(sqlSession, OptimizeHistoryMapper.class);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
 
       try {
         tasks.values().stream().flatMap(Collection::stream)
@@ -794,6 +798,7 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
+        long endTime = System.currentTimeMillis();
         tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
@@ -801,6 +806,14 @@ public class TableOptimizeItem extends IJDBCService {
                 removedList.add(removed);
                 optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+
+                // set end time and cost time in optimize_task_history
+                TableTaskHistory taskHistory = taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                if (taskHistory != null && taskHistory.getEndTime() != 0) {
+                  taskHistory.setEndTime(endTime);
+                  taskHistory.setCostTime(endTime - taskHistory.getStartTime());
+                  taskHistoryMapper.updateTaskHistory(taskHistory);
+                }
               }
               LOG.info("{} removed", optimizeTaskId);
             });
@@ -875,29 +888,6 @@ public class TableOptimizeItem extends IJDBCService {
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
     }
     return record;
-  }
-
-  /**
-   * Clear all optimize tasks.
-   */
-  public void clearOptimizeTasks() {
-    tasksLock.lock();
-    try {
-      HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
-      optimizeTasks.clear();
-      Set<String> removedTaskHistory = new HashSet<>();
-      for (OptimizeTaskItem task : toRemoved) {
-        task.clearOptimizeTask();
-        removedTaskHistory.add(task.getOptimizeTask().getTaskPlanGroup());
-      }
-      for (String taskPlanGroup : removedTaskHistory) {
-        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithPlanGroup(tableIdentifier, taskPlanGroup);
-      }
-      LOG.info("{} clear all optimize tasks", getTableIdentifier());
-      updateTableOptimizeStatus();
-    } finally {
-      tasksLock.unlock();
-    }
   }
 
   /**
