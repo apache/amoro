@@ -74,6 +74,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.utils.ConvertStructUtil.partitionToPath;
 
@@ -537,6 +538,10 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier) {
+    return getTxExcludeOptimize(identifier, true);
+  }
+
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier, boolean ignoreEmptyTransaction) {
     if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
       List<TransactionsOfTable> result = new ArrayList<>();
       ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
@@ -569,7 +574,13 @@ public class FileInfoCacheService extends IJDBCService {
     }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      List<TransactionsOfTable> transactions = snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      if (ignoreEmptyTransaction) {
+        return transactions.stream().filter(t -> t.getFileCount() > 0 || t.getFileSize() > 0)
+            .collect(Collectors.toList());
+      } else {
+        return transactions;
+      }
     }
   }
 

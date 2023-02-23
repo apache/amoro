@@ -19,6 +19,10 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.CommitMetaProducer;
+import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.TableChange;
+import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.TableMetadata;
@@ -33,6 +37,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.ModifyChangeTableSequence;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +69,14 @@ public class UpdateTool extends IJDBCService {
         try {
           if (isKeyedTable(tableMetadata)) {
             if (tableMetadata.getCurrentTxId() > 0) {
-              updateTransactionId(loadTable(tableIdentifier), tableMetadata.getCurrentTxId());
+              Snapshot createSnapshot = updateTransactionId(loadTable(tableIdentifier), tableMetadata.getCurrentTxId());
+              ServiceContainer.getArcticTransactionService().validTable(tableIdentifier.buildTableIdentifier());
+              // commit to file into cache
+              if (createSnapshot != null) {
+                TableCommitMeta tableCommitMeta = getTableCommitMeta(tableIdentifier, createSnapshot);
+                ServiceContainer.getFileInfoCacheService().commitCacheFileInfo(tableCommitMeta);
+              }
             }
-            ServiceContainer.getArcticTransactionService().validTable(tableIdentifier.buildTableIdentifier());
           }
         } catch (Throwable t) {
           LOG.error("failed to update transactionId of {}, ignore and continue", tableIdentifier, t);
@@ -87,7 +97,7 @@ public class UpdateTool extends IJDBCService {
         meta.getKeySpec().getFields().size() > 0;
   }
 
-  private static void updateTransactionId(ArcticTable arcticTable, long transactionId) {
+  private static Snapshot updateTransactionId(ArcticTable arcticTable, long transactionId) {
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedTable = arcticTable.asKeyedTable();
       Snapshot snapshot = keyedTable.changeTable().currentSnapshot();
@@ -96,16 +106,39 @@ public class UpdateTool extends IJDBCService {
         snapshotSequence = snapshot.sequenceNumber();
       }
       if (transactionId > snapshotSequence) {
-        LOG.info("{} try modify change table sequence from {} to {}", keyedTable.id(), snapshotSequence, transactionId);
+        TableIdentifier tableIdentifier = keyedTable.id();
+        LOG.info("{} try modify change table sequence from {} to {}", tableIdentifier, snapshotSequence, transactionId);
         ModifyChangeTableSequence modifyTableSequence =
             new ModifyChangeTableSequence(
                 keyedTable.changeTable().name(),
                 ((HasTableOperations) keyedTable.changeTable()).operations());
         modifyTableSequence.sequence(transactionId);
         modifyTableSequence.commit();
-        LOG.info("{} success modify change table sequence from {} to {}", keyedTable.id(), snapshotSequence,
+
+        CreateSnapshotEvent snapshotEvent = (CreateSnapshotEvent) modifyTableSequence.updateEvent();
+        Snapshot createSnapshot = keyedTable.changeTable().snapshot(snapshotEvent.snapshotId());
+
+        LOG.info("{} success modify change table sequence from {} to {}", tableIdentifier, snapshotSequence,
             transactionId);
+        return createSnapshot;
       }
     }
+    return null;
   }
+
+  private static TableCommitMeta getTableCommitMeta(TableIdentifier tableIdentifier, Snapshot createSnapshot) {
+    TableChange tableChange = new TableChange();
+    tableChange.setSnapshotSequence(createSnapshot.sequenceNumber());
+    tableChange.setSnapshotId(createSnapshot.snapshotId());
+    tableChange.setInnerTable(Constants.INNER_TABLE_CHANGE);
+    tableChange.setParentSnapshotId(createSnapshot.parentId() == null ? -1 : createSnapshot.parentId());
+    TableCommitMeta tableCommitMeta = new TableCommitMeta();
+    tableCommitMeta.setCommitMetaProducer(CommitMetaProducer.INGESTION);
+    tableCommitMeta.setTableIdentifier(tableIdentifier.buildTableIdentifier());
+    tableCommitMeta.setCommitTime(System.currentTimeMillis());
+    tableCommitMeta.setAction(createSnapshot.operation());
+    tableCommitMeta.addToChanges(tableChange);
+    return tableCommitMeta;
+  }
+
 }
