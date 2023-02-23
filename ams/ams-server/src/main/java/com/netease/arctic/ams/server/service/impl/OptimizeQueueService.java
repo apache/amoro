@@ -37,7 +37,6 @@ import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.optimize.AbstractIcebergOptimizePlan;
 import com.netease.arctic.ams.server.optimize.FullOptimizePlan;
 import com.netease.arctic.ams.server.optimize.IcebergFullOptimizePlan;
 import com.netease.arctic.ams.server.optimize.IcebergMinorOptimizePlan;
@@ -747,11 +746,11 @@ public class OptimizeQueueService extends IJDBCService {
       Snapshot baseCurrentSnapshot;
       Snapshot changeCurrentSnapshot = null;
       ArcticTable arcticTable = tableItem.getArcticTable();
-      StructLikeMap<Long> partitionMaxTransactionId = null;
+      StructLikeMap<Long> partitionOptimizedSequence = null;
       StructLikeMap<Long> legacyPartitionMaxTransactionId = null;
       if (arcticTable.isKeyedTable()) {
         baseCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().baseTable());
-        partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
         legacyPartitionMaxTransactionId =
             TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
         changeCurrentSnapshot = UnKeyedTableUtil.getCurrentSnapshot(arcticTable.asKeyedTable().changeTable());
@@ -787,7 +786,7 @@ public class OptimizeQueueService extends IJDBCService {
           return OptimizePlanResult.EMPTY;
         }
         MinorOptimizePlan minorPlan = tableItem.getMinorPlan(queueId, currentTime, baseFiles,
-            baseCurrentSnapshot, changeCurrentSnapshot, partitionMaxTransactionId,
+            baseCurrentSnapshot, changeCurrentSnapshot, partitionOptimizedSequence,
             legacyPartitionMaxTransactionId);
         if (minorPlan != null) {
           optimizePlanResult = minorPlan.plan();
