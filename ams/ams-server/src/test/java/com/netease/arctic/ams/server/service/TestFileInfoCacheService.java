@@ -122,7 +122,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     ServiceContainer.getFileInfoCacheService().commitCacheFileInfo(meta);
 
     List<TransactionsOfTable> transactionsOfTables =
-        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier);
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier, false);
     Assert.assertEquals(1, transactionsOfTables.size());
     Assert.assertEquals(snapshotId, transactionsOfTables.get(0).getTransactionId());
   }
