@@ -62,15 +62,43 @@ public class ModifyChangeTableSequence
   }
 
   @Override
-  protected List<ManifestFile> apply(TableMetadata metadataToUpdate, Snapshot snapshot) {
-    return Lists.newArrayList();
-  }
-
-  @Override
   protected Map<String, String> summary() {
     summaryBuilder.setPartitionSummaryLimit(ops.current().propertyAsInt(
         TableProperties.WRITE_PARTITION_SUMMARY_LIMIT, TableProperties.WRITE_PARTITION_SUMMARY_LIMIT_DEFAULT));
     return summaryBuilder.build();
+  }
+
+  private Map<String, String> summary(TableMetadata previous) {
+    Map<String, String> summary = summary();
+    if (summary == null) {
+      return ImmutableMap.of();
+    }
+
+    Map<String, String> previousSummary;
+    if (previous.currentSnapshot() != null) {
+      if (previous.currentSnapshot().summary() != null) {
+        previousSummary = previous.currentSnapshot().summary();
+      } else {
+        // previous snapshot had no summary, use an empty summary
+        previousSummary = ImmutableMap.of();
+      }
+    } else {
+      // if there was no previous snapshot, default the summary to start totals at 0
+      ImmutableMap.Builder<String, String> summaryBuilder = ImmutableMap.builder();
+      summaryBuilder
+          .put(SnapshotSummary.TOTAL_RECORDS_PROP, "0")
+          .put(SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0")
+          .put(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_POS_DELETES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_EQ_DELETES_PROP, "0");
+      previousSummary = summaryBuilder.build();
+    }
+
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    // copy all summary properties from the implementation
+    builder.putAll(previousSummary);
+    return builder.build();
   }
 
   @Override
@@ -103,8 +131,9 @@ public class ModifyChangeTableSequence
     this.targetBranch = branch;
   }
 
-  protected long nextSequenceNumber(TableMetadata base) {
-    return Math.max(base.nextSequenceNumber(), this.sequence);
+  @Override
+  protected List<ManifestFile> apply(TableMetadata metadataToUpdate, Snapshot snapshot) {
+    return Lists.newArrayList();
   }
 
   @Override
@@ -151,36 +180,7 @@ public class ModifyChangeTableSequence
         manifestList.location());
   }
 
-  private Map<String, String> summary(TableMetadata previous) {
-    Map<String, String> summary = summary();
-    if (summary == null) {
-      return ImmutableMap.of();
-    }
-
-    Map<String, String> previousSummary;
-    if (previous.currentSnapshot() != null) {
-      if (previous.currentSnapshot().summary() != null) {
-        previousSummary = previous.currentSnapshot().summary();
-      } else {
-        // previous snapshot had no summary, use an empty summary
-        previousSummary = ImmutableMap.of();
-      }
-    } else {
-      // if there was no previous snapshot, default the summary to start totals at 0
-      ImmutableMap.Builder<String, String> summaryBuilder = ImmutableMap.builder();
-      summaryBuilder
-          .put(SnapshotSummary.TOTAL_RECORDS_PROP, "0")
-          .put(SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0")
-          .put(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0")
-          .put(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0")
-          .put(SnapshotSummary.TOTAL_POS_DELETES_PROP, "0")
-          .put(SnapshotSummary.TOTAL_EQ_DELETES_PROP, "0");
-      previousSummary = summaryBuilder.build();
-    }
-
-    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-    // copy all summary properties from the implementation
-    builder.putAll(previousSummary);
-    return builder.build();
+  protected long nextSequenceNumber(TableMetadata base) {
+    return Math.max(base.nextSequenceNumber(), this.sequence);
   }
 }
