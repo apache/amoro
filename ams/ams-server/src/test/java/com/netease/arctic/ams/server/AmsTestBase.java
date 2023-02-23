@@ -63,7 +63,9 @@ import com.netease.arctic.ams.server.service.impl.TableBlockerService;
 import com.netease.arctic.ams.server.service.impl.TestTableBlockerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
+import com.netease.arctic.ams.server.utils.ChangeFilesUtilTest;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -141,7 +143,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     OptimizeManagerHandler.class,
     AdaptHiveService.class,
     PlatformFileInfoService.class,
-    HiveTableUtil.class
+    HiveTableUtil.class,
+    SequenceNumberFetcherTest.class,
+    ChangeFilesUtilTest.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class AmsTestBase {
