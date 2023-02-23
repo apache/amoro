@@ -68,7 +68,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.*;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
@@ -448,6 +454,8 @@ public class HiddenLogOperatorsTest {
         break;
       }
     }
+
+    jobClient.cancel();
   }
 
   private LogKafkaSource createKafkaSource(String groupId, boolean retract, List<String> topics) {
@@ -559,7 +567,7 @@ public class HiddenLogOperatorsTest {
             userSchema,
             properties,
             topic,
-            new HiddenKafkaFactory<>(),
+            logMsgFactory,
             LogRecordV1.fieldGetterFactory,
             jobId,
             ShuffleHelper.EMPTY

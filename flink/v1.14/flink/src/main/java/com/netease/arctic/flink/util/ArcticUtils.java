@@ -65,6 +65,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DE
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
@@ -159,6 +160,8 @@ public class ArcticUtils {
         LOG_STORE_MESSAGE_TOPIC));
 
     producerConfig = combineTableAndUnderlyingLogstoreProperties(properties, producerConfig);
+    String logType = CompatibleFlinkPropertyUtil.propertyAsString(properties, LOG_STORE_TYPE,
+        LOG_STORE_STORAGE_TYPE_DEFAULT);
 
     String version = properties.getOrDefault(LOG_STORE_DATA_VERSION, LOG_STORE_DATA_VERSION_DEFAULT);
     if (LOG_STORE_DATA_VERSION_DEFAULT.equals(version)) {
@@ -168,7 +171,7 @@ public class ArcticUtils {
             FlinkSchemaUtil.convert(tableSchema),
             producerConfig,
             topic,
-            buildLogMsgFactory(properties),
+            buildLogMsgFactory(logType),
             LogRecordV1.fieldGetterFactory,
             IdGenerator.generateUpstreamId(),
             helper,
@@ -182,7 +185,7 @@ public class ArcticUtils {
           FlinkSchemaUtil.convert(tableSchema),
           producerConfig,
           topic,
-          buildLogMsgFactory(properties),
+          buildLogMsgFactory(logType),
           LogRecordV1.fieldGetterFactory,
           IdGenerator.generateUpstreamId(),
           helper);
@@ -230,14 +233,19 @@ public class ArcticUtils {
 
       Preconditions.checkArgument(finalProp.containsKey(BOOTSTRAP_SERVERS_CONFIG), String.format("%s should be set",
           LOG_STORE_ADDRESS));
+    } else {
+      if (logStoreAddress != null) {
+        finalProp.putIfAbsent(PULSAR_SERVICE_URL.key(), logStoreAddress);
+      }
+
+      Preconditions.checkArgument(finalProp.containsKey(PULSAR_SERVICE_URL.key()), String.format("%s should be set",
+          LOG_STORE_ADDRESS));
     }
 
     return finalProp;
   }
 
-  public static <T> LogMsgFactory<T> buildLogMsgFactory(Map<String, String> tableProperties) {
-    String logType = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_TYPE,
-        LOG_STORE_STORAGE_TYPE_DEFAULT);
+  public static <T> LogMsgFactory<T> buildLogMsgFactory(String logType) {
     LogMsgFactory<T> factory;
     switch (logType) {
       case LOG_STORE_STORAGE_TYPE_KAFKA:

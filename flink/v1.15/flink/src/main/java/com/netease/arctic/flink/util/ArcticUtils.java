@@ -65,6 +65,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DE
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 /**
@@ -230,6 +231,13 @@ public class ArcticUtils {
       }
 
       Preconditions.checkArgument(finalProp.containsKey(BOOTSTRAP_SERVERS_CONFIG), String.format("%s should be set",
+          LOG_STORE_ADDRESS));
+    } else {
+      if (logStoreAddress != null) {
+        finalProp.putIfAbsent(PULSAR_SERVICE_URL.key(), logStoreAddress);
+      }
+
+      Preconditions.checkArgument(finalProp.containsKey(PULSAR_SERVICE_URL.key()), String.format("%s should be set",
           LOG_STORE_ADDRESS));
     }
 
