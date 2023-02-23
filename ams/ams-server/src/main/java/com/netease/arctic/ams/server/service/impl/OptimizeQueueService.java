@@ -637,8 +637,9 @@ public class OptimizeQueueService extends IJDBCService {
       for (TableIdentifier tableIdentifier : tableSort) {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+          ArcticTable arcticTable = tableItem.getArcticTable(true);
 
-          Map<String, String> properties = tableItem.getArcticTable(false).properties();
+          Map<String, String> properties = arcticTable.properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           // queue was updated
@@ -650,8 +651,7 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!CompatiblePropertyUtil.propertyAsBoolean(tableItem.getArcticTable(false).properties(),
-              TableProperties.ENABLE_SELF_OPTIMIZING,
+          if (!CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
               TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
             LOG.debug("{} is not enable optimize continue", tableIdentifier);
             continue;
@@ -674,7 +674,7 @@ public class OptimizeQueueService extends IJDBCService {
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
           if (tableItem.startPlanIfNot()) {
             try {
-              if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
+              if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
                 optimizePlanResult = planNativeIcebergTable(tableItem, currentTime);
               } else {
                 optimizePlanResult = planArcticTable(tableItem, currentTime);
@@ -708,7 +708,7 @@ public class OptimizeQueueService extends IJDBCService {
     private OptimizePlanResult planNativeIcebergTable(TableOptimizeItem tableItem, long currentTime) {
       TableIdentifier tableIdentifier = tableItem.getArcticTable().id();
       int queueId = optimizeQueue.getOptimizeQueueMeta().getQueueId();
-      ArcticTable arcticTable = tableItem.getArcticTable(true);
+      ArcticTable arcticTable = tableItem.getArcticTable();
       Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
       if (currentSnapshot == null) {
         return OptimizePlanResult.EMPTY;

@@ -36,18 +36,21 @@ import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.SnapshotFileGroup;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.ChangeFilesUtil;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -63,12 +66,14 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1067,11 +1072,17 @@ public class TableOptimizeItem extends IJDBCService {
       LOG.debug("{} change table is empty, skip minor optimize", tableIdentifier);
       return null;
     }
+    long changeSnapshotId = changeSnapshot.snapshotId();
+    long maxSequence = getMaxSequenceLimit(changeSnapshot, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    if (maxSequence == Long.MIN_VALUE) {
+      return null;
+    }
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newChangeScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
-            .useSnapshot(changeSnapshot.snapshotId());
+            .toSequence(maxSequence)
+            .useSnapshot(changeSnapshotId);
     List<ContentFileWithSequence<?>> changeFiles;
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
       changeFiles = Lists.newArrayList(files);
@@ -1079,9 +1090,71 @@ public class TableOptimizeItem extends IJDBCService {
       throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
     }
 
+    // if not optimize all files, it is difficult to get the accurate snapshot id, just set changeSnapshotId to -1 to 
+    // trigger next optimize
+    if (maxSequence != Long.MAX_VALUE) {
+      changeSnapshotId = -1;
+    }
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeFiles,
-        queueId, currentTime, changeSnapshot.snapshotId(),
+        queueId, currentTime, changeSnapshotId,
         baseSnapshot == null ? TableOptimizeRuntime.INVALID_SNAPSHOT_ID : baseSnapshot.snapshotId());
+  }
+
+  /**
+   * Select all the files whose sequence <= maxSequence as Selected-Files, seek the maxSequence to find as many
+   * Selected-Files as possible, and also
+   * - the cnt of these Selected-Files must <= maxFileCntLimit
+   * - the max TransactionId of the Selected-Files must > the min TransactionId of all the left files
+   *
+   * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be selected,
+   * Long.MIN_VALUE means no files should be selected
+   */
+  private long getMaxSequenceLimit(Snapshot changeSnapshot,
+                                   StructLikeMap<Long> partitionOptimizedSequence,
+                                   StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+    int totalFilesInSummary = PropertyUtil
+        .propertyAsInt(changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+    int maxFileCntLimit = CompatiblePropertyUtil.propertyAsInt(getArcticTable().properties(),
+        TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+    // not scan files to improve performance
+    if (totalFilesInSummary <= maxFileCntLimit) {
+      return Long.MAX_VALUE;
+    }
+    // scan and get all change files grouped by sequence(snapshot)
+    ChangeTableIncrementalScan changeTableIncrementalScan =
+        getArcticTable().asKeyedTable().changeTable().newChangeScan()
+            .fromSequence(partitionOptimizedSequence)
+            .fromLegacyTransaction(legacyPartitionMaxTransactionId)
+            .useSnapshot(changeSnapshot.snapshotId());
+    Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
+    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      for (ContentFileWithSequence<?> file : files) {
+        SnapshotFileGroup fileGroup = changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
+          long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
+          return new SnapshotFileGroup(file.getSequenceNumber(), txId);
+        });
+        fileGroup.addFile();
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
+    }
+
+    if (changeFilesGroupBySequence.isEmpty()) {
+      LOG.debug("{} get no change files to optimize with partitionOptimizedSequence {}", tableIdentifier,
+          partitionOptimizedSequence);
+      return Long.MIN_VALUE;
+    }
+
+    long maxSequence =
+        ChangeFilesUtil.getMaxSequenceLimit(new ArrayList<>(changeFilesGroupBySequence.values()), maxFileCntLimit);
+    if (maxSequence == Long.MIN_VALUE) {
+      LOG.warn("{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
+          tableIdentifier, maxFileCntLimit);
+    } else if (maxSequence != Long.MAX_VALUE) {
+      LOG.warn("{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
+          tableIdentifier, maxFileCntLimit, maxSequence);
+    }
+    return maxSequence;
   }
 
   /**
