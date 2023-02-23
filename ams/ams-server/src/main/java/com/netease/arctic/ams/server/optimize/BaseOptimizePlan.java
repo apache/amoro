@@ -38,7 +38,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.Snapshot;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -282,13 +281,11 @@ public abstract class BaseOptimizePlan {
   }
 
   private boolean baseTableCacheAll() {
-    if (arcticTable.isKeyedTable()) {
-      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
-          !snapshotIsCached.test(currentBaseSnapshotId)) {
-        LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", currentBaseSnapshotId);
-        return false;
-      }
+    if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+        !snapshotIsCached.test(currentBaseSnapshotId)) {
+      LOG.debug("File cache don't have cache snapshotId:{}," +
+          "wait file cache sync latest file info", currentBaseSnapshotId);
+      return false;
     }
 
     return true;
