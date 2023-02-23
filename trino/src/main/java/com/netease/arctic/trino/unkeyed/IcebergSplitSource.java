@@ -28,6 +28,7 @@ import com.google.common.io.Closer;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.trino.delete.TrinoDeleteFile;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
@@ -207,7 +208,11 @@ public class IcebergSplitSource
       if (requiresColumnStats) {
         scan = scan.includeColumnStats();
       }
-      this.fileScanTaskIterable = TableScanUtil.splitFiles(scan.planFiles(), tableScan.targetSplitSize());
+      if (tableScan instanceof ChangeTableIncrementalScan) {
+        this.fileScanTaskIterable = scan.planFiles();
+      } else {
+        this.fileScanTaskIterable = TableScanUtil.splitFiles(scan.planFiles(), tableScan.targetSplitSize());
+      }
       closer.register(fileScanTaskIterable);
       this.fileScanTaskIterator = fileScanTaskIterable.iterator();
       closer.register(fileScanTaskIterator);
