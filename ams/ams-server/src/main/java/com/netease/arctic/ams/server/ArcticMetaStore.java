@@ -141,6 +141,13 @@ public class ArcticMetaStore {
     config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key(),
             systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
 
+    config.put(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
+        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
+            ArcticMetaStoreConf.LOGIN_USERNAME.defaultValue()));
+    config.put(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
+        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
+            ArcticMetaStoreConf.LOGIN_PASSWORD.defaultValue()));
+
     //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
       config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key(),
@@ -289,7 +296,7 @@ public class ArcticMetaStore {
   }
 
   public static boolean isStarted() {
-    return server != null && server.isServing();
+    return server != null && server.isServing() && ServiceContainer.getOptimizeService().isInited();
   }
 
   public static void failover() {

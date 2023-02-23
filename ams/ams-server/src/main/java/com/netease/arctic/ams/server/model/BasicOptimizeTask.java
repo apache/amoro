@@ -21,7 +21,7 @@ package com.netease.arctic.ams.server.model;
 import com.netease.arctic.ams.api.OptimizeTask;
 
 public class BasicOptimizeTask extends OptimizeTask {
-  public static final int INVALID_TRANSACTION_ID = -1;
+  public static final int INVALID_SEQUENCE = -1;
 
   protected String taskCommitGroup;
   protected String taskPlanGroup;
@@ -40,8 +40,8 @@ public class BasicOptimizeTask extends OptimizeTask {
   protected int queueId = -1;
   protected long createTime;
 
-  private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
-  private long minChangeTransactionId = INVALID_TRANSACTION_ID;
+  private long toSequence = INVALID_SEQUENCE;
+  private long fromSequence = INVALID_SEQUENCE;
 
   public BasicOptimizeTask() {
   }
@@ -62,20 +62,20 @@ public class BasicOptimizeTask extends OptimizeTask {
     this.taskPlanGroup = taskPlanGroup;
   }
 
-  public long getMaxChangeTransactionId() {
-    return maxChangeTransactionId;
+  public long getToSequence() {
+    return toSequence;
   }
 
-  public void setMaxChangeTransactionId(long maxChangeTransactionId) {
-    this.maxChangeTransactionId = maxChangeTransactionId;
+  public void setToSequence(long toSequence) {
+    this.toSequence = toSequence;
   }
 
-  public long getMinChangeTransactionId() {
-    return minChangeTransactionId;
+  public long getFromSequence() {
+    return fromSequence;
   }
 
-  public void setMinChangeTransactionId(long minChangeTransactionId) {
-    this.minChangeTransactionId = minChangeTransactionId;
+  public void setFromSequence(long fromSequence) {
+    this.fromSequence = fromSequence;
   }
 
   public String getPartition() {
@@ -182,8 +182,8 @@ public class BasicOptimizeTask extends OptimizeTask {
         ", posDeleteFileCnt=" + posDeleteFileCnt +
         ", queueId=" + queueId +
         ", createTime=" + createTime +
-        ", maxChangeTransactionId=" + maxChangeTransactionId +
-        ", minChangeTransactionId=" + minChangeTransactionId +
+        ", toSequence=" + toSequence +
+        ", fromSequence=" + fromSequence +
         "} " + superToString();
   }
 

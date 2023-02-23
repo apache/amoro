@@ -176,6 +176,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     }
     if (!enumerationResult.isEmpty()) {
       splitAssigner.onDiscoveredSplits(enumerationResult.splits());
+    }
+    if (!enumerationResult.toOffset().isEmpty()) {
       enumeratorPosition.set(enumerationResult.toOffset());
     }
     LOG.info("handled result of splits, discover splits size {}, latest offset {}.",

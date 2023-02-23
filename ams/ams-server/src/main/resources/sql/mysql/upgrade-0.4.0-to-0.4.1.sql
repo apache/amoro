@@ -6,8 +6,12 @@ CREATE TABLE `table_blocker` (
   `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
   `create_time` datetime(3) DEFAULT NULL COMMENT 'Blocker create time',
   `expiration_time` datetime(3) DEFAULT NULL COMMENT 'Blocker expiration time',
+  `properties` mediumtext COMMENT 'Blocker properties',
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
 
 ALTER TABLE `optimize_group` ADD COLUMN `scheduling_policy`   varchar(20) COMMENT 'Optimize group scheduling policy' after `name`;
+ALTER TABLE `optimize_task` CHANGE `max_change_transaction_id` `to_sequence` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'to sequence';
+ALTER TABLE `optimize_task` CHANGE `min_change_transaction_id` `from_sequence` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'from sequence';
+ALTER TABLE `optimize_history` CHANGE `max_change_transaction_id` `partition_optimized_sequence` mediumtext COMMENT 'optimized sequence of these tasks';

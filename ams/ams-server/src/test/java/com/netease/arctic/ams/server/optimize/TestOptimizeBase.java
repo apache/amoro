@@ -20,31 +20,39 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.IdGenerator;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,9 +85,10 @@ public interface TestOptimizeBase {
     return Pair.of(snapshot, baseDataFiles);
   }
 
-  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(KeyedTable keyedTable, long transactionId)
+  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(KeyedTable keyedTable)
       throws IOException {
     AtomicInteger taskId = new AtomicInteger();
+    long transactionId = keyedTable.beginTransaction(null);
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(transactionId);
     Supplier<TaskWriter<Record>> taskWriterSupplier = () ->
         AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
@@ -134,13 +143,11 @@ public interface TestOptimizeBase {
   }
 
   default Pair<Snapshot, List<DeleteFile>> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    Long transactionId,
                                                     List<DataFile> dataFiles,
                                                     Set<DataTreeNode> targetNodes) throws IOException {
+    Long transactionId = null;
     if (arcticTable.isKeyedTable()) {
-      Preconditions.checkNotNull(transactionId);
-    } else {
-      Preconditions.checkArgument(transactionId == null);
+      transactionId = arcticTable.asKeyedTable().beginTransaction(null);
     }
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -182,7 +189,7 @@ public interface TestOptimizeBase {
   }
 
   default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,
-                                                           List<DataFile> dataFiles,
+                                                           List<PrimaryKeyedFile> dataFiles,
                                                            long transactionId) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -225,5 +232,67 @@ public interface TestOptimizeBase {
     }
 
     return baseDataFiles;
+  }
+
+  default List<FileScanTask> planBaseFiles(ArcticTable arcticTable) {
+    UnkeyedTable baseTable;
+    if (arcticTable.isKeyedTable()) {
+      baseTable = arcticTable.asKeyedTable().baseTable();
+    } else {
+      baseTable = arcticTable.asUnkeyedTable();
+    }
+    List<FileScanTask> baseFiles = new ArrayList<>();
+    try (CloseableIterable<FileScanTask> fileScanTasks = baseTable.newScan()
+        .planFiles()) {
+      fileScanTasks.forEach(baseFiles::add);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + baseTable.name(), e);
+    }
+    return baseFiles;
+  }
+
+  default List<ContentFileWithSequence<?>> planChangeFiles(KeyedTable keyedTable,
+                                                           StructLikeMap<Long> partitionOptimizedSequence,
+                                                           StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+    ChangeTableIncrementalScan changeTableIncrementalScan =
+        keyedTable.changeTable().newChangeScan()
+            .fromSequence(partitionOptimizedSequence)
+            .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+    List<ContentFileWithSequence<?>> changeFiles;
+    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      changeFiles = Lists.newArrayList(files);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
+    }
+    return changeFiles;
+  }
+
+  default KeyedTableScanResult planKeyedTableFiles(KeyedTable keyedTable) {
+    List<FileScanTask> baseFiles = planBaseFiles(keyedTable.baseTable());
+    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
+    StructLikeMap<Long> legacyPartitionMaxTransactionId =
+        TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
+    List<ContentFileWithSequence<?>> changeFiles =
+        planChangeFiles(keyedTable, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableScanResult(baseFiles, changeFiles);
+  }
+
+  class KeyedTableScanResult {
+    private final List<FileScanTask> baseFiles;
+    private final List<ContentFileWithSequence<?>> changeFiles;
+
+    public KeyedTableScanResult(List<FileScanTask> baseFiles,
+                                List<ContentFileWithSequence<?>> changeFiles) {
+      this.baseFiles = baseFiles;
+      this.changeFiles = changeFiles;
+    }
+
+    public List<FileScanTask> getBaseFiles() {
+      return baseFiles;
+    }
+
+    public List<ContentFileWithSequence<?>> getChangeFiles() {
+      return changeFiles;
+    }
   }
 }

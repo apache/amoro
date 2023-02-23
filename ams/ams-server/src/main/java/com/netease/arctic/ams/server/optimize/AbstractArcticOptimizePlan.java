@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
@@ -28,55 +27,70 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
+import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.SerializationUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractArcticOptimizePlan.class);
 
-  protected final List<DataFileInfo> baseTableFileList;
-  protected final List<DataFileInfo> changeTableFileList;
-  protected final List<DataFileInfo> posDeleteFileList;
+  private final List<ContentFileWithSequence<?>> changeFiles;
+  protected final List<FileScanTask> baseFileScanTasks;
   // Whether to customize the directory
   protected boolean isCustomizeDir;
-  // table file format
-  protected String fileFormat;
 
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
-  // partition -> position delete file
-  protected final Map<String, List<DeleteFile>> partitionPosDeleteFiles = new LinkedHashMap<>();
 
   // for base table or unKeyed table
   private final long currentBaseSnapshotId;
   // for change table
   protected final long currentChangeSnapshotId;
 
+  protected Long changeStoreToSequence;
+  protected final Map<String, Long> changeStoreFromSequence = new HashMap<>();
+
   public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                    List<DataFileInfo> baseTableFileList,
-                                    List<DataFileInfo> changeTableFileList,
-                                    List<DataFileInfo> posDeleteFileList,
-                                    Map<String, Boolean> partitionTaskRunning,
-                                    int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
-    this.baseTableFileList = baseTableFileList;
-    this.changeTableFileList = changeTableFileList;
-    this.posDeleteFileList = posDeleteFileList;
+                                    List<ContentFileWithSequence<?>> changeFiles,
+                                List<FileScanTask> baseFileScanTasks,
+                                int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, queueId, currentTime);
+    this.baseFileScanTasks = baseFileScanTasks;
+    this.changeFiles = changeFiles;
     this.isCustomizeDir = false;
-    this.fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
-        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     this.currentChangeSnapshotId = changeSnapshotId;
     this.currentBaseSnapshotId = baseSnapshotId;
   }
@@ -156,12 +170,12 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
               new TreeNode(node.getMask(), node.getIndex()))
           .collect(Collectors.toList()));
     }
-    if (taskConfig.getMaxTransactionId() != null) {
-      optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
+    if (taskConfig.getToSequence() != null) {
+      optimizeTask.setToSequence(taskConfig.getToSequence());
     }
 
-    if (taskConfig.getMinTransactionId() != null) {
-      optimizeTask.setMinChangeTransactionId(taskConfig.getMinTransactionId());
+    if (taskConfig.getFromSequence() != null) {
+      optimizeTask.setFromSequence(taskConfig.getFromSequence());
     }
 
     // table ams url
@@ -169,35 +183,233 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) +
         optimizeTask.getPosDeleteFiles().size() + "");
-    properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, taskConfig.getCustomHiveSubdirectory());
+    String customHiveSubdirectory = taskConfig.getCustomHiveSubdirectory();
+    if (customHiveSubdirectory != null) {
+      properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, customHiveSubdirectory);
+    }
+    if (taskConfig.isMoveFilesToHiveLocation()) {
+      properties.put(OptimizeTaskProperties.MOVE_FILES_TO_HIVE_LOCATION, true + "");
+    }
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
 
-  public boolean tableNeedPlan() {
-    return tableChanged();
+  @Override
+  protected void addOptimizeFiles() {
+    addChangeFilesIntoFileTree();
+    addBaseFilesIntoFileTree();
+    completeTree();
   }
 
-  /**
-   * check whether node task need to build
-   * @param posDeleteFiles pos-delete files in node
-   * @param baseFiles base files in node
-   * @return whether the node task need to build. If true, build task, otherwise skip.
-   */
-  protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
+  private void completeTree() {
+    partitionFileTree.values().forEach(FileTree::completeTree);
+  }
 
-  protected abstract boolean tableChanged();
+  protected void addChangeFilesIntoFileTree() {
+    if (arcticTable.isUnkeyedTable()) {
+      return;
+    }
+    LOG.debug("{} start {} plan change files", tableId(), getOptimizeType());
+    ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
+
+    Set<String> changeFileSet = new HashSet<>();
+    List<ContentFileWithSequence<?>> unOptimizedChangeFiles = this.changeFiles.stream().map(file -> {
+      String partition = changeTable.spec().partitionToPath(file.partition());
+      currentPartitions.add(partition);
+      if (changeFileSet.contains(file.path().toString())) {
+        return null;
+      }
+      changeFileSet.add(file.path().toString());
+      return file;
+    }).filter(Objects::nonNull).collect(Collectors.toList());
+
+    long maxSequenceLimit = getMaxSequenceLimit(unOptimizedChangeFiles);
+
+    AtomicInteger addCnt = new AtomicInteger();
+    unOptimizedChangeFiles.forEach(file -> {
+      long sequenceNumber = file.getSequenceNumber();
+
+      if (sequenceNumber >= maxSequenceLimit) {
+        return;
+      }
+      String partition = changeTable.spec().partitionToPath(file.partition());
+      putChangeFileIntoFileTree(partition, file);
+      markChangeStoreSequence(partition, file.getSequenceNumber());
+
+      addCnt.getAndIncrement();
+    });
+    LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
+        tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
+  }
+
+  private long getMaxSequenceLimit(List<ContentFileWithSequence<?>> unOptimizedChangeFiles) {
+    final int maxChangeFiles =
+        CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
+            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+    long maxTransactionIdLimit;
+    if (unOptimizedChangeFiles.size() <= maxChangeFiles) {
+      maxTransactionIdLimit = Long.MAX_VALUE;
+      // For normal cases, files count is less than optimize.max-file-count(default=100000), return all files
+      LOG.debug("{} start plan change files with all files, max-cnt limit {}, current file cnt {}", tableId(),
+          maxChangeFiles, unOptimizedChangeFiles.size());
+    } else {
+      List<Long> sortedTransactionIds = unOptimizedChangeFiles.stream().map(ContentFileWithSequence::getSequenceNumber)
+          .sorted(Long::compareTo)
+          .collect(Collectors.toList());
+      maxTransactionIdLimit = sortedTransactionIds.get(maxChangeFiles - 1);
+      // If files count is more than optimize.max-file-count, only keep files with small file transaction id
+      LOG.debug("{} start plan change files with max-cnt limit {}, current file cnt {}, less than transaction id {}",
+          tableId(), maxChangeFiles, unOptimizedChangeFiles.size(), maxTransactionIdLimit);
+    }
+    return maxTransactionIdLimit;
+  }
+
+  protected void addBaseFilesIntoFileTree() {
+    LOG.debug("{} start {} plan base files", tableId(), getOptimizeType());
+    UnkeyedTable baseTable = getBaseTable();
+
+    Set<String> baseFileSet = new HashSet<>();
+    Set<String> deleteFileSet = new HashSet<>();
+    baseFileScanTasks.forEach(task -> {
+      DataFile baseFile = task.file();
+      List<DeleteFile> deletes = task.deletes();
+      String partition = baseTable.spec().partitionToPath(baseFile.partition());
+
+      currentPartitions.add(partition);
+      if (!baseFileShouldOptimize(baseFile, partition)) {
+        return;
+      }
+      // put base files into file tree
+      if (!baseFileSet.contains(baseFile.path().toString())) {
+        putBaseFileIntoFileTree(partition, baseFile, DataFileType.BASE_FILE);
+        baseFileSet.add(baseFile.path().toString());
+      }
+
+      // put delete files into file tree
+      deletes.forEach(delete -> {
+        Preconditions.checkArgument(delete.content() == FileContent.POSITION_DELETES,
+            "only support pos-delete files for base file, unexpected file " + delete);
+        if (!deleteFileSet.contains(delete.path().toString())) {
+          putBaseFileIntoFileTree(partition, delete, DataFileType.POS_DELETE_FILE);
+          deleteFileSet.add(delete.path().toString());
+        }
+      });
+    });
+
+    LOG.debug("{} ==== {} add {} base files, {} pos-delete files into tree. After added, partition cnt of tree: {}",
+        tableId(), getOptimizeType(), baseFileSet.size(), deleteFileSet.size(), partitionFileTree.size());
+  }
+  
+  protected void putBaseFileIntoFileTree(String partition, ContentFile<?> contentFile, DataFileType fileType) {
+    FileTree treeRoot = partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
+    DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(contentFile.path().toString());
+    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase(contentFile.path().toString());
+    ContentFileWithSequence<?> wrap = WrapFileWithSequenceNumberHelper.wrap(contentFile, fileMeta.transactionId());
+    treeRoot.putNodeIfAbsent(node).addFile(wrap, fileType);
+  }
+
+  protected void putChangeFileIntoFileTree(String partition, ContentFileWithSequence<?> changeFile) {
+    FileTree treeRoot = partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
+    DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(changeFile.path().toString());
+    DataFileType fileType = FileNameGenerator.parseFileTypeForChange(changeFile.path().toString());
+    treeRoot.putNodeIfAbsent(node).addFile(changeFile, fileType);
+  }
+
+  protected UnkeyedTable getBaseTable() {
+    UnkeyedTable baseTable;
+    if (arcticTable.isKeyedTable()) {
+      baseTable = arcticTable.asKeyedTable().baseTable();
+    } else {
+      baseTable = arcticTable.asUnkeyedTable();
+    }
+    return baseTable;
+  }
+  
+  protected List<DataFile> getBaseFilesFromFileTree(String partition) {
+    FileTree fileTree = partitionFileTree.get(partition);
+    if (fileTree == null) {
+      return Collections.emptyList();
+    }
+    List<DataFile> baseFiles = new ArrayList<>();
+    fileTree.collectBaseFiles(baseFiles);
+    return baseFiles;
+  }
+
+  protected List<DeleteFile> getPosDeleteFilesFromFileTree(String partition) {
+    FileTree fileTree = partitionFileTree.get(partition);
+    if (fileTree == null) {
+      return Collections.emptyList();
+    }
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    fileTree.collectPosDeleteFiles(deleteFiles);
+    return deleteFiles;
+  }
+
+  protected List<DataFile> getDeleteFilesFromFileTree(String partition) {
+    FileTree fileTree = partitionFileTree.get(partition);
+    if (fileTree == null) {
+      return Collections.emptyList();
+    }
+    List<DataFile> deleteFiles = new ArrayList<>();
+    fileTree.collectDeleteFiles(deleteFiles);
+    return deleteFiles;
+  }
+
+  protected List<DataFile> getInsertFilesFromFileTree(String partition) {
+    FileTree fileTree = partitionFileTree.get(partition);
+    if (fileTree == null) {
+      return Collections.emptyList();
+    }
+    List<DataFile> insertFiles = new ArrayList<>();
+    fileTree.collectInsertFiles(insertFiles);
+    return insertFiles;
+  }
+
+  protected abstract boolean baseFileShouldOptimize(DataFile baseFile, String partition);
 
   protected boolean hasFileToOptimize() {
     return !partitionFileTree.isEmpty();
   }
 
-  public long getCurrentSnapshotId() {
+  @Override
+  protected long getCurrentSnapshotId() {
     return currentBaseSnapshotId;
   }
 
-  public long getCurrentChangeSnapshotId() {
+  @Override
+  protected long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
+  }
+
+  private void markChangeStoreSequence(String partition, long sequence) {
+    if (this.changeStoreToSequence == null || this.changeStoreToSequence < sequence) {
+      this.changeStoreToSequence = sequence;
+    }
+    Long fromSequence = changeStoreFromSequence.get(partition);
+    if (fromSequence == null) {
+      changeStoreFromSequence.put(partition, sequence);
+    } else if (sequence < fromSequence) {
+      changeStoreFromSequence.put(partition, sequence);
+    }
+  }
+
+  protected static class SplitIfNoFileExists implements Predicate<FileTree> {
+
+    public SplitIfNoFileExists() {
+    }
+
+    /**
+     * file tree can split if:
+     * - root node isn't leaf node
+     * - and no file exists in the root node
+     *
+     * @param fileTree - file tree to split
+     * @return true if this fileTree need split
+     */
+    @Override
+    public boolean test(FileTree fileTree) {
+      return !fileTree.isLeaf() && fileTree.isRootEmpty();
+    }
   }
 
 }
