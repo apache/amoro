@@ -48,11 +48,11 @@ public class OptimizeCheckTask implements ScheduledTasks.Task {
     } catch (Exception e) {
       LOG.error("unexpected check error " + tableOptimize.getTableIdentifier(), e);
     }
-    LOG.debug("{} optimize checker total cost {} ms", tableIdentifier, System.currentTimeMillis() - startTime);
+    LOG.info("{} optimize checker total cost {} ms", tableIdentifier, System.currentTimeMillis() - startTime);
   }
 
   private void check(TableOptimizeItem tableOptimize) {
-    LOG.debug("{} start check", tableOptimize.getTableIdentifier());
+    LOG.info("{} start check", tableOptimize.getTableIdentifier());
     tableOptimize.tryDisableSelfOptimizing();
     tableOptimize.checkTaskExecuteTimeout();
     tableOptimize.checkOptimizeGroup();
