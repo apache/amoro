@@ -808,7 +808,8 @@ public class TableOptimizeItem extends IJDBCService {
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
 
                 // set end time and cost time in optimize_task_history
-                TableTaskHistory taskHistory = taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                TableTaskHistory taskHistory =
+                    taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
                 if (taskHistory != null && taskHistory.getEndTime() != 0) {
                   taskHistory.setEndTime(endTime);
                   taskHistory.setCostTime(endTime - taskHistory.getStartTime());
