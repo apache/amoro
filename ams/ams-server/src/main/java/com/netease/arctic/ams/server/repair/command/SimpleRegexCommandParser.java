@@ -18,10 +18,10 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class SimpleRegexCommandParser implements CommandParser {
@@ -101,7 +101,7 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public String[] keywords() {
-    List<String> keywordsUpper = Arrays.asList(
+    String[] keywordsUpper = {
         ANALYZE,
         REPAIR,
         THROUGH,
@@ -110,16 +110,17 @@ public class SimpleRegexCommandParser implements CommandParser {
         REFRESH,
         FILE_CACHE,
         SHOW,
-        "START",
-        "STOP",
-        "FIND_BACK",
-        "ROLLBACK",
-        "SYNC_METADATA",
-        "DATABASES",
-        "TABLES");
-    List<String> keywordsLower = keywordsUpper.stream().map(
-        keyword -> keyword.toLowerCase()).collect(Collectors.toList());
-    keywordsUpper.addAll(keywordsLower);
-    return (String[]) keywordsUpper.stream().toArray();
+        OptimizeCall.action.START.name(),
+        OptimizeCall.action.STOP.name(),
+        RepairCall.way.FIND_BACK.name(),
+        RepairCall.way.SYNC_METADATA.name(),
+        RepairCall.way.ROLLBACK.name(),
+        ShowCall.namespaces.DATABASES.name(),
+        ShowCall.namespaces.TABLES.name()
+    };
+    Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
+        keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();
+
+    return (String[]) ArrayUtils.addAll(keywordsUpper, keywordsLower);
   }
 }
