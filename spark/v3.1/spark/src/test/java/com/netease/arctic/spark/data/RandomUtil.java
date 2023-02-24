@@ -35,6 +35,7 @@ public class RandomUtil {
   private static final long ONE_DAY_IN_MICROS = 24 * 60 * 60 * 1_000_000L;
   private static final String CHARS =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.!?";
+  private static long data = 0;
 
   public static Object generatePrimitive(Type.PrimitiveType primitive,
                                          Random random) {
@@ -46,7 +47,7 @@ public class RandomUtil {
         return random.nextInt();
 
       case LONG:
-        return random.nextLong();
+        return data += 1;
 
       case FLOAT:
         return random.nextFloat();
