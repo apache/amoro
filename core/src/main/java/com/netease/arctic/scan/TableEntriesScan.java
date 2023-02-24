@@ -63,6 +63,7 @@ public class TableEntriesScan {
   private final boolean allFileContent;
   private final boolean includeColumnStats;
   private final Set<FileContent> validFileContent;
+  private final MetadataTableType metadataTableType;
   private final Schema schema;
 
   private Table entriesTable;
@@ -82,6 +83,7 @@ public class TableEntriesScan {
     private boolean includeColumnStats = false;
     private final Set<FileContent> fileContents = Sets.newHashSet();
     private Schema schema;
+    private MetadataTableType metadataTableType = MetadataTableType.ENTRIES;
 
     public Builder(Table table) {
       this.table = table;
@@ -147,14 +149,21 @@ public class TableEntriesScan {
       return this;
     }
 
+    public Builder withMetadataTableType(MetadataTableType metadataTableType) {
+      this.metadataTableType = metadataTableType;
+      return this;
+    }
+
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats, schema);
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry,
+          fileContents, includeColumnStats, schema, metadataTableType);
     }
   }
 
 
   public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent, boolean includeColumnStats, Schema schema) {
+                          Set<FileContent> validFileContent, boolean includeColumnStats,
+                          Schema schema, MetadataTableType metadataTableType) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -163,6 +172,7 @@ public class TableEntriesScan {
     this.snapshotId = snapshotId;
     this.includeColumnStats = includeColumnStats;
     this.schema  = schema;
+    this.metadataTableType = metadataTableType;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
@@ -202,60 +212,15 @@ public class TableEntriesScan {
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
 
-  public CloseableIterable<IcebergFileEntry> allEntries() {
-    TableScan tableScan = getAllEntriesTable().newScan();
-    if (snapshotId != null) {
-      tableScan = tableScan.useSnapshot(snapshotId);
-    }
-    if (schema != null) {
-      tableScan = tableScan.project(schema);
-    }
-    CloseableIterable<FileScanTask> manifestFileScanTasks = tableScan.planFiles();
-
-    CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
-
-    CloseableIterable<IcebergFileEntry> allEntries =
-        CloseableIterable.transform(entries, (entry -> {
-          ManifestEntryFields.Status status =
-              ManifestEntryFields.Status.of(
-                  entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
-          long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
-          Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
-          StructLike fileRecord =
-              entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
-          FileContent fileContent =
-              getFileContent(fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
-          if (status == ManifestEntryFields.Status.ADDED || status == ManifestEntryFields.Status.EXISTING) {
-            ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
-            if (metricsEvaluator().eval(contentFile)) {
-              if (needMetrics() && !includeColumnStats) {
-                contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
-              }
-              return new IcebergFileEntry(snapshotId, sequence, contentFile);
-            }
-          }
-          return null;
-        }));
-    return CloseableIterable.filter(allEntries, Objects::nonNull);
-  }
-
   private Table getEntriesTable() {
     if (this.entriesTable == null) {
       this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
-          table.name(), table.name() + "#ENTRIES",
-          MetadataTableType.ENTRIES);
+          table.name(), table.name() + "#" + this.metadataTableType.name(),
+          this.metadataTableType);
     }
     return this.entriesTable;
   }
 
-  private Table getAllEntriesTable() {
-    if (this.entriesTable == null) {
-      this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
-          table.name(), table.name() + "#ALL_ENTRIES",
-          MetadataTableType.ALL_ENTRIES);
-    }
-    return this.entriesTable;
-  }
 
   private FileContent getFileContent(int contentId) {
     for (FileContent content : FileContent.values()) {

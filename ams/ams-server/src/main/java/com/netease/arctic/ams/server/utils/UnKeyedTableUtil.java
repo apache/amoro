@@ -25,6 +25,7 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
@@ -62,8 +63,10 @@ public class UnKeyedTableUtil {
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable).build();
-    for (IcebergFileEntry entry : manifestReader.allEntries()) {
+    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
+        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+        .withMetadataTableType(MetadataTableType.ALL_ENTRIES).build();
+    for (IcebergFileEntry entry : manifestReader.entries()) {
       validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
     }
 
