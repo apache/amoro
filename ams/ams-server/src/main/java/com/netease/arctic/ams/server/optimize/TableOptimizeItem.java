@@ -674,6 +674,9 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, InternalTableFilesMapper.class);
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
+
 
       TableOptimizeRuntime oldTableRuntime = tableOptimizeRuntime.clone();
       try {
@@ -693,6 +696,7 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
+        long endTime = System.currentTimeMillis();
         tasks.stream().map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
@@ -700,6 +704,15 @@ public class TableOptimizeItem extends IJDBCService {
                 removedList.add(removed);
                 optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+
+                // set end time and cost time in optimize_task_history
+                TableTaskHistory taskHistory =
+                    taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                if (taskHistory != null && taskHistory.getEndTime() != 0) {
+                  taskHistory.setEndTime(endTime);
+                  taskHistory.setCostTime(endTime - taskHistory.getStartTime());
+                  taskHistoryMapper.updateTaskHistory(taskHistory);
+                }
               }
               LOG.info("{} removed", optimizeTaskId);
             });
@@ -741,8 +754,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       OptimizeHistoryMapper optimizeHistoryMapper =
           getMapper(sqlSession, OptimizeHistoryMapper.class);
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
 
       try {
         tasks.values().stream().flatMap(Collection::stream)
@@ -798,7 +809,6 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
-        long endTime = System.currentTimeMillis();
         tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
@@ -806,15 +816,6 @@ public class TableOptimizeItem extends IJDBCService {
                 removedList.add(removed);
                 optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
-
-                // set end time and cost time in optimize_task_history
-                TableTaskHistory taskHistory =
-                    taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
-                if (taskHistory != null && taskHistory.getEndTime() != 0) {
-                  taskHistory.setEndTime(endTime);
-                  taskHistory.setCostTime(endTime - taskHistory.getStartTime());
-                  taskHistoryMapper.updateTaskHistory(taskHistory);
-                }
               }
               LOG.info("{} removed", optimizeTaskId);
             });
