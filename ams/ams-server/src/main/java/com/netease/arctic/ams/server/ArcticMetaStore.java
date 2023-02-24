@@ -465,6 +465,16 @@ public class ArcticMetaStore {
     config.setInteger(
         ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE,
         systemConfig.getInteger(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key()));
+    if (systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_WORKER_THREADS.key())) {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_WORKER_THREADS,
+          systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_WORKER_THREADS.key()));
+    }
+    if (systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS.key())) {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS,
+          systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS.key()));
+    }
 
     config.setString(
         ArcticMetaStoreConf.DB_TYPE,
