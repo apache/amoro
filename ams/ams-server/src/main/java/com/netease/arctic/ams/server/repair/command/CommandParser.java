@@ -22,6 +22,6 @@ public interface CommandParser {
 
   CallCommand parse(String line) throws IllegalCommandException;
 
-  String[] keyword();
+  String[] keywords();
 
 }

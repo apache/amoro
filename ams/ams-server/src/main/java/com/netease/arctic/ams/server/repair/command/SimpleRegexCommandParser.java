@@ -18,22 +18,71 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class SimpleRegexCommandParser implements CommandParser {
 
   private AnalyzeCallGenerator analyzeCallGenerator;
 
   private RepairCallGenerator repairCallGenerator;
 
+  private static final String ANALYZE = "ANALYZE";
+  private static final String REPAIR = "REPAIR";
+  private static final String USE = "USE";
+  private static final String OPTIMIZE = "OPTIMIZE";
+  private static final String REFRESH = "REFRESH";
+  private static final String SHOW = "SHOW";
+  private static final String THROUGH = "THROUGH";
+  private static final String ROLLBACK = "ROLLBACK";
+  private static final String FILE_CACHE = "FILE_CACHE";
 
 
   @Override
-  public CallCommand parse(String line) {
-    //todo
-    return null;
+  public CallCommand parse(String line) throws IllegalCommandException {
+    String[] commandSplit = line.split("\\s+");
+
+    for (String keyword : keywords()) {
+      if (StringUtils.equalsIgnoreCase(commandSplit[0], keyword)) {
+        switch (keyword) {
+          case ANALYZE:
+            return new AnalyzeCallGenerator().generate(commandSplit[1]);
+          case REPAIR:
+            if (StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
+              if (StringUtils.equalsIgnoreCase(commandSplit[3], ROLLBACK)) {
+                return new RepairCallGenerator().generate(commandSplit[1], commandSplit[3], commandSplit[4]);
+              } else {
+                return new RepairCallGenerator().generate(commandSplit[1], commandSplit[3], null);
+              }
+            } else {
+              throw new IllegalCommandException("Please check if your command is correct!");
+            }
+          case USE:
+            return new UseCallGenerator().generate(commandSplit[1]);
+          case OPTIMIZE:
+            return new OptimizeCallGenerator().generate(commandSplit[1], commandSplit[2]);
+          case REFRESH:
+            if (StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
+              return new RefreshCallGenerator().generate(commandSplit[2]);
+            } else {
+              throw new IllegalCommandException("Please check if your command is correct!");
+            }
+          case SHOW:
+            return new ShowCallGenerator().generate(commandSplit[1]);
+        }
+      }
+    }
+    throw new IllegalCommandException("Please check if your command is correct!");
   }
 
   @Override
-  public String[] keyword() {
-    return new String[0];
+  public String[] keywords() {
+    return new String[]{
+        ANALYZE,
+        REPAIR,
+        USE,
+        OPTIMIZE,
+        REFRESH,
+        SHOW
+    };
   }
 }
