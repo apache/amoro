@@ -31,6 +31,8 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
 
   private final BaseTaskConsumer taskConsumer;
 
+  private volatile boolean running = true;
+
   public FlinkConsumer(OptimizerConfig config) {
     this.taskConsumer = new BaseTaskConsumer(config);
   }
@@ -47,7 +49,7 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
   @Override
   public void run(SourceContext<TaskWrapper> sourceContext) throws Exception {
     int retry = 0;
-    while (true) {
+    while (running) {
       try {
         TaskWrapper task = taskConsumer.pollTask();
         if (task != null) {
@@ -73,6 +75,6 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
 
   @Override
   public void cancel() {
-
+    running = false;
   }
 }
