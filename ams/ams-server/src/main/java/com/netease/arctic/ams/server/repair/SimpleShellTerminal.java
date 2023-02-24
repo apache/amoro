@@ -28,7 +28,7 @@ import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 
-public class SimpleTerminal {
+public class SimpleShellTerminal {
 
   public static final String PROMPT = "repair> ";
 
@@ -40,7 +40,7 @@ public class SimpleTerminal {
 
   private TerminalOutput terminalOutput;
 
-  public SimpleTerminal(String[] keyWord, String welcome, CommandHandler commandHandler) {
+  public SimpleShellTerminal(String[] keyWord, String welcome, CommandHandler commandHandler) {
     this.keyWord = keyWord;
     this.welcome = welcome;
     this.commandHandler = commandHandler;

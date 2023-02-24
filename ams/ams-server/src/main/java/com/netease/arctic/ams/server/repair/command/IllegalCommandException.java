@@ -18,22 +18,8 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
-public class SimpleRegexCommandParser implements CommandParser {
-
-  private AnalyzeCallGenerator analyzeCallGenerator;
-
-  private RepairCallGenerator repairCallGenerator;
-
-
-
-  @Override
-  public CallCommand parse(String line) {
-    //todo
-    return null;
-  }
-
-  @Override
-  public String[] keyword() {
-    return new String[0];
+public class IllegalCommandException extends Exception{
+  public IllegalCommandException(String message) {
+    super(message);
   }
 }

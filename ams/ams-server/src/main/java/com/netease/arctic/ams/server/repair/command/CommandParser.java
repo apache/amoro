@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.repair.command;
 
 public interface CommandParser {
 
-  CallCommand parse(String line);
+  CallCommand parse(String line) throws IllegalCommandException;
 
   String[] keyword();
 

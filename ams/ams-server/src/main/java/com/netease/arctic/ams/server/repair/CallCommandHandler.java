@@ -18,7 +18,13 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.ams.server.repair.command.CommandParser;
+
 public class CallCommandHandler implements CommandHandler {
+
+  private String amsAddress;
+
+  private CommandParser commandParser;
 
   @Override
   public void dispatch(String line, TerminalOutput terminalOutput) {
