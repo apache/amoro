@@ -63,6 +63,7 @@ public class TableEntriesScan {
   private final boolean allFileContent;
   private final boolean includeColumnStats;
   private final Set<FileContent> validFileContent;
+  private final MetadataTableType metadataTableType;
   private final Schema schema;
 
   private Table entriesTable;
@@ -82,6 +83,7 @@ public class TableEntriesScan {
     private boolean includeColumnStats = false;
     private final Set<FileContent> fileContents = Sets.newHashSet();
     private Schema schema;
+    private MetadataTableType metadataTableType = MetadataTableType.ENTRIES;
 
     public Builder(Table table) {
       this.table = table;
@@ -147,14 +149,21 @@ public class TableEntriesScan {
       return this;
     }
 
+    public Builder withMetadataTableType(MetadataTableType metadataTableType) {
+      this.metadataTableType = metadataTableType;
+      return this;
+    }
+
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats, schema);
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry,
+          fileContents, includeColumnStats, schema, metadataTableType);
     }
   }
 
 
   public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent, boolean includeColumnStats, Schema schema) {
+                          Set<FileContent> validFileContent, boolean includeColumnStats,
+                          Schema schema, MetadataTableType metadataTableType) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -163,10 +172,11 @@ public class TableEntriesScan {
     this.snapshotId = snapshotId;
     this.includeColumnStats = includeColumnStats;
     this.schema  = schema;
+    this.metadataTableType = metadataTableType;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
-    TableScan tableScan = getEntriesTable().newScan();
+    TableScan tableScan = getMetadataTable().newScan();
     if (snapshotId != null) {
       tableScan = tableScan.useSnapshot(snapshotId);
     }
@@ -202,14 +212,15 @@ public class TableEntriesScan {
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
 
-  private Table getEntriesTable() {
+  private Table getMetadataTable() {
     if (this.entriesTable == null) {
       this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
-          table.name(), table.name() + "#ENTRIES",
-          MetadataTableType.ENTRIES);
+          table.name(), table.name() + "#" + this.metadataTableType.name(),
+          this.metadataTableType);
     }
     return this.entriesTable;
   }
+
 
   private FileContent getFileContent(int contentId) {
     for (FileContent content : FileContent.values()) {
@@ -305,7 +316,7 @@ public class TableEntriesScan {
 
   private int entryFieldIndex(String fieldName) {
     if (lazyIndexOfEntryType == null) {
-      List<Types.NestedField> fields = getEntriesTable().schema().columns();
+      List<Types.NestedField> fields = getMetadataTable().schema().columns();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
@@ -318,7 +329,7 @@ public class TableEntriesScan {
   private int dataFileFieldIndex(String fieldName) {
     if (lazyIndexOfDataFileType == null) {
       List<Types.NestedField> fields =
-          getEntriesTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
+          getMetadataTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
