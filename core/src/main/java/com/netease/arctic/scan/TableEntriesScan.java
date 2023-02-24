@@ -176,7 +176,7 @@ public class TableEntriesScan {
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
-    TableScan tableScan = getEntriesTable().newScan();
+    TableScan tableScan = getMetadataTable().newScan();
     if (snapshotId != null) {
       tableScan = tableScan.useSnapshot(snapshotId);
     }
@@ -212,7 +212,7 @@ public class TableEntriesScan {
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
 
-  private Table getEntriesTable() {
+  private Table getMetadataTable() {
     if (this.entriesTable == null) {
       this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
           table.name(), table.name() + "#" + this.metadataTableType.name(),
@@ -316,7 +316,7 @@ public class TableEntriesScan {
 
   private int entryFieldIndex(String fieldName) {
     if (lazyIndexOfEntryType == null) {
-      List<Types.NestedField> fields = getEntriesTable().schema().columns();
+      List<Types.NestedField> fields = getMetadataTable().schema().columns();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
@@ -329,7 +329,7 @@ public class TableEntriesScan {
   private int dataFileFieldIndex(String fieldName) {
     if (lazyIndexOfDataFileType == null) {
       List<Types.NestedField> fields =
-          getEntriesTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
+          getMetadataTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
