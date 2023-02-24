@@ -519,19 +519,29 @@ public class OptimizeQueueService extends IJDBCService {
           }
         } else {
           if (tables.contains(task.getTableIdentifier())) {
+            TableTaskHistory tableTaskHistory;
             try {
               // load files from sysdb
               task.setFiles();
+              // update max execute time
+              task.setMaxExecuteTime();
+              tableTaskHistory = task.onExecuting(jobId, attemptId);
             } catch (Exception e) {
               task.clearFiles();
-              LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
+              LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
               if (!tasks.offer(task)) {
+                LOG.error("{} failed to put task back into queue", task.getTaskId());
                 task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
               }
+
+              // sleep 1s, avoid poll task failed use too much cpu
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException ex) {
+                LOG.error("poll task {} failed, sleep thread was interrupted", task.getTaskId(), ex);
+              }
+              continue;
             }
-            // update max execute time
-            task.setMaxExecuteTime();
-            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);
             } catch (Exception e) {
