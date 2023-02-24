@@ -202,11 +202,57 @@ public class TableEntriesScan {
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
 
+  public CloseableIterable<IcebergFileEntry> allEntries() {
+    TableScan tableScan = getAllEntriesTable().newScan();
+    if (snapshotId != null) {
+      tableScan = tableScan.useSnapshot(snapshotId);
+    }
+    if (schema != null) {
+      tableScan = tableScan.project(schema);
+    }
+    CloseableIterable<FileScanTask> manifestFileScanTasks = tableScan.planFiles();
+
+    CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
+
+    CloseableIterable<IcebergFileEntry> allEntries =
+        CloseableIterable.transform(entries, (entry -> {
+          ManifestEntryFields.Status status =
+              ManifestEntryFields.Status.of(
+                  entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
+          long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
+          Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
+          StructLike fileRecord =
+              entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
+          FileContent fileContent =
+              getFileContent(fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
+          if (status == ManifestEntryFields.Status.ADDED || status == ManifestEntryFields.Status.EXISTING) {
+            ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
+            if (metricsEvaluator().eval(contentFile)) {
+              if (needMetrics() && !includeColumnStats) {
+                contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
+              }
+              return new IcebergFileEntry(snapshotId, sequence, contentFile);
+            }
+          }
+          return null;
+        }));
+    return CloseableIterable.filter(allEntries, Objects::nonNull);
+  }
+
   private Table getEntriesTable() {
     if (this.entriesTable == null) {
       this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
           table.name(), table.name() + "#ENTRIES",
           MetadataTableType.ENTRIES);
+    }
+    return this.entriesTable;
+  }
+
+  private Table getAllEntriesTable() {
+    if (this.entriesTable == null) {
+      this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
+          table.name(), table.name() + "#ALL_ENTRIES",
+          MetadataTableType.ALL_ENTRIES);
     }
     return this.entriesTable;
   }

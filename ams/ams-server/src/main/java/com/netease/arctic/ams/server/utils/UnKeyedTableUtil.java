@@ -18,7 +18,9 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
@@ -60,22 +62,9 @@ public class UnKeyedTableUtil {
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    Table manifestTable =
-        MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) internalTable).operations(),
-            internalTable.name(), metadataTableName(internalTable.name(), MetadataTableType.ALL_ENTRIES),
-            MetadataTableType.ALL_ENTRIES);
-    try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
-      for (Record entry : entries) {
-        ManifestEntryFields.Status status =
-            ManifestEntryFields.Status.of((int) entry.get(ManifestEntryFields.STATUS.fieldId()));
-        if (status == ManifestEntryFields.Status.ADDED || status == ManifestEntryFields.Status.EXISTING) {
-          GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
-          String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-          validFilesPath.add(TableFileUtils.getUriPath(filePath));
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("close manifest file error", e);
+    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable).build();
+    for (IcebergFileEntry entry : manifestReader.allEntries()) {
+      validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
     }
 
     return validFilesPath;
