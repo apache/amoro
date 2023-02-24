@@ -580,7 +580,7 @@ public class OptimizeQueueService extends IJDBCService {
               try {
                 Thread.sleep(1000);
               } catch (InterruptedException ex) {
-                LOG.error("poll task {} failed,sleep thread was interrupted", task.getTaskId(), ex);
+                LOG.error("poll task {} failed, sleep thread was interrupted", task.getTaskId(), ex);
               }
               continue;
             }
