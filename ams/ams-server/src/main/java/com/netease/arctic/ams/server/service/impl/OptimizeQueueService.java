@@ -561,19 +561,22 @@ public class OptimizeQueueService extends IJDBCService {
           }
         } else {
           if (tables.contains(task.getTableIdentifier())) {
+            TableTaskHistory tableTaskHistory;
             try {
               // load files from sysdb
               task.setFiles();
+              // update max execute time
+              task.setMaxExecuteTime();
+              tableTaskHistory = task.onExecuting(jobId, attemptId);
             } catch (Exception e) {
               task.clearFiles();
               LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
               if (!tasks.offer(task)) {
+                LOG.error("{} failed to put task back into queue", task.getTaskId());
                 task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
               }
+              continue;
             }
-            // update max execute time
-            task.setMaxExecuteTime();
-            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);
             } catch (Exception e) {
