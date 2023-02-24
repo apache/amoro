@@ -7,7 +7,7 @@ public class OptimizeCall implements CallCommand {
   /**
    * Start, Stop
    */
-  private String way;
+  private String action;
 
   private String tableName;
 

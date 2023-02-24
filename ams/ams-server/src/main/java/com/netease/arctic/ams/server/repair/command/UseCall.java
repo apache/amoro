@@ -4,11 +4,7 @@ import com.netease.arctic.ams.server.repair.Context;
 
 public class UseCall implements CallCommand {
 
-  private String tableName;
-
-  public UseCall(String tableName) {
-    this.tableName = tableName;
-  }
+  private String database;
 
   @Override
   public String call(Context context) {

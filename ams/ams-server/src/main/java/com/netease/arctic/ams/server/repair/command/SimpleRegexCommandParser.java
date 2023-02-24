@@ -26,6 +26,14 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   private RepairCallGenerator repairCallGenerator;
 
+  private OptimizeCallGenerator optimizeCallGenerator;
+
+  private RefreshCallGenerator refreshCallGenerator;
+
+  private ShowCallGenerator showCallGenerator;
+
+  private UseCallGenerator useCallGenerator;
+
   private static final String ANALYZE = "ANALYZE";
   private static final String REPAIR = "REPAIR";
   private static final String USE = "USE";
@@ -40,36 +48,42 @@ public class SimpleRegexCommandParser implements CommandParser {
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
     String[] commandSplit = line.split("\\s+");
+    if (commandSplit.length < 2) {
+      throw new IllegalCommandException("Please check if your command is correct!");
+    }
 
-    for (String keyword : keywords()) {
-      if (StringUtils.equalsIgnoreCase(commandSplit[0], keyword)) {
-        switch (keyword) {
-          case ANALYZE:
-            return new AnalyzeCallGenerator().generate(commandSplit[1]);
-          case REPAIR:
-            if (StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
-              if (StringUtils.equalsIgnoreCase(commandSplit[3], ROLLBACK)) {
-                return new RepairCallGenerator().generate(commandSplit[1], commandSplit[3], commandSplit[4]);
-              } else {
-                return new RepairCallGenerator().generate(commandSplit[1], commandSplit[3], null);
-              }
+    switch (commandSplit[0].toUpperCase()) {
+      case ANALYZE:
+        return analyzeCallGenerator.generate(commandSplit[1]);
+      case REPAIR:
+        if (StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH) && !(commandSplit.length < 4)) {
+          if (StringUtils.equalsIgnoreCase(commandSplit[3], ROLLBACK)) {
+            if (commandSplit.length < 5) {
+              throw new IllegalCommandException("Please check if you enter your SnapshotID!");
             } else {
-              throw new IllegalCommandException("Please check if your command is correct!");
+              return repairCallGenerator.generate(commandSplit[1], commandSplit[3], commandSplit[4]);
             }
-          case USE:
-            return new UseCallGenerator().generate(commandSplit[1]);
-          case OPTIMIZE:
-            return new OptimizeCallGenerator().generate(commandSplit[1], commandSplit[2]);
-          case REFRESH:
-            if (StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
-              return new RefreshCallGenerator().generate(commandSplit[2]);
-            } else {
-              throw new IllegalCommandException("Please check if your command is correct!");
-            }
-          case SHOW:
-            return new ShowCallGenerator().generate(commandSplit[1]);
+          } else {
+            return repairCallGenerator.generate(commandSplit[1], commandSplit[3], null);
+          }
+        } else {
+          throw new IllegalCommandException("Please check if your command is correct!");
         }
-      }
+      case USE:
+        return useCallGenerator.generate(commandSplit[1]);
+      case OPTIMIZE:
+        if (commandSplit.length < 3) {
+          throw new IllegalCommandException("Please check if your command is correct!");
+        }
+        return optimizeCallGenerator.generate(commandSplit[1], commandSplit[2]);
+      case REFRESH:
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE) && !(commandSplit.length < 3)) {
+          return refreshCallGenerator.generate(commandSplit[2]);
+        } else {
+          throw new IllegalCommandException("Please check if your command is correct!");
+        }
+      case SHOW:
+        return showCallGenerator.generate(commandSplit[1]);
     }
     throw new IllegalCommandException("Please check if your command is correct!");
   }
