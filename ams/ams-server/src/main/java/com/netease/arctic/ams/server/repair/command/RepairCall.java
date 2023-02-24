@@ -28,9 +28,11 @@ public class RepairCall implements CallCommand {
   private String tableName;
 
   /**
-   * FIND_BACK,ROLLBACK,DELETE_METADATA
+   * FIND_BACK,ROLLBACK,SYNC_METADATA
    */
-  private String way;
+  public enum way {
+    FIND_BACK, ROLLBACK, SYNC_METADATA
+  }
 
   /**
    * snapshot id if way is ROLLBACK
