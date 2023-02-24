@@ -18,5 +18,32 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import java.io.IOException;
+
 public class RepairMain {
+
+  public static void main(String[] args) throws IOException {
+    String amsUrl = amsUrl(args);
+    CommandHandler commandHandler = new CallCommandHandler(amsUrl);
+    SimpleShellTerminal simpleShellTerminal = new SimpleShellTerminal(commandHandler);
+    simpleShellTerminal.start();
+  }
+
+  /**
+   * thrift://ams-address/catalog or config path + catalog
+   * @param args
+   * @return
+   */
+  public static String amsUrl(String[] args) {
+    if (args == null || args.length == 0) {
+      throw new RuntimeException("Can not find any ams address or config path");
+    }
+    String args0 = args[0];
+    if (args0.startsWith("thrift")) {
+      return args0;
+    }
+
+    //todo
+    return null;
+  }
 }

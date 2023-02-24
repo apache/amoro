@@ -53,4 +53,16 @@ public class CallCommandHandler implements CommandHandler {
   public void close() {
 
   }
+
+  @Override
+  public String welcome() {
+    //todo
+    return null;
+  }
+
+  @Override
+  public String[] keyWord() {
+    //todo
+    return new String[0];
+  }
 }

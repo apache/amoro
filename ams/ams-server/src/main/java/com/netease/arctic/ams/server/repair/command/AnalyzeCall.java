@@ -18,14 +18,40 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.google.common.collect.ImmutableList;
 import com.netease.arctic.ams.server.repair.Context;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 
 public class AnalyzeCall implements CallCommand {
 
-  private String tableName;
+  private ArcticCatalog arcticCatalog;
+
+  private String tablePath;
+
+  public AnalyzeCall(ArcticCatalog arcticCatalog, String tablePath) {
+    this.arcticCatalog = arcticCatalog;
+    this.tablePath = tablePath;
+  }
 
   @Override
   public String call(Context context) {
+    TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
+    if (tableIdentifier.getDatabase() == null) {
+      tableIdentifier.setDatabase(context.getDb());
+    }
+
+    //tmp
+    tableIdentifier.setCatalog(arcticCatalog.name());
+
+    //check table dir and metadata file
+    ArcticTable arcticTable = null;
+    try {
+      arcticTable = arcticCatalog.loadTable(tableIdentifier);
+    }catch (Exception e){
+
+    }
     //todo
     return null;
   }

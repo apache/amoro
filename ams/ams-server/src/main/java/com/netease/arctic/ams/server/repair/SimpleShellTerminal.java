@@ -32,17 +32,11 @@ public class SimpleShellTerminal {
 
   public static final String PROMPT = "repair> ";
 
-  private String[] keyWord;
-
-  private String welcome;
-
   private CommandHandler commandHandler;
 
   private TerminalOutput terminalOutput;
 
-  public SimpleShellTerminal(String[] keyWord, String welcome, CommandHandler commandHandler) {
-    this.keyWord = keyWord;
-    this.welcome = welcome;
+  public SimpleShellTerminal(CommandHandler commandHandler) {
     this.commandHandler = commandHandler;
     this.terminalOutput = new TerminalOutput() {
       @Override
@@ -53,14 +47,14 @@ public class SimpleShellTerminal {
   }
 
   public void start() throws IOException {
-    terminalOutput.output(welcome);
+    terminalOutput.output(commandHandler.welcome());
 
     Terminal terminal = TerminalBuilder.builder()
         .system(true)
         .build();
     LineReaderBuilder lineReaderBuilder = LineReaderBuilder.builder().terminal(terminal);
-    if (keyWord != null) {
-      lineReaderBuilder.completer(new StringsCompleter(keyWord));
+    if (commandHandler.keyWord() != null) {
+      lineReaderBuilder.completer(new StringsCompleter(commandHandler.keyWord()));
     }
     LineReader lineReader = lineReaderBuilder.build();
 

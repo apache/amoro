@@ -16,18 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair;
+package com.netease.arctic.ams.server.repair.command;
 
-import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
+public enum RepairWay {
+  FIND_BACK(false),
+  SYNC_METADATA(false),
+  ROLLBACK(true);
 
-public interface CommandHandler {
+  boolean hasOption;
 
-  void dispatch(String line, TerminalOutput terminalOutput) throws Exception;
-
-  void close();
-
-  String welcome();
-
-  String[] keyWord();
-
+  RepairWay(boolean hasOption) {
+    this.hasOption = hasOption;
+  }
 }

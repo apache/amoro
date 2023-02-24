@@ -16,18 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair;
+package com.netease.arctic.ams.server.repair.command;
 
-import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
-
-public interface CommandHandler {
-
-  void dispatch(String line, TerminalOutput terminalOutput) throws Exception;
-
-  void close();
-
-  String welcome();
-
-  String[] keyWord();
-
+public enum DamageType {
+  FILE_LOSE,
+  MANIFEST_LOST,
+  MANIFEST_LIST_LOST,
+  METADATA_LOSE,
+  TABLE_SPACE_LOSE
 }

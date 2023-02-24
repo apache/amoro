@@ -18,7 +18,11 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.catalog.ArcticCatalog;
+
 public class AnalyzeCallGenerator {
+
+  private ArcticCatalog arcticCatalog;
 
   public AnalyzeCall generate(String tableName) {
     //todo
