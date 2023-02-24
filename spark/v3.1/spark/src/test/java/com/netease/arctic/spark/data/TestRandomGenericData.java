@@ -14,7 +14,6 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 public class TestRandomGenericData {
   private static final Types.StructType SCHEMA = Types.StructType.of(
       required(100, "id", Types.LongType.get()),
-      required(117, "id2", Types.LongType.get()),
       optional(101, "data", Types.StringType.get()),
       required(102, "b", Types.BooleanType.get()),
       optional(103, "i", Types.IntegerType.get()),
