@@ -18,17 +18,35 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.ams.server.repair.command.CallCommand;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
+import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 
 public class CallCommandHandler implements CommandHandler {
 
   private String amsAddress;
 
+  private ArcticCatalog arcticCatalog;
+
   private CommandParser commandParser;
 
-  @Override
-  public void dispatch(String line, TerminalOutput terminalOutput) {
+  private Context context;
 
+  public CallCommandHandler(String amsAddress) {
+    this.amsAddress = amsAddress;
+
+    this.arcticCatalog = CatalogLoader.load(amsAddress);
+
+    //todo init commandParser
+  }
+
+  @Override
+  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException {
+    CallCommand callCommand = commandParser.parse(line);
+    String result = callCommand.call(context);
+    terminalOutput.output(result);
   }
 
   @Override

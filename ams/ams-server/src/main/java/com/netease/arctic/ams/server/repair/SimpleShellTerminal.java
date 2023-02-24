@@ -73,8 +73,7 @@ public class SimpleShellTerminal {
         terminalOutput.output("quited repair server");
         return;
       } catch (Throwable t) {
-        commandHandler.close();
-        throw t;
+        terminalOutput.output("run error cause:\n" + t.getMessage());
       }
     }
   }

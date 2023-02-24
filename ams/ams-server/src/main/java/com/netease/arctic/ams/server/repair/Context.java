@@ -19,4 +19,10 @@
 package com.netease.arctic.ams.server.repair;
 
 public class Context {
+
+  private String db;
+
+  private String table;
+
+
 }

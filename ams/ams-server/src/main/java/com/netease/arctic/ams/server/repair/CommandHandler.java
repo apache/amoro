@@ -18,9 +18,11 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
+
 public interface CommandHandler {
 
-  void dispatch(String line, TerminalOutput terminalOutput);
+  void dispatch(String line, TerminalOutput terminalOutput) throws Exception;
 
   void close();
 
