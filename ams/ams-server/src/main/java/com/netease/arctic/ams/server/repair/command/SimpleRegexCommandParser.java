@@ -37,18 +37,11 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String ANALYZE = "ANALYZE";
   private static final String REPAIR = "REPAIR";
   private static final String THROUGH = "THROUGH";
-  private static final String FIND_BACK = "FIND_BACK";
-  private static final String SYNC_METADATA = "SYNC_METADATA";
-  private static final String ROLLBACK = "ROLLBACK";
   private static final String USE = "USE";
   private static final String OPTIMIZE = "OPTIMIZE";
-  private static final String START = "START";
-  private static final String STOP = "STOP";
   private static final String REFRESH = "REFRESH";
   private static final String FILE_CACHE = "FILE_CACHE";
   private static final String SHOW = "SHOW";
-  private static final String DATABASES = "DATABASES";
-  private static final String TABLES = "TABLES";
 
 
   @Override
@@ -62,41 +55,39 @@ public class SimpleRegexCommandParser implements CommandParser {
       case ANALYZE:
         return analyzeCallGenerator.generate(commandSplit[1]);
       case REPAIR:
-        if (StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH) && !(commandSplit.length < 4)) {
-          if (StringUtils.equalsIgnoreCase(commandSplit[3], ROLLBACK)) {
-            if (commandSplit.length < 5) {
-              throw new IllegalCommandException("Please check if you enter your SnapshotID!");
-            } else {
-              return repairCallGenerator.generate(commandSplit[1], commandSplit[3], commandSplit[4]);
-            }
-          } else if (StringUtils.equalsIgnoreCase(commandSplit[3], FIND_BACK) ||
-              StringUtils.equalsIgnoreCase(commandSplit[3], SYNC_METADATA)) {
-            return repairCallGenerator.generate(commandSplit[1], commandSplit[3], null);
-          }
-        } else {
+        if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
           throw new IllegalCommandException("Please check if your command is correct!");
+        }
+        if (StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.ROLLBACK))) {
+          if (commandSplit.length < 5) {
+            throw new IllegalCommandException("Please check if you enter your SnapshotID!");
+          } else {
+            return repairCallGenerator.generate(commandSplit[1], RepairCall.way.ROLLBACK, commandSplit[4]);
+          }
+        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.FIND_BACK)) ||
+            StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.SYNC_METADATA))) {
+          return repairCallGenerator.generate(commandSplit[1], RepairCall.way.valueOf(commandSplit[3]), null);
         }
       case USE:
         return useCallGenerator.generate(commandSplit[1]);
       case OPTIMIZE:
-        if (!(commandSplit.length < 3)) {
-          if (StringUtils.equalsIgnoreCase(commandSplit[1], START) ||
-              StringUtils.equalsIgnoreCase(commandSplit[1], STOP)) {
-            return optimizeCallGenerator.generate(commandSplit[1], commandSplit[2]);
-          }
-        } else {
+        if (commandSplit.length < 3) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(OptimizeCall.action.Start)) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(OptimizeCall.action.Stop))) {
+          return optimizeCallGenerator.generate(OptimizeCall.action.valueOf(commandSplit[1]), commandSplit[2]);
+        }
       case REFRESH:
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE) && !(commandSplit.length < 3)) {
+        if (!(commandSplit.length < 3) && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
           return refreshCallGenerator.generate(commandSplit[2]);
         } else {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
       case SHOW:
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], DATABASES) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], TABLES)) {
-          return showCallGenerator.generate(commandSplit[1]);
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(ShowCall.namespaces.DATABASES)) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(ShowCall.namespaces.TABLES))) {
+          return showCallGenerator.generate(ShowCall.namespaces.valueOf(commandSplit[1]));
         } else {
           throw new IllegalCommandException("Please check if your command is correct!");
         }

@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.repair.command;
 
 public class RepairCallGenerator {
 
-  public RepairCall generate(String tableName, String way, String option) {
+  public RepairCall generate(String tableName, RepairCall.way way, String option) {
     //todo
     return null;
   }

@@ -7,7 +7,9 @@ public class ShowCall implements CallCommand{
   /**
    * DATABASES, TABLES
    */
-  private String namespaces;
+  public enum namespaces {
+    DATABASES, TABLES
+  }
 
   @Override
   public String call(Context context) {
