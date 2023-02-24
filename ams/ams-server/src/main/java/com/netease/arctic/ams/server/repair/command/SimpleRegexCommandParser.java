@@ -20,6 +20,10 @@ package com.netease.arctic.ams.server.repair.command;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class SimpleRegexCommandParser implements CommandParser {
 
   private AnalyzeCallGenerator analyzeCallGenerator;
@@ -58,14 +62,14 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.ROLLBACK))) {
+        if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.ROLLBACK.name())) {
           if (commandSplit.length < 5) {
             throw new IllegalCommandException("Please check if you enter your SnapshotID!");
           } else {
             return repairCallGenerator.generate(commandSplit[1], RepairCall.way.ROLLBACK, commandSplit[4]);
           }
-        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.FIND_BACK)) ||
-            StringUtils.equalsIgnoreCase(commandSplit[3], String.valueOf(RepairCall.way.SYNC_METADATA))) {
+        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.FIND_BACK.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.SYNC_METADATA.name())) {
           return repairCallGenerator.generate(commandSplit[1], RepairCall.way.valueOf(commandSplit[3]), null);
         }
       case USE:
@@ -74,8 +78,8 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length < 3) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(OptimizeCall.action.Start)) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(OptimizeCall.action.Stop))) {
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.action.START.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.action.STOP.name())) {
           return optimizeCallGenerator.generate(OptimizeCall.action.valueOf(commandSplit[1]), commandSplit[2]);
         }
       case REFRESH:
@@ -85,8 +89,8 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
       case SHOW:
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(ShowCall.namespaces.DATABASES)) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], String.valueOf(ShowCall.namespaces.TABLES))) {
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.namespaces.DATABASES.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.namespaces.TABLES.name())) {
           return showCallGenerator.generate(ShowCall.namespaces.valueOf(commandSplit[1]));
         } else {
           throw new IllegalCommandException("Please check if your command is correct!");
@@ -97,13 +101,25 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public String[] keywords() {
-    return new String[]{
+    List<String> keywordsUpper = Arrays.asList(
         ANALYZE,
         REPAIR,
+        THROUGH,
         USE,
         OPTIMIZE,
         REFRESH,
-        SHOW
-    };
+        FILE_CACHE,
+        SHOW,
+        "START",
+        "STOP",
+        "FIND_BACK",
+        "ROLLBACK",
+        "SYNC_METADATA",
+        "DATABASES",
+        "TABLES");
+    List<String> keywordsLower = keywordsUpper.stream().map(
+        keyword -> keyword.toLowerCase()).collect(Collectors.toList());
+    keywordsUpper.addAll(keywordsLower);
+    return (String[]) keywordsUpper.stream().toArray();
   }
 }

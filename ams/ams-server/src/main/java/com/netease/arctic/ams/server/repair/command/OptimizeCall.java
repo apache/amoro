@@ -8,7 +8,7 @@ public class OptimizeCall implements CallCommand {
    * Start, Stop
    */
   public enum action {
-    Start, Stop
+    START, STOP
   }
 
   private String tableName;
