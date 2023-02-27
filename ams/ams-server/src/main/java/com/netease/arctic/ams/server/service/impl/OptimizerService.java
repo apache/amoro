@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
@@ -35,8 +36,10 @@ import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.optimizer.StatefulOptimizer;
 import com.netease.arctic.optimizer.factory.OptimizerFactory;
+import com.netease.arctic.table.TableProperties;
 import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +183,6 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
-
   public void insertOptimizer(
       String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {
@@ -216,6 +218,22 @@ public class OptimizerService extends IJDBCService {
         TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
         registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
     return getOptimizer(optimizerName).convertToDescriptor();
+  }
+
+  public void startOptimize(TableIdentifier tableIdentifier) {
+    CatalogUtil.getArcticCatalog(tableIdentifier.catalog)
+        .loadTable(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
+        .updateProperties()
+        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "true")
+        .commit();
+  }
+
+  public void stopOptimize(TableIdentifier tableIdentifier) {
+    CatalogUtil.getArcticCatalog(tableIdentifier.catalog)
+        .loadTable(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
+        .updateProperties()
+        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "false")
+        .commit();
   }
 
   private Optimizer fillContainerType(Optimizer optimizer) {

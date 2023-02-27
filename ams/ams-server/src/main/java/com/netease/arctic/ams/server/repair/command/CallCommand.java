@@ -19,7 +19,8 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.Context;
+import org.apache.thrift.TException;
 
 public interface CallCommand {
-  String call(Context context);
+  String call(Context context) throws TException;
 }

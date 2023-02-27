@@ -18,11 +18,17 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.server.repair.command.CallCommand;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
 import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
+import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
+import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
+import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
+import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import org.apache.thrift.TException;
 
 public class CallCommandHandler implements CommandHandler {
 
@@ -39,11 +45,19 @@ public class CallCommandHandler implements CommandHandler {
 
     this.arcticCatalog = CatalogLoader.load(amsAddress);
 
+    OptimizeCallGenerator optimizeCallGenerator = new OptimizeCallGenerator(amsAddress);
+    RefreshCallGenerator refreshCallGenerator = new RefreshCallGenerator(amsAddress);
+    ShowCallGenerator showCallGenerator = new ShowCallGenerator(amsAddress);
+    this.commandParser = new SimpleRegexCommandParser();
+
+    this.context = new Context();
+    this.context.setCatalog(arcticCatalog.name());
+
     //todo init commandParser
   }
 
   @Override
-  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException {
+  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException, TException {
     CallCommand callCommand = commandParser.parse(line);
     String result = callCommand.call(context);
     terminalOutput.output(result);

@@ -30,7 +30,7 @@ public class RepairCall implements CallCommand {
   /**
    * FIND_BACK,ROLLBACK,SYNC_METADATA
    */
-  public enum way {
+  public enum Way {
     FIND_BACK, ROLLBACK, SYNC_METADATA
   }
 

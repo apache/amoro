@@ -20,23 +20,22 @@ package com.netease.arctic.ams.server.repair;
 
 public class Context {
 
+  private String catalog;
   private String db;
 
-  private String table;
+  public String getCatalog() {
+    return catalog;
+  }
+
+  public void setCatalog(String catalog) {
+    this.catalog = catalog;
+  }
 
   public void setDb(String db) {
     this.db = db;
   }
 
-  public void setTable(String table) {
-    this.table = table;
-  }
-
   public String getDb() {
     return db;
-  }
-
-  public String getTable() {
-    return table;
   }
 }
