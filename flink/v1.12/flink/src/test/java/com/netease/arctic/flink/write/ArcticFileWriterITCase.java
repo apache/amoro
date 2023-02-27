@@ -18,10 +18,10 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.api.common.RuntimeExecutionMode;

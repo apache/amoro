@@ -173,14 +173,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     TableOptimizeItem tableItem = cachedTables.remove(tableIdentifier);
     optimizeQueueService.release(tableIdentifier);
     try {
+      tableItem.optimizeTasksClear(false);
+    } catch (Throwable t) {
+      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
+    }
+    try {
       deleteTableOptimizeRuntime(tableIdentifier);
     } catch (Throwable t) {
       LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
-    }
-    try {
-      tableItem.clearOptimizeTasks();
-    } catch (Throwable t) {
-      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
     try {
       deleteOptimizeRecord(tableIdentifier);
