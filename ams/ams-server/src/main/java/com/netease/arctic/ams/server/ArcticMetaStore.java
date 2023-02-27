@@ -206,6 +206,7 @@ public class ArcticMetaStore {
       }
     } catch (Throwable t) {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
+      failover();
     }
   }
 
