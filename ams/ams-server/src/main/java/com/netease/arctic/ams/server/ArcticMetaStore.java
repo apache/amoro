@@ -520,7 +520,7 @@ public class ArcticMetaStore {
   }
 
   private static Configuration initSystemConfig() {
-    Configuration config = Configuration.fromObjectMap(getSystemSettingFromYaml());
+    Configuration config = Configuration.fromObjectMap(yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG));
     config.setString(ArcticMetaStoreConf.ARCTIC_HOME, getArcticHome());
     return config;
   }
