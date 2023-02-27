@@ -30,27 +30,27 @@ public class ChangeFilesUtilTest {
   public void testGetMaxSequenceLimit() {
     List<ChangeFilesUtil.SnapshotFileGroup> sequenceGroups = new ArrayList<>();
     sequenceGroups.add(buildSequenceGroup(1, 100, 2));
-    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 0));
-    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 1));
-    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 2));
-    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 3));
+    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 0));
+    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 1));
+    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 2));
+    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 3));
 
     sequenceGroups.add(buildSequenceGroup(2, 101, 1));
-    Assert.assertEquals(1, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 2));
-    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 3));
+    Assert.assertEquals(1, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 2));
+    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 3));
 
     // disorder
     sequenceGroups.add(buildSequenceGroup(5, 103, 2));
     sequenceGroups.add(buildSequenceGroup(4, 102, 2));
     sequenceGroups.add(buildSequenceGroup(3, 99, 1));
-    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 2));
-    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 3));
-    Assert.assertEquals(3, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 4));
-    Assert.assertEquals(3, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 5));
-    Assert.assertEquals(4, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 6));
-    Assert.assertEquals(4, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 7));
-    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 8));
-    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 9));
+    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 2));
+    Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 3));
+    Assert.assertEquals(3, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 4));
+    Assert.assertEquals(3, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 5));
+    Assert.assertEquals(4, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 6));
+    Assert.assertEquals(4, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 7));
+    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 8));
+    Assert.assertEquals(Long.MAX_VALUE, ChangeFilesUtil.findMaxSequenceKeepingTxIdOrdered(sequenceGroups, 9));
 
   }
 
