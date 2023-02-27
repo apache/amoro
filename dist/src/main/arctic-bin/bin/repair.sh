@@ -32,30 +32,34 @@ fi
 
 THRIFT_PORT=$(cat $ARCTIC_HOME/conf/config.yaml | grep "arctic.ams.thrift.port" | awk '{print $2}')
 
-function get_ip() {
-    check_ip $(ip route get 1 | awk '{print $NF;exit}')
-    if [ $? -eq 1 ]; then
-      check_ip $(ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"|awk 'NR==1')
-      if [ $? -eq 1 ]; then
-          check_ip $(hostname -i | awk '{print $1}')
-      fi
-    fi
+function usage() {
+    cat <<EOF
+Usage: $0 [option]
+You just need to specify only one of the options:
+
+Options:
+    -t        Your thrift URL.
+              Pattern: thrift://{AMS_HOST}:{AMS_PORT}/{AMS_CATALOG_NAME}
+              Example: thrift://localhost:1260/catalog_name
+
+    -c        Your catalog name.
+              We'll read {AMS_PORT} from {ARCTIC_HOME}/conf/config.yaml
+              and use localhost as {AMS_HOST}
+
+If you specify both options, the latter will override the former
+EOF
 }
 
-function check_ip() {
-    IP=$1
-    VALID_CHECK=$(echo $IP|awk -F. '$1<=255&&$2<=255&&$3<=255&&$4<=255{print "yes"}')
-    if echo $IP|grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" >/dev/null; then
-        if [ $VALID_CHECK == "yes" ]; then
-          THRIFT_IP=$IP
-            return 0
-        else
-            return 1
-        fi
-    else
-        return 1
-    fi
-}
+while getopts 't:c:' OPT; do
+    case $OPT in
+        t) THRIFT_URL="$OPTARG";;
+        c) THRIFT_URL=thrift://localhost:$THRIFT_PORT/$OPTARG;;
+        ?) usage;;
+    esac
+done
 
-get_ip
-$JAVA_RUN com.netease.arctic.ams.server.repair.RepairMain thrift://$THRIFT_IP:$THRIFT_PORT/$1
+if [ -z "$THRIFT_URL" ]; then
+    THRIFT_URL=thrift://localhost:$THRIFT_PORT
+fi
+
+$JAVA_RUN com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL
