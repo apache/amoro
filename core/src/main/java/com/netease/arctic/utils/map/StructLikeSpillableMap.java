@@ -20,11 +20,9 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.utils.SerializationUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 
 /**
  * Copy form iceberg {@link org.apache.iceberg.util.StructLikeMap}. Make using StructLikeWrapper more cheap

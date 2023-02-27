@@ -32,7 +32,6 @@ import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;

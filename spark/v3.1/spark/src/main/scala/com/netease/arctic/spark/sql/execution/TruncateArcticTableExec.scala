@@ -21,7 +21,6 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec

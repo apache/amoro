@@ -30,12 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
-
 /**
  * PropertyUtil compatible with legacy flink properties
  */
