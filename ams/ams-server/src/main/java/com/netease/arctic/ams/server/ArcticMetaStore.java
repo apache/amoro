@@ -293,6 +293,7 @@ public class ArcticMetaStore {
       server.stop();
     }
     residentThreads.forEach(Thread::interrupt);
+    residentThreads.clear();
     ThreadPool.shutdown();
   }
 
@@ -343,6 +344,7 @@ public class ArcticMetaStore {
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
             org.apache.hadoop.util.StringUtils.stringifyException(t1));
+        failover();
       } finally {
         startLock.unlock();
       }
