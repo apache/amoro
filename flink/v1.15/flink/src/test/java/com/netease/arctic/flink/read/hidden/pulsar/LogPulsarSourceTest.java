@@ -63,6 +63,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -162,6 +163,7 @@ public class LogPulsarSourceTest extends TableTestBase {
         .table(result)
         .tableLoader(ArcticTableLoader.of(RESULT_TABLE_ID, catalogBuilder))
         .flinkSchema(FlinkSchemaUtil.toSchema(FLINK_USER_SCHEMA))
+        .context(Optional::of)
         .build();
 
     JobClient jobClient = env.executeAsync("Bounded Arctic Source Failover Test");
