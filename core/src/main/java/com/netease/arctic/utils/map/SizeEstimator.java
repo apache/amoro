@@ -16,34 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.model;
+package com.netease.arctic.utils.map;
 
-public class SnapshotStatistics {
-  private long id;
-  private long parentId;
-  private long commitTime;
-
-  public long getId() {
-    return id;
-  }
-
-  public void setId(long id) {
-    this.id = id;
-  }
-
-  public long getParentId() {
-    return parentId;
-  }
-
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
-  }
-
-  public long getCommitTime() {
-    return commitTime;
-  }
-
-  public void setCommitTime(long commitTime) {
-    this.commitTime = commitTime;
-  }
+/**
+ * An interface to estimate the size of payload in memory.
+ * @param <T>
+ */
+public interface SizeEstimator<T> {
+  /**
+   * This method is used to estimate the size of a payload in memory. The default implementation returns the total
+   * allocated size, in bytes, of the object and all other objects reachable from it
+   */
+  long sizeEstimate(T t);
 }

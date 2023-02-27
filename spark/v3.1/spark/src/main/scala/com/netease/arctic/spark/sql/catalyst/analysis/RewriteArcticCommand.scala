@@ -28,9 +28,6 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
-import scala.collection.{JavaConverters, mutable}
-import scala.concurrent.JavaConversions
-
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
  * @param sparkSession

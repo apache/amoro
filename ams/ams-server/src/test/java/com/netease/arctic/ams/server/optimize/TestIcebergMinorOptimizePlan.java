@@ -10,7 +10,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class TestIcebergMinorOptimizePlan extends TestIcebergBase {

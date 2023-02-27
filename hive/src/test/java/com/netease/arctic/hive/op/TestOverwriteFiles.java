@@ -1,6 +1,5 @@
 package com.netease.arctic.hive.op;
 
-import java.util.ArrayList;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
@@ -25,6 +24,7 @@ import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

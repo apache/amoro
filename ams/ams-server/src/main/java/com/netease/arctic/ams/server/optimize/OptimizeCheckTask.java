@@ -56,6 +56,7 @@ public class OptimizeCheckTask implements ScheduledTasks.Task {
     tableOptimize.tryDisableSelfOptimizing();
     tableOptimize.checkTaskExecuteTimeout();
     tableOptimize.checkOptimizeGroup();
+    tableOptimize.clearFailedTasks();
     tableOptimize.tryTriggerCommit();
     tableOptimize.updateTableOptimizeStatus();
   }
