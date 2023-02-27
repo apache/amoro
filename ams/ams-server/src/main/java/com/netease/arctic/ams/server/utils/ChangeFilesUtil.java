@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.ams.server.model.SnapshotFileGroup;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
@@ -182,5 +181,46 @@ public class ChangeFilesUtil {
       }
     }
     return wrappedList;
+  }
+
+  /**
+   * Files grouped by snapshot, but only with the file cnt.
+   */
+  public static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
+    private final long sequence;
+    private final long transactionId;
+    private int fileCnt = 0;
+
+    public SnapshotFileGroup(long sequence, long transactionId) {
+      this.sequence = sequence;
+      this.transactionId = transactionId;
+    }
+
+    public SnapshotFileGroup(long sequence, long transactionId, int fileCnt) {
+      this.sequence = sequence;
+      this.transactionId = transactionId;
+      this.fileCnt = fileCnt;
+    }
+
+    public void addFile() {
+      fileCnt++;
+    }
+
+    public long getTransactionId() {
+      return transactionId;
+    }
+
+    public int getFileCnt() {
+      return fileCnt;
+    }
+
+    public long getSequence() {
+      return sequence;
+    }
+
+    @Override
+    public int compareTo(SnapshotFileGroup o) {
+      return Long.compare(this.sequence, o.sequence);
+    }
   }
 }

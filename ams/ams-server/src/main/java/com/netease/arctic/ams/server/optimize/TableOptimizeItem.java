@@ -37,7 +37,6 @@ import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
-import com.netease.arctic.ams.server.model.SnapshotFileGroup;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -1154,12 +1153,13 @@ public class TableOptimizeItem extends IJDBCService {
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());
-    Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
+    Map<Long, ChangeFilesUtil.SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
       for (ContentFileWithSequence<?> file : files) {
-        SnapshotFileGroup fileGroup = changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
+        ChangeFilesUtil.SnapshotFileGroup
+            fileGroup = changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
           long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
-          return new SnapshotFileGroup(file.getSequenceNumber(), txId);
+          return new ChangeFilesUtil.SnapshotFileGroup(file.getSequenceNumber(), txId);
         });
         fileGroup.addFile();
       }

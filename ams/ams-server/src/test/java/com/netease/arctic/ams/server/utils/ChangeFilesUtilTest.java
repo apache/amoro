@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.ams.server.model.SnapshotFileGroup;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +28,7 @@ public class ChangeFilesUtilTest {
 
   @Test
   public void testGetMaxSequenceLimit() {
-    List<SnapshotFileGroup> sequenceGroups = new ArrayList<>();
+    List<ChangeFilesUtil.SnapshotFileGroup> sequenceGroups = new ArrayList<>();
     sequenceGroups.add(buildSequenceGroup(1, 100, 2));
     Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 0));
     Assert.assertEquals(Long.MIN_VALUE, ChangeFilesUtil.getMaxSequenceLimit(sequenceGroups, 1));
@@ -55,8 +54,8 @@ public class ChangeFilesUtilTest {
 
   }
 
-  private static SnapshotFileGroup buildSequenceGroup(long sequence, long txId, int cnt) {
-    return new SnapshotFileGroup(sequence, txId, cnt);
+  private static ChangeFilesUtil.SnapshotFileGroup buildSequenceGroup(long sequence, long txId, int cnt) {
+    return new ChangeFilesUtil.SnapshotFileGroup(sequence, txId, cnt);
   }
 
 }
