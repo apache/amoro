@@ -28,8 +28,8 @@ import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -58,25 +58,25 @@ public class OptimizeTaskItem extends IJDBCService {
   // interval between failed and retry = (1 + retry) * RETRY_INTERVAL
   private static final long RETRY_INTERVAL = 60000; // 60s
 
-  private final BaseOptimizeTask optimizeTask;
-  private volatile BaseOptimizeTaskRuntime optimizeRuntime;
+  private final BasicOptimizeTask optimizeTask;
+  private volatile OptimizeTaskRuntime optimizeRuntime;
   private final ReentrantLock lock = new ReentrantLock();
 
-  public OptimizeTaskItem(BaseOptimizeTask optimizeTask,
-                          BaseOptimizeTaskRuntime optimizeRuntime) {
+  public OptimizeTaskItem(BasicOptimizeTask optimizeTask,
+                          OptimizeTaskRuntime optimizeRuntime) {
     this.optimizeTask = optimizeTask;
     this.optimizeRuntime = optimizeRuntime;
   }
 
-  public BaseOptimizeTask getOptimizeTask() {
+  public BasicOptimizeTask getOptimizeTask() {
     return optimizeTask;
   }
 
-  public BaseOptimizeTaskRuntime getOptimizeRuntime() {
+  public OptimizeTaskRuntime getOptimizeRuntime() {
     return optimizeRuntime;
   }
 
-  public void setOptimizeRuntime(BaseOptimizeTaskRuntime optimizeRuntime) {
+  public void setOptimizeRuntime(OptimizeTaskRuntime optimizeRuntime) {
     this.optimizeRuntime = optimizeRuntime;
   }
 
@@ -93,7 +93,7 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on pending");
-      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getStatus() == OptimizeStatus.Failed) {
         newRuntime.setRetry(newRuntime.getRetry() + 1);
       }
@@ -111,13 +111,13 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on executing");
-      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       long currentTime = System.currentTimeMillis();
       newRuntime.setAttemptId(attemptId);
       newRuntime.setExecuteTime(currentTime);
       newRuntime.setJobId(jobId);
       newRuntime.setStatus(OptimizeStatus.Executing);
-      newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
+      newRuntime.setPreparedTime(OptimizeTaskRuntime.INVALID_TIME);
       newRuntime.setCostTime(0);
       newRuntime.setErrorMessage(null);
       persistTaskRuntime(newRuntime, false);
@@ -135,7 +135,7 @@ public class OptimizeTaskItem extends IJDBCService {
   public void onCommitted(long commitTime) {
     lock.lock();
     try {
-      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       newRuntime.setCommitTime(commitTime);
       newRuntime.setStatus(OptimizeStatus.Committed);
       // after commit, task will be deleted, there is no need to update
@@ -152,10 +152,10 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on failed");
-      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       newRuntime.setErrorMessage(errorMessage);
       newRuntime.setStatus(OptimizeStatus.Failed);
-      newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
+      newRuntime.setPreparedTime(OptimizeTaskRuntime.INVALID_TIME);
       newRuntime.setReportTime(reportTime);
       newRuntime.setCostTime(costTime);
       persistTaskRuntime(newRuntime, false);
@@ -173,8 +173,8 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on prepared");
-      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
-      if (newRuntime.getExecuteTime() == BaseOptimizeTaskRuntime.INVALID_TIME) {
+      OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      if (newRuntime.getExecuteTime() == OptimizeTaskRuntime.INVALID_TIME) {
         newRuntime.setExecuteTime(preparedTime);
       }
       newRuntime.setPreparedTime(preparedTime);
@@ -280,7 +280,7 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  private void persistTaskRuntime(BaseOptimizeTaskRuntime newRuntime, boolean updateTargetFiles) {
+  private void persistTaskRuntime(OptimizeTaskRuntime newRuntime, boolean updateTargetFiles) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
           getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
@@ -292,7 +292,7 @@ public class OptimizeTaskItem extends IJDBCService {
         try {
           internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
           newRuntime.getTargetFiles().forEach(file -> {
-            ContentFile<?> contentFile = SerializationUtils.toInternalTableFile(file);
+            ContentFile<?> contentFile = SerializationUtils.toContentFile(file);
             if (contentFile.content() == FileContent.DATA) {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
                   DataFileType.BASE_FILE.name(), 1, SerializationUtils.byteBufferToByteArray(file));
@@ -319,7 +319,7 @@ public class OptimizeTaskItem extends IJDBCService {
       try {
         internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
         optimizeRuntime.getTargetFiles().forEach(file -> {
-          ContentFile<?> contentFile = SerializationUtils.toInternalTableFile(file);
+          ContentFile<?> contentFile = SerializationUtils.toContentFile(file);
           if (contentFile.content() == FileContent.DATA) {
             internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
                 DataFileType.BASE_FILE.name(), 1, SerializationUtils.byteBufferToByteArray(file));
@@ -383,7 +383,7 @@ public class OptimizeTaskItem extends IJDBCService {
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
 
-      BaseOptimizeTask optimizeTask = getOptimizeTask();
+      BasicOptimizeTask optimizeTask = getOptimizeTask();
       OptimizeTaskId optimizeTaskId = optimizeTask.getTaskId();
       try {
         optimizeTasksMapper.insertOptimizeTask(optimizeTask, getOptimizeRuntime());

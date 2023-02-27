@@ -161,7 +161,7 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
       PositionDelete<T> posDelete = PositionDelete.create();
       try (PositionDeleteWriter<T> closeableWriter = writer) {
         posDeletes.forEach(
-            posRow -> closeableWriter.write(posDelete.set(filePath, posRow.pos(), posRow.row())));
+            posRow -> closeableWriter.write(posDelete.set(filePath.get(), posRow.pos(), posRow.row())));
       } catch (IOException e) {
         setFailure(e);
         throw new UncheckedIOException(

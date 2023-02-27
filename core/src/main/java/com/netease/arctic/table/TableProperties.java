@@ -38,8 +38,7 @@ public class TableProperties {
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
-  public static final String PARTITION_MAX_TRANSACTION_ID = "max-txId";
-  public static final long PARTITION_MAX_TRANSACTION_ID_DEFAULT = -1L;
+  public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
 
   public static final String LOCATION = "location";
 
@@ -262,7 +261,9 @@ public class TableProperties {
   public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
-  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
+  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = LOG_STORE_STORAGE_TYPE_KAFKA;
 
   public static final String LOG_STORE_ADDRESS = "log-store.address";
 
@@ -273,6 +274,8 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
+  
+  public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
 
@@ -288,7 +291,7 @@ public class TableProperties {
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     READ_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     READ_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
@@ -297,7 +300,7 @@ public class TableProperties {
 
 
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     WRITE_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);

@@ -43,16 +43,6 @@ public class TablePropertyUtilTest {
 
   private static final StructLikeMap<Map<String, String>> PARTITION_PROPERTIES = buildPartitionProperties();
 
-  @Test
-  public void testEncodePartitionProperties() {
-    Assert.assertEquals(JSON_VALUE, TablePropertyUtil.encodePartitionProperties(SPEC, PARTITION_PROPERTIES));
-  }
-
-  @Test
-  public void testDecodePartitionProperties() {
-    Assert.assertEquals(PARTITION_PROPERTIES, TablePropertyUtil.decodePartitionProperties(SPEC, JSON_VALUE));
-  }
-
   private static StructLikeMap<Map<String, String>> buildPartitionProperties() {
     StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(SPEC.partitionType());
     GenericRecord partition0 = GenericRecord.create(SPEC.partitionType());
@@ -67,5 +57,15 @@ public class TablePropertyUtilTest {
     partitionProperties.put(partition0, partition0Properties);
     partitionProperties.put(partition1, partition1Properties);
     return partitionProperties;
+  }
+
+  @Test
+  public void testEncodePartitionProperties() {
+    Assert.assertEquals(JSON_VALUE, TablePropertyUtil.encodePartitionProperties(SPEC, PARTITION_PROPERTIES));
+  }
+
+  @Test
+  public void testDecodePartitionProperties() {
+    Assert.assertEquals(PARTITION_PROPERTIES, TablePropertyUtil.decodePartitionProperties(SPEC, JSON_VALUE));
   }
 }

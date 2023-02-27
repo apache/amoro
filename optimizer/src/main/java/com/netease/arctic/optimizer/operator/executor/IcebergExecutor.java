@@ -19,7 +19,8 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
@@ -51,7 +52,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public class IcebergExecutor extends BaseExecutor {
+public class IcebergExecutor extends AbstractExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
 
@@ -124,8 +125,8 @@ public class IcebergExecutor extends BaseExecutor {
   }
 
   private CombinedIcebergScanTask buildIcebergScanTask() {
-    return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new IcebergContentFile[]{}),
-        task.allIcebergDeleteFiles().toArray(new IcebergContentFile[]{}),
+    return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new DataFileWithSequence[0]),
+        task.allIcebergDeleteFiles().toArray(new DeleteFileWithSequence[0]),
         table.spec(), task.getPartition());
   }
 

@@ -87,12 +87,13 @@ AS SELECT ...
 
 ## CREATE TABLE ... LIKE
 
-`CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区以及表配置复制到新表中，但不会复制数据。
+`CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区复制到新表中，但不会复制数据。
 
 ``` 
 CREATE TABLE arctic_catalog.db.sample
 LIKE arctic_catalog.db.sample2
 USING arctic
+TBLPROPERTIES ('owner'='xxxx');
 ```
 
 > 因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema 信息，如果是其他类型的表，则无法复制
@@ -115,6 +116,14 @@ AS SELECT ...
 DROP TABLE arctic_catalog.db.sample;
 ```
 
+## TRUNCATE TABLE
+
+Arctic Spark 支持 `TRUNCATE TABLE` 语法用于删除表中所有行
+
+```sql
+TRUNCATE TABLE arctic_catalog.db.sample;
+```
+
 ## ALTER TABLE
 Arctic 支持的 `ALTER TABLE` 语法包括：
 
@@ -123,6 +132,7 @@ Arctic 支持的 `ALTER TABLE` 语法包括：
 * ALTER TABLE ... RENAME COLUMN
 * ALTER TABLE ... ALTER COLUMN
 * ALTER TABLE ... DROP COLUMN
+* ALTER TABLE ... DROP PARTITION
 
 ### ALTER TABLE ... SET TBLPROPERTIES
 ```sql
@@ -205,6 +215,10 @@ ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col;
 ```sql
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN id;
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z;
+```
+### ALTER TABLE ... DROP PARTITION
+```sql
+ALTER TABLE arctic_catalog.db.sample DROP IF EXISTS PARTITION (dt=2022);
 ```
 
 

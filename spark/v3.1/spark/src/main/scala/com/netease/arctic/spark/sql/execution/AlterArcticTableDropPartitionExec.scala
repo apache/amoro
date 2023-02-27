@@ -20,12 +20,11 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.spark.SparkFilters
+import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
-import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types._
@@ -33,9 +32,11 @@ import org.apache.spark.sql.types._
 import java.util
 import scala.collection.JavaConverters.asJavaIterableConverter
 
-case class AlterArcticTableDropPartitionExec(table: Table,
-                                             parts: Seq[PartitionSpec],
-                                             retainData: Boolean) extends V2CommandExec {
+case class AlterArcticTableDropPartitionExec(
+  table: Table,
+  parts: Seq[PartitionSpec],
+  retainData: Boolean
+) extends V2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     // build partitions
     val specs = parts.map {
@@ -50,13 +51,15 @@ case class AlterArcticTableDropPartitionExec(table: Table,
     var i = 0
     var deleteExpr: Expression = null
     val expressions = new util.ArrayList[Expression]
-    while ( i < partitions.size) {
+    while (i < partitions.size) {
       val partitionData = partitions.apply(i).split("=")
 
       val dataType = table.schema().apply(partitionData.apply(0)).dataType
       val data = convertDataByType(dataType, partitionData.apply(1))
-      val experssion = EqualNullSafe(AttributeReference(partitionData.apply(0),
-        dataType)(),
+      val experssion = EqualNullSafe(
+        AttributeReference(
+          partitionData.apply(0),
+          dataType)(),
         Literal(data))
       expressions.add(experssion)
       i += 1
@@ -71,17 +74,17 @@ case class AlterArcticTableDropPartitionExec(table: Table,
     // build filters
     val filters = splitConjunctivePredicates(deleteExpr).map {
       filter =>
-        TranslateUtils.translateFilter(deleteExpr).getOrElse(
+        ExpressionHelper.translateFilter(deleteExpr).getOrElse(
           throw new UnsupportedOperationException("Cannot translate expression to source filter"))
     }.toArray
     val expression = SparkFilters.convert(filters)
     table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
+          val txId = arctic.table().asKeyedTable().beginTransaction(null)
           val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(expression)
-          overwriteBaseFiles.withTransactionIdForChangedPartition(
-            TablePropertyUtil.allocateTransactionId(arctic.table().asKeyedTable()))
+          overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()
         } else {
           val overwriteFiles = arctic.table().asUnkeyedTable().newOverwrite()

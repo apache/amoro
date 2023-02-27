@@ -57,33 +57,28 @@ public class TestRocksDBBackend {
     }
   }
 
-
   @Test
   public void testIterator() {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
     rocksDBBackend.addColumnFamily(CF_NAME);
-    List<String> expect = Arrays.asList(new String[] {
-            "mj",
-            "zjs",
-            "zyx"
-    });
+    List<String> expect = Arrays.asList("mj", "zjs", "zyx");
     rocksDBBackend.put(CF_NAME, "name", expect.get(0));
     rocksDBBackend.put(CF_NAME, 2, expect.get(1));
     rocksDBBackend.put(CF_NAME, 4556, expect.get(2));
     Iterator<String> values = rocksDBBackend.valuesForTest(CF_NAME);
     List<String> valueList = new ArrayList<>();
-    for ( ; values.hasNext(); ) {
+    for (; values.hasNext(); ) {
       valueList.add(values.next());
     }
     Collections.sort(expect);
     Collections.sort(valueList);
     Assert.assertEquals(expect.size(), valueList.size());
     Assert.assertArrayEquals(expect.toArray(), valueList.toArray());
-    
+
     rocksDBBackend.delete(CF_NAME, "name");
     valueList = new ArrayList<>();
     values = rocksDBBackend.valuesForTest(CF_NAME);
-    for ( ; values.hasNext(); ) {
+    for (; values.hasNext(); ) {
       valueList.add(values.next());
     }
     Assert.assertEquals(2, valueList.size());

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.source.log;
 
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;

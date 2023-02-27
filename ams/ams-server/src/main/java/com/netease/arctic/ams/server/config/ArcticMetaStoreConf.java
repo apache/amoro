@@ -158,6 +158,16 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("mysql")
           .withDescription("Restore database type.");
+  public static final ConfigOption<String> LOGIN_USERNAME =
+      ConfigOptions.key("login.username")
+          .stringType()
+          .defaultValue("admin")
+          .withDescription("ams login username.");
+  public static final ConfigOption<String> LOGIN_PASSWORD =
+      ConfigOptions.key("login.password")
+          .stringType()
+          .defaultValue("admin")
+          .withDescription("ams login password.");
   public static final ConfigOption<Boolean> ADAPT_HIVE_CLEAN_STALE_CHANGE_FILES_DEFAULT =
       ConfigOptions.key("adapt.hive.stale-change-files.clean.default")
           .booleanType()
@@ -188,6 +198,7 @@ public class ArcticMetaStoreConf {
    * config key prefix of terminal
    */
   public static final String TERMINAL_PREFIX = "arctic.ams.terminal.";
+  public static final String SPARK_CONF = "spark.";
   public static final ConfigOption<String> TERMINAL_BACKEND =
       ConfigOptions.key("arctic.ams.terminal.backend")
           .stringType()
@@ -217,4 +228,10 @@ public class ArcticMetaStoreConf {
           .intType()
           .defaultValue(30)
           .withDescription("session timeout in minute");
+
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("arctic.ams.blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
 }

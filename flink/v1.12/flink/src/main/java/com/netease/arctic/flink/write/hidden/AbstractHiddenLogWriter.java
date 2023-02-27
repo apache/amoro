@@ -212,7 +212,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
 
   @Override
   public void open() throws Exception {
-    producer.open();
+    producer.open(getRuntimeContext());
   }
 
   public void processElement(StreamRecord<RowData> element) throws Exception {

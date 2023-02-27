@@ -37,6 +37,7 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
 
   KeyedTable keyedTable;
   private Transaction tx;
+  private boolean skipEmptyCommit = false;
 
   protected final Map<String, String> properties;
 
@@ -51,27 +52,46 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
   }
 
   /**
-   * Add some operation in transaction and change max transaction id map.
+   * If this operation change nothing.
+   *
+   * @return true for nothing will be changed
+   */
+  protected abstract boolean isEmptyCommit();
+
+  /**
+   * Add some operation in transaction and change optimized sequence map.
    *
    * @param transaction table transaction
-   * @param partitionMaxTxId existing max transaction id map
-   * @return changed max transaction id map
+   * @param partitionOptimizedSequence existing optimized sequence map
+   * @return changed optimized sequence map
    */
-  protected abstract StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId);
+  protected abstract StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionOptimizedSequence);
 
   @Override
   public StructLikeMap<Long> apply() {
-    return apply(tx, TablePropertyUtil.getPartitionMaxTransactionId(keyedTable));
+    return apply(tx, TablePropertyUtil.getPartitionOptimizedSequence(keyedTable));
+  }
+
+  /**
+   * Skip empty commit.
+   * @return this for chain
+   */
+  public PartitionTransactionOperation skipEmptyCommit() {
+    this.skipEmptyCommit = true;
+    return this;
   }
 
 
   public void commit() {
+    if (this.skipEmptyCommit && isEmptyCommit()) {
+      return;
+    }
     this.tx = keyedTable.baseTable().newTransaction();
 
-    StructLikeMap<Long> partitionMaxSnapshotSequence = apply();
+    StructLikeMap<Long> partitionOptimizedSequence = apply();
     UpdatePartitionProperties updatePartitionProperties = keyedTable.baseTable().updatePartitionProperties(tx);
-    partitionMaxSnapshotSequence.forEach((partition, snapshotSequence) ->
-        updatePartitionProperties.set(partition, TableProperties.PARTITION_MAX_TRANSACTION_ID,
+    partitionOptimizedSequence.forEach((partition, snapshotSequence) ->
+        updatePartitionProperties.set(partition, TableProperties.PARTITION_OPTIMIZED_SEQUENCE,
             String.valueOf(snapshotSequence)));
     updatePartitionProperties.commit();
 

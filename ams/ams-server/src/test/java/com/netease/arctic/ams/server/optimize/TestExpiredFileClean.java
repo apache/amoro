@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -49,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestExpiredFileClean extends TableTestBase {
@@ -62,8 +64,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "0");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
@@ -86,8 +88,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "1");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
@@ -97,6 +99,29 @@ public class TestExpiredFileClean extends TableTestBase {
     TableExpireService.expireSnapshots(testKeyedTable.changeTable(), System.currentTimeMillis(), new HashSet<>());
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     Assert.assertFalse(testKeyedTable.io().exists((String) s1Files.get(0).path()));
+  }
+
+  @Test
+  public void testExpiredChangeTableFilesInBase() throws Exception {
+    List<DataFile> s1Files = insertChangeDataFiles(1);
+    testKeyedTable.baseTable().newAppend().appendFile(s1Files.get(0)).commit();
+    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    Assert.assertEquals(2, partitions.size());
+
+    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
+    updateProperties.commit();
+    Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
+    TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+
+    Set<String> exclude = UnKeyedTableUtil.getAllContentFilePath(testKeyedTable.baseTable());
+    insertChangeDataFiles(2);
+    TableExpireService.expireSnapshots(testKeyedTable.changeTable(), System.currentTimeMillis(), exclude);
+    Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
+    Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
+    Assert.assertFalse(testKeyedTable.io().exists((String) s1Files.get(1).path()));
   }
 
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
@@ -121,7 +146,7 @@ public class TestExpiredFileClean extends TableTestBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeTableFilesInfo.addAll(changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable, true))
         .collect(Collectors.toList()));
 
     return changeInsertFiles;

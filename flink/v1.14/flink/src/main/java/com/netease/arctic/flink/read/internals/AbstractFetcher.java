@@ -67,6 +67,8 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * @param <T> The type of elements deserialized from Kafka's byte records, and emitted into the
  *            Flink data streams.
  * @param <K> The type of topic/partition identifier used by Kafka in the specific version.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
 @Deprecated

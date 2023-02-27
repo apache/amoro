@@ -70,8 +70,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
+import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 
 /**
@@ -184,7 +183,7 @@ public class ArcticCatalog extends AbstractCatalog {
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
-        com.netease.arctic.flink.FlinkSchemaUtil.toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
+        toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
         partitionKeys,
         arcticProperties,
         null);
@@ -241,28 +240,6 @@ public class ArcticCatalog extends AbstractCatalog {
       tableProperties.putIfAbsent(FactoryUtil.FORMAT.key(), tableProperties.getOrDefault(
           TableProperties.LOG_STORE_DATA_FORMAT,
           TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT));
-      if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
-        tableProperties.putIfAbsent(
-            TOPIC.key(),
-            tableProperties.get(TableProperties.LOG_STORE_MESSAGE_TOPIC));
-      }
-
-      if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-        tableProperties.putIfAbsent(PROPS_BOOTSTRAP_SERVERS.key(), tableProperties.get(
-            TableProperties.LOG_STORE_ADDRESS));
-      }
-      tableProperties.putIfAbsent(
-          "properties.key.serializer",
-          "org.apache.kafka.common.serialization.ByteArraySerializer");
-      tableProperties.putIfAbsent(
-          "properties.value.serializer",
-          "org.apache.kafka.common.serialization.ByteArraySerializer");
-      tableProperties.putIfAbsent(
-          "properties.key.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-      tableProperties.putIfAbsent(
-          "properties.value.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
     }
   }
 

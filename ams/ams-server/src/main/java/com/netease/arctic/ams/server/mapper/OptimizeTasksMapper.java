@@ -18,8 +18,8 @@
 
 package com.netease.arctic.ams.server.mapper;
 
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import com.netease.arctic.ams.server.mybatis.Map2StringConverter;
@@ -36,7 +36,7 @@ public interface OptimizeTasksMapper {
   String TABLE_NAME = "optimize_task";
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_commit_group, task_plan_group, max_change_transaction_id, min_change_transaction_id, " +
+      " task_commit_group, task_plan_group, to_sequence, from_sequence, " +
       " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
       " insert_files, delete_files, base_files, pos_delete_files" +
@@ -50,8 +50,8 @@ public interface OptimizeTasksMapper {
       @Result(property = "partition", column = "partition"),
       @Result(property = "taskCommitGroup", column = "task_commit_group"),
       @Result(property = "taskPlanGroup", column = "task_plan_group"),
-      @Result(property = "maxChangeTransactionId", column = "max_change_transaction_id"),
-      @Result(property = "minChangeTransactionId", column = "min_change_transaction_id"),
+      @Result(property = "toSequence", column = "to_sequence"),
+      @Result(property = "fromSequence", column = "from_sequence"),
       @Result(property = "queueId", column = "queue_id"),
       @Result(property = "insertFileSize", column = "insert_file_size"),
       @Result(property = "deleteFileSize", column = "delete_file_size"),
@@ -68,11 +68,11 @@ public interface OptimizeTasksMapper {
       @Result(property = "sourceNodes", column = "source_nodes",
           typeHandler = ListOfTreeNode2StringConverter.class)
   })
-  List<BaseOptimizeTask> selectAllOptimizeTasks();
+  List<BasicOptimizeTask> selectAllOptimizeTasks();
 
   @Insert("insert into " + TABLE_NAME + " (" +
       " trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_commit_group, task_plan_group, max_change_transaction_id, min_change_transaction_id," +
+      " task_commit_group, task_plan_group, to_sequence, from_sequence," +
       " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
       " insert_files, delete_files, base_files, pos_delete_files," +
@@ -88,8 +88,8 @@ public interface OptimizeTasksMapper {
       " #{optimizeTask.partition}," +
       " #{optimizeTask.taskCommitGroup}," +
       " #{optimizeTask.taskPlanGroup}," +
-      " #{optimizeTask.maxChangeTransactionId}," +
-      " #{optimizeTask.minChangeTransactionId}," +
+      " #{optimizeTask.toSequence}," +
+      " #{optimizeTask.fromSequence}," +
       " #{optimizeTask.sourceNodes, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter}," +
       " #{optimizeTask.createTime, " +
@@ -127,8 +127,8 @@ public interface OptimizeTasksMapper {
       " #{optimizeTaskRuntime.newFileCnt}," +
       " #{optimizeTaskRuntime.costTime}" +
       " )")
-  void insertOptimizeTask(@Param("optimizeTask") BaseOptimizeTask optimizeTask,
-                          @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+  void insertOptimizeTask(@Param("optimizeTask") BasicOptimizeTask optimizeTask,
+                          @Param("optimizeTaskRuntime") OptimizeTaskRuntime optimizeTaskRuntime);
 
   @Delete("delete from " + TABLE_NAME + " where trace_id = #{traceId}")
   void deleteOptimizeTask(@Param("traceId") String traceId);

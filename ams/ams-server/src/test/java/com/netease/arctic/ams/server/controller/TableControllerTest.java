@@ -50,6 +50,7 @@ import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
+import com.netease.arctic.ams.server.service.impl.TableBlockerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -431,6 +432,8 @@ public class TableControllerTest {
     when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     when(adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
         mockUpgradeHiveMeta())).thenReturn(null);
+    TableBlockerService tableBlockerService = mock(TableBlockerService.class);
+    when(ServiceContainer.getTableBlockerService()).thenReturn(tableBlockerService);
     when(MetaService.getServerTableMeta(arcticHiveCatalog, TableIdentifier.of(catalog, db, table)))
         .thenReturn(mockServerTableMeta(catalog, db, table));
     Table hiveTable = mock(Table.class);

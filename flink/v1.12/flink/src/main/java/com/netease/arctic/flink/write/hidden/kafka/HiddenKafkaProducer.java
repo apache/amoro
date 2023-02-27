@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 
@@ -74,7 +73,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   private transient FlinkKafkaInternalProducer<byte[], byte[]> transactionalProducer;
 
   private ArcticLogPartitioner<T> arcticLogPartitioner;
-  private int[] partitions;
+  private List<Integer> partitions;
 
   public HiddenKafkaProducer(
       Properties producerConfig,
@@ -106,7 +105,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   public void send(LogData<T> logData) throws Exception {
     checkErroneous();
     byte[] message = logDataJsonSerialization.serialize(logData);
-    int partition = arcticLogPartitioner.partition(logData, partitions);
+    Integer partition = arcticLogPartitioner.partition(logData, partitions);
     ProducerRecord<byte[], byte[]> producerRecord =
         new ProducerRecord<>(topic, partition, null, null, message);
     producer.send(producerRecord, callback);
@@ -117,8 +116,8 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
     checkErroneous();
     byte[] message = logDataJsonSerialization.serialize(logData);
     List<ProducerRecord<byte[], byte[]>> recordList =
-        IntStream.of(partitions)
-            .mapToObj(i -> new ProducerRecord<byte[], byte[]>(topic, i, null, null, message))
+        partitions.stream()
+            .map(i -> new ProducerRecord<byte[], byte[]>(topic, i, null, null, message))
             .collect(Collectors.toList());
     LOG.info("sending {} partitions with flip message={}.", recordList.size(), logData);
     long start = System.currentTimeMillis();
@@ -165,14 +164,14 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
     return new FlinkKafkaInternalProducer<>(producerConfig);
   }
 
-  public static int[] getPartitionsByTopic(String topic, org.apache.kafka.clients.producer.Producer producer) {
+  public static List<Integer> getPartitionsByTopic(String topic, org.apache.kafka.clients.producer.Producer producer) {
     // the fetched list is immutable, so we're creating a mutable copy in order to sort it
     List<PartitionInfo> partitionsList = new ArrayList<>(producer.partitionsFor(topic));
 
     // sort the partitions by partition id to make sure the fetched partition list is the same across subtasks
     partitionsList.sort(Comparator.comparingInt(PartitionInfo::partition));
 
-    return partitionsList.stream().mapToInt(PartitionInfo::partition).toArray();
+    return partitionsList.stream().map(PartitionInfo::partition).collect(Collectors.toList());
   }
 
   protected void checkErroneous() throws FlinkKafkaException {

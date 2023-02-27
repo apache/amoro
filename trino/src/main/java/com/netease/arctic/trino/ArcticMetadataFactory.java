@@ -25,6 +25,7 @@ import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.iceberg.CommitTaskData;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.type.TypeManager;
+
 import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;

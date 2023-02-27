@@ -30,7 +30,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +66,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected Map<StructLike, Partition> partitionToCreate = Maps.newHashMap();
   protected final Map<StructLike, Partition> partitionToAlter = Maps.newHashMap();
   protected String unpartitionTableLocation;
-  protected long txId = -1;
+  protected Long txId = null;
   protected boolean validateLocation = true;
   protected boolean checkOrphanFiles = false;
   protected int commitTimestamp; // in seconds
@@ -423,7 +422,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     // create a new empty location for hive
     String newLocation;
     newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
-        HiveTableUtil.newHiveSubdirectory(txId));
+        txId != null ? HiveTableUtil.newHiveSubdirectory(txId) : HiveTableUtil.newHiveSubdirectory());
     OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
     try {
       file.createOrOverwrite().close();

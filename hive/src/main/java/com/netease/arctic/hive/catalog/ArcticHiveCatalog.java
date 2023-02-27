@@ -22,7 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
-import com.netease.arctic.catalog.BaseArcticCatalog;
+import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
@@ -40,6 +40,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.IcebergSchemaUtil;
@@ -64,7 +65,7 @@ import java.util.Map;
 /**
  * Implementation of {@link com.netease.arctic.catalog.ArcticCatalog} to support Hive table as base store.
  */
-public class ArcticHiveCatalog extends BaseArcticCatalog {
+public class ArcticHiveCatalog extends BasicArcticCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveCatalog.class);
 
@@ -95,7 +96,11 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         client.createDatabase(database);
         return null;
       });
-    } catch (TException | InterruptedException e) {
+    } catch (AlreadyExistsException e) {
+      throw new org.apache.iceberg.exceptions.AlreadyExistsException(
+          e, "Database '%s' already exists!", databaseName);
+
+    }  catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to create database:" + databaseName, e);
     }
   }
@@ -126,7 +131,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   @Override
   protected void doDropTable(TableMeta meta, boolean purge) {
     // drop hive table operation will only delete hive table metadata
-    // delete data files operation will use BaseArcticCatalog
+    // delete data files operation will use BasicArcticCatalog
     try {
       hiveClientPool.run(client -> {
         client.dropTable(meta.getTableIdentifier().getDatabase(),
@@ -190,7 +195,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
 
-  class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
+  class ArcticHiveTableBuilder extends ArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));

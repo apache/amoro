@@ -69,25 +69,15 @@ ArcticTable table = ArcticUtils.load(tableLoader);
 // }});
 Schema schema = table.schema();
 
-List<String> topics = new ArrayList<>();
-topics.add("topic_name");
+// -----------Hidden Kafka--------------
+LogKafkaSource source = LogKafkaSource.builder(schema, table.properties()).build();
 
-// 配置 kafka consumer 参数。详见 https://kafka.apache.org/documentation/#consumerconfigs
-Properties properties = new Properties();
-properties.put("group.id", groupId);
-properties.put("properties.bootstrap.servers", "broker1:port1, broker2:port2 ...");
+or
 
-Configuration configuration = new Configuration();
-// 开启保证数据一致性的低延迟读
-configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
+// -----------Hidden Pulsar--------------
+LogPulsarSource source = LogPulsarSource.builder(schema, table.properties()).build();
 
-LogKafkaSource kafkaSource = LogKafkaSource.builder(schema, configuration)
-    .setTopics(topics)
-    .setStartingOffsets(OffsetsInitializer.earliest())
-    .setProperties(properties)
-    .build();
-
-DataStream<RowData> stream = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Log Source");
+DataStream<RowData> stream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Log Source");
 // 打印读出的所有数据
 stream.print();
 

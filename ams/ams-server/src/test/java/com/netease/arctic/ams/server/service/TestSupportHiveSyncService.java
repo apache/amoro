@@ -46,6 +46,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
@@ -286,14 +287,14 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
   }
 
   private List<DataFile> insertTableHiveDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .withTransactionId(transactionId)
             .buildWriter(HiveLocationKind.INSTANT) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .buildWriter(HiveLocationKind.INSTANT);
-
-    List<DataFile> baseDataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

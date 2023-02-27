@@ -26,7 +26,7 @@ import org.apache.iceberg.io.OutputFile;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class ArcticFileIoDummy implements ArcticFileIO{
+public class ArcticFileIoDummy implements ArcticFileIO {
 
   private FileIO fileIO;
 
@@ -49,13 +49,13 @@ public class ArcticFileIoDummy implements ArcticFileIO{
   }
 
   @Override
-  public boolean mkdirs(String path) {
-    return false;
+  public void mkdirs(String path) {
+
   }
 
   @Override
-  public boolean rename(String oldpath, String newPath) {
-    return false;
+  public void rename(String oldpath, String newPath) {
+
   }
 
   @Override

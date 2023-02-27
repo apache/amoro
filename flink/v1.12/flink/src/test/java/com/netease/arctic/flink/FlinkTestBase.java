@@ -20,7 +20,7 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -312,16 +312,15 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
                                                              boolean base) {
-    return createKeyedTaskWriter(keyedTable, rowType, transactionId, base, 3);
+    return createKeyedTaskWriter(keyedTable, rowType, base, 3);
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
                                                              boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
-    taskWriterFactory.setTransactionId(transactionId);
     taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();

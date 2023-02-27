@@ -67,6 +67,8 @@ import static org.apache.flink.util.PropertiesUtil.getLong;
  *
  * <p>Please refer to Kafka's documentation for the available configuration properties:
  * http://kafka.apache.org/documentation.html#newconsumerconfigs
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
 public class FlinkKafkaConsumer<T> extends FlinkKafkaConsumerBase<T> {

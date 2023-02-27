@@ -67,6 +67,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private ChangeAction changeAction = ChangeAction.INSERT;
   private String customHiveSubdirectory;
   private Long targetFileSize;
+  private boolean orderedWriter = false;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -102,6 +103,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     return this;
   }
 
+  public AdaptHiveGenericTaskWriterBuilder withOrdered() {
+    this.orderedWriter = true;
+    return this;
+  }
+
   @Override
   public TaskWriter<Record> buildWriter(WriteOperationKind writeOperationKind) {
     LocationKind locationKind = AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
@@ -122,7 +128,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-    preconditions();
+    writeBasePreconditions();
     UnkeyedTable baseTable = this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     FileFormat fileFormat = FileFormat.valueOf((baseTable.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
@@ -142,7 +148,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    preconditions();
+    writeBasePreconditions();
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -183,14 +189,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         new GenericAppenderFactory(schema, table.spec());
     return new GenericBaseTaskWriter(fileFormat, appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec);
+        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
   }
 
   private GenericChangeTaskWriter buildChangeWriter() {
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
-    preconditions();
     KeyedTable table = (KeyedTable) this.table;
 
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
@@ -209,15 +214,16 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
         new GenericAppenderFactory(changeWriteSchema, table.spec());
-    return new GenericChangeTaskWriter(fileFormat,
+    return new GenericChangeTaskWriter(
+        fileFormat,
         appenderFactory,
         new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
             table.changeTable().encryption(), partitionId, taskId, transactionId),
         table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-        changeAction);
+        changeAction, orderedWriter);
   }
 
-  private void preconditions() {
+  private void writeBasePreconditions() {
     if (table.isKeyedTable()) {
       Preconditions.checkNotNull(transactionId);
     } else {
