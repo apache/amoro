@@ -44,7 +44,6 @@ import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
-import com.netease.arctic.ams.server.optimize.TestTableOptimizeItem;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestArcticTransactionService;
@@ -128,7 +127,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class,
-    TestTableOptimizeItem.class,
     UnKeyedTableUtilTest.class,
     SequenceNumberFetcherTest.class,
     TableOptimizeItemTest.class
