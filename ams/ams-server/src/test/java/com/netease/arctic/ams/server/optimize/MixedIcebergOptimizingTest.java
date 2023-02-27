@@ -23,6 +23,7 @@ import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.data.Record;
@@ -202,6 +203,61 @@ public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+
+    assertOptimizeHangUp(tb, startId + offset);
+  }
+
+  public void testKeyedTableTxIdNotInOrder() {
+    int offset = 1;
+    KeyedTable table = arcticTable.asKeyedTable();
+    TableIdentifier tb = table.id();
+    updateProperties(table, TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, "1");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5");
+    updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, "1");
+    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
+    // Step1: add 1 change file
+    writeChange(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3))
+    ), null);
+
+    long txId = table.beginTransaction(null);
+    // Step2: add 1 change file
+    writeChange(table, Lists.newArrayList(
+        newRecord(2, "bbb", quickDateWithZone(3))
+    ), null);
+
+    // Step3: update change data, insert 2 file
+    writeChange(table, Lists.newArrayList(
+        newRecord(2, "bbb_new", quickDateWithZone(3))), Lists.newArrayList(
+        newRecord(2, "bbb", quickDateWithZone(3))
+    ));
+
+    // Step4: update change data, insert 1 file
+    writeChange(table, Lists.newArrayList(
+        newRecord(3, "ccc", quickDateWithZone(3))
+    ), null);
+
+    // Step5: insert 1 change file with small txId, total 6 change files
+    writeChangeWithTxId(table, Lists.newArrayList(
+        newRecord(2, "bbb_old", quickDateWithZone(3))
+    ), null, txId);
+
+    assertIds(readRecords(table), 1, 2, 3);
+    assertNames(readRecords(table), "aaa", "bbb_new", "ccc");
+
+    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
+
+    // wait Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 1, 1);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 6, 5);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 6, 1);
+
+    table.refresh();
+    assertIds(readRecords(table), 1, 2, 3);
+    assertNames(readRecords(table), "aaa", "bbb_new", "ccc");
 
     assertOptimizeHangUp(tb, startId + offset);
   }
