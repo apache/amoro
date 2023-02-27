@@ -30,6 +30,7 @@ import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
+import com.netease.arctic.flink.write.hidden.pulsar.HiddenPulsarFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -49,16 +50,15 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.util.CloseableIterator;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,19 +77,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
-import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.readRecordsBytesInLog;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 
 /**
  * Hidden log operator tests.
  */
+@RunWith(Parameterized.class)
 public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static String topic;
@@ -325,16 +327,17 @@ public class HiddenLogOperatorsTest {
       output.addAll(collect(harness1));
       output.addAll(collect(harness2));
       Assertions.assertEquals(8, output.size());
-      ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
+
+      List<byte[]> consumerRecords = BaseLogTest.readRecordsBytesInLog(topic, logType, pulsarHelper);
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
-          System.out.println(deserialization.deserialize(consumerRecord.value()));
+          System.out.println(deserialization.deserialize(consumerRecord));
         } catch (IOException e) {
           e.printStackTrace();
         }
       });
-      Assertions.assertEquals(20, consumerRecords.count());
+      Assertions.assertEquals(20, consumerRecords.size());
     } catch (Exception e) {
       e.printStackTrace();
       throw e;
@@ -479,7 +482,21 @@ public class HiddenLogOperatorsTest {
         restoredCheckpoint,
         IdGenerator.generateUpstreamId(),
         new TestGlobalAggregateManager(),
-        topic);
+        topic,
+        logType);
+  }
+
+  public static OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
+      Long restoredCheckpoint, String topic, String type) throws Exception {
+    return createProducer(
+        1,
+        1,
+        0,
+        restoredCheckpoint,
+        IdGenerator.generateUpstreamId(),
+        new TestGlobalAggregateManager(),
+        topic,
+        type);
   }
 
   public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
@@ -495,7 +512,8 @@ public class HiddenLogOperatorsTest {
         restoredCheckpointId,
         jobId,
         globalAggregateManger,
-        topic);
+        topic,
+        logType);
   }
 
   public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
@@ -510,7 +528,8 @@ public class HiddenLogOperatorsTest {
         null,
         jobId,
         globalAggregateManger,
-        topic);
+        topic,
+        logType);
   }
 
   private static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
@@ -520,13 +539,31 @@ public class HiddenLogOperatorsTest {
       Long restoredCheckpointId,
       byte[] jobId,
       TestGlobalAggregateManager testGlobalAggregateManager,
-      String topic) throws Exception {
+      String topic,
+      String type) throws Exception {
+    LogMsgFactory logMsgFactory;
+    Properties properties;
+    switch (type) {
+      case LOG_STORE_STORAGE_TYPE_KAFKA:
+        logMsgFactory = new HiddenKafkaFactory();
+        properties = getPropertiesByTopic(topic);
+        break;
+      case LOG_STORE_STORAGE_TYPE_PULSAR:
+        logMsgFactory = new HiddenPulsarFactory();
+        properties = new Properties();
+        properties.put(PULSAR_ADMIN_URL.key(), pulsarHelper.op().adminUrl());
+        properties.put(PULSAR_SERVICE_URL.key(), pulsarHelper.op().serviceUrl());
+        break;
+      default:
+        throw new UnsupportedOperationException(type);
+    }
+
     HiddenLogWriter writer =
         new HiddenLogWriter(
             userSchema,
-            getPropertiesByTopic(topic),
+            properties,
             topic,
-            new HiddenKafkaFactory<>(),
+            logMsgFactory,
             LogRecordV1.fieldGetterFactory,
             jobId,
             ShuffleHelper.EMPTY

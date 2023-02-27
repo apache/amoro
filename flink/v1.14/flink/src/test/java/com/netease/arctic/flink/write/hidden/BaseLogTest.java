@@ -50,7 +50,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PU
 public class BaseLogTest {
   public final static Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
     add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
-    add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
+    add(Types.NestedField.required(1, "f_int", Types.IntegerType.get()));
     add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
     add(Types.NestedField.optional(3, "f_struct", Types.StructType.of(
         Types.NestedField.optional(4, "f_sub_boolean", Types.BooleanType.get()),
