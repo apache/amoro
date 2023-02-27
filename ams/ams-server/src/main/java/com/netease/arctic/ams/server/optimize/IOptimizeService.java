@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.List;
@@ -118,8 +117,4 @@ public interface IOptimizeService {
    * @param toRemoveTables -
    */
   void clearRemovedTables(List<TableIdentifier> toRemoveTables);
-
-  void enableSelfOptimizing(ArcticTable table);
-
-  void disableSelfOptimizing(ArcticTable table);
 }

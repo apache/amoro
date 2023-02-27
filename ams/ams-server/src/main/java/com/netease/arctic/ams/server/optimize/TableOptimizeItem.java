@@ -1358,10 +1358,6 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  public void tryDisableSelfOptimizing() {
-    ServiceContainer.getOptimizeService().disableSelfOptimizing(getArcticTable());
-  }
-
   private boolean isMinorOptimizing() {
     if (MapUtils.isEmpty(optimizeTasks)) {
       return false;

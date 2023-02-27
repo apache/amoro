@@ -168,6 +168,11 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     addNewTables(toAddTables);
     clearRemovedTables(toRemoveTables);
 
+    // clean tasks when self-optimizing disabled
+    optimizeTables.values().stream()
+        .map(TableOptimizeItem::getArcticTable)
+        .forEach(this::disableSelfOptimizing);
+
     LOG.info("Refresh tables complete, cost {} ms", System.currentTimeMillis() - startTimestamp);
     return new ArrayList<>(optimizeTables.keySet());
   }
@@ -175,7 +180,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   /**
    * clean self-optimizing table and related tasks
    * @param tableIdentifier Arctic table identifier
-   * @param pureDelete whether delete history records
+   * @param pureDelete whether delete history records and table runtime in sysdb
    */
   private void clearTableCache(TableIdentifier tableIdentifier, boolean pureDelete) {
     TableOptimizeItem tableItem = optimizeTables.remove(tableIdentifier);
@@ -185,12 +190,12 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     } catch (Throwable t) {
       LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
-    try {
-      deleteTableOptimizeRuntime(tableIdentifier);
-    } catch (Throwable t) {
-      LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
-    }
     if (pureDelete) {
+      try {
+        deleteTableOptimizeRuntime(tableIdentifier);
+      } catch (Throwable t) {
+        LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
+      }
       try {
         deleteOptimizeRecord(tableIdentifier);
         deleteOptimizeTaskHistory(tableIdentifier);
@@ -255,10 +260,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         .run(tableIdentifier -> {
           List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
 
-          ArcticCatalog arcticCatalog =
-              com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog());
-          ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
-          TableMetadata tableMetadata = buildTableMetadata(arcticCatalog, arcticTable);
+          TableMetadata tableMetadata = buildTableMetadata(tableIdentifier);
           if (CompatiblePropertyUtil.propertyAsBoolean(tableMetadata.getProperties(),
               TableProperties.ENABLE_SELF_OPTIMIZING,
               TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
@@ -290,10 +292,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private TableMetadata buildTableMetadata(ArcticCatalog arcticCatalog, ArcticTable arcticTable) {
-    TableIdentifier tableIdentifier = arcticTable.id();
+  private TableMetadata buildTableMetadata(TableIdentifier tableIdentifier) {
+    ArcticCatalog arcticCatalog =
+        com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog());
+
     TableMetadata tableMetadata = new TableMetadata();
     if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
+      ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
       tableMetadata.setTableIdentifier(tableIdentifier);
       tableMetadata.setProperties(arcticTable.properties());
     } else {
@@ -363,16 +368,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     return Math.max(2, Runtime.getRuntime().availableProcessors());
   }
 
-  @Override
-  public void enableSelfOptimizing(ArcticTable table) {
-    ArcticCatalog arcticCatalog =
-        com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(table.id().getCatalog());
-    TableMetadata tableMetadata = buildTableMetadata(arcticCatalog, table);
+  private void enableSelfOptimizing(ArcticTable table) {
+    TableIdentifier tableIdentifier = table.id();
+    TableMetadata tableMetadata = buildTableMetadata(tableIdentifier);
     if (!CompatiblePropertyUtil.propertyAsBoolean(
         tableMetadata.getProperties(),
         TableProperties.ENABLE_SELF_OPTIMIZING,
         TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
-      unOptimizeTables.add(table.id());
+      unOptimizeTables.add(tableIdentifier);
       return;
     }
 
@@ -384,11 +387,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
             TableProperties.TABLE_CREATE_TIME_DEFAULT);
     newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
     addTableIntoCache(newTableItem, tableMetadata.getProperties(), true);
-    LOG.info("Enable self-optimizing table: {}", table.id());
+    LOG.info("Enable self-optimizing table: {}", tableIdentifier);
   }
 
-  @Override
-  public void disableSelfOptimizing(ArcticTable table) {
+  private void disableSelfOptimizing(ArcticTable table) {
     TableIdentifier tableIdentifier = table.id();
     if (CompatiblePropertyUtil.propertyAsBoolean(
         table.properties(),
