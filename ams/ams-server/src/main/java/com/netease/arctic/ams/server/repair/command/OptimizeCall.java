@@ -4,10 +4,6 @@ import com.netease.arctic.ams.server.repair.Context;
 
 public class OptimizeCall implements CallCommand {
 
-  public enum action {
-    START, STOP
-  }
-
   private String tableName;
 
   private action action;
@@ -15,5 +11,9 @@ public class OptimizeCall implements CallCommand {
   @Override
   public String call(Context context) {
     return null;
+  }
+  
+  public enum action {
+    START, STOP
   }
 }
