@@ -16,20 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.command;
+package com.netease.arctic.utils.map;
 
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.types.StructType;
+import com.netease.arctic.utils.ObjectSizeCalculator;
 
-public interface ArcticSparkCommand {
+import java.io.Serializable;
 
-  String name();
-
-  StructType outputType();
-
-  Row[] execute();
-
-  default String execInfo() {
-    return "";
+public class DefaultSizeEstimator<T> implements SizeEstimator<T>, Serializable {
+  @Override
+  public long sizeEstimate(T t) {
+    return ObjectSizeCalculator.getObjectSize(t);
   }
 }
