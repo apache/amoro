@@ -114,6 +114,12 @@ public class ArcticMetaStore {
     validateConfig(systemConfig);
     config.putAll(systemConfig);
 
+    //extension properties
+    Map<String,String> extensionPro =
+        yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class) == null ? new HashMap<>() :
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class);
+    config.put(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES.key(), extensionPro);
+
     return config;
   }
 

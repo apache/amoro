@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import io.javalin.http.Context;
@@ -39,12 +40,16 @@ public class SettingController extends RestBaseController {
    */
   public static void getSystemSetting(Context ctx) {
     try {
-      LinkedHashMap<String, Object> result = ArcticMetaStore.getSystemSettingFromYaml();
+      LinkedHashMap<String, Object> config = ArcticMetaStore.getSystemSettingFromYaml();
       // hidden password and username
-      result.replace(MYBATIS_CONNECTION_PASSWORD.key(), MASK_STRING);
-      result.replace(MYBATIS_CONNECTION_USER_NAME.key(), MASK_STRING);
-      result.replace(LOGIN_USERNAME.key(), MASK_STRING);
-      result.replace(LOGIN_PASSWORD.key(), MASK_STRING);
+      config.replace(MYBATIS_CONNECTION_PASSWORD.key(), MASK_STRING);
+      config.replace(MYBATIS_CONNECTION_USER_NAME.key(), MASK_STRING);
+      config.replace(LOGIN_USERNAME.key(), MASK_STRING);
+      config.replace(LOGIN_PASSWORD.key(), MASK_STRING);
+      LinkedHashMap<String, Object> result = new LinkedHashMap<>();
+      config.forEach((k, v) -> {
+        result.put(k, JSON.toJSONString(v));
+      });
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
       e.printStackTrace();
