@@ -957,8 +957,8 @@ public class TableOptimizeItem extends IJDBCService {
     try {
       int maxRetry = optimizeMaxRetry();
       Optional<OptimizeTaskItem> failedTask =
-          optimizeTasks.values().stream()
-              .filter(task -> task.getOptimizeRuntime().getRetry() > maxRetry && task.getOptimizeStatus() == OptimizeStatus.Failed)
+          optimizeTasks.values().stream().filter(task ->
+                  task.getOptimizeRuntime().getRetry() > maxRetry && OptimizeStatus.Failed == task.getOptimizeStatus())
               .findAny();
 
       // if table has failed task after max retry, clear all tasks
