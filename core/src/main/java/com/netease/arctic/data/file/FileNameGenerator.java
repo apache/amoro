@@ -230,14 +230,8 @@ public class FileNameGenerator {
    * @return transactionId, return 0 if path is not arctic file format.
    */
   public static long parseChangeTransactionId(String path, long sequenceNumber) {
-    String fileName = TableFileUtils.getFileName(path);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matchArcticFileFormat(matcher)) {
-      long transactionId = Long.parseLong(matcher.group(3));
-      return transactionId == 0 ? sequenceNumber : transactionId;
-    } else {
-      return sequenceNumber;
-    }
+    long transactionId = parseTransactionId(path);
+    return transactionId == 0 ? sequenceNumber : transactionId;
   }
 
   /**
