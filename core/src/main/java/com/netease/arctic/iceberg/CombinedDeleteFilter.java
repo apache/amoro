@@ -79,24 +79,22 @@ public abstract class CombinedDeleteFilter<T> {
   private final List<DeleteFileWithSequence> posDeletes;
   private final List<DeleteFileWithSequence> eqDeletes;
   private final Schema requiredSchema;
-  private Map<String, Set<Long>> positionMap;
   private final Accessor<StructLike> posAccessor;
   private final Accessor<StructLike> filePathAccessor;
   private final Accessor<StructLike> dataTransactionIdAccessor;
-
+  private final Set<String> pathSets;
+  private final Schema deleteSchema;
+  private Map<String, Set<Long>> positionMap;
   // equity-field is primary key
   private Set<Integer> deleteIds = new HashSet<>();
-  private final Set<String> pathSets;
-
   private CloseablePredicate<T> eqPredicate;
-  private final Schema deleteSchema;
-
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  protected CombinedDeleteFilter(CombinedIcebergScanTask task,
-                                 Schema tableSchema,
-                                 Schema requestedSchema,
-                                 StructLikeCollections structLikeCollections) {
+  protected CombinedDeleteFilter(
+      CombinedIcebergScanTask task,
+      Schema tableSchema,
+      Schema requestedSchema,
+      StructLikeCollections structLikeCollections) {
     this(task, tableSchema, requestedSchema);
     this.structLikeCollections = structLikeCollections;
   }
@@ -113,7 +111,8 @@ public abstract class CombinedDeleteFilter<T> {
           if (deleteIds.isEmpty()) {
             deleteIds = ImmutableSet.copyOf(delete.equalityFieldIds());
           } else {
-            Preconditions.checkArgument(deleteIds.equals(ImmutableSet.copyOf(delete.equalityFieldIds())),
+            Preconditions.checkArgument(
+                deleteIds.equals(ImmutableSet.copyOf(delete.equalityFieldIds())),
                 "Equality delete files have different delete fields");
           }
           eqDeleteBuilder.add(delete);
@@ -134,22 +133,77 @@ public abstract class CombinedDeleteFilter<T> {
         .accessorForField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_ID);
     this.posAccessor = requiredSchema.accessorForField(MetadataColumns.ROW_POSITION.fieldId());
     this.filePathAccessor = requiredSchema.accessorForField(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId());
+  }
 
+  private static Schema fileProjection(
+      Schema tableSchema, Schema requestedSchema,
+      boolean hasPosDelete, Set<Integer> eqDeleteIds) {
+    if (!hasPosDelete && eqDeleteIds == null) {
+      return requestedSchema;
+    }
+
+    Set<Integer> requiredIds = Sets.newLinkedHashSet();
+    if (hasPosDelete) {
+      requiredIds.add(MetadataColumns.FILE_PATH.fieldId());
+      requiredIds.add(MetadataColumns.ROW_POSITION.fieldId());
+    }
+
+    if (eqDeleteIds != null) {
+      requiredIds.addAll(eqDeleteIds);
+      requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
+    }
+
+    requiredIds.add(MetadataColumns.IS_DELETED.fieldId());
+
+    Set<Integer> missingIds = Sets.newLinkedHashSet(
+        Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
+
+    if (missingIds.isEmpty()) {
+      return requestedSchema;
+    }
+
+    // TODO: support adding nested columns. this will currently fail when finding nested columns to add
+    List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
+    for (int fieldId : missingIds) {
+      if (fieldId == MetadataColumns.ROW_POSITION.fieldId() ||
+          fieldId == MetadataColumns.IS_DELETED.fieldId() ||
+          fieldId == com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
+          fieldId == MetadataColumns.FILE_PATH.fieldId()) {
+        continue; // add _pos and _deleted at the end
+      }
+
+      Types.NestedField field = tableSchema.asStruct().field(fieldId);
+      Preconditions.checkArgument(field != null, "Cannot find required field for ID %s", fieldId);
+
+      columns.add(field);
+    }
+
+    if (missingIds.contains(MetadataColumns.FILE_PATH.fieldId())) {
+      columns.add(MetadataColumns.FILE_PATH);
+    }
+
+    if (missingIds.contains(MetadataColumns.ROW_POSITION.fieldId())) {
+      columns.add(MetadataColumns.ROW_POSITION);
+    }
+
+    if (missingIds.contains(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId())) {
+      columns.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED);
+    }
+
+    if (missingIds.contains(MetadataColumns.IS_DELETED.fieldId())) {
+      columns.add(MetadataColumns.IS_DELETED);
+    }
+
+    return new Schema(columns);
   }
 
   public Schema requiredSchema() {
     return requiredSchema;
   }
 
-  protected abstract StructLike asStructLike(T record);
-
-  protected abstract InputFile getInputFile(String location);
-
   protected long pos(T record) {
     return (Long) posAccessor.get(asStructLike(record));
   }
-
-  protected abstract ArcticFileIO getArcticFileIo();
 
   protected String filePath(T record) {
     return filePathAccessor.get(asStructLike(record)).toString();
@@ -273,7 +327,8 @@ public abstract class CombinedDeleteFilter<T> {
     // if there are fewer deletes than a reasonable number to keep in memory, use a set
     if (positionMap == null) {
       positionMap = new HashMap<>();
-      List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes,
+      List<CloseableIterable<Record>> deletes = Lists.transform(
+          posDeletes,
           this::openPosDeletes);
       CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
       while (iterator.hasNext()) {
@@ -347,67 +402,6 @@ public abstract class CombinedDeleteFilter<T> {
     }
   }
 
-  private static Schema fileProjection(Schema tableSchema, Schema requestedSchema,
-      boolean hasPosDelete, Set<Integer> eqDeleteIds) {
-    if (!hasPosDelete && eqDeleteIds == null) {
-      return requestedSchema;
-    }
-
-    Set<Integer> requiredIds = Sets.newLinkedHashSet();
-    if (hasPosDelete) {
-      requiredIds.add(MetadataColumns.FILE_PATH.fieldId());
-      requiredIds.add(MetadataColumns.ROW_POSITION.fieldId());
-    }
-
-    if (eqDeleteIds != null) {
-      requiredIds.addAll(eqDeleteIds);
-      requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
-    }
-
-    requiredIds.add(MetadataColumns.IS_DELETED.fieldId());
-
-    Set<Integer> missingIds = Sets.newLinkedHashSet(
-        Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
-
-    if (missingIds.isEmpty()) {
-      return requestedSchema;
-    }
-
-    // TODO: support adding nested columns. this will currently fail when finding nested columns to add
-    List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
-    for (int fieldId : missingIds) {
-      if (fieldId == MetadataColumns.ROW_POSITION.fieldId() ||
-          fieldId == MetadataColumns.IS_DELETED.fieldId() ||
-          fieldId == com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
-          fieldId == MetadataColumns.FILE_PATH.fieldId()) {
-        continue; // add _pos and _deleted at the end
-      }
-
-      Types.NestedField field = tableSchema.asStruct().field(fieldId);
-      Preconditions.checkArgument(field != null, "Cannot find required field for ID %s", fieldId);
-
-      columns.add(field);
-    }
-
-    if (missingIds.contains(MetadataColumns.FILE_PATH.fieldId())) {
-      columns.add(MetadataColumns.FILE_PATH);
-    }
-
-    if (missingIds.contains(MetadataColumns.ROW_POSITION.fieldId())) {
-      columns.add(MetadataColumns.ROW_POSITION);
-    }
-
-    if (missingIds.contains(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId())) {
-      columns.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED);
-    }
-
-    if (missingIds.contains(MetadataColumns.IS_DELETED.fieldId())) {
-      columns.add(MetadataColumns.IS_DELETED);
-    }
-
-    return new Schema(columns);
-  }
-
   static class RecordWithLsn {
     private final Long lsn;
     private Record record;
@@ -430,4 +424,10 @@ public abstract class CombinedDeleteFilter<T> {
       return this;
     }
   }
+
+  protected abstract StructLike asStructLike(T record);
+
+  protected abstract InputFile getInputFile(String location);
+
+  protected abstract ArcticFileIO getArcticFileIo();
 }

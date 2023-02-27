@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -28,6 +27,7 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
+import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
@@ -73,8 +73,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
