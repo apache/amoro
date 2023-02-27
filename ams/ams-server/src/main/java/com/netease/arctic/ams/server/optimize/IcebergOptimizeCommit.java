@@ -99,22 +99,9 @@ public class IcebergOptimizeCommit extends BasicOptimizeCommit {
       majorCommit(arcticTable, majorAddFiles, majorDeleteFiles, baseSnapshotId);
 
       return true;
-    } catch (ValidationException e) {
-      String missFileMessage = "Missing required files to delete";
-      String foundNewDeleteMessage = "found new delete for replaced data file";
-      String foundNewPosDeleteMessage = "found new position delete for replaced data file";
-      if (e.getMessage().contains(missFileMessage) ||
-          e.getMessage().contains(foundNewDeleteMessage) ||
-          e.getMessage().contains(foundNewPosDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit.", arcticTable.id(), e);
-        return false;
-      } else {
-        LOG.error("unexpected commit error " + arcticTable.id(), e);
-        throw new Exception("unexpected commit error ", e);
-      }
-    } catch (Throwable t) {
-      LOG.error("unexpected commit error " + arcticTable.id(), t);
-      throw new Exception("unexpected commit error ", t);
+    } catch (Exception e) {
+      LOG.warn("Optimize commit table {} failed, give up commit.", arcticTable.id(), e);
+      return false;
     }
   }
 
