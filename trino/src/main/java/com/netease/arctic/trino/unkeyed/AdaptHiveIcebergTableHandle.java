@@ -28,6 +28,7 @@ import io.trino.plugin.iceberg.IcebergTableHandle;
 import io.trino.plugin.iceberg.TableType;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.predicate.TupleDomain;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;

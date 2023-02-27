@@ -22,7 +22,7 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
