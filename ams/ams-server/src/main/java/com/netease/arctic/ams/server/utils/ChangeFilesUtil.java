@@ -18,33 +18,16 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.FileNameGenerator;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SnapshotSummary;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.PropertyUtil;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChangeFilesUtil {
   private static final Logger LOG = LoggerFactory.getLogger(ChangeFilesUtil.class);
@@ -91,94 +74,6 @@ public class ChangeFilesUtil {
   }
 
   /**
-   * Plan change files for optimizing.
-   *
-   * @param keyedTable                 - Keyed Table
-   * @param changeSnapshot             - plan with snapshot of change store
-   * @param fromSequence               - from sequence
-   * @param fromLegacyMaxTransactionId - from legacy transaction id
-   * @return Pair of MaxSequence and Optimizing change files
-   */
-  public static ImmutablePair<Long, List<ContentFileWithSequence<?>>> planOptimizingChangeFiles(
-      KeyedTable keyedTable,
-      Snapshot changeSnapshot,
-      StructLikeMap<Long> fromSequence,
-      StructLikeMap<Long> fromLegacyMaxTransactionId) {
-    long changeSnapshotId = changeSnapshot.snapshotId();
-    int maxFileCntLimit = CompatiblePropertyUtil.propertyAsInt(keyedTable.properties(),
-        TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
-    // calculate the max sequence with the limit of max file cnt
-    long maxSequence =
-        getMaxSequenceLimit(keyedTable, changeSnapshot, fromSequence, fromLegacyMaxTransactionId, maxFileCntLimit);
-    if (maxSequence == Long.MIN_VALUE) {
-      return ImmutablePair.of(Long.MIN_VALUE, Collections.emptyList());
-    }
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        keyedTable.changeTable().newChangeScan()
-            .fromSequence(fromSequence)
-            .fromLegacyTransaction(fromLegacyMaxTransactionId)
-            .toSequence(maxSequence)
-            .useSnapshot(changeSnapshotId);
-    List<ContentFileWithSequence<?>> changeFiles;
-    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
-      changeFiles = Lists.newArrayList(files);
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
-    }
-
-    return ImmutablePair.of(maxSequence, changeFiles);
-  }
-
-  private static long getMaxSequenceLimit(KeyedTable keyedTable,
-                                          Snapshot changeSnapshot,
-                                          StructLikeMap<Long> partitionOptimizedSequence,
-                                          StructLikeMap<Long> legacyPartitionMaxTransactionId,
-                                          int maxFileCntLimit) {
-    int totalFilesInSummary = PropertyUtil
-        .propertyAsInt(changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
-    // not scan files to improve performance
-    if (totalFilesInSummary <= maxFileCntLimit) {
-      return Long.MAX_VALUE;
-    }
-    // scan and get all change files grouped by sequence(snapshot)
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        keyedTable.changeTable().newChangeScan()
-            .fromSequence(partitionOptimizedSequence)
-            .fromLegacyTransaction(legacyPartitionMaxTransactionId)
-            .useSnapshot(changeSnapshot.snapshotId());
-    Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
-    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
-      for (ContentFileWithSequence<?> file : files) {
-        ChangeFilesUtil.SnapshotFileGroup fileGroup =
-            changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
-              long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
-              return new ChangeFilesUtil.SnapshotFileGroup(file.getSequenceNumber(), txId);
-            });
-        fileGroup.addFile();
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + keyedTable.name(), e);
-    }
-
-    if (changeFilesGroupBySequence.isEmpty()) {
-      LOG.debug("{} get no change files to optimize with partitionOptimizedSequence {}", keyedTable.id(),
-          partitionOptimizedSequence);
-      return Long.MIN_VALUE;
-    }
-
-    long maxSequence =
-        findMaxSequenceKeepingTxIdOrdered(new ArrayList<>(changeFilesGroupBySequence.values()), maxFileCntLimit);
-    if (maxSequence == Long.MIN_VALUE) {
-      LOG.warn("{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
-          keyedTable.id(), maxFileCntLimit);
-    } else if (maxSequence != Long.MAX_VALUE) {
-      LOG.warn("{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
-          keyedTable.id(), maxFileCntLimit, maxSequence);
-    }
-    return maxSequence;
-  }
-
-  /**
    * Select all the files whose sequence <= maxSequence as Selected-Files, seek the maxSequence to find as many
    * Selected-Files as possible, and also
    * - the cnt of these Selected-Files must <= maxFileCntLimit
@@ -189,8 +84,7 @@ public class ChangeFilesUtil {
    * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be selected,
    * Long.MIN_VALUE means no files should be selected
    */
-  @VisibleForTesting
-  static long findMaxSequenceKeepingTxIdOrdered(List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
+  public static long getMaxSequenceLimit(List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
     if (maxFileCntLimit <= 0 || snapshotFileGroups == null || snapshotFileGroups.isEmpty()) {
       return Long.MIN_VALUE;
     }
