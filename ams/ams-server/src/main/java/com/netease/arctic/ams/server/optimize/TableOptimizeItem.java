@@ -74,7 +74,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1156,11 +1155,11 @@ public class TableOptimizeItem extends IJDBCService {
     Map<Long, ChangeFilesUtil.SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
       for (ContentFileWithSequence<?> file : files) {
-        ChangeFilesUtil.SnapshotFileGroup
-            fileGroup = changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
-          long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
-          return new ChangeFilesUtil.SnapshotFileGroup(file.getSequenceNumber(), txId);
-        });
+        ChangeFilesUtil.SnapshotFileGroup fileGroup =
+            changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
+              long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
+              return new ChangeFilesUtil.SnapshotFileGroup(file.getSequenceNumber(), txId);
+            });
         fileGroup.addFile();
       }
     } catch (IOException e) {
