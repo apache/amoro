@@ -71,13 +71,15 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
         (insertQuery, writeOptions, projections)
       }
+
       arcticRelation.table match {
         case tbl: ArcticSparkTable =>
           if (tbl.table().isKeyedTable) {
             if (checkDuplicatesEnabled()) {
+              val writeOption = options + ("optimize.enabled" -> "true")
               val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
               val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(newQuery, validateQuery)
-              ArcticRowLevelWrite(arcticRelation, checkDataQuery, options, projections)
+              ArcticRowLevelWrite(arcticRelation, checkDataQuery, writeOption, projections)
             } else {
               ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
             }
