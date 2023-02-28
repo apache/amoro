@@ -146,7 +146,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
         .mapToObj(projectedSchemaColumns::get)
         .collect(Collectors.toList()));
     }
-    LOG.info("Schema used for create KafkaSource is :{}", projectedSchema);
+    LOG.info("Schema used for create KafkaSource is: {}", projectedSchema);
 
     LogKafkaSourceBuilder kafkaSourceBuilder = LogKafkaSource.builder(projectedSchema, arcticTable.properties());
     kafkaSourceBuilder.setProperties(properties);
@@ -168,7 +168,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
         .mapToObj(projectedSchemaColumns::get)
         .collect(Collectors.toList()));
     }
-    LOG.info("Schema used for create PulsarSource is :{}", projectedSchema);
+    LOG.info("Schema used for create PulsarSource is: {}", projectedSchema);
 
     LogPulsarSourceBuilder pulsarSourceBuilder = LogPulsarSource.builder(projectedSchema, arcticTable.properties());
     pulsarSourceBuilder.setProperties(properties);

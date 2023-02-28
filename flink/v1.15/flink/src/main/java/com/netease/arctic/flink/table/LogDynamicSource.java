@@ -139,7 +139,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
         .mapToObj(projectedSchemaColumns::get)
         .collect(Collectors.toList()));
     }
-    LOG.info("Schema used for create KafkaSource is :{}", projectedSchema);
+    LOG.info("Schema used for create KafkaSource is: {}", projectedSchema);
 
     LogKafkaSourceBuilder kafkaSourceBuilder = LogKafkaSource.builder(projectedSchema, arcticTable.properties());
     kafkaSourceBuilder.setProperties(properties);
