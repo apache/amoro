@@ -57,7 +57,7 @@ public interface TaskHistoryMapper {
 
   @Select("select task_trace_id, retry, catalog_name, db_name, table_name, task_plan_group, " +
       "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
-      "task_trace_id = #{taskTraceId} order by retry desc limit 1")
+      "task_trace_id = #{taskTraceId} order by retry desc")
   @Results({
       @Result(column = "task_trace_id", property = "taskTraceId"),
       @Result(column = "retry", property = "retry"),
@@ -72,7 +72,7 @@ public interface TaskHistoryMapper {
       @Result(column = "cost_time", property = "costTime"),
       @Result(column = "queue_id", property = "queueId")
   })
-  TableTaskHistory selectLatestTaskHistoryByTraceId(@Param("taskTraceId") String taskTraceId);
+  List<TableTaskHistory> selectTaskHistoryByTraceId(@Param("taskTraceId") String taskTraceId);
 
   @Insert("insert into " + TABLE_NAME + "(task_trace_id, retry, catalog_name, db_name, table_name, " +
       "task_plan_group, start_time, end_time, cost_time, queue_id) values ( " +
