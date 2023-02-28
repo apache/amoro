@@ -16,14 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.catalog;
 
-import com.netease.arctic.ams.server.repair.RepairWay;
+public class CatalogManager {
 
-public class RepairCallGenerator {
+  private String thriftAddress;
 
-  public RepairCall generate(String tableName, RepairWay way, String option) {
-    //todo
-    return null;
+  public CatalogManager(String thriftAddress) {
+    this.thriftAddress = thriftAddress.endsWith("/") ? thriftAddress: thriftAddress + "/";
+  }
+
+  public ArcticCatalog getArcticCatalog(String catalogName) {
+    return CatalogLoader.load(thriftAddress + catalogName);
   }
 }

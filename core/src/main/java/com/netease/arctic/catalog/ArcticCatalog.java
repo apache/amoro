@@ -142,6 +142,8 @@ public interface ArcticCatalog {
    */
   void refresh();
 
+  String tableLocation(TableIdentifier identifier);
+
   /**
    * Return a table blocker manager.
    * @param tableIdentifier a table identifier

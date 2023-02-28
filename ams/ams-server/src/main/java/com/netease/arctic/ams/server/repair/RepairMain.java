@@ -18,13 +18,18 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
+import com.netease.arctic.ams.server.utils.YamlUtils;
+
 import java.io.IOException;
 
 public class RepairMain {
 
   public static void main(String[] args) throws IOException {
-    String amsUrl = amsUrl(args);
-    CommandHandler commandHandler = new CallCommandHandler(amsUrl);
+    RepairConfig repairConfig = getRepairConfig(args);
+    CommandHandler commandHandler = new CallCommandHandler(repairConfig);
     SimpleShellTerminal simpleShellTerminal = new SimpleShellTerminal(commandHandler);
     simpleShellTerminal.start();
   }
@@ -34,16 +39,22 @@ public class RepairMain {
    * @param args
    * @return
    */
-  public static String amsUrl(String[] args) {
-    if (args == null || args.length == 0) {
+  public static RepairConfig getRepairConfig(String[] args) {
+    if (args == null || args.length < 2) {
       throw new RuntimeException("Can not find any ams address or config path");
     }
-    String args0 = args[0];
-    if (args0.startsWith("thrift")) {
-      return args0;
-    }
+    String thriftUrl = args[0];
+    ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(thriftUrl);
+    String catalogName = arcticThriftUrl.catalogName();
+    String thriftUrlWithoutCatalog =
+        arcticThriftUrl.schema() + "://" + arcticThriftUrl.host() + ":" + arcticThriftUrl.port();
 
-    //todo
-    return null;
+    String configPath = args[1];
+    JSONObject yamlConfig = YamlUtils.load(configPath);
+    JSONObject repairProperties = yamlConfig.getJSONObject(ConfigFileProperties.REPAIR_PROPERTIES);
+    Integer maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
+    Integer maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
+
+    return new RepairConfig(catalogName, thriftUrlWithoutCatalog, maxFindSnapshotNum, maxRollbackSnapNum);
   }
 }

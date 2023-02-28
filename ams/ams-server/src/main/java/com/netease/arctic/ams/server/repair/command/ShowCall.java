@@ -11,14 +11,6 @@ import org.apache.thrift.TException;
 
 public class ShowCall implements CallCommand {
 
-  /**
-   * DATABASES, TABLES
-   */
-  public enum Namespaces {
-    DATABASES,
-    TABLES
-  }
-
   private ArcticCatalog arcticCatalog;
   private Namespaces namespaces;
 
@@ -40,5 +32,10 @@ public class ShowCall implements CallCommand {
       default:
         throw new UnsupportedOperationException("not support show operation named:" + this.namespaces);
     }
+  }
+
+  public enum Namespaces {
+    DATABASES,
+    TABLES
   }
 }

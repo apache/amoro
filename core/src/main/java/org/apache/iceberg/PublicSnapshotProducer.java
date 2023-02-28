@@ -16,12 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package org.apache.iceberg;
 
-public enum DamageType {
-  FILE_LOSE,
-  MANIFEST_LOST,
-  MANIFEST_LIST_LOST,
-  METADATA_LOSE,
-  TABLE_SPACE_LOSE
+public abstract class PublicSnapshotProducer<ThisT> extends  SnapshotProducer<ThisT>{
+  protected PublicSnapshotProducer(TableOperations ops) {
+    super(ops);
+  }
 }

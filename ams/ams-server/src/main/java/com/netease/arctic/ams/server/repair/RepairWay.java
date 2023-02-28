@@ -16,14 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.ams.server.repair;
 
-import com.netease.arctic.ams.server.repair.RepairWay;
+import com.netease.arctic.ams.server.repair.DamageType;
+import com.netease.arctic.ams.server.repair.TableAvailableResult;
+import java.util.List;
 
-public class RepairCallGenerator {
-
-  public RepairCall generate(String tableName, RepairWay way, String option) {
-    //todo
-    return null;
-  }
+public enum RepairWay {
+  FIND_BACK,
+  SYNC_METADATA,
+  ROLLBACK,
+  DROP_TABLE;
 }

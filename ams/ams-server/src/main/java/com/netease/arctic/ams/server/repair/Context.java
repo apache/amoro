@@ -18,10 +18,17 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.table.TableIdentifier;
+import java.util.HashMap;
+import java.util.Map;
+
 public class Context {
 
   private String catalog;
+
   private String db;
+
+  private Map<TableIdentifier, TableAvailableResult> tableAvailableResultMap = new HashMap<>();
 
   public String getCatalog() {
     return catalog;
@@ -31,11 +38,19 @@ public class Context {
     this.catalog = catalog;
   }
 
+  public String getDb() {
+    return db;
+  }
+
   public void setDb(String db) {
     this.db = db;
   }
 
-  public String getDb() {
-    return db;
+  public void setTableAvailableResult(TableAvailableResult result) {
+    tableAvailableResultMap.put(result.getIdentifier(), result);
+  }
+
+  public TableAvailableResult getTableAvailableResult(TableIdentifier identifier) {
+    return tableAvailableResultMap.get(identifier);
   }
 }

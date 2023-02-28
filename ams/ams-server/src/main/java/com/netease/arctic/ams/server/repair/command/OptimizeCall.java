@@ -9,13 +9,6 @@ import org.apache.thrift.TException;
 
 public class OptimizeCall implements CallCommand {
 
-  /**
-   * Start, Stop
-   */
-  public enum Action {
-    START, STOP
-  }
-
   private String tablePath;
   private OptimizeManager.Iface client;
   private Action action;
@@ -44,5 +37,9 @@ public class OptimizeCall implements CallCommand {
       default:
         throw new UnsupportedOperationException("not support optimize operation named:" + this.action);
     }
+  }
+
+  public enum Action {
+    START, STOP
   }
 }

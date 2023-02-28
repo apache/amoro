@@ -31,7 +31,9 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.BaseMetastoreCatalog;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.PublicBaseMetastoreCatalog;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -177,6 +179,16 @@ public class BasicIcebergCatalog implements ArcticCatalog {
       this.meta = client.getCatalog(meta.getCatalogName());
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", meta.getCatalogName()), e);
+    }
+  }
+
+  @Override
+  public String tableLocation(TableIdentifier identifier) {
+    if (icebergCatalog instanceof BaseMetastoreCatalog) {
+      return new PublicBaseMetastoreCatalog((BaseMetastoreCatalog) icebergCatalog)
+          .defaultWarehouseLocation(toIcebergTableIdentifier(identifier));
+    } else {
+      throw new UnsupportedOperationException("This iceberg catalog does not support obtaining location");
     }
   }
 

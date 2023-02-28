@@ -26,6 +26,10 @@ import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
 import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
 import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
+import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
+import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
+import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
+import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import org.apache.thrift.TException;
@@ -40,19 +44,17 @@ public class CallCommandHandler implements CommandHandler {
 
   private Context context;
 
-  public CallCommandHandler(String amsAddress) {
-    this.amsAddress = amsAddress;
+  public CallCommandHandler(RepairConfig repairConfig) {
+    this.amsAddress = repairConfig.getThriftUrl();
 
-    this.arcticCatalog = CatalogLoader.load(amsAddress);
-
+    this.context = new Context();
+    if (repairConfig.getCatalogName() != null) {
+      context.setCatalog(repairConfig.getCatalogName());
+    }
     OptimizeCallGenerator optimizeCallGenerator = new OptimizeCallGenerator(amsAddress);
     RefreshCallGenerator refreshCallGenerator = new RefreshCallGenerator(amsAddress);
     ShowCallGenerator showCallGenerator = new ShowCallGenerator(amsAddress);
     this.commandParser = new SimpleRegexCommandParser();
-
-    this.context = new Context();
-    this.context.setCatalog(arcticCatalog.name());
-
     //todo init commandParser
   }
 
@@ -77,6 +79,6 @@ public class CallCommandHandler implements CommandHandler {
   @Override
   public String[] keyWord() {
     //todo
-    return new String[0];
+    return commandParser.keywords();
   }
 }

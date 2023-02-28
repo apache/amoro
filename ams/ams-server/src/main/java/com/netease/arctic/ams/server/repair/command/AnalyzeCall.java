@@ -18,41 +18,100 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
-import com.google.common.collect.ImmutableList;
 import com.netease.arctic.ams.server.repair.Context;
+import com.netease.arctic.ams.server.repair.DamageType;
+import com.netease.arctic.ams.server.repair.RepairWay;
+import com.netease.arctic.ams.server.repair.TableAvailableAnalyzer;
+import com.netease.arctic.ams.server.repair.TableAvailableResult;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
+import java.util.List;
+import org.apache.iceberg.Snapshot;
 
 public class AnalyzeCall implements CallCommand {
 
-  private ArcticCatalog arcticCatalog;
+  private static final String TABLE_NAME = "TABLE_NAME";
+  private static final String YOU_CAN = "YOU CAN";
+  private static final String TABLE_IS_OK = "TABLE IS AVAILABLE";
+
 
   private String tablePath;
 
-  public AnalyzeCall(ArcticCatalog arcticCatalog, String tablePath) {
-    this.arcticCatalog = arcticCatalog;
+  private CatalogManager catalogManager;
+
+  private Integer maxFindSnapshotNum;
+
+  private Integer maxRollbackSnapNum;
+
+  public AnalyzeCall(
+      String tablePath,
+      CatalogManager catalogManager,
+      Integer maxFindSnapshotNum,
+      Integer maxRollbackSnapNum) {
     this.tablePath = tablePath;
+    this.catalogManager = catalogManager;
+    this.maxFindSnapshotNum = maxFindSnapshotNum;
+    this.maxRollbackSnapNum = maxRollbackSnapNum;
   }
 
   @Override
   public String call(Context context) {
-    TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
-    if (tableIdentifier.getDatabase() == null) {
-      tableIdentifier.setDatabase(context.getDb());
-    }
-
-    //tmp
-    tableIdentifier.setCatalog(arcticCatalog.name());
-
-    //check table dir and metadata file
-    ArcticTable arcticTable = null;
+    TableIdentifier identifier = null;
     try {
-      arcticTable = arcticCatalog.loadTable(tableIdentifier);
-    }catch (Exception e){
-
+       identifier = CallCommand.fullTableName(context, tablePath);
+    } catch (FullTableNameException e) {
+      return e.getMessage();
     }
-    //todo
-    return null;
+
+    ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
+    TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(arcticCatalog, identifier,
+        maxFindSnapshotNum, maxRollbackSnapNum);
+    TableAvailableResult availableResult = availableAnalyzer.check();
+    context.setTableAvailableResult(availableResult);
+    return format(availableResult);
+  }
+
+  /**
+   * Format is like:
+   *
+   * TABLE_NAME:
+   *   catalog.db.table
+   * FILE_LOSE:
+   *   hdfs://xxxx/xxxx/xxx
+   * YOU CAN:
+   *     FIND_BACK
+   *     SYNC_METADATA
+   *     ROLLBACK:
+   *       597568753507019307
+   *       512339827482937422
+   */
+  private String format(TableAvailableResult availableResult) {
+    LikeYmlFormat root = LikeYmlFormat.blank();
+    root.child(TABLE_NAME).child(availableResult.getIdentifier().getTableName());
+    if (availableResult.isOk()) {
+      root.child(TABLE_IS_OK);
+      return root.toString();
+    }
+
+    DamageType damageType = availableResult.getDamageType();
+    LikeYmlFormat damageTypeFormat = root.child(damageType.name());
+    for (String path: availableResult.lostFiles()) {
+      damageTypeFormat.child(path);
+    }
+
+    LikeYmlFormat youCanFormat = root.child(YOU_CAN);
+    List<RepairWay> repairWays = availableResult.youCan();
+    if (repairWays != null) {
+      for (RepairWay repairWay: repairWays) {
+        LikeYmlFormat wayFormat = youCanFormat.child(repairWay.name());
+        if (repairWay == RepairWay.ROLLBACK) {
+          for (Snapshot snapshot: availableResult.getRollbackList()) {
+            wayFormat.child(String.valueOf(snapshot.snapshotId()));
+          }
+        }
+      }
+    }
+    return root.print();
   }
 }

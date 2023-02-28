@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.ams.server.repair.RepairWay;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -62,15 +63,15 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.Way.ROLLBACK.name())) {
+        if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
           if (commandSplit.length < 5) {
             throw new IllegalCommandException("Please check if you enter your SnapshotID!");
           } else {
-            return repairCallGenerator.generate(commandSplit[1], RepairCall.Way.ROLLBACK, commandSplit[4]);
+            return repairCallGenerator.generate(commandSplit[1], RepairWay.ROLLBACK, commandSplit[4]);
           }
-        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.Way.FIND_BACK.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.Way.SYNC_METADATA.name())) {
-          return repairCallGenerator.generate(commandSplit[1], RepairCall.Way.valueOf(commandSplit[3]), null);
+        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.FIND_BACK.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.SYNC_METADATA.name())) {
+          return repairCallGenerator.generate(commandSplit[1], RepairWay.valueOf(commandSplit[3]), null);
         }
       case USE:
         return useCallGenerator.generate(commandSplit[1]);
@@ -78,9 +79,9 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length < 3) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.START.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.STOP.name())) {
-          return optimizeCallGenerator.generate(OptimizeCall.Action.valueOf(commandSplit[1]), commandSplit[2]);
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.action.START.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.action.STOP.name())) {
+          return optimizeCallGenerator.generate(OptimizeCall.action.valueOf(commandSplit[1]), commandSplit[2]);
         }
       case REFRESH:
         if (!(commandSplit.length < 3) && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
@@ -89,9 +90,9 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
       case SHOW:
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name())) {
-          return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1]));
+        if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.namespaces.DATABASES.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.namespaces.TABLES.name())) {
+          return showCallGenerator.generate(ShowCall.namespaces.valueOf(commandSplit[1]));
         } else {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
@@ -110,13 +111,13 @@ public class SimpleRegexCommandParser implements CommandParser {
         REFRESH,
         FILE_CACHE,
         SHOW,
-        OptimizeCall.Action.START.name(),
-        OptimizeCall.Action.STOP.name(),
-        RepairCall.Way.FIND_BACK.name(),
-        RepairCall.Way.SYNC_METADATA.name(),
-        RepairCall.Way.ROLLBACK.name(),
-        ShowCall.Namespaces.DATABASES.name(),
-        ShowCall.Namespaces.TABLES.name()
+        OptimizeCall.action.START.name(),
+        OptimizeCall.action.STOP.name(),
+        RepairWay.FIND_BACK.name(),
+        RepairWay.SYNC_METADATA.name(),
+        RepairWay.ROLLBACK.name(),
+        ShowCall.namespaces.DATABASES.name(),
+        ShowCall.namespaces.TABLES.name()
     };
     Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
         keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();
