@@ -180,8 +180,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public InternalRow setFileOffset(Long fileOffset) {
-    List<DataType> dataTypeList = Arrays.
-        stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays
+        .stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
     List<Object> rows = new ArrayList<>(dataTypeList.size() + 1);
     for (int i = 0; i < dataTypeList.size(); i++) {
       rows.add(row.get(i, dataTypeList.get(i)));
