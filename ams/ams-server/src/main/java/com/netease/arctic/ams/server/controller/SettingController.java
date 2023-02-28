@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import io.javalin.http.Context;
 
@@ -32,7 +33,7 @@ import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.MYBATIS_C
 
 public class SettingController extends RestBaseController {
   private static String MASK_STRING = "******";
-  
+
   /**
    * get systemSetting
    *
@@ -47,6 +48,23 @@ public class SettingController extends RestBaseController {
       config.replace(LOGIN_USERNAME.key(), MASK_STRING);
       config.replace(LOGIN_PASSWORD.key(), MASK_STRING);
       LinkedHashMap<String, Object> result = new LinkedHashMap<>();
+      //order config
+      result.put(ArcticMetaStoreConf.THRIFT_BIND_HOST.key(), config.get(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
+      result.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(), config.get(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+      result.put(ArcticMetaStoreConf.HTTP_SERVER_PORT.key(), config.get(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
+      result.put(ArcticMetaStoreConf.DB_TYPE.key(), config.get(ArcticMetaStoreConf.DB_TYPE.key()));
+      result.put(
+          ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key(),
+          config.get(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key()));
+      if (("mysql").equalsIgnoreCase(config.get(ArcticMetaStoreConf.DB_TYPE.key()).toString())) {
+        result.put(
+            MYBATIS_CONNECTION_USER_NAME.key(),
+            config.get(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
+        result.put(
+            ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key(),
+            config.get(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key()));
+      }
+
       config.forEach((k, v) -> {
         result.put(k, JSON.toJSONString(v));
       });

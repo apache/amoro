@@ -133,6 +133,7 @@ public class ArcticMetaStore {
       throw new RuntimeException("can't find host address start with " +
           systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
     }
+    systemConfig.put(ArcticMetaStoreConf.THRIFT_BIND_HOST.key(), inetAddress.getHostAddress());
 
     //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
