@@ -2,7 +2,6 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.sql.utils.ProjectingInternalRow;
-import com.netease.arctic.spark.table.SupportsUpsert;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.util.ArrayData;
@@ -181,11 +180,12 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public InternalRow setFileOffset(Long fileOffset) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays.
+        stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
     List<Object> rows = new ArrayList<>(dataTypeList.size() + 1);
-      for (int i = 0; i < dataTypeList.size(); i++) {
-        rows.add(row.get(i, dataTypeList.get(i)));
-      }
+    for (int i = 0; i < dataTypeList.size(); i++) {
+      rows.add(row.get(i, dataTypeList.get(i)));
+    }
     rows.add(fileOffset);
     return new GenericInternalRow(rows.toArray());
   }
