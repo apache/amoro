@@ -300,7 +300,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withDataSourceSchema(schema)
           .newUnkeyedUpsertWriter();
 
-      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedUpsertSparkWriter, dsSchema);
+      return new SimpleRowLevelDataWriter(internalRowUnkeyedUpsertSparkWriter, dsSchema, table.isKeyedTable());
     }
   }
 
@@ -319,7 +319,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
           .newUnkeyedUpsertWriter();
-      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 

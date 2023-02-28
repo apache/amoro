@@ -18,13 +18,16 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.catalyst.plans._
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -37,25 +40,50 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
+  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
+                             isUpsert: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isUpsert) {
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = false, 0)
+      (frontRowProjection, backRowProjection)
+    } else {
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
+      (null, backRowProjection)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
+  }
+
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
       val upsertWrite = arcticRelation.table.asUpsertWrite
-      val (newQuery, options) = if (upsertWrite.appendAsUpsert()) {
+      val (newQuery, options, projections) = if (upsertWrite.appendAsUpsert()) {
         val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
+        val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
+        val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
         val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
-        (upsertQuery, upsertOptions)
+        (insertQuery, upsertOptions, projections)
       } else {
-        (query, writeOptions)
+        val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)()) ++ query.output, query)
+        val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
+        (insertQuery, writeOptions, projections)
       }
       arcticRelation.table match {
         case tbl: ArcticSparkTable =>
           if (tbl.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
+//            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
             if (checkDuplicatesEnabled()) {
-              AppendArcticData(arcticRelation, newQuery, validateQuery, options)
+              val keyAttrs = {
+                val primarys = tbl.table().asKeyedTable().primaryKeySpec().fieldNames()
+                newQuery.references.filter(p => primarys.contains(p.name)).toSeq
+              }
+              val finalQuery = ValidateDuplicateRows(keyAttrs, newQuery.output, newQuery)
+              ArcticRowLevelWrite(arcticRelation, finalQuery, options, projections)
             } else {
-              ReplaceArcticData(arcticRelation, newQuery, options)
+              ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
             }
           } else {
             a

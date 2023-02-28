@@ -55,21 +55,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       println("create migrate to arctic command logical")
       MigrateToArcticExec(command) :: Nil
 
-    case ReplaceArcticData(d: DataSourceV2Relation, query, options) =>
-      AppendDataExec(
-        d.table.asWritable, new CaseInsensitiveStringMap(options
-          .asJava), planLater(query), refreshCache(d)) :: Nil
-
-    case AppendArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          AppendInsertDataExec(
-            t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
-            planLater(validateQuery), refreshCache(d)) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
-      }
-
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs) =>
       ArcticRowLevelWriteExec(
         table.table.asArcticTable, planLater(query),
@@ -108,6 +93,9 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
         notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
+
+    case ValidateDuplicateRows(rowIdAttrs, output, child) =>
+      ValidateDuplicateRowsExec(rowIdAttrs, output, planLater(child)) :: Nil
 
     case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
       AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil

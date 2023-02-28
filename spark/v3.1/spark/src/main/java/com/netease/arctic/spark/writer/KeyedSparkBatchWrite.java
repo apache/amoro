@@ -307,7 +307,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
           .newChangeWriter();
-      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, false);
+      return new SimpleRowLevelDataWriter(writer, dsSchema, true);
     }
   }
 
@@ -328,7 +328,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withDataSourceSchema(schema)
           .withOrderedWriter(orderedWrite)
           .newChangeWriter();
-      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+      return new SimpleRowLevelDataWriter(writer, dsSchema, true);
     }
   }
 
@@ -368,7 +368,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withDataSourceSchema(dsSchema)
           .withOrderedWriter(orderedWrite)
           .newChangeWriter();
-      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 }

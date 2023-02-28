@@ -20,6 +20,7 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
+import com.netease.arctic.spark.sql.utils.ProjectingInternalRow;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -28,13 +29,13 @@ import org.apache.spark.sql.types.StructType;
 
 import java.io.IOException;
 
-public class SimpleMergeRowDataWriter implements RowLevelWriter<InternalRow> {
+public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   
   final StructType schema;
   final boolean isKeyedTable;
 
-  public SimpleMergeRowDataWriter(TaskWriter<InternalRow> writer, StructType schema, boolean isKeyedTable) {
+  public SimpleRowLevelDataWriter(TaskWriter<InternalRow> writer, StructType schema, boolean isKeyedTable) {
     this.writer = writer;
     this.schema = schema;
     this.isKeyedTable = isKeyedTable;
@@ -56,9 +57,20 @@ public class SimpleMergeRowDataWriter implements RowLevelWriter<InternalRow> {
       delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.DELETE);
       insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.INSERT);
     }
-    writer.write(delete);
+    if (!rowIsAllNull(delete)) {
+      writer.write(delete);
+    }
     writer.write(insert);
 
+  }
+
+  private boolean rowIsAllNull(SparkInternalRowCastWrapper row) {
+    boolean isAllNull = true;
+    for (int i = 0; i < row.getSchema().size(); i ++)
+      if (!row.getRow().isNullAt(i)) {
+        isAllNull = false;
+      }
+    return isAllNull;
   }
 
   @Override

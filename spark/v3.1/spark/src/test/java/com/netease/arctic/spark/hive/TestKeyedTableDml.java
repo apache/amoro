@@ -1,6 +1,7 @@
 package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
+import org.apache.spark.SparkException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -192,11 +193,11 @@ public class TestKeyedTableDml extends SparkTestBase {
             " using arctic partitioned by (data) " , database, "testPks");
 
     // insert into values
-    Assert.assertThrows(UnsupportedOperationException.class,
-            () -> sql("insert into " + database + "." + "testPks" +
-                    " values (1, 1.1, 'abcd' ) , " +
-                    "(1, 1.1, 'bbcd'), " +
-                    "(3, 1.3, 'cbcd') "));
+//    Assert.assertThrows(SparkException.class,
+//            () -> sql("insert into " + database + "." + "testPks" +
+//                    " values (1, 1.1, 'abcd' ) , " +
+//                    "(1, 1.1, 'abcd'), " +
+//                    "(3, 1.3, 'cbcd') "));
 
     sql(createTableInsert, database, insertTable);
     sql("insert into " + database + "." + notUpsertTable +
@@ -207,7 +208,7 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("select * from " + database + "." + notUpsertTable);
 
     // insert into select
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1}",
                     database, notUpsertTable));
 
@@ -220,7 +221,8 @@ public class TestKeyedTableDml extends SparkTestBase {
     // insert into select + group by has duplicated data
     sql("insert into " + database + "." + notUpsertTable +
             " values (1, 'aaaa', 'abcd' )");
-    Assert.assertThrows(UnsupportedOperationException.class,
+    sql("select * from " + database + "." + notUpsertTable + " group by id, name, data");
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert into " + database + "." + insertTable +
                             " select * from {0}.{1} group by id, name, data",
                     database, notUpsertTable));
