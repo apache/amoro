@@ -43,6 +43,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -327,14 +328,17 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       int before = validFiles.size();
       io.doAs(() -> {
         // valid data files
-        for (FileScanTask scanTask
-            : internalTable.newScan().useSnapshot(snapshot.snapshotId()).planFiles()) {
-          if (scanTask.file() != null) {
-            validFiles.add(getUriPath(scanTask.file().path().toString()));
-            scanTask.deletes().forEach(file -> validFiles.add(getUriPath(file.path().toString())));
+
+        try (CloseableIterable<FileScanTask> fileScanTasks =
+                 internalTable.newScan().useSnapshot(snapshot.snapshotId()).planFiles()) {
+          for (FileScanTask scanTask : fileScanTasks) {
+            if (scanTask.file() != null) {
+              validFiles.add(getUriPath(scanTask.file().path().toString()));
+              scanTask.deletes().forEach(file -> validFiles.add(getUriPath(file.path().toString())));
+            }
           }
+          return null;
         }
-        return null;
       });
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);

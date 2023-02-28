@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.UpdatePartitionProperties;
@@ -42,8 +43,10 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +78,10 @@ public class BaseOptimizeCommit {
   }
 
   public boolean commit(long baseSnapshotId) throws Exception {
+    Set<ContentFile<?>> minorAddFiles = new HashSet<>();
+    Set<ContentFile<?>> minorDeleteFiles = new HashSet<>();
+    Set<ContentFile<?>> majorAddFiles = new HashSet<>();
+    Set<ContentFile<?>> majorDeleteFiles = new HashSet<>();
     try {
       if (optimizeTasksToCommit.isEmpty()) {
         LOG.info("{} get no tasks to commit", arcticTable.id());
@@ -84,10 +91,6 @@ public class BaseOptimizeCommit {
           optimizeTasksToCommit.keySet());
 
       // collect files
-      Set<ContentFile<?>> minorAddFiles = new HashSet<>();
-      Set<ContentFile<?>> minorDeleteFiles = new HashSet<>();
-      Set<ContentFile<?>> majorAddFiles = new HashSet<>();
-      Set<ContentFile<?>> majorDeleteFiles = new HashSet<>();
       PartitionSpec spec = arcticTable.spec();
       StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
@@ -137,7 +140,24 @@ public class BaseOptimizeCommit {
       String foundNewDeleteMessage = "found new delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit.", arcticTable.id(), e);
+        UnkeyedTable baseArcticTable;
+        if (arcticTable.isKeyedTable()) {
+          baseArcticTable = arcticTable.asKeyedTable().baseTable();
+        } else {
+          baseArcticTable = arcticTable.asUnkeyedTable();
+        }
+        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
+        // only delete data files are produced by major optimize, because the major optimize maybe support hive
+        // and produce redundant data files in hive location.(don't produce DeleteFile)
+        // minor produced files will be clean by orphan file clean
+        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
+        for (ContentFile<?> majorAddFile : majorAddFiles) {
+          String filePath = FileUtil.getUriPath(majorAddFile.path().toString());
+          if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
+            arcticTable.io().deleteFile(filePath);
+            LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
+          }
+        }
         return false;
       } else {
         LOG.error("unexpected commit error " + arcticTable.id(), e);
@@ -415,5 +435,25 @@ public class BaseOptimizeCommit {
     }
 
     return result;
+  }
+
+  private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
+    long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(table);
+    if (currentSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      return Collections.emptySet();
+    }
+
+    Set<String> committedFilePath = new HashSet<>();
+
+    for (Long snapshotHis : SnapshotUtil.snapshotIdsBetween(table, snapshotId, currentSnapshotId)) {
+      Snapshot snapshot = table.snapshot(snapshotHis);
+      if (snapshot != null) {
+        for (DataFile dataFile : snapshot.addedFiles()) {
+          committedFilePath.add(FileUtil.getUriPath(dataFile.path().toString()));
+        }
+      }
+    }
+
+    return committedFilePath;
   }
 }

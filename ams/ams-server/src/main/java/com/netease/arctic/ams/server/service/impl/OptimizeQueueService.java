@@ -84,7 +84,7 @@ public class OptimizeQueueService extends IJDBCService {
 
   private final ReentrantLock queueOperateLock = new ReentrantLock();
 
-  private static final int MAX_POOL_TASK_CNT = 10;
+  private static final int MAX_POOL_TASK_CNT = 50;
 
   public OptimizeQueueService() {
     init();
@@ -196,9 +196,8 @@ public class OptimizeQueueService extends IJDBCService {
 
   /**
    * delete all OptimizeQueue
-   *
    */
-  public void removeAllQueue()  {
+  public void removeAllQueue() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeQueueMapper optimizeQueueMapper = getMapper(sqlSession, OptimizeQueueMapper.class);
       optimizeQueueMapper.deleteAllQueue();
@@ -384,6 +383,7 @@ public class OptimizeQueueService extends IJDBCService {
             try {
               ArcticTable arcticTable = ServiceContainer.getOptimizeService()
                   .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
+
               String location;
               if (arcticTable.spec().isUnpartitioned()) {
                 location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
@@ -393,6 +393,7 @@ public class OptimizeQueueService extends IJDBCService {
                     arcticTable.spec(), DataFiles.data(arcticTable.spec(), task.getOptimizeTask().getPartition()),
                     subDirectory);
               }
+
               if (arcticTable.io().exists(location)) {
                 for (FileStatus fileStatus : arcticTable.io().list(location)) {
                   String fileLocation = fileStatus.getPath().toUri().getPath();
@@ -518,19 +519,29 @@ public class OptimizeQueueService extends IJDBCService {
           }
         } else {
           if (tables.contains(task.getTableIdentifier())) {
+            TableTaskHistory tableTaskHistory;
             try {
               // load files from sysdb
               task.setFiles();
+              // update max execute time
+              task.setMaxExecuteTime();
+              tableTaskHistory = task.onExecuting(jobId, attemptId);
             } catch (Exception e) {
               task.clearFiles();
-              LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
+              LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
               if (!tasks.offer(task)) {
+                LOG.error("{} failed to put task back into queue", task.getTaskId());
                 task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
               }
+
+              // sleep 1s, avoid poll task failed use too much cpu
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException ex) {
+                LOG.error("poll task {} failed, sleep thread was interrupted", task.getTaskId(), ex);
+              }
+              continue;
             }
-            // update max execute time
-            task.setMaxExecuteTime();
-            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);
             } catch (Exception e) {
