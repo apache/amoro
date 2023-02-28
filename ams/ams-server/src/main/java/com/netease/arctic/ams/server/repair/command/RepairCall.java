@@ -27,12 +27,7 @@ public class RepairCall implements CallCommand {
    */
   private String tableName;
 
-  /**
-   * FIND_BACK,ROLLBACK,SYNC_METADATA
-   */
-  public enum way {
-    FIND_BACK, ROLLBACK, SYNC_METADATA
-  }
+  private way way;
 
   /**
    * snapshot id if way is ROLLBACK
@@ -44,4 +39,9 @@ public class RepairCall implements CallCommand {
     //todo
     return null;
   }
+  
+  public enum way {
+    FIND_BACK, ROLLBACK, SYNC_METADATA
+  }
+
 }
