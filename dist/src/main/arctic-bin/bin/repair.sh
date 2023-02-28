@@ -30,7 +30,9 @@ else
     JAVA_RUN=java
 fi
 
-THRIFT_PORT=$(cat $ARCTIC_HOME/conf/config.yaml | grep "arctic.ams.thrift.port" | awk '{print $2}')
+CONFIG_PATH=$ARCTIC_HOME/conf/config.yaml
+
+THRIFT_PORT=$(cat $CONFIG_PATH | grep "arctic.ams.thrift.port" | awk '{print $2}')
 
 function usage() {
     cat <<EOF
@@ -62,4 +64,4 @@ if [ -z "$THRIFT_URL" ]; then
     THRIFT_URL=thrift://localhost:$THRIFT_PORT
 fi
 
-$JAVA_RUN com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL
+$JAVA_RUN com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL $CONFIG_PATH

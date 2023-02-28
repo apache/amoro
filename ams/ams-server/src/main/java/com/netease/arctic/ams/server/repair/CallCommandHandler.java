@@ -34,8 +34,8 @@ public class CallCommandHandler implements CommandHandler {
 
   private Context context;
 
-  public CallCommandHandler(String amsAddress) {
-    this.amsAddress = amsAddress;
+  public CallCommandHandler(RepairConfig repairConfig) {
+    this.amsAddress = repairConfig.getThriftUrl();
 
     this.arcticCatalog = CatalogLoader.load(amsAddress);
 
