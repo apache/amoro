@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SettingControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger("SettingControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(SettingController.class);
 
   @Test
   public void testGetVersion() {

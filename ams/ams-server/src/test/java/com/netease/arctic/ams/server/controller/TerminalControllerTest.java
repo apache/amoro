@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TerminalControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger("TerminalControllerTest");
+  private final Logger LOG = LoggerFactory.getTableCommitMetas("TerminalControllerTest");
 
   protected static final Object ANY = new Object();
 

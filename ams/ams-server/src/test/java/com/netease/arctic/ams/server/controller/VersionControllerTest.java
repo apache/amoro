@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * @Description: Version Info Test
  */
 public class VersionControllerTest extends TestCase {
-  private final Logger LOG = LoggerFactory.getLogger("VersionControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(VersionControllerTest.class);
   @Test
   public void testGetVersion() {
     JavalinTest.test((app, client) -> {

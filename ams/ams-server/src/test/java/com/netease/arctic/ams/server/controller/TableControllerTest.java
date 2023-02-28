@@ -121,7 +121,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
 
-  private final Logger LOG = LoggerFactory.getLogger("TableControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(TableControllerTest.class);
 
   private static final File testBaseDir = new File("unit_test_base_tmp");
 
@@ -288,7 +288,9 @@ public class TableControllerTest {
     JavalinTest.test((app, client) -> {
       app.get("/", TableController::getUpgradeHiveTableProperties);
       final okhttp3.Response resp = client.get("/", x -> {});
-      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      String respBody = resp.body().string();
+      LOG.info("response: {}", respBody);
+      OkResponse result = JSONObject.parseObject(respBody, OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });

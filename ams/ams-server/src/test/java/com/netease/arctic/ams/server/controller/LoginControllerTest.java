@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoginControllerTest extends TestCase {
-  private final Logger LOG = LoggerFactory.getLogger("LoginControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(LoginControllerTest.class);
 
   @Test
   public void testGetCurrent() {
