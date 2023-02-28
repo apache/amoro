@@ -38,7 +38,6 @@ public class VersionControllerTest extends TestCase {
       final okhttp3.Response resp = client.get("/", x -> {
       });
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }

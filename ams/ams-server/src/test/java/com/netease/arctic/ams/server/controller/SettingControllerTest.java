@@ -36,8 +36,6 @@ public class SettingControllerTest {
       });
       assert resp.code() == 200;
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
