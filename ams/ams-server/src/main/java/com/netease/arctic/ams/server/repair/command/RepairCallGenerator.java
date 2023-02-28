@@ -22,7 +22,7 @@ import com.netease.arctic.ams.server.repair.RepairWay;
 
 public class RepairCallGenerator {
 
-  public RepairCall generate(String tableName, RepairWay way, String option) {
+  public RepairCall generate(String tablePath, RepairWay way, String option) {
     //todo
     return null;
   }

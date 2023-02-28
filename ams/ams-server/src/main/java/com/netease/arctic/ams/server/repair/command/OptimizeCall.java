@@ -20,22 +20,18 @@ public class OptimizeCall implements CallCommand {
   }
 
   @Override
-  public String call(Context context) throws TException {
-    TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
-    if (tableIdentifier.getDatabase() == null) {
-      tableIdentifier.setDatabase(context.getDb());
-    }
-    tableIdentifier.setCatalog(context.getCatalog());
+  public String call(Context context) throws TException, FullTableNameException {
+    TableIdentifier identifier = CallCommand.fullTableName(context, tablePath);
 
     switch (this.action) {
       case START:
-        client.startOptimize(tableIdentifier.buildTableIdentifier());
+        client.startOptimize(identifier.buildTableIdentifier());
         return "optimize has started";
       case STOP:
-        client.stopOptimize(tableIdentifier.buildTableIdentifier());
+        client.stopOptimize(identifier.buildTableIdentifier());
         return "optimize has stopped";
       default:
-        throw new UnsupportedOperationException("not support optimize operation named:" + this.action);
+        throw new UnsupportedOperationException("Don't support optimize operation named:" + this.action);
     }
   }
 

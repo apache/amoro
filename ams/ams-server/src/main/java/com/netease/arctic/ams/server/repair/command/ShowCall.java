@@ -20,7 +20,7 @@ public class ShowCall implements CallCommand {
   }
 
   @Override
-  public String call(Context context) throws TException {
+  public String call(Context context) {
     switch (this.namespaces) {
       case DATABASES:
         return arcticCatalog.listDatabases().stream().collect(Collectors.joining("\\n"));

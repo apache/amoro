@@ -18,27 +18,16 @@
 
 package com.netease.arctic.ams.server.repair;
 
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.server.repair.command.CallCommand;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
-import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
 import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
 import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
 import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
-import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
-import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
-import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
-import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import org.apache.thrift.TException;
 
 public class CallCommandHandler implements CommandHandler {
 
   private String amsAddress;
-
-  private ArcticCatalog arcticCatalog;
 
   private CommandParser commandParser;
 
@@ -59,7 +48,7 @@ public class CallCommandHandler implements CommandHandler {
   }
 
   @Override
-  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException, Exception {
+  public void dispatch(String line, TerminalOutput terminalOutput) throws Exception {
     CallCommand callCommand = commandParser.parse(line);
     String result = callCommand.call(context);
     terminalOutput.output(result);

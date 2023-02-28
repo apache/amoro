@@ -1,9 +1,8 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.thrift.TException;
 
 public class RefreshCall implements CallCommand {
@@ -17,13 +16,9 @@ public class RefreshCall implements CallCommand {
   }
 
   @Override
-  public String call(Context context) throws TException {
-    com.netease.arctic.table.TableIdentifier tableIdentifier = com.netease.arctic.table.TableIdentifier.of(tablePath);
-    if (tableIdentifier.getDatabase() == null) {
-      tableIdentifier.setDatabase(context.getDb());
-    }
-    tableIdentifier.setCatalog(context.getCatalog());
-    client.refreshTable(tableIdentifier.buildTableIdentifier());
+  public String call(Context context) throws TException, FullTableNameException {
+    TableIdentifier identifier = CallCommand.fullTableName(context, tablePath);
+    client.refreshTable(identifier.buildTableIdentifier());
     return "OK";
   }
 }

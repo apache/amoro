@@ -64,16 +64,4 @@ public class LikeYmlFormat {
     }
     return sb.toString();
   }
-
-  public static void main(String[] args) {
-    LikeYmlFormat root = LikeYmlFormat.content(null);
-    root.child("FILE_NAME").child("a.b.c");
-    root.child("LOSE_FILE").child("hdfs://asda/x/x/x/x");
-    LikeYmlFormat youcan = root.child("YOU CAN");
-    youcan.child("FIND_BACK");
-    LikeYmlFormat rollback = youcan.child("ROLL_BACK ");
-    rollback.child("123123123123123123");
-    rollback.child("13123123123123123213");
-    System.out.println(root.print());
-  }
 }

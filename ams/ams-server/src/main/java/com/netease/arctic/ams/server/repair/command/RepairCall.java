@@ -26,7 +26,7 @@ public class RepairCall implements CallCommand {
   /**
    * if null then use table name of context
    */
-  private String tableName;
+  private String tablePath;
 
   private RepairWay way;
 

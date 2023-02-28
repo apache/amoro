@@ -18,6 +18,8 @@
 
 package com.netease.arctic.catalog;
 
+import java.util.List;
+
 public class CatalogManager {
 
   private String thriftAddress;
@@ -28,5 +30,9 @@ public class CatalogManager {
 
   public ArcticCatalog getArcticCatalog(String catalogName) {
     return CatalogLoader.load(thriftAddress + catalogName);
+  }
+
+  public List<String> catalogs() {
+    return CatalogLoader.catalogs(thriftAddress);
   }
 }
