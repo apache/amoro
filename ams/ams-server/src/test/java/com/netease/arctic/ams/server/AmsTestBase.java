@@ -31,6 +31,7 @@ import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
 import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItemTest;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestIcebergFullOptimizeCommit;
@@ -64,6 +65,7 @@ import com.netease.arctic.ams.server.service.impl.TestTableBlockerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -125,7 +127,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class,
-    UnKeyedTableUtilTest.class
+    UnKeyedTableUtilTest.class,
+    SequenceNumberFetcherTest.class,
+    TableOptimizeItemTest.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,

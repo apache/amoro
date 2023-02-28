@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ErrorMessage;
@@ -31,6 +32,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
+import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
@@ -39,6 +41,7 @@ import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -48,6 +51,7 @@ import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -63,6 +67,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -87,6 +92,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -126,6 +132,22 @@ public class TableOptimizeItem extends IJDBCService {
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
     this.metaRefreshTime = -1;
+    this.tableOptimizeRuntime = new TableOptimizeRuntime(tableMetadata.getTableIdentifier());
+    this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_QUOTA,
+        TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
+    this.groupNameCache = CompatiblePropertyUtil.propertyAsString(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_GROUP,
+        TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
+    this.tableIdentifier = tableMetadata.getTableIdentifier();
+    this.metastoreClient = ServiceContainer.getTableMetastoreHandler();
+    this.quotaService = ServiceContainer.getQuotaService();
+  }
+
+  @VisibleForTesting
+  public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata, long metaRefreshTime) {
+    this.arcticTable = arcticTable;
+    this.metaRefreshTime = metaRefreshTime;
     this.tableOptimizeRuntime = new TableOptimizeRuntime(tableMetadata.getTableIdentifier());
     this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
         TableProperties.SELF_OPTIMIZING_QUOTA,
@@ -662,9 +684,9 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksClear(BasicOptimizeCommit optimizeCommit) {
+  public void optimizeTasksClear(boolean refreshOptimizeStatus) {
     try (SqlSession sqlSession = getSqlSession(false)) {
-      Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
+      List<OptimizeTaskItem> tasks = new ArrayList<>(optimizeTasks.values());
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
@@ -672,25 +694,48 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, InternalTableFilesMapper.class);
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
 
+
+      TableOptimizeRuntime oldTableRuntime = tableOptimizeRuntime.clone();
       try {
+        // reset snapshot id in table runtime, because the tasks were cleared rather than committed.
+        // So need to plan again.
+        tableOptimizeRuntime.setCurrentSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+        tableOptimizeRuntime.setCurrentChangeSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
         // persist partition optimize time
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
-        LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to persist tableOptimizeRuntime after commit failed, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
+        return;
       }
 
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
-        tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
+        long endTime = System.currentTimeMillis();
+        tasks.stream().map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
               if (removed != null) {
                 removedList.add(removed);
                 optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+
+                // set end time and cost time in optimize_task_history
+                List<TableTaskHistory> taskHistoryList =
+                    taskHistoryMapper.selectTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                if (CollectionUtils.isNotEmpty(taskHistoryList)) {
+                  TableTaskHistory taskHistory = taskHistoryList.get(0);
+                  if (taskHistory != null && taskHistory.getEndTime() != 0) {
+                    taskHistory.setEndTime(endTime);
+                    taskHistory.setCostTime(endTime - taskHistory.getStartTime());
+                    taskHistoryMapper.updateTaskHistory(taskHistory);
+                  }
+                }
               }
               LOG.info("{} removed", optimizeTaskId);
             });
@@ -698,14 +743,20 @@ public class TableOptimizeItem extends IJDBCService {
         for (OptimizeTaskItem optimizeTaskItem : removedList) {
           optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
         }
-        LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
             t);
         sqlSession.rollback(true);
+        return;
       } finally {
         tasksLock.unlock();
       }
 
       sqlSession.commit(true);
+    }
+
+    if (refreshOptimizeStatus) {
+      updateTableOptimizeStatus();
     }
   }
 
@@ -865,29 +916,6 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
-   * Clear all optimize tasks.
-   */
-  public void clearOptimizeTasks() {
-    tasksLock.lock();
-    try {
-      HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
-      optimizeTasks.clear();
-      Set<String> removedTaskHistory = new HashSet<>();
-      for (OptimizeTaskItem task : toRemoved) {
-        task.clearOptimizeTask();
-        removedTaskHistory.add(task.getOptimizeTask().getTaskPlanGroup());
-      }
-      for (String taskPlanGroup : removedTaskHistory) {
-        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithPlanGroup(tableIdentifier, taskPlanGroup);
-      }
-      LOG.info("{} clear all optimize tasks", getTableIdentifier());
-      updateTableOptimizeStatus();
-    } finally {
-      tasksLock.unlock();
-    }
-  }
-
-  /**
    * GetOptimizeTasksToExecute
    * include Init, Failed.
    *
@@ -918,6 +946,29 @@ public class TableOptimizeItem extends IJDBCService {
                 System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
             LOG.error("{} execute timeout, change to Failed", task.getTaskId());
           });
+    } finally {
+      tasksLock.unlock();
+    }
+  }
+
+  /**
+   * If task execute failed after max retry, clear tasks.
+   */
+  public void clearFailedTasks() {
+    tasksLock.lock();
+    try {
+      int maxRetry = optimizeMaxRetry();
+      Optional<OptimizeTaskItem> failedTask =
+          optimizeTasks.values().stream().filter(task ->
+                  task.getOptimizeRuntime().getRetry() > maxRetry && OptimizeStatus.Failed == task.getOptimizeStatus())
+              .findAny();
+
+      // if table has failed task after max retry, clear all tasks
+      if (failedTask.isPresent()) {
+        LOG.warn("{} has execute task failed over {} times, the reason is {}",
+            tableIdentifier, maxRetry, failedTask.get().getOptimizeRuntime().getFailReason());
+        optimizeTasksClear(false);
+      }
     } finally {
       tasksLock.unlock();
     }
@@ -964,7 +1015,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
-        clearOptimizeTasks();
+        optimizeTasksClear(true);
       }
     }
 
@@ -988,7 +1039,8 @@ public class TableOptimizeItem extends IJDBCService {
           long commitTime = System.currentTimeMillis();
           optimizeTasksCommitted(optimizeCommit, commitTime);
         } else {
-          optimizeTasksClear(optimizeCommit);
+          LOG.warn("{} commit failed, clear optimize tasks", tableIdentifier);
+          optimizeTasksClear(true);
         }
       } else {
         LOG.info("{} get no tasks to commit", tableIdentifier);
@@ -1067,11 +1119,17 @@ public class TableOptimizeItem extends IJDBCService {
       LOG.debug("{} change table is empty, skip minor optimize", tableIdentifier);
       return null;
     }
+    long changeSnapshotId = changeSnapshot.snapshotId();
+    long maxSequence = getMaxSequenceLimit(changeSnapshot, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    if (maxSequence == Long.MIN_VALUE) {
+      return null;
+    }
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newChangeScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
-            .useSnapshot(changeSnapshot.snapshotId());
+            .toSequence(maxSequence)
+            .useSnapshot(changeSnapshotId);
     List<ContentFileWithSequence<?>> changeFiles;
     try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
       changeFiles = Lists.newArrayList(files);
@@ -1079,9 +1137,141 @@ public class TableOptimizeItem extends IJDBCService {
       throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
     }
 
+    // if not optimize all files, it is difficult to get the accurate snapshot id, just set changeSnapshotId to -1 to 
+    // trigger next optimize
+    if (maxSequence != Long.MAX_VALUE) {
+      changeSnapshotId = -1;
+    }
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeFiles,
-        queueId, currentTime, changeSnapshot.snapshotId(),
+        queueId, currentTime, changeSnapshotId,
         baseSnapshot == null ? TableOptimizeRuntime.INVALID_SNAPSHOT_ID : baseSnapshot.snapshotId());
+  }
+
+  private long getMaxSequenceLimit(Snapshot changeSnapshot,
+                                   StructLikeMap<Long> partitionOptimizedSequence,
+                                   StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+    int totalFilesInSummary = PropertyUtil
+        .propertyAsInt(changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+    int maxFileCntLimit = CompatiblePropertyUtil.propertyAsInt(getArcticTable().properties(),
+        TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+    // not scan files to improve performance
+    if (totalFilesInSummary <= maxFileCntLimit) {
+      return Long.MAX_VALUE;
+    }
+    // scan and get all change files grouped by sequence(snapshot)
+    ChangeTableIncrementalScan changeTableIncrementalScan =
+        getArcticTable().asKeyedTable().changeTable().newChangeScan()
+            .fromSequence(partitionOptimizedSequence)
+            .fromLegacyTransaction(legacyPartitionMaxTransactionId)
+            .useSnapshot(changeSnapshot.snapshotId());
+    Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
+    try (CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      for (ContentFileWithSequence<?> file : files) {
+        SnapshotFileGroup fileGroup =
+            changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
+              long txId = FileNameGenerator.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
+              return new SnapshotFileGroup(file.getSequenceNumber(), txId);
+            });
+        fileGroup.addFile();
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + getArcticTable().name(), e);
+    }
+
+    if (changeFilesGroupBySequence.isEmpty()) {
+      LOG.debug("{} get no change files to optimize with partitionOptimizedSequence {}", tableIdentifier,
+          partitionOptimizedSequence);
+      return Long.MIN_VALUE;
+    }
+
+    long maxSequence =
+        getMaxSequenceKeepingTxIdInOrder(new ArrayList<>(changeFilesGroupBySequence.values()), maxFileCntLimit);
+    if (maxSequence == Long.MIN_VALUE) {
+      LOG.warn("{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
+          tableIdentifier, maxFileCntLimit);
+    } else if (maxSequence != Long.MAX_VALUE) {
+      LOG.warn("{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
+          tableIdentifier, maxFileCntLimit, maxSequence);
+    }
+    return maxSequence;
+  }
+
+  /**
+   * Select all the files whose sequence <= maxSequence as Selected-Files, seek the maxSequence to find as many
+   * Selected-Files as possible, and also
+   * - the cnt of these Selected-Files must <= maxFileCntLimit
+   * - the max TransactionId of the Selected-Files must > the min TransactionId of all the left files
+   *
+   * @param snapshotFileGroups snapshotFileGroups
+   * @param maxFileCntLimit    maxFileCntLimit
+   * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be selected,
+   * Long.MIN_VALUE means no files should be selected
+   */
+  static long getMaxSequenceKeepingTxIdInOrder(List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
+    if (maxFileCntLimit <= 0 || snapshotFileGroups == null || snapshotFileGroups.isEmpty()) {
+      return Long.MIN_VALUE;
+    }
+    // 1.sort sequence
+    Collections.sort(snapshotFileGroups);
+    // 2.find the max index where all file cnt <= maxFileCntLimit
+    int index = -1;
+    int fileCnt = 0;
+    for (int i = 0; i < snapshotFileGroups.size(); i++) {
+      fileCnt += snapshotFileGroups.get(i).getFileCnt();
+      if (fileCnt <= maxFileCntLimit) {
+        index = i;
+      } else {
+        break;
+      }
+    }
+    // all files cnt <= maxFileCntLimit, return all files
+    if (fileCnt <= maxFileCntLimit) {
+      return Long.MAX_VALUE;
+    }
+    // if only check the first file groups, then the file cnt > maxFileCntLimit, no files should be selected
+    if (index == -1) {
+      return Long.MIN_VALUE;
+    }
+
+    // 3.wrap file group with the max TransactionId before and min TransactionId after
+    List<SnapshotFileGroupWrapper> snapshotFileGroupWrappers = wrapMinMaxTransactionId(snapshotFileGroups);
+    // 4.find the valid snapshotFileGroup
+    while (true) {
+      SnapshotFileGroupWrapper current = snapshotFileGroupWrappers.get(index);
+      // check transaction id inorder: max transaction id before(inclusive) < min transaction id after
+      if (Math.max(current.getFileGroup().getTransactionId(), current.getMaxTransactionIdBefore()) <
+          current.getMinTransactionIdAfter()) {
+        return current.getFileGroup().getSequence();
+      }
+      index--;
+      if (index == -1) {
+        return Long.MIN_VALUE;
+      }
+    }
+  }
+
+  private static List<SnapshotFileGroupWrapper> wrapMinMaxTransactionId(List<SnapshotFileGroup> snapshotFileGroups) {
+    List<SnapshotFileGroupWrapper> wrappedList = new ArrayList<>();
+    for (SnapshotFileGroup snapshotFileGroup : snapshotFileGroups) {
+      wrappedList.add(new SnapshotFileGroupWrapper(snapshotFileGroup));
+    }
+    long maxValue = Long.MIN_VALUE;
+    for (int i = 0; i < wrappedList.size(); i++) {
+      SnapshotFileGroupWrapper wrapper = wrappedList.get(i);
+      wrapper.setMaxTransactionIdBefore(maxValue);
+      if (wrapper.getFileGroup().getTransactionId() > maxValue) {
+        maxValue = wrapper.getFileGroup().getTransactionId();
+      }
+    }
+    long minValue = Long.MAX_VALUE;
+    for (int i = wrappedList.size() - 1; i >= 0; i--) {
+      SnapshotFileGroupWrapper wrapper = wrappedList.get(i);
+      wrapper.setMinTransactionIdAfter(minValue);
+      if (wrapper.getFileGroup().getTransactionId() < minValue) {
+        minValue = wrapper.getFileGroup().getTransactionId();
+      }
+    }
+    return wrappedList;
   }
 
   /**
@@ -1174,5 +1364,81 @@ public class TableOptimizeItem extends IJDBCService {
     }
     OptimizeTaskItem optimizeTaskItem = new ArrayList<>(optimizeTasks.values()).get(0);
     return optimizeTaskItem.getTaskId().getType() == OptimizeType.Minor;
+  }
+
+  /**
+   * Files grouped by snapshot, but only with the file cnt.
+   */
+  static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
+    private final long sequence;
+    private final long transactionId;
+    private int fileCnt = 0;
+
+    public SnapshotFileGroup(long sequence, long transactionId) {
+      this.sequence = sequence;
+      this.transactionId = transactionId;
+    }
+
+    public SnapshotFileGroup(long sequence, long transactionId, int fileCnt) {
+      this.sequence = sequence;
+      this.transactionId = transactionId;
+      this.fileCnt = fileCnt;
+    }
+
+    public void addFile() {
+      fileCnt++;
+    }
+
+    public long getTransactionId() {
+      return transactionId;
+    }
+
+    public int getFileCnt() {
+      return fileCnt;
+    }
+
+    public long getSequence() {
+      return sequence;
+    }
+
+    @Override
+    public int compareTo(SnapshotFileGroup o) {
+      return Long.compare(this.sequence, o.sequence);
+    }
+  }
+
+  /**
+   * Wrap SnapshotFileGroup with max and min Transaction Id
+   */
+  private static class SnapshotFileGroupWrapper {
+    private final SnapshotFileGroup fileGroup;
+    // in the ordered file group list, the max transaction before this file group, Long.MIN_VALUE for the first
+    private long maxTransactionIdBefore;
+    // in the ordered file group list, the min transaction after this file group, Long.MAX_VALUE for the last
+    private long minTransactionIdAfter;
+
+    public SnapshotFileGroupWrapper(SnapshotFileGroup fileGroup) {
+      this.fileGroup = fileGroup;
+    }
+
+    public SnapshotFileGroup getFileGroup() {
+      return fileGroup;
+    }
+
+    public long getMaxTransactionIdBefore() {
+      return maxTransactionIdBefore;
+    }
+
+    public void setMaxTransactionIdBefore(long maxTransactionIdBefore) {
+      this.maxTransactionIdBefore = maxTransactionIdBefore;
+    }
+
+    public long getMinTransactionIdAfter() {
+      return minTransactionIdAfter;
+    }
+
+    public void setMinTransactionIdAfter(long minTransactionIdAfter) {
+      this.minTransactionIdAfter = minTransactionIdAfter;
+    }
   }
 }

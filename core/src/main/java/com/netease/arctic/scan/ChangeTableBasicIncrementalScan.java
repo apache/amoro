@@ -46,6 +46,7 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   private final ChangeTable table;
   private StructLikeMap<Long> fromPartitionSequence;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
+  private Long toSequence;
   private Expression dataFilter;
   private Long snapshotId;
   private boolean includeColumnStats;
@@ -129,6 +130,12 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   @Override
   public ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence) {
     this.fromPartitionSequence = partitionSequence;
+    return this;
+  }
+
+  @Override
+  public ChangeTableIncrementalScan toSequence(long sequence) {
+    this.toSequence = sequence;
     return this;
   }
 
@@ -223,6 +230,9 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   private Boolean shouldKeepFile(StructLike partition, long sequence) {
+    if (biggerThanToSequence(sequence)) {
+      return false;
+    }
     if (fromPartitionSequence == null || fromPartitionSequence.isEmpty()) {
       // if fromPartitionSequence is not set or is empty, return null to check legacy transactionId
       return null;
@@ -239,6 +249,10 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
         return sequence > fromSequence;
       }
     }
+  }
+
+  private boolean biggerThanToSequence(long sequence) {
+    return this.toSequence != null && sequence > this.toSequence;
   }
 
   private boolean shouldKeepFileWithLegacyTxId(StructLike partition, long legacyTxId) {
