@@ -59,7 +59,7 @@ public class CallCommandHandler implements CommandHandler {
   }
 
   @Override
-  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException, TException {
+  public void dispatch(String line, TerminalOutput terminalOutput) throws IllegalCommandException, Exception {
     CallCommand callCommand = commandParser.parse(line);
     String result = callCommand.call(context);
     terminalOutput.output(result);
