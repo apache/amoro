@@ -193,11 +193,11 @@ public class TestKeyedTableDml extends SparkTestBase {
             " using arctic partitioned by (data) " , database, "testPks");
 
     // insert into values
-//    Assert.assertThrows(SparkException.class,
-//            () -> sql("insert into " + database + "." + "testPks" +
-//                    " values (1, 1.1, 'abcd' ) , " +
-//                    "(1, 1.1, 'abcd'), " +
-//                    "(3, 1.3, 'cbcd') "));
+    Assert.assertThrows(SparkException.class,
+            () -> sql("insert into " + database + "." + "testPks" +
+                    " values (1, 1.1, 'abcd' ) , " +
+                    "(1, 1.1, 'abcd'), " +
+                    "(3, 1.3, 'cbcd') "));
 
     sql(createTableInsert, database, insertTable);
     sql("insert into " + database + "." + notUpsertTable +

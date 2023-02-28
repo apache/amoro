@@ -76,7 +76,6 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       val projections = buildUpdateProjections(query, arcticRelation.output, ArcticExtensionUtils.isKeyedTable(arcticRelation))
       ArcticRowLevelWrite(arcticRelation, query, options, projections)
-//      query
 
     case _ => plan
   }

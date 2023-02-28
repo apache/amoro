@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
@@ -27,10 +26,11 @@ import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.LongType
 
@@ -74,14 +74,10 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       arcticRelation.table match {
         case tbl: ArcticSparkTable =>
           if (tbl.table().isKeyedTable) {
-//            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
             if (checkDuplicatesEnabled()) {
-              val keyAttrs = {
-                val primarys = tbl.table().asKeyedTable().primaryKeySpec().fieldNames()
-                newQuery.references.filter(p => primarys.contains(p.name)).toSeq
-              }
-              val finalQuery = ValidateDuplicateRows(keyAttrs, newQuery.output, newQuery)
-              ArcticRowLevelWrite(arcticRelation, finalQuery, options, projections)
+              val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
+              val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(newQuery, validateQuery)
+              ArcticRowLevelWrite(arcticRelation, checkDataQuery, options, projections)
             } else {
               ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
             }
@@ -96,7 +92,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case table: ArcticSparkTable =>
           if (table.table().isKeyedTable) {
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            OverwriteArcticPartitionsDynamic(arcticRelation, query, validateQuery, writeOptions)
+            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            a.copy(query = checkDataQuery)
           } else {
             a
           }
@@ -117,7 +114,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
                 finalExpr = expr.copy(query.output.last, expr.right)
               case _ =>
             }
-            OverwriteArcticDataByExpression(arcticRelation, finalExpr, query, validateQuery, writeOptions)
+            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            a.copy(query = checkDataQuery)
 
           } else {
             a
@@ -132,13 +130,9 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case _: ArcticSparkCatalog =>
           if (props.contains("primary.keys")) {
             val primaries = props("primary.keys").split(",")
-            val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
-            val alias = Alias(than, "count")()
-            val attributes = query.output.filter(p => primaries.contains(p.name))
-            val validateQuery = Aggregate(attributes, Seq(alias), query)
-            CreateArcticTableAsSelect(
-              catalog, ident, parts, query, validateQuery,
-              props, options, ifNotExists)
+            val validateQuery = buildValidatePrimaryKeyDuplication(primaries, query)
+            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            c.copy(query = checkDataQuery)
           } else {
             c
           }
@@ -152,15 +146,34 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
-          val alias = Alias(than, "count")()
           val attributes = query.output.filter(p => primaries.contains(p.name))
-          Aggregate(attributes, Seq(alias), query)
+          val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
+          val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)
+          val sumAttr = findOutputAttr(aggPlan.output, SUM_ROW_ID_ALIAS_NAME)
+          val havingExpr = GreaterThan(sumAttr, Literal(1L))
+          Filter(havingExpr, aggPlan)
         } else {
           throw new UnsupportedOperationException(s"UnKeyed table can not validate")
         }
     }
   }
+
+  def buildValidatePrimaryKeyDuplication(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
+    val attributes = query.output.filter(p => primaries.contains(p.name))
+    val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
+    val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)
+    val sumAttr = findOutputAttr(aggPlan.output, SUM_ROW_ID_ALIAS_NAME)
+    val havingExpr = GreaterThan(sumAttr, Literal(1L))
+    Filter(havingExpr, aggPlan)
+  }
+
+  protected def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
+    attrs.find(attr => resolver(attr.name, attrName)).getOrElse {
+      throw new UnsupportedOperationException(s"Cannot find $attrName in $attrs")
+    }
+  }
+
+  private final val SUM_ROW_ID_ALIAS_NAME = "_sum_"
 
   def checkDuplicatesEnabled(): Boolean = {
     java.lang.Boolean.valueOf(spark.sessionState.conf.
