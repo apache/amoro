@@ -28,8 +28,6 @@ public class CallCommandHandler implements CommandHandler {
 
   private String amsAddress;
 
-  private ArcticCatalog arcticCatalog;
-
   private CommandParser commandParser;
 
   private Context context;
@@ -37,8 +35,10 @@ public class CallCommandHandler implements CommandHandler {
   public CallCommandHandler(RepairConfig repairConfig) {
     this.amsAddress = repairConfig.getThriftUrl();
 
-    this.arcticCatalog = CatalogLoader.load(amsAddress);
-
+    this.context = new Context();
+    if (repairConfig.getCatalogName() != null) {
+      context.setCatalog(repairConfig.getCatalogName());
+    }
     //todo init commandParser
   }
 

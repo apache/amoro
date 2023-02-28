@@ -2,10 +2,10 @@ package com.netease.arctic.ams.server.repair;
 
 public class RepairConfig {
 
-  public String thriftUrl;
-  public String catalogName;
-  public Integer maxFindSnapshotNum;
-  public Integer maxRollbackSnapNum;
+  private String thriftUrl;
+  private String catalogName;
+  private Integer maxFindSnapshotNum;
+  private Integer maxRollbackSnapNum;
 
   public RepairConfig(String thriftUrl, String catalogName, Integer maxFindSnapshotNum, Integer maxRollbackSnapNum) {
     this.thriftUrl = thriftUrl;

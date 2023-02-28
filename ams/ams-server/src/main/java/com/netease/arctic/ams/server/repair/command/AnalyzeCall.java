@@ -24,6 +24,7 @@ import com.netease.arctic.ams.server.repair.RepairWay;
 import com.netease.arctic.ams.server.repair.TableAvailableAnalyzer;
 import com.netease.arctic.ams.server.repair.TableAvailableResult;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
 import org.apache.iceberg.Snapshot;
@@ -37,8 +38,21 @@ public class AnalyzeCall implements CallCommand {
 
   private String tablePath;
 
-  public AnalyzeCall(String tablePath) {
+  private CatalogManager catalogManager;
+
+  private Integer maxFindSnapshotNum;
+
+  private Integer maxRollbackSnapNum;
+
+  public AnalyzeCall(
+      String tablePath,
+      CatalogManager catalogManager,
+      Integer maxFindSnapshotNum,
+      Integer maxRollbackSnapNum) {
     this.tablePath = tablePath;
+    this.catalogManager = catalogManager;
+    this.maxFindSnapshotNum = maxFindSnapshotNum;
+    this.maxRollbackSnapNum = maxRollbackSnapNum;
   }
 
   @Override
@@ -50,7 +64,9 @@ public class AnalyzeCall implements CallCommand {
       return e.getMessage();
     }
 
-    TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer();
+    ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
+    TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(arcticCatalog, identifier,
+        maxFindSnapshotNum, maxRollbackSnapNum);
     TableAvailableResult availableResult = availableAnalyzer.check();
     context.setTableAvailableResult(availableResult);
     return format(availableResult);
