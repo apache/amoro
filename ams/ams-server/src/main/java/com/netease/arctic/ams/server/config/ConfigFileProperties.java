@@ -72,7 +72,7 @@ public class ConfigFileProperties {
 
   //repair config
   public static final String REPAIR_PROPERTIES = "repair";
-  public static final String REPAIR_MAX_FIND_SNAPSHOT_NUM = "arctic.repair.max.find.num";
-  public static final String REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM = "arctic.repair.max.roll.back.num";
+  public static final String REPAIR_MAX_FIND_SNAPSHOT_NUM = "max.find.snapshot.num";
+  public static final String REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM = "max.roll.back.snapshot.num";
 
 }
