@@ -55,6 +55,7 @@ public class OptimizingIntegrationTest {
   private static final TableIdentifier TB_8 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "iceberg_table8");
   private static final TableIdentifier TB_9 = TableIdentifier.of(HIVE_CATALOG, DATABASE, "hive_table9");
   private static final TableIdentifier TB_10 = TableIdentifier.of(HIVE_CATALOG, DATABASE, "hive_table10");
+  private static final TableIdentifier TB_11 = TableIdentifier.of(CATALOG, DATABASE, "test_table11");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -129,6 +130,14 @@ public class OptimizingIntegrationTest {
     assertTableExist(TB_4);
     MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testNoPkPartitionTableOptimizing();
+  }
+
+  @Test
+  public void testKeyedTableTxIdNotInOrder() {
+    ArcticTable arcticTable = createArcticTable(TB_11, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    assertTableExist(TB_11);
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    testCase.testKeyedTableTxIdNotInOrder();
   }
 
   @Test
