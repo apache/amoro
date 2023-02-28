@@ -43,6 +43,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
+import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
@@ -67,6 +68,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class FileInfoCacheService extends IJDBCService {
 
@@ -579,38 +582,52 @@ public class FileInfoCacheService extends IJDBCService {
     private void syncCache() {
       LOG.info("start execute syncCache");
       List<TableMetadata> tableMetadata = metaService.listTables();
-      long lowTime = System.currentTimeMillis() -
-          ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.TABLE_FILE_INFO_CACHE_INTERVAL);
+      List<Future> futures = new ArrayList<>();
       tableMetadata.forEach(meta -> {
-        if (meta.getTableIdentifier() == null) {
-          return;
-        }
-        TableIdentifier tableIdentifier = new TableIdentifier();
-        tableIdentifier.catalog = meta.getTableIdentifier().getCatalog();
-        tableIdentifier.database = meta.getTableIdentifier().getDatabase();
-        tableIdentifier.tableName = meta.getTableIdentifier().getTableName();
-        try {
-          ArcticCatalog catalog =
-              CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
-          com.netease.arctic.table.TableIdentifier tmp = com.netease.arctic.table.TableIdentifier.of(
-              tableIdentifier.getCatalog(),
-              tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName());
-          ArcticTable arcticTable = catalog.loadTable(tmp);
-          doSync(tableIdentifier, Constants.INNER_TABLE_BASE, lowTime);
-          if (arcticTable.isKeyedTable()) {
-            doSync(tableIdentifier, Constants.INNER_TABLE_CHANGE, lowTime);
+        futures.add(ThreadPool.getSyncFileInfoCachePool().submit(() -> {
+          if (meta.getTableIdentifier() == null) {
+            return;
           }
-        } catch (Exception e) {
-          LOG.error(
-              "SyncAndExpireFileCacheTask sync cache error " + tableIdentifier.catalog + tableIdentifier.database +
-                  tableIdentifier.tableName, e);
-        }
+          TableIdentifier tableIdentifier = new TableIdentifier();
+          tableIdentifier.catalog = meta.getTableIdentifier().getCatalog();
+          tableIdentifier.database = meta.getTableIdentifier().getDatabase();
+          tableIdentifier.tableName = meta.getTableIdentifier().getTableName();
+          try {
+            ArcticCatalog catalog =
+                CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
+            com.netease.arctic.table.TableIdentifier tmp = com.netease.arctic.table.TableIdentifier.of(
+                tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName());
+            ArcticTable arcticTable = catalog.loadTable(tmp);
+            doSync(tableIdentifier, Constants.INNER_TABLE_BASE);
+            if (arcticTable.isKeyedTable()) {
+              doSync(tableIdentifier, Constants.INNER_TABLE_CHANGE);
+            }
+          } catch (Exception e) {
+            LOG.error(
+                "SyncAndExpireFileCacheTask sync cache error " + tableIdentifier.catalog + tableIdentifier.database +
+                    tableIdentifier.tableName, e);
+          }
+        }));
       });
+      Iterator<Future> iterator = futures.iterator();
+      while (iterator.hasNext()) {
+        try {
+          iterator.next().get();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+          LOG.error("sync file cache error", e);
+        }
+      }
+      LOG.info("end execute syncCache");
     }
 
-    private void doSync(TableIdentifier tableIdentifier, String innerTable, long lowTime) {
+    private void doSync(TableIdentifier tableIdentifier, String innerTable) {
       try {
+        long lowTime = System.currentTimeMillis() -
+            ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.TABLE_FILE_INFO_CACHE_INTERVAL);
         Long maxCommitTime = fileInfoCacheService.getCachedMaxTime(tableIdentifier, innerTable);
         if (maxCommitTime == null || maxCommitTime < lowTime) {
           fileInfoCacheService.syncTableFileInfo(tableIdentifier, innerTable);

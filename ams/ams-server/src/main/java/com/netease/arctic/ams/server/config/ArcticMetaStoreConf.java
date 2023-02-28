@@ -106,7 +106,7 @@ public class ArcticMetaStoreConf {
   public static final ConfigOption<Integer> SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.file.sync.thread.pool-size")
           .intType()
-          .defaultValue(10)
+          .defaultValue(1)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all file sync processes.");
   public static final ConfigOption<String> THRIFT_BIND_HOST =
