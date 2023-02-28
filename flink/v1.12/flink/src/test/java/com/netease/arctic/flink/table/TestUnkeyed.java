@@ -398,7 +398,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
-      " id INT, name STRING) WITH %s", toWithClause(tableProperties));
+      " id INT, name STRING, op_time TIMESTAMP) WITH %s", toWithClause(tableProperties));
 
     sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
       "'arctic.emit.mode'='log'" +
@@ -681,7 +681,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
-      " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
+      " id INT, name STRING, op_time TIMESTAMP) PARTITIONED BY (op_time) WITH %s", toWithClause(tableProperties));
 
     sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
       "'arctic.emit.mode'='log'" +

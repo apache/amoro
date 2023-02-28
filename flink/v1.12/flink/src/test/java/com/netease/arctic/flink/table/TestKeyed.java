@@ -317,7 +317,7 @@ public class TestKeyed extends FlinkTestBase {
 
     tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
-      " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
     sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
       "'arctic.emit.mode'='log'" +
