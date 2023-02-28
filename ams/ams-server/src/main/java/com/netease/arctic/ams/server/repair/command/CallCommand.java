@@ -25,7 +25,7 @@ public interface CallCommand {
 
   String call(Context context)  throws Exception;
 
-  static TableIdentifier fullTableName(Context context, String tablePath) throws FullTableNameException {
+  default TableIdentifier fullTableName(Context context, String tablePath) throws FullTableNameException {
     TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
     if (tableIdentifier.getCatalog() == null) {
       if (context.getCatalog() == null) {

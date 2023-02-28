@@ -17,7 +17,7 @@ public class RefreshCall implements CallCommand {
 
   @Override
   public String call(Context context) throws TException, FullTableNameException {
-    TableIdentifier identifier = CallCommand.fullTableName(context, tablePath);
+    TableIdentifier identifier = fullTableName(context, tablePath);
     client.refreshTable(identifier.buildTableIdentifier());
     return "OK";
   }

@@ -56,13 +56,8 @@ public class AnalyzeCall implements CallCommand {
   }
 
   @Override
-  public String call(Context context) {
-    TableIdentifier identifier = null;
-    try {
-       identifier = CallCommand.fullTableName(context, tablePath);
-    } catch (FullTableNameException e) {
-      return e.getMessage();
-    }
+  public String call(Context context) throws FullTableNameException {
+    TableIdentifier identifier = fullTableName(context, tablePath);
 
     ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
     TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(arcticCatalog, identifier,

@@ -18,12 +18,14 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.ams.server.repair.command.AnalyzeCallGenerator;
 import com.netease.arctic.ams.server.repair.command.CallCommand;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
 import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
 import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
 import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
+import com.netease.arctic.catalog.CatalogManager;
 
 public class CallCommandHandler implements CommandHandler {
 
@@ -40,6 +42,11 @@ public class CallCommandHandler implements CommandHandler {
     if (repairConfig.getCatalogName() != null) {
       context.setCatalog(repairConfig.getCatalogName());
     }
+
+    CatalogManager catalogManager = new CatalogManager(repairConfig.getThriftUrl());
+
+    AnalyzeCallGenerator analyzeCallGenerator = new AnalyzeCallGenerator(catalogManager,
+        repairConfig.getMaxFindSnapshotNum(), repairConfig.getMaxRollbackSnapNum());
     OptimizeCallGenerator optimizeCallGenerator = new OptimizeCallGenerator(amsAddress);
     RefreshCallGenerator refreshCallGenerator = new RefreshCallGenerator(amsAddress);
     ShowCallGenerator showCallGenerator = new ShowCallGenerator(amsAddress);

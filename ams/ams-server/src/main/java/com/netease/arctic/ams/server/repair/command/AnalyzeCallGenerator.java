@@ -18,14 +18,28 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.ams.server.repair.RepairConfig;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogManager;
 
 public class AnalyzeCallGenerator {
 
-  private ArcticCatalog arcticCatalog;
+  private CatalogManager catalogManager;
 
-  public AnalyzeCall generate(String tableName) {
-    //todo
-    return null;
+  private Integer maxFindSnapshotNum;
+
+  private Integer maxRollbackSnapNum;
+
+  public AnalyzeCallGenerator(
+      CatalogManager catalogManager,
+      Integer maxFindSnapshotNum,
+      Integer maxRollbackSnapNum) {
+    this.catalogManager = catalogManager;
+    this.maxFindSnapshotNum = maxFindSnapshotNum;
+    this.maxRollbackSnapNum = maxRollbackSnapNum;
+  }
+
+  public AnalyzeCall generate(String tablePath) {
+    return new AnalyzeCall(tablePath, catalogManager, maxFindSnapshotNum, maxRollbackSnapNum);
   }
 }

@@ -84,40 +84,20 @@ public class TableAvailableResult {
     return identifier;
   }
 
-  public void setIdentifier(TableIdentifier identifier) {
-    this.identifier = identifier;
-  }
-
   public DamageType getDamageType() {
     return damageType;
-  }
-
-  public void setDamageType(DamageType damageType) {
-    this.damageType = damageType;
   }
 
   public Snapshot getSnapshot() {
     return snapshot;
   }
 
-  public void setSnapshot(Snapshot snapshot) {
-    this.snapshot = snapshot;
-  }
-
   public List<ManifestFile> getManifestFiles() {
     return manifestFiles;
   }
 
-  public void setManifestFiles(List<ManifestFile> manifestFiles) {
-    this.manifestFiles = manifestFiles;
-  }
-
   public List<ContentFile> getFiles() {
     return files;
-  }
-
-  public void setFiles(List<ContentFile> files) {
-    this.files = files;
   }
 
   public List<Snapshot> getRollbackList() {

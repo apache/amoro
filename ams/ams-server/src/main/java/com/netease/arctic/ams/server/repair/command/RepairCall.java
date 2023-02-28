@@ -20,8 +20,15 @@ package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.Context;
 import com.netease.arctic.ams.server.repair.RepairWay;
+import com.netease.arctic.ams.server.repair.TableAvailableResult;
+import com.netease.arctic.table.TableIdentifier;
 
 public class RepairCall implements CallCommand {
+
+  private static final String PLEASE_DO_ANALYSIS_FIRST = "Please do analysis first";
+
+  private static final String TABLE_IS_OK_DO_NOT_NEED_REPAIR = "Table is Ok. Don't need repair";
+
 
   /**
    * if null then use table name of context
@@ -36,7 +43,17 @@ public class RepairCall implements CallCommand {
   private String option;
 
   @Override
-  public String call(Context context) {
+  public String call(Context context) throws FullTableNameException {
+    TableIdentifier identifier = fullTableName(context, tablePath);
+
+    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(identifier);
+    if (tableAvailableResult == null) {
+      return PLEASE_DO_ANALYSIS_FIRST;
+    }
+    if (tableAvailableResult.isOk()) {
+      return TABLE_IS_OK_DO_NOT_NEED_REPAIR;
+    }
+
     //todo
     return null;
   }
