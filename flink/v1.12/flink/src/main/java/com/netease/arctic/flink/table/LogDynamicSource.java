@@ -142,7 +142,9 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
 
     if (projectedFields != null) {
       List<NestedField> projectedSchemaColumns = projectedSchema.columns();
-      projectedSchema = new Schema(Arrays.stream(projectedFields).mapToObj(projectedSchemaColumns::get).collect(Collectors.toList()));
+      projectedSchema = new Schema(Arrays.stream(projectedFields)
+        .mapToObj(projectedSchemaColumns::get)
+        .collect(Collectors.toList()));
     }
     LOG.info("Schema used for create KafkaSource is :{}", projectedSchema);
 
@@ -162,7 +164,9 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
 
     if (projectedFields != null) {
       List<NestedField> projectedSchemaColumns = projectedSchema.columns();
-      projectedSchema = new Schema(Arrays.stream(projectedFields).mapToObj(projectedSchemaColumns::get).collect(Collectors.toList()));
+      projectedSchema = new Schema(Arrays.stream(projectedFields)
+        .mapToObj(projectedSchemaColumns::get)
+        .collect(Collectors.toList()));
     }
     LOG.info("Schema used for create PulsarSource is :{}", projectedSchema);
 
