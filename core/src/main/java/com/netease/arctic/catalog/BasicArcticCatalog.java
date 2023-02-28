@@ -300,6 +300,12 @@ public class BasicArcticCatalog implements ArcticCatalog {
   }
 
   @Override
+  public String tableLocation(TableIdentifier identifier) {
+    TableMeta meta = getArcticTableMeta(identifier);
+    return checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
+  }
+
+  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return BasicTableBlockerManager.build(tableIdentifier, client);
   }

@@ -16,14 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package org.apache.iceberg;
 
-import com.netease.arctic.ams.server.repair.RepairWay;
+public abstract class PublicMergingSnapshotProducer<ThisT> extends MergingSnapshotProducer<ThisT> {
 
-public class RepairCallGenerator {
-
-  public RepairCall generate(String tableName, RepairWay way, String option) {
-    //todo
-    return null;
-  }
+    protected PublicMergingSnapshotProducer(String tableName, TableOperations ops) {
+        super(tableName, ops);
+    }
 }

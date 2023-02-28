@@ -16,16 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.ams.server.repair;
 
-public enum RepairWay {
-  FIND_BACK(false),
-  SYNC_METADATA(false),
-  ROLLBACK(true);
-
-  boolean hasOption;
-
-  RepairWay(boolean hasOption) {
-    this.hasOption = hasOption;
-  }
+public enum DamageType {
+  OK,
+  TABLE_NOT_FOUND,
+  FILE_LOSE,
+  MANIFEST_LOST,
+  MANIFEST_LIST_LOST,
+  METADATA_LOSE,
+  TABLE_SPACE_LOSE
 }

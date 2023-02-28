@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.Context;
+import com.netease.arctic.ams.server.repair.RepairWay;
 
 public class RepairCall implements CallCommand {
 
@@ -27,7 +28,7 @@ public class RepairCall implements CallCommand {
    */
   private String tableName;
 
-  private way way;
+  private RepairWay way;
 
   /**
    * snapshot id if way is ROLLBACK
@@ -38,10 +39,6 @@ public class RepairCall implements CallCommand {
   public String call(Context context) {
     //todo
     return null;
-  }
-  
-  public enum way {
-    FIND_BACK, ROLLBACK, SYNC_METADATA
   }
 
 }

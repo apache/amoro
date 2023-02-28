@@ -19,7 +19,34 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.Context;
+import com.netease.arctic.table.TableIdentifier;
 
 public interface CallCommand {
+
   String call(Context context);
+
+  static TableIdentifier fullTableName(Context context, String tablePath) throws FullTableNameException {
+    TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
+    if (tableIdentifier.getCatalog() == null) {
+      if (context.getCatalog() == null) {
+        throw new FullTableNameException("Can not find catalog name, your can support full table path or use 'USE " +
+            "{catalog}' statement");
+      }
+      tableIdentifier.setCatalog(context.getCatalog());
+    }
+    if (tableIdentifier.getDatabase() == null) {
+      if (context.getDb() == null) {
+        throw new FullTableNameException("Can not find db name, your can support full table path or use 'USE " +
+            "{database}' statement");
+      }
+      tableIdentifier.setDatabase(context.getDb());
+    }
+    return tableIdentifier;
+  }
+
+  class FullTableNameException extends Exception {
+    public FullTableNameException(String message) {
+      super(message);
+    }
+  }
 }

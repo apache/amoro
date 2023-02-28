@@ -63,6 +63,6 @@ public class CallCommandHandler implements CommandHandler {
   @Override
   public String[] keyWord() {
     //todo
-    return new String[0];
+    return commandParser.keywords();
   }
 }

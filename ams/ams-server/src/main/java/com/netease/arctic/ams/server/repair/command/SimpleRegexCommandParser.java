@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.ams.server.repair.RepairWay;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -62,15 +63,15 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
           throw new IllegalCommandException("Please check if your command is correct!");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.ROLLBACK.name())) {
+        if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
           if (commandSplit.length < 5) {
             throw new IllegalCommandException("Please check if you enter your SnapshotID!");
           } else {
-            return repairCallGenerator.generate(commandSplit[1], RepairCall.way.ROLLBACK, commandSplit[4]);
+            return repairCallGenerator.generate(commandSplit[1], RepairWay.ROLLBACK, commandSplit[4]);
           }
-        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.FIND_BACK.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[3], RepairCall.way.SYNC_METADATA.name())) {
-          return repairCallGenerator.generate(commandSplit[1], RepairCall.way.valueOf(commandSplit[3]), null);
+        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.FIND_BACK.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.SYNC_METADATA.name())) {
+          return repairCallGenerator.generate(commandSplit[1], RepairWay.valueOf(commandSplit[3]), null);
         }
       case USE:
         return useCallGenerator.generate(commandSplit[1]);
@@ -112,9 +113,9 @@ public class SimpleRegexCommandParser implements CommandParser {
         SHOW,
         OptimizeCall.action.START.name(),
         OptimizeCall.action.STOP.name(),
-        RepairCall.way.FIND_BACK.name(),
-        RepairCall.way.SYNC_METADATA.name(),
-        RepairCall.way.ROLLBACK.name(),
+        RepairWay.FIND_BACK.name(),
+        RepairWay.SYNC_METADATA.name(),
+        RepairWay.ROLLBACK.name(),
         ShowCall.namespaces.DATABASES.name(),
         ShowCall.namespaces.TABLES.name()
     };

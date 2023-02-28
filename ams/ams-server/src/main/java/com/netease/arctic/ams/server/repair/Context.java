@@ -18,25 +18,39 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.netease.arctic.table.TableIdentifier;
+import java.util.HashMap;
+import java.util.Map;
+
 public class Context {
+
+  private String catalog;
 
   private String db;
 
-  private String table;
+  private Map<TableIdentifier, TableAvailableResult> tableAvailableResultMap = new HashMap<>();
 
-  public void setDb(String db) {
-    this.db = db;
+  public String getCatalog() {
+    return catalog;
   }
 
-  public void setTable(String table) {
-    this.table = table;
+  public void setCatalog(String catalog) {
+    this.catalog = catalog;
   }
 
   public String getDb() {
     return db;
   }
 
-  public String getTable() {
-    return table;
+  public void setDb(String db) {
+    this.db = db;
+  }
+
+  public void setTableAvailableResult(TableAvailableResult result) {
+    tableAvailableResultMap.put(result.getIdentifier(), result);
+  }
+
+  public TableAvailableResult getTableAvailableResult(TableIdentifier identifier) {
+    return tableAvailableResultMap.get(identifier);
   }
 }
