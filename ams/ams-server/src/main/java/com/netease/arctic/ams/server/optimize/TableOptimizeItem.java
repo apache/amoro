@@ -31,6 +31,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
+import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
@@ -39,6 +40,7 @@ import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -87,6 +89,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -662,9 +665,9 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksClear(BasicOptimizeCommit optimizeCommit) {
+  public void optimizeTasksClear(boolean refreshOptimizeStatus) {
     try (SqlSession sqlSession = getSqlSession(false)) {
-      Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
+      List<OptimizeTaskItem> tasks = new ArrayList<>(optimizeTasks.values());
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
@@ -672,25 +675,45 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, InternalTableFilesMapper.class);
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
 
+
+      TableOptimizeRuntime oldTableRuntime = tableOptimizeRuntime.clone();
       try {
+        // reset snapshot id in table runtime, because the tasks were cleared rather than committed.
+        // So need to plan again.
+        tableOptimizeRuntime.setCurrentSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+        tableOptimizeRuntime.setCurrentChangeSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
         // persist partition optimize time
         tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
       } catch (Throwable t) {
-        LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to persist tableOptimizeRuntime after commit failed, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
+        return;
       }
 
       tasksLock.lock();
       List<OptimizeTaskItem> removedList = new ArrayList<>();
       try {
-        tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
+        long endTime = System.currentTimeMillis();
+        tasks.stream().map(OptimizeTaskItem::getTaskId)
             .forEach(optimizeTaskId -> {
               OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
               if (removed != null) {
                 removedList.add(removed);
                 optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
                 internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+
+                // set end time and cost time in optimize_task_history
+                TableTaskHistory taskHistory =
+                    taskHistoryMapper.selectLatestTaskHistoryByTraceId(optimizeTaskId.getTraceId());
+                if (taskHistory != null && taskHistory.getEndTime() != 0) {
+                  taskHistory.setEndTime(endTime);
+                  taskHistory.setCostTime(endTime - taskHistory.getStartTime());
+                  taskHistoryMapper.updateTaskHistory(taskHistory);
+                }
               }
               LOG.info("{} removed", optimizeTaskId);
             });
@@ -698,14 +721,20 @@ public class TableOptimizeItem extends IJDBCService {
         for (OptimizeTaskItem optimizeTaskItem : removedList) {
           optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
         }
-        LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
+        tableOptimizeRuntime.restoreTableOptimizeRuntime(oldTableRuntime);
+        LOG.error("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
             t);
         sqlSession.rollback(true);
+        return;
       } finally {
         tasksLock.unlock();
       }
 
       sqlSession.commit(true);
+    }
+
+    if (refreshOptimizeStatus) {
+      updateTableOptimizeStatus();
     }
   }
 
@@ -865,29 +894,6 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
-   * Clear all optimize tasks.
-   */
-  public void clearOptimizeTasks() {
-    tasksLock.lock();
-    try {
-      HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
-      optimizeTasks.clear();
-      Set<String> removedTaskHistory = new HashSet<>();
-      for (OptimizeTaskItem task : toRemoved) {
-        task.clearOptimizeTask();
-        removedTaskHistory.add(task.getOptimizeTask().getTaskPlanGroup());
-      }
-      for (String taskPlanGroup : removedTaskHistory) {
-        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithPlanGroup(tableIdentifier, taskPlanGroup);
-      }
-      LOG.info("{} clear all optimize tasks", getTableIdentifier());
-      updateTableOptimizeStatus();
-    } finally {
-      tasksLock.unlock();
-    }
-  }
-
-  /**
    * GetOptimizeTasksToExecute
    * include Init, Failed.
    *
@@ -918,6 +924,27 @@ public class TableOptimizeItem extends IJDBCService {
                 System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
             LOG.error("{} execute timeout, change to Failed", task.getTaskId());
           });
+    } finally {
+      tasksLock.unlock();
+    }
+  }
+
+  /**
+   * If task execute failed after max retry, clear tasks.
+   */
+  public void clearFailedTasks() {
+    tasksLock.lock();
+    try {
+      int maxRetry = optimizeMaxRetry();
+      Optional<OptimizeTaskItem> failedTask =
+          optimizeTasks.values().stream().findAny().filter(task -> task.getOptimizeRuntime().getRetry() > maxRetry);
+
+      // if table has failed task after max retry, clear all tasks
+      if (failedTask.isPresent()) {
+        LOG.warn("{} has execute task failed over {} times, the reason is {}",
+            tableIdentifier, maxRetry, failedTask.get().getOptimizeRuntime().getFailReason());
+        optimizeTasksClear(false);
+      }
     } finally {
       tasksLock.unlock();
     }
@@ -964,7 +991,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
-        clearOptimizeTasks();
+        optimizeTasksClear(true);
       }
     }
 
@@ -988,7 +1015,8 @@ public class TableOptimizeItem extends IJDBCService {
           long commitTime = System.currentTimeMillis();
           optimizeTasksCommitted(optimizeCommit, commitTime);
         } else {
-          optimizeTasksClear(optimizeCommit);
+          LOG.warn("{} commit failed, clear optimize tasks", tableIdentifier);
+          optimizeTasksClear(true);
         }
       } else {
         LOG.info("{} get no tasks to commit", tableIdentifier);

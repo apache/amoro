@@ -23,7 +23,7 @@ import com.netease.arctic.table.TableIdentifier;
 
 public interface CallCommand {
 
-  String call(Context context);
+  String call(Context context)  throws Exception;
 
   static TableIdentifier fullTableName(Context context, String tablePath) throws FullTableNameException {
     TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
