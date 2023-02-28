@@ -31,15 +31,15 @@ import java.util.Map;
 
 /**
  * test base class for normal spark tests.
- *
+ * <p>
  * test base class contain no code expect beforeClass && afterClass
  */
+@Deprecated
 public class SparkTestBase extends SparkTestContext {
 
   @Rule
   public TestName testName = new TestName();
-  protected long begin ;
-
+  protected long begin;
 
   @BeforeClass
   public static void startAll() throws IOException, ClassNotFoundException {
@@ -58,9 +58,8 @@ public class SparkTestBase extends SparkTestContext {
     cleanUpSparkSession();
   }
 
-
   @Before
-  public void testBegin(){
+  public void testBegin() {
     System.out.println("==================================");
     System.out.println("  Test Begin: " + testName.getMethodName());
     System.out.println("==================================");
@@ -74,5 +73,4 @@ public class SparkTestBase extends SparkTestContext {
     System.out.println("  Test End: " + testName.getMethodName() + ", total cost: " + cost + " ms");
     System.out.println("==================================");
   }
-
 }

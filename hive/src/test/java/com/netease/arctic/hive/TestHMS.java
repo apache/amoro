@@ -71,6 +71,10 @@ public class TestHMS extends ExternalResource {
     return mockHms.getClient();
   }
 
+  public int getMetastorePort() {
+    return mockHms.getMetastorePort();
+  }
+
   @Override
   protected void before() throws Throwable {
     if (SingletonResourceUtil.isUseSingletonResource()) {

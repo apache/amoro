@@ -78,6 +78,18 @@ public class UnKeyedTableUtil {
       LOG.error("close manifest file error", e);
     }
 
+    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
+        .withAliveEntry(true)
+        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+        .build();
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
+      }
+    } catch (IOException e) {
+      LOG.error("close manifest file error", e);
+    }
+
     return validFilesPath;
   }
 

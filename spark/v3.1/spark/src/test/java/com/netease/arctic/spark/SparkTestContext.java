@@ -93,6 +93,7 @@ import java.util.stream.IntStream;
 /**
  * test context for all spark tests.
  */
+@Deprecated
 public class SparkTestContext extends ExternalResource {
   protected static final Object ANY = new Object();
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
