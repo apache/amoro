@@ -124,6 +124,26 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertFalse(testKeyedTable.io().exists((String) s1Files.get(1).path()));
   }
 
+  @Test
+  public void testGetExpireTime() throws IOException {
+    insertChangeDataFiles(1);
+    insertChangeDataFiles(2);
+    long olderThan = System.currentTimeMillis() - 100;
+    Assert.assertEquals(olderThan, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+
+    AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
+    appendFiles.set("flink.max-committed-checkpoint-id", "100");
+    appendFiles.commit();
+    long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertTrue(checkpointTime > olderThan);
+    Assert.assertEquals(olderThan, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+
+    insertChangeDataFiles(2);
+    olderThan = testKeyedTable.changeTable().currentSnapshot().timestampMillis() + 100;
+    Assert.assertTrue(checkpointTime < olderThan);
+    Assert.assertEquals(checkpointTime, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+  }
+
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
     GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
         .withChangeAction(ChangeAction.INSERT)

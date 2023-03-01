@@ -45,6 +45,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,7 +139,8 @@ public class TableExpireService implements ITableExpireService {
             // in the base store
             Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
             baseExclude.addAll(finalHiveLocation);
-            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
+            long baseOlderThan = getExpireTime(baseTable, startTime - baseSnapshotsKeepTime);
+            expireSnapshots(baseTable, baseOlderThan, baseExclude);
             long baseCleanedTime = System.currentTimeMillis();
             LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
 
@@ -151,14 +154,16 @@ public class TableExpireService implements ITableExpireService {
             // in the change store
             Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
             changeExclude.addAll(finalHiveLocation);
-            expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
+            long changeOlderThan = getExpireTime(changeTable, startTime - changeSnapshotsKeepTime);
+            expireSnapshots(changeTable, changeOlderThan, changeExclude);
             return null;
           });
           LOG.info("[{}] {} expire cost total {} ms", traceId, arcticTable.id(),
               System.currentTimeMillis() - startTime);
         } else {
           UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
-          expireSnapshots(unKeyedArcticTable, startTime - baseSnapshotsKeepTime, hiveLocation);
+          long baseOlderThan = getExpireTime(unKeyedArcticTable, startTime - baseSnapshotsKeepTime);
+          expireSnapshots(unKeyedArcticTable, baseOlderThan, hiveLocation);
           long baseCleanedTime = System.currentTimeMillis();
           LOG.info("[{}] {} unKeyedTable expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
         }
@@ -166,6 +171,17 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("[" + traceId + "] unexpected expire error of table " + tableIdentifier, t);
       }
     }
+  }
+
+  public static long getExpireTime(UnkeyedTable table, long olderThan) {
+    ArrayList<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
+    for (int i = snapshots.size() - 1; i >= 0; i--) {
+      Snapshot snapshot = snapshots.get(i);
+      if (snapshot.summary().containsKey("flink.max-committed-checkpoint-id")) {
+        return Math.min(snapshot.timestampMillis(), olderThan);
+      }
+    }
+    return olderThan;
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
@@ -229,7 +245,7 @@ public class TableExpireService implements ITableExpireService {
   public static void expireSnapshots(UnkeyedTable arcticInternalTable,
                                      long olderThan,
                                      Set<String> exclude) {
-    LOG.debug("start expire snapshots, the exclude is {}", exclude);
+    LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();
