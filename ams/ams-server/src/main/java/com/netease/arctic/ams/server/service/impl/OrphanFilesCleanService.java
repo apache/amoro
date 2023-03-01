@@ -42,7 +42,6 @@ import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,6 @@ import java.io.File;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -178,15 +176,17 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         deleteFilesCnt);
   }
 
-  static Pattern getExcludeFileNameRegex(UnkeyedTable table) {
-    ArrayList<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
-    for (int i = snapshots.size() - 1; i >= 0; i--) {
-      Snapshot snapshot = snapshots.get(i);
+  private static Pattern getExcludeFileNameRegex(UnkeyedTable table) {
+    String latestFlinkJobId = null;
+    for (Snapshot snapshot : table.snapshots()) {
       String flinkJobId = snapshot.summary().get("flink.job-id");
       if (StringUtils.isNotBlank(flinkJobId)) {
-        // file name starting with flink.job-id should not be deleted
-        return Pattern.compile(flinkJobId + ".*");
+        latestFlinkJobId = flinkJobId;
       }
+    }
+    if (latestFlinkJobId != null) {
+      // file name starting with flink.job-id should not be deleted
+      return Pattern.compile(latestFlinkJobId + ".*");
     }
     return null;
   }
@@ -249,9 +249,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
     } else {
-      if (!exclude.contains(location) && fileStatus.getModificationTime() < lastTime
-          && (excludeFileNameRegex == null ||
-          !excludeFileNameRegex.matcher(TableFileUtils.getFileName(location)).matches())) {
+      if (!exclude.contains(location) && fileStatus.getModificationTime() < lastTime &&
+          (excludeFileNameRegex == null ||
+              !excludeFileNameRegex.matcher(TableFileUtils.getFileName(location)).matches())) {
         io.deleteFile(location);
         return 1;
       } else {
