@@ -55,6 +55,10 @@ public class RepairMain {
     Integer maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
     Integer maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
 
-    return new RepairConfig(catalogName, thriftUrlWithoutCatalog, maxFindSnapshotNum, maxRollbackSnapNum);
+    if (catalogName.isEmpty()){
+      return new RepairConfig(thriftUrlWithoutCatalog, null, maxFindSnapshotNum, maxRollbackSnapNum);
+    }else {
+      return new RepairConfig(thriftUrlWithoutCatalog, catalogName, maxFindSnapshotNum, maxRollbackSnapNum);
+    }
   }
 }
