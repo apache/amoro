@@ -67,7 +67,6 @@ import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKeyFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
