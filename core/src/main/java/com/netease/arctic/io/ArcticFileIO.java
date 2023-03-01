@@ -47,7 +47,7 @@ public interface ArcticFileIO extends FileIO {
   boolean exists(String path);
 
   /**
-   * Create a new directory.
+   * Create a new directory and all non-existent parents directories.
    *
    * @param path source path
    */
