@@ -116,10 +116,11 @@ public class SimpleRegexCommandParser implements CommandParser {
       case SHOW:
         if (commandSplit.length != 2) {
           throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: SHOW [ DATABASES | TABLES ]");
+              "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]");
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name())) {
+            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name()) ||
+            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.CATALOGS.name())) {
           return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase()));
         } else {
           throw new IllegalCommandException("Please check if your command is correct! " +
@@ -146,7 +147,8 @@ public class SimpleRegexCommandParser implements CommandParser {
         RepairWay.SYNC_METADATA.name(),
         RepairWay.ROLLBACK.name(),
         ShowCall.Namespaces.DATABASES.name(),
-        ShowCall.Namespaces.TABLES.name()
+        ShowCall.Namespaces.TABLES.name(),
+        ShowCall.Namespaces.CATALOGS.name()
     };
     Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
         keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();

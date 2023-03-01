@@ -8,7 +8,7 @@ public class HelpCall implements CallCommand {
     return
         "Usage:\n" +
         "\n" +
-        "SHOW [ DATABASES | TABLES ]                                 -- Show databases or tables --\n" +
+        "SHOW [ CATALOGS | DATABASES | TABLES ]                      -- Show catalogs, databases or tables --\n" +
         "\n" +
         "USE [ ${catalog_name} | ${database_name} ]                  -- Use catalog or database --\n" +
         "\n" +
