@@ -167,7 +167,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         TableOptimizeItem arcticTableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
         ServiceContainer.getOptimizeQueueService().release(tableIdentifier);
         try {
-          arcticTableItem.clearOptimizeTasks();
+          arcticTableItem.optimizeTasksClear(true);
         } catch (Throwable t) {
           LOG.error("failed to delete " + tableIdentifier + " compact task, ignore", t);
         }
