@@ -68,6 +68,9 @@ public class UnKeyedTableUtil {
           String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
           validFilesPath.add(FileUtil.getUriPath(filePath));
         }
+        GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
+        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
+        validFilesPath.add(FileUtil.getUriPath(filePath));
       }
     } catch (IOException e) {
       LOG.error("close manifest file error", e);

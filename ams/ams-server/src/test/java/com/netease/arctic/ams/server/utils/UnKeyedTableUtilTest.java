@@ -131,7 +131,6 @@ public class UnKeyedTableUtilTest extends TableTestBase {
     testKeyedTable.asKeyedTable().baseTable().expireSnapshots()
         .retainLast(1).expireOlderThan(System.currentTimeMillis()).cleanExpiredFiles(true).commit();
 
-    s1FilePath.remove(FileUtil.getUriPath(result.dataFiles()[0].path().toString()));
     Assert.assertEquals(s1FilePath, UnKeyedTableUtil.getAllContentFilePath(testKeyedTable.asKeyedTable().baseTable()));
   }
 
