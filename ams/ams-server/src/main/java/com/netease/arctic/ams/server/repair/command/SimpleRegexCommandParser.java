@@ -39,6 +39,8 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   private UseCallGenerator useCallGenerator;
 
+  private HelpCallGenerator helpCallGenerator;
+
   private static final String ANALYZE = "ANALYZE";
   private static final String REPAIR = "REPAIR";
   private static final String THROUGH = "THROUGH";
@@ -51,53 +53,80 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
-    String[] commandSplit = line.split("\\s+");
+    String[] commandSplit = line.trim().split("\\s+");
     if (commandSplit.length < 2) {
-      throw new IllegalCommandException("Please check if your command is correct!");
+      return helpCallGenerator.generate();
     }
 
     switch (commandSplit[0].toUpperCase()) {
       case ANALYZE:
+        if (commandSplit.length != 2) {
+          throw new IllegalCommandException("Please check if your command is correct! Pattern: ANALYZE ${table_name}");
+        }
         return analyzeCallGenerator.generate(commandSplit[1]);
       case REPAIR:
+        if (commandSplit.length > 5) {
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
+        }
         if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
-          throw new IllegalCommandException("Please check if your command is correct!");
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
-          if (commandSplit.length < 5) {
-            throw new IllegalCommandException("Please check if you enter your SnapshotID!");
+          if (commandSplit.length != 5) {
+            throw new IllegalCommandException("Please check if you enter the snapshot id!");
           } else {
             return repairCallGenerator.generate(commandSplit[1], RepairWay.ROLLBACK, commandSplit[4]);
           }
         } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.FIND_BACK.name()) ||
             StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.SYNC_METADATA.name())) {
-          return repairCallGenerator.generate(commandSplit[1], RepairWay.valueOf(commandSplit[3]), null);
+          if (commandSplit.length != 4) {
+            throw new IllegalCommandException("Please check if your command is correct! " +
+                "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
+          }
+          return repairCallGenerator.generate(
+              commandSplit[1],
+              RepairWay.valueOf(commandSplit[3].toUpperCase()), null);
         }
       case USE:
+        if (commandSplit.length != 2) {
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: USE [ ${catalog_name} | ${database_name}  ]");
+        }
         return useCallGenerator.generate(commandSplit[1]);
       case OPTIMIZE:
-        if (commandSplit.length < 3) {
-          throw new IllegalCommandException("Please check if your command is correct!");
+        if (commandSplit.length != 3) {
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: OPTIMIZE [ STOP | START ] ${table_name}");
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.START.name()) ||
             StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.STOP.name())) {
-          return optimizeCallGenerator.generate(OptimizeCall.Action.valueOf(commandSplit[1]), commandSplit[2]);
+          return optimizeCallGenerator.generate(
+              OptimizeCall.Action.valueOf(commandSplit[1].toUpperCase()),
+              commandSplit[2]);
         }
       case REFRESH:
-        if (!(commandSplit.length < 3) && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
+        if (commandSplit.length == 3 && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
           return refreshCallGenerator.generate(commandSplit[2]);
         } else {
-          throw new IllegalCommandException("Please check if your command is correct!");
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: REFRESH FILE_CACHE ${table_name}");
         }
       case SHOW:
+        if (commandSplit.length != 2) {
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: SHOW [ DATABASES | TABLES ]");
+        }
         if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
             StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name())) {
-          return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1]));
+          return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase()));
         } else {
-          throw new IllegalCommandException("Please check if your command is correct!");
+          throw new IllegalCommandException("Please check if your command is correct! " +
+              "Pattern: SHOW [ DATABASES | TABLES ]");
         }
     }
-    throw new IllegalCommandException("Please check if your command is correct!");
+    return helpCallGenerator.generate();
   }
 
   @Override
