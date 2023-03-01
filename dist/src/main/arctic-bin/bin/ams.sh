@@ -118,12 +118,10 @@ function status(){
 
 function start() {
   nohup ${CMDS} >/dev/null 2>>${STDERR_LOG} &
-    pid1=$!
-    wait $pid1
     if [ $? -ne 0 ]; then
         echo "start failed."
     fi
-    echo $! > ${PID}; sleep 1.5
+    echo $! > ${PID}; sleep 4
     if status ; then
         echo "process start success."; return 0
     else
