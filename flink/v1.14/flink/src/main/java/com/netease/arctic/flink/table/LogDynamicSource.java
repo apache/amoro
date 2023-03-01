@@ -37,7 +37,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.types.Types.NestedField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +65,6 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
   private final ReadableConfig tableOptions;
   private final Optional<String> consumerChangelogMode;
   private final boolean logRetractionEnable;
-  private int[] projectedFields;
 
   /**
    * Watermark strategy that is used to generate per-partition watermark.
@@ -78,7 +76,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
   /**
    * Indices that determine the value fields and the target position in the produced row.
    */
-  protected final int[] valueProjection;
+  protected int[] projectedFields;
 
   /**
    * Properties for the logStore consumer.
@@ -93,7 +91,6 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
       .build();
 
   public LogDynamicSource(
-      int[] valueProjection,
       Properties properties,
       Schema schema,
       ReadableConfig tableOptions,
@@ -104,12 +101,10 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
     this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
     this.arcticTable = arcticTable;
-    this.valueProjection = valueProjection;
     this.properties = properties;
   }
 
   public LogDynamicSource(
-      int[] valueProjection,
       Properties properties,
       Schema schema,
       ReadableConfig tableOptions,
@@ -121,23 +116,11 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
     this.consumerChangelogMode = consumerChangelogMode;
     this.logRetractionEnable = logRetractionEnable;
     this.arcticTable = arcticTable;
-    this.valueProjection = valueProjection;
     this.properties = properties;
   }
 
   protected LogKafkaSource createKafkaSource() {
-    Schema projectedSchema = schema;
-    if (valueProjection != null) {
-      final List<Types.NestedField> columns = schema.columns();
-      projectedSchema = new Schema(Arrays.stream(valueProjection).mapToObj(columns::get).collect(Collectors.toList()));
-    }
-
-    if (projectedFields != null) {
-      List<NestedField> projectedSchemaColumns = projectedSchema.columns();
-      projectedSchema = new Schema(Arrays.stream(projectedFields)
-        .mapToObj(projectedSchemaColumns::get)
-        .collect(Collectors.toList()));
-    }
+    Schema projectedSchema = getProjectSchema(schema);
     LOG.info("Schema used for create KafkaSource is: {}", projectedSchema);
 
     LogKafkaSourceBuilder kafkaSourceBuilder = LogKafkaSource.builder(projectedSchema, arcticTable.properties());
@@ -198,7 +181,6 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
   @Override
   public DynamicTableSource copy() {
     return new LogDynamicSource(
-        this.valueProjection,
         this.properties,
         this.schema,
         this.tableOptions,
@@ -230,5 +212,15 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
           "Don't support nested projection now.");
       this.projectedFields[i] = projectFields[i][0];
     }
+  }
+
+  private Schema getProjectSchema(Schema projectedSchema) {
+    if (projectedFields != null) {
+      List<NestedField> projectedSchemaColumns = projectedSchema.columns();
+      projectedSchema = new Schema(Arrays.stream(projectedFields)
+        .mapToObj(projectedSchemaColumns::get)
+        .collect(Collectors.toList()));
+    }
+    return projectedSchema;
   }
 }
