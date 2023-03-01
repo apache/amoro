@@ -79,7 +79,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    */
   private transient ArcticTable table;
   /**
-   * Track whether there is update_before before update_after or not neglecting primary key.
+   * Track whether there is update_before before update_after or not neglecting primary key if upsert enabled.
    */
   private transient boolean hasUpdateBefore = false;
 
@@ -219,7 +219,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
   /**
    * If upsert is enabled, turn update_after to insert if there isn't update_after followed by update_before.
-   * It may lead to some unnecessary delete data if there are some data interspersed with other primary key data.
+   * But it may lead to some unnecessary delete data if there are some data interspersed with other primary key data.
    * e.g. K1-UB, K2-UB, K1-UA, K2-UB
    */
   private void processMultiUpdateAfter(RowData row) {

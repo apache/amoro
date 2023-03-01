@@ -78,6 +78,10 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when deploy to yarn cluster.
    */
   private transient ArcticTable table;
+  /**
+   * Track whether there is update_before before update_after or not neglecting primary key if upsert enabled.
+   */
+  private transient boolean hasUpdateBefore = false;
 
   public ArcticFileWriter(
       ShuffleRulePolicy<RowData, ShuffleKey> shuffleRule,
@@ -201,7 +205,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       if (writer == null) {
         this.writer = taskWriterFactory.create();
       }
-
+      processMultiUpdateAfter(row);
       if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
         row.setRowKind(RowKind.DELETE);
         writer.write(row);
@@ -211,6 +215,22 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       writer.write(row);
       return null;
     });
+  }
+
+  /**
+   * If upsert is enabled, turn update_after to insert if there isn't update_after followed by update_before.
+   * But it may lead to some unnecessary delete data if there are some data interspersed with other primary key data.
+   * e.g. K1-UB, K2-UB, K1-UA, K2-UB
+   */
+  private void processMultiUpdateAfter(RowData row) {
+    if (!upsert) {
+      return;
+    }
+
+    if (!hasUpdateBefore && RowKind.UPDATE_AFTER.equals(row.getRowKind())) {
+      row.setRowKind(RowKind.INSERT);
+    }
+    hasUpdateBefore = RowKind.UPDATE_BEFORE.equals(row.getRowKind());
   }
 
   @Override
