@@ -441,11 +441,13 @@ public class TestKeyed extends FlinkTestBase {
   @Test
   public void testFileUpsert() throws IOException {
     Assume.assumeFalse(kafkaLegacyEnable);
+    Assume.assumeFalse(LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType));
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
     data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
     data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
@@ -477,6 +479,8 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.DELETE, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
@@ -488,6 +492,7 @@ public class TestKeyed extends FlinkTestBase {
   @Test
   public void testFileUpsertWithSamePrimaryKey() throws Exception {
     Assume.assumeFalse(kafkaLegacyEnable);
+    Assume.assumeFalse(LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType));
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
