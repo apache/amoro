@@ -238,30 +238,25 @@ public class TableController extends RestBaseController {
    * upgrade hive table to arctic.
    */
   public static void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
-    try {
-      Map<String, String> keyValues = new TreeMap<>();
-      Map<String, String> tableProperties =
-          AmsUtils.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
-      tableProperties.keySet().stream()
-          .filter(key -> !key.endsWith("_DEFAULT"))
-          .forEach(
-              key -> keyValues
-                  .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
-      ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
-      Map<String, String> hiveProperties =
-          AmsUtils.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
+    Map<String, String> keyValues = new TreeMap<>();
+    Map<String, String> tableProperties =
+        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
+    tableProperties.keySet().stream()
+        .filter(key -> !key.endsWith("_DEFAULT"))
+        .forEach(
+            key -> keyValues
+                .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
+    ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
+    Map<String, String> hiveProperties =
+        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
 
-      hiveProperties.keySet().stream()
-          .filter(key -> HiveTableProperties.EXPOSED.contains(hiveProperties.get(key)))
-          .filter(key -> !key.endsWith("_DEFAULT"))
-          .forEach(
-              key -> keyValues
-                  .put(hiveProperties.get(key), hiveProperties.get(key + "_DEFAULT")));
-      ctx.json(OkResponse.of(keyValues));
-    } catch (Throwable t) {
-      LOG.error("Fail to get properties", t);
-      throw t;
-    }
+    hiveProperties.keySet().stream()
+        .filter(key -> HiveTableProperties.EXPOSED.contains(hiveProperties.get(key)))
+        .filter(key -> !key.endsWith("_DEFAULT"))
+        .forEach(
+            key -> keyValues
+                .put(hiveProperties.get(key), hiveProperties.get(key + "_DEFAULT")));
+    ctx.json(OkResponse.of(keyValues));
   }
 
   /**

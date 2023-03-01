@@ -281,7 +281,6 @@ public class TableControllerTest {
       app.get("/", TableController::getUpgradeHiveTableProperties);
       final okhttp3.Response resp = client.get("/", x -> {});
       String respBody = resp.body().string();
-      LOG.info("response: {}", respBody);
       OkResponse result = JSONObject.parseObject(respBody, OkResponse.class);
       assert result.getCode() == 200;
     });
