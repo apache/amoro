@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.write;
 
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;

@@ -64,7 +64,6 @@ import static com.netease.arctic.TableTestBase.writeNewDataFile;
 import static com.netease.arctic.TableTestBase.writePosDeleteFile;
 
 public class SequenceNumberFetcherTest {
-  private static final Logger LOG = LoggerFactory.getLogger(SequenceNumberFetcherTest.class);
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -125,7 +124,7 @@ public class SequenceNumberFetcherTest {
         Collections.singletonList(writeNewDataFile(table, records(0, 10, table.schema()), partitionData)),
         4);
     checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 0);
-    
+
   }
 
   private void testTable(Table table) throws IOException {
@@ -145,7 +144,7 @@ public class SequenceNumberFetcherTest {
     List<DataFile> dataFiles2 = insertDataFiles(table, 10);
     checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 4);
 
-    List<DataFile> dataFiles3 = overwriteDataFiles(table, dataFiles1, 
+    List<DataFile> dataFiles3 = overwriteDataFiles(table, dataFiles1,
         Collections.singletonList(writeNewDataFile(table, records(0, 10, table.schema()),
             partitionData)));
     checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 5);
@@ -167,7 +166,7 @@ public class SequenceNumberFetcherTest {
     for (DataFile dataFile : dataFiles3) {
       file2Positions.put(dataFile.path().toString(), 0L);
     }
-    rewriteFiles(table, currentAllDeleteFiles, 
+    rewriteFiles(table, currentAllDeleteFiles,
         Collections.singletonList(writePosDeleteFile(table, file2Positions, partitionData)));
     checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 9);
 
@@ -186,7 +185,6 @@ public class SequenceNumberFetcherTest {
       if (checkedDataFiles.containsKey(path)) {
         Assert.assertEquals((long) checkedDataFiles.get(path), sequenceNumber);
       } else {
-        LOG.info("get sequence {} of {}", sequenceNumber, path);
         checkedDataFiles.put(path, sequenceNumber);
         Assert.assertEquals(expectSequence, sequenceNumber);
       }
@@ -197,7 +195,6 @@ public class SequenceNumberFetcherTest {
         if (checkedDeletes.containsKey(path)) {
           Assert.assertEquals((long) checkedDeletes.get(path), sequenceNumber);
         } else {
-          LOG.info("get sequence {} of {}", sequenceNumber, path);
           checkedDeletes.put(path, sequenceNumber);
           Assert.assertEquals(expectSequence, sequenceNumber);
         }

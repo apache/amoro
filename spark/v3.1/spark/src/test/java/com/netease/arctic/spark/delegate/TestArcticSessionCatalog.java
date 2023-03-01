@@ -21,10 +21,6 @@ package com.netease.arctic.spark.delegate;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.SparkTestContext;
 import com.netease.arctic.table.TableIdentifier;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -44,6 +40,10 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class TestArcticSessionCatalog extends SparkTestContext {
 

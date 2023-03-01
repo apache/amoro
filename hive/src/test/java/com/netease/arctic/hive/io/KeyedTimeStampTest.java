@@ -14,8 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.hive.io.TestIOUtils.testWriteChange;
 import static com.netease.arctic.hive.io.TestIOUtils.readHiveKeyedTable;
+import static com.netease.arctic.hive.io.TestIOUtils.testWriteChange;
 
 public class KeyedTimeStampTest extends HiveTableTestBase {
 
