@@ -5,13 +5,11 @@ import com.netease.arctic.ams.server.repair.command.CallCommand;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
 import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
 import com.netease.arctic.ams.server.repair.command.OptimizeCall;
-import com.netease.arctic.ams.server.repair.command.RepairCall;
 import com.netease.arctic.ams.server.repair.command.ShowCall;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.yaml.snakeyaml.Yaml;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -20,6 +18,7 @@ public class TestCommandParser {
 
   private static final MockSimpleRegexCommandParser mockSimpleRegexCommandParser = new MockSimpleRegexCommandParser();
 
+  //Temporary, will be deleted after the generator completes
   private static class MockSimpleRegexCommandParser implements CommandParser {
 
     private static final String ANALYZE = "ANALYZE";
@@ -94,10 +93,11 @@ public class TestCommandParser {
         case SHOW:
           if (commandSplit.length != 2) {
             throw new IllegalCommandException("Please check if your command is correct! " +
-                "Pattern: SHOW [ DATABASES | TABLES ]");
+                "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]");
           }
           if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
-              StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name())) {
+              StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name()) ||
+              StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.CATALOGS.name())) {
             return call -> "ShowCall " + ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase());
           } else {
             throw new IllegalCommandException("Please check if your command is correct! " +
@@ -124,7 +124,8 @@ public class TestCommandParser {
           RepairWay.SYNC_METADATA.name(),
           RepairWay.ROLLBACK.name(),
           ShowCall.Namespaces.DATABASES.name(),
-          ShowCall.Namespaces.TABLES.name()
+          ShowCall.Namespaces.TABLES.name(),
+          ShowCall.Namespaces.CATALOGS.name()
       };
       Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
           keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();
@@ -137,12 +138,12 @@ public class TestCommandParser {
   @Test
   public void testKeyWords() {
     String[] keywords = mockSimpleRegexCommandParser.keywords();
-    Assert.assertArrayEquals(keywords, new String[]{
+    Assert.assertArrayEquals(new String[]{
         "ANALYZE", "REPAIR", "THROUGH", "USE", "OPTIMIZE", "REFRESH", "FILE_CACHE", "SHOW",
-        "START", "STOP", "FIND_BACK", "SYNC_METADATA", "ROLLBACK", "DATABASES", "TABLES",
+        "START", "STOP", "FIND_BACK", "SYNC_METADATA", "ROLLBACK", "DATABASES", "TABLES", "CATALOGS",
         "analyze", "repair", "through", "use", "optimize", "refresh", "file_cache", "show",
-        "start", "stop", "find_back", "sync_metadata", "rollback", "databases", "tables"
-    });
+        "start", "stop", "find_back", "sync_metadata", "rollback", "databases", "tables", "catalogs"
+    }, keywords);
   }
 
   @Test
@@ -210,6 +211,8 @@ public class TestCommandParser {
         mockSimpleRegexCommandParser.parse("SHOW TABLES").call(null));
     Assert.assertEquals("ShowCall DATABASES",
         mockSimpleRegexCommandParser.parse("show  databases").call(null));
+    Assert.assertEquals("ShowCall CATALOGS",
+        mockSimpleRegexCommandParser.parse("show catalogs").call(null));
     Assert.assertThrows(IllegalCommandException.class,
         () -> mockSimpleRegexCommandParser.parse("show my_db tables").call(null));
 

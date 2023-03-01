@@ -1,27 +1,30 @@
 package com.netease.arctic.ams.server.repair.command;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.server.repair.Context;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.thrift.TException;
 
 public class ShowCall implements CallCommand {
 
-  private ArcticCatalog arcticCatalog;
+  private CatalogManager catalogManager;
   private Namespaces namespaces;
 
-  public ShowCall(ArcticCatalog arcticCatalog, Namespaces namespaces) {
-    this.arcticCatalog = arcticCatalog;
+  public ShowCall(CatalogManager catalogManager, Namespaces namespaces) {
+    this.catalogManager = catalogManager;
     this.namespaces = namespaces;
   }
 
   @Override
-  public String call(Context context) {
+  public String call(Context context) throws FullTableNameException {
+    if (context.getCatalog() == null) {
+      throw new FullTableNameException("Can not find catalog name, your can use 'USE ${catalog}' statement");
+    }
+    ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(context.getCatalog());
     switch (this.namespaces) {
+      case CATALOGS:
+        return catalogManager.catalogs().stream().collect(Collectors.joining("\\n"));
       case DATABASES:
         return arcticCatalog.listDatabases().stream().collect(Collectors.joining("\\n"));
       case TABLES:
@@ -35,6 +38,7 @@ public class ShowCall implements CallCommand {
   }
 
   public enum Namespaces {
+    CATALOGS,
     DATABASES,
     TABLES
   }
