@@ -125,23 +125,34 @@ public class TestExpiredFileClean extends TableTestBase {
   }
 
   @Test
-  public void testGetExpireTime() throws IOException {
+  public void testNotExpireFlinkLatestCommit() throws IOException {
     insertChangeDataFiles(1);
     insertChangeDataFiles(2);
-    long olderThan = System.currentTimeMillis() - 100;
-    Assert.assertEquals(olderThan, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+    Assert.assertEquals(Long.MAX_VALUE,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
     appendFiles.set("flink.max-committed-checkpoint-id", "100");
     appendFiles.commit();
     long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
-    Assert.assertTrue(checkpointTime > olderThan);
-    Assert.assertEquals(olderThan, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+    Assert.assertEquals(checkpointTime,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
+    appendFiles2.set("flink.max-committed-checkpoint-id", "101");
+    appendFiles2.commit();
+    long checkpointTime2 = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     insertChangeDataFiles(2);
-    olderThan = testKeyedTable.changeTable().currentSnapshot().timestampMillis() + 100;
-    Assert.assertTrue(checkpointTime < olderThan);
-    Assert.assertEquals(checkpointTime, TableExpireService.getExpireTime(testKeyedTable.changeTable(), olderThan));
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    testKeyedTable.updateProperties().set(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableExpireService.expireArcticTable(testKeyedTable);
+
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
   }
 
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
