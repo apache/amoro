@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
-import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.ITableExpireService;
@@ -28,6 +27,7 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DefaultKeyedFile;
@@ -129,27 +129,29 @@ public class TableExpireService implements ITableExpireService {
               LOG.warn("[{}] Base table is null: {} ", traceId, tableIdentifier);
               return null;
             }
-            List<DataFileInfo> changeFilesInfo = ServiceContainer.getFileInfoCacheService()
-                .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
-            Set<String> baseExclude = changeFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
-            baseExclude.addAll(finalHiveLocation);
-            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
-            long baseCleanedTime = System.currentTimeMillis();
-            LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
-
             UnkeyedTable changeTable = keyedArcticTable.changeTable();
             if (changeTable == null) {
               LOG.warn("[{}] Change table is null: {}", traceId, tableIdentifier);
               return null;
             }
+
+            // get valid files in the change store which shouldn't physically delete when expire the snapshot
+            // in the base store
+            Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
+            baseExclude.addAll(finalHiveLocation);
+            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
+            long baseCleanedTime = System.currentTimeMillis();
+            LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
+
             // delete ttl files
             List<DataFileInfo> changeDataFiles = ServiceContainer.getFileInfoCacheService()
                 .getChangeTableTTLDataFiles(keyedArcticTable.id().buildTableIdentifier(),
                     System.currentTimeMillis() - changeDataTTL);
             deleteChangeFile(keyedArcticTable, changeDataFiles);
-            List<DataFileInfo> baseFilesInfo = ServiceContainer.getFileInfoCacheService()
-                .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-            Set<String> changeExclude = baseFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
+
+            // get valid files in the base store which shouldn't physically delete when expire the snapshot
+            // in the change store
+            Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
             changeExclude.addAll(finalHiveLocation);
             expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
             return null;
@@ -235,7 +237,8 @@ public class TableExpireService implements ITableExpireService {
         .retainLast(1).expireOlderThan(olderThan)
         .deleteWith(file -> {
           try {
-            if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
+            String filePath = FileUtil.getUriPath(file);
+            if (!exclude.contains(filePath) && !exclude.contains(new Path(filePath).getParent().toString())) {
               arcticInternalTable.io().deleteFile(file);
             }
             parentDirectory.add(new Path(file).getParent().toString());

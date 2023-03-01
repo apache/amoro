@@ -42,5 +42,14 @@ public class ManifestEntryFields {
     public int id() {
       return id;
     }
+
+    public static Status of(int id) {
+      for (Status status : Status.values()) {
+        if (status.id() == id) {
+          return status;
+        }
+      }
+      throw new IllegalArgumentException("not support status id " + id);
+    }
   }
 }

@@ -52,6 +52,7 @@ import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -100,7 +101,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class
+    TestOrphanFileCleanSupportHive.class,
+    UnKeyedTableUtilTest.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
