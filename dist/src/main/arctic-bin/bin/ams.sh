@@ -141,7 +141,7 @@ function start() {
   sleep 3
   # Check if the process has died; in that case we'll tail the log so the user can see
   if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
-    echo "process start failed."
+    echo "process start failed. please check the error log in ${STDERR_LOG}"
   else
     echo "process start success."
   fi
