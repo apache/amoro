@@ -561,19 +561,29 @@ public class OptimizeQueueService extends IJDBCService {
           }
         } else {
           if (tables.contains(task.getTableIdentifier())) {
+            TableTaskHistory tableTaskHistory;
             try {
               // load files from sysdb
               task.setFiles();
+              // update max execute time
+              task.setMaxExecuteTime();
+              tableTaskHistory = task.onExecuting(jobId, attemptId);
             } catch (Exception e) {
               task.clearFiles();
-              LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
+              LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
               if (!tasks.offer(task)) {
+                LOG.error("{} failed to put task back into queue", task.getTaskId());
                 task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
               }
+
+              // sleep 1s, avoid poll task failed use too much cpu
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException ex) {
+                LOG.error("poll task {} failed, sleep thread was interrupted", task.getTaskId(), ex);
+              }
+              continue;
             }
-            // update max execute time
-            task.setMaxExecuteTime();
-            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);
             } catch (Exception e) {
@@ -637,8 +647,9 @@ public class OptimizeQueueService extends IJDBCService {
       for (TableIdentifier tableIdentifier : tableSort) {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+          ArcticTable arcticTable = tableItem.getArcticTable(true);
 
-          Map<String, String> properties = tableItem.getArcticTable(false).properties();
+          Map<String, String> properties = arcticTable.properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           // queue was updated
@@ -650,8 +661,7 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!CompatiblePropertyUtil.propertyAsBoolean(tableItem.getArcticTable(false).properties(),
-              TableProperties.ENABLE_SELF_OPTIMIZING,
+          if (!CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
               TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
             LOG.debug("{} is not enable optimize continue", tableIdentifier);
             continue;
@@ -674,7 +684,7 @@ public class OptimizeQueueService extends IJDBCService {
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
           if (tableItem.startPlanIfNot()) {
             try {
-              if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
+              if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
                 optimizePlanResult = planNativeIcebergTable(tableItem, currentTime);
               } else {
                 optimizePlanResult = planArcticTable(tableItem, currentTime);
@@ -708,7 +718,7 @@ public class OptimizeQueueService extends IJDBCService {
     private OptimizePlanResult planNativeIcebergTable(TableOptimizeItem tableItem, long currentTime) {
       TableIdentifier tableIdentifier = tableItem.getArcticTable().id();
       int queueId = optimizeQueue.getOptimizeQueueMeta().getQueueId();
-      ArcticTable arcticTable = tableItem.getArcticTable(true);
+      ArcticTable arcticTable = tableItem.getArcticTable();
       Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
       if (currentSnapshot == null) {
         return OptimizePlanResult.EMPTY;

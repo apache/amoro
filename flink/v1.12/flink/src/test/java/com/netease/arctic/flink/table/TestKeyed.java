@@ -43,7 +43,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -293,6 +292,68 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
+  public void testUnpartitionLogSinkSourceWithSelectedFields() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000015, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'arctic.emit.mode'='log'" +
+      ", 'log.version'='v1'" +
+      ") */" +
+      " select * from input");
+
+    TableResult result = exec("select id, op_time from arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.read.mode'='log'" +
+      ", 'scan.startup.mode'='earliest'" +
+      ")*/" +
+      "");
+
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{1000004, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000011, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000014, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
+  }
+
+  @Test
   public void testUnPartitionDoubleSink() throws Exception {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});
@@ -536,6 +597,68 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
+  }
+
+  @Test
+  public void testPartitionLogSinkSourceWithSelectedFields() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000015, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+      ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'arctic.emit.mode'='log'" +
+      ", 'log.version'='v1'" +
+      ") */" +
+      " select * from input");
+
+    TableResult result = exec("select id, op_time from arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.read.mode'='log'" +
+      ", 'scan.startup.mode'='earliest'" +
+      ")*/" +
+      "");
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{1000004, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000011, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000014, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 

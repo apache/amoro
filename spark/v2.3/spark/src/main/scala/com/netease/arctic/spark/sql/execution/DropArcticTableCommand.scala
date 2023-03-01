@@ -2,10 +2,10 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.source.ArcticSource
 import org.apache.spark.sql.arctic.AnalysisException
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.internal.StaticSQLConf
+import org.apache.spark.sql.{Row, SparkSession}
 
 case class DropArcticTableCommand(arctic: ArcticSource, tableIdentifier: TableIdentifier, ignoreIfExists: Boolean, purge: Boolean)
   extends RunnableCommand {
