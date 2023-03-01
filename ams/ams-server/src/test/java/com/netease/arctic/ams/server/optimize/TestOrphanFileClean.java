@@ -86,7 +86,7 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     changeOrphanDataFile.createOrOverwrite();
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
-    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
+    OrphanFilesCleanService.cleanContentFiles(testKeyedTable, System.currentTimeMillis());
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
     for (FileScanTask task : testKeyedTable.baseTable().newScan().planFiles()) {
@@ -124,7 +124,7 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
       Assert.assertTrue(testKeyedTable.io().exists(s));
     }
 
-    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
+    OrphanFilesCleanService.cleanContentFiles(testKeyedTable, System.currentTimeMillis());
     for (String s : fileInBaseStore) {
       Assert.assertTrue(testKeyedTable.io().exists(s));
     }
@@ -153,11 +153,59 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeInvalidMetadataJson));
     
-    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", true);
+    OrphanFilesCleanService.cleanMetadata(testKeyedTable, System.currentTimeMillis());
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeInvalidMetadataJson));
     
+    assertMetadataExists(testKeyedTable.changeTable());
+    assertMetadataExists(testKeyedTable.baseTable());
+  }
+
+  @Test
+  public void notDeleteFlinkTemporaryFile() throws IOException {
+    insertTableBaseDataFiles(testKeyedTable);
+    String flinkJobId = "flinkJobTest";
+    String fakeFlinkJobId = "fakeFlinkJobTest";
+
+    String baseOrphanFilePath = testKeyedTable.baseTable().location() + File.separator + "metadata" +
+        File.separator + flinkJobId + "orphan.avro";
+    String changeOrphanFilePath = testKeyedTable.changeTable().location() + File.separator + "metadata" +
+        File.separator + flinkJobId + "orphan.avro";
+    String fakeChangeOrphanFilePath = testKeyedTable.changeTable().location() + File.separator + "metadata" +
+        File.separator + fakeFlinkJobId + "orphan.avro";
+    OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
+    baseOrphanDataFile.createOrOverwrite();
+    OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
+    changeOrphanDataFile.createOrOverwrite();
+    OutputFile fakeChangeOrphanDataFile = testKeyedTable.io().newOutputFile(fakeChangeOrphanFilePath);
+    fakeChangeOrphanDataFile.createOrOverwrite();
+
+    String changeInvalidMetadataJson = testKeyedTable.changeTable().location() + File.separator + "metadata" +
+        File.separator + "v0.metadata.json";
+    testKeyedTable.io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite();
+
+    AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
+    appendFiles.set("flink.job-id", fakeFlinkJobId);
+    appendFiles.commit();
+
+    // set flink.job-id to change table
+    AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
+    appendFiles2.set("flink.job-id", flinkJobId);
+    appendFiles2.commit();
+
+    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
+    Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
+    Assert.assertTrue(testKeyedTable.io().exists(fakeChangeOrphanFilePath));
+    Assert.assertTrue(testKeyedTable.io().exists(changeInvalidMetadataJson));
+
+    OrphanFilesCleanService.cleanMetadata(testKeyedTable, System.currentTimeMillis());
+    Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
+    // files whose file name starts with flink.job-id should not be deleted
+    Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
+    Assert.assertFalse(testKeyedTable.io().exists(fakeChangeOrphanFilePath));
+    Assert.assertFalse(testKeyedTable.io().exists(changeInvalidMetadataJson));
+
     assertMetadataExists(testKeyedTable.changeTable());
     assertMetadataExists(testKeyedTable.baseTable());
   }
