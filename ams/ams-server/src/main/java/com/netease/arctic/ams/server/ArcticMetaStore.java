@@ -97,93 +97,60 @@ public class ArcticMetaStore {
     }
   }
 
-
   public static LinkedHashMap getSystemSettingFromYaml() {
     JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
     LinkedHashMap<String, Object> config = new LinkedHashMap<String, Object>();
 
+    systemConfig.put(ArcticMetaStoreConf.ARCTIC_HOME.key(), getArcticHome());
+    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
+    if (systemThriftPort == null) {
+      systemConfig.put(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT.key(),
+          systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    } else {
+      systemConfig.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(), Integer.parseInt(systemThriftPort));
+    }
+
+    validateConfig(systemConfig);
+    config.putAll(systemConfig);
+
+    //extension properties
+    Map<String,String> extensionPro =
+        yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class) == null ? new HashMap<>() :
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class);
+    config.put(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES.key(), extensionPro);
+
+    return config;
+  }
+
+  public static void validateConfig(JSONObject systemConfig) {
     if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
       throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
     }
     InetAddress inetAddress = AmsUtils.getLocalHostExactAddress(
-                    systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+        systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
     if (inetAddress == null) {
       throw new RuntimeException("can't find host address start with " +
-              systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+          systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
     }
-    config.put(ArcticMetaStoreConf.THRIFT_BIND_HOST.key(), inetAddress.getHostAddress());
-
-    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
-    if (systemThriftPort == null) {
-      config.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(),
-              systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
-    } else {
-      config.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(), Integer.parseInt(systemThriftPort));
-    }
-
-    config.put(ArcticMetaStoreConf.HTTP_SERVER_PORT.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
-    config.put(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key()));
-    config.put(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key()));
-    config.put(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key()));
-    config.put(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE.key()));
-    config.put(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key(),
-            systemConfig.getInteger(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key()));
-
-    config.put(ArcticMetaStoreConf.DB_TYPE.key(),
-            systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()));
-    config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key(),
-            systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key()));
-    config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key(),
-            systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
-
-    config.put(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
-        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_USERNAME.key(),
-            ArcticMetaStoreConf.LOGIN_USERNAME.defaultValue()));
-    config.put(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
-        systemConfig.getOrDefault(ArcticMetaStoreConf.LOGIN_PASSWORD.key(),
-            ArcticMetaStoreConf.LOGIN_PASSWORD.defaultValue()));
+    systemConfig.put(ArcticMetaStoreConf.THRIFT_BIND_HOST.key(), inetAddress.getHostAddress());
 
     //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
-      config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key(),
-              systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key()));
-      config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key(),
-              systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
+      if (!systemConfig.containsKey(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key()) ||
+          !systemConfig.containsKey(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key())) {
+        throw new RuntimeException("username and password must be configured if the database type is mysql");
+      }
     }
 
     //HA config
     if (systemConfig.containsKey(ArcticMetaStoreConf.HA_ENABLE.key()) &&
-            systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
-      config.put(ArcticMetaStoreConf.HA_ENABLE.key(), true);
-      config.put(ArcticMetaStoreConf.CLUSTER_NAME.key(),
-              systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key()));
-      config.put(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key(),
-              systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key()));
-    }
-
-    //extension properties
-    Map<String,String> extensionPro =
-            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class) == null ? new HashMap<>() :
-            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class);
-    config.put(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES.key(), extensionPro);
-
-    config.put(ArcticMetaStoreConf.ARCTIC_HOME.key(), getArcticHome());
-
-    // terminal properties
-    for (String key : systemConfig.keySet()) {
-      if (key != null && key.startsWith(ArcticMetaStoreConf.TERMINAL_PREFIX)) {
-        String value = systemConfig.getString(key);
-        config.put(key, value);
+        systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
+      if (!systemConfig.containsKey(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key())) {
+        throw new RuntimeException(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key() + " must be configured when you enable " +
+            "the ams high availability");
       }
     }
-
-    return config;
-
   }
 
   public static void tryStartServer() {
@@ -634,8 +601,9 @@ public class ArcticMetaStore {
         schedulePolicy = ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA;
       } else if (
           !(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA.equalsIgnoreCase(schedulePolicy) ||
-          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED.equalsIgnoreCase(schedulePolicy))) {
-        throw new IllegalArgumentException(String.format("Scheduling policy only can be %s and %s",
+              ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED.equalsIgnoreCase(schedulePolicy))) {
+        throw new IllegalArgumentException(String.format(
+            "Scheduling policy only can be %s and %s",
             ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA,
             ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED));
       }
