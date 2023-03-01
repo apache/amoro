@@ -186,6 +186,8 @@ public class ArcticMetaStore {
   }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
+    // init config
+    initConfig();
     try {
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
       int selectorThreads = conf.getInteger(ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS);
@@ -231,21 +233,17 @@ public class ArcticMetaStore {
           .workerThreads(workerThreads)
           .selectorThreads(selectorThreads)
           .acceptQueueSizePerThread(queueSizePerSelector);
-      server = new TThreadedSelectorServer(args);
       LOG.info("Started the new meta server on port [" + port + "]...");
       LOG.info("Options.thriftWorkerThreads = " + workerThreads);
       LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
       LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);
 
+      server = new TThreadedSelectorServer(args);
       // start meta store worker thread
       Lock metaStoreThreadsLock = new ReentrantLock();
       Condition startCondition = metaStoreThreadsLock.newCondition();
       AtomicBoolean startedServing = new AtomicBoolean();
       ThreadPool.initialize(conf);
-      // move configuration initialize to page!
-      //      initCatalogConfig();
-      initContainerConfig();
-      initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
       server.serve();
@@ -573,6 +571,16 @@ public class ArcticMetaStore {
     ServiceContainer.getCatalogMetadataService().addCatalog(catalogMetas);
   }
 
+  private static void initConfig() {
+    try {
+      initContainerConfig();
+      initOptimizeGroupConfig();
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
+
   private static void initContainerConfig() {
     JSONArray containers = yamlConfig.getJSONArray(ConfigFileProperties.CONTAINER_LIST);
     for (int i = 0; i < containers.size(); i++) {
@@ -620,7 +628,7 @@ public class ArcticMetaStore {
                   .equalsIgnoreCase(optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER)));
       if (!checkContainer) {
         throw new NoSuchObjectException(
-            "can not find such container config named" +
+            "can not find such container config named:" +
                 optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
       }
       if (optimizeGroup.containsKey(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES)) {
