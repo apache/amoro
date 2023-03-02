@@ -6,7 +6,6 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -324,10 +323,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
               "delete and re-create with same location");
         } else {
           // this partition is need to alter, rather than delete
-          StructLikeWrapper structLikeWrapper = StructLikeWrapper.forType(table.spec().schema().asStruct());
-          structLikeWrapper.set(entry.getKey());
           partitionToAlter.put(entry.getKey(), entry.getValue());
-          partitionToDelete.remove(structLikeWrapper.get());
+          partitionToDelete.remove(entry.getKey());
           continue;
         }
       }
