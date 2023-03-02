@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.google.common.base.Strings;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -35,7 +36,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ManifestFile;
@@ -122,65 +122,78 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
   public static void cleanContentFiles(ArcticTable arcticTable, long lastTime) {
     // For clean data files, should get valid files in the base store and the change store, so acquire in advance
     // to prevent repeated acquisition
-    Set<String> validFiles = getValidDataFiles(arcticTable);
+    Set<String> validFiles = getValidContentFiles(arcticTable);
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
-      clearInternalTableContentsFiles(keyedArcticTable, keyedArcticTable.baseTable(), lastTime, validFiles);
-      clearInternalTableContentsFiles(keyedArcticTable, keyedArcticTable.changeTable(), lastTime, validFiles);
+      LOG.info("{} start clean content files of base store", arcticTable.id());
+      int deleteFilesCnt = clearInternalTableContentsFiles(keyedArcticTable.baseTable(), lastTime, validFiles);
+      LOG.info("{} total delete {} files from base store", arcticTable.id(), deleteFilesCnt);
+
+      LOG.info("{} start clean content files of change store", arcticTable.id());
+      deleteFilesCnt = clearInternalTableContentsFiles(keyedArcticTable.changeTable(), lastTime, validFiles);
+      LOG.info("{} total delete {} files from change store", arcticTable.id(), deleteFilesCnt);
     } else {
-      clearInternalTableContentsFiles(arcticTable, arcticTable.asUnkeyedTable(), lastTime, validFiles);
+      LOG.info("{} start clean content files", arcticTable.id());
+      int deleteFilesCnt = clearInternalTableContentsFiles(arcticTable.asUnkeyedTable(), lastTime, validFiles);
+      LOG.info("{} total delete {} files", arcticTable.id(), deleteFilesCnt);
     }
   }
 
   public static void cleanMetadata(ArcticTable arcticTable, long lastTime) {
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
-      clearInternalTableMetadata(keyedArcticTable, keyedArcticTable.baseTable(), lastTime);
-      clearInternalTableMetadata(keyedArcticTable, keyedArcticTable.changeTable(), lastTime);
+      LOG.info("{} start clean metadata files of base store", arcticTable.id());
+      int deleteFilesCnt = clearInternalTableMetadata(keyedArcticTable.baseTable(), lastTime);
+      LOG.info("{} total delete {} metadata files from base store", arcticTable.id(), deleteFilesCnt);
+
+      LOG.info("{} start clean metadata files of change store", arcticTable.id());
+      deleteFilesCnt = clearInternalTableMetadata(keyedArcticTable.changeTable(), lastTime);
+      LOG.info("{} total delete {} metadata files from change store", arcticTable.id(), deleteFilesCnt);
     } else {
-      clearInternalTableMetadata(arcticTable, arcticTable.asUnkeyedTable(), lastTime);
+      LOG.info("{} start clean metadata files", arcticTable.id());
+      int deleteFilesCnt = clearInternalTableMetadata(arcticTable.asUnkeyedTable(), lastTime);
+      LOG.info("{} total delete {} metadata files", arcticTable.id(), deleteFilesCnt);
     }
   }
 
-  private static void clearInternalTableContentsFiles(ArcticTable table, UnkeyedTable internalTable, long lastTime,
-                                                      Set<String> exclude) {
+  private static int clearInternalTableContentsFiles(UnkeyedTable internalTable, long lastTime,
+                                                     Set<String> exclude) {
     int deleteFilesCnt = 0;
     String dataLocation = internalTable.location() + File.separator + DATA_FOLDER_NAME;
-    if (table.io().exists(dataLocation)) {
-      for (FileStatus fileStatus : table.io().list(dataLocation)) {
-        deleteFilesCnt += deleteInvalidDataFiles(table.io(),
+    if (internalTable.io().exists(dataLocation)) {
+      for (FileStatus fileStatus : internalTable.io().list(dataLocation)) {
+        deleteFilesCnt += deleteInvalidContentFiles(internalTable.io(),
             fileStatus,
             lastTime,
             exclude);
       }
     }
-    LOG.info("{} total delete {} files", table.id(), deleteFilesCnt);
+    return deleteFilesCnt;
   }
 
-  private static void clearInternalTableMetadata(ArcticTable table, UnkeyedTable internalTable, long lastTime) {
-    Set<String> validFiles = getValidMetadataFiles(table.id(), table.io(), internalTable);
-    LOG.info("{} table get {} valid files", table.id(), validFiles.size());
+  private static int clearInternalTableMetadata(UnkeyedTable internalTable, long lastTime) {
+    Set<String> validFiles = getValidMetadataFiles(internalTable);
+    LOG.info("{} table get {} valid files", internalTable.id(), validFiles.size());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(internalTable);
-    LOG.info("{} table get exclude file name pattern {}", table.id(), excludeFileNameRegex);
+    LOG.info("{} table get exclude file name pattern {}", internalTable.id(), excludeFileNameRegex);
     int deleteFilesCnt = 0;
     String metadataLocation = internalTable.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
-    for (FileStatus fileStatus : table.io().list(metadataLocation)) {
-      deleteFilesCnt += deleteInvalidMetadata(table.io(),
+    for (FileStatus fileStatus : internalTable.io().list(metadataLocation)) {
+      deleteFilesCnt += deleteInvalidMetadata(internalTable.io(),
           fileStatus,
           lastTime,
           validFiles,
           excludeFileNameRegex);
     }
-    LOG.info("{} total delete {} manifestList/manifest/metadata files", table.id(),
-        deleteFilesCnt);
+    return deleteFilesCnt;
   }
 
   private static Pattern getExcludeFileNameRegex(UnkeyedTable table) {
     String latestFlinkJobId = null;
     for (Snapshot snapshot : table.snapshots()) {
       String flinkJobId = snapshot.summary().get("flink.job-id");
-      if (StringUtils.isNotBlank(flinkJobId)) {
+      if (!Strings.isNullOrEmpty(flinkJobId)) {
         latestFlinkJobId = flinkJobId;
       }
     }
@@ -195,17 +208,17 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).toString();
   }
 
-  private static int deleteInvalidDataFiles(ArcticFileIO io,
-                                            FileStatus fileStatus,
-                                            Long lastTime,
-                                            Set<String> exclude) {
+  private static int deleteInvalidContentFiles(ArcticFileIO io,
+                                               FileStatus fileStatus,
+                                               Long lastTime,
+                                               Set<String> exclude) {
     String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
         int deleteFileCnt = 0;
         for (FileStatus file : io.list(location)) {
-          deleteFileCnt += deleteInvalidDataFiles(io, file, lastTime, exclude);
+          deleteFileCnt += deleteInvalidContentFiles(io, file, lastTime, exclude);
         }
         LOG.info("delete {} files in {}", deleteFileCnt, location);
 
@@ -221,8 +234,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         }
 
         TableFileUtils.deleteEmptyDirectory(io, location, exclude);
-        LOG.info("delete[execute={}] empty dir : {}", location,
-            formatTime(fileStatus.getModificationTime()));
+        LOG.info("delete empty dir : {}[{}]", location, formatTime(fileStatus.getModificationTime()));
         return 0;
       } else {
         return 0;
@@ -260,8 +272,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     }
   }
 
-  private static Set<String> getValidMetadataFiles(TableIdentifier tableIdentifier, ArcticFileIO io,
-                                                   UnkeyedTable internalTable) {
+  private static Set<String> getValidMetadataFiles(UnkeyedTable internalTable) {
+    TableIdentifier tableIdentifier = internalTable.id();
+    ArcticFileIO io = internalTable.io();
     Set<String> validFiles = new HashSet<>();
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
@@ -292,7 +305,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     return validFiles;
   }
 
-  private static Set<String> getValidDataFiles(ArcticTable arcticTable) {
+  private static Set<String> getValidContentFiles(ArcticTable arcticTable) {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
       Set<String> baseValidFiles = UnKeyedTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
@@ -303,7 +316,6 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       validFiles.addAll(changeValidFiles);
     } else {
       Set<String> baseValidFiles = UnKeyedTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
-      LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
     }
 
