@@ -88,6 +88,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       throw new RuntimeException(e);
     }
     this.partitionToAlter = StructLikeMap.create(table.spec().partitionType());
+    this.partitionToCreate = StructLikeMap.create(table.spec().partitionType());
+    this.partitionToDelete = StructLikeMap.create(table.spec().partitionType());
   }
 
   abstract SnapshotUpdate<?> getSnapshotUpdateDelegate();
