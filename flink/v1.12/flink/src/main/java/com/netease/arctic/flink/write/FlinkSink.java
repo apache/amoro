@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.metric.MetricsGenerator;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.flink.shuffle.RoundRobinShuffleRulePolicy;
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -177,7 +177,7 @@ public class FlinkSink {
 
       DistributionHashMode distributionMode = getDistributionHashMode();
       LOG.info("take effect distribute mode: {}", distributionMode);
-      ShuffleHelper helper = ShuffleHelper.build(table, writeSchema, flinkSchemaRowType);
+      PartitionPrimaryKeyHelper helper = PartitionPrimaryKeyHelper.build(table, writeSchema, flinkSchemaRowType);
 
       ShuffleRulePolicy<RowData, ShuffleKey>
           shufflePolicy = buildShuffleRulePolicy(helper, writeOperatorParallelism, distributionMode, overwrite, table);
@@ -196,7 +196,7 @@ public class FlinkSink {
       final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
       ArcticFileWriter fileWriter = createFileWriter(table, shufflePolicy, overwrite, flinkSchemaRowType,
-          arcticEmitMode, tableLoader);
+          arcticEmitMode, tableLoader, writeSchema);
 
       ArcticLogWriter logWriter = ArcticUtils.buildArcticLogWriter(table.properties(),
           producerConfig, topic, flinkSchema, arcticEmitMode, helper, tableLoader, watermarkWriteGap);
@@ -256,7 +256,7 @@ public class FlinkSink {
 
     @Nullable
     public static ShuffleRulePolicy<RowData, ShuffleKey> buildShuffleRulePolicy(
-        ShuffleHelper helper,
+        PartitionPrimaryKeyHelper helper,
         int writeOperatorParallelism,
         DistributionHashMode distributionHashMode,
         boolean overwrite,
@@ -298,8 +298,10 @@ public class FlinkSink {
                                                   boolean overwrite,
                                                   RowType flinkSchema,
                                                   ArcticTableLoader tableLoader) {
+    Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)),
+        arcticTable.schema());
     return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE,
-        tableLoader);
+        tableLoader, writeSchema);
   }
 
   public static ArcticFileWriter createFileWriter(ArcticTable arcticTable,
@@ -307,7 +309,8 @@ public class FlinkSink {
                                                   boolean overwrite,
                                                   RowType flinkSchema,
                                                   String emitMode,
-                                                  ArcticTableLoader tableLoader) {
+                                                  ArcticTableLoader tableLoader,
+                                                  Schema writeSchema) {
     if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
@@ -331,7 +334,8 @@ public class FlinkSink {
         minFileSplitCount,
         tableLoader,
         upsert,
-        submitEmptySnapshot);
+        submitEmptySnapshot,
+        PartitionPrimaryKeyHelper.build(arcticTable, writeSchema, flinkSchema));
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(ArcticTable arcticTable,

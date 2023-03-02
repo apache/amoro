@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden.pulsar;
 
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogDataJsonSerialization;
@@ -43,7 +43,7 @@ public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
       Properties producerConfig,
       String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
-      ShuffleHelper helper) {
+      PartitionPrimaryKeyHelper helper) {
     checkNotNull(topic);
     SinkConfiguration conf = toSinkConf(producerConfig);
 

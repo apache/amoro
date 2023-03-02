@@ -22,7 +22,7 @@ import com.netease.arctic.flink.read.hidden.pulsar.LogPulsarSourceTest;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.util.TestUtil;
@@ -575,7 +575,7 @@ public class HiddenLogOperatorsTest {
             logMsgFactory,
             LogRecordV1.fieldGetterFactory,
             jobId,
-            ShuffleHelper.EMPTY
+            PartitionPrimaryKeyHelper.EMPTY
         );
 
     OneInputStreamOperatorInternTest<RowData, RowData> harness =

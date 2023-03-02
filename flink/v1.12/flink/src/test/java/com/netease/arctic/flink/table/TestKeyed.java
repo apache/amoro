@@ -450,6 +450,11 @@ public class TestKeyed extends FlinkTestBase {
     data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
         InternalTypeInfo.ofFields(
             DataTypes.INT().getLogicalType(),
@@ -483,6 +488,70 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    Assert.assertEquals(DataUtil.toRowSet(expected),
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
+  }
+
+  @Test
+  public void testFileCDC() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
+    Assume.assumeFalse(LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType));
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
+    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
+        InternalTypeInfo.ofFields(
+            DataTypes.INT().getLogicalType(),
+            DataTypes.VARCHAR(100).getLogicalType(),
+            DataTypes.TIMESTAMP().getLogicalType()
+        ));
+
+    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+        " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+        ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE +
+        "/*+ OPTIONS(" +
+        "'arctic.emit.mode'='file'" +
+        ")*/" + " select * from input");
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
         new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
             "'streaming'='false'" +
