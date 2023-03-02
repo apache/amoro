@@ -11,9 +11,6 @@ on:
       - "master"
       - "0.**"
     paths:
-      - "!core/**"
-      - "!hive/**"
-      - "!ams/api/**"
       - "ams/ams-server/**"
       - "optimizer/**"
 
@@ -22,9 +19,6 @@ on:
       - "master"
       - "0.**"
     paths:
-      - "!core/**"
-      - "!hive/**"
-      - "!ams/**"
       - "ams/ams-server/**"
       - "optimizer/**"
 
@@ -50,11 +44,23 @@ jobs:
               - 'ams/ams-server/**'
             optimizer:
               - 'optimizer/**'
+            core:
+              - 'core/**'
+            hive:
+              - 'hive/**'
+            ams_api:
+              - 'ams/ams-api/**'
 
       - name: test for ams server
-        if: steps.changed-files.outputs.ams_server == 'true'
+        if: steps.changed-files.outputs.ams_server == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn install -pl 'ams/ams-server' -am -e
 
       - name: test for optimizer
-        if: steps.changed-files.outputs.optimizer == 'true'
+        if: steps.changed-files.outputs.optimizer == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn install -pl 'optimizer' -am -e
+
+      - name: Code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true
+          flags: ams

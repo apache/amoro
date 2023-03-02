@@ -138,13 +138,15 @@ public class AmsUtils {
 
     List<Field> fields = Arrays.stream(clazz.getDeclaredFields())
         // filter out the non-static fields
-        .filter(f -> Modifier.isStatic(f.getModifiers()))
+        .filter(f -> Modifier.isStatic(f.getModifiers()) && Modifier.isPublic(f.getModifiers()))
         .filter(f -> f.getAnnotation(Deprecated.class) == null)
+
         // collect to list
         .collect(Collectors.toList());
 
     Map<String, String> result = new HashMap<>();
     for (Field field : fields) {
+      field.setAccessible(true);
       result.put(field.getName(), field.get(null) + "");
     }
     return result;

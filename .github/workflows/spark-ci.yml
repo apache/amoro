@@ -47,11 +47,23 @@ jobs:
               - 'spark/v2.3/**'
             spark31:
               - 'spark/v3.1/**'
+            core:
+              - 'core/**'
+            hive:
+              - 'hive/**'
+            ams_api:
+              - 'ams/ams-api/**'
 
       - name: test for spark 2.3
-        if: steps.changed-files.outputs.spark23 == 'true'
+        if: steps.changed-files.outputs.spark23 == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn install -pl 'spark/v2.3/spark' -am -e
 
       - name: test for spark 3.1
-        if: steps.changed-files.outputs.spark31 == 'true'
+        if: steps.changed-files.outputs.spark31 == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn install -pl 'spark/v3.1/spark-runtime,ams/ams-server' -am -e
+
+      - name: Code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true
+          flags: spark
