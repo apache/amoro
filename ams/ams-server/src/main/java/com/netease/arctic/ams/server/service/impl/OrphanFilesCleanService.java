@@ -56,6 +56,8 @@ import java.util.regex.Pattern;
 
 public class OrphanFilesCleanService implements IOrphanFilesCleanService {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleanService.class);
+  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#FLINK_JOB_ID
+  public static final String FLINK_JOB_ID = "flink.job-id";
 
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String DATA_FOLDER_NAME = "data";
@@ -192,7 +194,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
   private static Pattern getExcludeFileNameRegex(UnkeyedTable table) {
     String latestFlinkJobId = null;
     for (Snapshot snapshot : table.snapshots()) {
-      String flinkJobId = snapshot.summary().get("flink.job-id");
+      String flinkJobId = snapshot.summary().get(FLINK_JOB_ID);
       if (!Strings.isNullOrEmpty(flinkJobId)) {
         latestFlinkJobId = flinkJobId;
       }

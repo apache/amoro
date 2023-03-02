@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService.DATA_FOLDER_NAME;
+import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService.FLINK_JOB_ID;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -186,12 +187,12 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     testKeyedTable.io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite();
 
     AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
-    appendFiles.set("flink.job-id", fakeFlinkJobId);
+    appendFiles.set(FLINK_JOB_ID, fakeFlinkJobId);
     appendFiles.commit();
 
     // set flink.job-id to change table
     AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
-    appendFiles2.set("flink.job-id", flinkJobId);
+    appendFiles2.set(FLINK_JOB_ID, flinkJobId);
     appendFiles2.commit();
 
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
