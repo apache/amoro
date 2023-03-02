@@ -28,10 +28,14 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private ChangeAction changeAction = ChangeAction.INSERT;
   private List<DataType> dataTypeList;
 
-  public SparkInternalRowCastWrapper(InternalRow row, ChangeAction changeAction) {
+  public SparkInternalRowCastWrapper(InternalRow row, ChangeAction changeAction, StructType schema) {
     this.row = row;
     this.changeAction = changeAction;
-    this.schema = ((ProjectingInternalRow) row).schema();
+    if (row instanceof ProjectingInternalRow) {
+      this.schema = ((ProjectingInternalRow) row).schema();
+    } else {
+      this.schema = schema;
+    }
   }
 
   public StructType getSchema() {

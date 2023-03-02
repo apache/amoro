@@ -42,7 +42,7 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.DELETE));
+    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.DELETE, schema));
   }
 
   @Override
@@ -50,11 +50,11 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
     SparkInternalRowCastWrapper delete;
     SparkInternalRowCastWrapper insert;
     if (isKeyedTable) {
-      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.UPDATE_BEFORE);
-      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.UPDATE_AFTER);
+      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.UPDATE_BEFORE, schema);
+      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.UPDATE_AFTER, schema);
     } else {
-      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.DELETE);
-      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.INSERT);
+      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.DELETE, schema);
+      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.INSERT, schema);
     }
     if (!rowIsAllNull(delete)) {
       writer.write(delete);
@@ -75,8 +75,7 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.INSERT));
-
+    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.INSERT, schema));
   }
 
   @Override
