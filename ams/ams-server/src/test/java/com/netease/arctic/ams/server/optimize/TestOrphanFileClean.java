@@ -24,8 +24,12 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.catalog.BasicArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -46,8 +50,10 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService.DATA_FOLDER_NAME;
@@ -56,6 +62,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @PrepareForTest({
+    CatalogLoader.class,
     ServiceContainer.class,
     JDBCSqlSessionFactoryProvider.class
 })
@@ -68,13 +75,20 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
   public void mock() {
     mockStatic(JDBCSqlSessionFactoryProvider.class);
     mockStatic(ServiceContainer.class);
+    mockStatic(CatalogLoader.class);
     when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
     FakeFileInfoCacheService fakeFileInfoCacheService = new FakeFileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fakeFileInfoCacheService);
+    when(ServiceContainer.getOrphanFilesCleanService()).thenReturn(new OrphanFilesCleanService());
+    FakeArcticCatalog fakeArcticCatalog = new FakeArcticCatalog();
+    fakeArcticCatalog.addTable(testKeyedTable);
+    when(CatalogLoader.load(null, testKeyedTable.id().getCatalog())).thenReturn(fakeArcticCatalog);
   }
 
   @Test
   public void orphanDataFileClean() throws IOException {
+    OrphanFilesCleanService.TableOrphanFileClean tableOrphanFileClean =
+        new OrphanFilesCleanService.TableOrphanFileClean(testKeyedTable.id());
     insertTableBaseDataFiles(testKeyedTable);
 
     String baseOrphanFilePath = testKeyedTable.baseTable().location() +
@@ -87,7 +101,11 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     changeOrphanDataFile.createOrOverwrite();
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
-    OrphanFilesCleanService.cleanContentFiles(testKeyedTable, System.currentTimeMillis());
+    testKeyedTable.updateProperties()
+        .set(TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME, "0")
+        .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true")
+        .commit();
+    tableOrphanFileClean.run();
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
     for (FileScanTask task : testKeyedTable.baseTable().newScan().planFiles()) {
@@ -233,6 +251,19 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     @Override
     public List<DataFileInfo> getOptimizeDatafiles(TableIdentifier tableIdentifier, String tableType) {
       return Collections.emptyList();
+    }
+  }
+
+  private static class FakeArcticCatalog extends BasicArcticCatalog {
+    private final Map<com.netease.arctic.table.TableIdentifier, ArcticTable> tables = new HashMap<>();
+
+    public void addTable(ArcticTable table) {
+      tables.put(table.id(), table);
+    }
+
+    @Override
+    public ArcticTable loadTable(com.netease.arctic.table.TableIdentifier identifier) {
+      return tables.get(identifier);
     }
   }
 }
