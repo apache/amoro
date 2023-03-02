@@ -25,6 +25,7 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtils;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TestRewritePartitions extends HiveTableTestBase {
 
@@ -205,6 +207,41 @@ public class TestRewritePartitions extends HiveTableTestBase {
     exceptedFiles.add("data-a2.parquet");
     exceptedFiles.add("data-a3.parquet");
     asserFilesName(exceptedFiles, table);
+  }
+
+  @Test
+  public void testCleanUnPartitionOrphanFileWhenCommit() throws TException {
+    List<Map.Entry<String, String>> orphanFiles = Lists.newArrayList(
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a1.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a2.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a3.parquet")
+    );
+    UnkeyedTable table = testUnPartitionHiveTable;
+    AppendFiles appendFiles = table.newAppend();
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);
+    orphanDataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+
+    List<Map.Entry<String, String>> files = Lists.newArrayList(
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a1.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a2.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a3.parquet")
+    );
+    List<DataFile> dataFiles = dataFileBuilder.buildList(files);
+
+    ReplacePartitions replacePartitions = table.newReplacePartitions();
+    dataFiles.forEach(replacePartitions::addFile);
+    replacePartitions.commit();
+
+    List<String> exceptedFiles = new ArrayList<>();
+    exceptedFiles.add("data-a1.parquet");
+    exceptedFiles.add("data-a3.parquet");
+    exceptedFiles.add("data-a2.parquet");
+    Table hiveTable = hms.getClient().getTable(table.id().getDatabase(), table.name());
+    List<String> fileNameList = new ArrayList<>(table.io().list(hiveTable.getSd().
+        getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    Assert.assertEquals(exceptedFiles, fileNameList);
   }
 
 

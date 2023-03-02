@@ -420,6 +420,49 @@ public class TestRewriteFiles extends HiveTableTestBase {
     asserFilesName(exceptedFiles, table);
   }
 
+  @Test
+  public void testCleanUnPartitionedOrphanFileWhenCommit() throws TException {
+    List<Map.Entry<String, String>> orphanFiles = Lists.newArrayList(
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a1.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a2.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a3.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a1.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a2.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/orphan-a3.parquet")
+    );
+    UnkeyedTable table = testUnPartitionHiveTable;
+    table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
+    AppendFiles appendFiles = table.newAppend();
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);
+    orphanDataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+
+    List<Map.Entry<String, String>> files = Lists.newArrayList(
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a1.parquet")
+    );
+    Set<DataFile> initDataFiles = new HashSet<>(dataFileBuilder.buildList(files));
+
+    List<Map.Entry<String, String>> newFiles = Lists.newArrayList(
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a1.parquet"),
+        Maps.immutableEntry(null, "/test_path/hive_data_location/data-a3.parquet")
+    );
+    Set<DataFile> newDataFiles = new HashSet<>(dataFileBuilder.buildList(newFiles));
+
+    RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
+    rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+    rewriteFiles.commit();
+
+    List<String> exceptedFiles = new ArrayList<>();
+    exceptedFiles.add("data-a1.parquet");
+    exceptedFiles.add("data-a3.parquet");
+    Table hiveTable = hms.getClient().getTable(table.id().getDatabase(), table.name());
+    List<String> fileNameList = new ArrayList<>(table.io().list(hiveTable.getSd().
+        getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    Assert.assertEquals(exceptedFiles, fileNameList);
+  }
+
   private void applyUpdateHiveFiles(
       Map<String, String> partitionAndLocations,
       Predicate<String> deleteFunc,
