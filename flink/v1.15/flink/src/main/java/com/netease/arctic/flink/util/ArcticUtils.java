@@ -20,7 +20,7 @@ package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
@@ -144,7 +144,7 @@ public class ArcticUtils {
                                                      @Nullable String topic,
                                                      TableSchema tableSchema,
                                                      String arcticEmitMode,
-                                                     ShuffleHelper helper,
+                                                     PartitionPrimaryKeyHelper helper,
                                                      ArcticTableLoader tableLoader,
                                                      Duration watermarkWriteGap) {
     if (!arcticWALWriterEnable(properties, arcticEmitMode)) {

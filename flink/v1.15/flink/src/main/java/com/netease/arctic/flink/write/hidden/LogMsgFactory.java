@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden;
 
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.flink.configuration.Configuration;
@@ -36,7 +36,7 @@ public interface LogMsgFactory<T> extends Serializable {
       Properties producerConfig,
       String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
-      ShuffleHelper helper);
+      PartitionPrimaryKeyHelper helper);
 
   Consumer<T> createConsumer();
 

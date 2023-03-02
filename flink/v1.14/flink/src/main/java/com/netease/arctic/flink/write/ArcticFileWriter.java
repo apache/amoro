@@ -19,6 +19,8 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.PrimaryKeyData;
+import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -45,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -65,6 +68,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
+  private final PartitionPrimaryKeyHelper primaryKeyHelper;
 
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
@@ -79,9 +83,9 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    */
   private transient ArcticTable table;
   /**
-   * Track whether there is update_before before update_after or not neglecting primary key if upsert enabled.
+   * Track whether there is update_before before update_after or not if upsert enabled.
    */
-  private transient boolean hasUpdateBefore = false;
+  private Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
 
   public ArcticFileWriter(
       ShuffleRulePolicy<RowData, ShuffleKey> shuffleRule,
@@ -89,7 +93,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
       boolean upsert,
-      boolean submitEmptySnapshot) {
+      boolean submitEmptySnapshot,
+      PartitionPrimaryKeyHelper primaryKeyHelper) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
@@ -98,8 +103,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.submitEmptySnapshot = submitEmptySnapshot;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
+    this.primaryKeyHelper = primaryKeyHelper;
   }
-
 
   @Override
   public void open() {
@@ -111,6 +116,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     initTaskWriterFactory(mask);
 
     this.writer = table.io().doAs(taskWriterFactory::create);
+    primaryKeyHelper.open();
   }
 
   @Override
@@ -219,19 +225,19 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   /**
-   * If upsert is enabled, turn update_after to insert if there isn't update_after followed by update_before.
-   * But it may lead to some unnecessary delete data if there are some data interspersed with other primary key data.
-   * e.g. K1-UB, K2-UB, K1-UA, K2-UB
+   * Turn update_after to insert if there isn't update_after followed by update_before.
    */
   private void processMultiUpdateAfter(RowData row) {
-    if (!upsert) {
-      return;
-    }
+    PrimaryKeyData key = primaryKeyHelper.key(row);
 
-    if (!hasUpdateBefore && RowKind.UPDATE_AFTER.equals(row.getRowKind())) {
+    if (RowKind.UPDATE_AFTER.equals(row.getRowKind()) && !hasUpdateBeforeKeys.contains(key)) {
       row.setRowKind(RowKind.INSERT);
     }
-    hasUpdateBefore = RowKind.UPDATE_BEFORE.equals(row.getRowKind());
+    if (RowKind.UPDATE_BEFORE.equals(row.getRowKind())) {
+      hasUpdateBeforeKeys.add(key);
+    } else {
+      hasUpdateBeforeKeys.remove(key);
+    }
   }
 
   @Override
@@ -258,7 +264,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    *
    * @param writeResult the WriteResult to emit
    * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
-   *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   * false only if the WriteResult is empty and the submitEmptySnapshot is false.
    */
   private boolean shouldEmit(WriteResult writeResult) {
     return submitEmptySnapshot || (writeResult != null &&

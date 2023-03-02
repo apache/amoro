@@ -439,7 +439,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
-  public void testFileUpsert() throws IOException {
+  public void testFileUpsert() {
     Assume.assumeFalse(kafkaLegacyEnable);
     Assume.assumeFalse(LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType));
     List<Object[]> data = new LinkedList<>();
@@ -502,7 +502,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
-  public void testFileCDC() throws IOException {
+  public void testFileCDC() {
     Assume.assumeFalse(kafkaLegacyEnable);
     Assume.assumeFalse(LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType));
     List<Object[]> data = new LinkedList<>();

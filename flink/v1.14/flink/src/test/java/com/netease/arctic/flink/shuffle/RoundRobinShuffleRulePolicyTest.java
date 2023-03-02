@@ -34,7 +34,7 @@ public class RoundRobinShuffleRulePolicyTest extends FlinkTestBase {
 
   @Test
   public void testPrimaryKeyPartitionedTable() throws Exception {
-    ShuffleHelper helper = ShuffleHelper.build(testKeyedTable, testKeyedTable.schema(), FLINK_ROW_TYPE);
+    PartitionPrimaryKeyHelper helper = PartitionPrimaryKeyHelper.build(testKeyedTable, testKeyedTable.schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
@@ -65,8 +65,8 @@ public class RoundRobinShuffleRulePolicyTest extends FlinkTestBase {
 
   @Test
   public void testPrimaryKeyTableWithoutPartition() throws Exception {
-    ShuffleHelper helper =
-        ShuffleHelper.build(testKeyedNoPartitionTable, testKeyedNoPartitionTable.schema(), FLINK_ROW_TYPE);
+    PartitionPrimaryKeyHelper helper =
+        PartitionPrimaryKeyHelper.build(testKeyedNoPartitionTable, testKeyedNoPartitionTable.schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
@@ -102,8 +102,8 @@ public class RoundRobinShuffleRulePolicyTest extends FlinkTestBase {
 
   @Test
   public void testPartitionedTableWithoutPrimaryKey() throws Exception {
-    ShuffleHelper helper =
-        ShuffleHelper.build(testPartitionTable, testPartitionTable.schema(), FLINK_ROW_TYPE);
+    PartitionPrimaryKeyHelper helper =
+        PartitionPrimaryKeyHelper.build(testPartitionTable, testPartitionTable.schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();

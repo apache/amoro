@@ -148,6 +148,9 @@ public class PartitionPrimaryKeyHelper implements Serializable {
   }
 
   public PrimaryKeyData key(RowData rowData) {
+    if (primaryKeyData == null) {
+      return null;
+    }
     primaryKeyData.primaryKey(rowDataWrapper.wrap(rowData));
     return primaryKeyData.copy();
   }
