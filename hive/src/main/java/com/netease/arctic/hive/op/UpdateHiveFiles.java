@@ -31,7 +31,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +72,9 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected boolean checkOrphanFiles = false;
   protected int commitTimestamp; // in seconds
 
-  public UpdateHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
-                         HMSClientPool hmsClient, HMSClientPool transactionClient) {
+  public UpdateHiveFiles(
+      Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
+      HMSClientPool hmsClient, HMSClientPool transactionClient) {
     this.transaction = transaction;
     this.insideTransaction = insideTransaction;
     this.table = table;
@@ -277,13 +277,13 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkOrphanFilesAndDelete() {
     List<String> partitionsToCheck = this.partitionToCreate.values()
         .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
-    for (String partitionLocation: partitionsToCheck) {
+    for (String partitionLocation : partitionsToCheck) {
       List<String> addFilesPathCollect = addFiles.stream()
           .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
       List<String> deleteFilesPathCollect = deleteFiles.stream()
           .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
       List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
-      for (FileStatus filePath: exisitedFiles) {
+      for (FileStatus filePath : exisitedFiles) {
         if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
             !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
           table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
@@ -382,12 +382,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
     if (!partitionToAlter.isEmpty()) {
       try {
-        transactionClient.run(c ->  {
+        transactionClient.run(c -> {
           try {
             c.alterPartitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
           } catch (InvocationTargetException | InstantiationException |
-              IllegalAccessException | NoSuchMethodException |
-              ClassNotFoundException e) {
+                   IllegalAccessException | NoSuchMethodException |
+                   ClassNotFoundException e) {
             throw new RuntimeException(e);
           }
           return null;
