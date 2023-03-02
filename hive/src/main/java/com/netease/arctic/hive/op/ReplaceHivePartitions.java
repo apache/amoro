@@ -35,7 +35,6 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
