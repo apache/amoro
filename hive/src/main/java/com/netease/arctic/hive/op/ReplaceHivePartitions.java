@@ -41,6 +41,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +69,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   private final String tableName;
   private final Table hiveTable;
 
-  private final Map<StructLike, Partition> rewritePartitions = Maps.newHashMap();
-  private final Map<StructLike, Partition> newPartitions = Maps.newHashMap();
+  private final StructLikeMap<Partition> rewritePartitions;
+  private final StructLikeMap<Partition> newPartitions;
   private String unpartitionTableLocation;
   private int commitTimestamp; // in seconds
 
@@ -92,6 +93,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
+    this.rewritePartitions = StructLikeMap.create(table.spec().partitionType());
+    this.newPartitions = StructLikeMap.create(table.spec().partitionType());
   }
 
   @Override
