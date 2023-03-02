@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,24 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.catalog;
+package com.netease.arctic.ams.server;
 
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import java.util.List;
+public class SingletonResourceUtil {
 
-public class CatalogManager {
+  private static final String USE_SINGLETON_TEST_RESOURCE_PROPERTY = "singleton-test-resource";
+  private static boolean USE_SINGLETON_TEST_RESOURCE = true;
 
-  private String thriftAddress;
-
-  public CatalogManager(String thriftAddress) {
-    this.thriftAddress = thriftAddress.endsWith("/") ? thriftAddress: thriftAddress + "/";
+  static {
+    USE_SINGLETON_TEST_RESOURCE =
+        Boolean.valueOf(System.getProperty(USE_SINGLETON_TEST_RESOURCE_PROPERTY, "true"));
   }
 
-  public ArcticCatalog getArcticCatalog(String catalogName) {
-    return CatalogLoader.load(thriftAddress + catalogName);
-  }
-
-  public List<String> catalogs() {
-    return CatalogLoader.catalogs(thriftAddress);
+  public static boolean isUseSingletonResource() {
+    return USE_SINGLETON_TEST_RESOURCE;
   }
 }

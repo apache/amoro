@@ -1,40 +1,49 @@
 package com.netease.arctic.ams.server.repair.command;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
+import com.netease.arctic.catalog.CatalogManager;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.stream.Collectors;
-import org.apache.thrift.TException;
 
 public class ShowCall implements CallCommand {
 
-  private ArcticCatalog arcticCatalog;
   private Namespaces namespaces;
+  private CatalogManager catalogManager;
 
-  public ShowCall(ArcticCatalog arcticCatalog, Namespaces namespaces) {
-    this.arcticCatalog = arcticCatalog;
+  public ShowCall(String amsAddress, Namespaces namespaces) {
     this.namespaces = namespaces;
+    this.catalogManager = new CatalogManager(amsAddress);
   }
 
   @Override
   public String call(Context context) {
     switch (this.namespaces) {
+      case CATALOGS:
+        return String.join("\\n", catalogManager.catalogs());
       case DATABASES:
-        return arcticCatalog.listDatabases().stream().collect(Collectors.joining("\\n"));
+        if (StringUtils.isEmpty(context.getCatalog())) {
+          throw new RuntimeException("there is no catalog be set");
+        }
+        return String.join("\\n", catalogManager.getArcticCatalog(context.getCatalog()).listDatabases());
       case TABLES:
-        return arcticCatalog.listTables(context.getDb())
-            .stream()
-            .map(TableIdentifier::getTableName)
-            .collect(Collectors.joining("\\n"));
+        if (StringUtils.isEmpty(context.getCatalog())) {
+          throw new RuntimeException("there is no catalog be set");
+        } else if (StringUtils.isEmpty(context.getDb())) {
+          throw new RuntimeException("there is no database be set");
+        } else {
+          return catalogManager.getArcticCatalog(context.getCatalog()).listTables(context.getDb())
+              .stream()
+              .map(e -> String.format("%s %s", e.getDatabase(), e.getTableName()))
+              .collect(Collectors.joining("\\n"));
+        }
       default:
         throw new UnsupportedOperationException("not support show operation named:" + this.namespaces);
     }
   }
 
   public enum Namespaces {
+    CATALOGS,
     DATABASES,
     TABLES
   }
