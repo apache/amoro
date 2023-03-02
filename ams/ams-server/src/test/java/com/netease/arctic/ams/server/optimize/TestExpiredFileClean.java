@@ -132,14 +132,14 @@ public class TestExpiredFileClean extends TableTestBase {
         TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
-    appendFiles.set("flink.max-committed-checkpoint-id", "100");
+    appendFiles.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
     appendFiles.commit();
     long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     Assert.assertEquals(checkpointTime,
         TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
-    appendFiles2.set("flink.max-committed-checkpoint-id", "101");
+    appendFiles2.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
     appendFiles2.commit();
     long checkpointTime2 = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     Assert.assertEquals(checkpointTime2,

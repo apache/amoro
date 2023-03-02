@@ -57,13 +57,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class TableExpireService implements ITableExpireService {
   private static final Logger LOG = LoggerFactory.getLogger(TableExpireService.class);
   private static final long EXPIRE_INTERVAL = 3600_000; // 1 hour
+  /**
+   * the same with org.apache.iceberg.flink.sink.IcebergFilesCommitter#MAX_COMMITTED_CHECKPOINT_ID
+   */
+  public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID = "flink.max-committed-checkpoint-id";
 
   private ScheduledTasks<TableIdentifier, TableExpireTask> cleanTasks;
 
@@ -110,9 +113,8 @@ public class TableExpireService implements ITableExpireService {
 
   public static void expireArcticTable(ArcticTable arcticTable) {
     TableIdentifier tableIdentifier = arcticTable.id();
-    final String traceId = UUID.randomUUID().toString();
     long startTime = System.currentTimeMillis();
-    LOG.info("[{}] {} start expire", traceId, tableIdentifier);
+    LOG.info("{} start expire", tableIdentifier);
 
     long changeDataTTL = Long.parseLong(arcticTable.properties()
         .getOrDefault(TableProperties.CHANGE_DATA_TTL,
@@ -124,35 +126,27 @@ public class TableExpireService implements ITableExpireService {
         .getOrDefault(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
             TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
 
-    Set<String> hiveLocation = new HashSet<>();
+    Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(arcticTable)) {
-      hiveLocation = HiveLocationUtils.getHiveLocation(arcticTable);
+      hiveLocations = HiveLocationUtils.getHiveLocation(arcticTable);
     }
 
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
-      Set<String> finalHiveLocation = hiveLocation;
+      Set<String> finalHiveLocations = hiveLocations;
       keyedArcticTable.io().doAs(() -> {
         UnkeyedTable baseTable = keyedArcticTable.baseTable();
-        if (baseTable == null) {
-          LOG.warn("[{}] Base table is null: {} ", traceId, tableIdentifier);
-          return null;
-        }
         UnkeyedTable changeTable = keyedArcticTable.changeTable();
-        if (changeTable == null) {
-          LOG.warn("[{}] Change table is null: {}", traceId, tableIdentifier);
-          return null;
-        }
 
         // get valid files in the change store which shouldn't physically delete when expire the snapshot
         // in the base store
-        Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
-        baseExclude.addAll(finalHiveLocation);
+        Set<String> baseExcludePaths = UnKeyedTableUtil.getAllContentFilePath(changeTable);
+        baseExcludePaths.addAll(finalHiveLocations);
         long latestBaseFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(baseTable);
         expireSnapshots(baseTable, Math.min(latestBaseFlinkCommitTime, startTime - baseSnapshotsKeepTime),
-            baseExclude);
+            baseExcludePaths);
         long baseCleanedTime = System.currentTimeMillis();
-        LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
+        LOG.info("{} base expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
 
         // delete ttl files
         List<DataFileInfo> changeDataFiles = ServiceContainer.getFileInfoCacheService()
@@ -163,28 +157,35 @@ public class TableExpireService implements ITableExpireService {
         // get valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
         Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
-        changeExclude.addAll(finalHiveLocation);
+        changeExclude.addAll(finalHiveLocations);
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
         expireSnapshots(changeTable, Math.min(latestChangeFlinkCommitTime, startTime - changeSnapshotsKeepTime),
             changeExclude);
         return null;
       });
-      LOG.info("[{}] {} expire cost total {} ms", traceId, arcticTable.id(),
+      LOG.info("{} expire cost total {} ms", arcticTable.id(),
           System.currentTimeMillis() - startTime);
     } else {
       UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
       long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unKeyedArcticTable);
       expireSnapshots(unKeyedArcticTable, Math.min(latestFlinkCommitTime, startTime - baseSnapshotsKeepTime),
-          hiveLocation);
+          hiveLocations);
       long baseCleanedTime = System.currentTimeMillis();
-      LOG.info("[{}] {} unKeyedTable expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
+      LOG.info("{} unKeyedTable expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
     }
   }
 
+  /**
+   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary.
+   * The latest snapshot with checkpoint id should not be expired or the flink job can't recover from state.
+   *
+   * @param table -
+   * @return commit time of snapshot with the latest flink checkpointId in summary
+   */
   public static long fetchLatestFlinkCommittedSnapshotTime(UnkeyedTable table) {
     long latestCommitTime = Long.MAX_VALUE;
     for (Snapshot snapshot : table.snapshots()) {
-      if (snapshot.summary().containsKey("flink.max-committed-checkpoint-id")) {
+      if (snapshot.summary().containsKey(FLINK_MAX_COMMITTED_CHECKPOINT_ID)) {
         latestCommitTime = snapshot.timestampMillis();
       }
     }
