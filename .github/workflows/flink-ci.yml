@@ -51,15 +51,27 @@ jobs:
               - 'flink/v1.14/**'
             flink1_15:
               - 'flink/v1.15/**'
+            core:
+              - 'core/**'
+            hive:
+              - 'hive/**'
+            ams_api:
+              - 'ams/ams-api/**'
 
       - name: test for flink 1.12
-        if: steps.changed-files.outputs.flink1_12 == 'true'
+        if: steps.changed-files.outputs.flink1_12 == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.12' -am
 
       - name: test for flink 1.14
-        if: steps.changed-files.outputs.flink1_14 == 'true'
+        if: steps.changed-files.outputs.flink1_14 == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.14' -am
 
       - name: test for flink 1.15
-        if: steps.changed-files.outputs.flink1_15 == 'true'
+        if: steps.changed-files.outputs.flink1_15 == 'true' && steps.changed-files.outputs.core == 'false' && steps.changed-files.outputs.hive == 'false' && steps.changed-files.outputs.ams_api == 'false'
         run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.15' -am
+
+      - name: Code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true
+          flags: flink
