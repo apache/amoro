@@ -86,7 +86,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
             a
           }
       }
-    case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _)
+    case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _)
       if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
@@ -102,7 +102,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           a
       }
 
-    case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, writeOptions, _)
+    case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, _, _)
       if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
@@ -125,7 +125,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           a
       }
 
-    case c @ CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
+    case c @ CreateTableAsSelect(catalog, _, _, query, props, _, _)
       if checkDuplicatesEnabled() =>
       catalog match {
         case _: ArcticSparkCatalog =>
