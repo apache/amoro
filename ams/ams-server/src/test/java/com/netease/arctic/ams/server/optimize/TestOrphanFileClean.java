@@ -91,21 +91,31 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
         new OrphanFilesCleanService.TableOrphanFileClean(testKeyedTable.id());
     insertTableBaseDataFiles(testKeyedTable);
 
-    String baseOrphanFilePath = testKeyedTable.baseTable().location() +
-        File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
+    String baseOrphanFileDir = testKeyedTable.baseTable().location() +
+        File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
+    String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
     String changeOrphanFilePath = testKeyedTable.changeTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
     OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
     OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite();
+    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFileDir));
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
+
+    tableOrphanFileClean.run();
+    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFileDir));
+    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
+    Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
+
     testKeyedTable.updateProperties()
         .set(TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME, "0")
         .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true")
         .commit();
     tableOrphanFileClean.run();
+
+    Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFileDir));
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
     for (FileScanTask task : testKeyedTable.baseTable().newScan().planFiles()) {
