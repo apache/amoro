@@ -39,22 +39,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
-  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
-                             isUpsert: Boolean): WriteQueryProjections = {
-    val (frontRowProjection, backRowProjection) = if (isUpsert) {
-      val frontRowProjection =
-        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
-      val backRowProjection =
-        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = false, 0)
-      (frontRowProjection, backRowProjection)
-    } else {
-      val backRowProjection =
-        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
-      (null, backRowProjection)
-    }
-    WriteQueryProjections(frontRowProjection, backRowProjection)
-  }
-
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
@@ -117,7 +101,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
             }
             val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
             a.copy(query = checkDataQuery)
-
           } else {
             a
           }
@@ -140,6 +123,22 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case _ =>
           c
       }
+  }
+
+  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
+                             isUpsert: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isUpsert) {
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = false, 0)
+      (frontRowProjection, backRowProjection)
+    } else {
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
+      (null, backRowProjection)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
   }
 
   def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
