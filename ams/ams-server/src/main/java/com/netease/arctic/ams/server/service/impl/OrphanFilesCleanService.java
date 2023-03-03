@@ -88,7 +88,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     @Override
     public void run() {
       try {
-        LOG.info("{} clean orphan files", tableIdentifier);
+        LOG.info("{} start clean orphan files", tableIdentifier);
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
