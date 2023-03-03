@@ -61,7 +61,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
             if (checkDuplicatesEnabled()) {
               val writeOption = options + ("optimize.enabled" -> "true")
               val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-              val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(newQuery, validateQuery)
+              val checkDataQuery = QueryWithConstraintCheck(newQuery, validateQuery)
               ArcticRowLevelWrite(arcticRelation, checkDataQuery, writeOption, projections)
             } else {
               ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
@@ -77,7 +77,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case table: ArcticSparkTable =>
           if (table.table().isKeyedTable) {
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
             a.copy(query = checkDataQuery)
           } else {
             a
@@ -99,7 +99,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
                 finalExpr = expr.copy(query.output.last, expr.right)
               case _ =>
             }
-            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
             a.copy(query = checkDataQuery)
           } else {
             a
@@ -115,7 +115,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           if (props.contains("primary.keys")) {
             val primaries = props("primary.keys").split(",")
             val validateQuery = buildValidatePrimaryKeyDuplication(primaries, query)
-            val checkDataQuery = DynamicArcticFilterWithCardinalityCheck(query, validateQuery)
+            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
             c.copy(query = checkDataQuery)
           } else {
             c

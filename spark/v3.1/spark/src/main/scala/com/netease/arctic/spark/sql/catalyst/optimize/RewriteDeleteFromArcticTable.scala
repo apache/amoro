@@ -23,7 +23,7 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asT
 import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERATION_COLUMN}
 import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
@@ -67,7 +67,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       ArcticRowLevelWrite(r, query, options, projections)
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsRowLevelOperator, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
     r.table match {
       case table: ArcticSparkTable => {
         if (table.table().isUnkeyedTable) {

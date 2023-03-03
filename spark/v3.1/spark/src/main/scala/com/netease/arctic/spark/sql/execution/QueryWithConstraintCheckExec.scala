@@ -38,7 +38,7 @@ import org.apache.spark.sql.vectorized.ColumnarBatch
 
 import scala.collection.JavaConverters._
 
-case class DynamicFileArcticFilterWithCardinalityCheckExec(
+case class QueryWithConstraintCheckExec(
     scanExec: SparkPlan,
     fileFilterExec: SparkPlan)
   extends DynamicFileFilterExecBase(scanExec, fileFilterExec)  {

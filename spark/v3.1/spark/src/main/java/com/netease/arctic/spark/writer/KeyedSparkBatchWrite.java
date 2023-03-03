@@ -25,7 +25,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
-import com.netease.arctic.spark.table.SupportsUpsert;
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
@@ -320,7 +320,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields())
-          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+          .filter(field -> !field.name().equals(RowDeltaUtils.OPERATION_COLUMN())).toArray(StructField[]::new));
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)

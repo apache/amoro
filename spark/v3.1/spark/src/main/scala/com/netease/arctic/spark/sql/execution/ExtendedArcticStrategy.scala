@@ -61,8 +61,8 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
-    case DynamicArcticFilterWithCardinalityCheck(scanPlan, fileFilterPlan) =>
-      DynamicFileArcticFilterWithCardinalityCheckExec(
+    case QueryWithConstraintCheck(scanPlan, fileFilterPlan) =>
+      QueryWithConstraintCheckExec(
         planLater(scanPlan),
         planLater(fileFilterPlan)) :: Nil
 

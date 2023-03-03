@@ -23,7 +23,7 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asT
 import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
@@ -80,7 +80,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     case _ => plan
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns,
+  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsRowLevelOperator, scanBuilder: SupportsExtendIdentColumns,
                        assignments: Seq[Assignment],
                        condition: Option[Expression]): LogicalPlan = {
     r.table match {
