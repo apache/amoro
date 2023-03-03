@@ -193,16 +193,16 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
   def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression =  {
     var i = 0
     var joinCondition: Expression = null
-    val expressions = new util.ArrayList[Expression]
+    var expressions: List[Expression] = List.empty
     while ( i < primaries.size) {
       val primary = primaries.get(i)
       val primaryAttr = r.output.find(_.name == primary).get
       val joinAttribute = insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
-      expressions.add(experssion)
+      expressions = expressions :+ experssion
       i += 1
     }
-    expressions.forEach(e => {
+    expressions.foreach(e => {
       if (joinCondition == null) {
         joinCondition = e
       } else {
