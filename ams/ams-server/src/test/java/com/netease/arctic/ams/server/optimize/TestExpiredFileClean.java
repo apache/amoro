@@ -20,6 +20,11 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizeTaskId;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.TableMetadata;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
@@ -27,6 +32,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.op.UpdatePartitionProperties;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -48,10 +54,14 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 public class TestExpiredFileClean extends TableTestBase {
 
@@ -153,6 +163,42 @@ public class TestExpiredFileClean extends TableTestBase {
     TableExpireService.expireArcticTable(testKeyedTable);
 
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+  }
+
+  @Test
+  public void testNotExpireOptimizeCommit() {
+    // commit snapshot
+    testTable.newAppend().commit();
+    testTable.newAppend().commit();
+    testTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableExpireService.expireArcticTable(testTable);
+    Assert.assertEquals(1, Iterables.size(testTable.snapshots()));
+
+
+    testTable.newAppend().commit();
+
+    // init optimize tasks
+    long optimizeSnapshotId = testTable.currentSnapshot().snapshotId();
+    OptimizeService optimizeService = (OptimizeService) ServiceContainer.getOptimizeService();
+    TableMetadata metadata = new TableMetadata();
+    metadata.setTableIdentifier(testTable.id());
+    metadata.setProperties(testTable.properties());
+    TableOptimizeItem tableOptimizeItem =
+        new TableOptimizeItem(testTable, metadata, System.currentTimeMillis() + 6 * 60 * 60 * 1000);
+    optimizeService.addTableIntoCache(tableOptimizeItem, Collections.emptyMap(), false);
+    BasicOptimizeTask basicOptimizeTask = new BasicOptimizeTask();
+    basicOptimizeTask.setTaskId(new OptimizeTaskId());
+    tableOptimizeItem.initOptimizeTasks(Collections.singletonList(new OptimizeTaskItem(basicOptimizeTask, null)));
+    tableOptimizeItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizeSnapshotId);
+
+    testTable.newAppend().commit();
+    testTable.newAppend().commit();
+
+    TableExpireService.expireArcticTable(testTable);
+    Assert.assertEquals(3, Iterables.size(testTable.snapshots()));
+
+
+
   }
 
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
