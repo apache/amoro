@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * @Description: Version Info Test
  */
 public class VersionControllerTest extends TestCase {
-  private final Logger LOG = LoggerFactory.getLogger("VersionControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(VersionControllerTest.class);
   @Test
   public void testGetVersion() {
     JavalinTest.test((app, client) -> {
@@ -38,7 +38,6 @@ public class VersionControllerTest extends TestCase {
       final okhttp3.Response resp = client.get("/", x -> {
       });
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
