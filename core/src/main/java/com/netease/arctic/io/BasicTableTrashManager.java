@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,6 +135,9 @@ public class BasicTableTrashManager implements TableTrashManager {
   @Override
   public boolean moveFileToTrash(String path) {
     try {
+      if (arcticFileIO.isDirectory(path)) {
+        return false;
+      }
       String targetFileLocation =
           generateFileLocationInTrash(this.tableRootLocation, path, this.trashLocation, System.currentTimeMillis());
       String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
@@ -173,7 +177,8 @@ public class BasicTableTrashManager implements TableTrashManager {
     // TODO deleteRecursive()
   }
 
-  private void deleteRecursive(String path) {
+  @VisibleForTesting
+  void deleteRecursive(String path) {
     arcticFileIO.doAs(() -> {
       Path toDelete = new Path(path);
       FileSystem fs = Util.getFs(toDelete, ((HadoopFileIO) arcticFileIO).getConf());
@@ -196,6 +201,9 @@ public class BasicTableTrashManager implements TableTrashManager {
     for (FileStatus datePath : datePaths) {
       String fullLocation = datePath.getPath().toString() + "/" + relativeLocation;
       if (arcticFileIO.exists(fullLocation)) {
+        if (arcticFileIO.isDirectory(fullLocation)) {
+          return null;
+        }
         return fullLocation;
       }
     }

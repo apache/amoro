@@ -35,7 +35,7 @@ public interface TableTrashManager {
   TableIdentifier tableId();
 
   /**
-   * Move a file to trash.
+   * Move a file to trash, not support directory.
    *
    * @param path the file path
    * @return true for success
@@ -43,7 +43,7 @@ public interface TableTrashManager {
   boolean moveFileToTrash(String path);
 
   /**
-   * If a file exist in trash.
+   * If a file exist in trash, not support directory.
    *
    * @param path the file path
    * @return true if exist
@@ -51,7 +51,7 @@ public interface TableTrashManager {
   boolean fileExistInTrash(String path);
 
   /**
-   * Restore a file from trash.
+   * Restore a file from trash, not support directory.
    *
    * @param path the file
    * @return true for success

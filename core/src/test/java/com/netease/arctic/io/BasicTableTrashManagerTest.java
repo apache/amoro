@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
@@ -37,7 +38,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void getTrashLocation() {
+  public void testGetTrashLocation() {
     TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
     Assert.assertEquals("/table/location/.trash",
         BasicTableTrashManager.getTrashLocation(id, "/table/location", null));
@@ -46,7 +47,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void getFileLocationInTrash() {
+  public void testGenerateFileLocationInTrash() {
     LocalDateTime localDateTime = LocalDateTime.of(2023, 2, 2, 1, 1);
     long toEpochMilli = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     String locationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
@@ -79,6 +80,67 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
     Assert.assertTrue(getArcticTable().io().exists(path));
     Assert.assertFalse(getArcticTable().io().exists(fileLocationInTrash));
+  }
+
+  @Test
+  public void testDeleteDirectory() {
+    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    String trashLocation =
+        BasicTableTrashManager.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String relativeFilePath = "base/test/test1.parquet";
+    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+
+    String directory = TableFileUtils.getFileDir(path);
+    long now = System.currentTimeMillis();
+    Assert.assertFalse(tableTrashManager.moveFileToTrash(directory));
+    String directoryLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
+        getArcticTable().location(), directory, trashLocation, now);
+
+    Assert.assertTrue(getArcticTable().io().exists(directory));
+    Assert.assertFalse(getArcticTable().io().exists(directoryLocationInTrash));
+  }
+
+  @Test
+  public void testRestoreDirectory() {
+    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    String trashLocation =
+        BasicTableTrashManager.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String relativeFilePath = "base/test/test1.parquet";
+    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+
+    String directory = TableFileUtils.getFileDir(path);
+    long now = System.currentTimeMillis();
+    Assert.assertTrue(tableTrashManager.moveFileToTrash(path));
+    String fileLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
+        getArcticTable().location(), path, trashLocation, now);
+
+    Assert.assertFalse(getArcticTable().io().exists(path));
+    Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
+
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(directory));
+    Assert.assertFalse(tableTrashManager.restoreFileFromTrash(directory));
+
+    Assert.assertFalse(getArcticTable().io().exists(path));
+    Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
+  }
+
+  @Test
+  public void testDeleteRecursive() {
+    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    String relativeFilePath = "base/test/test1.parquet";
+    String relativeFilePath2 = "base/test2/test2.parquet";
+    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    String path2 = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath2);
+    String testDir = TableFileUtils.getFileDir(path);
+    String baseDir = TableFileUtils.getFileDir(testDir);
+
+    Assert.assertTrue(getArcticTable().io().exists(path));
+    Assert.assertTrue(getArcticTable().io().exists(path2));
+
+    tableTrashManager.deleteRecursive(baseDir);
+    Assert.assertFalse(getArcticTable().io().exists(baseDir));
+    Assert.assertFalse(getArcticTable().io().exists(path));
+    Assert.assertFalse(getArcticTable().io().exists(path2));
   }
 
   private String createFile(FileIO io, String path) {
