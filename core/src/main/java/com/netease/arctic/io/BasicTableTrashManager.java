@@ -18,11 +18,8 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,57 +38,24 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Basic implementation of TableTrashManager.
  */
-public class BasicTableTrashManager implements TableTrashManager {
+class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-  public static String DEFAULT_TRASH_DIR = ".trash";
   private final TableIdentifier tableIdentifier;
   private final ArcticFileIO arcticFileIO;
   private final String tableRootLocation;
   private final String trashLocation;
 
-  public static BasicTableTrashManager of(ArcticTable table) {
-    Map<String, String> properties = table.properties();
-    String customTrashRootLocation = properties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
-    String trashLocation = getTrashLocation(table.id(), table.location(), customTrashRootLocation);
-    return new BasicTableTrashManager(table.id(), table.io(), table.location(), trashLocation);
-  }
-
-  public BasicTableTrashManager(TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
-                                String tableRootLocation, String trashLocation) {
+  BasicTableTrashManager(TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
+                         String tableRootLocation, String trashLocation) {
     this.tableIdentifier = tableIdentifier;
     this.arcticFileIO = arcticFileIO;
     this.tableRootLocation = tableRootLocation;
     this.trashLocation = trashLocation;
-  }
-
-  /**
-   * Get trash location.
-   *
-   * @param tableIdentifier         - table identifier
-   * @param tableLocation           - table root location
-   * @param customTrashRootLocation - from the table property table-trash.custom-root-location
-   * @return trash location
-   */
-  public static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
-                                        String customTrashRootLocation) {
-    String trashLocation;
-    if (StringUtils.isBlank(customTrashRootLocation)) {
-      trashLocation = tableLocation + "/" + DEFAULT_TRASH_DIR;
-    } else {
-      if (!customTrashRootLocation.endsWith("/")) {
-        customTrashRootLocation = customTrashRootLocation + "/";
-      }
-      trashLocation = customTrashRootLocation + tableIdentifier.getDatabase() +
-          "/" + tableIdentifier.getTableName() +
-          "/" + DEFAULT_TRASH_DIR;
-    }
-    return trashLocation;
   }
 
   /**

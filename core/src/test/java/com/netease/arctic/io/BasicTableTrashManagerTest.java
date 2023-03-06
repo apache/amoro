@@ -18,10 +18,8 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
@@ -38,15 +36,6 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testGetTrashLocation() {
-    TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
-    Assert.assertEquals("/table/location/.trash",
-        BasicTableTrashManager.getTrashLocation(id, "/table/location", null));
-    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/.trash", id.getDatabase(), id.getTableName()),
-        BasicTableTrashManager.getTrashLocation(id, "/table/location", "/tmp/xxx"));
-  }
-
-  @Test
   public void testGenerateFileLocationInTrash() {
     LocalDateTime localDateTime = LocalDateTime.of(2023, 2, 2, 1, 1);
     long toEpochMilli = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -57,9 +46,9 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteAndRestore() {
-    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
     String trashLocation =
-        BasicTableTrashManager.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
 
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
@@ -84,9 +73,9 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteDirectory() {
-    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
     String trashLocation =
-        BasicTableTrashManager.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
 
@@ -102,9 +91,9 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testRestoreDirectory() {
-    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
     String trashLocation =
-        BasicTableTrashManager.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
 
@@ -126,7 +115,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteRecursive() {
-    BasicTableTrashManager tableTrashManager = BasicTableTrashManager.of(getArcticTable());
+    BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.of(getArcticTable()));
     String relativeFilePath = "base/test/test1.parquet";
     String relativeFilePath2 = "base/test2/test2.parquet";
     String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
