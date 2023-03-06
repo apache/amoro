@@ -33,7 +33,7 @@ public class CatalogManager {
     this.thriftAddress = url.serverUrl();
   }
 
-  public ArcticCatalog getArcticCatalog() {
+  public ArcticCatalog getCurrentCatalog() {
     if (StringUtils.isEmpty(currentCatalog)) {
       return CatalogLoader.load(thriftAddress + currentCatalog);
     } else {
@@ -42,7 +42,9 @@ public class CatalogManager {
   }
 
   public ArcticCatalog getArcticCatalog(String catalogName) {
-    return CatalogLoader.load(thriftAddress + catalogName);
+    ArcticCatalog catalog = CatalogLoader.load(thriftAddress + catalogName);
+    this.currentCatalog = catalogName;
+    return catalog;
   }
 
   public List<String> catalogs() {
