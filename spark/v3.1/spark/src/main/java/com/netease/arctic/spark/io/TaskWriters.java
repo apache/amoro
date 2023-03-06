@@ -23,7 +23,6 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.spark.writer.UnkeyedUpsertSparkWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;

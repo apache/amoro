@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.io;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.OutputFileFactory;
