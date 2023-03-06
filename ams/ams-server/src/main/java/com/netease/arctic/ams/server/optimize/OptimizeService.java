@@ -51,6 +51,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -190,8 +191,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
-                                 boolean persistRuntime) {
+  @VisibleForTesting
+  void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
+                         boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
       String groupName = CompatiblePropertyUtil.propertyAsString(properties,
