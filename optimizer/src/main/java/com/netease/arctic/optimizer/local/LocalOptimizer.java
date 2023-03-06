@@ -29,6 +29,8 @@ import com.netease.arctic.optimizer.operator.BaseTaskConsumer;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import com.netease.arctic.optimizer.operator.DefaultOperatorFactory;
+import com.netease.arctic.optimizer.operator.OperatorFactory;
 import com.netease.arctic.optimizer.util.OptimizerUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
@@ -52,6 +54,8 @@ import java.util.concurrent.TimeUnit;
 public class LocalOptimizer implements StatefulOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizer.class);
   private static final long serialVersionUID = 1L;
+  
+  private final OperatorFactory operatorFactory;
 
   private OptimizerConfig config;
 
@@ -70,9 +74,15 @@ public class LocalOptimizer implements StatefulOptimizer {
   private volatile boolean stopped = false;
 
   public LocalOptimizer() {
+    this(new DefaultOperatorFactory());
+  }
+
+  public LocalOptimizer(OperatorFactory operatorFactory) {
+    this.operatorFactory = operatorFactory;
   }
 
   public LocalOptimizer(Map<String, String> properties) {
+    this();
     this.properties = properties;
   }
 
@@ -219,7 +229,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskConsumer baseTaskConsumer;
 
     public Consumer() {
-      this.baseTaskConsumer = new BaseTaskConsumer(config);
+      this.baseTaskConsumer = operatorFactory.buildTaskConsumer(config);
     }
 
     public TaskWrapper pollTask() throws InterruptedException {
@@ -266,8 +276,8 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskReporter baseTaskReporter;
 
     public Executor() {
-      this.baseTaskExecutor = new BaseTaskExecutor(config);
-      this.baseTaskReporter = new BaseTaskReporter(config);
+      this.baseTaskExecutor = operatorFactory.buildTaskExecutor(config);
+      this.baseTaskReporter = operatorFactory.buildTaskReporter(config);
     }
 
     @Override
@@ -287,7 +297,7 @@ public class LocalOptimizer implements StatefulOptimizer {
           LOG.info("get task to execute {}", task.getTask().getTaskId());
           OptimizeTaskStat result = baseTaskExecutor.execute(task);
           LOG.info("execute {} {}", result.getStatus(), task.getTask().getTaskId());
-          baseTaskReporter.report(result, 20, 10000);
+          baseTaskReporter.report(result);
           LOG.info("report success {}", result.getTaskId());
         } catch (InterruptedException e) {
           LOG.warn("execute interrupted");
@@ -305,7 +315,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseToucher toucher;
 
     public Toucher() {
-      this.toucher = new BaseToucher(config);
+      this.toucher = operatorFactory.buildToucher(config);
     }
 
     @Override
