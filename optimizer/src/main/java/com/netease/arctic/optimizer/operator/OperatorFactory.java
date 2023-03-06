@@ -20,10 +20,12 @@ package com.netease.arctic.optimizer.operator;
 
 import com.netease.arctic.optimizer.OptimizerConfig;
 
+import java.io.Serializable;
+
 /**
  * Factory for build operators, includes the consumer, executor, reporter and toucher.
  */
-public interface OperatorFactory {
+public interface OperatorFactory extends Serializable {
 
   /**
    * Build task consumer.
