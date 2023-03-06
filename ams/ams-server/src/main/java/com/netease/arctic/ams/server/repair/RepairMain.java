@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.utils.YamlUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
@@ -55,6 +56,8 @@ public class RepairMain {
     Integer maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
     Integer maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
 
-    return new RepairConfig(catalogName, thriftUrlWithoutCatalog, maxFindSnapshotNum, maxRollbackSnapNum);
+    catalogName = StringUtils.isBlank(catalogName) ? null : catalogName;
+
+    return new RepairConfig(thriftUrlWithoutCatalog , catalogName, maxFindSnapshotNum, maxRollbackSnapNum);
   }
 }
