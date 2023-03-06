@@ -83,12 +83,12 @@ class BasicTableTrashManager implements TableTrashManager {
   }
 
   private static String formatDate(long time) {
-    LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
-    return localDateTime.format(DATE_FORMATTER);
+    LocalDate localDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault()).toLocalDate();
+    return localDate.format(DATE_FORMATTER);
   }
 
-  private static LocalDateTime parseDate(String formattedDate) {
-    return LocalDateTime.parse(formattedDate, DATE_FORMATTER);
+  private static LocalDate parseDate(String formattedDate) {
+    return LocalDate.parse(formattedDate, DATE_FORMATTER);
   }
 
   @Override
@@ -97,11 +97,9 @@ class BasicTableTrashManager implements TableTrashManager {
   }
 
   @Override
-  public boolean moveFileToTrash(String path) {
+  public void moveFileToTrash(String path) {
     try {
-      if (arcticFileIO.isDirectory(path)) {
-        return false;
-      }
+      Preconditions.checkArgument(!arcticFileIO.isDirectory(path), "should not move a directory to trash " + path);
       String targetFileLocation =
           generateFileLocationInTrash(this.tableRootLocation, path, this.trashLocation, System.currentTimeMillis());
       String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
@@ -110,10 +108,9 @@ class BasicTableTrashManager implements TableTrashManager {
       }
       arcticFileIO.rename(path, targetFileLocation);
     } catch (Exception e) {
-      LOG.error("failed to move file to trash, {}", path, e);
-      return false;
+      LOG.error("{} failed to move file to trash, {}", tableIdentifier, path, e);
+      throw e;
     }
-    return true;
   }
 
   @Override
@@ -138,7 +135,29 @@ class BasicTableTrashManager implements TableTrashManager {
 
   @Override
   public void cleanFiles(LocalDate expirationDate) {
-    // TODO deleteRecursive()
+    List<FileStatus> datePaths = arcticFileIO.list(this.trashLocation);
+    if (datePaths.isEmpty()) {
+      return;
+    }
+    LOG.info("{} start clean files with expiration date {}", tableIdentifier, expirationDate);
+    for (FileStatus datePath : datePaths) {
+      String dateName = TableFileUtils.getFileName(datePath.getPath().toString());
+      LocalDate localDate;
+      try {
+        localDate = parseDate(dateName);
+      } catch (Exception e) {
+        LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.getPath().toString());
+        continue;
+      }
+      if (localDate.compareTo(expirationDate) < 0) {
+        deleteRecursive(datePath.getPath().toString());
+        LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
+            datePath.getPath().toString());
+      } else {
+        LOG.info("{} should not delete files in trash for date {},  {}", tableIdentifier, localDate,
+            datePath.getPath().toString());
+      }
+    }
   }
 
   @VisibleForTesting
@@ -166,7 +185,7 @@ class BasicTableTrashManager implements TableTrashManager {
       String fullLocation = datePath.getPath().toString() + "/" + relativeLocation;
       if (arcticFileIO.exists(fullLocation)) {
         if (arcticFileIO.isDirectory(fullLocation)) {
-          return null;
+          throw new IllegalArgumentException("can't restore a directory from trash " + fullLocation);
         }
         return fullLocation;
       }
