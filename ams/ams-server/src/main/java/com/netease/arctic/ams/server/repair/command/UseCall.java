@@ -13,9 +13,9 @@ public class UseCall implements CallCommand {
   private CatalogManager catalogManager;
   private String namespace;
 
-  public UseCall(String namespace, String amsAddress) {
+  public UseCall(String namespace, CatalogManager catalogManager) {
     this.namespace = namespace;
-    this.catalogManager = new CatalogManager(amsAddress);
+    this.catalogManager = catalogManager;
   }
 
   @Override

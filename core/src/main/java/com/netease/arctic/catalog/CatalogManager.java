@@ -20,13 +20,25 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 public class CatalogManager {
 
   private String thriftAddress;
+  private String currentCatalog;
 
   public CatalogManager(String thriftAddress) {
-    this.thriftAddress = thriftAddress.endsWith("/") ? thriftAddress: thriftAddress + "/";
+    ArcticThriftUrl url = ArcticThriftUrl.parse(thriftAddress);
+    this.currentCatalog = url.catalogName();
+    this.thriftAddress = url.serverUrl();
+  }
+
+  public ArcticCatalog getArcticCatalog() {
+    if (StringUtils.isEmpty(currentCatalog)) {
+      return CatalogLoader.load(thriftAddress + currentCatalog);
+    } else {
+      throw new RuntimeException("The current catalog is not set");
+    }
   }
 
   public ArcticCatalog getArcticCatalog(String catalogName) {

@@ -1,14 +1,15 @@
 package com.netease.arctic.ams.server.repair.command;
 
-public class ShowCallGenerator {
+import com.netease.arctic.catalog.CatalogManager;
 
-  private String amsAddress;
+public class ShowCallGenerator {
+  private CatalogManager catalogManager;
 
   public ShowCallGenerator(String amsAddress) {
-    this.amsAddress = amsAddress;
+    this.catalogManager = new CatalogManager(amsAddress);
   }
 
   public ShowCall generate(ShowCall.Namespaces namespaces) {
-    return new ShowCall(amsAddress, namespaces);
+    return new ShowCall(namespaces, catalogManager);
   }
 }

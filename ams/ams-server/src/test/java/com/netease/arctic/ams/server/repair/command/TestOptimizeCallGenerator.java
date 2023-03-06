@@ -18,20 +18,26 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.ams.server.repair.TestRepairEnv;
+import com.netease.arctic.catalog.TableTestBase;
 import org.apache.thrift.TException;
 import org.junit.Test;
 
-public class TestOptimizeCallGenerator extends TestRepairEnv {
+public class TestOptimizeCallGenerator extends TableTestBase {
+
+  public TestOptimizeCallGenerator() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
 
   @Test
   public void test() throws TException, CallCommand.FullTableNameException {
-    new OptimizeCallGenerator(TEST_AMS.getServerUrl()).generate(
+    new OptimizeCallGenerator(getCatalogUrl()).generate(
         OptimizeCall.Action.START,
-        TABLE_ID.toString()).call(new Context());
-    new OptimizeCallGenerator(TEST_AMS.getServerUrl()).generate(
+        TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context());
+    new OptimizeCallGenerator(getCatalogUrl()).generate(
         OptimizeCall.Action.STOP,
-        TABLE_ID.toString()).call(new Context());
+        TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context());
   }
 }

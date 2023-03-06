@@ -11,21 +11,21 @@ public class ShowCall implements CallCommand {
   private Namespaces namespaces;
   private CatalogManager catalogManager;
 
-  public ShowCall(String amsAddress, Namespaces namespaces) {
+  public ShowCall(Namespaces namespaces, CatalogManager catalogManager) {
     this.namespaces = namespaces;
-    this.catalogManager = new CatalogManager(amsAddress);
+    this.catalogManager = catalogManager;
   }
 
   @Override
   public String call(Context context) {
     switch (this.namespaces) {
       case CATALOGS:
-        return String.join("\\n", catalogManager.catalogs());
+        return String.join("\n", catalogManager.catalogs());
       case DATABASES:
         if (StringUtils.isEmpty(context.getCatalog())) {
           throw new RuntimeException("there is no catalog be set");
         }
-        return String.join("\\n", catalogManager.getArcticCatalog(context.getCatalog()).listDatabases());
+        return String.join("\n", catalogManager.getArcticCatalog(context.getCatalog()).listDatabases());
       case TABLES:
         if (StringUtils.isEmpty(context.getCatalog())) {
           throw new RuntimeException("there is no catalog be set");
@@ -35,7 +35,7 @@ public class ShowCall implements CallCommand {
           return catalogManager.getArcticCatalog(context.getCatalog()).listTables(context.getDb())
               .stream()
               .map(e -> String.format("%s %s", e.getDatabase(), e.getTableName()))
-              .collect(Collectors.joining("\\n"));
+              .collect(Collectors.joining("\n"));
         }
       default:
         throw new UnsupportedOperationException("not support show operation named:" + this.namespaces);

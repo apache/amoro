@@ -18,28 +18,35 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.ams.server.repair.TestRepairEnv;
+import com.netease.arctic.catalog.TableTestBase;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.stream.Collectors;
 
-public class TestShowCallGenerator extends TestRepairEnv {
+public class TestShowCallGenerator extends TableTestBase {
+
+  public TestShowCallGenerator() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
+
   @Test
   public void test() throws TException, CallCommand.FullTableNameException {
-    ShowCallGenerator generator = new ShowCallGenerator(TEST_AMS.getServerUrl());
+    ShowCallGenerator generator = new ShowCallGenerator(getCatalogUrl());
     Context context = new Context();
-    Assert.assertEquals(TEST_CATALOG_NAME, generator.generate(ShowCall.Namespaces.CATALOGS).call(context));
-    context.setCatalog(TEST_CATALOG_NAME);
-    Assert.assertEquals(TEST_DATABASE_NAME, generator.generate(ShowCall.Namespaces.DATABASES).call(context));
-    context.setDb(TEST_DATABASE_NAME);
+    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, generator.generate(ShowCall.Namespaces.CATALOGS).call(context));
+    context.setCatalog(TableTestHelpers.TEST_CATALOG_NAME);
+    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, generator.generate(ShowCall.Namespaces.DATABASES).call(context));
+    context.setDb(TableTestHelpers.TEST_DB_NAME);
     Assert.assertEquals(
-        catalog.listTables(TEST_DATABASE_NAME)
+        getCatalog().listTables(TableTestHelpers.TEST_DB_NAME)
             .stream()
             .map(e -> String.format("%s %s", e.getDatabase(), e.getTableName()))
-            .collect(Collectors.joining("\\n")),
+            .collect(Collectors.joining("\n")),
         generator.generate(ShowCall.Namespaces.TABLES).call(context));
   }
 }

@@ -18,26 +18,33 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.ams.server.repair.TestRepairEnv;
+import com.netease.arctic.catalog.TableTestBase;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestUseCallGenerator extends TestRepairEnv {
+public class TestUseCallGenerator extends TableTestBase {
+
+  public TestUseCallGenerator() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
 
   @Test
   public void test() throws TException, CallCommand.FullTableNameException {
     UseCallGenerator generator = new UseCallGenerator(TEST_AMS.getServerUrl());
     Context context = new Context();
-    generator.generate(TEST_CATALOG_NAME).call(context);
-    Assert.assertEquals(TEST_CATALOG_NAME, context.getCatalog());
-    generator.generate(TEST_DATABASE_NAME).call(context);
-    Assert.assertEquals(TEST_DATABASE_NAME, context.getDb());
+    generator.generate(TableTestHelpers.TEST_CATALOG_NAME).call(context);
+    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context.getCatalog());
+    generator.generate(TableTestHelpers.TEST_DB_NAME).call(context);
+    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context.getDb());
 
     Context context1 = new Context();
-    generator.generate(String.format("%s.%s", TEST_CATALOG_NAME, TEST_DATABASE_NAME)).call(context1);
-    Assert.assertEquals(TEST_CATALOG_NAME, context1.getCatalog());
-    Assert.assertEquals(TEST_DATABASE_NAME, context1.getDb());
+    generator.generate(String.format("%s.%s", TableTestHelpers.TEST_CATALOG_NAME, TableTestHelpers.TEST_DB_NAME))
+        .call(context1);
+    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context1.getCatalog());
+    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context1.getDb());
   }
 }

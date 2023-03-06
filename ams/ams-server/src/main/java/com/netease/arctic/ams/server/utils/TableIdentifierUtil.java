@@ -16,25 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.catalog.TableTestBase;
-import org.apache.thrift.TException;
-import org.junit.Assert;
-import org.junit.Test;
+import com.netease.arctic.table.TableIdentifier;
 
-public class TestRefreshCallGenerator extends TableTestBase {
-
-  public TestRefreshCallGenerator() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
-  }
-
-  @Test
-  public void test() throws TException, CallCommand.FullTableNameException {
-    RefreshCallGenerator generator = new RefreshCallGenerator(getCatalogUrl());
-    Assert.assertEquals("OK", generator.generate(TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context()));
+public class TableIdentifierUtil {
+  public static TableIdentifier convert(com.netease.arctic.ams.api.TableIdentifier identifier) {
+    return TableIdentifier.of(identifier);
   }
 }
