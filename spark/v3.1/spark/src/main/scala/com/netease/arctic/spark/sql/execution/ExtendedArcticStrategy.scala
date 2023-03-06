@@ -62,9 +62,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         output, planLater(child)) :: Nil
 
     case QueryWithConstraintCheck(scanPlan, fileFilterPlan) =>
-      QueryWithConstraintCheckExec(
-        planLater(scanPlan),
-        planLater(fileFilterPlan)) :: Nil
+      QueryWithConstraintCheckExec(planLater(scanPlan), planLater(fileFilterPlan)) :: Nil
 
     case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
       AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil

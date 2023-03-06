@@ -38,6 +38,6 @@ case class QueryWithConstraintCheck(
   override def output: Seq[Attribute] = scanPlan.output
 
   override def simpleString(maxFields: Int): String = {
-    s"DynamicFileFilterWithCardinalityCheck${truncatedString(output, "[", ", ", "]", maxFields)}"
+    s"QueryWithConstraintCheck${truncatedString(output, "[", ", ", "]", maxFields)}"
   }
 }
