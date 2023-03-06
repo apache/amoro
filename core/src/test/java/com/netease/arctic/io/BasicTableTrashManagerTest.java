@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -145,6 +146,65 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     Assert.assertFalse(getArcticTable().io().exists(baseDir));
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertFalse(getArcticTable().io().exists(path2));
+  }
+
+  @Test
+  public void testCleanFiles() {
+    BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.of(getArcticTable()));
+    String trashLocation =
+        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String file1 = getArcticTable().location() + File.separator + "base/test/test1.parquet";
+    String file2 = getArcticTable().location() + File.separator + "base/test/test2.parquet";
+    String file3 = getArcticTable().location() + File.separator + "base/test3/test3.parquet";
+    String file4 = getArcticTable().location() + File.separator + "base/test/test4.parquet";
+    String file5 = getArcticTable().location() + File.separator + "base/test/test5.parquet";
+    String illegalFile = trashLocation + File.separator + "/000/base/test/test6.parquet";
+    long day1 = LocalDateTime.of(2023, 2, 20, 1, 1)
+        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    long day2 = LocalDateTime.of(2023, 2, 21, 1, 1)
+        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    long day3 = LocalDateTime.of(2023, 2, 22, 1, 1)
+        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+    String file1Day1 =
+        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file1, trashLocation, day1);
+    String file2Day1 =
+        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file2, trashLocation, day1);
+    String file3Day1 =
+        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file3, trashLocation, day1);
+    String file4Day2 =
+        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file4, trashLocation, day2);
+    String file5Day3 =
+        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file5, trashLocation, day3);
+    createFile(getArcticTable().io(), file1Day1);
+    createFile(getArcticTable().io(), file2Day1);
+    createFile(getArcticTable().io(), file3Day1);
+    createFile(getArcticTable().io(), file4Day2);
+    createFile(getArcticTable().io(), file5Day3);
+    createFile(getArcticTable().io(), illegalFile);
+
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file1));
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file2));
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file3));
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file4));
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file5));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(illegalFile));
+
+    tableTrashManager.cleanFiles(LocalDate.of(2023, 2, 22));
+
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(file2));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(file3));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(file4));
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file5));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(illegalFile));
+
+    Assert.assertFalse(getArcticTable().io().exists(file1Day1));
+    Assert.assertFalse(getArcticTable().io().exists(file2Day1));
+    Assert.assertFalse(getArcticTable().io().exists(file3Day1));
+    Assert.assertFalse(getArcticTable().io().exists(file4Day2));
+    Assert.assertTrue(getArcticTable().io().exists(file5Day3));
+    Assert.assertTrue(getArcticTable().io().exists(illegalFile));
   }
 
   private String createFile(FileIO io, String path) {

@@ -23,8 +23,6 @@ import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class TableTrashManagersTest {
 
   @Test

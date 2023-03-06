@@ -67,8 +67,8 @@ class BasicTableTrashManager implements TableTrashManager {
    * @param deleteTime        - time the file deleted
    * @return file location in trash
    */
-  public static String generateFileLocationInTrash(String tableRootLocation, String fileLocation, String trashLocation,
-                                                   long deleteTime) {
+  static String generateFileLocationInTrash(String tableRootLocation, String fileLocation, String trashLocation,
+                                            long deleteTime) {
     String relativeFileLocation = getRelativeFileLocation(tableRootLocation, fileLocation);
     return trashLocation + "/" + formatDate(deleteTime) + "/" + relativeFileLocation;
   }
@@ -128,7 +128,7 @@ class BasicTableTrashManager implements TableTrashManager {
       arcticFileIO.rename(fileFromTrash, path);
       return true;
     } catch (Exception e) {
-      LOG.info("failed to restore file, {}", path, e);
+      LOG.info("{} failed to restore file, {}", tableIdentifier, path, e);
       return false;
     }
   }
@@ -146,7 +146,7 @@ class BasicTableTrashManager implements TableTrashManager {
       try {
         localDate = parseDate(dateName);
       } catch (Exception e) {
-        LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.getPath().toString());
+        LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.getPath().toString(), e);
         continue;
       }
       if (localDate.compareTo(expirationDate) < 0) {
