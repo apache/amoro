@@ -119,6 +119,37 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertFalse(testKeyedTable.io().exists((String) s1Files.get(1).path()));
   }
 
+  @Test
+  public void testNotExpireFlinkLatestCommit() throws IOException {
+    insertChangeDataFiles(1);
+    insertChangeDataFiles(2);
+    Assert.assertEquals(Long.MAX_VALUE,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
+    appendFiles.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
+    appendFiles.commit();
+    long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(checkpointTime,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
+    appendFiles2.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
+    appendFiles2.commit();
+    long checkpointTime2 = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    insertChangeDataFiles(2);
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    testKeyedTable.updateProperties().set(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableExpireService.expireArcticTable(testKeyedTable);
+
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+  }
+
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
     GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
         .withChangeAction(ChangeAction.INSERT)

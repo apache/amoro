@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SupportHiveSyncService implements ISupportHiveSyncService {
@@ -89,33 +88,32 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
     @Override
     public void run() {
       long startTime = System.currentTimeMillis();
-      final String traceId = UUID.randomUUID().toString();
       try {
-        LOG.info("[{}] {} start hive sync", traceId, tableIdentifier);
+        LOG.info("{} start hive sync", tableIdentifier);
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
         if (!TableTypeUtil.isHive(arcticTable)) {
-          LOG.debug("[{}] {} is not a support hive table", traceId, tableIdentifier);
+          LOG.debug("{} is not a support hive table", tableIdentifier);
           return;
         }
 
-        syncIcebergToHive(arcticTable, traceId);
+        syncIcebergToHive(arcticTable);
       } catch (Exception e) {
-        LOG.error("[{}] {} hive sync failed", traceId, tableIdentifier, e);
+        LOG.error("{} hive sync failed", tableIdentifier, e);
       } finally {
-        LOG.info("[{}] {} hive sync finished, cost {}ms", traceId, tableIdentifier,
+        LOG.info("{} hive sync finished, cost {}ms", tableIdentifier,
             System.currentTimeMillis() - startTime);
       }
     }
 
-    public static void syncIcebergToHive(ArcticTable arcticTable, String traceId) throws Exception {
+    public static void syncIcebergToHive(ArcticTable arcticTable) throws Exception {
       UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
           arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
       StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
 
       if (arcticTable.spec().isUnpartitioned()) {
-        syncNoPartitionTable(arcticTable, partitionProperty, traceId);
+        syncNoPartitionTable(arcticTable, partitionProperty);
       } else {
         syncPartitionTable(arcticTable, partitionProperty);
       }
@@ -126,11 +124,10 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
      * because only arctic update hive table location for unPartitioned table.
      */
     private static void syncNoPartitionTable(ArcticTable arcticTable,
-                                             StructLikeMap<Map<String, String>> partitionProperty,
-                                             String traceId) {
+                                             StructLikeMap<Map<String, String>> partitionProperty) {
       Map<String, String> property = partitionProperty.get(TablePropertyUtil.EMPTY_STRUCT);
       if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
-        LOG.debug("[{}] {} has no hive location in partition property", traceId, arcticTable.id());
+        LOG.debug("{} has no hive location in partition property", arcticTable.id());
         return;
       }
 
@@ -142,7 +139,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
           return hiveTable.getSd().getLocation();
         });
       } catch (Exception e) {
-        LOG.error("[{}] {} get hive location failed", traceId, arcticTable.id(), e);
+        LOG.error("{} get hive location failed", arcticTable.id(), e);
         return;
       }
 
@@ -155,7 +152,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
             return null;
           });
         } catch (Exception e) {
-          LOG.error("[{}] {} alter hive location failed", traceId, arcticTable.id(), e);
+          LOG.error("{} alter hive location failed", arcticTable.id(), e);
         }
       }
     }

@@ -64,7 +64,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     });
     Assert.assertNotEquals(newLocation, hiveLocation);
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable);
     hiveLocation = ((SupportHive) testUnPartitionKeyedHiveTable).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
           testUnPartitionKeyedHiveTable.id().getTableName());
@@ -84,7 +84,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
       return hiveTable.getSd().getLocation();
     });
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable);
     String newHiveLocation = ((SupportHive) testUnPartitionKeyedHiveTable).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
           testUnPartitionKeyedHiveTable.id().getTableName());
@@ -109,7 +109,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
             testKeyedHiveTable.id().getTableName(), partitionValues)));
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
     Partition hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
             testKeyedHiveTable.id().getTableName(), partitionValues));
@@ -159,7 +159,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
             testKeyedHiveTable.id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     Assert.assertThrows(NoSuchObjectException.class, () -> ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
@@ -208,7 +208,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
             testKeyedHiveTable.id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
@@ -265,7 +265,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
