@@ -19,6 +19,8 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -143,7 +145,12 @@ public class TableExpireService implements ITableExpireService {
         Set<String> baseExcludePaths = UnKeyedTableUtil.getAllContentFilePath(changeTable);
         baseExcludePaths.addAll(finalHiveLocations);
         long latestBaseFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(baseTable);
-        expireSnapshots(baseTable, Math.min(latestBaseFlinkCommitTime, startTime - baseSnapshotsKeepTime),
+        long optimizingSnapshotTime = fetchOptimizingSnapshotTime(baseTable);
+        long baseOlderThan = startTime - baseSnapshotsKeepTime;
+        LOG.info("{} base table expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
+            arcticTable.id(), latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan);
+        expireSnapshots(baseTable,
+            min(latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan),
             baseExcludePaths);
         long baseCleanedTime = System.currentTimeMillis();
         LOG.info("{} base expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
@@ -159,16 +166,24 @@ public class TableExpireService implements ITableExpireService {
         Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
         changeExclude.addAll(finalHiveLocations);
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
-        expireSnapshots(changeTable, Math.min(latestChangeFlinkCommitTime, startTime - changeSnapshotsKeepTime),
+        long changeOlderThan = startTime - changeSnapshotsKeepTime;
+        LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
+            latestChangeFlinkCommitTime, changeOlderThan);
+        expireSnapshots(changeTable,
+            Math.min(latestChangeFlinkCommitTime, changeOlderThan),
             changeExclude);
         return null;
       });
-      LOG.info("{} expire cost total {} ms", arcticTable.id(),
-          System.currentTimeMillis() - startTime);
+      LOG.info("{} expire cost total {} ms", arcticTable.id(), System.currentTimeMillis() - startTime);
     } else {
       UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
       long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unKeyedArcticTable);
-      expireSnapshots(unKeyedArcticTable, Math.min(latestFlinkCommitTime, startTime - baseSnapshotsKeepTime),
+      long optimizingSnapshotTime = fetchOptimizingSnapshotTime(unKeyedArcticTable);
+      long olderThan = startTime - baseSnapshotsKeepTime;
+      LOG.info("{} unKeyedTable expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
+          arcticTable.id(), latestFlinkCommitTime, optimizingSnapshotTime, olderThan);
+      expireSnapshots(unKeyedArcticTable,
+          min(latestFlinkCommitTime, optimizingSnapshotTime, olderThan),
           hiveLocations);
       long baseCleanedTime = System.currentTimeMillis();
       LOG.info("{} unKeyedTable expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
@@ -190,6 +205,34 @@ public class TableExpireService implements ITableExpireService {
       }
     }
     return latestCommitTime;
+  }
+
+  /**
+   * When optimizing tasks are not committed, the snapshot with which it planned should not be expired, since
+   * it will use the snapshot to check conflict when committing.
+   *
+   * @param table - table
+   * @return commit time of snapshot for optimizing
+   */
+  public static long fetchOptimizingSnapshotTime(UnkeyedTable table) {
+    try {
+      TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(table.id());
+      if (!tableOptimizeItem.getOptimizeTasks().isEmpty()) {
+        long currentSnapshotId = tableOptimizeItem.getTableOptimizeRuntime().getCurrentSnapshotId();
+        for (Snapshot snapshot : table.snapshots()) {
+          if (snapshot.snapshotId() == currentSnapshotId) {
+            return snapshot.timestampMillis();
+          }
+        }
+      }
+      return Long.MAX_VALUE;
+    } catch (NoSuchObjectException e) {
+      return Long.MAX_VALUE;
+    }
+  }
+
+  public static long min(long a, long b, long c) {
+    return Math.min(Math.min(a, b), c);
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
