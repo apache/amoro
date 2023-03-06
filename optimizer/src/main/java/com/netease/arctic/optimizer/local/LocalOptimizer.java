@@ -287,7 +287,7 @@ public class LocalOptimizer implements StatefulOptimizer {
           LOG.info("get task to execute {}", task.getTask().getTaskId());
           OptimizeTaskStat result = baseTaskExecutor.execute(task);
           LOG.info("execute {} {}", result.getStatus(), task.getTask().getTaskId());
-          baseTaskReporter.report(result, 20, 10000);
+          baseTaskReporter.report(result);
           LOG.info("report success {}", result.getTaskId());
         } catch (InterruptedException e) {
           LOG.warn("execute interrupted");
