@@ -218,11 +218,15 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       LOG.debug("failed to bind " + arcticTableItem.getTableIdentifier() + " and queue ", e);
     }
     if (persistRuntime) {
-      try {
-        insertTableOptimizeRuntime(arcticTableItem.getTableOptimizeRuntime());
-      } catch (Throwable t) {
-        LOG.debug("failed to insert " + arcticTableItem.getTableIdentifier() + " runtime, ignore", t);
-      }
+      persistTableRuntime(arcticTableItem.getTableOptimizeRuntime());
+    }
+  }
+
+  private void persistTableRuntime(TableOptimizeRuntime tableOptimizeRuntime) {
+    try {
+      insertTableOptimizeRuntime(tableOptimizeRuntime);
+    } catch (Throwable t) {
+      LOG.debug("failed to insert " + tableOptimizeRuntime.getTableIdentifier() + " runtime, ignore", t);
     }
   }
 
@@ -263,16 +267,17 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
 
           TableMetadata tableMetadata = buildTableMetadata(tableIdentifier);
+          TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
+          TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
+          arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
+              .initOptimizeTasks(tableOptimizeTasks);
           if (CompatiblePropertyUtil.propertyAsBoolean(tableMetadata.getProperties(),
               TableProperties.ENABLE_SELF_OPTIMIZING,
               TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
-            TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
-            TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
-            arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
-                .initOptimizeTasks(tableOptimizeTasks);
             addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
           } else {
             unOptimizeTables.add(tableIdentifier);
+            persistTableRuntime(arcticTableItem.getTableOptimizeRuntime());
           }
         });
     svc.shutdown();
@@ -377,6 +382,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         TableProperties.ENABLE_SELF_OPTIMIZING,
         TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
       unOptimizeTables.add(tableIdentifier);
+      persistTableRuntime(new TableOptimizeRuntime(tableIdentifier));
       return;
     }
 
