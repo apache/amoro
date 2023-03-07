@@ -66,6 +66,7 @@ import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
+import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -132,6 +133,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TableOptimizeItemTest.class
 })
 @PrepareForTest({
+    CatalogLoader.class,
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
     ServiceContainer.class,
