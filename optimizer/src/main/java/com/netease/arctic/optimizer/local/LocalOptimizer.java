@@ -242,8 +242,8 @@ public class LocalOptimizer implements StatefulOptimizer {
             LOG.info("poll task {}", task);
             return task;
           } else {
+            LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
             Thread.sleep(POLL_INTERVAL);
-            LOG.info("poll no task");
           }
         } catch (Throwable e) {
           if (stopped) {
