@@ -484,122 +484,137 @@ public class OptimizeQueueService extends IJDBCService {
 
     public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime) {
       long startTime = System.currentTimeMillis();
-      boolean first = true;
-      while (true) {
-        if (first) {
-          first = false;
+      OptimizeTaskItem task = tasks.poll();
+      if (task == null) {
+        tryPlanAsync(jobId, attemptId);
+        task = waitForTask(startTime, waitTime);
+        if (task == null) {
+          return null;
         } else {
-          long duration = System.currentTimeMillis() - startTime;
-          if (duration > waitTime) {
-            LOG.warn("pool task cost too much time {} ms, return null", duration);
+          return onExecuteOptimizeTask(task, jobId, attemptId);
+        }
+      } else {
+        return onExecuteOptimizeTask(task, jobId, attemptId);
+      }
+    }
+
+    private OptimizeTask onExecuteOptimizeTask(OptimizeTaskItem task, JobId jobId, String attemptId) {
+      TableTaskHistory tableTaskHistory;
+      try {
+        // load files from sysdb
+        task.setFiles();
+        // update max execute time
+        task.setMaxExecuteTime();
+        tableTaskHistory = task.onExecuting(jobId, attemptId);
+      } catch (Exception e) {
+        task.clearFiles();
+        LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
+        if (!tasks.offer(task)) {
+          LOG.error("{} failed to put task back into queue", task.getTaskId());
+          task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
+        }
+        throw e;
+      }
+      try {
+        insertTableTaskHistory(tableTaskHistory);
+      } catch (Exception e) {
+        LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
+      }
+      return task.getOptimizeTask();
+    }
+
+    private OptimizeTaskItem waitForTask(long startTime, long waitTime) {
+      while (true) {
+        lock();
+        try {
+          // if timeout, return null, await support zero or a negative value, and return false
+          if (planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
+              TimeUnit.MILLISECONDS)) {
+            OptimizeTaskItem task = tasks.poll();
+            if (task != null) {
+              if (!tables.contains(task.getTableIdentifier())) {
+                LOG.warn("get task {} from queue {} but table {} not in this queue",
+                    task.getTaskId(), queueName(), task.getTableIdentifier());
+                continue;
+              }
+              return task;
+            }
+          } else {
+            LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
             return null;
           }
+        } catch (InterruptedException e) {
+          LOG.warn("await for task was interrupted, return null", e);
+          return null;
+        } finally {
+          unlock();
         }
-        OptimizeTaskItem task = tasks.poll();
-        if (task == null) {
+        long duration = System.currentTimeMillis() - startTime;
+        if (duration > waitTime) {
+          LOG.info("pool task cost too much time {} ms, return null", duration);
+          return null;
+        }
+      }
+    }
+
+    private void tryPlanAsync(JobId jobId, String attemptId) {
+      if (!planThreadStarted.compareAndSet(false, true)) {
+        // a plan tread is working now
+        return;
+      }
+      try {
+        Thread planThread = new Thread(() -> {
+          int retry = 0;
+          boolean isHaveTask = false;
+
+          long threadStartTime = System.currentTimeMillis();
           try {
-            if (planThreadStarted.compareAndSet(false, true)) {
-              Thread planThread = new Thread(() -> {
-                int retry = 0;
-                boolean isHaveTask = false;
+            LOG.info("this plan started {}, {}", attemptId, jobId);
+            while (retry <= retryTime) {
+              LOG.debug("start get plan task retry {}", retry);
+              retry++;
+              long planStartTime = System.currentTimeMillis();
+              List<OptimizeTaskItem> tasks = plan(planStartTime);
+              if (CollectionUtils.isNotEmpty(tasks)) {
+                isHaveTask = true;
+                break;
+              }
 
-                long threadStartTime = System.currentTimeMillis();
-                try {
-                  LOG.info("this plan started {}, {}", attemptId, jobId);
-                  while (retry <= retryTime) {
-                    LOG.debug("start get plan task retry {}", retry);
-                    retry++;
-                    long planStartTime = System.currentTimeMillis();
-                    List<OptimizeTaskItem> tasks = plan(planStartTime);
-                    if (CollectionUtils.isNotEmpty(tasks)) {
-                      isHaveTask = true;
-                      break;
-                    }
+              try {
+                Thread.sleep(retryInterval);
+              } catch (InterruptedException e) {
+                LOG.error("Internal Thread Interrupted", e);
+              }
+            }
 
-                    try {
-                      Thread.sleep(retryInterval);
-                    } catch (InterruptedException e) {
-                      LOG.error("Internal Thread Interrupted", e);
-                    }
-                  }
-
-                  // no task have planned
-                  if (!isHaveTask) {
-                    LOG.debug("The queue {} has retry {} times, no task have planned",
-                        optimizeQueue.getOptimizeQueueMeta().getQueueId(),
-                        retryTime);
-                  }
-                } catch (Throwable t) {
-                  LOG.error("failed to plan", t);
-                  throw t;
-                } finally {
-                  LOG.info("this plan end {}, cost {} ms, retry {}",
-                      attemptId, System.currentTimeMillis() - threadStartTime, retry);
-                  if (planThreadStarted.compareAndSet(true, false)) {
-                    lock();
-                    try {
-                      planThreadCondition.signalAll();
-                    } finally {
-                      unlock();
-                    }
-                  }
-                }
-              });
-              planThread.setName(
-                  "Optimize Plan Thread Queue-" + optimizeQueue.getOptimizeQueueMeta().getQueueId());
-              planThread.start();
-            } else {
+            // no task have planned
+            if (!isHaveTask) {
+              LOG.debug("The queue {} has retry {} times, no task have planned",
+                  optimizeQueue.getOptimizeQueueMeta().getQueueId(),
+                  retryTime);
+            }
+          } catch (Throwable t) {
+            LOG.error("failed to plan", t);
+            throw t;
+          } finally {
+            LOG.info("this plan end {}, cost {} ms, retry {}",
+                attemptId, System.currentTimeMillis() - threadStartTime, retry);
+            if (planThreadStarted.compareAndSet(true, false)) {
               lock();
               try {
-                // if timeout, return null, await support zero or a negative value, and return false
-                if (!planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
-                    TimeUnit.MILLISECONDS)) {
-                  LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
-                  return null;
-                }
+                planThreadCondition.signalAll();
               } finally {
                 unlock();
               }
             }
-          } catch (Exception e) {
-            LOG.error("Failure when starting the plan thread, " + e);
           }
-        } else {
-          if (tables.contains(task.getTableIdentifier())) {
-            TableTaskHistory tableTaskHistory;
-            try {
-              // load files from sysdb
-              task.setFiles();
-              // update max execute time
-              task.setMaxExecuteTime();
-              tableTaskHistory = task.onExecuting(jobId, attemptId);
-            } catch (Exception e) {
-              task.clearFiles();
-              LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
-              if (!tasks.offer(task)) {
-                LOG.error("{} failed to put task back into queue", task.getTaskId());
-                task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
-              }
-
-              // sleep 1s, avoid poll task failed use too much cpu
-              try {
-                Thread.sleep(1000);
-              } catch (InterruptedException ex) {
-                LOG.error("poll task {} failed, sleep thread was interrupted", task.getTaskId(), ex);
-              }
-              continue;
-            }
-            try {
-              insertTableTaskHistory(tableTaskHistory);
-            } catch (Exception e) {
-              LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
-            }
-            return task.getOptimizeTask();
-          } else {
-            LOG.warn("get task {} from queue {} but table {} not in this queue",
-                task.getTaskId(), queueName(), task.getTableIdentifier());
-          }
-        }
+        });
+        planThread.setName(
+            "Optimize Plan Thread Queue-" + optimizeQueue.getOptimizeQueueMeta().getQueueId());
+        planThread.start();
+      } catch (Exception e) {
+        LOG.error("Failure when starting the plan thread", e);
+        planThreadStarted.set(false);
       }
     }
 
