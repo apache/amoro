@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkConsumer.class);
+  private static final long POLL_INTERVAL = 5000; // 5s
 
   private final BaseTaskConsumer taskConsumer;
 
@@ -51,13 +52,17 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
     int retry = 0;
     while (running) {
       try {
-        TaskWrapper task = taskConsumer.pollTask();
+        TaskWrapper task = taskConsumer.pollTask(0);
         if (task != null) {
           sourceContext.collect(task);
         } else {
+          Thread.sleep(POLL_INTERVAL);
           LOG.info("poll no task");
         }
       } catch (Exception e) {
+        if (!running) {
+          break;
+        }
         // The subscription is abnormal and cannot be restored, and a new consumer can be activated
         LOG.error("failed to poll task, retry {}", retry, e);
         retry++;
@@ -67,7 +72,7 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
           retry = 0;
           LOG.error("flink source has tried too many times, and the subscription message is suspended." +
               " Please check for errors");
-          Thread.sleep(10000);
+          Thread.sleep(2 * POLL_INTERVAL);
         }
       }
     }

@@ -484,11 +484,16 @@ public class OptimizeQueueService extends IJDBCService {
 
     public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime) {
       long startTime = System.currentTimeMillis();
+      boolean first = true;
       while (true) {
-        long duration = System.currentTimeMillis() - startTime;
-        if (duration > waitTime) {
-          LOG.warn("pool task cost too much time {} ms, return null", duration);
-          return null;
+        if (first) {
+          first = false;
+        } else {
+          long duration = System.currentTimeMillis() - startTime;
+          if (duration > waitTime) {
+            LOG.warn("pool task cost too much time {} ms, return null", duration);
+            return null;
+          }
         }
         OptimizeTaskItem task = tasks.poll();
         if (task == null) {
@@ -546,7 +551,7 @@ public class OptimizeQueueService extends IJDBCService {
             } else {
               lock();
               try {
-                // if timeout, return null
+                // if timeout, return null, await support zero or a negative value, and return false
                 if (!planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
                     TimeUnit.MILLISECONDS)) {
                   LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
