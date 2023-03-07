@@ -84,7 +84,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       sqlSession.commit(true);
     }
 
-    buildArcticTable(tableMetadata);
     TABLE_META_STORE_CACHE.put(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()),
         tableMetadata.getMetaStore());
     try {
@@ -243,15 +242,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   @Override
   public boolean isExist(TableIdentifier tableIdentifier) {
     return loadTableMetadata(tableIdentifier) != null;
-  }
-
-  @Override
-  public UnkeyedTable buildArcticTable(TableMetadata tableMetadata) {
-    Tables tables = new HadoopTables(tableMetadata.getMetaStore().getConfiguration());
-    Table icebergTable = tableMetadata.getMetaStore().doAs(()
-        -> tables.load(tableMetadata.getBaseLocation()));
-    ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetadata.getMetaStore());
-    return new BasicUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
   }
 
   public static class Key {

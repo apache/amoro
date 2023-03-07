@@ -32,7 +32,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -164,7 +164,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+        tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new UnkeyedHiveTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -185,7 +186,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
+    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+        tableMetaStore);
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
@@ -286,7 +288,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         meta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
       }
 
-      ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+          tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
@@ -385,7 +388,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       } catch (TException | InterruptedException e) {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
-      ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+          tableMetaStore);
       return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool);
     }

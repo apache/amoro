@@ -137,10 +137,9 @@ public class BasicKeyedTable implements KeyedTable {
     }
 
     baseTable.refresh();
-    if (PrimaryKeySpec.noPrimaryKey().equals(primaryKeySpec())) {
-      return;
+    if (primaryKeySpec().primaryKeyExisted()) {
+      changeTable.refresh();
     }
-    changeTable.refresh();
   }
 
   @Override

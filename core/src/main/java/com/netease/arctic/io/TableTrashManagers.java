@@ -29,16 +29,29 @@ public class TableTrashManagers {
   public static String DEFAULT_TRASH_DIR = ".trash";
 
   /**
-   * Get TableTrashManager from ArcticTable.
+   * Build {@link TableTrashManager} from {@link ArcticTable}.
    *
    * @param table - ArcticTable
    * @return TableTrashManager
    */
   public static TableTrashManager of(ArcticTable table) {
-    Map<String, String> properties = table.properties();
-    String customTrashRootLocation = properties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
-    String trashLocation = getTrashLocation(table.id(), table.location(), customTrashRootLocation);
-    return new BasicTableTrashManager(table.id(), table.io(), table.location(), trashLocation);
+    return build(table.id(), table.location(), table.properties(), table.io());
+  }
+
+  /**
+   * Build {@link TableTrashManager}.
+   *
+   * @param tableIdentifier  - table identifier
+   * @param tableLocation    - table root location
+   * @param tableProperties  - table properties
+   * @param fileIO           - table file io
+   * @return                 - built table trash manager
+   */
+  public static TableTrashManager build(TableIdentifier tableIdentifier, String tableLocation,
+      Map<String, String> tableProperties, ArcticFileIO fileIO) {
+    String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+    String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
+    return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);
   }
 
   /**
