@@ -149,12 +149,12 @@ public class PulsarSourceEnumerator
                 sourceConfiguration.getSubscriptionDesc());
         assignPendingPartitionSplits(singletonList(subtaskId));
     }
-    // ------------ custome start -----------------
+    // ------------ custom start -----------------
     @Override
     public PulsarSourceEnumState snapshotState() {
         return splitAssigner.snapshotState();
     }
-    // ------------ custome end -----------------
+    // ------------ custom end -----------------
     @Override
     public void close() {
         if (pulsarAdmin != null) {

@@ -150,12 +150,11 @@ public class PulsarSourceEnumerator
         assignPendingPartitionSplits(singletonList(subtaskId));
     }
 
-    // ------------ custome start -----------------
     @Override
     public PulsarSourceEnumState snapshotState(long checkpointId) throws Exception {
         return splitAssigner.snapshotState();
     }
-    // ------------ custome end -----------------
+
     @Override
     public void close() {
         if (pulsarAdmin != null) {
