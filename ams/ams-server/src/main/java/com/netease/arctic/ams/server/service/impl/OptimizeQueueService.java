@@ -490,12 +490,9 @@ public class OptimizeQueueService extends IJDBCService {
         task = waitForTask(startTime, waitTime);
         if (task == null) {
           return null;
-        } else {
-          return onExecuteOptimizeTask(task, jobId, attemptId);
-        }
-      } else {
-        return onExecuteOptimizeTask(task, jobId, attemptId);
-      }
+        } 
+      } 
+      return onExecuteOptimizeTask(task, jobId, attemptId);
     }
 
     private OptimizeTask onExecuteOptimizeTask(OptimizeTaskItem task, JobId jobId, String attemptId) {
