@@ -104,13 +104,6 @@ public interface IMetaService {
   boolean isExist(TableIdentifier tableIdentifier);
 
   /**
-   * build arctic table
-   *
-   * @param tableMetadata table meta data
-   */
-  UnkeyedTable buildArcticTable(TableMetadata tableMetadata);
-
-  /**
    * get talbe count in catalog catalogName
    * @param catalogName
    * @return
