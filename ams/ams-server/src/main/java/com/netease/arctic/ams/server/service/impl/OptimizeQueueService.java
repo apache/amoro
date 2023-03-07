@@ -484,7 +484,7 @@ public class OptimizeQueueService extends IJDBCService {
 
     public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime) {
       long startTime = System.currentTimeMillis();
-      OptimizeTaskItem task = tasks.poll();
+      OptimizeTaskItem task = pollValidTask();
       if (task == null) {
         tryPlanAsync(jobId, attemptId);
         task = waitForTask(startTime, waitTime);
@@ -520,20 +520,33 @@ public class OptimizeQueueService extends IJDBCService {
       return task.getOptimizeTask();
     }
 
+    private OptimizeTaskItem pollValidTask() {
+      while (true) {
+        OptimizeTaskItem task = tasks.poll();
+        if (task == null) {
+          return null;
+        }
+        if (tables.contains(task.getTableIdentifier())) {
+          return task;
+        } else {
+          LOG.warn("get task {} from queue {} but table {} not in this queue, continue",
+              task.getTaskId(), queueName(), task.getTableIdentifier());
+        }
+      }
+    }
+
     private OptimizeTaskItem waitForTask(long startTime, long waitTime) {
+      if (waitTime <= 0) {
+        return null;
+      }
       while (true) {
         lock();
         try {
           // if timeout, return null, await support zero or a negative value, and return false
           if (planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
               TimeUnit.MILLISECONDS)) {
-            OptimizeTaskItem task = tasks.poll();
+            OptimizeTaskItem task = pollValidTask();
             if (task != null) {
-              if (!tables.contains(task.getTableIdentifier())) {
-                LOG.warn("get task {} from queue {} but table {} not in this queue",
-                    task.getTaskId(), queueName(), task.getTableIdentifier());
-                continue;
-              }
               return task;
             }
           } else {
@@ -546,6 +559,7 @@ public class OptimizeQueueService extends IJDBCService {
         } finally {
           unlock();
         }
+        // check wait timeout
         long duration = System.currentTimeMillis() - startTime;
         if (duration > waitTime) {
           LOG.info("pool task cost too much time {} ms, return null", duration);
@@ -562,18 +576,17 @@ public class OptimizeQueueService extends IJDBCService {
       try {
         Thread planThread = new Thread(() -> {
           int retry = 0;
-          boolean isHaveTask = false;
 
           long threadStartTime = System.currentTimeMillis();
           try {
             LOG.info("this plan started {}, {}", attemptId, jobId);
+            List<OptimizeTaskItem> tasks = Collections.emptyList();
             while (retry <= retryTime) {
               LOG.debug("start get plan task retry {}", retry);
               retry++;
               long planStartTime = System.currentTimeMillis();
-              List<OptimizeTaskItem> tasks = plan(planStartTime);
+              tasks = plan(planStartTime);
               if (CollectionUtils.isNotEmpty(tasks)) {
-                isHaveTask = true;
                 break;
               }
 
@@ -581,11 +594,12 @@ public class OptimizeQueueService extends IJDBCService {
                 Thread.sleep(retryInterval);
               } catch (InterruptedException e) {
                 LOG.error("Internal Thread Interrupted", e);
+                break;
               }
             }
 
             // no task have planned
-            if (!isHaveTask) {
+            if (CollectionUtils.isEmpty(tasks)) {
               LOG.debug("The queue {} has retry {} times, no task have planned",
                   optimizeQueue.getOptimizeQueueMeta().getQueueId(),
                   retryTime);
