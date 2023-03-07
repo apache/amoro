@@ -2,6 +2,7 @@ package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
+import com.netease.arctic.ams.server.repair.DamageType;
 
 public class OptimizeCallGenerator {
 

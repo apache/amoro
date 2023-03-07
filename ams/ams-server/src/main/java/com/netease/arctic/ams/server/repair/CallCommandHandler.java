@@ -26,8 +26,14 @@ import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
 import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
 import com.netease.arctic.catalog.CatalogManager;
+import com.netease.arctic.table.TableIdentifier;
+import java.util.StringJoiner;
 
 public class CallCommandHandler implements CommandHandler {
+
+  private static final String PROMPT_PREFIX = "repair:";
+
+  private static final String PROMPT_SUFFIX = ">";
 
   private String amsAddress;
 
@@ -69,7 +75,7 @@ public class CallCommandHandler implements CommandHandler {
   @Override
   public String welcome() {
     return
-        " █████╗ ██████╗  ██████╗████████╗██╗ ██████╗    ██████╗ ███████╗██████╗  █████╗ ██╗██████╗ \n" +
+            " █████╗ ██████╗  ██████╗████████╗██╗ ██████╗    ██████╗ ███████╗██████╗  █████╗ ██╗██████╗ \n" +
             "██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██║██╔════╝    ██╔══██╗██╔════╝██╔══██╗██╔══██╗██║██╔══██╗\n" +
             "███████║██████╔╝██║        ██║   ██║██║         ██████╔╝█████╗  ██████╔╝███████║██║██████╔╝\n" +
             "██╔══██║██╔══██╗██║        ██║   ██║██║         ██╔══██╗██╔══╝  ██╔═══╝ ██╔══██║██║██╔══██╗\n" +
@@ -82,7 +88,20 @@ public class CallCommandHandler implements CommandHandler {
 
   @Override
   public String[] keyWord() {
-    //todo
     return commandParser.keywords();
+  }
+
+  /**
+   * Like Repair:{catalog}.{db}>
+   */
+  @Override
+  public String prompt() {
+    if (context.getCatalog() == null) {
+      return PROMPT_PREFIX + PROMPT_SUFFIX;
+    }
+    if (context.getDb() == null) {
+      return PROMPT_PREFIX + context.getCatalog() + PROMPT_SUFFIX;
+    }
+    return PROMPT_PREFIX + context.getCatalog() + "." + context.getDb() + PROMPT_PREFIX;
   }
 }

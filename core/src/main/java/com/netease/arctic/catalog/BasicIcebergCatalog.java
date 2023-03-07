@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableBuilder;
@@ -31,14 +32,15 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseMetastoreCatalog;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.PublicBaseMetastoreCatalog;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.common.DynMethods;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -56,6 +58,8 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   private Pattern databaseFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
+  private DynMethods.BoundMethod defaultWarehouseLocation;
+
 
   @Override
   public String name() {
@@ -81,6 +85,9 @@ public class BasicIcebergCatalog implements ArcticCatalog {
           meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
+    this.defaultWarehouseLocation = DynMethods.builder("defaultWarehouseLocation")
+        .hiddenImpl(icebergCatalog.getClass(), org.apache.iceberg.catalog.TableIdentifier.class)
+        .build(icebergCatalog);
   }
 
   @Override
@@ -144,7 +151,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     Table icebergTable = tableMetaStore.doAs(() -> icebergCatalog
         .loadTable(toIcebergTableIdentifier(tableIdentifier)));
-    ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
+    ArcticFileIO arcticFileIO = getArcticIO();
     return new BasicIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
         icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO,
         meta.getCatalogProperties());
@@ -184,12 +191,29 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public String tableLocation(TableIdentifier identifier) {
-    if (icebergCatalog instanceof BaseMetastoreCatalog) {
-      return new PublicBaseMetastoreCatalog((BaseMetastoreCatalog) icebergCatalog)
-          .defaultWarehouseLocation(toIcebergTableIdentifier(identifier));
-    } else {
-      throw new UnsupportedOperationException("This iceberg catalog does not support obtaining location");
+    try {
+      return defaultWarehouseLocation.invokeChecked(toIcebergTableIdentifier(identifier));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public ArcticHadoopTableOperations getChangeTableOperations(TableIdentifier identifier) {
+    return null;
+  }
+
+  @Override
+  public ArcticHadoopTableOperations getBaseTableOperations(TableIdentifier identifier) {
+    ArcticFileIO arcticFileIO = getArcticIO();
+    return new ArcticHadoopTableOperations(new Path(tableLocation(identifier)),
+        arcticFileIO,
+        tableMetaStore.getConfiguration());
+  }
+
+  @Override
+  public ArcticFileIO getArcticIO() {
+    return new ArcticHadoopFileIO(tableMetaStore);
   }
 
   @Override

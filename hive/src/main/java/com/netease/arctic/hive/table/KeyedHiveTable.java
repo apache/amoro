@@ -70,7 +70,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return ((SupportHive)baseTable()).hiveLocation();
   }
 
-  private void syncHiveSchemaToArctic() {
+  public void syncHiveSchemaToArctic() {
     if (PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
@@ -79,11 +79,15 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     }
   }
 
-  private void syncHiveDataToArctic() {
-    if (PropertyUtil.propertyAsBoolean(
+  public boolean enableSyncHiveDataToArctic() {
+    return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+  }
+
+  public void syncHiveDataToArctic() {
+    if (enableSyncHiveDataToArctic()) {
       HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
     }
   }

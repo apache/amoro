@@ -31,28 +31,4 @@ import java.util.List;
 
 public class RepairTool {
 
-  public static void syncMetadataForFileLose(Table table, List<ContentFile> loseFile) {
-    ForcedDeleteFiles forcedDeleteFiles = ForcedDeleteFiles.of(table);
-    for (ContentFile contentFile: loseFile) {
-      if (contentFile instanceof DataFile) {
-        forcedDeleteFiles.delete((DataFile) contentFile);
-      } else if (contentFile instanceof DeleteFile) {
-        forcedDeleteFiles.delete((DeleteFile) contentFile);
-      }
-    }
-    forcedDeleteFiles.commit();
-  }
-
-  public static void syncMetadataForManifestLose(Table table, List<ManifestFile> loseManifestFile) {
-    ForcedDeleteManifests forcedDeleteManifests = ForcedDeleteManifests.of(table);
-    for (ManifestFile manifestFile: loseManifestFile) {
-      forcedDeleteManifests.deleteManifest(manifestFile);
-    }
-    forcedDeleteManifests.commit();
-  }
-
-  public static void rollback(Table table, long snapshot) {
-    ManageSnapshots manageSnapshots = table.manageSnapshots();
-    manageSnapshots.rollbackTo(snapshot).commit();
-  }
 }

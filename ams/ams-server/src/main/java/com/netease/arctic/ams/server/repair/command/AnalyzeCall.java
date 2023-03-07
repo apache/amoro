@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
+import java.util.Set;
 import org.apache.iceberg.Snapshot;
 
 public class AnalyzeCall implements CallCommand {
@@ -96,7 +97,7 @@ public class AnalyzeCall implements CallCommand {
     }
 
     LikeYmlFormat youCanFormat = root.child(YOU_CAN);
-    List<RepairWay> repairWays = availableResult.youCan();
+    Set<RepairWay> repairWays = availableResult.youCan();
     if (repairWays != null) {
       for (RepairWay repairWay: repairWays) {
         LikeYmlFormat wayFormat = youCanFormat.child(repairWay.name());

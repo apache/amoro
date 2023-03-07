@@ -19,9 +19,15 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.io.ArcticFileIO;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableMetadataParser;
+import org.apache.iceberg.common.DynMethods;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
@@ -31,14 +37,82 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   private final ArcticFileIO arcticFileIO;
 
+  private DynMethods.BoundMethod findVersion = DynMethods.builder("findVersion")
+      .hiddenImpl(HadoopTableOperations.class, null)
+      .build(this);
+
+  private DynMethods.BoundMethod metadataFilePath = DynMethods.builder("metadataFilePath")
+      .hiddenImpl(HadoopTableOperations.class, Integer.TYPE, TableMetadataParser.Codec.class)
+      .build(this);
+
+  private DynMethods.BoundMethod oldMetadataFilePath = DynMethods.builder("oldMetadataFilePath")
+      .hiddenImpl(HadoopTableOperations.class, Integer.TYPE, TableMetadataParser.Codec.class)
+      .build(this);
+
+  private DynMethods.BoundMethod versionHintFile = DynMethods.builder("versionHintFile")
+      .hiddenImpl(HadoopTableOperations.class, null)
+      .build(this);
+
+  private final Configuration conf;
+
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
     super(location, fileIO, conf, LockManagers.defaultLockManager());
+    this.conf = conf;
     this.arcticFileIO = fileIO;
   }
 
   @Override
   public TableMetadata refresh() {
     return arcticFileIO.doAs(super::refresh);
+  }
+
+  public int findVersion() {
+    try {
+      return arcticFileIO.doAs(() -> findVersion.invokeChecked());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Path metadataFilePath(int metadataVersion, TableMetadataParser.Codec codec) {
+    try {
+      return metadataFilePath.invokeChecked(metadataVersion, codec);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Path oldMetadataFilePath(int metadataVersion, TableMetadataParser.Codec codec) {
+    try {
+      return oldMetadataFilePath.invokeChecked(metadataVersion, codec);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public List<Path> getMetadataCandidateFiles(int metadataVersion) {
+    List<Path> paths = new ArrayList<>();
+    for (TableMetadataParser.Codec codec : TableMetadataParser.Codec.values()) {
+      Path metadataFile = metadataFilePath(metadataVersion, codec);
+      paths.add(metadataFile);
+
+      if (codec.equals(TableMetadataParser.Codec.GZIP)) {
+        // we have to be backward-compatible with .metadata.json.gz files
+        metadataFile = oldMetadataFilePath(metadataVersion, codec);
+        paths.add(metadataFile);
+      }
+    }
+    return paths;
+  }
+
+  public void removeVersionHit() {
+    Path path = null;
+    try {
+      path = versionHintFile.invokeChecked();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    io().deleteFile(path.toString());
   }
 
   @Override

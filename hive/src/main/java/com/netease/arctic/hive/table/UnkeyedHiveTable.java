@@ -142,11 +142,15 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
     }
   }
 
-  private void syncHiveDataToArctic() {
-    if (syncHiveChange && PropertyUtil.propertyAsBoolean(
+  public boolean enableSyncHiveDataToArctic() {
+    return syncHiveChange && PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+  }
+
+  public void syncHiveDataToArctic() {
+    if (enableSyncHiveDataToArctic()) {
       HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
     }
   }

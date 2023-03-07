@@ -22,11 +22,21 @@ import com.google.common.collect.Iterables;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseLocationKind;
+import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
@@ -40,6 +50,10 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public class TableAvailableAnalyzer {
+
+  private static final Pattern PATTERN = Pattern.compile("Metadata file for version ([0-9]+) is missing");
+
+  private Map<String, Boolean> fileExistCache = new HashMap<>();
 
   private ArcticCatalog arcticCatalog;
 
@@ -61,6 +75,7 @@ public class TableAvailableAnalyzer {
     if (maxRollbackSnapNum != null) {
       this.maxRollbackSnapNum = maxRollbackSnapNum;
     }
+    this.io = arcticCatalog.getArcticIO();
   }
 
   public TableAvailableResult check() {
@@ -71,22 +86,57 @@ public class TableAvailableAnalyzer {
       // Now don't resolve this exception
       return TableAvailableResult.tableNotFound(identifier);
     } catch (ValidationException e) {
-      if (e.getMessage().matches("Metadata file for version [0-9]+ is missing")) {
-        return TableAvailableResult.metadataLose(identifier);
+      Matcher matcher = PATTERN.matcher(e.getMessage());
+      Integer version = null;
+      while (matcher.find()) {
+         version = Integer.parseInt(matcher.group(1));
       }
+
+      //Not version exception
+      if (version == null) {
+        throw e;
+      }
+
+      TableAvailableResult tableAvailableResult = TableAvailableResult.metadataLose(identifier, version);
+
+      ArcticHadoopTableOperations changeTableOperations = arcticCatalog.getChangeTableOperations(identifier);
+
+      if (changeTableOperations != null) {
+        boolean changeIsError = true;
+        List<Path> metadataCandidateFiles = changeTableOperations.getMetadataCandidateFiles(version);
+        for (Path path: metadataCandidateFiles) {
+          if (exists(path.toString())) {
+            changeIsError = false;
+            break;
+          }
+        }
+
+        if (changeIsError) {
+          tableAvailableResult.setLocationKind(ChangeLocationKind.INSTANT);
+          tableAvailableResult.setTableOperations(changeTableOperations);
+          return tableAvailableResult;
+        }
+      }
+      tableAvailableResult.setTableOperations(arcticCatalog.getBaseTableOperations(identifier));
+      tableAvailableResult.setLocationKind(BaseLocationKind.INSTANT);
+      return tableAvailableResult;
     }
 
-    this.io = arcticTable.io();
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedTable = arcticTable.asKeyedTable();
       TableAvailableResult changeResult = check(keyedTable.changeTable());
       if(!changeResult.isOk()) {
+        changeResult.setLocationKind(ChangeLocationKind.INSTANT);
+        changeResult.setArcticTable(keyedTable.changeTable());
         return changeResult;
       }
       TableAvailableResult baseResult = check(keyedTable.baseTable());
+      baseResult.setLocationKind(BaseLocationKind.INSTANT);
+      baseResult.setArcticTable(keyedTable.baseTable());
       return baseResult;
     } else {
-      return check(arcticTable.asUnkeyedTable());
+      TableAvailableResult result = check(arcticTable.asUnkeyedTable());
+      return result;
     }
   }
 
@@ -105,7 +155,7 @@ public class TableAvailableAnalyzer {
     List<Snapshot> rollbackSnapshot = new ArrayList<>();
     Iterables.addAll(rollbackSnapshot, finalOkSnapshot);
     tableAvailableResult.setRollbackList(rollbackSnapshot);
-
+    tableAvailableResult.setArcticTable(table);
     return tableAvailableResult;
   }
 
@@ -148,6 +198,6 @@ public class TableAvailableAnalyzer {
   }
 
   private boolean exists(String path) {
-    return io.exists(path);
+    return fileExistCache.computeIfAbsent(path, p -> io.exists(path));
   }
 }

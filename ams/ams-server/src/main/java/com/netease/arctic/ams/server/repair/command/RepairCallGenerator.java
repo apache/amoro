@@ -19,11 +19,17 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.RepairWay;
+import com.netease.arctic.catalog.CatalogManager;
 
 public class RepairCallGenerator {
 
-  public RepairCall generate(String tablePath, RepairWay way, String option) {
-    //todo
-    return null;
+  private CatalogManager catalogManager;
+
+  public RepairCallGenerator(CatalogManager catalogManager) {
+    this.catalogManager = catalogManager;
+  }
+
+  public RepairCall generate(String tablePath, RepairWay way, Long option) {
+    return new RepairCall(tablePath, way, option, catalogManager);
   }
 }

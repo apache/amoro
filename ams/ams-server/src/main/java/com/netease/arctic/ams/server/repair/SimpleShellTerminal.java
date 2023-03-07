@@ -30,8 +30,6 @@ import java.io.IOException;
 
 public class SimpleShellTerminal {
 
-  public static final String PROMPT = "repair> ";
-
   private CommandHandler commandHandler;
 
   private TerminalOutput terminalOutput;
@@ -60,7 +58,7 @@ public class SimpleShellTerminal {
 
     while (true) {
       try {
-        String line = lineReader.readLine(PROMPT);
+        String line = lineReader.readLine(commandHandler.prompt());
         commandHandler.dispatch(line, terminalOutput);
       } catch (UserInterruptException | EndOfFileException e) {
         commandHandler.close();

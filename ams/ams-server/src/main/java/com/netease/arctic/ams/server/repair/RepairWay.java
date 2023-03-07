@@ -18,13 +18,10 @@
 
 package com.netease.arctic.ams.server.repair;
 
-import com.netease.arctic.ams.server.repair.DamageType;
-import com.netease.arctic.ams.server.repair.TableAvailableResult;
-import java.util.List;
-
 public enum RepairWay {
   FIND_BACK,
   SYNC_METADATA,
   ROLLBACK,
-  DROP_TABLE;
+  DROP_TABLE,
+  ROLLBACK_OR_DROP_TABLE
 }

@@ -36,4 +36,8 @@ public interface SupportHive {
    * @return hive metastore client
    */
   HMSClientPool getHMSClient();
+
+  boolean enableSyncHiveDataToArctic();
+
+  void syncHiveDataToArctic();
 }

@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.repair;
 
 import com.netease.arctic.table.TableIdentifier;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Context {
@@ -28,7 +29,13 @@ public class Context {
 
   private String db;
 
-  private Map<TableIdentifier, TableAvailableResult> tableAvailableResultMap = new HashMap<>();
+  private Map<TableIdentifier, TableAvailableResult> tableAvailableResultMap =
+      new LinkedHashMap<TableIdentifier, TableAvailableResult>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<TableIdentifier, TableAvailableResult> eldest) {
+          return size() > 10;
+        }
+  };
 
   public String getCatalog() {
     return catalog;
