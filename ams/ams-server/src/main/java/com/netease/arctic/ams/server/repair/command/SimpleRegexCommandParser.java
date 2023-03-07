@@ -27,20 +27,6 @@ import java.util.stream.Collectors;
 
 public class SimpleRegexCommandParser implements CommandParser {
 
-  private AnalyzeCallGenerator analyzeCallGenerator;
-
-  private RepairCallGenerator repairCallGenerator;
-
-  private OptimizeCallGenerator optimizeCallGenerator;
-
-  private RefreshCallGenerator refreshCallGenerator;
-
-  private ShowCallGenerator showCallGenerator;
-
-  private UseCallGenerator useCallGenerator;
-
-  private HelpCallGenerator helpCallGenerator;
-
   private static final String ANALYZE = "ANALYZE";
   private static final String REPAIR = "REPAIR";
   private static final String THROUGH = "THROUGH";
@@ -49,7 +35,6 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String REFRESH = "REFRESH";
   private static final String FILE_CACHE = "FILE_CACHE";
   private static final String SHOW = "SHOW";
-
   private static final String ANALYZE_EXCEPTION_MESSAGE =
       "Please check if your command is correct! Pattern: ANALYZE ${table_name}";
   private static final String REPAIR_EXCEPTION_MESSAGE =
@@ -69,11 +54,17 @@ public class SimpleRegexCommandParser implements CommandParser {
       "Please check if your command is correct! " +
           "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]";
 
+  private CallFactory callFactory;
+
+  public SimpleRegexCommandParser(CallFactory callFactory) {
+    this.callFactory = callFactory;
+  }
+
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
     String[] commandSplit = line.trim().split("\\s+");
     if (commandSplit.length < 2) {
-      return helpCallGenerator.generate();
+      return callFactory.generateHelpCall();
     }
 
     switch (commandSplit[0].toUpperCase()) {
@@ -81,7 +72,7 @@ public class SimpleRegexCommandParser implements CommandParser {
         if (commandSplit.length != 2) {
           throw new IllegalCommandException(ANALYZE_EXCEPTION_MESSAGE);
         }
-        return analyzeCallGenerator.generate(commandSplit[1]);
+        return callFactory.generateAnalyzeCall(commandSplit[1]);
       case REPAIR:
         if (commandSplit.length > 5) {
           throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
@@ -90,11 +81,8 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
-          if (commandSplit.length != 5) {
-            throw new IllegalCommandException("Please check if you enter the snapshot id!");
-          } else {
-            return repairCallGenerator.generate(commandSplit[1], RepairWay.ROLLBACK, commandSplit[4]);
-          }
+          Long snapshot = commandSplit.length != 5 ? null: Long.parseLong(commandSplit[4]);
+          return callFactory.generateRepairCall(commandSplit[1], RepairWay.ROLLBACK, snapshot);
         } else {
           if (commandSplit.length != 4) {
             throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
@@ -105,13 +93,13 @@ public class SimpleRegexCommandParser implements CommandParser {
           } catch (IllegalArgumentException e) {
             throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
           }
-          return repairCallGenerator.generate(commandSplit[1], repairWay, null);
+          return callFactory.generateRepairCall(commandSplit[1], repairWay, null);
         }
       case USE:
         if (commandSplit.length != 2 || commandSplit[1].split("\\.").length > 2) {
           throw new IllegalCommandException(USE_EXCEPTION_MESSAGE);
         }
-        return useCallGenerator.generate(commandSplit[1]);
+        return callFactory.generateUseCall(commandSplit[1]);
       case OPTIMIZE:
         if (commandSplit.length != 3) {
           throw new IllegalCommandException(OPTIMIZE_EXCEPTION_MESSAGE);
@@ -122,10 +110,10 @@ public class SimpleRegexCommandParser implements CommandParser {
         } catch (IllegalArgumentException e) {
           throw new IllegalCommandException(OPTIMIZE_EXCEPTION_MESSAGE);
         }
-        return optimizeCallGenerator.generate(optimizeAction, commandSplit[2]);
+        return callFactory.generateOptimizeCall(optimizeAction, commandSplit[2]);
       case REFRESH:
         if (commandSplit.length == 3 && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
-          return refreshCallGenerator.generate(commandSplit[2]);
+          return callFactory.generateRefreshCall(commandSplit[2]);
         } else {
           throw new IllegalCommandException(REFRESH_EXCEPTION_MESSAGE);
         }
@@ -139,9 +127,9 @@ public class SimpleRegexCommandParser implements CommandParser {
         } catch (IllegalArgumentException e) {
           throw new IllegalCommandException(SHOW_EXCEPTION_MESSAGE);
         }
-        return showCallGenerator.generate(namespaces);
+        return callFactory.generateShowCall(namespaces);
     }
-    return helpCallGenerator.generate();
+    return callFactory.generateHelpCall();
   }
 
   @Override

@@ -18,16 +18,15 @@
 
 package com.netease.arctic.ams.server.repair;
 
-import com.netease.arctic.ams.server.repair.command.AnalyzeCallGenerator;
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.ams.api.client.OptimizeManagerClient;
 import com.netease.arctic.ams.server.repair.command.CallCommand;
+import com.netease.arctic.ams.server.repair.command.CallFactory;
 import com.netease.arctic.ams.server.repair.command.CommandParser;
-import com.netease.arctic.ams.server.repair.command.OptimizeCallGenerator;
-import com.netease.arctic.ams.server.repair.command.RefreshCallGenerator;
-import com.netease.arctic.ams.server.repair.command.ShowCallGenerator;
+import com.netease.arctic.ams.server.repair.command.DefaultCallFactory;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
 import com.netease.arctic.catalog.CatalogManager;
-import com.netease.arctic.table.TableIdentifier;
-import java.util.StringJoiner;
 
 public class CallCommandHandler implements CommandHandler {
 
@@ -48,11 +47,12 @@ public class CallCommandHandler implements CommandHandler {
     if (repairConfig.getCatalogName() != null) {
       context.setCatalog(repairConfig.getCatalogName());
     }
-    OptimizeCallGenerator optimizeCallGenerator = new OptimizeCallGenerator(amsAddress);
-    RefreshCallGenerator refreshCallGenerator = new RefreshCallGenerator(amsAddress);
-    ShowCallGenerator showCallGenerator = new ShowCallGenerator(amsAddress);
-    this.commandParser = new SimpleRegexCommandParser();
-    //todo init commandParser
+    CatalogManager catalogManager = new CatalogManager(amsAddress);
+    OptimizeManagerClient optimizeManagerClient = new OptimizeManagerClient(amsAddress);
+    AmsClient amsClient = new PooledAmsClient(amsAddress);
+
+    CallFactory callFactory = new DefaultCallFactory(repairConfig, catalogManager, optimizeManagerClient, amsClient);
+    this.commandParser = new SimpleRegexCommandParser(callFactory);
   }
 
   @Override
