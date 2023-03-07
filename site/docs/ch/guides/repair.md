@@ -34,7 +34,7 @@ File 文件丢失包括 DataFile, Equality Delete File, Position Delete File 三
 - 如果 trash 目录下找不到且还有 metadata 文件存在那么就会删除 version-hit.txt 文件，这样表会自动回退版本，如果已经不存在可用的 metadata 文件，那么清除表。
 
 ## 使用说明
-Repair 工具会提供两种启动方式：脚本和可执行 Jar 包。两种方式都可以启动 Repair 工具，启动后会进入一个交互式终端。
+Repair 工具会跟随 AMS 部署并提供脚本以启动 Repair 工具，启动后会进入一个交互式终端。
 ### 脚本启动
 AMS 部署目录的 bin 目录下会有 Repair 工具的脚本，名为 `repair.sh`。  
 脚本提供三个选项，其中 '-t' 和 '-c' 参数只用指定其中一个即可：
@@ -61,8 +61,6 @@ $ ./bin/repair.sh -c local_catalog                                  #指定 cata
 $ ./bin/repair.sh -t thrift://localhost:1260/local_catalog -m 4     #指定 thrift 地址和 4GB 内存大小
 $ ./bin/repair.sh -h                                                #获取帮助
 ```
-### 可执行 Jar 包启动
-#todo
 
 ### Repair 工具使用
 Repair 工具支持如下命令，您也可以通过在工具中输入 'help' 来获取帮助：
@@ -111,10 +109,12 @@ Repair 命令目前提供三种方式进行修复
 - `REPAIR ${table_name} THROUGH FIND_BACK`：在回收站中找回文件
 - `REPAIR ${table_name} THROUGH SYNC_METADATA`：在元数据中删除不存在的文件或同步元数据
 - `REPAIR ${table_name} THROUGH ROLLBACK ${snapshot_id}`：回滚到不含丢失文件的版本
+- `REPAIR ${table_name} THROUGH DROP_TABLE`：清除表的元数据
 ```
 REPAIR user THROUGH FIND_BACK              
 REPAIR user THROUGH SYNC_METADATA          
 REPAIR user THROUGH ROLLBACK 597568753507019307
+REPAIR user THROUGH DROP_TABLE
 ```
 
 #### OPTIMIZE

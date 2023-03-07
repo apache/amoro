@@ -20,6 +20,7 @@ public class HelpCall implements CallCommand {
             " delete non-existent files in the metadata --\n" +
             "REPAIR ${table_name} THROUGH ROLLBACK ${snapshot_id}        -- Roll back to a snapshot" +
             " without lost files --\n" +
+            "REPAIR ${table_name} THROUGH DROP_TABLE                     -- Drop table metadata --\n" +
             "\n" +
             "OPTIMIZE [ STOP | START ] ${table_name}                     -- Start or stop optimizing tasks" +
             " for the table --\n" +
