@@ -41,6 +41,7 @@ import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOptimizeService;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.service.MetaService;
@@ -125,7 +126,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class,
-    UnKeyedTableUtilTest.class
+    UnKeyedTableUtilTest.class,
+    TestOptimizeService.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,

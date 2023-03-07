@@ -90,7 +90,7 @@ public class SimpleRegexCommandParser implements CommandParser {
               RepairWay.valueOf(commandSplit[3].toUpperCase()), null);
         }
       case USE:
-        if (commandSplit.length != 2) {
+        if (commandSplit.length != 2 || commandSplit[1].split("\\.").length > 2) {
           throw new IllegalCommandException("Please check if your command is correct! " +
               "Pattern: USE [ ${catalog_name} | ${database_name}  ]");
         }
@@ -118,13 +118,11 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException("Please check if your command is correct! " +
               "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]");
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.CATALOGS.name())) {
+        try {
           return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase()));
-        } else {
+        } catch (IllegalArgumentException e) {
           throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: SHOW [ DATABASES | TABLES ]");
+              "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]");
         }
     }
     return helpCallGenerator.generate();
@@ -146,9 +144,9 @@ public class SimpleRegexCommandParser implements CommandParser {
         RepairWay.FIND_BACK.name(),
         RepairWay.SYNC_METADATA.name(),
         RepairWay.ROLLBACK.name(),
+        ShowCall.Namespaces.CATALOGS.name(),
         ShowCall.Namespaces.DATABASES.name(),
-        ShowCall.Namespaces.TABLES.name(),
-        ShowCall.Namespaces.CATALOGS.name()
+        ShowCall.Namespaces.TABLES.name()
     };
     Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
         keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();
