@@ -16,27 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.controller;
+package com.netease.arctic.optimizer.operator;
 
-import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.server.controller.response.Response;
-import io.javalin.testtools.JavalinTest;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.netease.arctic.optimizer.OptimizerConfig;
 
-public class SettingControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger(SettingController.class);
+/**
+ * Default implementation of {@link OperatorFactory}.
+ */
+public class DefaultOperatorFactory implements OperatorFactory {
 
-  @Test
-  public void testGetVersion() {
-    JavalinTest.test((app, client) -> {
-      app.get("/", ctx -> SettingController.getSystemSetting(ctx));
-      final okhttp3.Response resp = client.get("/", x -> {
-      });
-      assert resp.code() == 200;
-      Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      assert result.getCode() == 200;
-    });
+  @Override
+  public BaseTaskConsumer buildTaskConsumer(OptimizerConfig config) {
+    return new BaseTaskConsumer(config);
+  }
+
+  @Override
+  public BaseTaskExecutor buildTaskExecutor(OptimizerConfig config) {
+    return new BaseTaskExecutor(config);
+  }
+
+  @Override
+  public BaseTaskReporter buildTaskReporter(OptimizerConfig config) {
+    return new BaseTaskReporter(config);
+  }
+
+  @Override
+  public BaseToucher buildToucher(OptimizerConfig config) {
+    return new BaseToucher(config);
   }
 }

@@ -16,27 +16,26 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.controller;
+package com.netease.arctic.optimizer.local;
 
-import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.server.controller.response.Response;
-import io.javalin.testtools.JavalinTest;
+import com.netease.arctic.optimizer.Optimizer;
+import com.netease.arctic.optimizer.StatefulOptimizer;
+import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class SettingControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger(SettingController.class);
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+
+public class LocalOptimizerFactoryTest {
 
   @Test
-  public void testGetVersion() {
-    JavalinTest.test((app, client) -> {
-      app.get("/", ctx -> SettingController.getSystemSetting(ctx));
-      final okhttp3.Response resp = client.get("/", x -> {
-      });
-      assert resp.code() == 200;
-      Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      assert result.getCode() == 200;
-    });
+  public void serializeOptimizer() {
+    LocalOptimizerFactory localOptimizerFactory = new LocalOptimizerFactory();
+    LocalOptimizer localOptimizer =
+        ((LocalOptimizer) localOptimizerFactory.createOptimizer("test_local_optimizer", Collections.emptyMap()));
+    byte[] serialize = localOptimizerFactory.serialize(localOptimizer);
+    Optimizer deserializedOptimizer = localOptimizerFactory.deserialize(serialize);
+    Assert.assertTrue(deserializedOptimizer instanceof LocalOptimizer);
   }
 }
