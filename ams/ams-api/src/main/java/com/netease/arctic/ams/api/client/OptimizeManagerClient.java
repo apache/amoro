@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.handler.impl;
+package com.netease.arctic.ams.api.client;
 
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.NoSuchObjectException;
@@ -28,53 +28,52 @@ import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.utils.TableIdentifierUtil;
 import org.apache.thrift.TException;
 
-public class OptimizeManagerHandler implements OptimizeManager.Iface {
+public class OptimizeManagerClient implements OptimizeClient {
+  private String metastoreUrl;
+
+  public OptimizeManagerClient(String metastoreUrl) {
+    this.metastoreUrl = metastoreUrl;
+  }
+
+  private OptimizeManager.Iface getIface() {
+    return OptimizeManagerClientPools.getClient(metastoreUrl);
+  }
 
   @Override
   public void ping() throws TException {
-
+    getIface().ping();
   }
 
   @Override
   public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
-      throws TException {
-    return ServiceContainer.getOptimizeQueueService().pollTask(queueId, jobId, attemptId, waitTime);
+      throws NoSuchObjectException, TException {
+    return getIface().pollTask(queueId, jobId, attemptId, waitTime);
   }
 
   @Override
-  public void reportOptimizeResult(OptimizeTaskStat optimizeTaskStat) throws NoSuchObjectException {
-    ServiceContainer.getOptimizeService().handleOptimizeResult(optimizeTaskStat);
+  public void reportOptimizeResult(OptimizeTaskStat optimizeTaskStat) throws TException {
+    getIface().reportOptimizeResult(optimizeTaskStat);
   }
 
   @Override
   public void reportOptimizerState(OptimizerStateReport reportData) throws TException {
-    ServiceContainer.getOptimizerService().updateOptimizerState(reportData);
+    getIface().reportOptimizerState(reportData);
   }
 
   @Override
   public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws TException {
-    return ServiceContainer.getOptimizerService().registerOptimizer(registerInfo);
+    return getIface().registerOptimizer(registerInfo);
   }
 
   @Override
   public void stopOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-    try {
-      ServiceContainer.getOptimizeService().stopOptimize(TableIdentifierUtil.convert(tableIdentifier));
-    } catch (Exception e) {
-      throw new OperationErrorException(e.getMessage());
-    }
+    getIface().stopOptimize(tableIdentifier);
   }
 
   @Override
   public void startOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-    try {
-      ServiceContainer.getOptimizeService().startOptimize(TableIdentifierUtil.convert(tableIdentifier));
-    } catch (Exception e) {
-      throw new OperationErrorException(e.getMessage());
-    }
+    getIface().startOptimize(tableIdentifier);
   }
 }

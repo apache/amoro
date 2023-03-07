@@ -1,15 +1,12 @@
 package com.netease.arctic.ams.server.repair.command;
 
-import com.netease.arctic.ams.api.OptimizeManager;
-import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
-import com.netease.arctic.ams.server.repair.DamageType;
+import com.netease.arctic.ams.api.client.OptimizeManagerClient;
 
 public class OptimizeCallGenerator {
-
-  private OptimizeManager.Iface client;
+  private OptimizeManagerClient client;
 
   public OptimizeCallGenerator(String amsAddress) {
-    client = OptimizeManagerClientPools.getClient(amsAddress);
+    client = new OptimizeManagerClient(amsAddress);
   }
 
   public OptimizeCall generate(OptimizeCall.Action action, String tablePath) {

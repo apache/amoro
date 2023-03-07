@@ -36,26 +36,37 @@ THRIFT_PORT=$(cat $CONFIG_PATH | grep "arctic.ams.thrift.port" | awk '{print $2}
 
 function usage() {
     cat <<EOF
+
 Usage: $0 [option]
-You just need to specify only one of the options:
+You just need to specify only one of the [ -t | -c ] options:
 
 Options:
     -t        Your thrift URL.
               Pattern: thrift://{AMS_HOST}:{AMS_PORT}/{AMS_CATALOG_NAME}
-              Example: thrift://localhost:1260/catalog_name
+              Example: -t thrift://localhost:1260/catalog_name
 
     -c        Your catalog name.
               We'll read {AMS_PORT} from {ARCTIC_HOME}/conf/config.yaml
-              and use localhost as {AMS_HOST}
+              and use localhost as {AMS_HOST} to form a thrift URL
+              Example: -c local_catalog
 
-If you specify both options, the latter will override the former
+    -m        Memory allocated for the JVM of the Arctic Repair.
+              Unit: GB
+              Default: 2GB (Recommend no less than 2GB)
+              Example: -m 3 (Means to allocate 3GB of memory to JVM)
+
+If you specify both '-t -c' options, the latter will override the former
+
 EOF
+    exit 2
 }
 
-while getopts 't:c:' OPT; do
+while getopts 't:c:m:h' OPT; do
     case $OPT in
         t) THRIFT_URL="$OPTARG";;
         c) THRIFT_URL=thrift://localhost:$THRIFT_PORT/$OPTARG;;
+        m) JVM_MEMORY=$OPTARG;;
+        h) usage;;
         ?) usage;;
     esac
 done
@@ -64,4 +75,10 @@ if [ -z "$THRIFT_URL" ]; then
     THRIFT_URL=thrift://localhost:$THRIFT_PORT
 fi
 
-$JAVA_RUN com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL $CONFIG_PATH
+if [ -z "$JVM_MEMORY" ]; then
+    JVM_MEMORY=2
+fi
+
+JVM_MEMORY=$((JVM_MEMORY*1024))
+
+$JAVA_RUN -Xms"$JVM_MEMORY"m -Xmx"$JVM_MEMORY"m com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL $CONFIG_PATH

@@ -50,6 +50,24 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String FILE_CACHE = "FILE_CACHE";
   private static final String SHOW = "SHOW";
 
+  private static final String ANALYZE_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! Pattern: ANALYZE ${table_name}";
+  private static final String REPAIR_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: REPAIR ${table_name} THROUGH " +
+          "[ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} | DROP_TABLE ]";
+  private static final String USE_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: USE [ ${catalog_name} | ${database_name}  ]";
+  private static final String OPTIMIZE_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: OPTIMIZE [ STOP | START ] ${table_name}";
+  private static final String REFRESH_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: REFRESH FILE_CACHE ${table_name}";
+  private static final String SHOW_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]";
 
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
@@ -61,17 +79,15 @@ public class SimpleRegexCommandParser implements CommandParser {
     switch (commandSplit[0].toUpperCase()) {
       case ANALYZE:
         if (commandSplit.length != 2) {
-          throw new IllegalCommandException("Please check if your command is correct! Pattern: ANALYZE ${table_name}");
+          throw new IllegalCommandException(ANALYZE_EXCEPTION_MESSAGE);
         }
         return analyzeCallGenerator.generate(commandSplit[1]);
       case REPAIR:
         if (commandSplit.length > 5) {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
+          throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
         }
         if (commandSplit.length < 4 || !StringUtils.equalsIgnoreCase(commandSplit[2], THROUGH)) {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
+          throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
           if (commandSplit.length != 5) {
@@ -79,53 +95,51 @@ public class SimpleRegexCommandParser implements CommandParser {
           } else {
             return repairCallGenerator.generate(commandSplit[1], RepairWay.ROLLBACK, commandSplit[4]);
           }
-        } else if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.FIND_BACK.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.SYNC_METADATA.name())) {
+        } else {
           if (commandSplit.length != 4) {
-            throw new IllegalCommandException("Please check if your command is correct! " +
-                "Pattern: REPAIR ${table_name} THROUGH [ FIND_BACK | SYNC_METADATA | ROLLBACK ${snapshot_id} ]");
+            throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
           }
-          return repairCallGenerator.generate(
-              commandSplit[1],
-              RepairWay.valueOf(commandSplit[3].toUpperCase()), null);
+          RepairWay repairWay;
+          try {
+            repairWay = RepairWay.valueOf(commandSplit[3].toUpperCase());
+          } catch (IllegalArgumentException e) {
+            throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
+          }
+          return repairCallGenerator.generate(commandSplit[1], repairWay, null);
         }
       case USE:
-        if (commandSplit.length != 2) {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: USE [ ${catalog_name} | ${database_name}  ]");
+        if (commandSplit.length != 2 || commandSplit[1].split("\\.").length > 2) {
+          throw new IllegalCommandException(USE_EXCEPTION_MESSAGE);
         }
         return useCallGenerator.generate(commandSplit[1]);
       case OPTIMIZE:
         if (commandSplit.length != 3) {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: OPTIMIZE [ STOP | START ] ${table_name}");
+          throw new IllegalCommandException(OPTIMIZE_EXCEPTION_MESSAGE);
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.START.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], OptimizeCall.Action.STOP.name())) {
-          return optimizeCallGenerator.generate(
-              OptimizeCall.Action.valueOf(commandSplit[1].toUpperCase()),
-              commandSplit[2]);
+        OptimizeCall.Action optimizeAction;
+        try {
+          optimizeAction = OptimizeCall.Action.valueOf(commandSplit[1].toUpperCase());
+        } catch (IllegalArgumentException e) {
+          throw new IllegalCommandException(OPTIMIZE_EXCEPTION_MESSAGE);
         }
+        return optimizeCallGenerator.generate(optimizeAction, commandSplit[2]);
       case REFRESH:
         if (commandSplit.length == 3 && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
           return refreshCallGenerator.generate(commandSplit[2]);
         } else {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: REFRESH FILE_CACHE ${table_name}");
+          throw new IllegalCommandException(REFRESH_EXCEPTION_MESSAGE);
         }
       case SHOW:
         if (commandSplit.length != 2) {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]");
+          throw new IllegalCommandException(SHOW_EXCEPTION_MESSAGE);
         }
-        if (StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.DATABASES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.TABLES.name()) ||
-            StringUtils.equalsIgnoreCase(commandSplit[1], ShowCall.Namespaces.CATALOGS.name())) {
-          return showCallGenerator.generate(ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase()));
-        } else {
-          throw new IllegalCommandException("Please check if your command is correct! " +
-              "Pattern: SHOW [ DATABASES | TABLES ]");
+        ShowCall.Namespaces namespaces;
+        try {
+          namespaces = ShowCall.Namespaces.valueOf(commandSplit[1].toUpperCase());
+        } catch (IllegalArgumentException e) {
+          throw new IllegalCommandException(SHOW_EXCEPTION_MESSAGE);
         }
+        return showCallGenerator.generate(namespaces);
     }
     return helpCallGenerator.generate();
   }
@@ -146,9 +160,10 @@ public class SimpleRegexCommandParser implements CommandParser {
         RepairWay.FIND_BACK.name(),
         RepairWay.SYNC_METADATA.name(),
         RepairWay.ROLLBACK.name(),
+        RepairWay.DROP_TABLE.name(),
+        ShowCall.Namespaces.CATALOGS.name(),
         ShowCall.Namespaces.DATABASES.name(),
-        ShowCall.Namespaces.TABLES.name(),
-        ShowCall.Namespaces.CATALOGS.name()
+        ShowCall.Namespaces.TABLES.name()
     };
     Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
         keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();

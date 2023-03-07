@@ -1,8 +1,15 @@
 package com.netease.arctic.ams.server.repair.command;
 
-public class UseCallGenerator {
+import com.netease.arctic.catalog.CatalogManager;
 
-  public UseCall generate(String database) {
-    return null;
+public class UseCallGenerator {
+  private CatalogManager catalogManager;
+
+  public UseCallGenerator(String amsAddress) {
+    this.catalogManager = new CatalogManager(amsAddress);
+  }
+
+  public UseCall generate(String namespace) {
+    return new UseCall(namespace, this.catalogManager);
   }
 }

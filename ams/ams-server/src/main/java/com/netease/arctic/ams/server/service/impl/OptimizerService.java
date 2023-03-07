@@ -220,22 +220,6 @@ public class OptimizerService extends IJDBCService {
     return getOptimizer(optimizerName).convertToDescriptor();
   }
 
-  public void startOptimize(TableIdentifier tableIdentifier) {
-    CatalogUtil.getArcticCatalog(tableIdentifier.catalog)
-        .loadTable(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
-        .updateProperties()
-        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "true")
-        .commit();
-  }
-
-  public void stopOptimize(TableIdentifier tableIdentifier) {
-    CatalogUtil.getArcticCatalog(tableIdentifier.catalog)
-        .loadTable(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
-        .updateProperties()
-        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "false")
-        .commit();
-  }
-
   private Optimizer fillContainerType(Optimizer optimizer) {
     if (optimizer == null) {
       return null;

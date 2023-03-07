@@ -48,11 +48,6 @@ public class CallCommandHandler implements CommandHandler {
     if (repairConfig.getCatalogName() != null) {
       context.setCatalog(repairConfig.getCatalogName());
     }
-
-    CatalogManager catalogManager = new CatalogManager(repairConfig.getThriftUrl());
-
-    AnalyzeCallGenerator analyzeCallGenerator = new AnalyzeCallGenerator(catalogManager,
-        repairConfig.getMaxFindSnapshotNum(), repairConfig.getMaxRollbackSnapNum());
     OptimizeCallGenerator optimizeCallGenerator = new OptimizeCallGenerator(amsAddress);
     RefreshCallGenerator refreshCallGenerator = new RefreshCallGenerator(amsAddress);
     ShowCallGenerator showCallGenerator = new ShowCallGenerator(amsAddress);
