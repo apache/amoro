@@ -17,7 +17,7 @@ public class TestOrphanFileCleanSupportIceberg extends TestIcebergBase {
     OutputFile baseOrphanDataFile = icebergNoPartitionTable.io().newOutputFile(orphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
     Assert.assertTrue(icebergNoPartitionTable.io().exists(orphanFilePath));
-    OrphanFilesCleanService.clean(icebergNoPartitionTable, System.currentTimeMillis(), true, "all", false);
+    OrphanFilesCleanService.cleanContentFiles(icebergNoPartitionTable, System.currentTimeMillis());
     Assert.assertFalse(icebergNoPartitionTable.io().exists(orphanFilePath));
   }
 
@@ -28,7 +28,7 @@ public class TestOrphanFileCleanSupportIceberg extends TestIcebergBase {
     OutputFile baseOrphanDataFile = icebergNoPartitionTable.io().newOutputFile(orphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
     Assert.assertTrue(icebergNoPartitionTable.io().exists(orphanFilePath));
-    OrphanFilesCleanService.clean(icebergNoPartitionTable, System.currentTimeMillis(), true, "all", true);
+    OrphanFilesCleanService.cleanMetadata(icebergNoPartitionTable, System.currentTimeMillis());
     Assert.assertFalse(icebergNoPartitionTable.io().exists(orphanFilePath));
   }
 }
