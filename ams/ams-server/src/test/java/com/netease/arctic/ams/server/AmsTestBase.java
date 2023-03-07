@@ -28,14 +28,6 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
-import com.netease.arctic.ams.server.maintainer.TestCommandParser;
-import com.netease.arctic.ams.server.maintainer.TestGetMaintainerConfig;
-import com.netease.arctic.ams.server.maintainer.command.TestAnalyzeCall;
-import com.netease.arctic.ams.server.maintainer.command.TestOptimizeCall;
-import com.netease.arctic.ams.server.maintainer.command.TestRepairCall;
-import com.netease.arctic.ams.server.maintainer.command.TestShowCall;
-import com.netease.arctic.ams.server.maintainer.command.TestTableCall;
-import com.netease.arctic.ams.server.maintainer.command.TestUseCall;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItemTest;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
@@ -119,6 +111,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TableOptimizeItemTest.class
 })
 @PrepareForTest({
+    CatalogLoader.class,
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
     ServiceContainer.class,

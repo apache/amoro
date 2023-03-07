@@ -69,7 +69,7 @@ public class TestOrphanFileCleanSupportHive extends TestSupportHiveBase {
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(hiveOrphanFilePath));
-    OrphanFilesCleanService.clean(testUnPartitionKeyedHiveTable, System.currentTimeMillis(), true, "all", false);
+    OrphanFilesCleanService.cleanContentFiles(testUnPartitionKeyedHiveTable, System.currentTimeMillis());
     Assert.assertFalse(testUnPartitionKeyedHiveTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(hiveOrphanFilePath));
   }
