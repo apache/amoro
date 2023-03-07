@@ -78,10 +78,8 @@ public abstract class PulsarFetcherManagerBase<T>
 
     @Override
     protected void startFetcher(SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher) {
-        // -------------- custom start --------------
-        if (fetcherStatus.get(0) != Boolean.TRUE) {
-            fetcherStatus.put(0, true);
-            // -------------- custom end --------------
+        if (fetcherStatus.get(fetcher.fetcherId()) != Boolean.TRUE) {
+            fetcherStatus.put(fetcher.fetcherId(), true);
             super.startFetcher(fetcher);
         }
     }
@@ -101,9 +99,7 @@ public abstract class PulsarFetcherManagerBase<T>
                 fetcher = createSplitFetcher();
             }
         }
-        // -------------- custom start --------------
-        splitFetcherMapping.put(splitId, 0);
-        // -------------- custom end --------------
+        splitFetcherMapping.put(splitId, fetcher.fetcherId());
         return fetcher;
     }
 }
