@@ -49,7 +49,6 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
 
   @Override
   public void run(SourceContext<TaskWrapper> sourceContext) throws Exception {
-    int retry = 0;
     while (running) {
       try {
         TaskWrapper task = taskConsumer.pollTask(0);
@@ -63,17 +62,8 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
         if (!running) {
           break;
         }
-        // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-        LOG.error("failed to poll task, retry {}", retry, e);
-        retry++;
-      } finally {
-        if (retry >= 3) {
-          //stop = true;
-          retry = 0;
-          LOG.error("flink source has tried too many times, and the subscription message is suspended." +
-              " Please check for errors");
-          Thread.sleep(2 * POLL_INTERVAL);
-        }
+        LOG.error("failed to poll task", e);
+        Thread.sleep(POLL_INTERVAL);
       }
     }
   }

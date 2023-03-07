@@ -234,7 +234,6 @@ public class LocalOptimizer implements StatefulOptimizer {
     }
 
     public TaskWrapper pollTask() throws InterruptedException {
-      int retry = 0;
       while (!stopped) {
         try {
           TaskWrapper task = baseTaskConsumer.pollTask(0);
@@ -249,22 +248,8 @@ public class LocalOptimizer implements StatefulOptimizer {
           if (stopped) {
             break;
           }
-          // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-          LOG.error("failed to poll task, retry {}", retry, e);
-          retry++;
-        } finally {
-          if (retry >= 3) {
-            //stop = true;
-            retry = 0;
-            LOG.error("consumer has tried too many times, and the subscription message is suspended." +
-                " Please check for errors");
-            try {
-              Thread.sleep(2 * POLL_INTERVAL);
-            } catch (InterruptedException e) {
-              LOG.warn("consumer interrupted");
-              throw e;
-            }
-          }
+          LOG.error("failed to poll task", e);
+          Thread.sleep(POLL_INTERVAL);
         }
       }
       return null;
