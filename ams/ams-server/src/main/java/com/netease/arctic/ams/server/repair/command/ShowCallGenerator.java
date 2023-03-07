@@ -3,7 +3,6 @@ package com.netease.arctic.ams.server.repair.command;
 import com.netease.arctic.catalog.CatalogManager;
 
 public class ShowCallGenerator {
-
   private CatalogManager catalogManager;
 
   public ShowCallGenerator(String amsAddress) {
@@ -11,6 +10,6 @@ public class ShowCallGenerator {
   }
 
   public ShowCall generate(ShowCall.Namespaces namespaces) {
-    return new ShowCall(catalogManager, namespaces);
+    return new ShowCall(namespaces, catalogManager);
   }
 }
