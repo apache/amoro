@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 public class LocalOptimizer implements StatefulOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizer.class);
   private static final long serialVersionUID = 1L;
+  private static final long POLL_INTERVAL = 5000; // 5s
   
   private final OperatorFactory operatorFactory;
 
@@ -233,36 +234,22 @@ public class LocalOptimizer implements StatefulOptimizer {
     }
 
     public TaskWrapper pollTask() throws InterruptedException {
-      int retry = 0;
       while (!stopped) {
         try {
-          TaskWrapper task = baseTaskConsumer.pollTask();
+          TaskWrapper task = baseTaskConsumer.pollTask(0);
           if (task != null) {
             LOG.info("poll task {}", task);
             return task;
           } else {
-            LOG.info("poll no task");
+            LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
+            Thread.sleep(POLL_INTERVAL);
           }
         } catch (Throwable e) {
           if (stopped) {
             break;
           }
-          // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-          LOG.error("failed to poll task, retry {}", retry, e);
-          retry++;
-        } finally {
-          if (retry >= 3) {
-            //stop = true;
-            retry = 0;
-            LOG.error("consumer has tried too many times, and the subscription message is suspended." +
-                " Please check for errors");
-            try {
-              Thread.sleep(10000);
-            } catch (InterruptedException e) {
-              LOG.warn("consumer interrupted");
-              throw e;
-            }
-          }
+          LOG.error("failed to poll task", e);
+          Thread.sleep(POLL_INTERVAL);
         }
       }
       return null;
