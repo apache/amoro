@@ -152,7 +152,12 @@ public class TopicMetadataListener implements Serializable, Closeable {
                 LOG.warn("", e);
             }
         }
-
+        // ---------------- custom start -------------
+        // cannot access timeService in JM
+        if (timeService == null) {
+            return;
+        }
+        // ---------------- custom end -------------
         // Register next timer.
         long currentProcessingTime = timeService.getCurrentProcessingTime();
         long triggerTime = currentProcessingTime + topicMetadataRefreshInterval;
