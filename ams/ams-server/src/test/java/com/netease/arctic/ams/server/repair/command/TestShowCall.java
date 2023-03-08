@@ -22,34 +22,22 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.server.repair.CallCommandTestBase;
 import com.netease.arctic.ams.server.repair.Context;
 import com.netease.arctic.catalog.CatalogTestHelpers;
-import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Map;
 
-public class TestShowCallGenerator extends TableTestBase {
-
-  public TestShowCallGenerator() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
-  }
-
-  public static ShowCallGenerator showCallGenerator;
-
-  @BeforeClass
-  public static void generate() {
-    showCallGenerator = new ShowCallGenerator(TEST_AMS.getServerUrl());
-  }
+public class TestShowCall extends CallCommandTestBase {
 
   @Test
   public void testShowCatalogs() {
     Context context = new Context();
-    Assert.assertEquals(TEST_CATALOG_NAME, showCallGenerator.generate(ShowCall.Namespaces.CATALOGS).call(context));
+    Assert.assertEquals(TEST_CATALOG_NAME, callFactory.generateShowCall(ShowCall.Namespaces.CATALOGS).call(context));
 
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/temp");
@@ -58,7 +46,7 @@ public class TestShowCallGenerator extends TableTestBase {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     Assert.assertEquals(
         TEST_CATALOG_NAME + "\nrepair_catalog",
-        showCallGenerator.generate(ShowCall.Namespaces.CATALOGS).call(context));
+        callFactory.generateShowCall(ShowCall.Namespaces.CATALOGS).call(context));
   }
 
   @Test
@@ -66,17 +54,17 @@ public class TestShowCallGenerator extends TableTestBase {
     Context context = new Context();
     Assert.assertThrows(
         RuntimeException.class,
-        () -> showCallGenerator.generate(ShowCall.Namespaces.DATABASES).call(context));
+        () -> callFactory.generateShowCall(ShowCall.Namespaces.DATABASES).call(context));
 
     context.setCatalog(TEST_CATALOG_NAME);
     Assert.assertEquals(
         TableTestHelpers.TEST_DB_NAME,
-        showCallGenerator.generate(ShowCall.Namespaces.DATABASES).call(context));
+        callFactory.generateShowCall(ShowCall.Namespaces.DATABASES).call(context));
 
     TEST_AMS.getAmsHandler().createDatabase(TEST_CATALOG_NAME, "repair_db");
     Assert.assertEquals(
         TableTestHelpers.TEST_DB_NAME + "\nrepair_db",
-        showCallGenerator.generate(ShowCall.Namespaces.DATABASES).call(context));
+        callFactory.generateShowCall(ShowCall.Namespaces.DATABASES).call(context));
   }
 
   @Test
@@ -84,16 +72,16 @@ public class TestShowCallGenerator extends TableTestBase {
     Context context = new Context();
     Assert.assertThrows(
         RuntimeException.class,
-        () -> showCallGenerator.generate(ShowCall.Namespaces.TABLES).call(context));
+        () -> callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
 
     context.setCatalog(TEST_CATALOG_NAME);
     Assert.assertThrows(
         RuntimeException.class,
-        () -> showCallGenerator.generate(ShowCall.Namespaces.TABLES).call(context));
+        () -> callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
 
     context.setDb(TableTestHelpers.TEST_DB_NAME);
     Assert.assertEquals(
         "test_db test_table",
-        showCallGenerator.generate(ShowCall.Namespaces.TABLES).call(context));
+        callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
   }
 }
