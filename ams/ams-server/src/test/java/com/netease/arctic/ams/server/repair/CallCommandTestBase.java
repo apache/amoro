@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.ams.server.repair;
 
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.client.OptimizeManagerClient;
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.ams.server.repair.RepairConfig;
+import com.netease.arctic.ams.server.repair.command.CallFactory;
+import com.netease.arctic.ams.server.repair.command.DefaultCallFactory;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.catalog.TableTestBase;
 

@@ -1,12 +1,7 @@
 package com.netease.arctic.ams.server.repair;
 
 
-import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.client.OptimizeManagerClient;
 import com.netease.arctic.ams.server.repair.command.AnalyzeCall;
-import com.netease.arctic.ams.server.repair.command.CallCommand;
-import com.netease.arctic.ams.server.repair.command.CommandParser;
-import com.netease.arctic.ams.server.repair.command.DefaultCallFactory;
 import com.netease.arctic.ams.server.repair.command.HelpCall;
 import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
 import com.netease.arctic.ams.server.repair.command.OptimizeCall;
@@ -15,23 +10,12 @@ import com.netease.arctic.ams.server.repair.command.RepairCall;
 import com.netease.arctic.ams.server.repair.command.ShowCall;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
 import com.netease.arctic.ams.server.repair.command.UseCall;
-import com.netease.arctic.catalog.CatalogManager;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
-public class TestCommandParser {
-  private static SimpleRegexCommandParser simpleRegexCommandParser = 
-      new SimpleRegexCommandParser(new DefaultCallFactory(
-          new RepairConfig("thrift://localhost:1260", "local_catalog", 100, 100),
-          new CatalogManager("thrift://localhost:1260"),
-          new OptimizeManagerClient("thrift://localhost:1260"),
-          new PooledAmsClient("thrift://localhost:1260")
-      ));
+public class TestCommandParser extends CallCommandTestBase {
+  private static SimpleRegexCommandParser simpleRegexCommandParser =
+      new SimpleRegexCommandParser(callFactory);
 
 
   @Test

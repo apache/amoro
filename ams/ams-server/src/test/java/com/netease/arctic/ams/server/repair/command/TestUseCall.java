@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.server.repair.CallCommandTestBase;
 import com.netease.arctic.ams.server.repair.Context;
 import org.apache.thrift.TException;
 import org.junit.Assert;

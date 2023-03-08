@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.server.repair.CallCommandTestBase;
 import com.netease.arctic.ams.server.repair.Context;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
