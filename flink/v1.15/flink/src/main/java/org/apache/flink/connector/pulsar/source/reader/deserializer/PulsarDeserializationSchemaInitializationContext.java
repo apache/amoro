@@ -46,8 +46,6 @@ public class PulsarDeserializationSchemaInitializationContext
 
     @Override
     public UserCodeClassLoader getUserCodeClassLoader() {
-        // ------------------ custom start ---------------------
-        return (UserCodeClassLoader) Thread.currentThread().getContextClassLoader();
-        // ------------------ custom end ---------------------
+        return readerContext.getUserCodeClassLoader();
     }
 }

@@ -20,15 +20,14 @@ package org.apache.flink.connector.pulsar.source.config;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.configuration.DescribedEnum;
 import org.apache.flink.configuration.description.InlineElement;
 
 import static org.apache.flink.configuration.description.TextElement.text;
 
-// ------------- custom start ------------------
 /** The enum class for defining the cursor verify behavior. */
 @PublicEvolving
-public enum CursorVerification {
-// ------------- custom end ------------------
+public enum CursorVerification implements DescribedEnum {
     /** We would just fail the consuming. */
     FAIL_ON_MISMATCH(text("Fail the consuming from Pulsar when we don't find the related cursor.")),
 
@@ -42,6 +41,7 @@ public enum CursorVerification {
     }
 
     @Internal
+    @Override
     public InlineElement getDescription() {
         return desc;
     }
