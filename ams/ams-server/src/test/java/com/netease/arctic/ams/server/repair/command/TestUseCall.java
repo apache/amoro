@@ -19,25 +19,25 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.repair.Context;
-import com.netease.arctic.catalog.TableTestBase;
 import org.apache.thrift.TException;
+import org.junit.Assert;
 import org.junit.Test;
 
-public class TestOptimizeCallGenerator extends TableTestBase {
-
-  public TestOptimizeCallGenerator() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
-  }
+public class TestUseCall extends CallCommandTestBase {
 
   @Test
   public void test() throws TException, CallCommand.FullTableNameException {
-    new OptimizeCallGenerator(getCatalogUrl()).generate(
-        OptimizeCall.Action.START,
-        TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context());
-    new OptimizeCallGenerator(getCatalogUrl()).generate(
-        OptimizeCall.Action.STOP,
-        TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context());
+    Context context = new Context();
+    callFactory.generateUseCall(TableTestHelpers.TEST_CATALOG_NAME).call(context);
+    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context.getCatalog());
+    callFactory.generateUseCall(TableTestHelpers.TEST_DB_NAME).call(context);
+    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context.getDb());
+
+    Context context1 = new Context();
+    callFactory.generateUseCall(String.format("%s.%s", TableTestHelpers.TEST_CATALOG_NAME, TableTestHelpers.TEST_DB_NAME))
+        .call(context1);
+    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context1.getCatalog());
+    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context1.getDb());
   }
 }
