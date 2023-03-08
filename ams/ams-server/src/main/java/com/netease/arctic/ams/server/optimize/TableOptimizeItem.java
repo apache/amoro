@@ -459,6 +459,10 @@ public class TableOptimizeItem extends IJDBCService {
         tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
         return;
       }
+      if (!tableChanged(currentSnapshot)) {
+        tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
+        return;
+      }
       List<FileScanTask> fileScanTasks;
       TableScan tableScan = arcticTable.asUnkeyedTable().newScan();
       tableScan = tableScan.useSnapshot(currentSnapshot.snapshotId());
@@ -526,6 +530,10 @@ public class TableOptimizeItem extends IJDBCService {
               TableOptimizeRuntime.OptimizeStatus.Pending, optimizePlanResult.getOptimizeTasks(), OptimizeType.Major);
         } else {
           if (isKeyedTable()) {
+            if (!changeStoreChanged(changeCurrentSnapshot)) {
+              tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
+              return;
+            }
             MinorOptimizePlan minorPlan =
                 getMinorPlan(-1, System.currentTimeMillis(), baseFiles, baseCurrentSnapshot,
                     changeCurrentSnapshot, partitionOptimizedSequence, legacyPartitionMaxTransactionId);
