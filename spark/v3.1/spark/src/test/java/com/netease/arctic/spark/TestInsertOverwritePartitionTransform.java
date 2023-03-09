@@ -105,6 +105,7 @@ public class TestInsertOverwritePartitionTransform extends SparkTestBase {
     sql("use " + catalogNameArctic);
     sql("DROP TABLE IF EXISTS " + database + "." + table);
     sql("DROP TABLE IF EXISTS " + source);
+    sql("DROP DATABASE IF EXISTS " + database);
   }
 
   @Test
