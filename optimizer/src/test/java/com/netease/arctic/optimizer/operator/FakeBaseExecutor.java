@@ -42,11 +42,6 @@ public class FakeBaseExecutor extends BaseTaskExecutor {
   public OptimizeTaskStat execute(TaskWrapper sourceTask) {
     OptimizeTaskId taskId = sourceTask.getTask().getTaskId();
     LOG.info("executing task {}", sourceTask.getTask().getTaskId());
-    try {
-      Thread.sleep(10000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
     OptimizeTaskStat compactTaskStat = new OptimizeTaskStat();
     compactTaskStat.setTaskId(taskId);
     compactTaskStat.setStatus(OptimizeStatus.Prepared);
