@@ -550,7 +550,8 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
-        " ts timestamp " +
+        " ts timestamp," +
+        " primary key (id) \n" +
         ") using arctic \n" +
         " partitioned by ( ts ) \n" +
         " tblproperties ( \n" +
@@ -558,16 +559,16 @@ public class TestCreateTableDDL extends SparkTestBase {
         " ''props.test2'' = ''val2'' ) ", database, tableB);
 
     sql("create table {0}.{1} like {2}.{3}", database, tableA, database, tableB);
-    sql("use spark_catalog");
     Table hiveTableA = hms.getClient().getTable(database, tableA);
     Assert.assertNotNull(hiveTableA);
-    rows = sql("desc table {0}.{1}", database, tableA);
-    assertHiveDesc(rows,
-        Lists.newArrayList("id", "name", "ts"),
-        Lists.newArrayList("ts"));
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifierA).schema().asStruct());
 
     sql("drop table {0}.{1}", database, tableA);
-    assertTableNotExist(identifierA);
     sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
