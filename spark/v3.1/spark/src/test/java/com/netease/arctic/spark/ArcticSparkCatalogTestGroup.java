@@ -60,6 +60,7 @@ import java.util.Map;
     TestKeyedTableDML.class,
     TestKeyedTableDMLInsertOverwriteDynamic.class,
     TestKeyedTableDMLInsertOverwriteStatic.class,
+    TestInsertOverwritePartitionTransform.class,
     TestUnKeyedTableDDL.class,
     TestMigrateNonHiveTable.class,
     TestOptimizeWrite.class,
