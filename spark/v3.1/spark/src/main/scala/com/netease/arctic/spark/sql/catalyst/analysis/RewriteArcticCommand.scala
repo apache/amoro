@@ -54,7 +54,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         }
         c.copy(properties = propertiesMap, writeOptions = optionsMap)
       case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-        if provider.get != null && provider.get.equals("arctic") =>
+        if provider.isDefined && provider.get != null && provider.get.equals("arctic") =>
           val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
           val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
           val table = sourceCatalog.loadTable(sourceIdentifier)

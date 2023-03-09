@@ -543,6 +543,38 @@ public class TestCreateTableDDL extends SparkTestBase {
   }
 
   @Test
+  public void testCreateTableLikeWithNoProvider() throws TException {
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
+    TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3}", database, tableA, database, tableB);
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts"),
+        Lists.newArrayList("ts"));
+
+    sql("drop table {0}.{1}", database, tableA);
+    assertTableNotExist(identifierA);
+    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifierB);
+
+  }
+
+  @Test
   public void testCreateNewTableShouldHaveTimestampWithoutZone() {
     withSQLConf(ImmutableMap.of(
             USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, "true"), () -> {
