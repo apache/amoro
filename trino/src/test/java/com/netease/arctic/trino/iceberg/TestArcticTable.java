@@ -19,10 +19,8 @@
 package com.netease.arctic.trino.iceberg;
 
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
-import java.util.Map;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.DeleteFiles;
@@ -50,8 +48,11 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 
-//extends BaseUnkeyedTable is for adapt IcebergMeta
-public class TestArcticTable extends BaseUnkeyedTable {
+import java.util.List;
+import java.util.Map;
+
+//extends BasicUnkeyedTable is for adapt IcebergMeta
+public class TestArcticTable extends BasicUnkeyedTable {
 
     private BaseTable table;
 

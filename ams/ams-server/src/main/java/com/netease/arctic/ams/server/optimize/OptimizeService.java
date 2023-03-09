@@ -30,9 +30,9 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -51,6 +51,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,6 +115,12 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   @Override
+  public boolean isInited() {
+    LOG.info("OptimizeService inited {}", inited);
+    return inited;
+  }
+
+  @Override
   public synchronized void checkOptimizeCheckTasks(long checkInterval) {
     try {
       LOG.info("Schedule Optimize Checker");
@@ -167,14 +174,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     TableOptimizeItem tableItem = cachedTables.remove(tableIdentifier);
     optimizeQueueService.release(tableIdentifier);
     try {
+      tableItem.optimizeTasksClear(false);
+    } catch (Throwable t) {
+      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
+    }
+    try {
       deleteTableOptimizeRuntime(tableIdentifier);
     } catch (Throwable t) {
       LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
-    }
-    try {
-      tableItem.clearOptimizeTasks();
-    } catch (Throwable t) {
-      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
     try {
       deleteOptimizeRecord(tableIdentifier);
@@ -184,8 +191,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
-                                 boolean persistRuntime) {
+  @VisibleForTesting
+  void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
+                         boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
       String groupName = CompatiblePropertyUtil.propertyAsString(properties,
@@ -359,25 +367,25 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private Map<TableIdentifier, List<OptimizeTaskItem>> loadOptimizeTasks() {
     Map<TableIdentifier, List<OptimizeTaskItem>> results = new HashMap<>();
 
-    List<BaseOptimizeTask> optimizeTasks = selectAllOptimizeTasks();
+    List<BasicOptimizeTask> optimizeTasks = selectAllOptimizeTasks();
 
-    for (BaseOptimizeTask optimizeTask : optimizeTasks) {
+    for (BasicOptimizeTask optimizeTask : optimizeTasks) {
       initOptimizeTask(optimizeTask);
     }
-    Map<OptimizeTaskId, BaseOptimizeTaskRuntime> optimizeTaskRuntimes =
+    Map<OptimizeTaskId, OptimizeTaskRuntime> optimizeTaskRuntimes =
         selectAllOptimizeTaskRuntimes().stream()
-            .collect(Collectors.toMap(BaseOptimizeTaskRuntime::getOptimizeTaskId, r -> r));
+            .collect(Collectors.toMap(OptimizeTaskRuntime::getOptimizeTaskId, r -> r));
     AtomicBoolean lostTaskRuntime = new AtomicBoolean(false);
     List<OptimizeTaskItem> optimizeTaskItems = optimizeTasks.stream()
         .map(t -> {
-          BaseOptimizeTaskRuntime optimizeTaskRuntime = optimizeTaskRuntimes.get(t.getTaskId());
+          OptimizeTaskRuntime optimizeTaskRuntime = optimizeTaskRuntimes.get(t.getTaskId());
           if (optimizeTaskRuntime == null) {
             lostTaskRuntime.set(true);
             LOG.error("can't find optimize task runtime in sysdb, tableIdentifier = {}, taskId = {}",
                 t.getTableIdentifier(), t.getTaskId());
           }
           return new OptimizeTaskItem(t,
-              optimizeTaskRuntimes.getOrDefault(t.getTaskId(), new BaseOptimizeTaskRuntime(t.getTaskId())));
+              optimizeTaskRuntimes.getOrDefault(t.getTaskId(), new OptimizeTaskRuntime(t.getTaskId())));
         })
         .collect(Collectors.toList());
 
@@ -393,7 +401,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     return results;
   }
 
-  private void initOptimizeTask(BaseOptimizeTask optimizeTask) {
+  private void initOptimizeTask(BasicOptimizeTask optimizeTask) {
     if (optimizeTask.getInsertFiles() == null) {
       optimizeTask.setInsertFiles(Collections.emptyList());
     }
@@ -482,7 +490,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private List<BaseOptimizeTaskRuntime> selectAllOptimizeTaskRuntimes() {
+  private List<OptimizeTaskRuntime> selectAllOptimizeTaskRuntimes() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
           getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
@@ -490,7 +498,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private List<BaseOptimizeTask> selectAllOptimizeTasks() {
+  private List<BasicOptimizeTask> selectAllOptimizeTasks() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);

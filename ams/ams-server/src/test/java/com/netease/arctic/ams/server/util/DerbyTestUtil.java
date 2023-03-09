@@ -35,7 +35,6 @@ import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableBlockerMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
-import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
@@ -123,7 +122,6 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(FileInfoCacheMapper.class);
           configuration.addMapper(TaskHistoryMapper.class);
           configuration.addMapper(SnapInfoCacheMapper.class);
-          configuration.addMapper(TableTransactionMetaMapper.class);
           configuration.addMapper(DatabaseMetadataMapper.class);
           configuration.addMapper(OptimizerMapper.class);
           configuration.addMapper(ContainerMetadataMapper.class);

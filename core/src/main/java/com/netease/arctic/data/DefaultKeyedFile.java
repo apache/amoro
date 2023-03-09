@@ -18,7 +18,7 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.data.file.FileNameGenerator;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -37,30 +37,30 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   private final DataFile internalFile;
 
-  private transient FileMeta meta;
+  private final FileMeta meta;
 
-  public DefaultKeyedFile(DataFile internalFile) {
+  private DefaultKeyedFile(DataFile internalFile, FileMeta meta) {
     this.internalFile = internalFile;
+    this.meta = meta;
   }
 
-  private void parse() {
-    this.meta = TableFileUtils.parseFileMetaFromFileName(TableFileUtils
-            .getFileName(internalFile.path().toString()));
+  public static DefaultKeyedFile parseChange(DataFile dataFile, long sequenceNumber) {
+    FileMeta fileMeta = FileNameGenerator.parseChange(dataFile.path().toString(), sequenceNumber);
+    return new DefaultKeyedFile(dataFile, fileMeta);
+  }
+
+  public static DefaultKeyedFile parseBase(DataFile dataFile) {
+    FileMeta fileMeta = FileNameGenerator.parseBase(dataFile.path().toString());
+    return new DefaultKeyedFile(dataFile, fileMeta);
   }
 
   @Override
   public Long transactionId() {
-    if (meta == null) {
-      parse();
-    }
     return meta.transactionId();
   }
 
   @Override
   public DataFileType type() {
-    if (meta == null) {
-      parse();
-    }
     return meta.type();
   }
 
@@ -136,12 +136,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataFile copy() {
-    return new DefaultKeyedFile(internalFile.copy());
+    return new DefaultKeyedFile(internalFile.copy(), meta);
   }
 
   @Override
   public DataFile copyWithoutStats() {
-    return new DefaultKeyedFile(internalFile.copyWithoutStats());
+    return new DefaultKeyedFile(internalFile.copyWithoutStats(), meta);
   }
 
   @Override
@@ -151,9 +151,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataTreeNode node() {
-    if (meta == null) {
-      parse();
-    }
     return meta.node();
   }
 
@@ -174,12 +171,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     return Objects.hash(internalFile.path());
   }
 
-  public static class FileMeta {
+  public static class FileMeta implements Serializable {
     private final long transactionId;
     private final DataFileType type;
     private final DataTreeNode node;
 
-    public FileMeta(Long transactionId, DataFileType type, DataTreeNode node) {
+    public FileMeta(long transactionId, DataFileType type, DataTreeNode node) {
       this.transactionId = transactionId;
       this.type = type;
       this.node = node;

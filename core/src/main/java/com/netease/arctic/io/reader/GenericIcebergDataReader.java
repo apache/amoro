@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class GenericIcebergDataReader extends BaseIcebergDataReader<Record> {
+public class GenericIcebergDataReader extends AbstractIcebergDataReader<Record> {
   public GenericIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,

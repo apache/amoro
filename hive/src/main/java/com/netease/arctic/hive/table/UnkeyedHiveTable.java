@@ -30,7 +30,7 @@ import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
@@ -44,7 +44,7 @@ import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROO
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
+public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, SupportHive {
 
   private final HMSClientPool hiveClient;
   private final String tableLocation;

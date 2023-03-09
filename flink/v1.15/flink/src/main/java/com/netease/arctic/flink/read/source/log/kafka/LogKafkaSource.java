@@ -28,7 +28,6 @@ import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
-import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
@@ -61,7 +60,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
  *    .build();
  * }</pre>
  *
- * <p>See {@link KafkaSourceBuilder} for more details.
+ * <p>See {@link LogKafkaSourceBuilder} for more details.
  */
 public class LogKafkaSource extends KafkaSource<RowData> {
   private static final long serialVersionUID = 1L;

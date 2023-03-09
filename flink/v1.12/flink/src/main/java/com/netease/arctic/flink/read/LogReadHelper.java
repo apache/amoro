@@ -46,6 +46,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * According to upstreamId and partition topic dealing with the flip message, when should begin to retract message and
  * when to end it.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
+ * use {@link com.netease.arctic.flink.read.source.log.LogSourceHelper} instead.
  */
 @Deprecated
 public class LogReadHelper implements Serializable {

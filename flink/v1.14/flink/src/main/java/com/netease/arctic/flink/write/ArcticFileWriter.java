@@ -41,7 +41,6 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.relocated.com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,27 +137,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     checkpointState.add(context.getCheckpointId());
   }
 
-  private void initTaskWriterFactory(Long mask) {
+  private void initTaskWriterFactory(long mask) {
     if (taskWriterFactory instanceof ArcticRowDataTaskWriterFactory) {
-      if (mask != null) {
-        ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
-      }
-      ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setTransactionId(getTransactionId());
+      ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
     }
     taskWriterFactory.initialize(subTaskId, attemptId);
-  }
-
-  private Long getTransactionId() {
-    Long transaction;
-    if (table.isKeyedTable()) {
-      String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
-      transaction = table.asKeyedTable().beginTransaction(signature);
-      LOG.info("table:{}, signature:{}, transactionId:{}. From jobId:{}, ckpId:{}", table.name(), signature,
-          transaction, jobId, checkpointId);
-    } else {
-      transaction = null;
-    }
-    return transaction;
   }
 
   @VisibleForTesting
@@ -217,9 +200,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     RowData row = element.getValue();
     table.io().doAs(() -> {
       if (writer == null) {
-        // Reassign transaction id when processing the new file data to avoid the situation that there is no data
-        // written during the next checkpoint period.
-        initTaskWriterFactory(null);
         this.writer = taskWriterFactory.create();
       }
 

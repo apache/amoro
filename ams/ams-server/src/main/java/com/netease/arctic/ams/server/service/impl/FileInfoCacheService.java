@@ -37,7 +37,6 @@ import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
-import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
@@ -77,6 +76,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FileInfoCacheService extends IJDBCService {
 
@@ -309,7 +309,7 @@ public class FileInfoCacheService extends IJDBCService {
       List<CacheFileInfo> fileInfos = new ArrayList<>();
       List<DataFile> addFiles = new ArrayList<>();
       List<DataFile> deleteFiles = new ArrayList<>();
-      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
+      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, tableType, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
         CacheFileInfo cacheFileInfo = CacheFileInfo.convert(amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
@@ -391,11 +391,11 @@ public class FileInfoCacheService extends IJDBCService {
     }
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
     deleteFiles.forEach(dataFile -> {
-      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table, tableType);
       cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
 
@@ -538,6 +538,10 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier) {
+    return getTxExcludeOptimize(identifier, true);
+  }
+
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier, boolean ignoreEmptyTransaction) {
     if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
       List<TransactionsOfTable> result = new ArrayList<>();
       ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
@@ -570,7 +574,13 @@ public class FileInfoCacheService extends IJDBCService {
     }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      List<TransactionsOfTable> transactions = snapInfoCacheMapper.getTxExcludeOptimize(identifier);
+      if (ignoreEmptyTransaction) {
+        return transactions.stream().filter(t -> t.getFileCount() > 0 || t.getFileSize() > 0)
+            .collect(Collectors.toList());
+      } else {
+        return transactions;
+      }
     }
   }
 

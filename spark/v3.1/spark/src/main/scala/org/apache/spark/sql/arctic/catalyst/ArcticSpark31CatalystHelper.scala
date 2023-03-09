@@ -118,7 +118,7 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
       internalRowToStruct.wrap(input)
       keyData.primaryKey(internalRowToStruct)
       val node = keyData.treeNode(numBuckets)
-      node.getId
+      node.getIndex
     }
 
     override def nullable: Boolean = true

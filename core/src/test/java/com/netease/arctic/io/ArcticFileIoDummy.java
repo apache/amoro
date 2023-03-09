@@ -49,13 +49,13 @@ public class ArcticFileIoDummy implements ArcticFileIO {
   }
 
   @Override
-  public boolean mkdirs(String path) {
-    return false;
+  public void mkdirs(String path) {
+
   }
 
   @Override
-  public boolean rename(String oldpath, String newPath) {
-    return false;
+  public void rename(String oldpath, String newPath) {
+
   }
 
   @Override

@@ -146,13 +146,13 @@ public class TableBlockerService extends IJDBCService {
       long now = System.currentTimeMillis();
       TableBlocker tableBlocker = mapper.selectBlocker(Long.parseLong(blockerId), now);
       if (tableBlocker == null) {
-        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+        throw new NoSuchObjectException(
+            tableIdentifier + " illegal blockerId " + blockerId + ", it may be released or expired");
       }
       long expirationTime = now + blockerTimeout;
       mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime);
       return expirationTime;
     } catch (NoSuchObjectException e1) {
-      LOG.error("failed to renew blocker {} for {}", blockerId, tableIdentifier, e1);
       throw e1;
     } catch (Exception e) {
       LOG.error("failed to renew blocker {} for {}", blockerId, tableIdentifier, e);

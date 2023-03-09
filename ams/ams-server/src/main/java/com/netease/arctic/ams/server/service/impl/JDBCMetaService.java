@@ -33,7 +33,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
@@ -57,7 +57,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Logger LOG = LoggerFactory.getLogger(JDBCMetaService.class);
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();
   private final FileInfoCacheService fileInfoCacheService;
-  private final ArcticTransactionService transactionService;
   private final DDLTracerService ddlTracerService;
 
   private final AdaptHiveService adaptHiveService;
@@ -66,7 +65,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
-    this.transactionService = ServiceContainer.getArcticTransactionService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
     this.adaptHiveService = ServiceContainer.getAdaptHiveService();
     this.tableBlockerService = ServiceContainer.getTableBlockerService();
@@ -141,7 +139,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         }
 
         fileInfoCacheService.deleteTableCache(tableIdentifier);
-        transactionService.delete(tableIdentifier.buildTableIdentifier());
         ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
         adaptHiveService.removeTableCache(tableIdentifier);
         tableBlockerService.clearBlockers(tableIdentifier);
@@ -182,7 +179,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         TableOptimizeItem arcticTableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
         ServiceContainer.getOptimizeQueueService().release(tableIdentifier);
         try {
-          arcticTableItem.clearOptimizeTasks();
+          arcticTableItem.optimizeTasksClear(true);
         } catch (Throwable t) {
           LOG.error("failed to delete " + tableIdentifier + " compact task, ignore", t);
         }
@@ -254,7 +251,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     Table icebergTable = tableMetadata.getMetaStore().doAs(()
         -> tables.load(tableMetadata.getBaseLocation()));
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetadata.getMetaStore());
-    return new BaseUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
+    return new BasicUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
   }
 
   public static class Key {

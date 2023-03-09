@@ -26,8 +26,6 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.IdGenerator;
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -36,6 +34,7 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -70,8 +69,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private final long transactionId = IdGenerator.randomId();
-  private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
+  private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory();
 
   private final boolean orderedWriter;
 
@@ -81,7 +79,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     this.table = table;
     this.dsSchema = info.schema();
     this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
-        "writer.distributed-and-ordered", "true"
+        "writer.distributed-and-ordered", "false"
     ));
     this.catalog = catalog;
   }
@@ -162,7 +160,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new WriterFactory(table, dsSchema, false, transactionId, null, orderedWriter);
+      return new WriterFactory(table, dsSchema, false, null, orderedWriter);
     }
 
     @Override
@@ -182,7 +180,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory, orderedWriter);
+      return new WriterFactory(table, dsSchema, true, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -207,7 +205,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory, orderedWriter);
+      return new WriterFactory(table, dsSchema, true, hiveSubdirectory, orderedWriter);
     }
 
     @Override
@@ -228,7 +226,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new DeltaUpsertWriteFactory(table, dsSchema, transactionId, orderedWriter);
+      return new DeltaUpsertWriteFactory(table, dsSchema, orderedWriter);
     }
 
     @Override
@@ -254,7 +252,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
 
-    protected final long transactionId;
     protected final String hiveSubdirectory;
 
     protected final boolean isOverwrite;
@@ -264,13 +261,11 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         UnkeyedTable table,
         StructType dsSchema,
         boolean isOverwrite,
-        long transactionId,
         String hiveSubdirectory,
         boolean orderedWrite) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
-      this.transactionId = transactionId;
       this.hiveSubdirectory = hiveSubdirectory;
       this.orderedWriter = orderedWrite;
     }
@@ -279,7 +274,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       TaskWriters builder =  TaskWriters.of(table)
           .withPartitionId(partitionId)
-          .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withOrderedWriter(orderedWriter)
           .withDataSourceSchema(dsSchema)
@@ -292,8 +286,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class DeltaUpsertWriteFactory extends WriterFactory {
 
-    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, long transactionId, boolean ordredWriter) {
-      super(table, dsSchema, false, transactionId, null, ordredWriter);
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, boolean ordredWriter) {
+      super(table, dsSchema, false, null, ordredWriter);
     }
 
     @Override
@@ -302,7 +296,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
       TaskWriter<InternalRow> internalRowUnkeyedUpsertSparkWriter = TaskWriters.of(table)
           .withPartitionId(partitionId)
-          .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
           .newUnkeyedUpsertWriter();
@@ -313,8 +306,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class MergeWriteFactory extends WriterFactory {
 
-    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
-      super(table, dsSchema, false, transactionId, null, orderedWrite);
+    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, boolean orderedWrite) {
+      super(table, dsSchema, false, null, orderedWrite);
     }
 
     @Override
@@ -322,7 +315,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
@@ -337,7 +329,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new MergeWriteFactory(table, dsSchema, transactionId, orderedWriter);
+      return new MergeWriteFactory(table, dsSchema, orderedWriter);
     }
 
     @Override

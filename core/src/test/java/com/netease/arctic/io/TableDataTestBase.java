@@ -21,7 +21,6 @@ package com.netease.arctic.io;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -120,7 +119,6 @@ public class TableDataTestBase extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = getArcticTable().asKeyedTable().changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
@@ -135,7 +133,6 @@ public class TableDataTestBase extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = getArcticTable().asKeyedTable().changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }

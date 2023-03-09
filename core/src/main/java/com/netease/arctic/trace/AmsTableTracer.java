@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -262,22 +261,24 @@ public class AmsTableTracer implements TableTracer {
       if (realAddedDataFiles == addedFiles.size() && realDeletedDataFiles == deletedFiles.size() &&
           realAddedDeleteFiles == addedDeleteFiles.size() && readRemovedDeleteFiles == deletedDeleteFiles.size()) {
         addFiles =
-            addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+            addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable, innerTable))
                 .collect(Collectors.toList());
         deleteFiles =
-            deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+            deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable, innerTable))
                 .collect(Collectors.toList());
         addFiles.addAll(addedDeleteFiles.stream()
-            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable, innerTable))
+            .collect(Collectors.toList()));
         deleteFiles.addAll(deletedDeleteFiles.stream()
-            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable, innerTable))
+            .collect(Collectors.toList()));
       } else {
         // tracer file change info is different from iceberg snapshot, should get iceberg real file change info
-        SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
+        SnapshotFileUtil.getSnapshotFiles(arcticTable, innerTable, snapshot, addFiles, deleteFiles);
       }
 
       return new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
-          snapshot.sequenceNumber(), parentSnapshotId);
+          parentSnapshotId, snapshot.sequenceNumber());
     }
   }
 

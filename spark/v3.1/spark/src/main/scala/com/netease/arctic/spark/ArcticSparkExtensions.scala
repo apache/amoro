@@ -20,10 +20,10 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, ResolveMergeIntoTableReferences, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
-import com.netease.arctic.spark.sql.optimize._
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
 import org.apache.spark.sql.catalyst.optimizer._

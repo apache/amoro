@@ -40,7 +40,7 @@ public class IcebergCatalogTest extends CatalogTestBase {
     nativeIcebergCatalog.createTable(TableIdentifier.of("db2", "tb1"), TableTestHelpers.TABLE_SCHEMA);
     ArcticTable table = icebergCatalog.loadTable(
         com.netease.arctic.table.TableIdentifier.of(TEST_CATALOG_NAME, "db2", "tb1"));
-    Assert.assertTrue(table instanceof BaseIcebergCatalog.BaseIcebergTable);
+    Assert.assertTrue(table instanceof BasicIcebergCatalog.BasicIcebergTable);
     Assert.assertEquals(true, table.isUnkeyedTable());
     Assert.assertEquals(TableTestHelpers.TABLE_SCHEMA.asStruct(), table.schema().asStruct());
     nativeIcebergCatalog.dropTable(TableIdentifier.of("db2", "tb1"), true);

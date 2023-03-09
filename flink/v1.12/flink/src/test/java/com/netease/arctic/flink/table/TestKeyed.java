@@ -40,9 +40,9 @@ import org.apache.flink.util.CloseableIterator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -64,6 +64,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOCATION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
@@ -99,13 +100,16 @@ public class TestKeyed extends FlinkTestBase {
   public boolean isHive;
   @Parameterized.Parameter(1)
   public String logType;
+  @Parameterized.Parameter(2)
+  public boolean kafkaLegacyEnable;
 
-  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}")
+  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}, kafkaLegacyEnable = {2}")
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][]{
-            {false, LOG_STORE_STORAGE_TYPE_KAFKA},
-            {false, LOG_STORE_STORAGE_TYPE_PULSAR}
+            {false, LOG_STORE_STORAGE_TYPE_KAFKA, true},
+            {false, LOG_STORE_STORAGE_TYPE_KAFKA, false},
+            {false, LOG_STORE_STORAGE_TYPE_PULSAR, false}
         });
   }
 
@@ -137,7 +141,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   private void prepareLog() {
-    topic = TestUtil.getUtMethodName(testName);
+    topic = TestUtil.getUtMethodName(testName) + isHive + kafkaLegacyEnable;
     tableProperties.clear();
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -151,6 +155,10 @@ public class TestKeyed extends FlinkTestBase {
       kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
       tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
       tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    }
+
+    if (kafkaLegacyEnable) {
+      tableProperties.put(ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(), "true");
     }
   }
 
@@ -167,6 +175,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testSinkSourceFile() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
@@ -283,6 +292,68 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
+  public void testUnpartitionLogSinkSourceWithSelectedFields() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000015, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'arctic.emit.mode'='log'" +
+      ", 'log.version'='v1'" +
+      ") */" +
+      " select * from input");
+
+    TableResult result = exec("select id, op_time from arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.read.mode'='log'" +
+      ", 'scan.startup.mode'='earliest'" +
+      ")*/" +
+      "");
+
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{1000004, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000011, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000014, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
+  }
+
+  @Test
   public void testUnPartitionDoubleSink() throws Exception {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});
@@ -330,6 +401,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testPartitionSinkFile() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -368,6 +440,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testFileUpsert() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
@@ -412,10 +485,9 @@ public class TestKeyed extends FlinkTestBase {
             ") */")));
   }
 
-  // Ignore this case because of ci blocking problem in Github
-  @Ignore
   @Test
   public void testFileUpsertWithSamePrimaryKey() throws Exception {
+    Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -525,6 +597,68 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
+  }
+
+  @Test
+  public void testPartitionLogSinkSourceWithSelectedFields() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000015, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+      ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'arctic.emit.mode'='log'" +
+      ", 'log.version'='v1'" +
+      ") */" +
+      " select * from input");
+
+    TableResult result = exec("select id, op_time from arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.read.mode'='log'" +
+      ", 'scan.startup.mode'='earliest'" +
+      ")*/" +
+      "");
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{1000004, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000011, LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{1000014, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000015, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 

@@ -25,7 +25,6 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -46,7 +45,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> hiveFiles = insertHiveDataFiles(testUnPartitionKeyedHiveTable, 1);
-    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L).second();
+    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable).second();
 
     DeleteFiles deleteHiveFiles = testUnPartitionKeyedHiveTable.baseTable().newDelete();
     for (DataFile hiveFile : hiveFiles) {
@@ -62,14 +61,14 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3L).second();
+    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable).second();
     for (DataFile s3File : s3Files) {
       Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(s3File.path().toString()));
     }
 
     Set<String> hiveLocation = new HashSet<>();
     if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
-      hiveLocation.add(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString()));
+      hiveLocation.add(TableFileUtils.getUriPath(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString())));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(testUnPartitionKeyedHiveTable.baseTable().snapshots()));
@@ -87,7 +86,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
 
   private List<DataFile> insertHiveDataFiles(ArcticTable arcticTable, long transactionId) throws Exception {
 
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(IdGenerator.randomId());
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(transactionId);
     AtomicInteger taskId = new AtomicInteger();
 
     Supplier<TaskWriter<Record>> taskWriterSupplier = () -> AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)

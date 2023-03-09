@@ -36,6 +36,7 @@ import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
+import io.javalin.http.ContentType;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import org.apache.commons.lang3.StringUtils;
@@ -130,10 +131,17 @@ public class AmsRestServer {
     app.routes(() -> {
       /*backend routers*/
       path("", () -> {
-        //  /docs/latest can't be locationed to the index.html, so we add rule to redict to it.
+        // /docs/latest can't be located to the index.html, so we add rule to redirect to it.
         get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
         // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
-        get("/{page}", ctx -> ctx.html(getFileContent()));
+        get("/{page}", ctx -> {
+          if ("favicon.ico".equals(ctx.pathParam("page"))) {
+            ctx.contentType(ContentType.IMAGE_ICO);
+            ctx.result(AmsRestServer.class.getClassLoader().getResourceAsStream("static/favicon.ico"));
+          } else {
+            ctx.html(getFileContent());
+          }
+        });
         get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
       });
       path("/ams/v1", () -> {

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.io.writer;
 
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -27,50 +27,39 @@ import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Factory responsible for generating data file names for change and base location
  * <p>
- * File name pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{count}
+ * File name pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{operation_id}-{count}
  * <ul>
  *   <li>tree_node_id: id of {@link com.netease.arctic.data.DataTreeNode} the file belong</li>
  *   <li>file_type: short name of file's {@link com.netease.arctic.data.DataFileType} </li>
  *   <li>transaction_id: id of transaction the file added</li>
  *   <li>partition_id: id of partitioned data in parallel engine like spark & flink </li>
  *   <li>task_id: id of write task within partition</li>
+ *   <li>operation_id: a random id to avoid duplicated file name</li>
  *   <li>count: auto increment count within writer </li>
  * </ul>
  */
 public class CommonOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final int partitionId;
-  private final long taskId;
-  private final Long transactionId;
-
-  private final AtomicLong fileCount = new AtomicLong(0);
+  private final FileNameGenerator fileNameGenerator;
 
   public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
                            FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
                            int partitionId, long taskId, Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    this.partitionId = partitionId;
-    this.taskId = taskId;
-    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
+    this.fileNameGenerator = new FileNameGenerator(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, fileCount.incrementAndGet()));
+    return fileNameGenerator.fileName(key);
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
