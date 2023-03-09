@@ -81,9 +81,8 @@ public abstract class AbstractOptimizePlan {
     List<BasicOptimizeTask> tasks = collectTasks(getPartitionsToOptimizeInOrder());
 
     long endTime = System.nanoTime();
-    LOG.info("{} ==== {} plan tasks cost {} ns, {} ms", tableId(), getOptimizeType(), endTime - startTime,
-        (endTime - startTime) / 1_000_000);
-    LOG.info("{} {} plan get {} tasks", tableId(), getOptimizeType(), tasks.size());
+    LOG.info("{} ==== {} plan tasks get {} tasks, cost {} ns, {} ms", tableId(), getOptimizeType(), tasks.size(),
+        endTime - startTime, (endTime - startTime) / 1_000_000);
     return buildOptimizePlanResult(tasks);
   }
 
