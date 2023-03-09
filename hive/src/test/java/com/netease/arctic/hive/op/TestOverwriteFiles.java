@@ -483,11 +483,11 @@ public class TestOverwriteFiles extends HiveTableTestBase {
 
     List<String> exceptedFiles = new ArrayList<>();
     exceptedFiles.add("data-a1.parquet");
-    exceptedFiles.add("data-a3.parquet");
     exceptedFiles.add("data-a2.parquet");
+    exceptedFiles.add("data-a3.parquet");
     Table hiveTable = hms.getClient().getTable(table.id().getDatabase(), table.name());
-    List<String> fileNameList = new ArrayList<>(table.io().list(hiveTable.getSd().
-        getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    List<String> fileNameList = table.io().list(hiveTable.getSd().
+        getLocation()).stream().map(f -> f.getPath().getName()).sorted().collect(Collectors.toList());
     Assert.assertEquals(exceptedFiles, fileNameList);
   }
 
