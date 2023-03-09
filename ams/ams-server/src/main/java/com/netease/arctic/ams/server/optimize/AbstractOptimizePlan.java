@@ -50,8 +50,8 @@ public abstract class AbstractOptimizePlan {
 
   // all partitions
   protected final Set<String> allPartitions = new HashSet<>();
-  // partitions should optimize but skipped
-  protected final Set<String> skippedPartitions = new HashSet<>();
+  // partitions to optimizing
+  protected final Set<String> affectedPartitions = new HashSet<>();
   
   private int collectFileCnt = 0;
 
@@ -90,26 +90,22 @@ public abstract class AbstractOptimizePlan {
   protected List<BasicOptimizeTask> collectTasks(List<String> partitions) {
     List<BasicOptimizeTask> results = new ArrayList<>();
 
-    int collectPartitionCnt = 0;
-    int index = 0;
-    for (; index < partitions.size(); index++) {
-      String partition = partitions.get(index);
+    for (String partition : partitions) {
       List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
-      collectPartitionCnt++;
-      LOG.info("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
-          getOptimizeType());
-      results.addAll(optimizeTasks);
-      if (reachMaxFileCnt(optimizeTasks)) {
-        LOG.info("{} get enough files {} > {}, ignore left partitions", tableId(), this.collectFileCnt,
-            getMaxFileCntLimit());
-        break;
+      if (optimizeTasks.size() > 0) {
+        this.affectedPartitions.add(partition);
+        LOG.info("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
+            getOptimizeType());
+        results.addAll(optimizeTasks);
+        if (reachMaxFileCnt(optimizeTasks)) {
+          LOG.info("{} get enough files {} > {}, ignore left partitions", tableId(), this.collectFileCnt,
+              getMaxFileCntLimit());
+          break;
+        }
       }
     }
-    for (; index < partitions.size(); index++) {
-      this.skippedPartitions.add(partitions.get(index));
-    }
-    LOG.info("{} ==== after collect {} task of partitions {}/{}, skip {} partitions", tableId(), getOptimizeType(),
-        collectPartitionCnt, partitions.size(), this.skippedPartitions.size());
+    LOG.info("{} ==== after collect, get {} task of partitions {}/{}", tableId(), getOptimizeType(),
+        affectedPartitions.size(), partitions.size());
     return results;
   }
 
@@ -121,17 +117,11 @@ public abstract class AbstractOptimizePlan {
       newFileCnt += taskFileCnt;
     }
     this.collectFileCnt += newFileCnt;
-    return limitFileCnt() && this.collectFileCnt > getMaxFileCntLimit();
+    return limitFileCnt() && this.collectFileCnt >= getMaxFileCntLimit();
   }
 
   private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
-    // skipping files means not all files of current snapshot are optimized, we should return -1 to trigger
-    // next optimizing
-    long currentSnapshotId =
-        skippedPartitions.isEmpty() ? this.currentSnapshotId : TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
-    Set<String> affectedPartitions = new HashSet<>(this.allPartitions);
-    affectedPartitions.removeAll(skippedPartitions);
-    return new OptimizePlanResult(affectedPartitions, optimizeTasks, getOptimizeType(), currentSnapshotId,
+    return new OptimizePlanResult(this.affectedPartitions, optimizeTasks, getOptimizeType(), this.currentSnapshotId,
         getCurrentChangeSnapshotId(), this.planGroup);
   }
 
