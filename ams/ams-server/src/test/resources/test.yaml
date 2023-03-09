@@ -1,0 +1,36 @@
+ams:
+  a: 1
+  b: 2
+  c: d
+  d:
+    - 11
+    - 12
+    - 13
+  e:
+    - a
+    - b
+    - c
+  f: true
+test:
+  a: b
+  c: d
+  e: f
+
+containers:
+  # arctic optimizer container config.sh
+  - name: localContainer
+    type: local
+    properties:
+      hadoop_home:
+        - a
+        - b
+        - c
+      # java_home: /opt/java
+  - name: flinkContainer
+    type: flink
+    properties:
+      FLINK_HOME: /opt/flink/        #flink install home
+      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
+      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
+      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
+      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir

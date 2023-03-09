@@ -18,9 +18,9 @@
 
 package com.netease.arctic.ams.server;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.client.AmsServerInfo;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
+import com.netease.arctic.ams.server.utils.JacksonUtils;
 import com.netease.arctic.ams.server.utils.ZookeeperUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
@@ -71,7 +71,7 @@ public class HighAvailabilityServices {
   }
 
   public AmsServerInfo getMaster() throws Exception {
-    return JSONObject.parseObject(
+    return JacksonUtils.parseObject(
         zkService.getData(AmsHAProperties.getMasterPath(namespace)),
         AmsServerInfo.class);
   }

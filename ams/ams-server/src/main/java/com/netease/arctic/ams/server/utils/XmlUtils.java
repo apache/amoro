@@ -56,7 +56,7 @@ public class XmlUtils {
       Element next = (Element) i.next();
       rs.put(next.getName(), next.getData());
     }
-    System.out.println("result" + JSONObject.toJSON(rs));
+    System.out.println("result" + JacksonUtils.toJSONString(rs));
     return rs;
   }
 

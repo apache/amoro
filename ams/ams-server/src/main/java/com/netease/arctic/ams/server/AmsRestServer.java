@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.server.controller.CatalogController;
 import com.netease.arctic.ams.server.controller.HealthCheckController;
 import com.netease.arctic.ams.server.controller.LoginController;
@@ -33,6 +32,7 @@ import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.exception.ForbiddenException;
 import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.service.impl.ApiTokenService;
+import com.netease.arctic.ams.server.utils.JacksonUtils;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
@@ -120,7 +120,7 @@ public class AmsRestServer {
                   ctx.queryParam("signature"), ctx.queryParamMap());
         } else if (needLoginCheck(uriPath)) {
           if (null == ctx.sessionAttribute("user")) {
-            LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
+            LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JacksonUtils.toJSONString(
                     ctx.sessionAttributeMap()));
             throw new ForbiddenException();
           }

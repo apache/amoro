@@ -2,13 +2,12 @@ package com.netease.arctic.ams.server.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * @Author alex.wang
@@ -75,6 +74,55 @@ public class JacksonUtils {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException(DESERIALIZE_ERROR, e);
         }
+    }
+
+    public static List<String> parseObjectsString(String jsonString){
+        JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametricType(ArrayList.class, String.class);
+        try {
+            return OBJECT_MAPPER.readValue(jsonString, javaType);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(DESERIALIZE_ERROR, e);
+        }
+    }
+
+    public static String getString(JsonNode jsonNode, String fieldName){
+        if(jsonNode == null || jsonNode.get(fieldName) == null){
+            return null;
+        }
+        JsonNode result = jsonNode.get(fieldName);
+        if(result.isTextual()){
+            return jsonNode.get(fieldName).asText();
+        }
+        return jsonNode.get(fieldName).toString();
+    }
+
+    public static Integer getInteger(JsonNode jsonNode, String fieldName) {
+        if(jsonNode == null || jsonNode.get(fieldName) == null){
+            return null;
+        }
+        JsonNode value = jsonNode.get(fieldName);
+        if(value.isInt()){
+            return value.intValue();
+        }
+        throw new ClassCastException("can not cast to int, value : " + value);
+    }
+
+    public static Boolean getBoolean(JsonNode jsonNode, String fieldName){
+        if(jsonNode == null || jsonNode.get(fieldName) == null){
+            return null;
+        }
+        JsonNode value = jsonNode.get(fieldName);
+        if (value.isBoolean()) {
+            return value.booleanValue();
+        }
+        throw new ClassCastException("can not cast to bool, value : " + value);
+    }
+
+    public static String getOrDefaultString(JsonNode jsonNode, String fieldName, String defaultValue){
+        if(jsonNode == null || jsonNode.get(fieldName) == null){
+            return defaultValue;
+        }
+        return jsonNode.get(fieldName).asText();
     }
 
 }
