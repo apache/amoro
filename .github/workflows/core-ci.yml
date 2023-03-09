@@ -8,19 +8,33 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "core/**"
-      - "hive/**"
-      - "ams/ams-api/**"
+    paths-ignpore:
+      - ".github/**"
+      - ".idea/**"
+      - "dev/**"
+      - "dist/**"
+      - "docker/**"
+      - "site/**"
+      - "style/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
 
   pull_request:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "core/**"
-      - "hive/**"
-      - "ams/ams-api/**"
+    paths-ignpore:
+      - ".github/**"
+      - ".idea/**"
+      - "dev/**"
+      - "dist/**"
+      - "docker/**"
+      - "site/**"
+      - "style/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
 
 jobs:
   build:
