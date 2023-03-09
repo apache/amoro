@@ -136,19 +136,19 @@ public abstract class AbstractOptimizePlan {
   }
 
   protected List<String> getPartitionsToOptimizeInOrder() {
-    List<PartitionWeight> partitionWeights = new ArrayList<>();
-    for (String partition : allPartitions) {
-      if (partitionNeedPlan(partition)) {
-        partitionWeights.add(new PartitionWeight(partition, getPartitionWeight(partition)));
-      }
-    }
-    if (partitionWeights.size() > 0) {
-      LOG.info("{} filter partitions to optimize, partition count {}", tableId(), partitionWeights.size());
+    List<String> partitionNeedOptimizedInOrder = allPartitions.stream()
+        .filter(this::partitionNeedPlan)
+        .map(partition -> new PartitionWeight(partition, getPartitionWeight(partition)))
+        .sorted()
+        .map(PartitionWeight::getPartition)
+        .collect(Collectors.toList());
+    if (partitionNeedOptimizedInOrder.size() > 0) {
+      LOG.info("{} filter partitions to optimize, partition count {}", tableId(),
+          partitionNeedOptimizedInOrder.size());
     } else {
       LOG.debug("{} filter partitions to optimize, partition count 0", tableId());
     }
-    Collections.sort(partitionWeights);
-    return partitionWeights.stream().map(PartitionWeight::getPartition).collect(Collectors.toList());
+    return partitionNeedOptimizedInOrder;
   }
 
   protected long getPartitionWeight(String partitionToPath) {
