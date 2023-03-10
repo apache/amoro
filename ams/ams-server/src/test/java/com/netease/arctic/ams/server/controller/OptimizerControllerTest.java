@@ -160,22 +160,31 @@ public class OptimizerControllerTest {
   }
 
   @Test
-  public void testCreateOptimizeGroup() throws Exception {
-    String name = "test_queue";
-    String container = "test1";
+  public void testCreateOptimizeGroup() {
+    // normal case, code = 200
     Map<String, String> properties = Maps.newHashMap();
     properties.put("memory","1024");
-    String schedulePolicy = "";
+    createOptimizeGroup("test_queue", "test1", "", properties, 200);
+    // abnormal case 1, optimize group name already exists, code =400
+    createOptimizeGroup("test_queue", "test1", "", properties, 400);
+    // abnormal case 2, can not find such container config, code =400
+    createOptimizeGroup("test_queue1", "", "", properties, 400);
+    // abnormal case 3, scheduling policy only can be quota and balanced, code =400
+    createOptimizeGroup("test_queue2", "test1", "test", properties, 400);
+  }
+
+  public void createOptimizeGroup
+      (String name, String container, String schedulePolicy, Map<String, String> properties, int code) {
+    JSONObject  requestJson = new JSONObject();
+    requestJson.put("name",name);
+    requestJson.put("container",container);
+    requestJson.put("schedulePolicy",schedulePolicy);
+    requestJson.put("properties",properties);
     JavalinTest.test((app, client) -> {
       app.post("/createQueue", OptimizerController::createOptimizeGroup);
-      JSONObject  requestJson = new JSONObject();
-      requestJson.put("name",name);
-      requestJson.put("container",container);
-      requestJson.put("properties", properties);
-      requestJson.put("schedulePolicy",schedulePolicy);
       final okhttp3.Response resp = client.post("/createQueue", requestJson);
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      assert result.getCode() == 200;
+      assert  result.getCode() == code;
     });
   }
 

@@ -175,7 +175,7 @@ public class OptimizeQueueService extends IJDBCService {
     List<OptimizeQueueMeta> metas = getQueues();
     for (OptimizeQueueMeta meta : metas) {
       if (meta.getName().equals(name)) {
-        throw new MetaException("optimize group name:" + name + " already exists");
+        throw new MetaException("optimize group name: " + name + " already exists");
       }
     }
     queue.setName(name);
@@ -186,7 +186,7 @@ public class OptimizeQueueService extends IJDBCService {
                 .equalsIgnoreCase(container));
     if (!checkContainer) {
       throw new NoSuchObjectException(
-          "can not find such container config named" + container);
+          "can not find such container config named " + container);
     }
     queue.setContainer(container);
     String policy = StringUtils.trim(schedulePolicy);

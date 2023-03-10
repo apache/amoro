@@ -284,7 +284,8 @@ public class OptimizerController extends RestBaseController {
       ServiceContainer.getOptimizeQueueService().createQueue(name, container, schedulePolicy, properties);
     } catch (Exception e) {
       LOG.error("Failed to create optimize group", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to create optimize group", ""));
+      ctx.json(new ErrorResponse(
+          HttpCode.BAD_REQUEST, "Failed to create optimize group, " + e.getMessage(), ""));
       return;
     }
     ctx.json(OkResponse.of("Success to create optimize group"));
