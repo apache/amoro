@@ -19,9 +19,7 @@
 package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
@@ -36,7 +34,6 @@ import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
-import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;

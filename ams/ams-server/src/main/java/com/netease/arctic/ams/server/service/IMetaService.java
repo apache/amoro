@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.service;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
 
 import java.util.List;
 import java.util.Map;

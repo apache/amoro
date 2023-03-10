@@ -28,13 +28,13 @@ import java.util.Map;
 public class ArcticFileIOs {
 
   public static ArcticFileIO buildTableFileIO(TableIdentifier tableIdentifier, String tableLocation,
-      Map<String, String> tableProperties, TableMetaStore tableMetaStore) {
+                                              Map<String, String> tableProperties, TableMetaStore tableMetaStore) {
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     if (PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
         TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
-       TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
-           tableProperties, fileIO);
-       return new RecoverableArcticFileIO(fileIO, trashManager);
+      TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
+          tableProperties, fileIO);
+      return new RecoverableArcticFileIO(fileIO, trashManager);
     } else {
       return fileIO;
     }
