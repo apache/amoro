@@ -288,6 +288,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     ReachableFileUtil.metadataFileLocations(internalTable, false)
         .forEach(f -> validFiles.add(TableFileUtils.getUriPath(f)));
     validFiles.add(TableFileUtils.getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
+    ReachableFileUtil.statisticsFilesLocations(internalTable)
+        .forEach(f -> validFiles.add(TableFileUtils.getUriPath(f)));
 
     return validFiles;
   }
