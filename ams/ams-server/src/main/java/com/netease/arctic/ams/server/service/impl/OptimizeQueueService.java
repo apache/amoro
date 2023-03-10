@@ -160,6 +160,15 @@ public class OptimizeQueueService extends IJDBCService {
     }
   }
 
+  /**
+   * create new optimize group
+   * @param name String
+   * @param container String
+   * @param schedulePolicy String
+   * @param properties Map<String, String>
+   * @throws MetaException when name already exists
+   * @throws NoSuchObjectException when container name not exists
+   */
   public void createQueue(String name, String container, String schedulePolicy, Map<String, String> properties)
       throws MetaException, NoSuchObjectException {
     OptimizeQueueMeta queue = new OptimizeQueueMeta();

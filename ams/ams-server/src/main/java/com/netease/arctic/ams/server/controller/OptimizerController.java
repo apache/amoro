@@ -272,7 +272,7 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * create optimizeGroup: name, container, schedulePolicy, properties
-   * url = /optimize/optimizerGroups/createOptimizeQueue
+   * url = /optimize/optimizerGroups
    */
   public static void createOptimizeGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
