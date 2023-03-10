@@ -82,7 +82,6 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           case arcticTable: ArcticSparkTable if arcticTable.table().isKeyedTable =>
             targetProperties += ("primary.keys" -> String.join(",", arcticTable.table().asKeyedTable().primaryKeySpec().fieldNames()))
           case _ =>
-
         }
         targetProperties += ("provider" -> "arctic")
         CreateV2Table(targetCatalog, targetIdentifier,
