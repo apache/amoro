@@ -82,8 +82,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private ScheduledTasks<TableIdentifier, OptimizeCheckTask> checkTasks;
 
-  private ScheduledExecutorService refreshTableEsv;
-
   private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> cachedTables = new ConcurrentHashMap<>();
@@ -109,7 +107,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           LOG.info("OptimizeService init...");
           loadTables();
           initOptimizeTasksIntoOptimizeQueue();
-          refreshTableEsv = Executors.newSingleThreadScheduledExecutor(
+          ScheduledExecutorService refreshTableEsv = Executors.newSingleThreadScheduledExecutor(
               new ThreadFactoryBuilder()
                   .setDaemon(false)
                   .setNameFormat("Optimize Refresh Tables Thread")
