@@ -66,6 +66,8 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
             table match {
               case arcticTable: ArcticSparkTable =>
                 createArcticTable(properties, ifNotExists, targetCatalog, targetIdentifier, table, arcticTable)
+              case _ =>
+                createArcticTable(properties, ifNotExists, targetCatalog, targetIdentifier, table, null)
             }
 
           case _: ArcticSparkSessionCatalog[_] =>
@@ -74,6 +76,8 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
                 createArcticTable(properties, ifNotExists, targetCatalog, targetIdentifier, table, arcticTable)
               case _ => c
             }
+
+          case _ => c
         }
       }
       case _ => plan
@@ -85,10 +89,12 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
                                 targetIdentifier: Identifier, table: Table, arcticTable: ArcticSparkTable) = {
     var targetProperties = properties
     targetProperties += ("provider" -> "arctic")
-    arcticTable.table() match {
-      case table: KeyedTable =>
-        targetProperties += ("primary.keys" -> String.join(",", table.primaryKeySpec().fieldNames()))
-      case _ =>
+    if (arcticTable != null) {
+      arcticTable.table() match {
+        case table: KeyedTable =>
+          targetProperties += ("primary.keys" -> String.join(",", table.primaryKeySpec().fieldNames()))
+        case _ =>
+      }
     }
     CreateV2Table(targetCatalog, targetIdentifier,
       table.schema(), table.partitioning(), targetProperties, ifNotExists)
