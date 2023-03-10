@@ -206,6 +206,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
   @Test
   public void testCreateTableLikeWithoutArcticCatalogWithNoProvider() throws TException {
+    sql("set spark.sql.arctic.delegate.enabled=true");
     sql("use catalog");
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -220,10 +221,9 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
     Table hiveTableA = hms.getClient().getTable(database, table2);
     Assert.assertNotNull(hiveTableA);
+    sql("drop table {0}.{1}", database, table3);
     sql("use spark_catalog");
     sql("drop table {0}.{1}", database, table2);
-
-    sql("drop table {0}.{1}", database, table3);
   }
 
 
