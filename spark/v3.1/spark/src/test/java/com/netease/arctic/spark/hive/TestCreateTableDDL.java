@@ -559,17 +559,28 @@ public class TestCreateTableDDL extends SparkTestBase {
         " ''props.test2'' = ''val2'' ) ", database, tableB);
 
     sql("create table {0}.{1} like {2}.{3}", database, tableA, database, tableB);
-    Table hiveTableA = hms.getClient().getTable(database, tableA);
-    Assert.assertNotNull(hiveTableA);
+    Table hiveTable1 = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTable1);
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
         Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, loadTable(identifierA).schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
 
     sql("drop table {0}.{1}", database, tableA);
-    sql("use " + catalogNameHive);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    Table hiveTable2 = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTable2);
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifierA).schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, tableA);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
 

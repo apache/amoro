@@ -166,7 +166,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table3);
 
-    sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, table2, database, table3);
     sql("desc table {0}.{1}", database, table2);
     assertDescResult(rows, Lists.newArrayList("id"));
 
@@ -179,29 +179,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   }
 
   @Test
-  public void testCreateHiveTableLikeWithNoProvider() throws TException {
-    sql("set spark.sql.arctic.delegate.enabled=true");
-    sql("use spark_catalog");
-    sql("create table {0}.{1} ( \n" +
-        " id int , \n" +
-        " name string , \n " +
-        " ts timestamp  \n" +
-        ") stored as parquet \n" +
-        " partitioned by ( ts ) \n" +
-        " tblproperties ( \n" +
-        " ''props.test1'' = ''val1'', \n" +
-        " ''props.test2'' = ''val2'' ) ", database, table3);
-
-    sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
-    Table hiveTableA = hms.getClient().getTable(database, table2);
-    Assert.assertNotNull(hiveTableA);
-    sql("drop table {0}.{1}", database, table2);
-
-    sql("drop table {0}.{1}", database, table3);
-  }
-
-  @Test
-  public void testCreateArcticTableLikeWithNoProvider() {
+  public void testCreateTableLikeWithNoProvider() throws TException {
     sql("set spark.sql.arctic.delegate.enabled=true");
     sql("use spark_catalog");
     sql("create table {0}.{1} ( \n" +
@@ -216,11 +194,8 @@ public class TestArcticSessionCatalog extends SparkTestContext {
         " ''props.test2'' = ''val2'' ) ", database, table3);
 
     sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
-    sql("desc table {0}.{1}", database, table2);
-    assertDescResult(rows, Lists.newArrayList("id"));
-
-    sql("desc table extended {0}.{1}", database, table2);
-    assertDescResult(rows, Lists.newArrayList("id"));
+    Table hiveTableA = hms.getClient().getTable(database, table2);
+    Assert.assertNotNull(hiveTableA);
     sql("drop table {0}.{1}", database, table2);
 
     sql("drop table {0}.{1}", database, table3);
