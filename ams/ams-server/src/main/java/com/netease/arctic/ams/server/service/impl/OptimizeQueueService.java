@@ -160,6 +160,42 @@ public class OptimizeQueueService extends IJDBCService {
     }
   }
 
+  public void createQueue(String name, String container, String schedulePolicy, Map<String, String> properties)
+      throws MetaException, NoSuchObjectException {
+    OptimizeQueueMeta queue = new OptimizeQueueMeta();
+    List<OptimizeQueueMeta> metas = getQueues();
+    for (OptimizeQueueMeta meta : metas) {
+      if (meta.getName().equals(name)) {
+        throw new MetaException("optimize group name:" + name + " already exists");
+      }
+    }
+    queue.setName(name);
+    List<Container> containers = getContainers();
+    boolean checkContainer =
+        containers.stream()
+            .anyMatch(e -> e.getName()
+                .equalsIgnoreCase(container));
+    if (!checkContainer) {
+      throw new NoSuchObjectException(
+          "can not find such container config named" + container);
+    }
+    queue.setContainer(container);
+    String policy = StringUtils.trim(schedulePolicy);
+    if (StringUtils.isBlank(policy)) {
+      policy = ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA;
+    } else if (
+        !(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA.equalsIgnoreCase(policy) ||
+            ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED.equalsIgnoreCase(policy))) {
+      throw new IllegalArgumentException(String.format(
+          "Scheduling policy only can be %s and %s",
+          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA,
+          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED));
+    }
+    queue.setSchedulingPolicy(policy);
+    queue.setProperties(properties);
+    createQueue(queue);
+  }
+
   /**
    * Update optimize queue
    *

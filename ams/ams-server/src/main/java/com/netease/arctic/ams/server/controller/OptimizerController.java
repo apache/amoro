@@ -269,5 +269,21 @@ public class OptimizerController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to scaleOut optimizer", ""));
     }
   }
+
+  public static void createOptimizeGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    try {
+      String name = (String) map.get("name");
+      String container = (String) map.get("container");
+      String schedulePolicy = (String) map.get("schedulePolicy");
+      Map<String, String> properties = (Map) map.get("properties");
+      ServiceContainer.getOptimizeQueueService().createQueue(name, container, schedulePolicy, properties);
+    } catch (Exception e) {
+      LOG.error("Failed to create optimize group", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to create optimize group", ""));
+      return;
+    }
+    ctx.json(OkResponse.of("Success to create optimize group"));
+  }
 }
 

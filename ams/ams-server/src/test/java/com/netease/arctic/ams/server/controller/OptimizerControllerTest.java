@@ -159,6 +159,26 @@ public class OptimizerControllerTest {
     });
   }
 
+  @Test
+  public void testCreateOptimizeGroup() throws Exception {
+    String name = "test_queue";
+    String container = "test1";
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory","1024");
+    String schedulePolicy = "";
+    JavalinTest.test((app, client) -> {
+      app.post("/createQueue", OptimizerController::createOptimizeGroup);
+      JSONObject  requestJson = new JSONObject();
+      requestJson.put("name",name);
+      requestJson.put("container",container);
+      requestJson.put("properties", properties);
+      requestJson.put("schedulePolicy",schedulePolicy);
+      final okhttp3.Response resp = client.post("/createQueue", requestJson);
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      assert result.getCode() == 200;
+    });
+  }
+
   private static void createOptimizeGroup(String name, String container) throws MetaException {
     OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
     optimizeQueueMeta.setName(name);
