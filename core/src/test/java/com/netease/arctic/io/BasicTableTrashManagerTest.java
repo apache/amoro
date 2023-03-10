@@ -82,12 +82,10 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
     String directory = TableFileUtils.getFileDir(path);
     long now = System.currentTimeMillis();
-    try {
-      tableTrashManager.moveFileToTrash(directory);
-      Assert.fail("should not successfully move a directory to trash");
-    } catch (IllegalArgumentException e) {
-      // ignore
-    }
+    IllegalArgumentException illegalArgumentException =
+        Assert.assertThrows("should not successfully move a directory to trash",
+            IllegalArgumentException.class, () -> tableTrashManager.moveFileToTrash(directory));
+    Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
     String directoryLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
         getArcticTable().location(), directory, trashLocation, now);
 
@@ -112,40 +110,18 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
 
-    try {
-      tableTrashManager.fileExistInTrash(directory);
-      Assert.fail("should not successfully check a directory in trash");
-    } catch (IllegalArgumentException e) {
-      // ignore
-    }
-    try {
-      tableTrashManager.restoreFileFromTrash(directory);
-      Assert.fail("should not successfully restore a directory in trash");
-    } catch (IllegalArgumentException e) {
-      // ignore
-    }
+    IllegalArgumentException illegalArgumentException =
+        Assert.assertThrows("should not successfully check a directory in trash",
+            IllegalArgumentException.class, () -> tableTrashManager.fileExistInTrash(directory));
+    Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
+
+    illegalArgumentException =
+        Assert.assertThrows("should not successfully restore a directory in trash",
+            IllegalArgumentException.class, () -> tableTrashManager.restoreFileFromTrash(directory));
+    Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
-  }
-
-  @Test
-  public void testDeleteRecursive() {
-    BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.of(getArcticTable()));
-    String relativeFilePath = "base/test/test1.parquet";
-    String relativeFilePath2 = "base/test2/test2.parquet";
-    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
-    String path2 = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath2);
-    String testDir = TableFileUtils.getFileDir(path);
-    String baseDir = TableFileUtils.getFileDir(testDir);
-
-    Assert.assertTrue(getArcticTable().io().exists(path));
-    Assert.assertTrue(getArcticTable().io().exists(path2));
-
-    tableTrashManager.deleteRecursive(baseDir);
-    Assert.assertFalse(getArcticTable().io().exists(baseDir));
-    Assert.assertFalse(getArcticTable().io().exists(path));
-    Assert.assertFalse(getArcticTable().io().exists(path2));
   }
 
   @Test

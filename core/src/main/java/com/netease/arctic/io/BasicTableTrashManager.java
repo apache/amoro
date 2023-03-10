@@ -21,17 +21,10 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.hadoop.HadoopFileIO;
-import org.apache.iceberg.hadoop.Util;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,7 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Basic implementation of TableTrashManager.
+ * Basic implementation of {@link TableTrashManager}.
  */
 class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
@@ -150,7 +143,7 @@ class BasicTableTrashManager implements TableTrashManager {
         continue;
       }
       if (localDate.compareTo(expirationDate) < 0) {
-        deleteRecursive(datePath.getPath().toString());
+        arcticFileIO.deleteDirectoryRecursively(datePath.getPath().toString());
         LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
             datePath.getPath().toString());
       } else {
@@ -158,21 +151,6 @@ class BasicTableTrashManager implements TableTrashManager {
             datePath.getPath().toString());
       }
     }
-  }
-
-  @VisibleForTesting
-  void deleteRecursive(String path) {
-    arcticFileIO.doAs(() -> {
-      Path toDelete = new Path(path);
-      FileSystem fs = Util.getFs(toDelete, ((HadoopFileIO) arcticFileIO).getConf());
-
-      try {
-        fs.delete(toDelete, true);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to delete file: " + path, e);
-      }
-      return null;
-    });
   }
 
   private String findFileFromTrash(String path) {
