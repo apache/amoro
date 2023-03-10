@@ -85,6 +85,11 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all optimize commit processes.");
+  public static final ConfigOption<Long> OPTIMIZE_REFRESH_TABLES_INTERVAL =
+      ConfigOptions.key("arctic.ams.optimize.refresh-tables.interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Refresh interval of tables in all catalogs.");
   public static final ConfigOption<Integer> EXPIRE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.expire.thread.pool-size")
           .intType()
