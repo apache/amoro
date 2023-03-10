@@ -19,7 +19,6 @@
 package com.netease.arctic.spark;
 
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -40,8 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATALOG_TABLE;
-import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATALOG_TABLE_DEFAULT;
 
 /**
  * A Spark catalog that can also load non-Iceberg tables.
@@ -117,11 +114,11 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    if (isDelegateEnable() && arcticTableExists(ident)) {
-      return getArcticCatalog().loadTable(ident);
-    } else {
-      return getSessionCatalog().loadTable(ident);
+    Table table = getSessionCatalog().loadTable(ident);
+    if(isArcticTable(table)) {
+      return arcticCatalog.loadTable(ident);
     }
+    return table;
   }
 
   @Override
@@ -140,7 +137,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    if (isDelegateEnable() && arcticTableExists(ident)) {
+    Table table = getSessionCatalog().loadTable(ident);
+    if(isArcticTable(table)) {
       return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -152,7 +150,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
     // required to return false.
     try {
-      if (isDelegateEnable() && arcticTableExists(ident)) {
+      Table table = getSessionCatalog().loadTable(ident);
+      if(isArcticTable(table)) {
         return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
       } else {
         return getSessionCatalog().dropTable(ident);
@@ -166,7 +165,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public void renameTable(Identifier from, Identifier to) throws NoSuchTableException, TableAlreadyExistsException {
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
-    if (isDelegateEnable() && arcticTableExists(from)) {
+    Table table = getSessionCatalog().loadTable(from);
+    if(isArcticTable(table)) {
       getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
@@ -201,13 +201,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     return false;
   }
 
-  private boolean isDelegateEnable() {
-    SparkSession sparkSession = SparkSession.active();
-    return Boolean.parseBoolean(
-        sparkSession.conf().get(DELEGATE_DEFAULT_CATALOG_TABLE, DELEGATE_DEFAULT_CATALOG_TABLE_DEFAULT)
-    );
-  }
-
   private T getSessionCatalog() {
     Preconditions.checkNotNull(sessionCatalog, "Delegated SessionCatalog is missing. " +
         "Please make sure your are replacing Spark's default catalog, named 'spark_catalog'.");
@@ -222,16 +215,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   }
 
-  public boolean arcticTableExists(Identifier ident) throws NoSuchTableException {
-    Table table = getSessionCatalog().loadTable(ident);
-    if (table.properties().containsKey("arctic.enabled") && table.properties().get("arctic.enabled").equals("true")) {
-      try {
-        ArcticSparkCatalog arcticCatalog = getArcticCatalog();
-        return arcticCatalog.tableExists(ident);
-      } catch (Exception e) {
-        return false;
-      }
-    }
-    return false;
+  private boolean isArcticTable(Table table) {
+    return table.properties().containsKey("arctic.enabled")
+        && table.properties().get("arctic.enabled").equals("true");
   }
 }
