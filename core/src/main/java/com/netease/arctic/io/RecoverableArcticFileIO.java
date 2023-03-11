@@ -3,12 +3,15 @@ package com.netease.arctic.io;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of {@link ArcticFileIO} with deleted files recovery support.
@@ -18,12 +21,17 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
 
   private final ArcticFileIO fileIO;
   private final TableTrashManager trashManager;
+  private final String trashFilePattern;
+  private final Pattern pattern;
 
   RecoverableArcticFileIO(
       com.netease.arctic.io.ArcticFileIO fileIO,
-      TableTrashManager trashManager) {
+      TableTrashManager trashManager,
+      String trashFilePattern) {
     this.fileIO = fileIO;
     this.trashManager = trashManager;
+    this.trashFilePattern = trashFilePattern;
+    this.pattern = Strings.isNullOrEmpty(this.trashFilePattern) ? null : Pattern.compile(this.trashFilePattern);
   }
 
   @Override
@@ -79,17 +87,29 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
 
   @Override
   public void deleteFile(String path) {
-    moveToTrash(path);
+    if (matchTrashFilePattern(path)) {
+      moveToTrash(path);
+    } else {
+      fileIO.deleteFile(path);
+    }
   }
 
   @Override
   public void deleteFile(InputFile file) {
-    moveToTrash(file.location());
+    if (matchTrashFilePattern(file.location())) {
+      moveToTrash(file.location());
+    } else {
+      fileIO.deleteFile(file);
+    }
   }
 
   @Override
   public void deleteFile(OutputFile file) {
-    moveToTrash(file.location());
+    if (matchTrashFilePattern(file.location())) {
+      moveToTrash(file.location());
+    } else {
+      fileIO.deleteFile(file);
+    }
   }
 
   @Override
@@ -102,8 +122,22 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
     fileIO.close();
   }
 
+
+  @VisibleForTesting
+  protected boolean matchTrashFilePattern(String path) {
+    return pattern.matcher(path).matches();
+  }
+
   public ArcticFileIO getInternalFileIO() {
     return fileIO;
+  }
+
+  public TableTrashManager getTrashManager() {
+    return trashManager;
+  }
+
+  public String getTrashFilePattern() {
+    return trashFilePattern;
   }
 
   private void moveToTrash(String filePath) {

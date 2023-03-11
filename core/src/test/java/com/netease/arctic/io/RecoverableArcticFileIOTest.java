@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
@@ -46,7 +47,8 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
     ArcticTable arcticTable = getArcticTable();
     trashManager = TableTrashManagers.build(arcticTable.id(), arcticTable.location(),
         arcticTable.properties(), arcticTable.io());
-    recoverableArcticFileIO = new RecoverableArcticFileIO(arcticTable.io(), trashManager);
+    recoverableArcticFileIO =
+        new RecoverableArcticFileIO(arcticTable.io(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
     arcticFileIO = arcticTable.io();
 
     file1 = getArcticTable().location() + "/base/test/test1/test1.parquet";
@@ -133,6 +135,22 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
     recoverableArcticFileIO.deleteFile(recoverableArcticFileIO.newOutputFile(file1));
     Assert.assertFalse(arcticFileIO.exists(file1));
     Assert.assertTrue(trashManager.fileExistInTrash(file1));
+  }
+
+  @Test
+  public void trashFilePattern() {
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file1));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file2));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file3));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
+        "/metadata/version-hint.text"));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
+        "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
+        "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
+
+    Assert.assertFalse(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
+        "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
   }
 
   private void createFile(String path) {

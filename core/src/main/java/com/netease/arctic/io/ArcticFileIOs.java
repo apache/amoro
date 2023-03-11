@@ -33,9 +33,7 @@ public class ArcticFileIOs {
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     if (PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
         TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
-      TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
-          tableProperties, fileIO);
-      return new RecoverableArcticFileIO(fileIO, trashManager);
+      return buildRecoverableArcticFileIO(fileIO, tableIdentifier, tableLocation, tableProperties);
     } else {
       return fileIO;
     }
@@ -43,26 +41,37 @@ public class ArcticFileIOs {
 
   public static ArcticFileIO refreshTableFileIO(TableIdentifier tableIdentifier, ArcticFileIO fileIO,
                                                 String tableLocation, Map<String, String> tableProperties) {
-    Preconditions.checkNotNull(fileIO != null, "file IO should not be null");
+    fileIO = unWrapArcticFileIO(fileIO);
     if (PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
         TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
-      if (fileIO instanceof RecoverableArcticFileIO) {
-        return fileIO;
-      } else {
-        TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
-            tableProperties, fileIO);
-        return new RecoverableArcticFileIO(fileIO, trashManager);
-      }
+      return buildRecoverableArcticFileIO(fileIO, tableIdentifier, tableLocation, tableProperties);
     } else {
-      if (fileIO instanceof RecoverableArcticFileIO) {
-        return ((RecoverableArcticFileIO) fileIO).getInternalFileIO();
-      } else {
-        return fileIO;
-      }
+      return fileIO;
     }
   }
 
   public static ArcticFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
     return new ArcticHadoopFileIO(tableMetaStore);
+  }
+
+  private static ArcticFileIO unWrapArcticFileIO(ArcticFileIO fileIO) {
+    Preconditions.checkNotNull(fileIO, "file IO should not be null");
+    if (fileIO instanceof RecoverableArcticFileIO) {
+      return ((RecoverableArcticFileIO) fileIO).getInternalFileIO();
+    } else {
+      return fileIO;
+    }
+  }
+
+  private static RecoverableArcticFileIO buildRecoverableArcticFileIO(ArcticFileIO fileIO,
+                                                                      TableIdentifier tableIdentifier,
+                                                                      String tableLocation,
+                                                                      Map<String, String> tableProperties) {
+    Preconditions.checkNotNull(fileIO, "file IO should not be null");
+    TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
+        tableProperties, fileIO);
+    String trashFilePattern = PropertyUtil.propertyAsString(tableProperties, TableProperties.TABLE_TRASH_FILE_PATTERN,
+        TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
+    return new RecoverableArcticFileIO(fileIO, trashManager, trashFilePattern);
   }
 }
