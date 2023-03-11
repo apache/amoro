@@ -201,8 +201,8 @@ public class BasicKeyedTable implements KeyedTable {
 
     public BasicInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
+        AmsClient client, Map<String, String> catalogProperties) {
+      super(tableIdentifier, baseIcebergTable, arcticFileIO, client, catalogProperties);
     }
 
     @Override
@@ -215,8 +215,8 @@ public class BasicKeyedTable implements KeyedTable {
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+        AmsClient client, Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
     }
 
     @Override

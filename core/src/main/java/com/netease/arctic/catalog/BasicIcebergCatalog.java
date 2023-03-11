@@ -192,27 +192,13 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   }
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {
-    private final Map<String, String> catalogProperties;
-
-    public BasicIcebergTable(
-        TableIdentifier tableIdentifier,
-        Table icebergTable,
-        ArcticFileIO arcticFileIO) {
-      this(tableIdentifier, icebergTable, arcticFileIO, null);
-    }
 
     public BasicIcebergTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO);
-      this.catalogProperties = catalogProperties;
-    }
-
-    @Override
-    public Map<String, String> properties() {
-      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
     }
 
     @Override

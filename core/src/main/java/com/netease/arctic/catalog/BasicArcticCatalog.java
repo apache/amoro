@@ -195,13 +195,13 @@ public class BasicArcticCatalog implements ArcticCatalog {
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
+        fileIO, client, catalogMeta.getCatalogProperties());
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
-        fileIO, client);
+        fileIO, client, catalogMeta.getCatalogProperties());
     return new BasicKeyedTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
   }
@@ -225,7 +225,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
     ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, tableMeta.getProperties(),
         tableMetaStore);
     return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
+        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, catalogMeta.getCatalogProperties());
   }
 
   protected String checkLocation(TableMeta meta, String locationKey) {
@@ -614,7 +614,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
       BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
               tableMetaStore.getConfiguration()),
-          fileIO, client);
+          fileIO, client, catalogMeta.getCatalogProperties());
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
@@ -626,7 +626,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
       ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
               tableMetaStore.getConfiguration()),
-          fileIO, client);
+          fileIO, client, catalogMeta.getCatalogProperties());
       return new BasicKeyedTable(meta, tableLocation,
           primaryKeySpec, client, baseTable, changeTable);
     }
@@ -647,7 +647,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, meta.getProperties(),
           tableMetaStore);
       return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
-          tableMetaStore.getConfiguration()), fileIO, client);
+          tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
     }
 
     private String getTableLocationForCreate() {

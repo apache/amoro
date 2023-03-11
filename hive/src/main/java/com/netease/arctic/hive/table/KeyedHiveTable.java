@@ -37,6 +37,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.Map;
+
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
@@ -98,8 +100,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+        AmsClient client, Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
     }
 
     @Override
@@ -122,8 +124,10 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
                                  ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
-                                 HMSClientPool hiveClient, boolean syncHiveChange) {
-      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, syncHiveChange);
+                                 HMSClientPool hiveClient, Map<String, String> catalogProperties,
+                                 boolean syncHiveChange) {
+      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
+          syncHiveChange);
     }
 
     @Override

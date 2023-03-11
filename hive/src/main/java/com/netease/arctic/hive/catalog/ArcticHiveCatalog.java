@@ -169,13 +169,13 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, tableLocation, client, hiveClientPool, false);
+        fileIO, tableLocation, client, hiveClientPool, catalogMeta.getCatalogProperties(), false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
-        fileIO, client);
+        fileIO, client, catalogMeta.getCatalogProperties());
     return new KeyedHiveTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, hiveClientPool, baseTable, changeTable);
   }
@@ -189,7 +189,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     ArcticFileIO arcticFileIO =
         ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(), tableMetaStore);
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
+        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool,
+        catalogMeta.getCatalogProperties());
   }
 
   public HMSClientPool getHMSClient() {
@@ -303,7 +304,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
               tableMetaStore.getConfiguration()),
-          fileIO, tableLocation, client, hiveClientPool, false);
+          fileIO, tableLocation, client, hiveClientPool, catalogMeta.getCatalogProperties(), false);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
@@ -318,7 +319,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
               tableMetaStore.getConfiguration()),
-          fileIO, client);
+          fileIO, client, catalogMeta.getCatalogProperties());
 
       Map<String, String> metaProperties = meta.properties;
       try {
@@ -391,7 +392,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
           tableMetaStore);
       return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
-          tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool);
+          tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
+          catalogMeta.getCatalogProperties());
     }
 
     private org.apache.hadoop.hive.metastore.api.Table newHiveTable(TableMeta meta) {
