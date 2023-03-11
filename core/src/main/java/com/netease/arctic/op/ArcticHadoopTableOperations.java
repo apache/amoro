@@ -27,9 +27,9 @@ import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.util.LockManagers;
 
-public class ArcticHadoopTableOperations extends HadoopTableOperations {
+public class ArcticHadoopTableOperations extends HadoopTableOperations implements SupportArcticFileIO {
 
-  private final ArcticFileIO arcticFileIO;
+  private ArcticFileIO arcticFileIO;
 
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
     super(location, fileIO, conf, LockManagers.defaultLockManager());
@@ -62,5 +62,15 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
       }
       return null;
     });
+  }
+
+  @Override
+  public ArcticFileIO io() {
+    return this.arcticFileIO;
+  }
+
+  @Override
+  public void setFileIo(ArcticFileIO fileIO) {
+    this.arcticFileIO = fileIO;
   }
 }

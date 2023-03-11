@@ -167,7 +167,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    UnkeyedHiveTable baseTable = new UnkeyedHiveTable(tableIdentifier,
+    UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, tableLocation, client, hiveClientPool, false);
 
@@ -300,14 +300,14 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
           throw new IllegalStateException("create base table failed", e);
         }
       });
-      UnkeyedHiveTable baseTable = new UnkeyedHiveTable(tableIdentifier,
+      UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
               tableMetaStore.getConfiguration()),
           fileIO, tableLocation, client, hiveClientPool, false);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          Table createTable =  tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
+          Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
           createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
           return createTable;

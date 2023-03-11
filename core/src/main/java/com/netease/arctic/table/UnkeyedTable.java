@@ -42,6 +42,8 @@ public interface UnkeyedTable extends ArcticTable, Table {
    * @return a new {@link UpdatePartitionProperties}
    */
   UpdatePartitionProperties updatePartitionProperties(Transaction transaction);
+  
+  void refreshFileIO(String tableLocation, Map<String, String> properties);
 
   @Override
   default String name() {

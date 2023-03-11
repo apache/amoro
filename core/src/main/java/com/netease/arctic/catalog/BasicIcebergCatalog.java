@@ -191,7 +191,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
         tableIdentifier.getTableName());
   }
 
-  public class BasicIcebergTable extends BasicUnkeyedTable {
+  public static class BasicIcebergTable extends BasicUnkeyedTable {
     private final Map<String, String> catalogProperties;
 
     public BasicIcebergTable(
@@ -213,6 +213,11 @@ public class BasicIcebergCatalog implements ArcticCatalog {
     @Override
     public Map<String, String> properties() {
       return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+    }
+
+    @Override
+    protected boolean autoRefreshFileIO() {
+      return false;
     }
   }
 }

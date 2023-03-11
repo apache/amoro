@@ -102,6 +102,10 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
     fileIO.close();
   }
 
+  public ArcticFileIO getInternalFileIO() {
+    return fileIO;
+  }
+
   private void moveToTrash(String filePath) {
     trashManager.moveFileToTrash(filePath);
     LOG.debug("Move file:{} to table trash", filePath);

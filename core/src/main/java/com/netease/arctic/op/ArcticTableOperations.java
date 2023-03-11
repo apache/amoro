@@ -21,16 +21,15 @@ package com.netease.arctic.op;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
 
 /**
  * A wrapper class around {@link TableOperations}. Add authentication for all methods.
  */
-public class ArcticTableOperations implements TableOperations {
+public class ArcticTableOperations implements TableOperations, SupportArcticFileIO {
 
   private final TableOperations ops;
-  private final ArcticFileIO arcticFileIO;
+  private ArcticFileIO arcticFileIO;
 
   public ArcticTableOperations(TableOperations ops, ArcticFileIO arcticFileIO) {
     this.ops = ops;
@@ -56,8 +55,13 @@ public class ArcticTableOperations implements TableOperations {
   }
 
   @Override
-  public FileIO io() {
+  public ArcticFileIO io() {
     return arcticFileIO;
+  }
+
+  @Override
+  public void setFileIo(ArcticFileIO fileIO) {
+    this.arcticFileIO = fileIO;
   }
 
   @Override

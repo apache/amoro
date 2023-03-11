@@ -27,6 +27,7 @@ import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -109,6 +110,25 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     @Override
     public ChangeTableIncrementalScan newChangeScan() {
       return new ChangeTableBasicIncrementalScan(this);
+    }
+
+    @Override
+    protected boolean autoRefreshFileIO() {
+      return false;
+    }
+  }
+
+  public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
+
+    public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
+                                 ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
+                                 HMSClientPool hiveClient, boolean syncHiveChange) {
+      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, syncHiveChange);
+    }
+
+    @Override
+    protected boolean autoRefreshFileIO() {
+      return false;
     }
   }
 }

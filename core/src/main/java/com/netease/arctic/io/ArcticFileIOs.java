@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
@@ -37,6 +38,27 @@ public class ArcticFileIOs {
       return new RecoverableArcticFileIO(fileIO, trashManager);
     } else {
       return fileIO;
+    }
+  }
+
+  public static ArcticFileIO refreshTableFileIO(TableIdentifier tableIdentifier, ArcticFileIO fileIO,
+                                                String tableLocation, Map<String, String> tableProperties) {
+    Preconditions.checkNotNull(fileIO != null, "file IO should not be null");
+    if (PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
+        TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
+      if (fileIO instanceof RecoverableArcticFileIO) {
+        return fileIO;
+      } else {
+        TableTrashManager trashManager = TableTrashManagers.build(tableIdentifier, tableLocation,
+            tableProperties, fileIO);
+        return new RecoverableArcticFileIO(fileIO, trashManager);
+      }
+    } else {
+      if (fileIO instanceof RecoverableArcticFileIO) {
+        return ((RecoverableArcticFileIO) fileIO).getInternalFileIO();
+      } else {
+        return fileIO;
+      }
     }
   }
 

@@ -20,7 +20,9 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
+import com.netease.arctic.op.SupportArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.ArcticAppendFiles;
@@ -97,6 +99,26 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public void refresh() {
     icebergTable.refresh();
+    if (autoRefreshFileIO()) {
+      refreshFileIO(location(), properties());
+    }
+  }
+
+  protected boolean autoRefreshFileIO() {
+    return true;
+  }
+
+  @Override
+  public void refreshFileIO(String tableLocation, Map<String, String> properties) {
+    if (icebergTable instanceof HasTableOperations) {
+      TableOperations operations = ((HasTableOperations) icebergTable).operations();
+      if (operations instanceof SupportArcticFileIO) {
+        SupportArcticFileIO supportArcticFileIO = (SupportArcticFileIO) operations;
+        ArcticFileIO refreshedArcticFileIO =
+            ArcticFileIOs.refreshTableFileIO(tableIdentifier, supportArcticFileIO.io(), tableLocation, properties);
+        supportArcticFileIO.setFileIo(refreshedArcticFileIO);
+      }
+    }
   }
 
   @Override
