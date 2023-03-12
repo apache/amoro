@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden;
 
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.flink.api.common.functions.AggregateFunction;
@@ -83,7 +83,7 @@ public class GlobalFlipCommitter {
     private final LogMsgFactory<RowData> factory;
     private final Properties producerConfig;
     private final String topic;
-    private final PartitionPrimaryKeyHelper helper;
+    private final ShuffleHelper helper;
     private transient LogMsgFactory.Producer<RowData> producer;
 
     public FlipCommitFunction(
@@ -93,7 +93,7 @@ public class GlobalFlipCommitter {
         LogMsgFactory<RowData> factory,
         Properties producerConfig,
         String topic,
-        PartitionPrimaryKeyHelper helper) {
+        ShuffleHelper helper) {
       this.numberOfTasks = numberOfTasks;
       this.factory = checkNotNull(factory);
       this.logDataJsonSerialization = new LogDataJsonSerialization<>(

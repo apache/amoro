@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
@@ -52,7 +52,7 @@ public class AutomaticLogWriter extends ArcticLogWriter {
       LogMsgFactory<RowData> factory,
       LogData.FieldGetterFactory<RowData> fieldGetterFactory,
       byte[] jobId,
-      PartitionPrimaryKeyHelper helper,
+      ShuffleHelper helper,
       ArcticTableLoader tableLoader,
       Duration writeLogstoreWatermarkGap) {
     this.arcticLogWriter =

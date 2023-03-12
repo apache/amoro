@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden;
 
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.table.data.RowData;
@@ -37,9 +37,9 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class ArcticLogPartitioner<T> implements Serializable {
   private static final long serialVersionUID = 9184708069203854226L;
   private final AtomicInteger counter = new AtomicInteger(0);
-  private PartitionPrimaryKeyHelper helper;
+  private ShuffleHelper helper;
 
-  public ArcticLogPartitioner(PartitionPrimaryKeyHelper shuffleHelper) {
+  public ArcticLogPartitioner(ShuffleHelper shuffleHelper) {
     this.helper = shuffleHelper;
   }
 

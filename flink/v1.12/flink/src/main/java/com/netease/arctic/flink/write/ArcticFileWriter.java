@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -68,7 +68,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-  private final PartitionPrimaryKeyHelper primaryKeyHelper;
+  private final ShuffleHelper primaryKeyHelper;
 
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
@@ -94,7 +94,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       ArcticTableLoader tableLoader,
       boolean upsert,
       boolean submitEmptySnapshot,
-      PartitionPrimaryKeyHelper primaryKeyHelper) {
+      ShuffleHelper primaryKeyHelper) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;

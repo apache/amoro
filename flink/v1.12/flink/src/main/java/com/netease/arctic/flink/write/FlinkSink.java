@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.metric.MetricsGenerator;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.RoundRobinShuffleRulePolicy;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
@@ -177,7 +177,7 @@ public class FlinkSink {
 
       DistributionHashMode distributionMode = getDistributionHashMode();
       LOG.info("take effect distribute mode: {}", distributionMode);
-      PartitionPrimaryKeyHelper helper = PartitionPrimaryKeyHelper.build(table, writeSchema, flinkSchemaRowType);
+      ShuffleHelper helper = ShuffleHelper.build(table, writeSchema, flinkSchemaRowType);
 
       ShuffleRulePolicy<RowData, ShuffleKey>
           shufflePolicy = buildShuffleRulePolicy(helper, writeOperatorParallelism, distributionMode, overwrite, table);
@@ -256,7 +256,7 @@ public class FlinkSink {
 
     @Nullable
     public static ShuffleRulePolicy<RowData, ShuffleKey> buildShuffleRulePolicy(
-        PartitionPrimaryKeyHelper helper,
+        ShuffleHelper helper,
         int writeOperatorParallelism,
         DistributionHashMode distributionHashMode,
         boolean overwrite,
@@ -335,7 +335,7 @@ public class FlinkSink {
         tableLoader,
         upsert,
         submitEmptySnapshot,
-        PartitionPrimaryKeyHelper.build(arcticTable, writeSchema, flinkSchema));
+        ShuffleHelper.build(arcticTable, writeSchema, flinkSchema));
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(ArcticTable arcticTable,

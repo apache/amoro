@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write.hidden;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.write.ArcticLogWriter;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
@@ -65,7 +65,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   private final Schema schema;
   private final Properties producerConfig;
   private final String topic;
-  private final PartitionPrimaryKeyHelper helper;
+  private final ShuffleHelper helper;
   protected final LogMsgFactory<RowData> factory;
   protected LogMsgFactory.Producer<RowData> producer;
 
@@ -90,7 +90,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
       LogMsgFactory<RowData> factory,
       LogData.FieldGetterFactory<RowData> fieldGetterFactory,
       byte[] jobId,
-      PartitionPrimaryKeyHelper helper) {
+      ShuffleHelper helper) {
     this.schema = schema;
     this.producerConfig = checkNotNull(producerConfig);
     this.topic = checkNotNull(topic);

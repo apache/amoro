@@ -21,7 +21,7 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
@@ -301,7 +301,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
             new HiddenKafkaFactory<>(),
             LogRecordV1.fieldGetterFactory,
             jobId,
-            PartitionPrimaryKeyHelper.EMPTY,
+            ShuffleHelper.EMPTY,
             tableLoader,
             writeLogstoreWatermarkGap);
 
