@@ -186,7 +186,7 @@ public class TableProperties {
   public static final String TABLE_TRASH_CUSTOM_ROOT_LOCATION = "table-trash.custom-root-location";
 
   public static final String TABLE_TRASH_KEEP_DAYS = "table-trash.keep.days";
-  public static final int TABLE_TRASH_KEEP_DAYS_DEFAULT = 2; // 2 Days
+  public static final int TABLE_TRASH_KEEP_DAYS_DEFAULT = 7; // 7 Days
 
   public static final String TABLE_TRASH_FILE_PATTERN = "table-trash.file-pattern";
   public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT = ".+\\.parquet" +

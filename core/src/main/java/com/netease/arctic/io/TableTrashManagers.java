@@ -31,24 +31,24 @@ public class TableTrashManagers {
   /**
    * Build {@link TableTrashManager} from {@link ArcticTable}.
    *
-   * @param table - ArcticTable
+   * @param table - {@link ArcticTable}
    * @return TableTrashManager
    */
-  public static TableTrashManager of(ArcticTable table) {
+  public static TableTrashManager build(ArcticTable table) {
     return build(table.id(), table.location(), table.properties(), table.io());
   }
 
   /**
    * Build {@link TableTrashManager}.
    *
-   * @param tableIdentifier  - table identifier
-   * @param tableLocation    - table root location
-   * @param tableProperties  - table properties
-   * @param fileIO           - table file io
-   * @return                 - built table trash manager
+   * @param tableIdentifier - table identifier
+   * @param tableLocation   - table root location
+   * @param tableProperties - table properties
+   * @param fileIO          - table file io
+   * @return - built table trash manager
    */
   public static TableTrashManager build(TableIdentifier tableIdentifier, String tableLocation,
-      Map<String, String> tableProperties, ArcticFileIO fileIO) {
+                                        Map<String, String> tableProperties, ArcticFileIO fileIO) {
     String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
     return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);

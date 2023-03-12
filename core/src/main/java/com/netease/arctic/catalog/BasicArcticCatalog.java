@@ -49,7 +49,6 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;

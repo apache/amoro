@@ -47,7 +47,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteAndRestore() {
-    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation =
         TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
 
@@ -74,7 +74,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteDirectory() {
-    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation =
         TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
     String relativeFilePath = "base/test/test1.parquet";
@@ -95,7 +95,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testRestoreDirectory() {
-    TableTrashManager tableTrashManager = TableTrashManagers.of(getArcticTable());
+    TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation =
         TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
     String relativeFilePath = "base/test/test1.parquet";
@@ -126,7 +126,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testCleanFiles() {
-    BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.of(getArcticTable()));
+    BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.build(getArcticTable()));
     String trashLocation =
         TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
     String file1 = getArcticTable().location() + File.separator + "base/test/test1.parquet";
