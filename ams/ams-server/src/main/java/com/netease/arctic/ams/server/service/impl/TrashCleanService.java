@@ -76,21 +76,23 @@ public class TrashCleanService {
         LOG.info("{} start clean trash", tableIdentifier);
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
-        ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
-
-        int keepDays = PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.TABLE_TRASH_KEEP_DAYS,
-            TableProperties.TABLE_TRASH_KEEP_DAYS_DEFAULT);
-        LocalDate expirationDate = LocalDate.now().minusDays(keepDays);
-
-        TableTrashManager tableTrashManager = TableTrashManagers.build(arcticTable);
-
-        LOG.info("{} clean trash, keepDays={}", tableIdentifier, keepDays);
-        tableTrashManager.cleanFiles(expirationDate);
-        LOG.info("{} clean trash finished", tableIdentifier);
+        clean(catalog.loadTable(tableIdentifier));
       } catch (Throwable t) {
         LOG.error("{} clean trash unexpected error", tableIdentifier, t);
       }
     }
+  }
+
+  static void clean(ArcticTable arcticTable) {
+    int keepDays = PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.TABLE_TRASH_KEEP_DAYS,
+        TableProperties.TABLE_TRASH_KEEP_DAYS_DEFAULT);
+    LocalDate expirationDate = LocalDate.now().minusDays(keepDays);
+
+    TableTrashManager tableTrashManager = TableTrashManagers.build(arcticTable);
+
+    LOG.info("{} clean trash, keepDays={}", arcticTable.id(), keepDays);
+    tableTrashManager.cleanFiles(expirationDate);
+    LOG.info("{} clean trash finished", arcticTable.id());
   }
 }
 

@@ -128,11 +128,14 @@ class BasicTableTrashManager implements TableTrashManager {
 
   @Override
   public void cleanFiles(LocalDate expirationDate) {
+    LOG.info("{} start clean files with expiration date {}", tableIdentifier, expirationDate);
+    if (!arcticFileIO.exists(this.trashLocation)) {
+      return;
+    }
     List<FileStatus> datePaths = arcticFileIO.list(this.trashLocation);
     if (datePaths.isEmpty()) {
       return;
     }
-    LOG.info("{} start clean files with expiration date {}", tableIdentifier, expirationDate);
     for (FileStatus datePath : datePaths) {
       String dateName = TableFileUtils.getFileName(datePath.getPath().toString());
       LocalDate localDate;
