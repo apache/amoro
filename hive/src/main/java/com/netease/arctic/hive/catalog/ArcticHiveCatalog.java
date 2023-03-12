@@ -164,7 +164,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    Map<String, String> mergedProperties =
+        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
         tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
@@ -186,8 +188,11 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    ArcticFileIO arcticFileIO =
-        ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(), tableMetaStore);
+
+    Map<String, String> mergedProperties =
+        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
+    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
+        tableMetaStore);
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool,
         catalogMeta.getCatalogProperties());

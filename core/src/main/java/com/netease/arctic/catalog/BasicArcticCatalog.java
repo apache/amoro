@@ -49,6 +49,7 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
@@ -190,7 +191,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    Map<String, String> mergedProperties =
+        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
         tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
@@ -222,7 +225,10 @@ public class BasicArcticCatalog implements ArcticCatalog {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, tableMeta.getProperties(),
+
+    Map<String, String> mergedProperties =
+        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
+    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, mergedProperties,
         tableMetaStore);
     return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, catalogMeta.getCatalogProperties());
