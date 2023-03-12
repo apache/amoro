@@ -179,12 +179,7 @@ public class OptimizeQueueService extends IJDBCService {
       }
     }
     queue.setName(name);
-    List<Container> containers = getContainers();
-    boolean checkContainer =
-        containers.stream()
-            .anyMatch(e -> e.getName()
-                .equalsIgnoreCase(container));
-    if (!checkContainer) {
+    if (getContainer(container) == null) {
       throw new NoSuchObjectException(
           "can not find such container config named " + container);
     }
@@ -393,6 +388,13 @@ public class OptimizeQueueService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
       return containerMetadataMapper.getContainers();
+    }
+  }
+
+  public Container getContainer(String container){
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
+      return containerMetadataMapper.getContainer(container);
     }
   }
 
