@@ -60,11 +60,6 @@ public class DefaultCallFactory implements CallFactory{
   }
 
   @Override
-  public RefreshCall generateRefreshCall(String tablePath) {
-    return new RefreshCall(amsClient, tablePath);
-  }
-
-  @Override
   public RepairCall generateRepairCall(
       String tablePath, RepairWay way, Long option) {
     return new RepairCall(tablePath, way, option, catalogManager);
@@ -78,5 +73,9 @@ public class DefaultCallFactory implements CallFactory{
   @Override
   public UseCall generateUseCall(String namespace) {
     return new UseCall(namespace, catalogManager);
+  }
+
+  public TableCall generateTableCall(String tablePath, TableCall.TableOperation tableOperation) {
+    return new TableCall(amsClient, catalogManager, tablePath, tableOperation);
   }
 }

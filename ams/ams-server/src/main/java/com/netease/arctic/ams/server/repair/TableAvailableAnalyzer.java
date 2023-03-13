@@ -38,10 +38,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.ValidationException;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 
 import java.util.ArrayList;
@@ -79,7 +83,7 @@ public class TableAvailableAnalyzer {
   }
 
   public TableAvailableResult check() {
-    ArcticTable arcticTable = null;
+    ArcticTable arcticTable;
     try {
       arcticTable = arcticCatalog.loadTable(identifier);
     }catch (NoSuchTableException e) {
@@ -97,7 +101,7 @@ public class TableAvailableAnalyzer {
         throw e;
       }
 
-      TableAvailableResult tableAvailableResult = TableAvailableResult.metadataLose(identifier, version);
+      //Metadata has lost
 
       ArcticHadoopTableOperations changeTableOperations = arcticCatalog.getChangeTableOperations(identifier);
 
@@ -112,14 +116,11 @@ public class TableAvailableAnalyzer {
         }
 
         if (changeIsError) {
-          tableAvailableResult.setLocationKind(ChangeLocationKind.INSTANT);
-          tableAvailableResult.setTableOperations(changeTableOperations);
-          return tableAvailableResult;
+          return TableAvailableResult.metadataLose(identifier, version, changeTableOperations, ChangeLocationKind.INSTANT);
         }
       }
-      tableAvailableResult.setTableOperations(arcticCatalog.getBaseTableOperations(identifier));
-      tableAvailableResult.setLocationKind(BaseLocationKind.INSTANT);
-      return tableAvailableResult;
+      return TableAvailableResult.metadataLose(identifier, version, arcticCatalog.getBaseTableOperations(identifier),
+          BaseLocationKind.INSTANT);
     }
 
     if (arcticTable.isKeyedTable()) {
@@ -127,12 +128,10 @@ public class TableAvailableAnalyzer {
       TableAvailableResult changeResult = check(keyedTable.changeTable());
       if(!changeResult.isOk()) {
         changeResult.setLocationKind(ChangeLocationKind.INSTANT);
-        changeResult.setArcticTable(keyedTable.changeTable());
         return changeResult;
       }
       TableAvailableResult baseResult = check(keyedTable.baseTable());
       baseResult.setLocationKind(BaseLocationKind.INSTANT);
-      baseResult.setArcticTable(keyedTable.baseTable());
       return baseResult;
     } else {
       TableAvailableResult result = check(arcticTable.asUnkeyedTable());
@@ -142,6 +141,9 @@ public class TableAvailableAnalyzer {
 
   private TableAvailableResult check(UnkeyedTable table) {
     Snapshot currentSnapshot = table.currentSnapshot();
+    if (currentSnapshot == null) {
+      return TableAvailableResult.available(identifier);
+    }
     TableAvailableResult tableAvailableResult = checkSnapshot(table, currentSnapshot);
     if (tableAvailableResult.isOk()) {
       return tableAvailableResult;
@@ -164,7 +166,7 @@ public class TableAvailableAnalyzer {
 
     //check manifestList
     if (!exists(currentSnapshot.manifestListLocation())) {
-      return TableAvailableResult.manifestListLose(identifier, currentSnapshot);
+      return TableAvailableResult.manifestListLose(identifier, currentSnapshot, table);
     }
 
     //check manifest
@@ -173,24 +175,26 @@ public class TableAvailableAnalyzer {
     List<ManifestFile> loseManifests =
         manifestFiles.stream().filter(s -> !exists(s.path())).collect(Collectors.toList());
     if (loseManifests.size() != 0) {
-      return TableAvailableResult.manifestLost(identifier, loseManifests);
+      return TableAvailableResult.manifestLost(identifier, loseManifests, table);
     }
 
     //check file
-    TableEntriesScan tableEntriesScan = TableEntriesScan.builder(table)
-        .withAliveEntry(true)
-        .useSnapshot(currentSnapshot.snapshotId())
-        .build();
-    CloseableIterator<IcebergFileEntry> iterator = tableEntriesScan.entries().iterator();
+    CloseableIterator<FileScanTask> iterator =
+        table.newScan().useSnapshot(currentSnapshot.snapshotId()).planFiles().iterator();
     List<ContentFile> lostFile = new ArrayList<>();
     while (iterator.hasNext()) {
-      IcebergFileEntry icebergFileEntry = iterator.next();
-      if (!io.exists(icebergFileEntry.getFile().path().toString())) {
-        lostFile.add(icebergFileEntry.getFile());
+      FileScanTask fileScanTask = iterator.next();
+      if (!exists(fileScanTask.file().path().toString())) {
+        lostFile.add(fileScanTask.file());
+      }
+      for (DeleteFile deleteFile: fileScanTask.deletes()) {
+        if (!exists(deleteFile.path().toString())) {
+          lostFile.add(deleteFile);
+        }
       }
     }
     if (lostFile.size() != 0) {
-      return TableAvailableResult.filesLose(identifier, lostFile);
+      return TableAvailableResult.filesLose(identifier, lostFile, table);
     }
 
     //table is available

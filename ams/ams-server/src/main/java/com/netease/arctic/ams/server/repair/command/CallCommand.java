@@ -25,7 +25,11 @@ public interface CallCommand {
 
   String call(Context context)  throws Exception;
 
-  default TableIdentifier fullTableName(Context context, String tablePath) throws FullTableNameException {
+  default String OK() {
+    return "OK";
+  }
+
+  default TableIdentifier fullTableName(Context context, String tablePath) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
     if (tableIdentifier.getCatalog() == null) {
       if (context.getCatalog() == null) {
@@ -44,7 +48,7 @@ public interface CallCommand {
     return tableIdentifier;
   }
 
-  class FullTableNameException extends Exception {
+  class FullTableNameException extends RuntimeException {
     public FullTableNameException(String message) {
       super(message);
     }

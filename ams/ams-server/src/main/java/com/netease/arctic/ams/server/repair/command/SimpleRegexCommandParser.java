@@ -19,11 +19,15 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.RepairWay;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 public class SimpleRegexCommandParser implements CommandParser {
 
@@ -35,6 +39,7 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String REFRESH = "REFRESH";
   private static final String FILE_CACHE = "FILE_CACHE";
   private static final String SHOW = "SHOW";
+  private static final String TABLE = "TABLE";
   private static final String ANALYZE_EXCEPTION_MESSAGE =
       "Please check if your command is correct! Pattern: ANALYZE ${table_name}";
   private static final String REPAIR_EXCEPTION_MESSAGE =
@@ -47,9 +52,9 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String OPTIMIZE_EXCEPTION_MESSAGE =
       "Please check if your command is correct! " +
           "Pattern: OPTIMIZE [ STOP | START ] ${table_name}";
-  private static final String REFRESH_EXCEPTION_MESSAGE =
+  private static final String TABLE_EXCEPTION_MESSAGE =
       "Please check if your command is correct! " +
-          "Pattern: REFRESH FILE_CACHE ${table_name}";
+          "Pattern: TABLE ${table_name} REFRESH";
   private static final String SHOW_EXCEPTION_MESSAGE =
       "Please check if your command is correct! " +
           "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]";
@@ -111,11 +116,12 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException(OPTIMIZE_EXCEPTION_MESSAGE);
         }
         return callFactory.generateOptimizeCall(optimizeAction, commandSplit[2]);
-      case REFRESH:
-        if (commandSplit.length == 3 && StringUtils.equalsIgnoreCase(commandSplit[1], FILE_CACHE)) {
-          return callFactory.generateRefreshCall(commandSplit[2]);
+      case TABLE:
+        if (commandSplit.length == 3) {
+          TableCall.TableOperation tableOperation = TableCall.TableOperation.valueOf(commandSplit[2]);
+          return callFactory.generateTableCall(commandSplit[1], tableOperation);
         } else {
-          throw new IllegalCommandException(REFRESH_EXCEPTION_MESSAGE);
+          throw new IllegalCommandException(TABLE_EXCEPTION_MESSAGE);
         }
       case SHOW:
         if (commandSplit.length != 2) {
@@ -134,7 +140,8 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public String[] keywords() {
-    String[] keywordsUpper = {
+    List<String> keywordUpper = new ArrayList<>();
+    keywordUpper.addAll(Arrays.asList(
         ANALYZE,
         REPAIR,
         THROUGH,
@@ -143,19 +150,16 @@ public class SimpleRegexCommandParser implements CommandParser {
         REFRESH,
         FILE_CACHE,
         SHOW,
-        OptimizeCall.Action.START.name(),
-        OptimizeCall.Action.STOP.name(),
-        RepairWay.FIND_BACK.name(),
-        RepairWay.SYNC_METADATA.name(),
-        RepairWay.ROLLBACK.name(),
-        RepairWay.DROP_TABLE.name(),
-        ShowCall.Namespaces.CATALOGS.name(),
-        ShowCall.Namespaces.DATABASES.name(),
-        ShowCall.Namespaces.TABLES.name()
-    };
-    Object[] keywordsLower = Arrays.stream(keywordsUpper).map(
-        keyword -> keyword.toLowerCase()).collect(Collectors.toList()).toArray();
+        TABLE));
 
-    return (String[]) ArrayUtils.addAll(keywordsUpper, keywordsLower);
+    keywordUpper.addAll(Arrays.stream(OptimizeCall.Action.values()).map(Enum::name).collect(Collectors.toList()));
+    keywordUpper.addAll(Arrays.stream(RepairWay.values()).map(Enum::name).collect(Collectors.toList()));
+    keywordUpper.addAll(Arrays.stream(ShowCall.Namespaces.values()).map(Enum::name).collect(Collectors.toList()));
+    keywordUpper.addAll(Arrays.stream(TableCall.TableOperation.values()).map(Enum::name).collect(Collectors.toList()));
+
+    List<String> all =
+        keywordUpper.stream().flatMap(s -> Stream.of(s, s.toLowerCase())).collect(Collectors.toList());
+
+    return all.toArray(new String[0]);
   }
 }

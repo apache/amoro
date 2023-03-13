@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,21 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair.command;
+package com.netease.arctic.ams.server.repair;
 
-import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.server.repair.CallCommandTestBase;
-import com.netease.arctic.ams.server.repair.Context;
-import org.apache.thrift.TException;
-import org.junit.Assert;
+import java.io.IOException;
 import org.junit.Test;
 
-public class TestRefreshCall extends CallCommandTestBase {
-
+public class TestRepairMain {
 
   @Test
-  public void test() throws TException, CallCommand.FullTableNameException {
-    Assert.assertEquals("OK",
-        callFactory.generateRefreshCall(TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context()));
+  public void start() throws IOException, InterruptedException {
+    RepairConfig repairConfig = new RepairConfig("thrift://10.196.98.26:18312", "mix_iceberg_catalog_test", 10, 1);
+    RepairMain.bootstrap(repairConfig);
+    Thread.sleep(1000);
   }
 }

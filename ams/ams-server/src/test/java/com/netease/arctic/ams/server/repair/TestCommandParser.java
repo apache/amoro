@@ -5,10 +5,10 @@ import com.netease.arctic.ams.server.repair.command.AnalyzeCall;
 import com.netease.arctic.ams.server.repair.command.HelpCall;
 import com.netease.arctic.ams.server.repair.command.IllegalCommandException;
 import com.netease.arctic.ams.server.repair.command.OptimizeCall;
-import com.netease.arctic.ams.server.repair.command.RefreshCall;
 import com.netease.arctic.ams.server.repair.command.RepairCall;
 import com.netease.arctic.ams.server.repair.command.ShowCall;
 import com.netease.arctic.ams.server.repair.command.SimpleRegexCommandParser;
+import com.netease.arctic.ams.server.repair.command.TableCall;
 import com.netease.arctic.ams.server.repair.command.UseCall;
 import org.junit.Assert;
 import org.junit.Test;
@@ -81,13 +81,9 @@ public class TestCommandParser extends CallCommandTestBase {
     Assert.assertThrows(IllegalCommandException.class,
         () -> simpleRegexCommandParser.parse("OPTIMIZE stock"));
 
-    //RefreshCall test
-    Assert.assertEquals(RefreshCall.class,
-        simpleRegexCommandParser.parse("REFRESH FILE_CACHE order_line").getClass());
-    Assert.assertEquals(RefreshCall.class,
-        simpleRegexCommandParser.parse("refresh  file_cache order_line").getClass());
-    Assert.assertThrows(IllegalCommandException.class,
-        () -> simpleRegexCommandParser.parse("refresh order_line"));
+    //TableCall test
+    Assert.assertEquals(TableCall.class,
+        simpleRegexCommandParser.parse("TABLE order_line REFRESH").getClass());
 
     //ShowCall test
     Assert.assertEquals(ShowCall.class,

@@ -144,10 +144,6 @@ public class RepairCall implements CallCommand {
         rollback(tableAvailableResult.getArcticTable(), option);
         return REPAIR_SUCCESS;
       }
-      case DROP_TABLE: {
-        arcticCatalog.dropTable(identifier, false);
-        return REPAIR_SUCCESS;
-      }
     }
     return REPAIR_SUCCESS;
   }
@@ -176,10 +172,6 @@ public class RepairCall implements CallCommand {
       }
       case ROLLBACK_OR_DROP_TABLE: {
         arcticHadoopTableOperations.removeVersionHit();
-        return;
-      }
-      case DROP_TABLE:{
-        arcticCatalog.dropTable(identifier, false);
         return;
       }
     }

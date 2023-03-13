@@ -28,6 +28,7 @@ import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.iceberg.Snapshot;
 
 public class AnalyzeCall implements CallCommand {
@@ -87,17 +88,21 @@ public class AnalyzeCall implements CallCommand {
     root.child(TABLE_NAME).child(availableResult.getIdentifier().getTableName());
     if (availableResult.isOk()) {
       root.child(TABLE_IS_OK);
-      return root.toString();
+      return root.print();
     }
 
     DamageType damageType = availableResult.getDamageType();
     LikeYmlFormat damageTypeFormat = root.child(damageType.name());
-    for (String path: availableResult.lostFiles()) {
-      damageTypeFormat.child(path);
+    if (damageType == DamageType.METADATA_LOSE) {
+      damageTypeFormat.child(availableResult.getMetadataVersion().toString());
+    } else {
+      for (String path : availableResult.lostFiles()) {
+        damageTypeFormat.child(path);
+      }
     }
 
     LikeYmlFormat youCanFormat = root.child(YOU_CAN);
-    Set<RepairWay> repairWays = availableResult.youCan();
+    List<RepairWay> repairWays = availableResult.youCan();
     if (repairWays != null) {
       for (RepairWay repairWay: repairWays) {
         LikeYmlFormat wayFormat = youCanFormat.child(repairWay.name());

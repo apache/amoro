@@ -18,29 +18,20 @@
 
 package com.netease.arctic.ams.server.repair;
 
-import com.google.common.collect.Sets;
-import com.netease.arctic.hive.table.KeyedHiveTable;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
@@ -83,7 +74,10 @@ public class TableAvailableResult {
       Snapshot snapshot,
       List<ManifestFile> manifestFiles,
       List<ContentFile> files,
-      List<Snapshot> rollbackList) {
+      List<Snapshot> rollbackList,
+      UnkeyedTable arcticTable,
+      ArcticHadoopTableOperations tableOperations,
+      LocationKind locationKind) {
     this.identifier = tableIdentifier;
     this.damageType = damageType;
     this.metadataVersion = metadataVersion;
@@ -91,43 +85,49 @@ public class TableAvailableResult {
     this.manifestFiles = manifestFiles;
     this.files = files;
     this.rollbackList = rollbackList;
+    this.arcticTable = arcticTable;
+    this.tableOperations = tableOperations;
+    this.locationKind = locationKind;
 
     if (damageType == DamageType.METADATA_LOSE) {
       checkNotNull(locationKind);
       checkNotNull(tableOperations);
-    } else {
+    } else if (damageType == DamageType.MANIFEST_LIST_LOST
+        || damageType == DamageType.MANIFEST_LOST
+        || damageType == DamageType.FILE_LOSE){
       checkNotNull(arcticTable);
     }
   }
 
   public static TableAvailableResult available(TableIdentifier identifier) {
     return new TableAvailableResult(identifier, DamageType.OK, null,null,
-        null, null, null);
+        null, null, null, null, null, null);
   }
 
   public static TableAvailableResult tableNotFound(TableIdentifier identifier) {
     return new TableAvailableResult(identifier, DamageType.TABLE_NOT_FOUND, null,null,
-        null, null, null);
+        null, null, null, null, null, null);
   }
 
-  public static TableAvailableResult metadataLose(TableIdentifier identifier, Integer metadataVersion) {
+  public static TableAvailableResult metadataLose(TableIdentifier identifier, Integer metadataVersion,
+      ArcticHadoopTableOperations tableOperations, LocationKind locationKind) {
     return new TableAvailableResult(identifier, DamageType.METADATA_LOSE, metadataVersion,null,
-        null, null, null);
+        null, null, null, null, tableOperations, locationKind);
   }
 
-  public static TableAvailableResult manifestListLose(TableIdentifier identifier, Snapshot snapshot) {
+  public static TableAvailableResult manifestListLose(TableIdentifier identifier, Snapshot snapshot, UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.MANIFEST_LIST_LOST, null, snapshot,
-        null, null, null);
+        null, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult manifestLost(TableIdentifier identifier, List<ManifestFile> manifestFiles) {
+  public static TableAvailableResult manifestLost(TableIdentifier identifier, List<ManifestFile> manifestFiles, UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.MANIFEST_LOST, null,null,
-        manifestFiles, null, null);
+        manifestFiles, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult filesLose(TableIdentifier identifier, List<ContentFile> files) {
+  public static TableAvailableResult filesLose(TableIdentifier identifier, List<ContentFile> files, UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.FILE_LOSE, null,
-        null, null, files, null);
+        null, null, files, null, arcticTable, null, null);
   }
 
 
@@ -213,41 +213,37 @@ public class TableAvailableResult {
     return Collections.EMPTY_LIST;
   }
 
-  public Set<RepairWay> youCan() {
+  public List<RepairWay> youCan() {
     if (isOk()) {
-      return Collections.EMPTY_SET;
+      return Collections.EMPTY_LIST;
     }
     if (canFindBack()) {
-      return Sets.newHashSet(RepairWay.FIND_BACK);
+      return Arrays.asList(RepairWay.FIND_BACK);
     }
-    Set<RepairWay> ways = new HashSet<>();
+    List<RepairWay> ways = new ArrayList<>();
     switch (damageType) {
       case METADATA_LOSE: {
         ways.add(RepairWay.ROLLBACK_OR_DROP_TABLE);
-        ways.add(RepairWay.DROP_TABLE);
         break;
       }
       case MANIFEST_LIST_LOST: {
-        ways.add(RepairWay.DROP_TABLE);
         addRollback(ways);
         break;
       }
       case MANIFEST_LOST:
         ways.add(RepairWay.SYNC_METADATA);
-        ways.add(RepairWay.DROP_TABLE);
         addRollback(ways);
         break;
       case FILE_LOSE: {
         ways.add(RepairWay.SYNC_METADATA);
-        ways.add(RepairWay.DROP_TABLE);
         addRollback(ways);
         break;
       }
     }
-    return null;
+    return ways;
   }
 
-  private void addRollback(Set<RepairWay> ways) {
+  private void addRollback(List<RepairWay> ways) {
     if (rollbackList != null && rollbackList.size() != 0) {
       ways.add(RepairWay.ROLLBACK);
     }

@@ -39,5 +39,9 @@ public interface SupportHive {
 
   boolean enableSyncHiveDataToArctic();
 
+  boolean enableSyncHiveSchemaToArctic();
+
   void syncHiveDataToArctic();
+
+  void syncHiveSchemaToArctic();
 }

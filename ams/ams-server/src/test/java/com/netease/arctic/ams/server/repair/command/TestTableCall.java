@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.repair;
+package com.netease.arctic.ams.server.repair.command;
 
-public enum RepairWay {
-  FIND_BACK,
-  SYNC_METADATA,
-  ROLLBACK,
-  ROLLBACK_OR_DROP_TABLE
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.server.repair.CallCommandTestBase;
+import com.netease.arctic.ams.server.repair.Context;
+import org.apache.thrift.TException;
+import org.junit.Assert;
+import org.junit.Test;
+
+public class TestTableCall extends CallCommandTestBase {
+
+
+  @Test
+  public void testRefresh() throws Exception {
+    Assert.assertEquals("OK",
+        callFactory.generateTableCall(TableTestHelpers.TEST_TABLE_ID.toString(), TableCall.TableOperation.REFRESH)
+            .call(new Context()));
+  }
 }

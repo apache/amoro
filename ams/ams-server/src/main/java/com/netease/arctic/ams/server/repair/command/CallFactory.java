@@ -28,11 +28,11 @@ public interface CallFactory {
 
   OptimizeCall generateOptimizeCall(OptimizeCall.Action action, String tablePath);
 
-  RefreshCall generateRefreshCall(String tablePath);
-
   RepairCall generateRepairCall(String tablePath, RepairWay way, Long option);
 
   ShowCall generateShowCall(ShowCall.Namespaces namespaces);
 
   UseCall generateUseCall(String namespace);
+
+  TableCall generateTableCall(String tablePath, TableCall.TableOperation tableOperation);
 }

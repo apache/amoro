@@ -18,15 +18,24 @@
 
 package com.netease.arctic.ams.server.repair;
 
+import com.google.common.collect.Iterables;
 import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.client.OptimizeManagerClient;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.repair.command.CallFactory;
 import com.netease.arctic.ams.server.repair.command.DefaultCallFactory;
 import com.netease.arctic.catalog.CatalogManager;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.TableDataTestBase;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
+import com.netease.arctic.table.ChangeTable;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
 
-public class CallCommandTestBase extends TableTestBase {
+public class CallCommandTestBase extends TableDataTestBase {
 
   private static final Integer maxFindSnapshotNum = 100;
   private static final Integer maxRollbackSnapNum = 100;
@@ -38,8 +47,42 @@ public class CallCommandTestBase extends TableTestBase {
       new PooledAmsClient(TEST_AMS.getServerUrl())
   );
 
-  public CallCommandTestBase() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+  protected String removeFile() {
+    CloseableIterable<FileScanTask> fileScanTasks = getArcticTable().asKeyedTable().changeTable().newScan().planFiles();
+    FileScanTask[] fileScanTasksArray = Iterables.toArray(fileScanTasks, FileScanTask.class);
+    String removeFile = Arrays.stream(fileScanTasksArray).filter(s -> s.file().path().toString().contains("ED"))
+        .findAny().get().file().path().toString();
+    getArcticTable().io().deleteFile(removeFile);
+    return removeFile;
   }
 
+  protected String removeManifest() {
+    String removeManifest =
+        getArcticTable().asKeyedTable().changeTable().currentSnapshot().allManifests().get(0).path();
+    getArcticTable().io().deleteFile(removeManifest);
+    return removeManifest;
+  }
+
+  protected String removeManifestList() {
+    String removeManifestList = getArcticTable().asKeyedTable().changeTable().currentSnapshot().manifestListLocation();
+    getArcticTable().io().deleteFile(removeManifestList);
+    return removeManifestList;
+  }
+
+  protected int removeMetadata() {
+    ChangeTable changeTable = getArcticTable().asKeyedTable().changeTable();
+    ArcticHadoopTableOperations changeTableOperations =
+        getCatalog().getChangeTableOperations(TableTestHelpers.TEST_TABLE_ID);
+    int version = changeTableOperations.findVersion();
+    List<Path> metadataCandidateFiles =
+        changeTableOperations.getMetadataCandidateFiles(version);
+
+    ArcticFileIO arcticFileIO = changeTable.io();
+    for (Path path: metadataCandidateFiles) {
+      if (arcticFileIO.exists(path.toString())) {
+        arcticFileIO.deleteFile(path.toString());
+      }
+    }
+    return version;
+  }
 }

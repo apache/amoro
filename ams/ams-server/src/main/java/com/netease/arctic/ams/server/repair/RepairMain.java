@@ -30,6 +30,10 @@ public class RepairMain {
 
   public static void main(String[] args) throws IOException {
     RepairConfig repairConfig = getRepairConfig(args);
+    bootstrap(repairConfig);
+  }
+
+  public static void bootstrap(RepairConfig repairConfig) throws IOException {
     CommandHandler commandHandler = new CallCommandHandler(repairConfig);
     SimpleShellTerminal simpleShellTerminal = new SimpleShellTerminal(commandHandler);
     simpleShellTerminal.start();
@@ -41,22 +45,25 @@ public class RepairMain {
    * @return
    */
   public static RepairConfig getRepairConfig(String[] args) {
-    if (args == null || args.length < 2) {
+    if (args == null) {
       throw new RuntimeException("Can not find any ams address or config path");
     }
     String thriftUrl = args[0];
     ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(thriftUrl);
     String catalogName = arcticThriftUrl.catalogName();
+    catalogName = StringUtils.isBlank(catalogName) ? null : catalogName;
     String thriftUrlWithoutCatalog =
         arcticThriftUrl.schema() + "://" + arcticThriftUrl.host() + ":" + arcticThriftUrl.port();
 
-    String configPath = args[1];
-    JSONObject yamlConfig = YamlUtils.load(configPath);
-    JSONObject repairProperties = yamlConfig.getJSONObject(ConfigFileProperties.REPAIR_PROPERTIES);
-    Integer maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
-    Integer maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
-
-    catalogName = StringUtils.isBlank(catalogName) ? null : catalogName;
+    Integer maxFindSnapshotNum = null;
+    Integer maxRollbackSnapNum = null;
+    if (args.length == 2) {
+      String configPath = args[1];
+      JSONObject yamlConfig = YamlUtils.load(configPath);
+      JSONObject repairProperties = yamlConfig.getJSONObject(ConfigFileProperties.REPAIR_PROPERTIES);
+      maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
+      maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
+    }
 
     return new RepairConfig(thriftUrlWithoutCatalog , catalogName, maxFindSnapshotNum, maxRollbackSnapNum);
   }
