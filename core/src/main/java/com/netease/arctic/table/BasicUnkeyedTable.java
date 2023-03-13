@@ -76,7 +76,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
-  protected ArcticFileIO arcticFileIO;
+  protected final ArcticFileIO arcticFileIO;
 
   private final AmsClient client;
 
