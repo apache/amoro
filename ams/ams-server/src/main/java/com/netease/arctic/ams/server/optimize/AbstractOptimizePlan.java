@@ -52,6 +52,7 @@ public abstract class AbstractOptimizePlan {
   protected final Set<String> allPartitions = new HashSet<>();
   // partitions to optimizing
   protected final Set<String> affectedPartitions = new HashSet<>();
+  private boolean skippedPartitions = false;
   
   private int collectFileCnt = 0;
 
@@ -91,16 +92,18 @@ public abstract class AbstractOptimizePlan {
 
     for (String partition : partitions) {
       List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
+      if (reachMaxFileCount()) {
+        this.skippedPartitions = true;
+        LOG.info("{} get enough files {} > {}, ignore left partitions", tableId(), this.collectFileCnt,
+            getMaxFileCntLimit());
+        break;
+      }
       if (optimizeTasks.size() > 0) {
         this.affectedPartitions.add(partition);
         LOG.info("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
             getOptimizeType());
         results.addAll(optimizeTasks);
-        if (reachMaxFileCnt(optimizeTasks)) {
-          LOG.info("{} get enough files {} > {}, ignore left partitions", tableId(), this.collectFileCnt,
-              getMaxFileCntLimit());
-          break;
-        }
+        accumulateFileCount(optimizeTasks);
       }
     }
     LOG.info("{} ==== after collect, get {} task of partitions {}/{}", tableId(), getOptimizeType(),
@@ -108,7 +111,7 @@ public abstract class AbstractOptimizePlan {
     return results;
   }
 
-  private boolean reachMaxFileCnt(List<BasicOptimizeTask> newTasks) {
+  private void accumulateFileCount(List<BasicOptimizeTask> newTasks) {
     int newFileCnt = 0;
     for (BasicOptimizeTask optimizeTask : newTasks) {
       int taskFileCnt = optimizeTask.getBaseFileCnt() + optimizeTask.getDeleteFileCnt() +
@@ -116,12 +119,20 @@ public abstract class AbstractOptimizePlan {
       newFileCnt += taskFileCnt;
     }
     this.collectFileCnt += newFileCnt;
+  }
+
+  private boolean reachMaxFileCount() {
     return this.collectFileCnt >= getMaxFileCntLimit();
   }
 
   private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
+    long currentChangeSnapshotId = getCurrentChangeSnapshotId();
+    if (skippedPartitions) {
+      // if not all partitions are optimized, current change snapshot id should set to -1 to trigger next minor optimize
+      currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+    }
     return new OptimizePlanResult(this.affectedPartitions, optimizeTasks, getOptimizeType(), this.currentSnapshotId,
-        getCurrentChangeSnapshotId(), this.planGroup);
+        currentChangeSnapshotId, this.planGroup);
   }
 
   protected List<String> getPartitionsToOptimizeInOrder() {
