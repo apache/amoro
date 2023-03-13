@@ -197,9 +197,9 @@ public class BasicKeyedTable implements KeyedTable {
     return new KeyedPartitionRewrite(this);
   }
 
-  public static class BasicInternalTable extends BasicUnkeyedTable implements BaseTable {
+  public static class BaseInternalTable extends BasicUnkeyedTable implements BaseTable {
 
-    public BasicInternalTable(
+    public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client, catalogProperties);

@@ -195,7 +195,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
     ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
         tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
+    BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client, catalogMeta.getCatalogProperties());
 
@@ -616,7 +616,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
         }
       });
 
-      BaseTable baseTable = new BasicKeyedTable.BasicInternalTable(tableIdentifier,
+      BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
           CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
               tableMetaStore.getConfiguration()),
           fileIO, client, catalogMeta.getCatalogProperties());
