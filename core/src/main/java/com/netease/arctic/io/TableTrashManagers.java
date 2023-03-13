@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 
 import java.util.Map;
@@ -64,17 +65,28 @@ public class TableTrashManagers {
    */
   public static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
                                         String customTrashRootLocation) {
-    String trashLocation;
+    String trashParentLocation;
     if (Strings.isNullOrEmpty(customTrashRootLocation)) {
-      trashLocation = tableLocation + "/" + DEFAULT_TRASH_DIR;
+      trashParentLocation = tableLocation;
     } else {
-      if (!customTrashRootLocation.endsWith("/")) {
-        customTrashRootLocation = customTrashRootLocation + "/";
-      }
-      trashLocation = customTrashRootLocation + tableIdentifier.getDatabase() +
-          "/" + tableIdentifier.getTableName() +
-          "/" + DEFAULT_TRASH_DIR;
+      trashParentLocation = getTrashParentLocation(tableIdentifier, customTrashRootLocation);
     }
-    return trashLocation;
+    return trashParentLocation + "/" + DEFAULT_TRASH_DIR;
+  }
+
+  /**
+   * Get trash parent location, when table are deleted, the trash parent location should be deleted.
+   *
+   * @param tableIdentifier         - table identifier
+   * @param customTrashRootLocation - from the table property table-trash.custom-root-location
+   * @return trash parent location.
+   */
+  public static String getTrashParentLocation(TableIdentifier tableIdentifier, String customTrashRootLocation) {
+    Preconditions.checkNotNull(customTrashRootLocation);
+    if (!customTrashRootLocation.endsWith("/")) {
+      customTrashRootLocation = customTrashRootLocation + "/";
+    }
+    return customTrashRootLocation + tableIdentifier.getCatalog() + "/" + tableIdentifier.getDatabase() + "/" +
+        tableIdentifier.getTableName();
   }
 }

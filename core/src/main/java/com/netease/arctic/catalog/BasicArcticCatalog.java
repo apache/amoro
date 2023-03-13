@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
@@ -286,6 +287,17 @@ public class BasicArcticCatalog implements ArcticCatalog {
       if (fileIO.exists(tableLocation) && purge) {
         LOG.info("try to delete table directory location is " + tableLocation);
         fileIO.deleteDirectoryRecursively(tableLocation);
+      }
+      // delete custom trash location
+      Map<String, String> mergedProperties =
+          CatalogUtil.mergeCatalogPropertiesToTable(meta.properties, catalogMeta.getCatalogProperties());
+      String customTrashLocation = mergedProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+      if (customTrashLocation != null) {
+        TableIdentifier tableId = TableIdentifier.of(meta.getTableIdentifier());
+        String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableId, customTrashLocation);
+        if (fileIO.exists(trashParentLocation)) {
+          fileIO.deleteDirectoryRecursively(trashParentLocation);
+        }
       }
     } catch (Exception e) {
       LOG.warn("drop table directory fail ", e);

@@ -30,7 +30,7 @@ public class TableTrashManagersTest {
     TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
     Assert.assertEquals("/table/location/.trash",
         TableTrashManagers.getTrashLocation(id, "/table/location", null));
-    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/.trash", id.getDatabase(), id.getTableName()),
+    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s/.trash", id.getCatalog(), id.getDatabase(), id.getTableName()),
         TableTrashManagers.getTrashLocation(id, "/table/location", "/tmp/xxx"));
   }
 }
