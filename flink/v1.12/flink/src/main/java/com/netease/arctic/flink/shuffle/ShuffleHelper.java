@@ -146,12 +146,4 @@ public class ShuffleHelper implements Serializable {
     primaryKeyData.primaryKey(rowDataWrapper.wrap(rowData));
     return primaryKeyData.hashCode();
   }
-
-  public PrimaryKeyData key(RowData rowData) {
-    if (primaryKeyData == null) {
-      return null;
-    }
-    primaryKeyData.primaryKey(rowDataWrapper.wrap(rowData));
-    return primaryKeyData.copy();
-  }
 }

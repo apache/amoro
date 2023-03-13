@@ -68,8 +68,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-  private final ShuffleHelper primaryKeyHelper;
-
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
   private transient int attemptId;
@@ -103,7 +101,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.submitEmptySnapshot = submitEmptySnapshot;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
-    this.primaryKeyHelper = primaryKeyHelper;
   }
 
   @Override
@@ -116,7 +113,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     initTaskWriterFactory(mask);
 
     this.writer = table.io().doAs(taskWriterFactory::create);
-    primaryKeyHelper.open();
   }
 
   @Override
@@ -212,32 +208,9 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       if (writer == null) {
         this.writer = taskWriterFactory.create();
       }
-      processMultiUpdateAfter(row);
-      if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
-        row.setRowKind(RowKind.DELETE);
-        writer.write(row);
-        row.setRowKind(RowKind.INSERT);
-      }
-
       writer.write(row);
       return null;
     });
-  }
-
-  /**
-   * Turn update_after to insert if there isn't update_after followed by update_before.
-   */
-  private void processMultiUpdateAfter(RowData row) {
-    PrimaryKeyData key = primaryKeyHelper.key(row);
-
-    if (RowKind.UPDATE_AFTER.equals(row.getRowKind()) && !hasUpdateBeforeKeys.contains(key)) {
-      row.setRowKind(RowKind.INSERT);
-    }
-    if (RowKind.UPDATE_BEFORE.equals(row.getRowKind())) {
-      hasUpdateBeforeKeys.add(key);
-    } else {
-      hasUpdateBeforeKeys.remove(key);
-    }
   }
 
   @Override
