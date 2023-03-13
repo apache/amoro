@@ -312,8 +312,6 @@ public class FlinkSink {
       boolean overwrite,
       RowType flinkSchema,
       ArcticTableLoader tableLoader) {
-    Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)),
-        arcticTable.schema());
     return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE,
         tableLoader);
   }
