@@ -194,11 +194,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public void refreshFileIO(String tableLocation, Map<String, String> properties) {
-      table.refreshFileIO(tableLocation, properties);
-    }
-
-    @Override
     public Map<Integer, Schema> schemas() {
       return table.schemas();
     }

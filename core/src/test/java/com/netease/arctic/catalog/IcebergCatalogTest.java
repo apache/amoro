@@ -105,21 +105,6 @@ public class IcebergCatalogTest extends CatalogTestBase {
     Assert.assertFalse(loadTable.io() instanceof RecoverableArcticFileIO);
   }
 
-  @Test
-  public void testRefreshFileIO() {
-    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    Catalog nativeIcebergCatalog = getIcebergCatalog();
-    nativeIcebergCatalog.createTable(
-        TableIdentifier.of(TableTestHelpers.TEST_DB_NAME, TableTestHelpers.TEST_TABLE_NAME),
-        TableTestHelpers.TABLE_SCHEMA);
-    ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
-    table.updateProperties().set(TableProperties.ENABLE_TABLE_TRASH, "true").commit();
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
-    table.refresh();
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
-  }
-
   @After
   public void after() {
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);

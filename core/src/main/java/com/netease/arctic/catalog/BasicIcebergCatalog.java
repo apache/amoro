@@ -200,10 +200,5 @@ public class BasicIcebergCatalog implements ArcticCatalog {
         Map<String, String> catalogProperties) {
       super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
     }
-
-    @Override
-    protected boolean autoRefreshFileIO() {
-      return false;
-    }
   }
 }

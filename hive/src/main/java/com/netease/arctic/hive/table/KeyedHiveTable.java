@@ -113,11 +113,6 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     public ChangeTableIncrementalScan newChangeScan() {
       return new ChangeTableBasicIncrementalScan(this);
     }
-
-    @Override
-    protected boolean autoRefreshFileIO() {
-      return false;
-    }
   }
 
   public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
@@ -128,11 +123,6 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
                                  boolean syncHiveChange) {
       super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
           syncHiveChange);
-    }
-
-    @Override
-    protected boolean autoRefreshFileIO() {
-      return false;
     }
   }
 }

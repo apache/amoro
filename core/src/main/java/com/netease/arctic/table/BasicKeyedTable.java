@@ -137,10 +137,8 @@ public class BasicKeyedTable implements KeyedTable {
     }
 
     baseTable.refresh();
-    baseTable.refreshFileIO(location(), properties());
     if (primaryKeySpec().primaryKeyExisted()) {
       changeTable.refresh();
-      changeTable.refreshFileIO(location(), properties());
     }
   }
 
@@ -204,11 +202,6 @@ public class BasicKeyedTable implements KeyedTable {
         AmsClient client, Map<String, String> catalogProperties) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client, catalogProperties);
     }
-
-    @Override
-    protected boolean autoRefreshFileIO() {
-      return false;
-    }
   }
 
   public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
@@ -217,11 +210,6 @@ public class BasicKeyedTable implements KeyedTable {
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
-    }
-
-    @Override
-    protected boolean autoRefreshFileIO() {
-      return false;
     }
 
     @Override
