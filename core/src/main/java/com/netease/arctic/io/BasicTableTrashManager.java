@@ -67,6 +67,8 @@ class BasicTableTrashManager implements TableTrashManager {
   }
 
   private static String getRelativeFileLocation(String tableRootLocation, String fileLocation) {
+    tableRootLocation = TableFileUtils.getUriPath(tableRootLocation);
+    fileLocation = TableFileUtils.getUriPath(fileLocation);
     if (!tableRootLocation.endsWith("/")) {
       tableRootLocation = tableRootLocation + "/";
     }
