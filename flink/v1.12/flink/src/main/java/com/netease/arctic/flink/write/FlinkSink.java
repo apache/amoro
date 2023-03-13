@@ -196,7 +196,7 @@ public class FlinkSink {
       final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
       ArcticFileWriter fileWriter = createFileWriter(table, shufflePolicy, overwrite, flinkSchemaRowType,
-          arcticEmitMode, tableLoader, writeSchema);
+          arcticEmitMode, tableLoader);
 
       ArcticLogWriter logWriter = ArcticUtils.buildArcticLogWriter(table.properties(),
           producerConfig, topic, flinkSchema, arcticEmitMode, helper, tableLoader, watermarkWriteGap);
@@ -301,7 +301,7 @@ public class FlinkSink {
     Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)),
         arcticTable.schema());
     return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE,
-        tableLoader, writeSchema);
+        tableLoader);
   }
 
   public static ArcticFileWriter createFileWriter(ArcticTable arcticTable,
@@ -309,8 +309,7 @@ public class FlinkSink {
                                                   boolean overwrite,
                                                   RowType flinkSchema,
                                                   String emitMode,
-                                                  ArcticTableLoader tableLoader,
-                                                  Schema writeSchema) {
+                                                  ArcticTableLoader tableLoader) {
     if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
@@ -334,8 +333,7 @@ public class FlinkSink {
         minFileSplitCount,
         tableLoader,
         upsert,
-        submitEmptySnapshot,
-        ShuffleHelper.build(arcticTable, writeSchema, flinkSchema));
+        submitEmptySnapshot);
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(ArcticTable arcticTable,

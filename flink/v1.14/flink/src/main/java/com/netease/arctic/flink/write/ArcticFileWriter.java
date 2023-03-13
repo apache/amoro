@@ -19,8 +19,6 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -46,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -67,8 +64,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-  private final ShuffleHelper primaryKeyHelper;
-
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
   private transient int attemptId;
@@ -81,10 +76,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when deploy to yarn cluster.
    */
   private transient ArcticTable table;
-  /**
-   * Track whether there is update_before before update_after or not if upsert enabled.
-   */
-  private Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
 
   public ArcticFileWriter(
       ShuffleRulePolicy<RowData, ShuffleKey> shuffleRule,
@@ -92,8 +83,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
       boolean upsert,
-      boolean submitEmptySnapshot,
-      ShuffleHelper primaryKeyHelper) {
+      boolean submitEmptySnapshot) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
@@ -102,7 +92,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.submitEmptySnapshot = submitEmptySnapshot;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
-    this.primaryKeyHelper = primaryKeyHelper;
   }
 
   @Override
@@ -115,7 +104,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     initTaskWriterFactory(mask);
 
     this.writer = table.io().doAs(taskWriterFactory::create);
-    primaryKeyHelper.open();
   }
 
   @Override

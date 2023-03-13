@@ -19,8 +19,6 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -38,7 +36,6 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.types.RowKind;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -47,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -80,10 +76,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when deploy to yarn cluster.
    */
   private transient ArcticTable table;
-  /**
-   * Track whether there is update_before before update_after or not if upsert enabled.
-   */
-  private Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
 
   public ArcticFileWriter(
       ShuffleRulePolicy<RowData, ShuffleKey> shuffleRule,
@@ -91,8 +83,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
       boolean upsert,
-      boolean submitEmptySnapshot,
-      ShuffleHelper primaryKeyHelper) {
+      boolean submitEmptySnapshot) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
