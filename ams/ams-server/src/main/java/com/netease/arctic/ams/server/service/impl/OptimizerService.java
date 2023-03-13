@@ -253,14 +253,13 @@ public class OptimizerService extends IJDBCService {
       return;
     }
 
-    LOG.info("checkOptimizerRetry");
     //考虑新的也为null的情况
     String statusIdentification = newReportData.optimizerState
             .get(STATUS_IDENTIFICATION);
     if (!statusIdentification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
             stateInfo.get(STATUS_IDENTIFICATION) != null) {
 
-      LOG.info("checkOptimizerRetry retry");
+      LOG.info("Optimizer " + newReportData.optimizerId + " retry occurred");
       //出问题，任务重试过
       //通过optimizer的id
       long optimizerId = newReportData.optimizerId;
@@ -271,14 +270,17 @@ public class OptimizerService extends IJDBCService {
                 .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
-          OptimizeTaskId taskId = baseOptimizeTask.taskId;
+          //由于optimzer可能是先poll任务再heartbeat,只将createtime 小于 statusIdentification的合并任务设置为失败
+          if (baseOptimizeTask.getCreateTime()/1000 < Long.parseLong(statusIdentification)) {
+            OptimizeTaskId taskId = baseOptimizeTask.taskId;
 
-          TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
+            TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
 
-          TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService()
-                  .getTableOptimizeItem(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
+            TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService()
+                    .getTableOptimizeItem(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
 
-          tableOptimizeItem.taskFailedForOptimizerRetry(taskId);
+            tableOptimizeItem.taskFailedForOptimizerRetry(taskId);
+          }
         }
       } catch (NoSuchObjectException e) {
         throw new RuntimeException(e);
