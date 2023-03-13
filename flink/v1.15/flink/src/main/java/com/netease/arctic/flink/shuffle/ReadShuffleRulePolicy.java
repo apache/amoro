@@ -37,15 +37,15 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, ShuffleKey> {
   private static final Logger LOG = LoggerFactory.getLogger(ReadShuffleRulePolicy.class);
 
-  private final PartitionPrimaryKeyHelper helper;
+  private final ShuffleHelper helper;
 
   private final DistributionHashMode distributionHashMode;
 
-  public ReadShuffleRulePolicy(PartitionPrimaryKeyHelper helper) {
+  public ReadShuffleRulePolicy(ShuffleHelper helper) {
     this(helper, DistributionHashMode.autoSelect(helper.isPrimaryKeyExist(), helper.isPartitionKeyExist()));
   }
 
-  public ReadShuffleRulePolicy(PartitionPrimaryKeyHelper helper,
+  public ReadShuffleRulePolicy(ShuffleHelper helper,
                                DistributionHashMode distributionHashMode) {
     this.helper = helper;
     this.distributionHashMode = distributionHashMode;
@@ -81,11 +81,11 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
    * Circular polling feed a streamRecord into a special factor node
    */
   static class RoundRobinPartitioner implements Partitioner<ShuffleKey> {
-    private final PartitionPrimaryKeyHelper helper;
+    private final ShuffleHelper helper;
     private final DistributionHashMode distributionHashMode;
     private Random random = null;
 
-    RoundRobinPartitioner(DistributionHashMode distributionHashMode, PartitionPrimaryKeyHelper helper) {
+    RoundRobinPartitioner(DistributionHashMode distributionHashMode, ShuffleHelper helper) {
       this.distributionHashMode = distributionHashMode;
       this.helper = helper;
       if (!distributionHashMode.isSupportPartition() && !distributionHashMode.isSupportPrimaryKey()) {

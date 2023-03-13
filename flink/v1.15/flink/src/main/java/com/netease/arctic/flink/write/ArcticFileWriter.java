@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyData;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
 import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -38,7 +38,6 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.types.RowKind;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -68,7 +67,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-  private final PartitionPrimaryKeyHelper primaryKeyHelper;
+  private final ShuffleHelper primaryKeyHelper;
 
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
@@ -94,7 +93,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       ArcticTableLoader tableLoader,
       boolean upsert,
       boolean submitEmptySnapshot,
-      PartitionPrimaryKeyHelper primaryKeyHelper) {
+      ShuffleHelper primaryKeyHelper) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
@@ -212,32 +211,9 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       if (writer == null) {
         this.writer = taskWriterFactory.create();
       }
-      processMultiUpdateAfter(row);
-      if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
-        row.setRowKind(RowKind.DELETE);
-        writer.write(row);
-        row.setRowKind(RowKind.INSERT);
-      }
-
       writer.write(row);
       return null;
     });
-  }
-
-  /**
-   * Turn update_after to insert if there isn't update_after followed by update_before.
-   */
-  private void processMultiUpdateAfter(RowData row) {
-    PrimaryKeyData key = primaryKeyHelper.key(row);
-
-    if (RowKind.UPDATE_AFTER.equals(row.getRowKind()) && !hasUpdateBeforeKeys.contains(key)) {
-      row.setRowKind(RowKind.INSERT);
-    }
-    if (RowKind.UPDATE_BEFORE.equals(row.getRowKind())) {
-      hasUpdateBeforeKeys.add(key);
-    } else {
-      hasUpdateBeforeKeys.remove(key);
-    }
   }
 
   @Override

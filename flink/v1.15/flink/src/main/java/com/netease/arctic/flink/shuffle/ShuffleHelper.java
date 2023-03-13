@@ -36,7 +36,7 @@ import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
 /**
  * This helper operates to one arctic table and the data of the table.
  */
-public class PartitionPrimaryKeyHelper implements Serializable {
+public class ShuffleHelper implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private boolean primaryKeyExist = false;
@@ -46,9 +46,9 @@ public class PartitionPrimaryKeyHelper implements Serializable {
   private Types.StructType struct;
   private transient RowDataWrapper rowDataWrapper;
 
-  public static PartitionPrimaryKeyHelper EMPTY = new PartitionPrimaryKeyHelper();
+  public static ShuffleHelper EMPTY = new ShuffleHelper();
 
-  public static PartitionPrimaryKeyHelper build(ArcticTable table, Schema schema, RowType rowType) {
+  public static ShuffleHelper build(ArcticTable table, Schema schema, RowType rowType) {
     PartitionKey partitionKey = null;
 
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {
@@ -57,12 +57,12 @@ public class PartitionPrimaryKeyHelper implements Serializable {
     schema = addFieldsNotInArctic(schema, rowType);
 
     if (table.isUnkeyedTable()) {
-      return new PartitionPrimaryKeyHelper(rowType, schema.asStruct(), partitionKey);
+      return new ShuffleHelper(rowType, schema.asStruct(), partitionKey);
     }
 
     KeyedTable keyedTable = table.asKeyedTable();
     PrimaryKeyData primaryKeyData = new PrimaryKeyData(keyedTable.primaryKeySpec(), schema);
-    return new PartitionPrimaryKeyHelper(keyedTable.primaryKeySpec().primaryKeyExisted(),
+    return new ShuffleHelper(keyedTable.primaryKeySpec().primaryKeyExisted(),
         primaryKeyData, partitionKey, rowType, schema.asStruct());
   }
 
@@ -101,25 +101,25 @@ public class PartitionPrimaryKeyHelper implements Serializable {
     }
   }
 
-  public PartitionPrimaryKeyHelper() {
+  public ShuffleHelper() {
   }
 
-  public PartitionPrimaryKeyHelper(RowType rowType, Types.StructType structType,
-                                   PartitionKey partitionKey) {
+  public ShuffleHelper(RowType rowType, Types.StructType structType,
+                       PartitionKey partitionKey) {
     this(false, null, partitionKey, rowType, structType);
   }
 
-  public PartitionPrimaryKeyHelper(boolean primaryKeyExist, PrimaryKeyData primaryKeyData,
-                                   PartitionKey partitionKey, RowType rowType, Types.StructType structType) {
+  public ShuffleHelper(boolean primaryKeyExist, PrimaryKeyData primaryKeyData,
+                       PartitionKey partitionKey, RowType rowType, Types.StructType structType) {
     this(primaryKeyExist, primaryKeyData, null, partitionKey, rowType, structType);
   }
 
-  public PartitionPrimaryKeyHelper(boolean primaryKeyExist,
-                                   PrimaryKeyData primaryKeyData,
-                                   RowDataWrapper rowDataWrapper,
-                                   PartitionKey partitionKey,
-                                   RowType rowType,
-                                   Types.StructType structType) {
+  public ShuffleHelper(boolean primaryKeyExist,
+                       PrimaryKeyData primaryKeyData,
+                       RowDataWrapper rowDataWrapper,
+                       PartitionKey partitionKey,
+                       RowType rowType,
+                       Types.StructType structType) {
     this.primaryKeyExist = primaryKeyExist;
     this.primaryKeyData = primaryKeyData;
     this.rowDataWrapper = rowDataWrapper;
