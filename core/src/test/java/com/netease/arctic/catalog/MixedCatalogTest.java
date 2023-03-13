@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -113,6 +114,9 @@ public class MixedCatalogTest extends CatalogTestBase {
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
         "false");
+    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+        "true");
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
@@ -121,6 +125,8 @@ public class MixedCatalogTest extends CatalogTestBase {
         .asUnkeyedTable();
     Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
   }
@@ -135,12 +141,17 @@ public class MixedCatalogTest extends CatalogTestBase {
         .asUnkeyedTable();
     Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
         "false");
+    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+        "true");
     getCatalog().refresh();
     createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
@@ -149,6 +160,39 @@ public class MixedCatalogTest extends CatalogTestBase {
         .asUnkeyedTable();
     Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
+
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+  }
+
+  @Test
+  public void testLoadTableWithNewCatalogProperties() throws TException {
+    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
+    UnkeyedTable createTable = getCatalog()
+        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
+
+    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
+    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+        "false");
+    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+        "true");
+    getCatalog().refresh();
+    ArcticTable loadTable = getCatalog().loadTable(createTable.id());
+    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(loadTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(loadTable.properties(),
+        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
