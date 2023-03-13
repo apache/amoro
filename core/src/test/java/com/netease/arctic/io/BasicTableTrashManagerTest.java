@@ -20,13 +20,17 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -35,6 +39,9 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   public BasicTableTrashManagerTest() {
     super(TableFormat.MIXED_ICEBERG, true, true);
   }
+
+  @Rule
+  public TemporaryFolder tempTrashLocation = new TemporaryFolder();
 
   @Test
   public void testGenerateFileLocationInTrash() {
@@ -181,6 +188,24 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     Assert.assertFalse(getArcticTable().io().exists(file4Day2));
     Assert.assertTrue(getArcticTable().io().exists(file5Day3));
     Assert.assertTrue(getArcticTable().io().exists(illegalFile));
+  }
+
+  @Test
+  public void testDeleteTrashLocation() throws IOException {
+    String customTrashLocation = tempTrashLocation.newFolder().getPath();
+    getArcticTable().updateProperties()
+        .set(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION, customTrashLocation)
+        .commit();
+    String file1 = getArcticTable().location() + File.separator + "base/test/test1.parquet";
+    createFile(getArcticTable().io(), file1);
+    TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
+    tableTrashManager.moveFileToTrash(file1);
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(file1));
+    String trashParentLocation =
+        TableTrashManagers.getTrashParentLocation(getArcticTable().id(), customTrashLocation);
+    getCatalog().dropTable(getArcticTable().id(), true);
+    Assert.assertFalse(getArcticTable().io().exists(trashParentLocation));
+    Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
   }
 
   private String createFile(FileIO io, String path) {
