@@ -391,7 +391,7 @@ public class OptimizeQueueService extends IJDBCService {
     }
   }
 
-  public Container getContainer(String container){
+  public Container getContainer(String container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
       return containerMetadataMapper.getContainer(container);
