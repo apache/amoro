@@ -47,7 +47,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, ShuffleKey> {
   private static final Logger LOG = LoggerFactory.getLogger(RoundRobinShuffleRulePolicy.class);
 
-  private final PartitionPrimaryKeyHelper helper;
+  private final ShuffleHelper helper;
 
   private final int downStreamOperatorParallelism;
 
@@ -64,14 +64,14 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
     this(null, downStreamOperatorParallelism, fileSplit);
   }
 
-  public RoundRobinShuffleRulePolicy(PartitionPrimaryKeyHelper helper,
+  public RoundRobinShuffleRulePolicy(ShuffleHelper helper,
                                      int downStreamOperatorParallelism,
                                      int fileSplit) {
     this(helper, downStreamOperatorParallelism, fileSplit,
         DistributionHashMode.autoSelect(helper.isPrimaryKeyExist(), helper.isPartitionKeyExist()));
   }
 
-  public RoundRobinShuffleRulePolicy(PartitionPrimaryKeyHelper helper,
+  public RoundRobinShuffleRulePolicy(ShuffleHelper helper,
                                      int downStreamOperatorParallelism,
                                      int fileSplit, DistributionHashMode distributionHashMode) {
     this.helper = helper;
@@ -176,11 +176,11 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
   static class RoundRobinPartitioner implements Partitioner<ShuffleKey> {
     private final int downStreamOperatorParallelism;
     private final int factor;
-    private final PartitionPrimaryKeyHelper helper;
+    private final ShuffleHelper helper;
     private final DistributionHashMode distributionHashMode;
 
     RoundRobinPartitioner(int downStreamOperatorParallelism, int factor,
-                          DistributionHashMode distributionHashMode, PartitionPrimaryKeyHelper helper) {
+                          DistributionHashMode distributionHashMode, ShuffleHelper helper) {
       this.downStreamOperatorParallelism = downStreamOperatorParallelism;
       this.factor = factor;
       this.distributionHashMode = distributionHashMode;

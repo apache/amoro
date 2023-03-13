@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write.hidden.kafka;
 
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.shuffle.PartitionPrimaryKeyHelper;
+import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
@@ -458,7 +458,7 @@ public class HiddenLogOperatorsTest {
             new HiddenKafkaFactory<>(),
             LogRecordV1.fieldGetterFactory,
             jobId,
-            PartitionPrimaryKeyHelper.EMPTY
+            ShuffleHelper.EMPTY
         );
 
     OneInputStreamOperatorInternTest<RowData, RowData> harness =
