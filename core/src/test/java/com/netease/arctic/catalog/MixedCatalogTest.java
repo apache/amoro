@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.io.RecoverableArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -31,6 +32,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,9 +67,6 @@ public class MixedCatalogTest extends CatalogTestBase {
     Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
     Assert.assertEquals(TableTestHelpers.TEST_TABLE_ID, loadTable.id());
-
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
   }
 
   @Test
@@ -103,9 +102,6 @@ public class MixedCatalogTest extends CatalogTestBase {
 
     Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), loadTable.changeTable().spec());
-
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
   }
 
   @Test
@@ -127,8 +123,7 @@ public class MixedCatalogTest extends CatalogTestBase {
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
   }
 
   @Test
@@ -143,6 +138,7 @@ public class MixedCatalogTest extends CatalogTestBase {
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
+    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
@@ -162,9 +158,7 @@ public class MixedCatalogTest extends CatalogTestBase {
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
   }
 
   @Test
@@ -179,6 +173,7 @@ public class MixedCatalogTest extends CatalogTestBase {
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
+    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
@@ -193,17 +188,26 @@ public class MixedCatalogTest extends CatalogTestBase {
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(loadTable.properties(),
         TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+    Assert.assertTrue(loadTable.io() instanceof RecoverableArcticFileIO);
   }
-  
+
   @Test
   public void testGetTableBlockerManager() {
-    TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertEquals(TableTestHelpers.TEST_TABLE_ID, tableBlockerManager.tableIdentifier());
+    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
+    UnkeyedTable createTable = getCatalog()
+        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(createTable.id());
+    Assert.assertEquals(createTable.id(), tableBlockerManager.tableIdentifier());
     Assert.assertTrue(tableBlockerManager.getBlockers().isEmpty());
-    
+  }
+  
+  @After
+  public void after() {
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
   }
 
   protected Schema getCreateTableSchema() {

@@ -78,7 +78,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
-  protected final ArcticFileIO arcticFileIO;
+  protected ArcticFileIO arcticFileIO;
 
   private final AmsClient client;
 
@@ -113,6 +113,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
         ArcticFileIO refreshedArcticFileIO =
             ArcticFileIOs.refreshTableFileIO(tableIdentifier, supportArcticFileIO.io(), tableLocation, properties);
         supportArcticFileIO.setFileIo(refreshedArcticFileIO);
+        this.arcticFileIO = refreshedArcticFileIO;
       }
     }
   }
