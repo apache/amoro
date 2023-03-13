@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.repair;
 
-public class RepairException extends RuntimeException{
+public class RepairException extends RuntimeException {
   public RepairException(String message) {
     super(message);
   }

@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.repair;
 
 import com.netease.arctic.table.TableIdentifier;
-import java.util.HashMap;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

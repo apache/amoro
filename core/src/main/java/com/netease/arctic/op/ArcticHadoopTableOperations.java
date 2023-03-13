@@ -19,11 +19,7 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.io.ArcticFileIO;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
@@ -32,6 +28,9 @@ import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.util.LockManagers;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArcticHadoopTableOperations extends HadoopTableOperations {
 

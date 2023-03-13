@@ -32,32 +32,32 @@ import static org.apache.iceberg.DataOperations.DELETE;
  */
 public class ForcedDeleteFiles extends PublicMergingSnapshotProducer<ForcedDeleteFiles> {
 
-    protected ForcedDeleteFiles(String tableName, TableOperations ops) {
-        super(tableName, ops);
-    }
+  protected ForcedDeleteFiles(String tableName, TableOperations ops) {
+    super(tableName, ops);
+  }
 
-    public static ForcedDeleteFiles of(Table table) {
-        if (table instanceof HasTableOperations) {
-            return new ForcedDeleteFiles(table.name(), ((HasTableOperations)table).operations());
-        }
-        throw new IllegalArgumentException("only support HasTableOperations table");
+  public static ForcedDeleteFiles of(Table table) {
+    if (table instanceof HasTableOperations) {
+      return new ForcedDeleteFiles(table.name(), ((HasTableOperations) table).operations());
     }
+    throw new IllegalArgumentException("only support HasTableOperations table");
+  }
 
-    @Override
-    protected ForcedDeleteFiles self() {
-        return this;
-    }
+  @Override
+  protected ForcedDeleteFiles self() {
+    return this;
+  }
 
-    @Override
-    protected String operation() {
-        return DELETE;
-    }
+  @Override
+  protected String operation() {
+    return DELETE;
+  }
 
-    public void delete(DataFile dataFile) {
-        super.delete(dataFile);
-    }
+  public void delete(DataFile dataFile) {
+    super.delete(dataFile);
+  }
 
-    public void delete(DeleteFile deleteFile) {
-        super.delete(deleteFile);
-    }
+  public void delete(DeleteFile deleteFile) {
+    super.delete(deleteFile);
+  }
 }

@@ -19,15 +19,13 @@
 package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.RepairWay;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import java.util.stream.Stream;
 
 public class SimpleRegexCommandParser implements CommandParser {
 
@@ -86,7 +84,7 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException(REPAIR_EXCEPTION_MESSAGE);
         }
         if (StringUtils.equalsIgnoreCase(commandSplit[3], RepairWay.ROLLBACK.name())) {
-          Long snapshot = commandSplit.length != 5 ? null: Long.parseLong(commandSplit[4]);
+          Long snapshot = commandSplit.length != 5 ? null : Long.parseLong(commandSplit[4]);
           return callFactory.generateRepairCall(commandSplit[1], RepairWay.ROLLBACK, snapshot);
         } else {
           if (commandSplit.length != 4) {

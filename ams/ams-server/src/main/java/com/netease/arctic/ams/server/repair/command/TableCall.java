@@ -27,7 +27,7 @@ import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 
-public class TableCall implements CallCommand{
+public class TableCall implements CallCommand {
 
   private ArcticTableMetastore.Iface client;
   private CatalogManager catalogManager;
@@ -48,10 +48,10 @@ public class TableCall implements CallCommand{
   @Override
   public String call(Context context) throws Exception {
     switch (tableOperation) {
-      case REFRESH:{
+      case REFRESH: {
         TableIdentifier identifier = fullTableName(context, tablePath);
         client.refreshTable(identifier.buildTableIdentifier());
-        return OK();
+        return ok();
       }
       case SYNC_HIVE_METADATA: {
         TableIdentifier identifier = fullTableName(context, tablePath);
@@ -60,6 +60,7 @@ public class TableCall implements CallCommand{
         if (TableTypeUtil.isHive(arcticTable)) {
           ((SupportHive)arcticTable).syncHiveSchemaToArctic();
         }
+        return ok();
       }
       case SYNC_HIVE_DATA: {
         TableIdentifier identifier = fullTableName(context, tablePath);
@@ -68,11 +69,13 @@ public class TableCall implements CallCommand{
         if (TableTypeUtil.isHive(arcticTable)) {
           ((SupportHive)arcticTable).syncHiveDataToArctic();
         }
+        return ok();
       }
       case DROP_METADATA: {
         TableIdentifier identifier = fullTableName(context, tablePath);
         ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
         arcticCatalog.dropTable(identifier, false);
+        return ok();
       }
       default: {
         throw new IllegalCommandException(String.format("Unsupported %s", tableOperation));
@@ -81,7 +84,7 @@ public class TableCall implements CallCommand{
 
   }
 
-  public enum TableOperation{
+  public enum TableOperation {
     REFRESH,
     SYNC_HIVE_METADATA,
     SYNC_HIVE_DATA,

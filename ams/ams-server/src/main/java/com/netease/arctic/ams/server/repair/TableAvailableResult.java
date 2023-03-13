@@ -23,15 +23,16 @@ import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.Snapshot;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.hadoop.fs.Path;
-import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.ManifestFile;
-import org.apache.iceberg.Snapshot;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
@@ -92,9 +93,9 @@ public class TableAvailableResult {
     if (damageType == DamageType.METADATA_LOSE) {
       checkNotNull(locationKind);
       checkNotNull(tableOperations);
-    } else if (damageType == DamageType.MANIFEST_LIST_LOST
-        || damageType == DamageType.MANIFEST_LOST
-        || damageType == DamageType.FILE_LOSE){
+    } else if (damageType == DamageType.MANIFEST_LIST_LOST ||
+        damageType == DamageType.MANIFEST_LOST ||
+        damageType == DamageType.FILE_LOSE) {
       checkNotNull(arcticTable);
     }
   }
@@ -115,17 +116,20 @@ public class TableAvailableResult {
         null, null, null, null, tableOperations, locationKind);
   }
 
-  public static TableAvailableResult manifestListLose(TableIdentifier identifier, Snapshot snapshot, UnkeyedTable arcticTable) {
+  public static TableAvailableResult manifestListLose(TableIdentifier identifier,
+      Snapshot snapshot, UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.MANIFEST_LIST_LOST, null, snapshot,
         null, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult manifestLost(TableIdentifier identifier, List<ManifestFile> manifestFiles, UnkeyedTable arcticTable) {
+  public static TableAvailableResult manifestLost(TableIdentifier identifier,
+      List<ManifestFile> manifestFiles, UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.MANIFEST_LOST, null,null,
         manifestFiles, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult filesLose(TableIdentifier identifier, List<ContentFile> files, UnkeyedTable arcticTable) {
+  public static TableAvailableResult filesLose(TableIdentifier identifier, List<ContentFile> files,
+      UnkeyedTable arcticTable) {
     return new TableAvailableResult(identifier, DamageType.FILE_LOSE, null,
         null, null, files, null, arcticTable, null, null);
   }

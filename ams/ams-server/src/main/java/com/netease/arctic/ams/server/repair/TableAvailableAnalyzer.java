@@ -19,39 +19,33 @@
 package com.netease.arctic.ams.server.repair;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.ValidationException;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class TableAvailableAnalyzer {
 
@@ -86,14 +80,14 @@ public class TableAvailableAnalyzer {
     ArcticTable arcticTable;
     try {
       arcticTable = arcticCatalog.loadTable(identifier);
-    }catch (NoSuchTableException e) {
+    } catch (NoSuchTableException e) {
       // Now don't resolve this exception
       return TableAvailableResult.tableNotFound(identifier);
     } catch (ValidationException e) {
       Matcher matcher = PATTERN.matcher(e.getMessage());
       Integer version = null;
       while (matcher.find()) {
-         version = Integer.parseInt(matcher.group(1));
+        version = Integer.parseInt(matcher.group(1));
       }
 
       //Not version exception
@@ -102,7 +96,6 @@ public class TableAvailableAnalyzer {
       }
 
       //Metadata has lost
-
       ArcticHadoopTableOperations changeTableOperations = arcticCatalog.getChangeTableOperations(identifier);
 
       if (changeTableOperations != null) {
@@ -116,7 +109,8 @@ public class TableAvailableAnalyzer {
         }
 
         if (changeIsError) {
-          return TableAvailableResult.metadataLose(identifier, version, changeTableOperations, ChangeLocationKind.INSTANT);
+          return TableAvailableResult.metadataLose(identifier, version,
+              changeTableOperations, ChangeLocationKind.INSTANT);
         }
       }
       return TableAvailableResult.metadataLose(identifier, version, arcticCatalog.getBaseTableOperations(identifier),
@@ -126,7 +120,7 @@ public class TableAvailableAnalyzer {
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedTable = arcticTable.asKeyedTable();
       TableAvailableResult changeResult = check(keyedTable.changeTable());
-      if(!changeResult.isOk()) {
+      if (!changeResult.isOk()) {
         changeResult.setLocationKind(ChangeLocationKind.INSTANT);
         return changeResult;
       }

@@ -19,8 +19,9 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 public class CatalogManager {
 

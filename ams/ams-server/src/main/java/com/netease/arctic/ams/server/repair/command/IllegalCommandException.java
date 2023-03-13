@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.repair.command;
 
-public class IllegalCommandException extends Exception{
+public class IllegalCommandException extends Exception {
   public IllegalCommandException(String message) {
     super(message);
   }

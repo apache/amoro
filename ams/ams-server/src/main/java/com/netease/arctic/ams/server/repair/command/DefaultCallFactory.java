@@ -24,7 +24,7 @@ import com.netease.arctic.ams.server.repair.RepairConfig;
 import com.netease.arctic.ams.server.repair.RepairWay;
 import com.netease.arctic.catalog.CatalogManager;
 
-public class DefaultCallFactory implements CallFactory{
+public class DefaultCallFactory implements CallFactory {
 
   private RepairConfig config;
 

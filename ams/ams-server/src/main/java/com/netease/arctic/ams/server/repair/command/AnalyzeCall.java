@@ -26,10 +26,9 @@ import com.netease.arctic.ams.server.repair.TableAvailableResult;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.iceberg.Snapshot;
+
+import java.util.List;
 
 public class AnalyzeCall implements CallCommand {
 

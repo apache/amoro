@@ -34,7 +34,6 @@ import com.netease.arctic.op.ForcedDeleteManifests;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -42,6 +41,8 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Table;
+
+import java.util.List;
 
 import static com.netease.arctic.ams.server.repair.DamageType.FILE_LOSE;
 import static com.netease.arctic.ams.server.repair.DamageType.MANIFEST_LOST;
@@ -112,7 +113,7 @@ public class RepairCall implements CallCommand {
         TableTrashManager tableTrashManager = tableAvailableResult.getTableTrashManager();
         List<String> loseFiles = tableAvailableResult.lostFiles();
         for (String path: loseFiles) {
-          if (!tableTrashManager.restoreFileFromTrash(path)){
+          if (!tableTrashManager.restoreFileFromTrash(path)) {
             throw new RepairException(String.format("Can not find back file %s", path));
           }
         }
@@ -163,7 +164,7 @@ public class RepairCall implements CallCommand {
             arcticHadoopTableOperations.getMetadataCandidateFiles(tableAvailableResult.getMetadataVersion());
         TableTrashManager tableTrashManager = tableAvailableResult.getTableTrashManager();
         for (Path path: metadataCandidateFiles) {
-          if (tableTrashManager.moveFileToTrash(path.toString())){
+          if (tableTrashManager.moveFileToTrash(path.toString())) {
             return;
           }
         }

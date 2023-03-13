@@ -25,7 +25,7 @@ public interface CallCommand {
 
   String call(Context context)  throws Exception;
 
-  default String OK() {
+  default String ok() {
     return "OK";
   }
 

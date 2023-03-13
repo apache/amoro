@@ -49,11 +49,6 @@ public class LikeYmlFormat {
     return print("", this);
   }
 
-  @Override
-  public String toString() {
-    return print();
-  }
-
   private static String print(String prefix, LikeYmlFormat likeYmlFormat) {
     StringBuilder sb = new StringBuilder();
     if (likeYmlFormat.content != null) {
@@ -69,4 +64,10 @@ public class LikeYmlFormat {
     }
     return sb.toString();
   }
+
+  @Override
+  public String toString() {
+    return print();
+  }
+
 }

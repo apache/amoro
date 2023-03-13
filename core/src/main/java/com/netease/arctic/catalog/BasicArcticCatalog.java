@@ -435,7 +435,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
   private void validate(TableIdentifier identifier) {
     if (StringUtils.isEmpty(identifier.getCatalog())) {
       identifier.setCatalog(this.catalogName);
-    }else if (!this.catalogName.equals(identifier.getCatalog())) {
+    } else if (!this.catalogName.equals(identifier.getCatalog())) {
       throw new IllegalArgumentException("catalog name miss match");
     }
   }

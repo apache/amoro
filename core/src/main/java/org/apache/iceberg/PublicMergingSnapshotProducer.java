@@ -19,8 +19,7 @@
 package org.apache.iceberg;
 
 public abstract class PublicMergingSnapshotProducer<ThisT> extends MergingSnapshotProducer<ThisT> {
-
-    protected PublicMergingSnapshotProducer(String tableName, TableOperations ops) {
-        super(tableName, ops);
-    }
+  protected PublicMergingSnapshotProducer(String tableName, TableOperations ops) {
+    super(tableName, ops);
+  }
 }

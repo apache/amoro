@@ -18,7 +18,7 @@
 
 package org.apache.iceberg;
 
-public abstract class PublicSnapshotProducer<ThisT> extends  SnapshotProducer<ThisT>{
+public abstract class PublicSnapshotProducer<ThisT> extends  SnapshotProducer<ThisT> {
   protected PublicSnapshotProducer(TableOperations ops) {
     super(ops);
   }
