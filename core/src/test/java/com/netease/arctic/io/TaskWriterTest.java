@@ -145,12 +145,13 @@ public class TaskWriterTest extends TableTestBase {
   @Test
   public void testGetPrimaryKeyFunction() throws IOException {
     GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-      .withOrdered()
-      .withTransactionId(1L)
-      .buildBaseWriter();
+        .withOrdered()
+        .withTransactionId(1L)
+        .buildBaseWriter();
 
     PrimaryKeyData actualPrimaryKeyData = writer.getPrimaryKey();
-    PrimaryKeyData expectPrimaryKeyData = new PrimaryKeyData(getArcticTable().asKeyedTable().primaryKeySpec(), getArcticTable().schema());
+    PrimaryKeyData expectPrimaryKeyData = new PrimaryKeyData(getArcticTable().asKeyedTable().primaryKeySpec(),
+        getArcticTable().schema());
     Assert.assertEquals(actualPrimaryKeyData, expectPrimaryKeyData);
   }
 
