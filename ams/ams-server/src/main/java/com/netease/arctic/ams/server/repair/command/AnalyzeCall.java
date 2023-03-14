@@ -63,7 +63,7 @@ public class AnalyzeCall implements CallCommand {
     ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
     TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(arcticCatalog, identifier,
         maxFindSnapshotNum, maxRollbackSnapNum);
-    TableAvailableResult availableResult = availableAnalyzer.check();
+    TableAvailableResult availableResult = availableAnalyzer.analyze();
     context.setTableAvailableResult(availableResult);
     return format(availableResult);
   }

@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
@@ -213,12 +212,17 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public ArcticFileIO getArcticIO() {
-    return new ArcticHadoopFileIO(tableMetaStore);
+    return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
   }
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return BasicTableBlockerManager.build(tableIdentifier, client);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return meta.getCatalogProperties();
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {

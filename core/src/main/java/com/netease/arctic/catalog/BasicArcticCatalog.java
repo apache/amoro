@@ -347,13 +347,18 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public ArcticFileIO getArcticIO() {
-    return new ArcticHadoopFileIO(tableMetaStore);
+    return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
   }
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     validate(tableIdentifier);
     return BasicTableBlockerManager.build(tableIdentifier, client);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return catalogMeta.getCatalogProperties();
   }
 
   public TableMetaStore getTableMetaStore() {

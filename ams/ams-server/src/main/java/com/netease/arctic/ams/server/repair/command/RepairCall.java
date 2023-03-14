@@ -167,7 +167,7 @@ public class RepairCall implements CallCommand {
             arcticHadoopTableOperations.getMetadataCandidateFiles(tableAvailableResult.getMetadataVersion());
         TableTrashManager tableTrashManager = tableAvailableResult.getTableTrashManager();
         for (Path path: metadataCandidateFiles) {
-          if (tableTrashManager.moveFileToTrash(path.toString())) {
+          if (tableTrashManager.restoreFileFromTrash(path.toString())) {
             return;
           }
         }

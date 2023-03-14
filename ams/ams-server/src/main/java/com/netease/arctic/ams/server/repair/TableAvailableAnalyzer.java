@@ -21,6 +21,8 @@ package com.netease.arctic.ams.server.repair;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.TableTrashManager;
+import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -76,7 +78,15 @@ public class TableAvailableAnalyzer {
     this.io = arcticCatalog.getArcticIO();
   }
 
-  public TableAvailableResult check() {
+  public TableAvailableResult analyze() {
+    TableAvailableResult tableAvailableResult = check();
+    TableTrashManager tableTrashManager = TableTrashManagers.build(identifier, arcticCatalog);
+    tableAvailableResult.setTableTrashManager(tableTrashManager);
+    return tableAvailableResult;
+  }
+
+  @NotNull
+  private TableAvailableResult check() {
     ArcticTable arcticTable;
     try {
       arcticTable = arcticCatalog.loadTable(identifier);
