@@ -30,6 +30,11 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
+import org.apache.spark.sql.connector.catalog.CatalogManager;
+import org.apache.spark.sql.connector.catalog.CatalogPlugin;
+import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -121,6 +126,41 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table_D);
     sql("drop table {0}.{1}", database, table_D2);
 
+  }
+
+  @Test
+  public void testTableDDL() throws TableAlreadyExistsException, NoSuchTableException {
+    TableIdentifier tableIdent = TableIdentifier.of(catalogNameHive, database, table_D);
+    sql("use spark_catalog");
+    sql("create table {0}.{1} ( id int, data string) using arctic", database, table_D);
+    sql("ALTER TABLE {0}.{1} ADD COLUMN c3 INT", database, table_D);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "data", Types.StringType.get()),
+        Types.NestedField.optional(3, "c3", Types.IntegerType.get()));
+
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(tableIdent).schema().asStruct());
+
+    // test rename
+    CatalogManager catalogManager = spark.sessionState().catalogManager();
+    CatalogPlugin catalog = catalogManager.currentCatalog();
+    Identifier oldName = Identifier.of(new String[]{database}, table_D);
+    Identifier newName = Identifier.of(new String[]{database}, table_D2);
+    if (catalog instanceof ArcticSparkSessionCatalog) {
+      Assert.assertThrows(
+          UnsupportedOperationException.class,
+          () ->  ((ArcticSparkSessionCatalog<?>) catalog).renameTable(oldName, newName));
+      ((ArcticSparkSessionCatalog<?>) catalog).dropTable(oldName);
+    }
+
+    sql("create table {0}.{1} ( id int, data string) using iceberg", database, table_D);
+    if (catalog instanceof ArcticSparkSessionCatalog) {
+      ((ArcticSparkSessionCatalog<?>) catalog).renameTable(oldName, newName);
+      ((ArcticSparkSessionCatalog<?>) catalog).dropTable(newName);
+      Identifier noTable = Identifier.of(new String[]{database}, "no_table");
+      ((ArcticSparkSessionCatalog<?>) catalog).dropTable(noTable);
+    }
   }
 
   @Ignore
