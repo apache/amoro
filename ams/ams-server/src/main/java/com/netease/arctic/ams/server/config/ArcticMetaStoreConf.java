@@ -105,7 +105,7 @@ public class ArcticMetaStoreConf {
   public static final ConfigOption<Integer> TRASH_CLEAN_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.trash.clean.thread.pool-size")
           .intType()
-          .defaultValue(3)
+          .defaultValue(0)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all table trash clean processes.");
   public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
