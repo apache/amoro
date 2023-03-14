@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -98,6 +99,30 @@ public class BaseCatalogTest extends CatalogTestBase {
     ArcticTable loadTable = getCatalog().loadTable(createTable.id());
     Assert.assertFalse(PropertyUtil.propertyAsBoolean(loadTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+  }
+
+  @Test
+  public void testDropTable() {
+    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
+    createTestTable();
+    ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    ArcticFileIO io = table.io();
+    String tableLocation = table.location();
+
+    checkTableExist(io, tableLocation);
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    Assert.assertFalse(getCatalog().listTables(TableTestHelpers.TEST_DB_NAME).contains(TableTestHelpers.TEST_TABLE_ID));
+    checkTableNotExist(io, tableLocation);
+  }
+
+  protected void checkTableExist(ArcticFileIO io, String tableLocation) {
+    Assert.assertTrue(getCatalog().listTables(TableTestHelpers.TEST_DB_NAME).contains(TableTestHelpers.TEST_TABLE_ID));
+    Assert.assertTrue(io.exists(tableLocation));
+  }
+
+  protected void checkTableNotExist(ArcticFileIO io, String tableLocation) {
+    Assert.assertFalse(getCatalog().listTables(TableTestHelpers.TEST_DB_NAME).contains(TableTestHelpers.TEST_TABLE_ID));
+    Assert.assertFalse(io.exists(tableLocation));
   }
 
   @After
