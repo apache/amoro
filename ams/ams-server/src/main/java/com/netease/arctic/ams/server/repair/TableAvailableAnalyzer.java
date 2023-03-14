@@ -30,7 +30,6 @@ import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
@@ -109,16 +108,9 @@ public class TableAvailableAnalyzer {
       ArcticHadoopTableOperations changeTableOperations = arcticCatalog.getChangeTableOperations(identifier);
 
       if (changeTableOperations != null) {
-        boolean changeIsError = true;
-        List<Path> metadataCandidateFiles = changeTableOperations.getMetadataCandidateFiles(version);
-        for (Path path: metadataCandidateFiles) {
-          if (exists(path.toString())) {
-            changeIsError = false;
-            break;
-          }
-        }
-
-        if (changeIsError) {
+        try {
+          changeTableOperations.current();
+        } catch (ValidationException ex) {
           return TableAvailableResult.metadataLose(identifier, version,
               changeTableOperations, ChangeLocationKind.INSTANT);
         }

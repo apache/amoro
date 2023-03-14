@@ -130,7 +130,7 @@ OPTIMIZE START user
 `TABLE ${table_name} [ REFRESH | SYNC_HIVE_METADATA | SYNC_HIVE_DATA | DROP_METADATA ]`
 
 对指定表进行操作，REFRESH:刷新表的文件缓存，SYNC_HIVE_METADATA: 同步 Hive 兼容表的元数据，SYNC_HIVE_DATA: 同步 Hive兼容表的数据，
-DROP_METADATA: 删除 Arctic 表的元数据，删除完了数据文件还存在，用户可以从当前数据重构这张表
+DROP_METADATA: 删除 Arctic 表的元数据，删除完了数据文件还存在，用户可以从当前数据重构这张表.
 ```
 REFRESH FILE_CACHE user 
 ```
@@ -141,6 +141,8 @@ REFRESH FILE_CACHE user
 退出 Repair 工具
 
 > Tips: Repair 工具中所有关键字都是大小写不敏感的
+> 
+> 安全的恢复表的步骤是：'OPTIMIZE STOP -> TABLE REFRESH -> REPAIR -> TABLE REFRESH -> OPTIMIZE START'
 
 
 

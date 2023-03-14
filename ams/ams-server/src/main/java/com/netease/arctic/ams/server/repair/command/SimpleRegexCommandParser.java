@@ -119,7 +119,7 @@ public class SimpleRegexCommandParser implements CommandParser {
         return callFactory.generateOptimizeCall(optimizeAction, commandSplit[2]);
       case TABLE:
         if (commandSplit.length == 3) {
-          TableCall.TableOperation tableOperation = TableCall.TableOperation.valueOf(commandSplit[2]);
+          TableCall.TableOperation tableOperation = TableCall.TableOperation.valueOf(commandSplit[2].toUpperCase());
           return callFactory.generateTableCall(commandSplit[1], tableOperation);
         } else {
           throw new IllegalCommandException(TABLE_EXCEPTION_MESSAGE);

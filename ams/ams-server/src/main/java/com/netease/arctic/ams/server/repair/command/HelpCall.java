@@ -28,7 +28,9 @@ public class HelpCall implements CallCommand {
             "TABLE ${table_name} [ REFRESH | SYNC_HIVE_METADATA | SYNC_HIVE_DATA | DROP_METADATA ] " +
             "        -- Operate table --\n" +
             "\n" +
-            "QUIT                                                        -- Exit --"
+            "QUIT                                                        -- Exit --" +
+            "The steps to recover table safely is 'OPTIMIZE STOP -> TABLE REFRESH -> REPAIR -> TABLE REFRESH -> " +
+            "OPTIMIZE START'"
         ;
   }
 }
