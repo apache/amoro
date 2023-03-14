@@ -191,10 +191,8 @@ public class BasicArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    Map<String, String> mergedProperties =
-        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
-        tableMetaStore);
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+        tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -226,10 +224,8 @@ public class BasicArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    Map<String, String> mergedProperties =
-        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, mergedProperties,
-        tableMetaStore);
+    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, tableMeta.getProperties(),
+        tableMetaStore, catalogMeta.getCatalogProperties());
     return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, catalogMeta.getCatalogProperties());
   }
@@ -594,9 +590,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
           this.identifier, this.schema);
       String tableLocation = getTableLocationForCreate();
 
-      // default properties would not override user-defined properties
-      this.properties = CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogMeta.getCatalogProperties());
-
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
           .withPrimaryKeySpec(this.primaryKeySpec);
@@ -619,7 +612,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
       fillTableProperties(meta);
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore);
+          tableMetaStore, catalogMeta.getCatalogProperties());
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
@@ -662,7 +655,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
         }
       });
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, meta.getProperties(),
-          tableMetaStore);
+          tableMetaStore, catalogMeta.getCatalogProperties());
       return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
     }

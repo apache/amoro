@@ -164,10 +164,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    Map<String, String> mergedProperties =
-        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
-        tableMetaStore);
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+        tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -189,12 +187,10 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    Map<String, String> mergedProperties =
-        CatalogUtil.mergeCatalogPropertiesToTable(tableMeta.getProperties(), catalogMeta.getCatalogProperties());
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, mergedProperties,
-        tableMetaStore);
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+        tableMetaStore, catalogMeta.getCatalogProperties());
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool,
+        fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
         catalogMeta.getCatalogProperties());
   }
 
@@ -295,7 +291,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       }
 
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore);
+          tableMetaStore, catalogMeta.getCatalogProperties());
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
@@ -394,8 +390,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       } catch (TException | InterruptedException e) {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
+
       ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore);
+          tableMetaStore, catalogMeta.getCatalogProperties());
       return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
           catalogMeta.getCatalogProperties());
