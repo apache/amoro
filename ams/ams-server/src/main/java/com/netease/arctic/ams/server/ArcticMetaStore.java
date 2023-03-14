@@ -317,6 +317,14 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
+  private static void startTrashClean() {
+    ThreadPool.getPool(ThreadPool.Type.TRASH_CLEAN).scheduleWithFixedDelay(
+        ServiceContainer.getTrashCleanService()::checkTrashCleanTasks,
+        3 * 1000L,
+        60 * 1000L,
+        TimeUnit.MILLISECONDS);
+  }
+
   private static void startSupportHiveSync() {
     ThreadPool.getPool(ThreadPool.Type.HIVE_SYNC).scheduleWithFixedDelay(
         ServiceContainer.getSupportHiveSyncService()::checkHiveSyncTasks,

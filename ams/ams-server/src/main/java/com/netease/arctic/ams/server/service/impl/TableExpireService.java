@@ -77,7 +77,8 @@ public class TableExpireService implements ITableExpireService {
     Set<TableIdentifier> ids =
         tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
     cleanTasks.checkRunningTask(ids,
-        tableId -> EXPIRE_INTERVAL,
+        () -> 0L,
+        () -> EXPIRE_INTERVAL,
         TableExpireTask::new,
         false);
     LOG.info("Schedule Expired Cleaner finished with {} valid ids", ids.size());

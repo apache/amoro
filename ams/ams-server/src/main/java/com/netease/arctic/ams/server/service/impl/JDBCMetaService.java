@@ -32,18 +32,11 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.PropertiesUtil;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.Tables;
-import org.apache.iceberg.hadoop.HadoopTables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +76,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       sqlSession.commit(true);
     }
 
-    buildArcticTable(tableMetadata);
     TABLE_META_STORE_CACHE.put(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()),
         tableMetadata.getMetaStore());
     try {
@@ -230,15 +222,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   @Override
   public boolean isExist(TableIdentifier tableIdentifier) {
     return loadTableMetadata(tableIdentifier) != null;
-  }
-
-  @Override
-  public UnkeyedTable buildArcticTable(TableMetadata tableMetadata) {
-    Tables tables = new HadoopTables(tableMetadata.getMetaStore().getConfiguration());
-    Table icebergTable = tableMetadata.getMetaStore().doAs(()
-        -> tables.load(tableMetadata.getBaseLocation()));
-    ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetadata.getMetaStore());
-    return new BaseUnkeyedTable(tableMetadata.getTableIdentifier(), icebergTable, fileIO);
   }
 
   public static class Key {
