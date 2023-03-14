@@ -36,10 +36,6 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                |
 | clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                       |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 存在时间超过 min-existing-time-minutes 未被引用的孤儿文件会被自动清理 |
-| table-trash.enabled                         | false     | 是否开启回收站功能                       |
-| table-trash.custom-root-location            | Null      | 自定义回收站目录                       |
-| table-trash.keep.days                       | 7         | 回收站保留时间                       |
-| table-trash.file-pattern                    | .+\\.parquet\|.\*snap-[0-9]+-[0-9]+-.+\\.avro\|.\*version-hint.text\|.\*V[0-9]+\\.metadata\\.json\|.\*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro    | 回收站文件匹配正则表达式       |
 
 ## Mixed streaming format
 
@@ -95,3 +91,12 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | base.hive.auto-sync-schema-change  | true             | 是否从 HMS 自动同步 Hive 的 schema 变更             |
 | base.hive.auto-sync-data-write     | false            | 是否自动同步 Hive 的原生的数据写入，有 Hive 原生数据写入时需要打开             |
+
+### Trash 相关配置
+
+| 配置名称                                     | 默认值    | 描述                                     |
+| ------------------------------------------- | -------- | ----------------------------------       |
+| table-trash.enabled                         | false     | 是否开启回收站功能                       |
+| table-trash.custom-root-location            | null      | 自定义回收站目录                       |
+| table-trash.keep.days                       | 7         | 回收站保留时间                       |
+| table-trash.file-pattern                    | .+\\.parquet\|.\*snap-[0-9]+-[0-9]+-.+\\.avro\|.\*version-hint.text\|.\*V[0-9]+\\.metadata\\.json\|.\*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro    | 允许放入回收站的文件的正则表达式       |
