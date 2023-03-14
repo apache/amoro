@@ -35,26 +35,29 @@ public interface TableTrashManager {
   TableIdentifier tableId();
 
   /**
-   * Move a file to trash.
+   * Move a file to trash, not support directory.
    *
    * @param path the file path
-   * @return true for success
+   * @throws java.io.UncheckedIOException - if failed to move file to trash
+   * @throws IllegalArgumentException     - if path is a directory
    */
-  boolean moveFileToTrash(String path);
+  void moveFileToTrash(String path);
 
   /**
-   * If a file exist in trash.
+   * If a file exist in trash, not support directory.
    *
    * @param path the file path
    * @return true if exist
+   * @throws IllegalArgumentException - if path is a directory in trash
    */
   boolean fileExistInTrash(String path);
 
   /**
-   * Restore a file from trash.
+   * Restore a file from trash, not support directory.
    *
    * @param path the file
    * @return true for success
+   * @throws IllegalArgumentException - if path is a directory in trash
    */
   boolean restoreFileFromTrash(String path);
 

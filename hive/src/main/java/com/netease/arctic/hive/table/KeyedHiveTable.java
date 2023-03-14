@@ -27,6 +27,7 @@ import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -35,6 +36,8 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
+
+import java.util.Map;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
@@ -105,8 +108,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+        AmsClient client, Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
     }
 
     @Override
@@ -117,6 +120,17 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     @Override
     public ChangeTableIncrementalScan newChangeScan() {
       return new ChangeTableBasicIncrementalScan(this);
+    }
+  }
+
+  public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
+
+    public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
+                                 ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
+                                 HMSClientPool hiveClient, Map<String, String> catalogProperties,
+                                 boolean syncHiveChange) {
+      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
+          syncHiveChange);
     }
   }
 }

@@ -39,6 +39,8 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.Map;
+
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
@@ -57,8 +59,9 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       ArcticFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
-      HMSClientPool hiveClient) {
-    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, true);
+      HMSClientPool hiveClient,
+      Map<String, String> catalogProperties) {
+    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties, true);
   }
 
   public UnkeyedHiveTable(
@@ -68,8 +71,9 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       String tableLocation,
       AmsClient client,
       HMSClientPool hiveClient,
+      Map<String, String> catalogProperties,
       boolean syncHiveChange) {
-    super(tableIdentifier, icebergTable, arcticFileIO, client);
+    super(tableIdentifier, icebergTable, arcticFileIO, client, catalogProperties);
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
     this.syncHiveChange = syncHiveChange;

@@ -47,7 +47,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
 
   private final TableMetaStore tableMetaStore;
 
-  public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
+  ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
     this.tableMetaStore = tableMetaStore;
   }
@@ -78,20 +78,19 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean deleteFileWithResult(String path, boolean recursive) {
-    return tableMetaStore.doAs(() -> {
+  public void deleteDirectoryRecursively(String path) {
+    tableMetaStore.doAs(() -> {
       Path toDelete = new Path(path);
       FileSystem fs = getFs(toDelete);
-      boolean result;
       try {
-        result = fs.delete(toDelete, recursive);
+        if (!fs.delete(toDelete, true)) {
+          throw new IOException("Fail to delete directory:" + path + " recursively, " +
+              "file system return false, need to check the hdfs path");
+        }
       } catch (IOException e) {
-        result = false;
+        throw new UncheckedIOException("Fail to delete directory:" + path + " recursively", e);
       }
-      if (!result) {
-        LOG.warn("Fail to delete file " + path + " and file system return false, need to check the hdfs path");
-      }
-      return result;
+      return null;
     });
   }
 
