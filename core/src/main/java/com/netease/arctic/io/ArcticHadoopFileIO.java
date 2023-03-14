@@ -43,7 +43,6 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHadoopFileIO.class);
 
   private final TableMetaStore tableMetaStore;
 
