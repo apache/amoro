@@ -102,17 +102,20 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
    * Turn update_after to insert if there isn't update_after followed by update_before.
    */
   private void processMultiUpdateAfter(RowData row) {
-    PrimaryKeyData primaryKey = super.getPrimaryKey();
-    primaryKey.primaryKey(wrapper.wrap(row));
-    PrimaryKeyData copyKey = primaryKey.copy();
+    RowKind rowKind = row.getRowKind();
+    if (RowKind.UPDATE_BEFORE.equals(rowKind) || RowKind.UPDATE_AFTER.equals(rowKind)) {
+      PrimaryKeyData primaryKey = super.getPrimaryKey();
+      primaryKey.primaryKey(asStructLike(row));
+      PrimaryKeyData copyKey = primaryKey.copy();
 
-    if (RowKind.UPDATE_AFTER.equals(row.getRowKind()) && !hasUpdateBeforeKeys.contains(copyKey)) {
-      row.setRowKind(RowKind.INSERT);
-    }
-    if (RowKind.UPDATE_BEFORE.equals(row.getRowKind())) {
-      hasUpdateBeforeKeys.add(copyKey);
-    } else {
-      hasUpdateBeforeKeys.remove(copyKey);
+      if (RowKind.UPDATE_AFTER.equals(rowKind)) {
+        if (!hasUpdateBeforeKeys.contains(copyKey)) {
+          row.setRowKind(RowKind.INSERT);
+        }
+        hasUpdateBeforeKeys.remove(copyKey);
+      } else {
+        hasUpdateBeforeKeys.add(copyKey);
+      }
     }
   }
 }
