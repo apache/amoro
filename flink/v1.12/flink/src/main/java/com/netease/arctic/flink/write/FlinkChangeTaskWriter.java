@@ -103,7 +103,7 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
   private void processMultiUpdateAfter(RowData row) {
     RowKind rowKind = row.getRowKind();
     if (RowKind.UPDATE_BEFORE.equals(rowKind) || RowKind.UPDATE_AFTER.equals(rowKind)) {
-      PrimaryKeyData primaryKey = super.getPrimaryKey();
+      PrimaryKeyData primaryKey = getPrimaryKey();
       primaryKey.primaryKey(asStructLike(row));
       PrimaryKeyData copyKey = primaryKey.copy();
 

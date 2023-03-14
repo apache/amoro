@@ -123,7 +123,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     writerHolder.close();
   }
 
-  public PrimaryKeyData getPrimaryKey() {
+  protected PrimaryKeyData getPrimaryKey() {
     return primaryKey;
   }
 

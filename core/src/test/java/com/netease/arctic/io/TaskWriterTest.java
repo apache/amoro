@@ -21,7 +21,6 @@ package com.netease.arctic.io;
 import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.PrimaryKeyData;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -140,19 +139,6 @@ public class TaskWriterTest extends TableTestBase {
       }
     });
 
-  }
-
-  @Test
-  public void testGetPrimaryKeyFunction() throws IOException {
-    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withOrdered()
-        .withTransactionId(1L)
-        .buildBaseWriter();
-
-    PrimaryKeyData actualPrimaryKeyData = writer.getPrimaryKey();
-    PrimaryKeyData expectPrimaryKeyData = new PrimaryKeyData(getArcticTable().asKeyedTable().primaryKeySpec(),
-        getArcticTable().schema());
-    Assert.assertEquals(actualPrimaryKeyData, expectPrimaryKeyData);
   }
 
   private List<Record> writeRecords() {
