@@ -105,105 +105,73 @@ public class MixedCatalogTest extends CatalogTestBase {
   }
 
   @Test
-  public void testCreateTableWithCatalogTableProperties() throws TException {
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
+  public void testCreateTableWithNewCatalogProperties() throws TException {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
+    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
-  }
-
-  @Test
-  public void testRefreshCatalogProperties() throws TException {
-    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
         "false");
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
     getCatalog().refresh();
     createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
+    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
   }
 
   @Test
-  public void testLoadTableWithNewCatalogProperties() throws TException {
+  public void testRecoverableFileIO() throws TException {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
     Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
         "true");
     getCatalog().refresh();
-    ArcticTable loadTable = getCatalog().loadTable(createTable.id());
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(loadTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(loadTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertTrue(loadTable.io() instanceof RecoverableArcticFileIO);
+
+    ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    Assert.assertTrue(table.io() instanceof RecoverableArcticFileIO);
+
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    createTable = getCatalog()
+        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
   }
 
   @Test
   public void testGetTableBlockerManager() {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    UnkeyedTable createTable = getCatalog()
+    KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPrimaryKeySpec(TableTestHelpers.PRIMARY_KEY_SPEC)
         .withPartitionSpec(getCreateTableSpec())
         .create()
-        .asUnkeyedTable();
+        .asKeyedTable();
     TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(createTable.id());
     Assert.assertEquals(createTable.id(), tableBlockerManager.tableIdentifier());
     Assert.assertTrue(tableBlockerManager.getBlockers().isEmpty());
   }
-  
+
   @After
   public void after() {
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);

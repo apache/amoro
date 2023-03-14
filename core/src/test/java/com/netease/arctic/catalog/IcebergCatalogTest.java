@@ -27,7 +27,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -42,72 +41,45 @@ public class IcebergCatalogTest extends CatalogTestBase {
   @Test
   public void testLoadIcebergTable() {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    Catalog nativeIcebergCatalog = getIcebergCatalog();
-    nativeIcebergCatalog.createTable(
-        TableIdentifier.of(TableTestHelpers.TEST_DB_NAME, TableTestHelpers.TEST_TABLE_NAME),
-        TableTestHelpers.TABLE_SCHEMA);
+    createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
     Assert.assertTrue(table instanceof BasicIcebergCatalog.BasicIcebergTable);
-    Assert.assertEquals(true, table.isUnkeyedTable());
+    Assert.assertTrue(table.isUnkeyedTable());
     Assert.assertEquals(TableTestHelpers.TABLE_SCHEMA.asStruct(), table.schema().asStruct());
   }
 
   @Test
-  public void testCreateTableWithCatalogTableProperties() throws TException {
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
+  public void testRecoverableFileIO() throws TException {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    Catalog nativeIcebergCatalog = getIcebergCatalog();
-    nativeIcebergCatalog.createTable(
-        TableIdentifier.of(TableTestHelpers.TEST_DB_NAME, TableTestHelpers.TEST_TABLE_NAME),
-        TableTestHelpers.TABLE_SCHEMA);
-    ArcticTable createTable = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
-  }
-
-  @Test
-  public void testLoadTableWithNewCatalogProperties() throws TException {
-    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    Catalog nativeIcebergCatalog = getIcebergCatalog();
-    nativeIcebergCatalog.createTable(
-        TableIdentifier.of(TableTestHelpers.TEST_DB_NAME, TableTestHelpers.TEST_TABLE_NAME),
-        TableTestHelpers.TABLE_SCHEMA);
-    ArcticTable createTable = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
+    createIcebergTable();
+    ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
         "true");
     getCatalog().refresh();
-    ArcticTable loadTable = getCatalog().loadTable(createTable.id());
-    Assert.assertEquals(false, PropertyUtil.propertyAsBoolean(loadTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    Assert.assertEquals(true, PropertyUtil.propertyAsBoolean(loadTable.properties(),
-        TableProperties.ENABLE_TABLE_TRASH, TableProperties.ENABLE_TABLE_TRASH_DEFAULT));
-    Assert.assertFalse(loadTable.io() instanceof RecoverableArcticFileIO);
+
+    table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
+
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    createIcebergTable();
+    table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
   }
 
   @After
   public void after() {
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+  }
+
+  private void createIcebergTable() {
+    Catalog nativeIcebergCatalog = getIcebergCatalog();
+    nativeIcebergCatalog.createTable(
+        TableIdentifier.of(TableTestHelpers.TEST_DB_NAME, TableTestHelpers.TEST_TABLE_NAME),
+        TableTestHelpers.TABLE_SCHEMA);
   }
 }
