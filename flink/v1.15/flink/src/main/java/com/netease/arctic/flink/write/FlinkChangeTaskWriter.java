@@ -105,14 +105,15 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
     if (RowKind.UPDATE_BEFORE.equals(rowKind) || RowKind.UPDATE_AFTER.equals(rowKind)) {
       PrimaryKeyData primaryKey = getPrimaryKey();
       primaryKey.primaryKey(asStructLike(row));
-      PrimaryKeyData copyKey = primaryKey.copy();
 
       if (RowKind.UPDATE_AFTER.equals(rowKind)) {
-        if (!hasUpdateBeforeKeys.contains(copyKey)) {
+        if (!hasUpdateBeforeKeys.contains(primaryKey)) {
           row.setRowKind(RowKind.INSERT);
+        } else {
+          hasUpdateBeforeKeys.remove(primaryKey);
         }
-        hasUpdateBeforeKeys.remove(copyKey);
       } else {
+        PrimaryKeyData copyKey = primaryKey.copy();
         hasUpdateBeforeKeys.add(copyKey);
       }
     }
