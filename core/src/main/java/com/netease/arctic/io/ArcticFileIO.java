@@ -47,7 +47,7 @@ public interface ArcticFileIO extends FileIO {
   boolean exists(String path);
 
   /**
-   * Create a new directory.
+   * Create a new directory and all non-existent parents directories.
    *
    * @param path source path
    */
@@ -56,20 +56,16 @@ public interface ArcticFileIO extends FileIO {
   /**
    * Rename file from old path to new path
    *
-   * @param oldpath source path
+   * @param oldPath source path
    * @param newPath target path
    */
-  void rename(String oldpath, String newPath);
+  void rename(String oldPath, String newPath);
 
-  /** Delete a file.
+  /** Delete a directory recursively
    *
    * @param path the path to delete.
-   * @param recursive if path is a directory and set to
-   * true, the directory is deleted else throws an exception. In
-   * case of a file the recursive can be set to either true or false.
-   * @return  true if delete is successful else false.
    */
-  boolean deleteFileWithResult(String path, boolean recursive);
+  void deleteDirectoryRecursively(String path);
 
   //TODO FileStatus is a hadoop object, need to be replaced
   List<FileStatus> list(String location);
