@@ -25,7 +25,8 @@ public class HelpCall implements CallCommand {
             "OPTIMIZE [ STOP | START ] ${table_name}                     -- Start or stop optimizing tasks" +
             " for the table --\n" +
             "\n" +
-            "REFRESH FILE_CACHE ${table_name}                            -- Flush the file cache for the table --\n" +
+            "TABLE ${table_name} [ REFRESH | SYNC_HIVE_METADATA | SYNC_HIVE_DATA | DROP_METADATA ] " +
+            "        -- Operate table --\n" +
             "\n" +
             "QUIT                                                        -- Exit --"
         ;
