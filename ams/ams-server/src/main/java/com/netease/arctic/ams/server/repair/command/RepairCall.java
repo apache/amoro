@@ -50,8 +50,6 @@ import static com.netease.arctic.ams.server.repair.RepairWay.SYNC_METADATA;
 
 public class RepairCall implements CallCommand {
 
-  private static final String REPAIR_SUCCESS = "Repair is success";
-
   /**
    * if null then use table name of context
    */
@@ -102,7 +100,7 @@ public class RepairCall implements CallCommand {
 
     if (damageType == DamageType.METADATA_LOSE) {
       repairMetadataLose(identifier, tableAvailableResult);
-      return REPAIR_SUCCESS;
+      return success(identifier, context);
     }
 
     ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
@@ -117,24 +115,24 @@ public class RepairCall implements CallCommand {
             throw new RepairException(String.format("Can not find back file %s", path));
           }
         }
-        return REPAIR_SUCCESS;
+        return success(identifier, context);
       }
       case SYNC_METADATA: {
         switch (damageType) {
           case MANIFEST_LOST: {
             syncMetadataForManifestLose(tableAvailableResult.getArcticTable(), tableAvailableResult.getManifestFiles());
-            return REPAIR_SUCCESS;
+            return success(identifier, context);
           }
           case FILE_LOSE: {
             if (TableTypeUtil.isHive(arcticTable)) {
               SupportHive supportHive = (SupportHive) arcticTable;
               if (supportHive.enableSyncHiveDataToArctic()) {
                 arcticCatalog.refresh();
-                return REPAIR_SUCCESS;
+                return success(identifier, context);
               }
             }
             syncMetadataForFileLose(tableAvailableResult.getArcticTable(), tableAvailableResult.getFiles());
-            return REPAIR_SUCCESS;
+            return success(identifier, context);
           }
           default: {
             throw new RepairException(String.format("%s only for %s and %s", SYNC_METADATA, MANIFEST_LOST, FILE_LOSE));
@@ -143,10 +141,15 @@ public class RepairCall implements CallCommand {
       }
       case ROLLBACK: {
         rollback(tableAvailableResult.getArcticTable(), option);
-        return REPAIR_SUCCESS;
+        return success(identifier, context);
       }
     }
-    return REPAIR_SUCCESS;
+    return success(identifier, context);
+  }
+
+  public String success(TableIdentifier identifier, Context context) {
+    context.clean(identifier);
+    return ok();
   }
 
   private void repairMetadataLose(TableIdentifier identifier, TableAvailableResult tableAvailableResult) {

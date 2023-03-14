@@ -59,6 +59,14 @@ public class SimpleShellTerminal {
     while (true) {
       try {
         String line = lineReader.readLine(commandHandler.prompt());
+        if (line.equalsIgnoreCase("QUIT") ||
+            line.equalsIgnoreCase("CLOSE") ||
+            line.equalsIgnoreCase("EXIST")) {
+          commandHandler.close();
+          terminalOutput.output("quited repair server");
+          return;
+        }
+
         commandHandler.dispatch(line, terminalOutput);
       } catch (UserInterruptException | EndOfFileException e) {
         commandHandler.close();

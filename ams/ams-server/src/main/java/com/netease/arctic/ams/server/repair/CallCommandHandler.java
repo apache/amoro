@@ -97,6 +97,6 @@ public class CallCommandHandler implements CommandHandler {
     if (context.getDb() == null) {
       return PROMPT_PREFIX + context.getCatalog() + PROMPT_SUFFIX;
     }
-    return PROMPT_PREFIX + context.getCatalog() + "." + context.getDb() + PROMPT_PREFIX;
+    return PROMPT_PREFIX + context.getCatalog() + "." + context.getDb() + PROMPT_SUFFIX;
   }
 }

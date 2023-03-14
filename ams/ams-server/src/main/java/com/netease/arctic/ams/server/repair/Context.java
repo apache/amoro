@@ -60,4 +60,8 @@ public class Context {
   public TableAvailableResult getTableAvailableResult(TableIdentifier identifier) {
     return tableAvailableResultMap.get(identifier);
   }
+
+  public void clean(TableIdentifier identifier) {
+    tableAvailableResultMap.remove(identifier);
+  }
 }

@@ -61,8 +61,10 @@ public class RepairMain {
       String configPath = args[1];
       JSONObject yamlConfig = YamlUtils.load(configPath);
       JSONObject repairProperties = yamlConfig.getJSONObject(ConfigFileProperties.REPAIR_PROPERTIES);
-      maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
-      maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
+      if (repairProperties != null) {
+        maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
+        maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
+      }
     }
 
     return new RepairConfig(thriftUrlWithoutCatalog, catalogName, maxFindSnapshotNum, maxRollbackSnapNum);

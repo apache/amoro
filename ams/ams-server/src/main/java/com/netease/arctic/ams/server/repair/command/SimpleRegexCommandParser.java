@@ -65,6 +65,9 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
+    if (line.endsWith(";")) {
+      line = line.replace(";", "");
+    }
     String[] commandSplit = line.trim().split("\\s+");
     if (commandSplit.length < 2) {
       return callFactory.generateHelpCall();

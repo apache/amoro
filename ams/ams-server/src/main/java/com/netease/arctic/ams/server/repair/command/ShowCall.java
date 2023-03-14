@@ -2,6 +2,7 @@ package com.netease.arctic.ams.server.repair.command;
 
 import com.netease.arctic.ams.server.repair.Context;
 import com.netease.arctic.catalog.CatalogManager;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public class ShowCall implements CallCommand {
         } else {
           return catalogManager.getArcticCatalog(context.getCatalog()).listTables(context.getDb())
               .stream()
-              .map(e -> String.format("%s %s", e.getDatabase(), e.getTableName()))
+              .map(TableIdentifier::getTableName)
               .collect(Collectors.joining("\n"));
         }
       default:

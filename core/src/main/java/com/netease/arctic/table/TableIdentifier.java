@@ -38,9 +38,9 @@ public class TableIdentifier implements Serializable {
   }
 
   private TableIdentifier(String catalog, String database, String tableName) {
-    this.catalog = Preconditions.checkNotNull(catalog, "Catalog name must not be null.");
-    this.database = Preconditions.checkNotNull(database, "Database name must not be null.");
-    this.tableName = Preconditions.checkNotNull(tableName, "Table name must not be null.");
+    this.catalog = catalog;
+    this.database = database;
+    this.tableName = tableName;
   }
 
   public static TableIdentifier of(String catalog, String database, String tableName) {
