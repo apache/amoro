@@ -83,6 +83,20 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
+  public void testMoveAndOverwrite() {
+    TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
+
+    String relativeFilePath = "base/test/test1.parquet";
+    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+
+    tableTrashManager.moveFileToTrash(path);
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
+    createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    tableTrashManager.moveFileToTrash(path);
+    Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
+  }
+
+  @Test
   public void testDeleteDirectory() {
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation =

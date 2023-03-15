@@ -1,5 +1,6 @@
 package com.netease.arctic.io;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
@@ -137,5 +138,15 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
   private void moveToTrash(String filePath) {
     trashManager.moveFileToTrash(filePath);
     LOG.debug("Move file:{} to table trash", filePath);
+  }
+
+  @Override
+  public void setConf(Configuration conf) {
+    fileIO.setConf(conf);
+  }
+
+  @Override
+  public Configuration getConf() {
+    return fileIO.getConf();
   }
 }

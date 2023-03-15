@@ -41,6 +41,7 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
+
   private final TableMetaStore tableMetaStore;
 
   ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
