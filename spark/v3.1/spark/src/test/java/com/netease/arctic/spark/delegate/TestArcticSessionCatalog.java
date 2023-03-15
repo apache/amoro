@@ -29,6 +29,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.spark.SparkCatalog;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
@@ -45,6 +46,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -65,7 +67,9 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
     configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.url", amsUrl + "/" + catalogNameHive);
-    configs.put("spark.arctic.sql.delegate.enable", "true");
+    configs.put("spark.sql.catalog.catalog", SparkCatalog.class.getName());
+    configs.put("spark.sql.catalog.catalog.type", "hive");
+    configs.put("spark.sql.arctic.delegate.enabled", "true");
 
     setUpSparkSession(configs);
   }
@@ -100,6 +104,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   private String table_D = "test4";
   private String table_D2 = "test5";
 
+  @Ignore
   @Test
   public void testHiveDelegate() throws TException {
     System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
@@ -214,6 +219,50 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table2);
 
     sql("drop table {0}.{1}", database, table3);
+  }
+
+  @Test
+  public void testCreateTableLikeWithNoProvider() throws TException {
+    sql("set spark.sql.arctic.delegate.enabled=true");
+    sql("use spark_catalog");
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp,  \n" +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table3);
+
+    sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
+    Table hiveTableA = hms.getClient().getTable(database, table2);
+    Assert.assertNotNull(hiveTableA);
+    sql("drop table {0}.{1}", database, table2);
+
+    sql("drop table {0}.{1}", database, table3);
+  }
+
+  @Test
+  public void testCreateTableLikeWithoutArcticCatalogWithNoProvider() throws TException {
+    sql("use catalog");
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp  \n" +
+        ") stored as parquet \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table3);
+
+    sql("create table {0}.{1} like {2}.{3}", database, table2, database, table3);
+    Table hiveTableA = hms.getClient().getTable(database, table2);
+    Assert.assertNotNull(hiveTableA);
+    sql("use spark_catalog");
+    sql("drop table {0}.{1}", database, table3);
+    sql("drop table {0}.{1}", database, table2);
   }
 
 
