@@ -36,7 +36,6 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.types.RowKind;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -66,7 +65,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
   private transient int attemptId;
@@ -120,7 +118,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
                 new ListStateDescriptor<>(
                     subTaskId + "-task-file-writer-state",
                     LongSerializer.INSTANCE));
-    
+
     if (context.isRestored()) {
       // get last success ckp num from state when failover continuously
       checkpointId = checkpointState.get().iterator().next();
@@ -136,7 +134,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     checkpointState.clear();
     checkpointState.add(context.getCheckpointId());
   }
-  
+
   private void initTaskWriterFactory(Long mask) {
     if (taskWriterFactory instanceof ArcticRowDataTaskWriterFactory) {
       if (mask != null) {
@@ -221,13 +219,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
         initTaskWriterFactory(null);
         this.writer = taskWriterFactory.create();
       }
-
-      if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
-        row.setRowKind(RowKind.DELETE);
-        writer.write(row);
-        row.setRowKind(RowKind.INSERT);
-      }
-
       writer.write(row);
       return null;
     });
@@ -257,7 +248,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    *
    * @param writeResult the WriteResult to emit
    * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
-   *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   * false only if the WriteResult is empty and the submitEmptySnapshot is false.
    */
   private boolean shouldEmit(WriteResult writeResult) {
     return submitEmptySnapshot || (writeResult != null &&

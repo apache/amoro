@@ -36,7 +36,6 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.types.RowKind;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -221,13 +220,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
         initTaskWriterFactory(null);
         this.writer = taskWriterFactory.create();
       }
-
-      if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
-        row.setRowKind(RowKind.DELETE);
-        writer.write(row);
-        row.setRowKind(RowKind.INSERT);
-      }
-
       writer.write(row);
       return null;
     });

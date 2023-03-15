@@ -141,6 +141,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     dataWriterMap.clear();
   }
 
+  protected PrimaryKeyData getPrimaryKey() {
+    return primaryKey;
+  }
+
   /**
    * Wrap the data as a {@link StructLike}.
    */
