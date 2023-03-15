@@ -271,7 +271,7 @@ public class OptimizerService extends IJDBCService {
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
           //由于optimzer可能是先poll任务再heartbeat,只将createtime 小于 statusIdentification的合并任务设置为失败
-          if (baseOptimizeTask.getCreateTime()/1000 < Long.parseLong(statusIdentification)) {
+          if (baseOptimizeTask.getCreateTime() / 1000 < Long.parseLong(statusIdentification)) {
             OptimizeTaskId taskId = baseOptimizeTask.taskId;
 
             TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
