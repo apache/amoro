@@ -18,12 +18,30 @@
 
 package com.netease.arctic.ams.server;
 
+import com.netease.arctic.ams.server.repair.TestCommandParser;
+import com.netease.arctic.ams.server.repair.TestGetRepairConfig;
+import com.netease.arctic.ams.server.repair.command.TestAnalyzeCall;
+import com.netease.arctic.ams.server.repair.command.TestOptimizeCall;
+import com.netease.arctic.ams.server.repair.command.TestRepairCall;
+import com.netease.arctic.ams.server.repair.command.TestShowCall;
+import com.netease.arctic.ams.server.repair.command.TestTableCall;
+import com.netease.arctic.ams.server.repair.command.TestUseCall;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({TestHighAvailabilityServices.class})
+@Suite.SuiteClasses({
+    TestHighAvailabilityServices.class,
+    TestGetRepairConfig.class,
+    TestCommandParser.class,
+    TestAnalyzeCall.class,
+    TestOptimizeCall.class,
+    TestRepairCall.class,
+    TestShowCall.class,
+    TestTableCall.class,
+    TestUseCall.class
+})
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
                   "com.amazonaws.http.conn.ssl.*",
                   "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*",

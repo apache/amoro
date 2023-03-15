@@ -45,6 +45,7 @@ import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOptimizeService;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
+import com.netease.arctic.ams.server.repair.TestGetRepairConfig;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestArcticTransactionService;
