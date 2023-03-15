@@ -101,6 +101,9 @@ class BasicTableTrashManager implements TableTrashManager {
       if (!arcticFileIO.exists(targetFileDir)) {
         arcticFileIO.mkdirs(targetFileDir);
       }
+      if (arcticFileIO.exists(targetFileLocation)) {
+        arcticFileIO.deleteFile(targetFileLocation);
+      }
       arcticFileIO.rename(path, targetFileLocation);
     } catch (Exception e) {
       LOG.error("{} failed to move file to trash, {}", tableIdentifier, path, e);

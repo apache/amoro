@@ -20,12 +20,13 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.table.TableIdentifier;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
  * Trash Manager for a table.
  */
-public interface TableTrashManager {
+public interface TableTrashManager extends Serializable {
   /**
    * Table identifier.
    * A TableTrashManager only handle files in this table's location.
