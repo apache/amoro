@@ -65,6 +65,7 @@ public class SimpleRegexCommandParser implements CommandParser {
 
   @Override
   public CallCommand parse(String line) throws IllegalCommandException {
+    line = line.trim();
     if (line.endsWith(";")) {
       line = line.replace(";", "");
     }

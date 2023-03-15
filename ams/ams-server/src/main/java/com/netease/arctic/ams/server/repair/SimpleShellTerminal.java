@@ -61,7 +61,7 @@ public class SimpleShellTerminal {
         String line = lineReader.readLine(commandHandler.prompt());
         if (line.equalsIgnoreCase("QUIT") ||
             line.equalsIgnoreCase("CLOSE") ||
-            line.equalsIgnoreCase("EXIST")) {
+            line.equalsIgnoreCase("EXIT")) {
           commandHandler.close();
           terminalOutput.output("quited repair server");
           return;
