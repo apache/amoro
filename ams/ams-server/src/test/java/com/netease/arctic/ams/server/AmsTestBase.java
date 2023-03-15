@@ -62,11 +62,11 @@ import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import com.netease.arctic.ams.server.service.impl.TableBlockerService;
 import com.netease.arctic.ams.server.service.impl.TestTableBlockerService;
+import com.netease.arctic.ams.server.service.impl.TrashCleanServiceTest;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
-import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -125,6 +125,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     TestTableBlockerService.class,
+    TrashCleanServiceTest.class,
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class,
