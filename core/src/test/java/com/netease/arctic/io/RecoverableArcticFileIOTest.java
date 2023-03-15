@@ -145,6 +145,8 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
         "/metadata/version-hint.text"));
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
+        "/metadata/v2.metadata.json"));
+    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
         "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
         "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
