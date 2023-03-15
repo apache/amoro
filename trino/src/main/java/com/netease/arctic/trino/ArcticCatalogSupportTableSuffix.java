@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
@@ -152,8 +153,33 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
+  public String tableLocation(TableIdentifier identifier) {
+    return arcticCatalog.tableLocation(identifier);
+  }
+
+  @Override
+  public ArcticHadoopTableOperations getChangeTableOperations(TableIdentifier identifier) {
+    return arcticCatalog.getChangeTableOperations(identifier);
+  }
+
+  @Override
+  public ArcticHadoopTableOperations getBaseTableOperations(TableIdentifier identifier) {
+    return arcticCatalog.getBaseTableOperations(identifier);
+  }
+
+  @Override
+  public ArcticFileIO getArcticIO() {
+    return arcticCatalog.getArcticIO();
+  }
+
+  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return arcticCatalog.getTableBlockerManager(tableIdentifier);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return arcticCatalog.properties();
   }
 
   public TableMetaStore getTableMetaStore() {
