@@ -33,4 +33,12 @@ public class TableTrashManagersTest {
     Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s/.trash", id.getCatalog(), id.getDatabase(), id.getTableName()),
         TableTrashManagers.getTrashLocation(id, "/table/location", "/tmp/xxx"));
   }
+
+  @Test
+  public void getTrashParentLocation() {
+    TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
+    String trashParentLocation = TableTrashManagers.getTrashParentLocation(id, "/tmp/xxx");
+    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s", id.getCatalog(), id.getDatabase(), id.getTableName()),
+        trashParentLocation);
+  }
 }

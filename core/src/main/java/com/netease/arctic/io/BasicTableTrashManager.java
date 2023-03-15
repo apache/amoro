@@ -178,4 +178,9 @@ class BasicTableTrashManager implements TableTrashManager {
     }
     return null;
   }
+
+  @Override
+  public String getTrashLocation() {
+    return trashLocation;
+  }
 }

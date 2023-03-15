@@ -21,17 +21,12 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
-import static org.junit.Assert.*;
 
 public class TrashCleanServiceTest extends TableTestBase {
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -39,13 +34,14 @@ public class TrashCleanServiceTest extends TableTestBase {
   @Test
   public void clean() {
     ArcticTable table = this.testKeyedTable;
-    String file1 = createTrashFileInDay(table, 9, "test1.parquet");
-    String file2 = createTrashFileInDay(table, 9, "test2.parquet");
-    String file3 = createTrashFileInDay(table, 9, "test/test3.parquet");
-    String file4 = createTrashFileInDay(table, 8, "test4.parquet");
-    String file5 = createTrashFileInDay(table, 7, "test5.parquet");
-    String file6 = createTrashFileInDay(table, 6, "test6.parquet");
-    String file7 = createTrashFileInDay(table, 0, "test7.parquet");
+    String trashLocation = TableTrashManagers.build(table).getTrashLocation();
+    String file1 = createTrashFileInDay(table, trashLocation, 9, "test1.parquet");
+    String file2 = createTrashFileInDay(table, trashLocation, 9, "test2.parquet");
+    String file3 = createTrashFileInDay(table, trashLocation, 9, "test/test3.parquet");
+    String file4 = createTrashFileInDay(table, trashLocation, 8, "test4.parquet");
+    String file5 = createTrashFileInDay(table, trashLocation, 7, "test5.parquet");
+    String file6 = createTrashFileInDay(table, trashLocation, 6, "test6.parquet");
+    String file7 = createTrashFileInDay(table, trashLocation, 0, "test7.parquet");
     Assert.assertTrue(table.io().exists(file1));
     Assert.assertTrue(table.io().exists(file2));
     Assert.assertTrue(table.io().exists(file3));
@@ -65,8 +61,7 @@ public class TrashCleanServiceTest extends TableTestBase {
     Assert.assertTrue(table.io().exists(file7));
   }
 
-  private String createTrashFileInDay(ArcticTable table, int day, String fileName) {
-    String trashLocation = TableTrashManagers.getTrashLocation(table.id(), table.location(), null);
+  private String createTrashFileInDay(ArcticTable table, String trashLocation, int day, String fileName) {
     String filePath = trashLocation + "/" + LocalDate.now().minusDays(day).format(DATE_FORMATTER) + "/" + fileName;
     OutputFile outputFile = table.io().newOutputFile(filePath);
     outputFile.createOrOverwrite();
