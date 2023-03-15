@@ -156,6 +156,10 @@ public class ThreadPool {
     }
   }
 
+  public static ThreadPoolExecutor getSyncFileInfoCachePool() {
+    return syncFileInfoCachePool;
+  }
+
   public static synchronized void shutdown() {
     if (self != null) {
       optimizeCheckPool.shutdownNow();
