@@ -59,8 +59,8 @@ public class ArcticFileIoDummy implements ArcticFileIO {
   }
 
   @Override
-  public boolean deleteFileWithResult(String path, boolean recursive) {
-    return false;
+  public void deleteDirectoryRecursively(String path) {
+
   }
 
   @Override

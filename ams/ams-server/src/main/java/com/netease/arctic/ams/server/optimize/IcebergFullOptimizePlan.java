@@ -24,6 +24,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,7 +47,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergFullOptimizePlan.class);
 
-  protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+  private final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+  // cache partitionDeleteFileTotalSize
+  private final Map<String, Long> partitionDeleteFileTotalSize = new HashMap<>();
 
   public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                  List<FileScanTask> fileScanTasks,
@@ -59,7 +63,7 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
     for (FileScanTask fileScanTask : fileScanTasks) {
       DataFile dataFile = fileScanTask.file();
       String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
-      currentPartitions.add(partitionPath);
+      allPartitions.add(partitionPath);
       List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
       fileScanTasks.add(fileScanTask);
       addCnt.getAndIncrement();
@@ -71,19 +75,10 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
-    List<FileScanTask> partitionFileScanTasks = partitionFileList.get(partitionToPath);
-    if (CollectionUtils.isEmpty(partitionFileScanTasks)) {
-      LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, there are no data files",
-          tableId(), getOptimizeType(), partitionToPath);
+    long deleteFilesTotalSize = getPartitionDeleteFileTotalSize(partitionToPath);
+    if (deleteFilesTotalSize == 0) {
       return false;
     }
-
-    Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
-    for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
-      partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
-    }
-
-    double deleteFilesTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
 
     long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -103,6 +98,58 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
             "delete files totalSize is {}, target size is {}",
         tableId(), getOptimizeType(), partitionToPath, deleteFilesTotalSize, targetSize);
     return false;
+  }
+
+  @Override
+  protected long getMaxOptimizeInterval() {
+    return CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT);
+  }
+
+  @Override
+  protected long getLatestOptimizeTime(String partition) {
+    return tableOptimizeRuntime.getLatestFullOptimizeTime(partition);
+  }
+
+  private long getPartitionDeleteFileTotalSize(String partitionToPath) {
+    Long cached = partitionDeleteFileTotalSize.get(partitionToPath);
+    if (cached != null) {
+      return cached;
+    }
+    List<FileScanTask> partitionFileScanTasks = partitionFileList.get(partitionToPath);
+    if (CollectionUtils.isEmpty(partitionFileScanTasks)) {
+      LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, there are no data files",
+          tableId(), getOptimizeType(), partitionToPath);
+      return 0;
+    }
+
+    Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
+    for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
+      partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
+    }
+
+    long deleteFileTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
+    partitionDeleteFileTotalSize.put(partitionToPath, deleteFileTotalSize);
+    return deleteFileTotalSize;
+  }
+
+  @Override
+  protected PartitionWeight getPartitionWeight(String partitionToPath) {
+    return new IcebergFullPartitionWeight(getPartitionDeleteFileTotalSize(partitionToPath));
+  }
+
+  protected static class IcebergFullPartitionWeight implements PartitionWeight {
+    private final long deleteFileSize;
+
+    public IcebergFullPartitionWeight(long deleteFileSize) {
+      this.deleteFileSize = deleteFileSize;
+    }
+
+    @Override
+    public int compareTo(PartitionWeight o) {
+      return Long.compare(((IcebergFullPartitionWeight) o).deleteFileSize, this.deleteFileSize);
+    }
   }
 
   @Override
@@ -138,8 +185,6 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
             eqDeleteFiles, posDeleteFiles, taskPartitionConfig));
       }
     }
-
-
     return collector;
   }
 }
