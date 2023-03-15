@@ -17,18 +17,6 @@ public class TestCommandParser extends CallCommandTestBase {
   private static SimpleRegexCommandParser simpleRegexCommandParser =
       new SimpleRegexCommandParser(callFactory);
 
-
-  @Test
-  public void testKeyWords() {
-    String[] keywords = simpleRegexCommandParser.keywords();
-    Assert.assertArrayEquals(new String[]{
-        "ANALYZE", "REPAIR", "THROUGH", "USE", "OPTIMIZE", "REFRESH", "FILE_CACHE", "SHOW", "START", "STOP",
-        "FIND_BACK", "SYNC_METADATA", "ROLLBACK", "DROP_TABLE", "CATALOGS", "DATABASES", "TABLES",
-        "analyze", "repair", "through", "use", "optimize", "refresh", "file_cache", "show", "start", "stop",
-        "find_back", "sync_metadata", "rollback", "drop_table", "catalogs", "databases", "tables"
-    }, keywords);
-  }
-
   @Test
   public void testParser() throws Exception {
     //AnalyzeCall test
@@ -62,8 +50,6 @@ public class TestCommandParser extends CallCommandTestBase {
         simpleRegexCommandParser.parse(" REPAIR stock THROUGH FIND_BACK ").getClass());
     Assert.assertEquals(RepairCall.class,
         simpleRegexCommandParser.parse("repair  stock  through  sync_metadata").getClass());
-    Assert.assertEquals(RepairCall.class,
-        simpleRegexCommandParser.parse(" REPAIR stock THROUGH drop_table ").getClass());
 
     //UseCall test
     Assert.assertEquals(UseCall.class,

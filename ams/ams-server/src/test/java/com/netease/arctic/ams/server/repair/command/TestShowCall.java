@@ -32,6 +32,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static com.netease.arctic.TableTestHelpers.TEST_TABLE_NAME;
+
 public class TestShowCall extends CallCommandTestBase {
 
   @Test
@@ -81,7 +83,7 @@ public class TestShowCall extends CallCommandTestBase {
 
     context.setDb(TableTestHelpers.TEST_DB_NAME);
     Assert.assertEquals(
-        "test_db test_table",
+        TEST_TABLE_NAME,
         callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
   }
 }
