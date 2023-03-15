@@ -24,6 +24,8 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.mapping.MappedField;
+import org.apache.iceberg.mapping.MappedFields;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -33,6 +35,7 @@ import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.Type;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,7 +82,7 @@ class AdaptHiveReadConf<T> {
       typeWithIds = fileSchema;
       this.projection = ParquetSchemaUtil.pruneColumns(fileSchema, expectedSchema);
     } else if (nameMapping != null) {
-      typeWithIds = ParquetSchemaUtil.applyNameMapping(fileSchema, nameMapping);
+      typeWithIds = ParquetSchemaUtil.applyNameMapping(fileSchema, convertNameMapping(fileSchema, nameMapping));
       this.projection = ParquetSchemaUtil.pruneColumns(typeWithIds, expectedSchema);
     } else {
       typeWithIds = ParquetSchemaUtil.addFallbackIds(fileSchema);
@@ -240,5 +243,35 @@ class AdaptHiveReadConf<T> {
       }
     }
     return listBuilder.build();
+  }
+
+  private static NameMapping convertNameMapping(MessageType fileSchema, NameMapping nameMapping) {
+    return NameMapping.of(convertNameMapping(fileSchema, nameMapping.asMappedFields().fields()));
+  }
+
+  private static MappedFields convertNameMapping(MessageType fileSchema, MappedFields mappedFields) {
+    if (mappedFields == null) {
+      return null;
+    }
+    return MappedFields.of(convertNameMapping(fileSchema, mappedFields.fields()));
+  }
+
+  private static List<MappedField> convertNameMapping(MessageType fileSchema, List<MappedField> fields) {
+    return fields.stream()
+        .map(mappedField -> {
+          Set<String> lowercaseNames =
+              mappedField.names().stream().map(name -> {
+                for (Type t : fileSchema.getFields()) {
+                  if (t.getName().equalsIgnoreCase(name)) {
+                    return t.getName();
+                  }
+                }
+                return name;
+              }).collect(Collectors.toSet());
+          return MappedField.of(mappedField.id(), lowercaseNames, convertNameMapping(
+              fileSchema,
+              mappedField.nestedMapping()));
+        })
+        .collect(Collectors.toList());
   }
 }
