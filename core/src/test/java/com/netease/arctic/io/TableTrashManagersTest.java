@@ -31,5 +31,16 @@ public class TableTrashManagersTest {
         TableTrashManagers.getTrashLocation(id, "/table/location", null));
     Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s/.trash", id.getCatalog(), id.getDatabase(), id.getTableName()),
         TableTrashManagers.getTrashLocation(id, "/table/location", "/tmp/xxx"));
+    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s/.trash", id.getCatalog(), id.getDatabase(), id.getTableName()),
+        TableTrashManagers.getTrashLocation(id, "/table/location", "/tmp/xxx/"));
+  }
+
+  @Test
+  public void getTrashParentLocation() {
+    TableIdentifier id = TableIdentifier.of("test_catalog", "test_db", "test_table");
+    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s", id.getCatalog(), id.getDatabase(), id.getTableName()),
+        TableTrashManagers.getTrashParentLocation(id, "/tmp/xxx"));
+    Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s", id.getCatalog(), id.getDatabase(), id.getTableName()),
+        TableTrashManagers.getTrashParentLocation(id, "/tmp/xxx/"));
   }
 }

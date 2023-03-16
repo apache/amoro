@@ -81,9 +81,9 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     String changeOrphanFilePath = testKeyedTable.changeTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
     OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
-    baseOrphanDataFile.createOrOverwrite();
+    baseOrphanDataFile.createOrOverwrite().close();
     OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
-    changeOrphanDataFile.createOrOverwrite();
+    changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
     OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
@@ -142,13 +142,13 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
     String changeOrphanFilePath = testKeyedTable.changeTable().location() + File.separator + "metadata" +
         File.separator + "orphan.avro";
     OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
-    baseOrphanDataFile.createOrOverwrite();
+    baseOrphanDataFile.createOrOverwrite().close();
     OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
-    changeOrphanDataFile.createOrOverwrite();
+    changeOrphanDataFile.createOrOverwrite().close();
 
     String changeInvalidMetadataJson = testKeyedTable.changeTable().location() + File.separator + "metadata" +
         File.separator + "v0.metadata.json";
-    testKeyedTable.io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite();
+    testKeyedTable.io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeInvalidMetadataJson));

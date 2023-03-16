@@ -137,7 +137,7 @@ public class TableProperties {
   public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT = ".+\\.parquet" +
       "|.*snap-[0-9]+-[0-9]+-.+\\.avro" + // snap-1515213806302741636-1-UUID.avro
       "|.*version-hint.text" + // version-hint.text
-      "|.*V[0-9]+\\.metadata\\.json" + // V123.metadata.json
+      "|.*v[0-9]+\\.metadata\\.json" + // v123.metadata.json
       "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
 
   /**
