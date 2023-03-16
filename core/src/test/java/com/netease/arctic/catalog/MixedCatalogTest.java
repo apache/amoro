@@ -149,7 +149,8 @@ public class MixedCatalogTest extends CatalogTestBase {
     getCatalog().refresh();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    assertRecoverableFileIO(table);
+    TableTrashManager expected = TableTrashManagers.build(table);
+    assertRecoverableFileIO(table, expected.getTrashLocation());
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     createTable = getCatalog()
@@ -157,7 +158,8 @@ public class MixedCatalogTest extends CatalogTestBase {
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    assertRecoverableFileIO(createTable);
+    expected = TableTrashManagers.build(createTable);
+    assertRecoverableFileIO(createTable, expected.getTrashLocation());
   }
 
   @Test
@@ -180,9 +182,10 @@ public class MixedCatalogTest extends CatalogTestBase {
     getCatalog().refresh();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    assertRecoverableFileIO(table);
-    assertRecoverableFileIO(table.asKeyedTable().changeTable());
-    assertRecoverableFileIO(table.asKeyedTable().baseTable());
+    TableTrashManager expected = TableTrashManagers.build(table);
+    assertRecoverableFileIO(table, expected.getTrashLocation());
+    assertRecoverableFileIO(table.asKeyedTable().changeTable(), expected.getTrashLocation());
+    assertRecoverableFileIO(table.asKeyedTable().baseTable(), expected.getTrashLocation());
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     createTable = getCatalog()
@@ -191,17 +194,17 @@ public class MixedCatalogTest extends CatalogTestBase {
         .withPrimaryKeySpec(TableTestHelpers.PRIMARY_KEY_SPEC)
         .create()
         .asKeyedTable();
-    assertRecoverableFileIO(createTable);
-    assertRecoverableFileIO(table.asKeyedTable().changeTable());
-    assertRecoverableFileIO(table.asKeyedTable().baseTable());
+    expected = TableTrashManagers.build(createTable);
+    assertRecoverableFileIO(createTable, expected.getTrashLocation());
+    assertRecoverableFileIO(table.asKeyedTable().changeTable(), expected.getTrashLocation());
+    assertRecoverableFileIO(table.asKeyedTable().baseTable(), expected.getTrashLocation());
   }
 
-  private void assertRecoverableFileIO(ArcticTable arcticTable) {
+  private void assertRecoverableFileIO(ArcticTable arcticTable, String expectTrashLocation) {
     Assert.assertTrue(arcticTable.io() instanceof RecoverableArcticFileIO);
     RecoverableArcticFileIO io = (RecoverableArcticFileIO) arcticTable.io();
-    TableTrashManager expected = TableTrashManagers.build(arcticTable);
-    Assert.assertEquals(expected.getTrashLocation(), io.getTrashManager().getTrashLocation());
-    Assert.assertEquals(expected.tableId(), io.getTrashManager().tableId());
+    Assert.assertEquals(expectTrashLocation, io.getTrashManager().getTrashLocation());
+    Assert.assertEquals(arcticTable.id(), io.getTrashManager().tableId());
     Assert.assertEquals(TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT, io.getTrashFilePattern());
   }
 

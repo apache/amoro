@@ -39,43 +39,37 @@ import java.util.List;
 class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+
   private final TableIdentifier tableIdentifier;
   private final ArcticFileIO arcticFileIO;
-  private final String tableRootLocation;
   private final String trashLocation;
 
-  BasicTableTrashManager(TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
-                         String tableRootLocation, String trashLocation) {
+  BasicTableTrashManager(TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO, String trashLocation) {
     this.tableIdentifier = tableIdentifier;
     this.arcticFileIO = arcticFileIO;
-    this.tableRootLocation = tableRootLocation;
     this.trashLocation = trashLocation;
   }
 
   /**
    * Generate file location in trash
    *
-   * @param relativeFileLocation - relative location of file
-   * @param trashLocation        - trash location
-   * @param deleteTime           - time the file deleted
+   * @param filePath          - file path
+   * @param trashRootLocation - trash location
+   * @param deleteTime        - time the file deleted
    * @return file location in trash
    */
   @VisibleForTesting
-  static String generateFileLocationInTrash(String relativeFileLocation, String trashLocation,
-                                            long deleteTime) {
-    return trashLocation + "/" + formatDate(deleteTime) + "/" + relativeFileLocation;
+  static String generateFileLocationInTrash(String filePath, String trashRootLocation, long deleteTime) {
+    return trashRootLocation + "/" + formatDate(deleteTime) + getAbsolutePath(filePath);
   }
 
   @VisibleForTesting
-  static String getRelativeFileLocation(String tableRootLocation, String fileLocation) {
-    tableRootLocation = TableFileUtils.getUriPath(tableRootLocation);
-    fileLocation = TableFileUtils.getUriPath(fileLocation);
-    if (!tableRootLocation.endsWith("/")) {
-      tableRootLocation = tableRootLocation + "/";
+  static String getAbsolutePath(String filePath) {
+    String uriPath = TableFileUtils.getUriPath(filePath);
+    if (!uriPath.startsWith("/")) {
+      uriPath = "/" + uriPath;
     }
-    Preconditions.checkArgument(fileLocation.startsWith(tableRootLocation),
-        String.format("file %s is not in table location %s", fileLocation, tableRootLocation));
-    return fileLocation.replaceFirst(tableRootLocation, "");
+    return uriPath;
   }
 
   private static String formatDate(long time) {
@@ -95,11 +89,9 @@ class BasicTableTrashManager implements TableTrashManager {
   @Override
   public void moveFileToTrash(String path) {
     try {
+      Preconditions.checkArgument(arcticFileIO.exists(path), "file not exist " + path);
       Preconditions.checkArgument(!arcticFileIO.isDirectory(path), "should not move a directory to trash " + path);
-      String targetFileLocation = generateFileLocationInTrash(
-          getRelativeFileLocation(this.tableRootLocation, path),
-          this.trashLocation,
-          System.currentTimeMillis());
+      String targetFileLocation = generateFileLocationInTrash(path, this.trashLocation, System.currentTimeMillis());
       String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
       if (!arcticFileIO.exists(targetFileDir)) {
         arcticFileIO.mkdirs(targetFileDir);
@@ -168,10 +160,10 @@ class BasicTableTrashManager implements TableTrashManager {
     if (!arcticFileIO.exists(this.trashLocation)) {
       return null;
     }
+    String absolutePath = getAbsolutePath(path);
     List<FileStatus> datePaths = arcticFileIO.list(this.trashLocation);
-    String relativeLocation = getRelativeFileLocation(this.tableRootLocation, path);
     for (FileStatus datePath : datePaths) {
-      String fullLocation = datePath.getPath().toString() + "/" + relativeLocation;
+      String fullLocation = datePath.getPath().toString() + absolutePath;
       if (arcticFileIO.exists(fullLocation)) {
         if (arcticFileIO.isDirectory(fullLocation)) {
           throw new IllegalArgumentException("can't restore a directory from trash " + fullLocation);

@@ -26,8 +26,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
-
 @RunWith(Parameterized.class)
 public class BuildTableTrashManagerTest extends TableTestBase {
 
@@ -49,13 +47,11 @@ public class BuildTableTrashManagerTest extends TableTestBase {
     TableIdentifier id = getArcticTable().id();
     TableTrashManager trashManager = TableTrashManagers.build(getArcticTable());
     Assert.assertEquals(id, trashManager.tableId());
-    Assert.assertEquals(getTableTrashLocation(id), trashManager.getTrashLocation());
+    Assert.assertEquals(getTableTrashLocation(), trashManager.getTrashLocation());
   }
 
-  private String getTableTrashLocation(TableIdentifier id) {
-    String catalogDir = getCatalogMeta().getCatalogProperties().get(KEY_WAREHOUSE);
-    return String.format("%s/%s/%s/%s", catalogDir, id.getDatabase(), id.getTableName(),
-        TableTrashManagers.DEFAULT_TRASH_DIR);
+  private String getTableTrashLocation() {
+    return String.format("%s/%s", getArcticTable().location(), TableTrashManagers.DEFAULT_TRASH_DIR);
   }
 
 }

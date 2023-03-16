@@ -21,8 +21,6 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TableFileUtils;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
@@ -39,13 +37,7 @@ public class TableTrashManagers {
    * @return TableTrashManager
    */
   public static TableTrashManager build(ArcticTable table) {
-    String tableRootLocation;
-    if (!TableTypeUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
-      tableRootLocation = TableFileUtils.getFileDir(table.location());
-    } else {
-      tableRootLocation = table.location();
-    }
-    return build(table.id(), tableRootLocation, table.properties(), table.io());
+    return build(table.id(), table.location(), table.properties(), table.io());
   }
 
   /**
@@ -61,7 +53,7 @@ public class TableTrashManagers {
                                         Map<String, String> tableProperties, ArcticFileIO fileIO) {
     String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
-    return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);
+    return new BasicTableTrashManager(tableIdentifier, fileIO, trashLocation);
   }
 
   /**
@@ -74,7 +66,7 @@ public class TableTrashManagers {
    */
   @VisibleForTesting
   static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
-                                        String customTrashRootLocation) {
+                                 String customTrashRootLocation) {
     String trashParentLocation;
     if (Strings.isNullOrEmpty(customTrashRootLocation)) {
       trashParentLocation = tableLocation;

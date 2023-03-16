@@ -39,7 +39,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static com.netease.arctic.io.BasicTableTrashManager.generateFileLocationInTrash;
-import static com.netease.arctic.io.BasicTableTrashManager.getRelativeFileLocation;
+import static com.netease.arctic.io.BasicTableTrashManager.getAbsolutePath;
 
 
 @RunWith(Parameterized.class)
@@ -64,22 +64,18 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testGenerateFileLocationInTrash() {
-    String relativeFileLocation =
-        getRelativeFileLocation("/tmp/table", "/tmp/table/change/file1");
-    Assert.assertEquals("change/file1", relativeFileLocation);
-    relativeFileLocation =
-        getRelativeFileLocation("/tmp/table/", "/tmp/table/change/file1");
-    Assert.assertEquals("change/file1", relativeFileLocation);
-    relativeFileLocation =
-        getRelativeFileLocation("hdfs://hz11-trino-arctic-0.jd.163.org:8020/user/warehouse/",
-            "/user/warehouse/change/file1");
-    Assert.assertEquals("change/file1", relativeFileLocation);
+    String absolutePath = getAbsolutePath("/tmp/table/change/file1");
+    Assert.assertEquals("/tmp/table/change/file1", absolutePath);
+    absolutePath = getAbsolutePath("tmp/table/change/file1");
+    Assert.assertEquals("/tmp/table/change/file1", absolutePath);
+    absolutePath = getAbsolutePath("hdfs://127.0.0.1:8020/user/warehouse");
+    Assert.assertEquals("/user/warehouse", absolutePath);
 
     LocalDateTime localDateTime = LocalDateTime.of(2023, 2, 2, 1, 1);
     long toEpochMilli = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     String locationInTrash =
-        generateFileLocationInTrash("change/file1", "/tmp/table/.trash", toEpochMilli);
-    Assert.assertEquals("/tmp/table/.trash/20230202/change/file1", locationInTrash);
+        generateFileLocationInTrash("hdfs://127.0.0.1:8020/user/warehouse/file1", "/tmp/table/.trash", toEpochMilli);
+    Assert.assertEquals("/tmp/table/.trash/20230202/user/warehouse/file1", locationInTrash);
   }
 
   @Test
@@ -96,8 +92,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
-    String fileLocationInTrash =
-        generateFileLocationInTrash(relativeFilePath, trashLocation, now);
+    String fileLocationInTrash = generateFileLocationInTrash(path, trashLocation, now);
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
@@ -138,9 +133,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
         Assert.assertThrows("should not successfully move a directory to trash",
             IllegalArgumentException.class, () -> tableTrashManager.moveFileToTrash(directory));
     Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
-    String relativeDirectory = getRelativeFileLocation(tableRootLocation, directory);
-    String directoryLocationInTrash =
-        generateFileLocationInTrash(relativeDirectory, trashLocation, now);
+    String directoryLocationInTrash = generateFileLocationInTrash(directory, trashLocation, now);
 
     Assert.assertTrue(getArcticTable().io().exists(directory));
     Assert.assertFalse(getArcticTable().io().exists(directoryLocationInTrash));
@@ -157,8 +150,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     String directory = TableFileUtils.getFileDir(path);
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
-    String fileLocationInTrash =
-        generateFileLocationInTrash(relativeFilePath, trashLocation, now);
+    String fileLocationInTrash = generateFileLocationInTrash(path, trashLocation, now);
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
@@ -195,16 +187,11 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     long day3 = LocalDateTime.of(2023, 2, 22, 1, 1)
         .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-    String file1Day1 =
-        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file1), trashLocation, day1);
-    String file2Day1 =
-        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file2), trashLocation, day1);
-    String file3Day1 =
-        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file3), trashLocation, day1);
-    String file4Day2 =
-        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file4), trashLocation, day2);
-    String file5Day3 =
-        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file5), trashLocation, day3);
+    String file1Day1 = generateFileLocationInTrash(file1, trashLocation, day1);
+    String file2Day1 = generateFileLocationInTrash(file2, trashLocation, day1);
+    String file3Day1 = generateFileLocationInTrash(file3, trashLocation, day1);
+    String file4Day2 = generateFileLocationInTrash(file4, trashLocation, day2);
+    String file5Day3 = generateFileLocationInTrash(file5, trashLocation, day3);
     createFile(getArcticTable().io(), file1Day1);
     createFile(getArcticTable().io(), file2Day1);
     createFile(getArcticTable().io(), file3Day1);

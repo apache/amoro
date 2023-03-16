@@ -187,7 +187,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
@@ -197,7 +197,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   public HMSClientPool getHMSClient() {
     return hiveClientPool;
   }
-
 
   class ArcticHiveTableBuilder extends ArcticTableBuilder {
 
@@ -391,7 +390,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
 
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, meta.getProperties(),
           tableMetaStore, catalogMeta.getCatalogProperties());
       return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,

@@ -50,13 +50,11 @@ public class BuildHiveTableTrashManagerTest extends HiveTableTestBase {
     TableIdentifier id = getArcticTable().id();
     TableTrashManager trashManager = TableTrashManagers.build(getArcticTable());
     Assert.assertEquals(id, trashManager.tableId());
-    Assert.assertEquals(getTableTrashLocation(id), trashManager.getTrashLocation());
+    Assert.assertEquals(getTableTrashLocation(), trashManager.getTrashLocation());
   }
 
-  private String getTableTrashLocation(TableIdentifier id) throws TException {
-    String databaseLocation = TEST_HMS.getHiveClient().getDatabase(id.getDatabase()).getLocationUri();
-    return String.format("%s/%s/%s", databaseLocation, id.getTableName(),
-        TableTrashManagers.DEFAULT_TRASH_DIR);
+  private String getTableTrashLocation() {
+    return String.format("%s/%s", getArcticTable().location(), TableTrashManagers.DEFAULT_TRASH_DIR);
   }
 
 }
