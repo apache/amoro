@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,32 +16,21 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.table;
+package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.hive.HMSClientPool;
+public interface CallFactory {
 
-/**
- * Mix-in interface to mark task use hive as base store
- */
-public interface SupportHive {
+  AnalyzeCall generateAnalyzeCall(String tablePath);
 
-  /**
-   * Base path to store hive data files
-   * @return path to store hive file
-   */
-  String hiveLocation();
+  HelpCall generateHelpCall();
 
-  /**
-   * the client to operate hive table
-   * @return hive metastore client
-   */
-  HMSClientPool getHMSClient();
+  OptimizeCall generateOptimizeCall(OptimizeCall.Action action, String tablePath);
 
-  boolean enableSyncHiveDataToArctic();
+  RepairCall generateRepairCall(String tablePath, RepairWay way, Long option);
 
-  boolean enableSyncHiveSchemaToArctic();
+  ShowCall generateShowCall(ShowCall.Namespaces namespaces);
 
-  void syncHiveDataToArctic(boolean force);
+  UseCall generateUseCall(String namespace);
 
-  void syncHiveSchemaToArctic();
+  TableCall generateTableCall(String tablePath, TableCall.TableOperation tableOperation);
 }

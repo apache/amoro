@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,32 +16,20 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.table;
+package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.server.maintainer.Context;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Mix-in interface to mark task use hive as base store
- */
-public interface SupportHive {
+public class TestTableCall extends CallCommandTestBase {
 
-  /**
-   * Base path to store hive data files
-   * @return path to store hive file
-   */
-  String hiveLocation();
 
-  /**
-   * the client to operate hive table
-   * @return hive metastore client
-   */
-  HMSClientPool getHMSClient();
-
-  boolean enableSyncHiveDataToArctic();
-
-  boolean enableSyncHiveSchemaToArctic();
-
-  void syncHiveDataToArctic(boolean force);
-
-  void syncHiveSchemaToArctic();
+  @Test
+  public void testRefresh() throws Exception {
+    Assert.assertEquals("OK",
+        callFactory.generateTableCall(TableTestHelpers.TEST_TABLE_ID.toString(), TableCall.TableOperation.REFRESH)
+            .call(new Context()));
+  }
 }

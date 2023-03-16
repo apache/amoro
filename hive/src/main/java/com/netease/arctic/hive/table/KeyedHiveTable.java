@@ -56,8 +56,12 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
   @Override
@@ -67,7 +71,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       syncHiveSchemaToArctic();
     }
     if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic();
+      syncHiveDataToArctic(false);
     }
   }
 
@@ -77,6 +81,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return ((SupportHive)baseTable()).hiveLocation();
   }
 
+  @Override
   public boolean enableSyncHiveSchemaToArctic() {
     return PropertyUtil.propertyAsBoolean(
         properties(),
@@ -84,10 +89,12 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
+  @Override
   public void syncHiveSchemaToArctic() {
     HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
   }
 
+  @Override
   public boolean enableSyncHiveDataToArctic() {
     return PropertyUtil.propertyAsBoolean(
         properties(),
@@ -95,8 +102,9 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
   }
 
-  public void syncHiveDataToArctic() {
-    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
+  @Override
+  public void syncHiveDataToArctic(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
   }
 
   @Override

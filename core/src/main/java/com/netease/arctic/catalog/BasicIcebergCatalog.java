@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableBuilder;
@@ -32,7 +31,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -186,33 +184,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", meta.getCatalogName()), e);
     }
-  }
-
-  @Override
-  public String tableLocation(TableIdentifier identifier) {
-    try {
-      return defaultWarehouseLocation.invokeChecked(toIcebergTableIdentifier(identifier));
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public ArcticHadoopTableOperations getChangeTableOperations(TableIdentifier identifier) {
-    return null;
-  }
-
-  @Override
-  public ArcticHadoopTableOperations getBaseTableOperations(TableIdentifier identifier) {
-    ArcticFileIO arcticFileIO = getArcticIO();
-    return new ArcticHadoopTableOperations(new Path(tableLocation(identifier)),
-        arcticFileIO,
-        tableMetaStore.getConfiguration());
-  }
-
-  @Override
-  public ArcticFileIO getArcticIO() {
-    return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
   }
 
   @Override

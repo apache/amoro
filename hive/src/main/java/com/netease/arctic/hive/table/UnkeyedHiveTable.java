@@ -81,15 +81,19 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       syncHiveSchemaToArctic();
     }
     if (enableSyncHiveDataToArctic()) {
-      syncHiveDataToArctic();
+      syncHiveDataToArctic(false);
     }
   }
 
   @Override
   public void refresh() {
     super.refresh();
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
   @Override
@@ -141,6 +145,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
     return new HiveSchemaUpdate(this, hiveClient, super.updateSchema());
   }
 
+  @Override
   public boolean enableSyncHiveSchemaToArctic() {
     return syncHiveChange && PropertyUtil.propertyAsBoolean(
         properties(),
@@ -148,10 +153,12 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
+  @Override
   public void syncHiveSchemaToArctic() {
     HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
   }
 
+  @Override
   public boolean enableSyncHiveDataToArctic() {
     return syncHiveChange && PropertyUtil.propertyAsBoolean(
         properties(),
@@ -159,7 +166,8 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
   }
 
-  public void syncHiveDataToArctic() {
-    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
+  @Override
+  public void syncHiveDataToArctic(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
   }
 }

@@ -51,4 +51,8 @@ public class CatalogManager {
   public List<String> catalogs() {
     return CatalogLoader.catalogs(thriftAddress);
   }
+
+  public String getThriftAddress() {
+    return thriftAddress;
+  }
 }

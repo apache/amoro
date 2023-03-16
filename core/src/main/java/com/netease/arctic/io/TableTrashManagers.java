@@ -18,15 +18,12 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class TableTrashManagers {
@@ -56,15 +53,6 @@ public class TableTrashManagers {
     String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
     return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);
-  }
-
-  public static TableTrashManager build(TableIdentifier tableIdentifier, ArcticCatalog arcticCatalog) {
-    Map<String, String> catalogProperties = arcticCatalog.properties();
-    Map<String, String> tableProperties =
-        CatalogUtil.mergeCatalogPropertiesToTable(Collections.emptyMap(), catalogProperties);
-    String tableLocation = arcticCatalog.tableLocation(tableIdentifier);
-    ArcticFileIO arcticIO = arcticCatalog.getArcticIO();
-    return build(tableIdentifier, tableLocation, tableProperties, arcticIO);
   }
 
   /**

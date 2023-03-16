@@ -20,8 +20,6 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -144,14 +142,6 @@ public interface ArcticCatalog {
    */
   void refresh();
 
-  String tableLocation(TableIdentifier identifier);
-
-  ArcticHadoopTableOperations getChangeTableOperations(TableIdentifier identifier);
-
-  ArcticHadoopTableOperations getBaseTableOperations(TableIdentifier identifier);
-
-  ArcticFileIO getArcticIO();
-
   /**
    * Return a table blocker manager.
    * @param tableIdentifier a table identifier
@@ -159,6 +149,11 @@ public interface ArcticCatalog {
    */
   TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier);
 
+  /**
+   * Return catalog properties.
+   *
+   * @return properties
+   */
   Map<String, String> properties();
 
 }

@@ -319,38 +319,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   }
 
   @Override
-  public String tableLocation(TableIdentifier identifier) {
-    TableMeta meta = getArcticTableMeta(identifier);
-    return checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
-  }
-
-  @Override
-  public ArcticHadoopTableOperations getChangeTableOperations(TableIdentifier identifier) {
-    TableMeta meta = getArcticTableMeta(identifier);
-    if (isKeyedTable(meta)) {
-      return new ArcticHadoopTableOperations(
-          new Path(meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE)),
-          getArcticIO(),
-          tableMetaStore.getConfiguration());
-    }
-    return null;
-  }
-
-  @Override
-  public ArcticHadoopTableOperations getBaseTableOperations(TableIdentifier identifier) {
-    TableMeta meta = getArcticTableMeta(identifier);
-    return new ArcticHadoopTableOperations(
-        new Path(meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE)),
-        getArcticIO(),
-        tableMetaStore.getConfiguration());
-  }
-
-  @Override
-  public ArcticFileIO getArcticIO() {
-    return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
-  }
-
-  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     validate(tableIdentifier);
     return BasicTableBlockerManager.build(tableIdentifier, client);
