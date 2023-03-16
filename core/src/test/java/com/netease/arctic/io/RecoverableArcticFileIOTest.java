@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 public class RecoverableArcticFileIOTest extends TableTestBase {
@@ -57,7 +58,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void exists() {
+  public void exists() throws IOException {
     createFile(file1);
     Assert.assertTrue(recoverableArcticFileIO.exists(file1));
     Assert.assertFalse(recoverableArcticFileIO.exists(file2));
@@ -71,7 +72,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void rename() {
+  public void rename() throws IOException {
     String newLocation = getArcticTable().location() + "/base/test/test4.parquet";
     createFile(file1);
     recoverableArcticFileIO.rename(file1, newLocation);
@@ -80,7 +81,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void deleteDirectoryRecursively() {
+  public void deleteDirectoryRecursively() throws IOException {
     createFile(file1);
     createFile(file2);
     createFile(file3);
@@ -90,7 +91,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void list() {
+  public void list() throws IOException {
     createFile(file1);
     createFile(file2);
     createFile(file3);
@@ -99,7 +100,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void isDirectory() {
+  public void isDirectory() throws IOException {
     createFile(file1);
     Assert.assertFalse(recoverableArcticFileIO.isDirectory(file1));
     Assert.assertTrue(recoverableArcticFileIO.isDirectory(getArcticTable().location()));
@@ -114,7 +115,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void deleteFile() {
+  public void deleteFile() throws IOException {
     createFile(file1);
     recoverableArcticFileIO.deleteFile(file1);
     Assert.assertFalse(arcticFileIO.exists(file1));
@@ -122,7 +123,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void deleteInputFile() {
+  public void deleteInputFile() throws IOException {
     createFile(file1);
     recoverableArcticFileIO.deleteFile(recoverableArcticFileIO.newInputFile(file1));
     Assert.assertFalse(arcticFileIO.exists(file1));
@@ -130,7 +131,7 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   }
 
   @Test
-  public void deleteOutputFile() {
+  public void deleteOutputFile() throws IOException {
     createFile(file1);
     recoverableArcticFileIO.deleteFile(recoverableArcticFileIO.newOutputFile(file1));
     Assert.assertFalse(arcticFileIO.exists(file1));
@@ -155,8 +156,8 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
         "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
   }
 
-  private void createFile(String path) {
+  private void createFile(String path) throws IOException {
     OutputFile baseOrphanDataFile = arcticFileIO.newOutputFile(path);
-    baseOrphanDataFile.createOrOverwrite();
+    baseOrphanDataFile.createOrOverwrite().close();
   }
 }

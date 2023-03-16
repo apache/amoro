@@ -25,6 +25,7 @@ import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -32,7 +33,7 @@ public class TrashCleanServiceTest extends TableTestBase {
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   @Test
-  public void clean() {
+  public void clean() throws IOException {
     ArcticTable table = this.testKeyedTable;
     String trashLocation = TableTrashManagers.build(table).getTrashLocation();
     String file1 = createTrashFileInDay(table, trashLocation, 9, "test1.parquet");
@@ -61,10 +62,11 @@ public class TrashCleanServiceTest extends TableTestBase {
     Assert.assertTrue(table.io().exists(file7));
   }
 
-  private String createTrashFileInDay(ArcticTable table, String trashLocation, int day, String fileName) {
+  private String createTrashFileInDay(ArcticTable table, String trashLocation, int day, String fileName)
+      throws IOException {
     String filePath = trashLocation + "/" + LocalDate.now().minusDays(day).format(DATE_FORMATTER) + "/" + fileName;
     OutputFile outputFile = table.io().newOutputFile(filePath);
-    outputFile.createOrOverwrite();
+    outputFile.createOrOverwrite().close();
     return filePath;
   }
 }

@@ -83,7 +83,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testDeleteAndRestore() {
+  public void testDeleteAndRestore() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation = tableTrashManager.getTrashLocation();
@@ -110,7 +110,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testMoveAndOverwrite() {
+  public void testMoveAndOverwrite() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
 
@@ -125,7 +125,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testDeleteDirectory() {
+  public void testDeleteDirectory() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation = tableTrashManager.getTrashLocation();
@@ -147,7 +147,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testRestoreDirectory() {
+  public void testRestoreDirectory() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     String trashLocation = tableTrashManager.getTrashLocation();
@@ -178,7 +178,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testCleanFiles() {
+  public void testCleanFiles() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
     BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.build(getArcticTable()));
     String trashLocation = tableTrashManager.getTrashLocation();
@@ -255,9 +255,9 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
   }
 
-  private String createFile(FileIO io, String path) {
+  private String createFile(FileIO io, String path) throws IOException {
     OutputFile baseOrphanDataFile = io.newOutputFile(path);
-    baseOrphanDataFile.createOrOverwrite();
+    baseOrphanDataFile.createOrOverwrite().close();
     return path;
   }
 
