@@ -19,6 +19,7 @@
 
 package org.apache.iceberg.parquet;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.RuntimeIOException;
@@ -245,7 +246,8 @@ class AdaptHiveReadConf<T> {
     return listBuilder.build();
   }
 
-  private static NameMapping convertNameMapping(MessageType fileSchema, NameMapping nameMapping) {
+  @VisibleForTesting
+  static NameMapping convertNameMapping(MessageType fileSchema, NameMapping nameMapping) {
     return NameMapping.of(convertNameMapping(fileSchema, nameMapping.asMappedFields().fields()));
   }
 
