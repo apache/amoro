@@ -22,6 +22,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 import org.apache.parquet.schema.MessageType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,123 +34,97 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 
 public class TestAdaptHiveReadConf {
 
-  private static final org.apache.iceberg.types.Types.StructType SUPPORTED_PRIMITIVES =
-      org.apache.iceberg.types.Types.StructType.of(
-          required(100, "id", org.apache.iceberg.types.Types.LongType.get()),
-          optional(101, "data", org.apache.iceberg.types.Types.StringType.get()),
-          required(102, "b", org.apache.iceberg.types.Types.BooleanType.get()),
-          optional(103, "i", org.apache.iceberg.types.Types.IntegerType.get()),
-          required(104, "l", org.apache.iceberg.types.Types.LongType.get()),
-          optional(105, "f", org.apache.iceberg.types.Types.FloatType.get()),
-          required(106, "d", org.apache.iceberg.types.Types.DoubleType.get()),
-          optional(107, "date", org.apache.iceberg.types.Types.DateType.get()),
-          required(108, "ts", org.apache.iceberg.types.Types.TimestampType.withZone()),
-          required(110, "s", org.apache.iceberg.types.Types.StringType.get()),
-          required(112, "fixed", org.apache.iceberg.types.Types.FixedType.ofLength(7)),
-          optional(113, "bytes", org.apache.iceberg.types.Types.BinaryType.get()),
-          required(114, "dec_9_0", org.apache.iceberg.types.Types.DecimalType.of(9, 0)),
-          required(115, "dec_11_2", org.apache.iceberg.types.Types.DecimalType.of(11, 2)),
-          required(116, "dec_38_10", org.apache.iceberg.types.Types.DecimalType.of(38, 10)) // spark's maximum precision
+  private static final Types.StructType SUPPORTED_PRIMITIVES =
+      Types.StructType.of(
+          required(100, "id", Types.LongType.get()),
+          optional(101, "data", Types.StringType.get()),
+          required(102, "b", Types.BooleanType.get()),
+          optional(103, "i", Types.IntegerType.get()),
+          required(104, "l", Types.LongType.get()),
+          optional(105, "f", Types.FloatType.get()),
+          required(106, "d", Types.DoubleType.get()),
+          optional(107, "date", Types.DateType.get()),
+          required(108, "ts", Types.TimestampType.withZone()),
+          required(110, "s", Types.StringType.get()),
+          required(112, "fixed", Types.FixedType.ofLength(7)),
+          optional(113, "bytes", Types.BinaryType.get()),
+          required(114, "dec_9_0", Types.DecimalType.of(9, 0)),
+          required(115, "dec_11_2", Types.DecimalType.of(11, 2)),
+          required(116, "dec_38_10", Types.DecimalType.of(38, 10)) // spark's maximum precision
       );
+
+  private final String col0 = "id";
+  private final String col1 = "list_of_maps";
+  private final String col5 = "map_of_lists";
+  private final String col9 = "list_of_lists";
+  private final String col12 = "map_of_maps";
+  private final String col17 = "list_of_struct_of_nested_types";
+  private final String col20 = "m1";
+  private final String col23 = "l1";
+  private final String col25 = "l2";
+  private final String col27 = "m2";
 
   @Test
   public void testAssignIdsByNameMapping() {
-    org.apache.iceberg.types.Types.StructType hiveStructType = org.apache.iceberg.types.Types.StructType.of(
-        required(0, "id".toUpperCase(), org.apache.iceberg.types.Types.LongType.get()),
-        optional(1, "list_of_maps".toUpperCase(),
-            org.apache.iceberg.types.Types.ListType.ofOptional(
-                2,
-                org.apache.iceberg.types.Types.MapType.ofOptional(3, 4,
-                    org.apache.iceberg.types.Types.StringType.get(),
-                    SUPPORTED_PRIMITIVES))),
-        optional(5, "map_of_lists".toUpperCase(),
-            org.apache.iceberg.types.Types.MapType.ofOptional(6, 7,
-                org.apache.iceberg.types.Types.StringType.get(),
-                org.apache.iceberg.types.Types.ListType.ofOptional(8, SUPPORTED_PRIMITIVES))),
-        required(9, "list_of_lists".toUpperCase(),
-            org.apache.iceberg.types.Types.ListType.ofOptional(
-                10,
-                org.apache.iceberg.types.Types.ListType.ofOptional(11, SUPPORTED_PRIMITIVES))),
-        required(12, "map_of_maps".toUpperCase(),
-            org.apache.iceberg.types.Types.MapType.ofOptional(13, 14,
-                org.apache.iceberg.types.Types.StringType.get(),
-                org.apache.iceberg.types.Types.MapType.ofOptional(15, 16,
-                    org.apache.iceberg.types.Types.StringType.get(),
-                    SUPPORTED_PRIMITIVES))),
-        required(
-            17,
-            "list_of_struct_of_nested_types".toUpperCase(),
-            org.apache.iceberg.types.Types.ListType.ofOptional(19, org.apache.iceberg.types.Types.StructType.of(
-                org.apache.iceberg.types.Types.NestedField.required(
-                    20,
-                    "m1".toUpperCase(),
-                    org.apache.iceberg.types.Types.MapType.ofOptional(21, 22,
-                        org.apache.iceberg.types.Types.StringType.get(),
-                        SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.optional(
-                    23,
-                    "l1".toUpperCase(),
-                    org.apache.iceberg.types.Types.ListType.ofRequired(24, SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.required(
-                    25,
-                    "l2".toUpperCase(),
-                    org.apache.iceberg.types.Types.ListType.ofRequired(26, SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.optional(
-                    27,
-                    "m2".toUpperCase(),
-                    org.apache.iceberg.types.Types.MapType.ofOptional(28, 29,
-                        org.apache.iceberg.types.Types.StringType.get(),
-                        SUPPORTED_PRIMITIVES))
-            )))
+    //hive struct field names are all uppercase
+    Types.StructType hiveStructType = Types.StructType.of(
+        required(0, col0.toUpperCase(), Types.LongType.get()),
+        optional(1, col1.toUpperCase(),
+            Types.ListType.ofOptional(2, Types.MapType.ofOptional(3, 4, Types.StringType.get(), SUPPORTED_PRIMITIVES))),
+        optional(
+            5,
+            col5.toUpperCase(),
+            Types.MapType.ofOptional(6, 7, Types.StringType.get(), Types.ListType.ofOptional(8, SUPPORTED_PRIMITIVES))),
+        required(9, col9.toUpperCase(),
+            Types.ListType.ofOptional(10, Types.ListType.ofOptional(11, SUPPORTED_PRIMITIVES))),
+        required(12, col12.toUpperCase(),
+            Types.MapType.ofOptional(
+                13,
+                14,
+                Types.StringType.get(),
+                Types.MapType.ofOptional(15, 16, Types.StringType.get(), SUPPORTED_PRIMITIVES))),
+        required(17, col17.toUpperCase(), Types.ListType.ofOptional(19, Types.StructType.of(
+            Types.NestedField.required(
+                20,
+                col20.toUpperCase(),
+                Types.MapType.ofOptional(21, 22, Types.StringType.get(), SUPPORTED_PRIMITIVES)),
+            Types.NestedField.optional(23, col23.toUpperCase(), Types.ListType.ofRequired(24, SUPPORTED_PRIMITIVES)),
+            Types.NestedField.required(25, col25.toUpperCase(), Types.ListType.ofRequired(26, SUPPORTED_PRIMITIVES)),
+            Types.NestedField.optional(
+                27,
+                col27.toUpperCase(),
+                Types.MapType.ofOptional(28, 29, Types.StringType.get(), SUPPORTED_PRIMITIVES))
+        )))
     );
 
-    org.apache.iceberg.types.Types.StructType structType = org.apache.iceberg.types.Types.StructType.of(
-        required(0, "id", org.apache.iceberg.types.Types.LongType.get()),
-        optional(1, "list_of_maps",
-            org.apache.iceberg.types.Types.ListType.ofOptional(
-                2,
-                org.apache.iceberg.types.Types.MapType.ofOptional(3, 4,
-                    org.apache.iceberg.types.Types.StringType.get(),
-                    SUPPORTED_PRIMITIVES))),
-        optional(5, "map_of_lists",
-            org.apache.iceberg.types.Types.MapType.ofOptional(6, 7,
-                org.apache.iceberg.types.Types.StringType.get(),
-                org.apache.iceberg.types.Types.ListType.ofOptional(8, SUPPORTED_PRIMITIVES))),
-        required(9, "list_of_lists",
-            org.apache.iceberg.types.Types.ListType.ofOptional(
-                10,
-                org.apache.iceberg.types.Types.ListType.ofOptional(11, SUPPORTED_PRIMITIVES))),
-        required(12, "map_of_maps",
-            org.apache.iceberg.types.Types.MapType.ofOptional(13, 14,
-                org.apache.iceberg.types.Types.StringType.get(),
-                org.apache.iceberg.types.Types.MapType.ofOptional(15, 16,
-                    org.apache.iceberg.types.Types.StringType.get(),
-                    SUPPORTED_PRIMITIVES))),
+    Types.StructType structType = Types.StructType.of(
+        required(0, col0, Types.LongType.get()),
+        optional(1, col1,
+            Types.ListType.ofOptional(2, Types.MapType.ofOptional(3, 4, Types.StringType.get(), SUPPORTED_PRIMITIVES))),
+        optional(
+            5,
+            col5,
+            Types.MapType.ofOptional(6, 7, Types.StringType.get(), Types.ListType.ofOptional(8, SUPPORTED_PRIMITIVES))),
         required(
-            17,
-            "list_of_struct_of_nested_types",
-            org.apache.iceberg.types.Types.ListType.ofOptional(19, org.apache.iceberg.types.Types.StructType.of(
-                org.apache.iceberg.types.Types.NestedField.required(
-                    20,
-                    "m1",
-                    org.apache.iceberg.types.Types.MapType.ofOptional(21, 22,
-                        org.apache.iceberg.types.Types.StringType.get(),
-                        SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.optional(
-                    23,
-                    "l1",
-                    org.apache.iceberg.types.Types.ListType.ofRequired(24, SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.required(
-                    25,
-                    "l2",
-                    org.apache.iceberg.types.Types.ListType.ofRequired(26, SUPPORTED_PRIMITIVES)),
-                org.apache.iceberg.types.Types.NestedField.optional(
-                    27,
-                    "m2",
-                    org.apache.iceberg.types.Types.MapType.ofOptional(28, 29,
-                        org.apache.iceberg.types.Types.StringType.get(),
-                        SUPPORTED_PRIMITIVES))
-            )))
+            9,
+            col9,
+            Types.ListType.ofOptional(10, Types.ListType.ofOptional(11, SUPPORTED_PRIMITIVES))),
+        required(12, col12,
+            Types.MapType.ofOptional(
+                13,
+                14,
+                Types.StringType.get(),
+                Types.MapType.ofOptional(15, 16, Types.StringType.get(), SUPPORTED_PRIMITIVES))),
+        required(17, col17, Types.ListType.ofOptional(19, Types.StructType.of(
+            Types.NestedField.required(
+                20,
+                col20,
+                Types.MapType.ofOptional(21, 22, Types.StringType.get(), SUPPORTED_PRIMITIVES)),
+            Types.NestedField.optional(23, col23, Types.ListType.ofRequired(24, SUPPORTED_PRIMITIVES)),
+            Types.NestedField.required(25, col25, Types.ListType.ofRequired(26, SUPPORTED_PRIMITIVES)),
+            Types.NestedField.optional(27, col27,
+                Types.MapType.ofOptional(28, 29, Types.StringType.get(), SUPPORTED_PRIMITIVES))
+        )))
     );
 
     Schema schema = new Schema(TypeUtil.assignFreshIds(structType, new AtomicInteger(0)::incrementAndGet)
