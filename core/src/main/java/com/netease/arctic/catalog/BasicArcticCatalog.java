@@ -221,13 +221,14 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   protected UnkeyedTable loadUnKeyedTable(TableMeta tableMeta) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
+    String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, tableMeta.getProperties(),
+    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, catalogMeta.getCatalogProperties());
+        fileIO, tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
   }
 
   protected String checkLocation(TableMeta meta, String locationKey) {
@@ -644,6 +645,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
     protected UnkeyedTable createUnKeyedTable(TableMeta meta) {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
+      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
 
       fillTableProperties(meta);
@@ -654,7 +656,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
           throw new IllegalStateException("create table failed", e);
         }
       });
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, baseLocation, meta.getProperties(),
+      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
           tableMetaStore, catalogMeta.getCatalogProperties());
       return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
