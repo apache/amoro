@@ -57,9 +57,11 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -412,6 +414,8 @@ public class TableOptimizeItem extends IJDBCService {
     if (!(Boolean.parseBoolean(PropertyUtil
         .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
+      tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+    } else if (getArcticTable().isKeyedTable() && !baseTableCacheAll()) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
       Map<String, Boolean> partitionIsRunning = generatePartitionRunning();
@@ -901,6 +905,24 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public List<OptimizeTaskItem> getOptimizeTasks() {
     return new ArrayList<>(optimizeTasks.values());
+  }
+
+  /**
+   * If {@link BaseTable} of {@link KeyedTable} have cached all snapshots/files.
+   *
+   * @return true for all cached
+   */
+  public boolean baseTableCacheAll() {
+    Preconditions.checkArgument(getArcticTable().isKeyedTable(), "only support keyed table");
+    long currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable());
+    if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+        !fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE,
+            currentBaseSnapshotId)) {
+      LOG.debug("File cache don't have cache snapshotId:{}, wait file cache sync latest file info",
+          currentBaseSnapshotId);
+      return false;
+    }
+    return true;
   }
 
   /**

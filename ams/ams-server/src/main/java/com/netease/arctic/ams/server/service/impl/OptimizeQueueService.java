@@ -632,6 +632,10 @@ public class OptimizeQueueService extends IJDBCService {
               continue;
             }
           }
+          
+          if (tableItem.getArcticTable().isKeyedTable() && !tableItem.baseTableCacheAll()) {
+            continue;
+          }
 
           List<BaseOptimizeTask> optimizeTasks;
           BaseOptimizePlan optimizePlan;
