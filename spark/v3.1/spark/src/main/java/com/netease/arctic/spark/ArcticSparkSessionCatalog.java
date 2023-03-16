@@ -41,6 +41,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
+
 
 /**
  * A Spark catalog that can also load non-Iceberg tables.
@@ -218,7 +220,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   private boolean isArcticTable(Table table) {
-    return table.properties().containsKey("arctic.enabled") &&
-        table.properties().get("arctic.enabled").equals("true");
+    return table.properties().containsKey(ARCTIC_TABLE_FLAG) &&
+        table.properties().get(ARCTIC_TABLE_FLAG).equals("true");
   }
 }

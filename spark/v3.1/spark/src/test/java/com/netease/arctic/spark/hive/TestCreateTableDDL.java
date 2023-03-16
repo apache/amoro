@@ -544,6 +544,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateTableLikeWithNoProvider() throws TException {
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `true`");
     TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
     TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
 
@@ -583,7 +584,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableA);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
-
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `false`");
   }
 
   @Test
