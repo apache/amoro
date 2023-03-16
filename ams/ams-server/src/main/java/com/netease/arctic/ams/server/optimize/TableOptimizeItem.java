@@ -409,7 +409,10 @@ public class TableOptimizeItem extends IJDBCService {
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else if (getArcticTable().isKeyedTable() && !baseTableCacheAll()) {
-      tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+      // Pending should not change to Idle when base not cache all
+      if (tableOptimizeRuntime.getOptimizeStatus() != TableOptimizeInfo.OptimizeStatus.Pending) {
+        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+      }
     } else {
       Map<String, Boolean> partitionIsRunning = generatePartitionRunning();
       FullOptimizePlan fullPlan = getFullPlan(-1, System.currentTimeMillis(), partitionIsRunning);
