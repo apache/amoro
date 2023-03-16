@@ -20,24 +20,43 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+import static com.netease.arctic.io.BasicTableTrashManager.generateFileLocationInTrash;
+import static com.netease.arctic.io.BasicTableTrashManager.getRelativeFileLocation;
+
+
+@RunWith(Parameterized.class)
 public class BasicTableTrashManagerTest extends TableTestBase {
-  public BasicTableTrashManagerTest() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+
+  public BasicTableTrashManagerTest(boolean keyedTable,
+                                    boolean partitionedTable) {
+    super(TableFormat.MIXED_ICEBERG, keyedTable, partitionedTable);
+  }
+
+  @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
+  public static Object[][] parameters() {
+    return new Object[][] {
+        {true, true},
+        {true, false},
+        {false, true},
+        {false, false}};
   }
 
   @Rule
@@ -45,29 +64,40 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testGenerateFileLocationInTrash() {
+    String relativeFileLocation =
+        getRelativeFileLocation("/tmp/table", "/tmp/table/change/file1");
+    Assert.assertEquals("change/file1", relativeFileLocation);
+    relativeFileLocation =
+        getRelativeFileLocation("/tmp/table/", "/tmp/table/change/file1");
+    Assert.assertEquals("change/file1", relativeFileLocation);
+    relativeFileLocation =
+        getRelativeFileLocation("hdfs://hz11-trino-arctic-0.jd.163.org:8020/user/warehouse/",
+            "/user/warehouse/change/file1");
+    Assert.assertEquals("change/file1", relativeFileLocation);
+
     LocalDateTime localDateTime = LocalDateTime.of(2023, 2, 2, 1, 1);
     long toEpochMilli = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-    String locationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
-        "/tmp/table", "/tmp/table/change/file1", "/tmp/table/.trash", toEpochMilli);
+    String locationInTrash =
+        generateFileLocationInTrash("change/file1", "/tmp/table/.trash", toEpochMilli);
     Assert.assertEquals("/tmp/table/.trash/20230202/change/file1", locationInTrash);
   }
 
   @Test
-  public void testDeleteAndRestore() {
+  public void testDeleteAndRestore() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
-    String trashLocation =
-        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String trashLocation = tableTrashManager.getTrashLocation();
 
     String relativeFilePath = "base/test/test1.parquet";
-    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     Assert.assertFalse(tableTrashManager.fileExistInTrash(path));
     Assert.assertFalse(tableTrashManager.restoreFileFromTrash(path));
 
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
-    String fileLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
-        getArcticTable().location(), path, trashLocation, now);
+    String fileLocationInTrash =
+        generateFileLocationInTrash(relativeFilePath, trashLocation, now);
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
@@ -80,26 +110,27 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testMoveAndOverwrite() {
+  public void testMoveAndOverwrite() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
 
     String relativeFilePath = "base/test/test1.parquet";
-    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     tableTrashManager.moveFileToTrash(path);
     Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
-    createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
     tableTrashManager.moveFileToTrash(path);
     Assert.assertTrue(tableTrashManager.fileExistInTrash(path));
   }
 
   @Test
-  public void testDeleteDirectory() {
+  public void testDeleteDirectory() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
-    String trashLocation =
-        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
-    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     String directory = TableFileUtils.getFileDir(path);
     long now = System.currentTimeMillis();
@@ -107,26 +138,27 @@ public class BasicTableTrashManagerTest extends TableTestBase {
         Assert.assertThrows("should not successfully move a directory to trash",
             IllegalArgumentException.class, () -> tableTrashManager.moveFileToTrash(directory));
     Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
-    String directoryLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
-        getArcticTable().location(), directory, trashLocation, now);
+    String relativeDirectory = getRelativeFileLocation(tableRootLocation, directory);
+    String directoryLocationInTrash =
+        generateFileLocationInTrash(relativeDirectory, trashLocation, now);
 
     Assert.assertTrue(getArcticTable().io().exists(directory));
     Assert.assertFalse(getArcticTable().io().exists(directoryLocationInTrash));
   }
 
   @Test
-  public void testRestoreDirectory() {
+  public void testRestoreDirectory() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
-    String trashLocation =
-        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
+    String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
-    String path = createFile(getArcticTable().io(), getArcticTable().location() + File.separator + relativeFilePath);
+    String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
     String directory = TableFileUtils.getFileDir(path);
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
-    String fileLocationInTrash = BasicTableTrashManager.generateFileLocationInTrash(
-        getArcticTable().location(), path, trashLocation, now);
+    String fileLocationInTrash =
+        generateFileLocationInTrash(relativeFilePath, trashLocation, now);
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
@@ -146,16 +178,16 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testCleanFiles() {
+  public void testCleanFiles() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) TableTrashManagers.build(getArcticTable()));
-    String trashLocation =
-        TableTrashManagers.getTrashLocation(getArcticTable().id(), getArcticTable().location(), null);
-    String file1 = getArcticTable().location() + File.separator + "base/test/test1.parquet";
-    String file2 = getArcticTable().location() + File.separator + "base/test/test2.parquet";
-    String file3 = getArcticTable().location() + File.separator + "base/test3/test3.parquet";
-    String file4 = getArcticTable().location() + File.separator + "base/test/test4.parquet";
-    String file5 = getArcticTable().location() + File.separator + "base/test/test5.parquet";
-    String illegalFile = trashLocation + File.separator + "/000/base/test/test6.parquet";
+    String trashLocation = tableTrashManager.getTrashLocation();
+    String file1 = fullLocation(tableRootLocation, "base/test/test1.parquet");
+    String file2 = fullLocation(tableRootLocation, "base/test/test2.parquet");
+    String file3 = fullLocation(tableRootLocation, "base/test3/test3.parquet");
+    String file4 = fullLocation(tableRootLocation, "base/test/test4.parquet");
+    String file5 = fullLocation(tableRootLocation, "base/test/test5.parquet");
+    String illegalFile = trashLocation + "/000/base/test/test6.parquet";
     long day1 = LocalDateTime.of(2023, 2, 20, 1, 1)
         .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     long day2 = LocalDateTime.of(2023, 2, 21, 1, 1)
@@ -164,15 +196,15 @@ public class BasicTableTrashManagerTest extends TableTestBase {
         .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
     String file1Day1 =
-        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file1, trashLocation, day1);
+        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file1), trashLocation, day1);
     String file2Day1 =
-        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file2, trashLocation, day1);
+        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file2), trashLocation, day1);
     String file3Day1 =
-        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file3, trashLocation, day1);
+        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file3), trashLocation, day1);
     String file4Day2 =
-        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file4, trashLocation, day2);
+        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file4), trashLocation, day2);
     String file5Day3 =
-        BasicTableTrashManager.generateFileLocationInTrash(getArcticTable().location(), file5, trashLocation, day3);
+        generateFileLocationInTrash(getRelativeFileLocation(tableRootLocation, file5), trashLocation, day3);
     createFile(getArcticTable().io(), file1Day1);
     createFile(getArcticTable().io(), file2Day1);
     createFile(getArcticTable().io(), file3Day1);
@@ -206,11 +238,12 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   @Test
   public void testDeleteTrashLocation() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
     String customTrashLocation = tempTrashLocation.newFolder().getPath();
     getArcticTable().updateProperties()
         .set(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION, customTrashLocation)
         .commit();
-    String file1 = getArcticTable().location() + File.separator + "base/test/test1.parquet";
+    String file1 = fullLocation(tableRootLocation, "base/test/test1.parquet");
     createFile(getArcticTable().io(), file1);
     TableTrashManager tableTrashManager = TableTrashManagers.build(getArcticTable());
     tableTrashManager.moveFileToTrash(file1);
@@ -222,9 +255,24 @@ public class BasicTableTrashManagerTest extends TableTestBase {
     Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
   }
 
-  private String createFile(FileIO io, String path) {
+  private String createFile(FileIO io, String path) throws IOException {
     OutputFile baseOrphanDataFile = io.newOutputFile(path);
-    baseOrphanDataFile.createOrOverwrite();
+    baseOrphanDataFile.createOrOverwrite().close();
     return path;
+  }
+
+  private String getTableRootLocation(ArcticTable table) {
+    if (!TableTypeUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
+      return TableFileUtils.getFileDir(table.location());
+    } else {
+      return table.location();
+    }
+  }
+
+  private String fullLocation(String dir, String relativeLocation) {
+    if (!dir.endsWith("/")) {
+      dir = dir + "/";
+    }
+    return dir + relativeLocation;
   }
 }
