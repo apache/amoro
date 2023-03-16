@@ -397,8 +397,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         tableMetadata.getProperties(),
         TableProperties.ENABLE_SELF_OPTIMIZING,
         TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
-      unOptimizeTables.add(tableIdentifier);
-      persistTableRuntime(new TableOptimizeRuntime(tableIdentifier));
+      if (!unOptimizeTables.contains(tableIdentifier)) {
+        unOptimizeTables.add(tableIdentifier);
+        persistTableRuntime(new TableOptimizeRuntime(tableIdentifier));
+      }
       return;
     }
 
