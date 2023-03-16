@@ -91,7 +91,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
@@ -155,7 +155,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
@@ -219,7 +219,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
@@ -281,7 +281,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);

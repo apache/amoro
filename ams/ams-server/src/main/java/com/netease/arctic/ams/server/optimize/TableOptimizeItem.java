@@ -115,13 +115,6 @@ public class TableOptimizeItem extends IJDBCService {
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
   private volatile double quotaCache;
-  private final Predicate<Long> snapshotIsCached = new Predicate<Long>() {
-    @Override
-    public boolean apply(@Nullable Long snapshotId) {
-      return fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(),
-          Constants.INNER_TABLE_BASE, snapshotId);
-    }
-  };
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -941,10 +934,10 @@ public class TableOptimizeItem extends IJDBCService {
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveFullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     } else {
       return new FullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     }
   }
 
@@ -964,10 +957,10 @@ public class TableOptimizeItem extends IJDBCService {
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveMajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     } else {
       return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     }
   }
 
@@ -989,7 +982,7 @@ public class TableOptimizeItem extends IJDBCService {
         fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
 
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
-        partitionIsRunning, queueId, currentTime, snapshotIsCached);
+        partitionIsRunning, queueId, currentTime);
   }
 
   /**
