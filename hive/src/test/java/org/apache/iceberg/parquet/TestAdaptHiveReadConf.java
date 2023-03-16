@@ -18,7 +18,6 @@
 
 package org.apache.iceberg.parquet;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMapping;
@@ -26,6 +25,8 @@ import org.apache.iceberg.types.TypeUtil;
 import org.apache.parquet.schema.MessageType;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
