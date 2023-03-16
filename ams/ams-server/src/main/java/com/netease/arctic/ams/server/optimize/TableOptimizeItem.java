@@ -57,9 +57,11 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -113,13 +115,6 @@ public class TableOptimizeItem extends IJDBCService {
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
   private volatile double quotaCache;
-  private final Predicate<Long> snapshotIsCached = new Predicate<Long>() {
-    @Override
-    public boolean apply(@Nullable Long snapshotId) {
-      return fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(),
-          Constants.INNER_TABLE_BASE, snapshotId);
-    }
-  };
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -413,6 +408,11 @@ public class TableOptimizeItem extends IJDBCService {
         .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+    } else if (getArcticTable().isKeyedTable() && !baseTableCacheAll()) {
+      // Pending should not change to Idle when base not cache all
+      if (tableOptimizeRuntime.getOptimizeStatus() != TableOptimizeInfo.OptimizeStatus.Pending) {
+        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+      }
     } else {
       Map<String, Boolean> partitionIsRunning = generatePartitionRunning();
       FullOptimizePlan fullPlan = getFullPlan(-1, System.currentTimeMillis(), partitionIsRunning);
@@ -904,6 +904,24 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
+   * If {@link BaseTable} of {@link KeyedTable} have cached all snapshots/files.
+   *
+   * @return true for all cached
+   */
+  public boolean baseTableCacheAll() {
+    Preconditions.checkArgument(getArcticTable().isKeyedTable(), "only support keyed table");
+    long currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable());
+    if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+        !fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE,
+            currentBaseSnapshotId)) {
+      LOG.debug("File cache don't have cache snapshotId:{}, wait file cache sync latest file info",
+          currentBaseSnapshotId);
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Get Full Plan.
    *
    * @param queueId     -
@@ -919,10 +937,10 @@ public class TableOptimizeItem extends IJDBCService {
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveFullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     } else {
       return new FullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     }
   }
 
@@ -942,10 +960,10 @@ public class TableOptimizeItem extends IJDBCService {
 
     if (getArcticTable() instanceof SupportHive) {
       return new SupportHiveMajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     } else {
       return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime, snapshotIsCached);
+          baseFiles, posDeleteFiles, partitionIsRunning, queueId, currentTime);
     }
   }
 
@@ -967,7 +985,7 @@ public class TableOptimizeItem extends IJDBCService {
         fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
 
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
-        partitionIsRunning, queueId, currentTime, snapshotIsCached);
+        partitionIsRunning, queueId, currentTime);
   }
 
   /**

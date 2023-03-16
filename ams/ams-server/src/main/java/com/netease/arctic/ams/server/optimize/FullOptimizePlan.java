@@ -61,10 +61,9 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                           List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
-                          Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                          Predicate<Long> snapshotIsCached) {
+                          Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, Collections.emptyList(), posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+        partitionTaskRunning, queueId, currentTime);
   }
 
   @Override
