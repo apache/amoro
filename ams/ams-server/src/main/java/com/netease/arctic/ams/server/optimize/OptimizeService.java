@@ -150,7 +150,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       }
       checkTasks.checkRunningTask(
           cachedTables.keySet(),
-          identifier -> checkInterval,
+          () -> 0L,
+          () -> checkInterval,
           OptimizeCheckTask::new,
           false);
       LOG.info("Schedule Optimize Checker finished with {} valid tables", cachedTables.keySet().size());
