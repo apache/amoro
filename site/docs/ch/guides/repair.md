@@ -127,7 +127,7 @@ OPTIMIZE START user
 ```
 
 #### TABLE
-`TABLE ${table_name} [ REFRESH | SYNC_HIVE_METADATA | SYNC_HIVE_DATA | DROP_METADATA ]`
+`TABLE ${table_name} [ REFRESH | SYNC_HIVE_METADATA | SYNC_HIVE_DATA | SYNC_HIVE_DATA_FORCE | DROP_METADATA ]`
 
 对指定表进行操作，REFRESH:刷新表的文件缓存，SYNC_HIVE_METADATA: 同步 Hive 兼容表的元数据，SYNC_HIVE_DATA: 同步 Hive兼容表的数据，
 DROP_METADATA: 删除 Arctic 表的元数据，删除完了数据文件还存在，用户可以从当前数据重构这张表.

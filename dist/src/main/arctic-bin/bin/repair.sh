@@ -81,4 +81,4 @@ fi
 
 JVM_MEMORY=$((JVM_MEMORY*1024))
 
-$JAVA_RUN -Xms"$JVM_MEMORY"m -Xmx"$JVM_MEMORY"m com.netease.arctic.ams.server.repair.RepairMain $THRIFT_URL $CONFIG_PATH
+$JAVA_RUN -Xms"$JVM_MEMORY"m -Xmx"$JVM_MEMORY"m com.netease.arctic.ams.server.maintainer.MaintainerMain $THRIFT_URL $CONFIG_PATH
