@@ -48,32 +48,37 @@ public class TableCall implements CallCommand {
   @Override
   public String call(Context context) throws Exception {
     TableIdentifier identifier = fullTableName(context, tablePath);
-    ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
-    ArcticTable arcticTable = arcticCatalog.loadTable(identifier);
     switch (tableOperation) {
       case REFRESH: {
         client.refreshTable(identifier.buildTableIdentifier());
         return ok();
       }
       case SYNC_HIVE_METADATA: {
+        ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
+        ArcticTable arcticTable = arcticCatalog.loadTable(identifier);
         if (TableTypeUtil.isHive(arcticTable)) {
           ((SupportHive)arcticTable).syncHiveSchemaToArctic();
         }
         return ok();
       }
       case SYNC_HIVE_DATA: {
+        ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
+        ArcticTable arcticTable = arcticCatalog.loadTable(identifier);
         if (TableTypeUtil.isHive(arcticTable)) {
           ((SupportHive)arcticTable).syncHiveDataToArctic(false);
         }
         return ok();
       }
       case SYNC_HIVE_DATA_FORCE : {
+        ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
+        ArcticTable arcticTable = arcticCatalog.loadTable(identifier);
         if (TableTypeUtil.isHive(arcticTable)) {
           ((SupportHive)arcticTable).syncHiveDataToArctic(true);
         }
         return ok();
       }
       case DROP_METADATA: {
+        ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
         arcticCatalog.dropTable(identifier, false);
         return ok();
       }
