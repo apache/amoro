@@ -46,6 +46,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
@@ -64,7 +65,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     });
     Assert.assertNotEquals(newLocation, hiveLocation);
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable);
     hiveLocation = ((SupportHive) testUnPartitionKeyedHiveTable).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
           testUnPartitionKeyedHiveTable.id().getTableName());
@@ -84,7 +85,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
       return hiveTable.getSd().getLocation();
     });
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testUnPartitionKeyedHiveTable);
     String newHiveLocation = ((SupportHive) testUnPartitionKeyedHiveTable).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
           testUnPartitionKeyedHiveTable.id().getTableName());
@@ -109,7 +110,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
             testKeyedHiveTable.id().getTableName(), partitionValues)));
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
     Partition hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
             testKeyedHiveTable.id().getTableName(), partitionValues));
@@ -159,7 +160,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
             testKeyedHiveTable.id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     Assert.assertThrows(NoSuchObjectException.class, () -> ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
@@ -208,7 +209,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
             testKeyedHiveTable.id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
@@ -265,7 +266,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 
-    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable, "UnitTest");
+    SupportHiveSyncService.SupportHiveSyncTask.syncIcebergToHive(testKeyedHiveTable);
 
     hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
         client.getPartition(testKeyedHiveTable.id().getDatabase(),
@@ -286,14 +287,14 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
   }
 
   private List<DataFile> insertTableHiveDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .withTransactionId(transactionId)
             .buildWriter(HiveLocationKind.INSTANT) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .buildWriter(HiveLocationKind.INSTANT);
-
-    List<DataFile> baseDataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+    List<DataFile> baseDataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

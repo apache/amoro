@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.write;
 
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -65,10 +64,6 @@ public class ArcticFileCommitterTest extends FlinkTestBase {
   }
 
   public void checkChangeFiles(int fileCnt, int recordCnt, KeyedTable table) {
-    checkChangeFiles(fileCnt, recordCnt, null, table);
-  }
-
-  public void checkChangeFiles(int fileCnt, int recordCnt, Long fileSeqno, KeyedTable table) {
     table.changeTable().refresh();
     TableScan tableScan = table.changeTable().newScan();
     CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles();
@@ -77,9 +72,6 @@ public class ArcticFileCommitterTest extends FlinkTestBase {
     for (FileScanTask fileScanTask : fileScanTasks) {
       actualFileCnt++;
       actualRecordCnt += fileScanTask.file().recordCount();
-      if (fileSeqno != null) {
-        Assert.assertEquals(fileSeqno, new DefaultKeyedFile(fileScanTask.file()).transactionId());
-      }
     }
     Assert.assertEquals(fileCnt, actualFileCnt);
     Assert.assertEquals(recordCnt, actualRecordCnt);

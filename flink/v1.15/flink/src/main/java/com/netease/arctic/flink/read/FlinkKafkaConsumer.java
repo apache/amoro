@@ -19,7 +19,6 @@ package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.internals.AbstractFetcher;
 import com.netease.arctic.flink.read.internals.KafkaFetcher;
-import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.metrics.MetricGroup;
@@ -67,8 +66,10 @@ import static org.apache.flink.util.PropertiesUtil.getLong;
  *
  * <p>Please refer to Kafka's documentation for the available configuration properties:
  * http://kafka.apache.org/documentation.html#newconsumerconfigs
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
-@PublicEvolving
+@Deprecated
 public class FlinkKafkaConsumer<T> extends FlinkKafkaConsumerBase<T> {
 
   private static final long serialVersionUID = 1L;

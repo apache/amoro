@@ -85,6 +85,11 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all optimize commit processes.");
+  public static final ConfigOption<Long> OPTIMIZE_REFRESH_TABLES_INTERVAL =
+      ConfigOptions.key("arctic.ams.optimize.refresh-tables.interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Refresh interval of tables in all catalogs.");
   public static final ConfigOption<Integer> EXPIRE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.expire.thread.pool-size")
           .intType()
@@ -97,6 +102,12 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all orphan file clean processes.");
+  public static final ConfigOption<Integer> TRASH_CLEAN_THREAD_POOL_SIZE =
+      ConfigOptions.key("arctic.ams.trash.clean.thread.pool-size")
+          .intType()
+          .defaultValue(0)
+          .withDescription("Number of threads in the thread pool.  " +
+              "These will be used to execute all table trash clean processes.");
   public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.support.hive.sync.thread.pool-size")
           .intType()
@@ -158,6 +169,16 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("mysql")
           .withDescription("Restore database type.");
+  public static final ConfigOption<String> LOGIN_USERNAME =
+      ConfigOptions.key("login.username")
+          .stringType()
+          .defaultValue("admin")
+          .withDescription("ams login username.");
+  public static final ConfigOption<String> LOGIN_PASSWORD =
+      ConfigOptions.key("login.password")
+          .stringType()
+          .defaultValue("admin")
+          .withDescription("ams login password.");
   public static final ConfigOption<Boolean> ADAPT_HIVE_CLEAN_STALE_CHANGE_FILES_DEFAULT =
       ConfigOptions.key("adapt.hive.stale-change-files.clean.default")
           .booleanType()
@@ -188,6 +209,7 @@ public class ArcticMetaStoreConf {
    * config key prefix of terminal
    */
   public static final String TERMINAL_PREFIX = "arctic.ams.terminal.";
+  public static final String SPARK_CONF = "spark.";
   public static final ConfigOption<String> TERMINAL_BACKEND =
       ConfigOptions.key("arctic.ams.terminal.backend")
           .stringType()
@@ -217,4 +239,10 @@ public class ArcticMetaStoreConf {
           .intType()
           .defaultValue(30)
           .withDescription("session timeout in minute");
+
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("arctic.ams.blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
 }

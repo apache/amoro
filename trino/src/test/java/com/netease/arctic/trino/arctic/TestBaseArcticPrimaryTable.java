@@ -73,25 +73,25 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Test
   public void changeQuery(){
     assertQuery("select * from " + "arctic.test_db.\"test_pk_table#change\"",
-        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,2,2,'INSERT')," +
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
-            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',3,1,'DELETE')");
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase(){
     assertQuery("select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
-            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,2,2,'INSERT')," +
+            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
                     "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',3,1,'DELETE')");
+                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @Test
   public void changeQueryWhenTableNameContainDataBase(){
     assertQuery("select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
-            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,2,2,'INSERT')," +
+            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
                     "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',3,1,'DELETE')");
+                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @AfterClass

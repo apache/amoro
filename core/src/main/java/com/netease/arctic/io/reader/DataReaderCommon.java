@@ -2,7 +2,7 @@ package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
 import org.apache.iceberg.DataFile;
@@ -24,7 +24,7 @@ import java.util.function.BiFunction;
 
 public class DataReaderCommon {
 
-  protected static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
+  public static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
       BiFunction<Type, Object, Object> convertConstant) {
     Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
     Map<Integer, Object> idToConstant = new HashMap<>();
@@ -59,9 +59,8 @@ public class DataReaderCommon {
   }
 
   protected static Map<Integer, ?> getIdToConstant(
-      IcebergContentFile contentFile, Schema projectedSchema, PartitionSpec spec,
+      DataFileWithSequence dataFile, Schema projectedSchema, PartitionSpec spec,
       BiFunction<Type, Object, Object> convertConstant) {
-    DataFile dataFile = contentFile.asDataFile();
     Map<Integer, Object> idToConstant = new HashMap<>();
 
     idToConstant.putAll(partitionMap(dataFile, spec, convertConstant));
@@ -71,7 +70,7 @@ public class DataReaderCommon {
 
     idToConstant.put(
         MetadataColumns.TRANSACTION_ID_FILED_ID,
-        convertConstant.apply(Types.LongType.get(), contentFile.getSequenceNumber()));
+        convertConstant.apply(Types.LongType.get(), dataFile.getSequenceNumber()));
 
     return idToConstant;
   }

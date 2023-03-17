@@ -19,7 +19,6 @@
 package com.netease.arctic.spark;
 
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -28,8 +27,6 @@ import org.apache.spark.sql.connector.catalog.CatalogExtension;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
-import org.apache.spark.sql.connector.catalog.StagedTable;
-import org.apache.spark.sql.connector.catalog.StagingTableCatalog;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
@@ -42,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATALOG_TABLE;
 
 /**
  * A Spark catalog that can also load non-Iceberg tables.
@@ -50,7 +46,7 @@ import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATAL
  * @param <T> CatalogPlugin class to avoid casting to TableCatalog and SupportsNamespaces.
  */
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    implements StagingTableCatalog, SupportsNamespaces, CatalogExtension {
+    implements SupportsNamespaces, CatalogExtension {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkSessionCatalog.class);
   private static final String[] DEFAULT_NAMESPACE = new String[]{"default"};
 
@@ -118,17 +114,11 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    if (isDelegateEnable()) {
-      try {
-        LOG.info("try to load arctic table first ......");
-        return getArcticCatalog().loadTable(ident);
-      } catch (NoSuchTableException e) {
-        LOG.info("no arctic table, load hive table by default spark session catalog.");
-        return getSessionCatalog().loadTable(ident);
-      }
-    } else {
-      return getSessionCatalog().loadTable(ident);
+    Table table = getSessionCatalog().loadTable(ident);
+    if (isArcticTable(table)) {
+      return arcticCatalog.loadTable(ident);
     }
+    return table;
   }
 
   @Override
@@ -146,31 +136,9 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   @Override
-  public StagedTable stageCreate(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties)
-      throws TableAlreadyExistsException, NoSuchNamespaceException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
-  }
-
-  @Override
-  public StagedTable stageReplace(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties)
-      throws NoSuchNamespaceException, NoSuchTableException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
-  }
-
-  @Override
-  public StagedTable stageCreateOrReplace(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties) throws NoSuchNamespaceException {
-    throw new UnsupportedOperationException("Unsupported createTable.");
-  }
-
-  @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    if (isDelegateEnable() && getArcticCatalog().tableExists(ident)) {
+    Table table = getSessionCatalog().loadTable(ident);
+    if (isArcticTable(table)) {
       return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -181,9 +149,14 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public boolean dropTable(Identifier ident) {
     // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
     // required to return false.
-    if (isDelegateEnable()) {
-      return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
-    } else {
+    try {
+      Table table = getSessionCatalog().loadTable(ident);
+      if (isArcticTable(table)) {
+        return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
+      } else {
+        return getSessionCatalog().dropTable(ident);
+      }
+    } catch (NoSuchTableException e) {
       return getSessionCatalog().dropTable(ident);
     }
   }
@@ -192,7 +165,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public void renameTable(Identifier from, Identifier to) throws NoSuchTableException, TableAlreadyExistsException {
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
-    if (isDelegateEnable() && getArcticCatalog().tableExists(from)) {
+    Table table = getSessionCatalog().loadTable(from);
+    if (isArcticTable(table)) {
       getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
@@ -203,9 +177,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     this.options = options;
-    if (isDelegateEnable()) {
-      this.arcticCatalog = buildSparkCatalog(name, options);
-    }
   }
 
   @Override
@@ -230,13 +201,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     return false;
   }
 
-  private boolean isDelegateEnable() {
-    SparkSession sparkSession = SparkSession.active();
-    return Boolean.parseBoolean(
-        sparkSession.conf().get(DELEGATE_DEFAULT_CATALOG_TABLE, "true")
-    );
-  }
-
   private T getSessionCatalog() {
     Preconditions.checkNotNull(sessionCatalog, "Delegated SessionCatalog is missing. " +
         "Please make sure your are replacing Spark's default catalog, named 'spark_catalog'.");
@@ -249,5 +213,10 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     }
     return this.arcticCatalog;
 
+  }
+
+  private boolean isArcticTable(Table table) {
+    return table.properties().containsKey("arctic.enabled") &&
+        table.properties().get("arctic.enabled").equals("true");
   }
 }

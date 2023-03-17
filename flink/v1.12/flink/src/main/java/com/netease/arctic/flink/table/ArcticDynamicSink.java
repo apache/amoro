@@ -22,7 +22,6 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Flink table api that generates sink operators.
@@ -46,18 +44,15 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
 
   private final ArcticTableLoader tableLoader;
   private final CatalogTable flinkTable;
-  private final String topic;
   private final boolean primaryKeyExisted;
   private boolean overwrite = false;
 
   ArcticDynamicSink(
       CatalogTable flinkTable,
       ArcticTableLoader tableLoader,
-      String topic,
       boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
-    this.topic = topic;
     this.primaryKeyExisted = primaryKeyExisted;
   }
 
@@ -75,15 +70,12 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = KafkaOptions.getKafkaProperties(table.properties());
 
     return (DataStreamSinkProvider) dataStream -> {
       DataStreamSink<?> ds = FlinkSink
           .forRowData(dataStream)
           .table(table)
           .flinkSchema(flinkTable.getSchema())
-          .producerConfig(producerConfig)
-          .topic(topic)
           .tableLoader(tableLoader)
           .overwrite(overwrite)
           .build();

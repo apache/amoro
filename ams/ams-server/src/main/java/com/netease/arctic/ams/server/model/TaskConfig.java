@@ -25,27 +25,48 @@ import javax.annotation.Nullable;
 public class TaskConfig {
   private final OptimizeType optimizeType;
   private final String partition;
-  @Nullable
-  private final Long maxTransactionId;
-  private final Long minTransactionId;
   private final String commitGroup;
   private final String planGroup;
   private final long createTime;
-  private final String customHiveSubdirectory;
 
-  public TaskConfig(String partition, @Nullable Long maxTransactionId,
-                    @Nullable Long minTransactionId,
-                    String commitGroup, String planGroup,
-                    OptimizeType optimizeType, long createTime,
-                    @Nullable String customHiveSubdirectory) {
+  private final boolean moveFilesToHiveLocation;
+  @Nullable
+  private final String customHiveSubdirectory;
+  @Nullable
+  private final Long toSequence;
+  @Nullable
+  private final Long fromSequence;
+
+  private TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
+                     boolean moveFilesToHiveLocation, @Nullable String customHiveSubdirectory,
+                     @Nullable Long toSequence, @Nullable Long fromSequence) {
     this.optimizeType = optimizeType;
     this.partition = partition;
-    this.maxTransactionId = maxTransactionId;
-    this.minTransactionId = minTransactionId;
     this.commitGroup = commitGroup;
     this.planGroup = planGroup;
     this.createTime = createTime;
+    this.moveFilesToHiveLocation = moveFilesToHiveLocation;
     this.customHiveSubdirectory = customHiveSubdirectory;
+    this.toSequence = toSequence;
+    this.fromSequence = fromSequence;
+  }
+
+  public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
+                    boolean moveFilesToHiveLocation, @Nullable String customHiveSubdirectory) {
+    this(optimizeType, partition, commitGroup, planGroup, createTime, moveFilesToHiveLocation, customHiveSubdirectory,
+        null, null);
+  }
+
+  public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup, long createTime,
+                    @Nullable Long toSequence, @Nullable Long fromSequence) {
+    this(optimizeType, partition, commitGroup, planGroup, createTime, false, null,
+        toSequence, fromSequence);
+  }
+
+  public TaskConfig(OptimizeType optimizeType, String partition, String commitGroup, String planGroup,
+                    long createTime) {
+    this(optimizeType, partition, commitGroup, planGroup, createTime, false, null,
+        null, null);
   }
 
   public OptimizeType getOptimizeType() {
@@ -57,13 +78,13 @@ public class TaskConfig {
   }
 
   @javax.annotation.Nullable
-  public Long getMaxTransactionId() {
-    return maxTransactionId;
+  public Long getToSequence() {
+    return toSequence;
   }
 
   @javax.annotation.Nullable
-  public Long getMinTransactionId() {
-    return minTransactionId;
+  public Long getFromSequence() {
+    return fromSequence;
   }
 
   public String getCommitGroup() {
@@ -78,7 +99,27 @@ public class TaskConfig {
     return createTime;
   }
 
+  @Nullable
   public String getCustomHiveSubdirectory() {
     return customHiveSubdirectory;
+  }
+
+  public boolean isMoveFilesToHiveLocation() {
+    return moveFilesToHiveLocation;
+  }
+
+  @Override
+  public String toString() {
+    return "TaskConfig{" +
+        "optimizeType=" + optimizeType +
+        ", partition='" + partition + '\'' +
+        ", commitGroup='" + commitGroup + '\'' +
+        ", planGroup='" + planGroup + '\'' +
+        ", createTime=" + createTime +
+        ", moveFilesToHiveLocation=" + moveFilesToHiveLocation +
+        ", customHiveSubdirectory='" + customHiveSubdirectory + '\'' +
+        ", maxChangeSequence=" + toSequence +
+        ", minChangeSequence=" + fromSequence +
+        '}';
   }
 }

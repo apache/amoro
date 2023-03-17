@@ -50,6 +50,7 @@ import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
+import com.netease.arctic.ams.server.service.impl.TableBlockerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -120,7 +121,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
 
-  private final Logger LOG = LoggerFactory.getLogger("TableControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(TableControllerTest.class);
 
   private static final File testBaseDir = new File("unit_test_base_tmp");
 
@@ -191,7 +192,6 @@ public class TableControllerTest {
             app.get("/", TableController::getCatalogs);
       final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -205,7 +205,6 @@ public class TableControllerTest {
       String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/signature", catalogName, database,table);
       final okhttp3.Response resp = client.get(String.format(url), x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
       assert Utils.generateTablePageToken(catalogName,database,table).equals(result.getResult());
     });
@@ -217,7 +216,6 @@ public class TableControllerTest {
       app.get("/{catalog}/", TableController::getDatabaseList);
       final okhttp3.Response resp = client.get("/" + catalogName + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -229,7 +227,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/", TableController::getTableList);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -241,7 +238,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getTableDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -253,7 +249,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getHiveTableDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -268,7 +263,6 @@ public class TableControllerTest {
       final okhttp3.Response resp1 = client.post("/" + catalogName + "/" + database + "/" + table + "/",
           requestJson, x -> {});
       OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
 
@@ -276,7 +270,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getUpgradeStatus);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -287,8 +280,8 @@ public class TableControllerTest {
     JavalinTest.test((app, client) -> {
       app.get("/", TableController::getUpgradeHiveTableProperties);
       final okhttp3.Response resp = client.get("/", x -> {});
-      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      String respBody = resp.body().string();
+      OkResponse result = JSONObject.parseObject(respBody, OkResponse.class);
       assert result.getCode() == 200;
     });
   }
@@ -300,7 +293,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getOptimizeInfo);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -312,7 +304,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getTableTransactions);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -324,7 +315,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/{transactionId}/", TableController::getTransactionDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/1/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -336,7 +326,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/", TableController::getTablePartitions);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -348,7 +337,6 @@ public class TableControllerTest {
       app.get("/{catalog}/{db}/{table}/{partition}/", TableController::getPartitionFileListInfo);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/dt/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -431,6 +419,8 @@ public class TableControllerTest {
     when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     when(adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
         mockUpgradeHiveMeta())).thenReturn(null);
+    TableBlockerService tableBlockerService = mock(TableBlockerService.class);
+    when(ServiceContainer.getTableBlockerService()).thenReturn(tableBlockerService);
     when(MetaService.getServerTableMeta(arcticHiveCatalog, TableIdentifier.of(catalog, db, table)))
         .thenReturn(mockServerTableMeta(catalog, db, table));
     Table hiveTable = mock(Table.class);

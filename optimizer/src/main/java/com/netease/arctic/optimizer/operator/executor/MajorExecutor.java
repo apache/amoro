@@ -21,12 +21,12 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MajorExecutor extends BaseExecutor {
+public class MajorExecutor extends AbstractExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MajorExecutor.class);
 
   public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
@@ -62,10 +62,11 @@ public class MajorExecutor extends BaseExecutor {
   @Override
   public OptimizeTaskResult execute() throws Exception {
     Iterable<DataFile> targetFiles;
-    LOG.info("Start processing arctic table major optimize task: {}", task);
+    LOG.info("Start processing arctic table major optimize task {} of {}: {}", task.getTaskId(),
+        task.getTableIdentifier(), task);
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
-    List<DataFile> dataFiles = task.dataFiles();
+    List<PrimaryKeyedFile> dataFiles = task.dataFiles();
     dataFiles.addAll(task.deleteFiles());
     targetFiles = table.io().doAs(() -> {
       CloseableIterator<Record> recordIterator =
@@ -106,20 +107,20 @@ public class MajorExecutor extends BaseExecutor {
         writer.write(baseRecord);
         insertCount++;
         if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling {}",
-              task.getTaskId(), insertCount, baseRecord);
+          LOG.info("task {} of {} insert records number {} and data sampling {}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount, baseRecord);
         }
       }
     } finally {
       recordIterator.close();
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
 
     return Arrays.asList(writer.complete().dataFiles());
   }
 
-  private CloseableIterator<Record> openTask(List<DataFile> dataFiles,
+  private CloseableIterator<Record> openTask(List<PrimaryKeyedFile> dataFiles,
                                              Map<DataTreeNode, List<DeleteFile>> deleteFileMap,
                                              Schema requiredSchema, Set<DataTreeNode> sourceNodes) {
     if (CollectionUtils.isEmpty(dataFiles)) {
@@ -139,18 +140,17 @@ public class MajorExecutor extends BaseExecutor {
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {
-          DefaultKeyedFile defaultKeyedFile = new DefaultKeyedFile(file);
-          if (defaultKeyedFile.type() == DataFileType.EQ_DELETE_FILE) {
-            return new BaseArcticFileScanTask(defaultKeyedFile, null, table.spec());
+          if (file.type() == DataFileType.EQ_DELETE_FILE) {
+            return new BasicArcticFileScanTask(file, null, table.spec());
           } else {
-            return new BaseArcticFileScanTask(defaultKeyedFile,
-                deleteFileMap.get(defaultKeyedFile.node()), table.spec());
+            return new BasicArcticFileScanTask(file,
+                deleteFileMap.get(file.node()), table.spec());
           }
         })
         .collect(Collectors.toList());
 
     KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(fileScanTasks);
-    LOG.info("start read data : {}", table.id());
+    LOG.info("start read data : task {} of {}", task.getTaskId(), task.getTableIdentifier());
     return arcticDataReader.readData(keyedTableScanTask);
   }
 }

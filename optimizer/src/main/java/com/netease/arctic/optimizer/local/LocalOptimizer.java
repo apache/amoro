@@ -29,6 +29,8 @@ import com.netease.arctic.optimizer.operator.BaseTaskConsumer;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import com.netease.arctic.optimizer.operator.DefaultOperatorFactory;
+import com.netease.arctic.optimizer.operator.OperatorFactory;
 import com.netease.arctic.optimizer.util.OptimizerUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
@@ -52,6 +54,9 @@ import java.util.concurrent.TimeUnit;
 public class LocalOptimizer implements StatefulOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizer.class);
   private static final long serialVersionUID = 1L;
+  private static final long POLL_INTERVAL = 5000; // 5s
+  
+  private final OperatorFactory operatorFactory;
 
   private OptimizerConfig config;
 
@@ -70,9 +75,15 @@ public class LocalOptimizer implements StatefulOptimizer {
   private volatile boolean stopped = false;
 
   public LocalOptimizer() {
+    this(new DefaultOperatorFactory());
+  }
+
+  public LocalOptimizer(OperatorFactory operatorFactory) {
+    this.operatorFactory = operatorFactory;
   }
 
   public LocalOptimizer(Map<String, String> properties) {
+    this();
     this.properties = properties;
   }
 
@@ -85,7 +96,22 @@ public class LocalOptimizer implements StatefulOptimizer {
     JSONObject containerProperties = containerInfo.getJSONObject(OptimizerProperties.CONTAINER_PROPERTIES);
     JSONObject groupProperties = groupInfo.getJSONObject(OptimizerProperties.OPTIMIZER_GROUP_PROPERTIES);
 
-    //add compact execute config
+    // spill map config
+    Boolean enableSpillMap = groupProperties.getBoolean(OptimizerProperties.SPILLABLE_MAP_ENABLE);
+    String backendBaseDir = groupProperties.getString(OptimizerProperties.SPILLABLE_MAP_DIR);
+    Long maxDeleteMemorySize = groupProperties.getLong(OptimizerProperties.SPILLABLE_MEMORY_LIMIT);
+    String spillMapCmd = "";
+    if (enableSpillMap != null) {
+      spillMapCmd = spillMapCmd + " -es " + enableSpillMap;
+    }
+    if (backendBaseDir != null) {
+      spillMapCmd = spillMapCmd + " -rp " + backendBaseDir;
+    }
+    if (maxDeleteMemorySize != null) {
+      spillMapCmd = spillMapCmd + " -mm " + maxDeleteMemorySize;
+    }
+
+    // add compact execute config
     String amsUrl;
     if (systemInfo.containsKey(OptimizerProperties.HA_ENABLE) && systemInfo.getBoolean(OptimizerProperties.HA_ENABLE)) {
       amsUrl = String.format("zookeeper://%s/%s", systemInfo.getString(OptimizerProperties.ZOOKEEPER_SERVER).trim(),
@@ -101,11 +127,11 @@ public class LocalOptimizer implements StatefulOptimizer {
         OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL_DEFAULT;
     int memory = groupProperties.getInteger("memory");
 
-    //start compact job
+    // start compact job
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
-    String cmd = String.format("%s/bin/localOptimize.sh %s %s %s %s %s %s", arcticHome, memory, amsUrl,
-        groupInfo.get("id"),
-        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID));
+    String cmd = String.format("%s/bin/localOptimize.sh -m %s -a %s -q %s -p %s -hb %s -id %s",
+        arcticHome, memory, amsUrl, groupInfo.get("id"),
+        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID)) + spillMapCmd;
     LOG.info("starting compact job use command:" + cmd);
     Runtime runtime = Runtime.getRuntime();
     try {
@@ -204,40 +230,26 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskConsumer baseTaskConsumer;
 
     public Consumer() {
-      this.baseTaskConsumer = new BaseTaskConsumer(config);
+      this.baseTaskConsumer = operatorFactory.buildTaskConsumer(config);
     }
 
     public TaskWrapper pollTask() throws InterruptedException {
-      int retry = 0;
       while (!stopped) {
         try {
-          TaskWrapper task = baseTaskConsumer.pollTask();
+          TaskWrapper task = baseTaskConsumer.pollTask(0);
           if (task != null) {
             LOG.info("poll task {}", task);
             return task;
           } else {
-            LOG.info("poll no task");
+            LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
+            Thread.sleep(POLL_INTERVAL);
           }
         } catch (Throwable e) {
           if (stopped) {
             break;
           }
-          // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-          LOG.error("failed to poll task, retry {}", retry, e);
-          retry++;
-        } finally {
-          if (retry >= 3) {
-            //stop = true;
-            retry = 0;
-            LOG.error("consumer has tried too many times, and the subscription message is suspended." +
-                " Please check for errors");
-            try {
-              Thread.sleep(10000);
-            } catch (InterruptedException e) {
-              LOG.warn("consumer interrupted");
-              throw e;
-            }
-          }
+          LOG.error("failed to poll task", e);
+          Thread.sleep(POLL_INTERVAL);
         }
       }
       return null;
@@ -251,8 +263,8 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskReporter baseTaskReporter;
 
     public Executor() {
-      this.baseTaskExecutor = new BaseTaskExecutor(config);
-      this.baseTaskReporter = new BaseTaskReporter(config);
+      this.baseTaskExecutor = operatorFactory.buildTaskExecutor(config);
+      this.baseTaskReporter = operatorFactory.buildTaskReporter(config);
     }
 
     @Override
@@ -272,7 +284,7 @@ public class LocalOptimizer implements StatefulOptimizer {
           LOG.info("get task to execute {}", task.getTask().getTaskId());
           OptimizeTaskStat result = baseTaskExecutor.execute(task);
           LOG.info("execute {} {}", result.getStatus(), task.getTask().getTaskId());
-          baseTaskReporter.report(result, 20, 10000);
+          baseTaskReporter.report(result);
           LOG.info("report success {}", result.getTaskId());
         } catch (InterruptedException e) {
           LOG.warn("execute interrupted");
@@ -290,7 +302,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseToucher toucher;
 
     public Toucher() {
-      this.toucher = new BaseToucher(config);
+      this.toucher = operatorFactory.buildToucher(config);
     }
 
     @Override

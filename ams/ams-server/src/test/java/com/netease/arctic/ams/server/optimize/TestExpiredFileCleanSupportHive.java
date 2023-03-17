@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -37,12 +38,14 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> hiveFiles = insertHiveDataFiles(testUnPartitionKeyedHiveTable, 1);
-    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L).second();
+    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable).second();
 
     DeleteFiles deleteHiveFiles = testUnPartitionKeyedHiveTable.baseTable().newDelete();
     for (DataFile hiveFile : hiveFiles) {
@@ -58,14 +61,14 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3L).second();
+    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable).second();
     for (DataFile s3File : s3Files) {
       Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(s3File.path().toString()));
     }
 
     Set<String> hiveLocation = new HashSet<>();
     if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
-      hiveLocation.add(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString()));
+      hiveLocation.add(TableFileUtils.getUriPath(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString())));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(testUnPartitionKeyedHiveTable.baseTable().snapshots()));
@@ -82,11 +85,16 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   }
 
   private List<DataFile> insertHiveDataFiles(ArcticTable arcticTable, long transactionId) throws Exception {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withTransactionId(transactionId)
-        .buildWriter(HiveLocationKind.INSTANT);
 
-    List<DataFile> dataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(transactionId);
+    AtomicInteger taskId = new AtomicInteger();
+
+    Supplier<TaskWriter<Record>> taskWriterSupplier = () -> AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+        .withTransactionId(transactionId)
+        .withTaskId(taskId.incrementAndGet())
+        .withCustomHiveSubdirectory(hiveSubDir)
+        .buildWriter(HiveLocationKind.INSTANT);
+    List<DataFile> dataFiles = insertBaseDataFiles(taskWriterSupplier, arcticTable.schema());
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

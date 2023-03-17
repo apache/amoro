@@ -20,8 +20,6 @@ package com.netease.arctic.spark;
 
 public class SparkSQLProperties {
 
-  public static final String DELEGATE_DEFAULT_CATALOG_TABLE = "spark.sql.arctic.delegate.enabled";
-
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES =
           "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
 
@@ -32,7 +30,10 @@ public class SparkSQLProperties {
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE_DEFAULT = "false";
 
-  public static final String CHECK_DATA_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
+  public static final String CHECK_SOURCE_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
 
-  public static final String CHECK_DATA_DUPLICATES_ENABLE_DEFAULT = "false";
+  public static final String CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT = "false";
+
+  public static final String OPTIMIZE_WRITE_ENABLED = "spark.sql.arctic.optimize-write-enabled";
+  public static final String OPTIMIZE_WRITE_ENABLED_DEFAULT = "true";
 }

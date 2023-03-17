@@ -17,7 +17,7 @@
   ~ limitations under the License.
   -->
 
-<Configuration>
+<Configuration monitorInterval="10">
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
     </properties>

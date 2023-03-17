@@ -21,12 +21,10 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -104,19 +102,20 @@ public class TablePropertyUtil {
     return value;
   }
 
-  public static StructLikeMap<Long> getPartitionMaxTransactionId(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
+  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
+    StructLikeMap<Long> partitionOptimizedSequence = StructLikeMap.create(keyedTable.spec().partitionType());
 
     StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID) == null) ?
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT :
-          Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
-      baseTableMaxTransactionId.put(partitionKey, maxTxId);
+          propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE) == null) ?
+          null : Long.parseLong(propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE));
+      if (maxTxId != null) {
+        partitionOptimizedSequence.put(partitionKey, maxTxId);
+      }
     });
 
-    return baseTableMaxTransactionId;
+    return partitionOptimizedSequence;
   }
 
   public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
@@ -133,13 +132,6 @@ public class TablePropertyUtil {
     });
 
     return baseTableMaxTransactionId;
-  }
-
-  public static long allocateTransactionId(KeyedTable keyedTable) {
-    ChangeTable changeTable = keyedTable.changeTable();
-    changeTable.refresh();
-    Snapshot snapshot = changeTable.currentSnapshot();
-    return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
   }
 
 

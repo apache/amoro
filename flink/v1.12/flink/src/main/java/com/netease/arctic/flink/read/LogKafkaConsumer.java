@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.internals.AbstractFetcher;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.ReadableConfig;
@@ -47,7 +48,10 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 
 /**
  * An arctic log consumer that consume arctic log data from kafka.
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0; use {@link LogKafkaSource} instead.
  */
+@Deprecated
 public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
   private static final long serialVersionUID = 7855676094345921722L;
   private KafkaDeserializationSchemaWrapper<RowData> logRecordDeserializationSchemaWrapper;

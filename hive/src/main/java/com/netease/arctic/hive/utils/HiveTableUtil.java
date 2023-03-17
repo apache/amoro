@@ -21,6 +21,7 @@ package com.netease.arctic.hive.utils;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
@@ -98,6 +99,10 @@ public class HiveTableUtil {
   
   public static String newHiveSubdirectory(long transactionId) {
     return System.currentTimeMillis() + "_" + transactionId;
+  }
+
+  public static String newHiveSubdirectory() {
+    return System.currentTimeMillis() + "_" + IdGenerator.randomId();
   }
 
   public static StorageDescriptor storageDescriptor(

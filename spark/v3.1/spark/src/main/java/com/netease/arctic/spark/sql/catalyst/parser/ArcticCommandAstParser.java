@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
-
 import java.util.List;
 import java.util.stream.Collectors;
 

@@ -142,7 +142,7 @@ public class BaseLogTest {
           ChangeAction.INSERT,
           new GenericRowData(0));
 
-  public LogDataJsonDeserialization<RowData> createLogDataDeserialization() {
+  public static LogDataJsonDeserialization<RowData> createLogDataDeserialization() {
     return new LogDataJsonDeserialization<>(userSchema, LogRecordV1.factory, arrayFactory, mapFactory);
   }
 

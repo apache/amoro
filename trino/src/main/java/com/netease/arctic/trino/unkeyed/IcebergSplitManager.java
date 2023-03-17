@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.unkeyed;
 
 import com.google.common.collect.ImmutableList;
+import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.TableNameResolve;
 import io.airlift.units.Duration;
@@ -45,7 +46,6 @@ import static java.util.Objects.requireNonNull;
  * Iceberg original IcebergSplitManager has some problems for arctic, such as iceberg version, table type.
  */
 public class IcebergSplitManager implements ConnectorSplitManager {
-  public static final int ICEBERG_DOMAIN_COMPACTION_THRESHOLD = 1000;
 
   private final ArcticTransactionManager transactionManager;
   private final TypeManager typeManager;
@@ -77,8 +77,14 @@ public class IcebergSplitManager implements ConnectorSplitManager {
         transactionManager.get(transaction).getArcticTable(table.getSchemaTableName()).asUnkeyedTable();
     Duration dynamicFilteringWaitTimeout = getDynamicFilteringWaitTimeout(session);
 
-    TableScan tableScan = icebergTable.newScan()
-        .useSnapshot(table.getSnapshotId().get());
+    TableScan tableScan;
+    if (icebergTable instanceof ChangeTable) {
+      tableScan = ((ChangeTable)icebergTable).newChangeScan();
+    } else {
+      tableScan = icebergTable.newScan()
+          .useSnapshot(table.getSnapshotId().get());
+    }
+
     TableNameResolve resolve = new TableNameResolve(table.getTableName());
     IcebergSplitSource splitSource = new IcebergSplitSource(
         table,

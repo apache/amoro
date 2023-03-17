@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -41,7 +42,7 @@ public class SimpleInternalRowDataWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new WriteTaskCommit(result.dataFiles());
+    return new WriteTaskCommit(result.dataFiles(), new DeleteFile[0]);
   }
 
   @Override

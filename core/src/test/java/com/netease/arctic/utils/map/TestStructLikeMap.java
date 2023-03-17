@@ -1,9 +1,7 @@
 package com.netease.arctic.utils.map;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.iceberg.optimize.StructProjection;
-import java.io.IOException;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
@@ -11,33 +9,33 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
 public class TestStructLikeMap {
 
-  private static Schema PK_SCHEMA = new Schema(
+  private static final Schema PK_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get())));
 
-  private static Schema DATA_SCHEMA = new Schema(
+  private static final Schema DATA_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get()),
-          Types.NestedField.of(4, false,"c4", Types.StringType.get()),
-          Types.NestedField.of(5, false,"c5", Types.BinaryType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get()),
+          Types.NestedField.of(4, false, "c4", Types.StringType.get()),
+          Types.NestedField.of(5, false, "c5", Types.BinaryType.get())));
 
-  private static Schema DELETE_SCHEMA = new Schema(
+  private static final Schema DELETE_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get())));
 
   @Test
   public void testMemoryMap() throws IOException {
@@ -46,10 +44,10 @@ public class TestStructLikeMap {
 
   @Test
   public void testSpillableMap() throws IOException {
-    testMap(StructLikeSpillableMap.create(PK_SCHEMA.asStruct(), 10L));
+    testMap(StructLikeSpillableMap.create(PK_SCHEMA.asStruct(), 10L, null));
   }
 
-  private void testMap(StructLikeBaseMap actualMap) throws IOException {
+  private void testMap(StructLikeBaseMap<ChangedLsn> actualMap) throws IOException {
     StructLikeMap<ChangedLsn> expectedMap = StructLikeMap.create(PK_SCHEMA.asStruct());
     long count = 100;
     for (long i = 0; i < count; i++) {
@@ -71,7 +69,7 @@ public class TestStructLikeMap {
 
     private static final Random RANDOM = new Random(100000);
 
-    private Object[] values = new Object[]{
+    private final Object[] values = new Object[] {
         RANDOM.nextDouble(),
         RANDOM.nextInt(),
         RANDOM.nextBoolean(),
@@ -81,6 +79,7 @@ public class TestStructLikeMap {
 
     DataStructLike() throws UnsupportedEncodingException {
     }
+
     @Override
     public int size() {
       return 5;
@@ -101,7 +100,7 @@ public class TestStructLikeMap {
 
     private static final Random RANDOM = new Random(100000);
 
-    private Object[] values = new Object[]{
+    private final Object[] values = new Object[] {
         RANDOM.nextDouble(),
         RANDOM.nextInt(),
         RANDOM.nextBoolean()
@@ -109,6 +108,7 @@ public class TestStructLikeMap {
 
     DeleteStructLike() {
     }
+
     @Override
     public int size() {
       return 3;

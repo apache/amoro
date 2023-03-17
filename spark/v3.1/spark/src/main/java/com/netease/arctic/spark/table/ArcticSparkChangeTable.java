@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.table;
 
 import com.netease.arctic.spark.reader.SparkScanBuilder;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 public class ArcticSparkChangeTable extends SparkTable {
 
-  private final BaseUnkeyedTable baseUnkeyedTable;
+  private final BasicUnkeyedTable basicUnkeyedTable;
 
   private SparkSession lazySpark = null;
 
@@ -46,9 +46,9 @@ public class ArcticSparkChangeTable extends SparkTable {
       TableCapability.BATCH_READ
       );
 
-  public ArcticSparkChangeTable(BaseUnkeyedTable baseUnkeyedTable, boolean refreshEagerly) {
-    super(baseUnkeyedTable, refreshEagerly);
-    this.baseUnkeyedTable = baseUnkeyedTable;
+  public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
+    super(basicUnkeyedTable, refreshEagerly);
+    this.basicUnkeyedTable = basicUnkeyedTable;
   }
 
   private SparkSession sparkSession() {
@@ -65,10 +65,10 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    return new SparkScanBuilder(sparkSession(), baseUnkeyedTable, options, buildSchema(baseUnkeyedTable));
+    return new SparkScanBuilder(sparkSession(), basicUnkeyedTable, options, buildSchema(basicUnkeyedTable));
   }
 
-  public Schema buildSchema(BaseUnkeyedTable table) {
+  public Schema buildSchema(BasicUnkeyedTable table) {
     Schema schema = table.schema();
     List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
     columns.add(MetadataColumns.TRANSACTION_ID_FILED);
@@ -79,6 +79,6 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   @Override
   public StructType schema() {
-    return SparkSchemaUtil.convert(buildSchema(baseUnkeyedTable));
+    return SparkSchemaUtil.convert(buildSchema(basicUnkeyedTable));
   }
 }
