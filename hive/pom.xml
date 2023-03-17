@@ -123,6 +123,7 @@
                 <configuration>
                     <includes>
                         <include>**/ArcticHiveTestMain.java</include>
+                        <include>**/TestAdaptHiveReadConf.java</include>
                     </includes>
                 </configuration>
             </plugin>
