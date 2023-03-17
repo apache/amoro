@@ -18,6 +18,9 @@
 
 package com.netease.arctic.ams.server.utils.terminal;
 
+/**
+ * You can use this interface to print content to console ,
+ */
 public interface TerminalOutput {
   void output(String st);
 }

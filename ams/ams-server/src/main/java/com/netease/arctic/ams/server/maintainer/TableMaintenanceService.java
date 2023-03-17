@@ -20,7 +20,7 @@ package com.netease.arctic.ams.server.maintainer;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.client.OptimizeManagerClient;
+import com.netease.arctic.ams.api.client.OptimizeManagerEntrypoint;
 import com.netease.arctic.ams.server.maintainer.command.CallCommand;
 import com.netease.arctic.ams.server.maintainer.command.CallFactory;
 import com.netease.arctic.ams.server.maintainer.command.CommandParser;
@@ -30,7 +30,7 @@ import com.netease.arctic.ams.server.utils.terminal.TerminalOutput;
 import com.netease.arctic.ams.server.utils.terminal.TerminalService;
 import com.netease.arctic.catalog.CatalogManager;
 
-public class MaintainerTerminalService implements TerminalService {
+public class TableMaintenanceService implements TerminalService {
 
   private static final String PROMPT_PREFIX = "repair:";
 
@@ -42,7 +42,7 @@ public class MaintainerTerminalService implements TerminalService {
 
   private Context context;
 
-  public MaintainerTerminalService(MaintainerConfig maintainerConfig) {
+  public TableMaintenanceService(MaintainerConfig maintainerConfig) {
     this.amsAddress = maintainerConfig.getThriftUrl();
 
     this.context = new Context();
@@ -50,7 +50,7 @@ public class MaintainerTerminalService implements TerminalService {
       context.setCatalog(maintainerConfig.getCatalogName());
     }
     CatalogManager catalogManager = new CatalogManager(amsAddress);
-    OptimizeManagerClient optimizeManagerClient = new OptimizeManagerClient(amsAddress);
+    OptimizeManagerEntrypoint optimizeManagerClient = new OptimizeManagerEntrypoint(amsAddress);
     AmsClient amsClient = new PooledAmsClient(amsAddress);
 
     CallFactory callFactory =
@@ -59,7 +59,7 @@ public class MaintainerTerminalService implements TerminalService {
   }
 
   @Override
-  public void dispatch(String line, TerminalOutput terminalOutput) throws Exception {
+  public void resolve(String line, TerminalOutput terminalOutput) throws Exception {
     CallCommand callCommand = commandParser.parse(line);
     String result = callCommand.call(context);
     terminalOutput.output(result);

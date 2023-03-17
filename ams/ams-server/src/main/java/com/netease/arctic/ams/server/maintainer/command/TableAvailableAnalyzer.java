@@ -83,26 +83,26 @@ public class TableAvailableAnalyzer {
     this.io = RepairUtil.arcticFileIO(catalogManager.getThriftAddress(), identifier.getCatalog());
   }
 
-  public TableAvailableResult analyze() {
-    TableAvailableResult tableAvailableResult = check();
+  public TableAnalyzeResult analyze() {
+    TableAnalyzeResult tableAnalyzeResult = check();
     TableTrashManager tableTrashManager = null;
     try {
       tableTrashManager = RepairUtil.tableTrashManager(catalogManager.getThriftAddress(), identifier);
     } catch (TException e) {
       throw new RuntimeException(e);
     }
-    tableAvailableResult.setTableTrashManager(tableTrashManager);
-    return tableAvailableResult;
+    tableAnalyzeResult.setTableTrashManager(tableTrashManager);
+    return tableAnalyzeResult;
   }
 
   @NotNull
-  private TableAvailableResult check() {
+  private TableAnalyzeResult check() {
     ArcticTable arcticTable;
     try {
       arcticTable = arcticCatalog.loadTable(identifier);
     } catch (NoSuchTableException e) {
       // Now don't resolve this exception
-      return TableAvailableResult.tableNotFound(identifier);
+      return TableAnalyzeResult.tableNotFound(identifier);
     } catch (ValidationException e) {
       Matcher matcher = PATTERN.matcher(e.getMessage());
       Integer version = null;
@@ -122,39 +122,39 @@ public class TableAvailableAnalyzer {
         if (io.exists(path.toString())) {
 
           //Change is lose if base is exist
-          return TableAvailableResult.metadataLose(identifier, version, new RepairTableOperation(catalogManager,
+          return TableAnalyzeResult.metadataLose(identifier, version, new RepairTableOperation(catalogManager,
               identifier, ChangeLocationKind.INSTANT), ChangeLocationKind.INSTANT);
         }
       }
 
-      return TableAvailableResult.metadataLose(identifier, version, new RepairTableOperation(catalogManager,
+      return TableAnalyzeResult.metadataLose(identifier, version, new RepairTableOperation(catalogManager,
           identifier, BaseLocationKind.INSTANT), BaseLocationKind.INSTANT);
     }
 
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedTable = arcticTable.asKeyedTable();
-      TableAvailableResult changeResult = check(keyedTable.changeTable());
+      TableAnalyzeResult changeResult = check(keyedTable.changeTable());
       if (!changeResult.isOk()) {
         changeResult.setLocationKind(ChangeLocationKind.INSTANT);
         return changeResult;
       }
-      TableAvailableResult baseResult = check(keyedTable.baseTable());
+      TableAnalyzeResult baseResult = check(keyedTable.baseTable());
       baseResult.setLocationKind(BaseLocationKind.INSTANT);
       return baseResult;
     } else {
-      TableAvailableResult result = check(arcticTable.asUnkeyedTable());
+      TableAnalyzeResult result = check(arcticTable.asUnkeyedTable());
       return result;
     }
   }
 
-  private TableAvailableResult check(UnkeyedTable table) {
+  private TableAnalyzeResult check(UnkeyedTable table) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
-      return TableAvailableResult.available(identifier);
+      return TableAnalyzeResult.available(identifier);
     }
-    TableAvailableResult tableAvailableResult = checkSnapshot(table, currentSnapshot);
-    if (tableAvailableResult.isOk()) {
-      return tableAvailableResult;
+    TableAnalyzeResult tableAnalyzeResult = checkSnapshot(table, currentSnapshot);
+    if (tableAnalyzeResult.isOk()) {
+      return tableAnalyzeResult;
     }
 
     //find can roll back snapshot
@@ -164,17 +164,17 @@ public class TableAvailableAnalyzer {
     Iterable<Snapshot> finalOkSnapshot = Iterables.limit(okSnapshot, maxRollbackSnapNum);
     List<Snapshot> rollbackSnapshot = new ArrayList<>();
     Iterables.addAll(rollbackSnapshot, finalOkSnapshot);
-    tableAvailableResult.setRollbackList(rollbackSnapshot);
-    tableAvailableResult.setArcticTable(table);
-    return tableAvailableResult;
+    tableAnalyzeResult.setRollbackList(rollbackSnapshot);
+    tableAnalyzeResult.setArcticTable(table);
+    return tableAnalyzeResult;
   }
 
   @NotNull
-  private TableAvailableResult checkSnapshot(UnkeyedTable table, Snapshot currentSnapshot) {
+  private TableAnalyzeResult checkSnapshot(UnkeyedTable table, Snapshot currentSnapshot) {
 
     //check manifestList
     if (!exists(currentSnapshot.manifestListLocation())) {
-      return TableAvailableResult.manifestListLose(identifier, currentSnapshot, table);
+      return TableAnalyzeResult.manifestListLose(identifier, currentSnapshot, table);
     }
 
     //check manifest
@@ -183,7 +183,7 @@ public class TableAvailableAnalyzer {
     List<ManifestFile> loseManifests =
         manifestFiles.stream().filter(s -> !exists(s.path())).collect(Collectors.toList());
     if (loseManifests.size() != 0) {
-      return TableAvailableResult.manifestLost(identifier, loseManifests, table);
+      return TableAnalyzeResult.manifestLost(identifier, loseManifests, table);
     }
 
     //check file
@@ -202,11 +202,11 @@ public class TableAvailableAnalyzer {
       }
     }
     if (lostFile.size() != 0) {
-      return TableAvailableResult.filesLose(identifier, lostFile, table);
+      return TableAnalyzeResult.filesLose(identifier, lostFile, table);
     }
 
     //table is available
-    return TableAvailableResult.available(identifier);
+    return TableAnalyzeResult.available(identifier);
   }
 
   private boolean exists(String path) {

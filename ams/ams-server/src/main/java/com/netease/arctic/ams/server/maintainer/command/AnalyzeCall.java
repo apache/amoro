@@ -56,7 +56,7 @@ public class AnalyzeCall implements CallCommand {
     TableIdentifier identifier = fullTableName(context, tablePath);
     TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(catalogManager, identifier,
         maxFindSnapshotNum, maxRollbackSnapNum);
-    TableAvailableResult availableResult = availableAnalyzer.analyze();
+    TableAnalyzeResult availableResult = availableAnalyzer.analyze();
     context.setTableAvailableResult(availableResult);
     return format(availableResult);
   }
@@ -75,7 +75,7 @@ public class AnalyzeCall implements CallCommand {
    *       597568753507019307
    *       512339827482937422
    */
-  private String format(TableAvailableResult availableResult) {
+  private String format(TableAnalyzeResult availableResult) {
     LikeYmlFormat root = LikeYmlFormat.blank();
     root.child(TABLE_NAME).child(availableResult.getIdentifier().getTableName());
     if (availableResult.isOk()) {

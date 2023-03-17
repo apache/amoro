@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer;
 
-import com.netease.arctic.ams.server.maintainer.command.TableAvailableResult;
+import com.netease.arctic.ams.server.maintainer.command.TableAnalyzeResult;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.LinkedHashMap;
@@ -30,10 +30,10 @@ public class Context {
 
   private String db;
 
-  private Map<TableIdentifier, TableAvailableResult> tableAvailableResultMap =
-      new LinkedHashMap<TableIdentifier, TableAvailableResult>() {
+  private Map<TableIdentifier, TableAnalyzeResult> tableAvailableResultMap =
+      new LinkedHashMap<TableIdentifier, TableAnalyzeResult>() {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<TableIdentifier, TableAvailableResult> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<TableIdentifier, TableAnalyzeResult> eldest) {
           return size() > 10;
         }
   };
@@ -54,11 +54,11 @@ public class Context {
     this.db = db;
   }
 
-  public void setTableAvailableResult(TableAvailableResult result) {
+  public void setTableAvailableResult(TableAnalyzeResult result) {
     tableAvailableResultMap.put(result.getIdentifier(), result);
   }
 
-  public TableAvailableResult getTableAvailableResult(TableIdentifier identifier) {
+  public TableAnalyzeResult getTableAvailableResult(TableIdentifier identifier) {
     return tableAvailableResultMap.get(identifier);
   }
 

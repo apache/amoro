@@ -30,10 +30,10 @@ import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.api.TableIdentifier;
 import org.apache.thrift.TException;
 
-public class OptimizeManagerClient implements OptimizeClient {
+public class OptimizeManagerEntrypoint implements OptimizeEntrypoint {
   private String metastoreUrl;
 
-  public OptimizeManagerClient(String metastoreUrl) {
+  public OptimizeManagerEntrypoint(String metastoreUrl) {
     this.metastoreUrl = metastoreUrl;
   }
 

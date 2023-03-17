@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-public class TableAvailableResult {
+public class TableAnalyzeResult {
 
   private TableIdentifier identifier;
 
@@ -68,7 +68,7 @@ public class TableAvailableResult {
 
   private Boolean canFindBack;
 
-  private TableAvailableResult(
+  private TableAnalyzeResult(
       TableIdentifier tableIdentifier,
       DamageType damageType,
       Integer metadataVersion,
@@ -100,37 +100,37 @@ public class TableAvailableResult {
     }
   }
 
-  public static TableAvailableResult available(TableIdentifier identifier) {
-    return new TableAvailableResult(identifier, DamageType.OK, null,null,
+  public static TableAnalyzeResult available(TableIdentifier identifier) {
+    return new TableAnalyzeResult(identifier, DamageType.OK, null,null,
         null, null, null, null, null, null);
   }
 
-  public static TableAvailableResult tableNotFound(TableIdentifier identifier) {
-    return new TableAvailableResult(identifier, DamageType.TABLE_NOT_FOUND, null,null,
+  public static TableAnalyzeResult tableNotFound(TableIdentifier identifier) {
+    return new TableAnalyzeResult(identifier, DamageType.TABLE_NOT_FOUND, null,null,
         null, null, null, null, null, null);
   }
 
-  public static TableAvailableResult metadataLose(TableIdentifier identifier, Integer metadataVersion,
+  public static TableAnalyzeResult metadataLose(TableIdentifier identifier, Integer metadataVersion,
       RepairTableOperation tableOperations, LocationKind locationKind) {
-    return new TableAvailableResult(identifier, DamageType.METADATA_LOSE, metadataVersion,null,
+    return new TableAnalyzeResult(identifier, DamageType.METADATA_LOSE, metadataVersion,null,
         null, null, null, null, tableOperations, locationKind);
   }
 
-  public static TableAvailableResult manifestListLose(TableIdentifier identifier,
+  public static TableAnalyzeResult manifestListLose(TableIdentifier identifier,
       Snapshot snapshot, UnkeyedTable arcticTable) {
-    return new TableAvailableResult(identifier, DamageType.MANIFEST_LIST_LOST, null, snapshot,
+    return new TableAnalyzeResult(identifier, DamageType.MANIFEST_LIST_LOST, null, snapshot,
         null, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult manifestLost(TableIdentifier identifier,
+  public static TableAnalyzeResult manifestLost(TableIdentifier identifier,
       List<ManifestFile> manifestFiles, UnkeyedTable arcticTable) {
-    return new TableAvailableResult(identifier, DamageType.MANIFEST_LOST, null,null,
+    return new TableAnalyzeResult(identifier, DamageType.MANIFEST_LOST, null,null,
         manifestFiles, null, null, arcticTable, null, null);
   }
 
-  public static TableAvailableResult filesLose(TableIdentifier identifier, List<ContentFile> files,
+  public static TableAnalyzeResult filesLose(TableIdentifier identifier, List<ContentFile> files,
       UnkeyedTable arcticTable) {
-    return new TableAvailableResult(identifier, DamageType.FILE_LOSE, null,
+    return new TableAnalyzeResult(identifier, DamageType.FILE_LOSE, null,
         null, null, files, null, arcticTable, null, null);
   }
 

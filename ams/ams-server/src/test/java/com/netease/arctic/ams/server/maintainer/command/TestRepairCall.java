@@ -47,9 +47,9 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeFile = removeFile();
     Assert.assertTrue(analyze(context).contains(removeFile));
 
-    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
 
-    repair(context, RepairWay.ROLLBACK, tableAvailableResult.getRollbackList().get(0).snapshotId());
+    repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
 
     Assert.assertFalse(fileExists(removeFile, getArcticTable().asKeyedTable().changeTable()));
   }
@@ -71,8 +71,8 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeManifest = removeManifest();
     Assert.assertTrue(analyze(context).contains(removeManifest));
 
-    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
-    repair(context, RepairWay.ROLLBACK, tableAvailableResult.getRollbackList().get(0).snapshotId());
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
 
     Assert.assertFalse(manifestExists(removeManifest, getArcticTable().asKeyedTable().changeTable()));
   }
@@ -83,8 +83,8 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeManifestList = removeManifestList();
     Assert.assertTrue(analyze(context).contains(removeManifestList));
 
-    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
-    repair(context, RepairWay.ROLLBACK, tableAvailableResult.getRollbackList().get(0).snapshotId());
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
     getArcticTable().refresh();
     Assert.assertFalse(getArcticTable().asKeyedTable().changeTable().currentSnapshot().manifestListLocation().equalsIgnoreCase(removeManifestList));
   }
@@ -95,7 +95,7 @@ public class TestRepairCall extends CallCommandTestBase {
     int version = removeMetadata();
     Assert.assertTrue(analyze(context).contains(String.valueOf(version)));
 
-    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
     repair(context, RepairWay.ROLLBACK_OR_DROP_TABLE, null);
     getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
   }

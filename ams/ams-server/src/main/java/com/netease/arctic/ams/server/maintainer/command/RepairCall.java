@@ -75,19 +75,19 @@ public class RepairCall implements CallCommand {
   public String call(Context context) throws FullTableNameException {
     TableIdentifier identifier = fullTableName(context, tablePath);
 
-    TableAvailableResult tableAvailableResult = context.getTableAvailableResult(identifier);
-    if (tableAvailableResult == null) {
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(identifier);
+    if (tableAnalyzeResult == null) {
       throw new MaintainerException("Please do analysis first");
     }
-    if (tableAvailableResult.isOk()) {
+    if (tableAnalyzeResult.isOk()) {
       throw new MaintainerException("Table is Ok. No need to repair");
     }
 
-    if (!tableAvailableResult.youCan().contains(way)) {
+    if (!tableAnalyzeResult.youCan().contains(way)) {
       throw new MaintainerException(String.format("No %s this option", way));
     }
 
-    DamageType damageType = tableAvailableResult.getDamageType();
+    DamageType damageType = tableAnalyzeResult.getDamageType();
 
     if (damageType == DamageType.TABLE_NOT_FOUND) {
       throw new MaintainerException("Table is not found, If you also have data " +
@@ -95,7 +95,7 @@ public class RepairCall implements CallCommand {
     }
 
     if (damageType == DamageType.METADATA_LOSE) {
-      repairMetadataLose(identifier, tableAvailableResult);
+      repairMetadataLose(identifier, tableAnalyzeResult);
       return success(identifier, context);
     }
 
@@ -104,8 +104,8 @@ public class RepairCall implements CallCommand {
 
     switch (way) {
       case FIND_BACK: {
-        TableTrashManager tableTrashManager = tableAvailableResult.getTableTrashManager();
-        List<String> loseFiles = tableAvailableResult.lostFiles();
+        TableTrashManager tableTrashManager = tableAnalyzeResult.getTableTrashManager();
+        List<String> loseFiles = tableAnalyzeResult.lostFiles();
         for (String path: loseFiles) {
           if (!tableTrashManager.restoreFileFromTrash(path)) {
             throw new MaintainerException(String.format("Can not find back file %s", path));
@@ -116,7 +116,7 @@ public class RepairCall implements CallCommand {
       case SYNC_METADATA: {
         switch (damageType) {
           case MANIFEST_LOST: {
-            syncMetadataForManifestLose(tableAvailableResult.getArcticTable(), tableAvailableResult.getManifestFiles());
+            syncMetadataForManifestLose(tableAnalyzeResult.getArcticTable(), tableAnalyzeResult.getManifestFiles());
             return success(identifier, context);
           }
           case FILE_LOSE: {
@@ -127,7 +127,7 @@ public class RepairCall implements CallCommand {
                 return success(identifier, context);
               }
             }
-            syncMetadataForFileLose(tableAvailableResult.getArcticTable(), tableAvailableResult.getFiles());
+            syncMetadataForFileLose(tableAnalyzeResult.getArcticTable(), tableAnalyzeResult.getFiles());
             return success(identifier, context);
           }
           default: {
@@ -137,7 +137,7 @@ public class RepairCall implements CallCommand {
         }
       }
       case ROLLBACK: {
-        rollback(tableAvailableResult.getArcticTable(), option);
+        rollback(tableAnalyzeResult.getArcticTable(), option);
         return success(identifier, context);
       }
     }
@@ -149,23 +149,23 @@ public class RepairCall implements CallCommand {
     return ok();
   }
 
-  private void repairMetadataLose(TableIdentifier identifier, TableAvailableResult tableAvailableResult) {
+  private void repairMetadataLose(TableIdentifier identifier, TableAnalyzeResult tableAnalyzeResult) {
     ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
     RepairTableOperation repairTableOperation = new RepairTableOperation(catalogManager, identifier,
-        tableAvailableResult.getLocationKind());
+        tableAnalyzeResult.getLocationKind());
 
     switch (way) {
       case FIND_BACK : {
         List<Path> metadataCandidateFiles =
-            repairTableOperation.getMetadataCandidateFiles(tableAvailableResult.getMetadataVersion());
-        TableTrashManager tableTrashManager = tableAvailableResult.getTableTrashManager();
+            repairTableOperation.getMetadataCandidateFiles(tableAnalyzeResult.getMetadataVersion());
+        TableTrashManager tableTrashManager = tableAnalyzeResult.getTableTrashManager();
         for (Path path: metadataCandidateFiles) {
           if (tableTrashManager.restoreFileFromTrash(path.toString())) {
             return;
           }
         }
         throw new MaintainerException(String.format("Can not find back, metadata version is %s",
-            tableAvailableResult.getMetadataVersion()));
+            tableAnalyzeResult.getMetadataVersion()));
       }
       case ROLLBACK_OR_DROP_TABLE: {
         repairTableOperation.removeVersionHit();

@@ -18,9 +18,12 @@
 
 package com.netease.arctic.ams.server.utils.terminal;
 
+/**
+ * A interface for {@link SimpleShellTerminal} to define your own processing logic
+ */
 public interface TerminalService {
 
-  void dispatch(String line, TerminalOutput terminalOutput) throws Exception;
+  void resolve(String line, TerminalOutput terminalOutput) throws Exception;
 
   void close();
 

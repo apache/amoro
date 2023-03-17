@@ -67,7 +67,7 @@ public class SimpleShellTerminal {
           return;
         }
 
-        terminalService.dispatch(line, terminalOutput);
+        terminalService.resolve(line, terminalOutput);
       } catch (UserInterruptException | EndOfFileException e) {
         terminalService.close();
         terminalOutput.output("quited repair server");

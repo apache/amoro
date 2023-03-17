@@ -36,7 +36,7 @@ public class MaintainerMain {
   }
 
   public static void bootstrap(MaintainerConfig maintainerConfig) throws IOException {
-    TerminalService terminalService = new MaintainerTerminalService(maintainerConfig);
+    TerminalService terminalService = new TableMaintenanceService(maintainerConfig);
     SimpleShellTerminal simpleShellTerminal = new SimpleShellTerminal(terminalService);
     simpleShellTerminal.start();
   }

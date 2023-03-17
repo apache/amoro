@@ -31,11 +31,8 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   private final ArcticFileIO arcticFileIO;
 
-  private final Configuration conf;
-
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
     super(location, fileIO, conf, LockManagers.defaultLockManager());
-    this.conf = conf;
     this.arcticFileIO = fileIO;
   }
 

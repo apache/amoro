@@ -21,14 +21,11 @@ package com.netease.arctic.ams.server.maintainer.command;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.client.OptimizeManagerClient;
+import com.netease.arctic.ams.api.client.OptimizeManagerEntrypoint;
 import com.netease.arctic.ams.server.maintainer.MaintainerConfig;
-import com.netease.arctic.ams.server.maintainer.command.CallFactory;
-import com.netease.arctic.ams.server.maintainer.command.DefaultCallFactory;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableDataTestBase;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.ChangeTable;
 import java.util.Arrays;
@@ -45,7 +42,7 @@ public class CallCommandTestBase extends TableDataTestBase {
   public static CallFactory callFactory = new DefaultCallFactory(
       new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME, maxFindSnapshotNum, maxRollbackSnapNum),
       new CatalogManager(TEST_AMS.getServerUrl()),
-      new OptimizeManagerClient(TEST_AMS.getServerUrl()),
+      new OptimizeManagerEntrypoint(TEST_AMS.getServerUrl()),
       new PooledAmsClient(TEST_AMS.getServerUrl())
   );
 
