@@ -18,42 +18,49 @@
 
 package com.netease.arctic.scan;
 
-import org.apache.iceberg.expressions.Expression;
+import com.netease.arctic.data.file.ContentFileWithSequence;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
-public interface ChangeTableIncrementalScan {
-  /**
-   * Config this scan with filter by the {@link Expression}.
-   *
-   * @param expr a filter expression
-   * @return scan based on this with results filtered by the expression
-   */
-  ChangeTableIncrementalScan filter(Expression expr);
+public interface ChangeTableIncrementalScan extends TableScan {
 
   /**
-   * Plan the {@link ArcticFileScanTask tasks} for this scan.
+   * Config this scan to read data from {@code partitionSequence} exclusive to
+   * the current sequence inclusive.
    *
-   * @return an Iterable of tasks for this scan
-   */
-  CloseableIterable<ArcticFileScanTask> planTasks();
-
-  /**
-   * Config this scan to read data from {@code partitionTransactionId} exclusive to
-   * the current Transaction inclusive.
-   * @param partitionTransactionId from TransactionId for each partition
+   * @param partitionSequence - sequence for each partition
    * @return this for method chaining
    */
-  ChangeTableIncrementalScan fromTransaction(StructLikeMap<Long> partitionTransactionId);
+  ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence);
 
+  /**
+   * Config this scan to read data up to a particular sequence (inclusive).
+   *
+   * @param sequence - sequence (inclusive)
+   * @return this for method chaining
+   */
+  ChangeTableIncrementalScan toSequence(long sequence);
 
   /**
    * Config this scan to read data from legacy {@code partitionTransactionId} exclusive to
    * the current Transaction inclusive.
    * For partitions set both TransactionId and LegacyTransactionId, LegacyTransactionId will
    * be ignored.
+   *
    * @param partitionTransactionId from TransactionId for each partition
    * @return this for method chaining
    */
   ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
+
+  /**
+   * Plan the {@link ContentFileWithSequence files with sequence} that will be read by this scan.
+   * The sequence is the sequence for each file from iceberg metadata.
+   *
+   * @return an Iterable of files with sequence that are required by this scan
+   */
+  CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence();
+
+  @Override
+  ChangeTableIncrementalScan useSnapshot(long snapshotId);
 }

@@ -37,7 +37,7 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
   private final boolean overwrite;
 
   private transient Long mask = null;
-  private transient Long transactionId = null;
+  private final transient Long transactionId = null;
   private transient Integer taskId = null;
   private transient Integer attemptId = null;
 
@@ -53,18 +53,8 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
     this.mask = mask;
   }
 
-  public void setTransactionId(Long transactionId) {
-    this.transactionId = transactionId;
-  }
-
   @Override
   public void initialize(int taskId, int attemptId) {
-    if (table.isKeyedTable()) {
-      Preconditions.checkNotNull(transactionId, "TransactionId should be set first. " +
-          "Invoke setTransactionId() before this method");
-    } else {
-      Preconditions.checkArgument(transactionId == null, "TransactionId should be null for unkeyed table.");
-    }
     this.taskId = taskId;
     this.attemptId = attemptId;
   }

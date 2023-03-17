@@ -27,6 +27,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Map;
@@ -75,13 +76,8 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     Preconditions.checkArgument(setPropertiesForPartition == null ||
             !setPropertiesForPartition.containsKey(key),
         "Cannot remove and update the same key: %s", key);
-    Set<String> properties = removeProperties.get(partitionData);
-    if (properties != null) {
-      properties.remove(key);
-      if (properties.isEmpty()) {
-        removeProperties.remove(partitionData);
-      }
-    }
+    Set<String> properties = removeProperties.computeIfAbsent(partitionData, k -> Sets.newHashSet());
+    properties.add(key);
     return this;
   }
 

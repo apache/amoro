@@ -19,21 +19,20 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -53,7 +52,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MinorExecutor extends BaseExecutor {
+public class MinorExecutor extends AbstractExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
   public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
@@ -63,18 +62,19 @@ public class MinorExecutor extends BaseExecutor {
   @Override
   public OptimizeTaskResult execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
-    LOG.info("Start processing arctic table minor optimize task: {}", task);
+    LOG.info("Start processing arctic table minor optimize task {} of {}: {}", task.getTaskId(),
+        task.getTableIdentifier(), task);
 
-    Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
+    Map<DataTreeNode, List<PrimaryKeyedFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     KeyedTable keyedTable = table.asKeyedTable();
 
     AtomicLong insertCount = new AtomicLong();
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
     Types.StructType recordStruct = requiredSchema.asStruct();
-    for (Map.Entry<DataTreeNode, List<DataFile>> nodeFileEntry : dataFileMap.entrySet()) {
+    for (Map.Entry<DataTreeNode, List<PrimaryKeyedFile>> nodeFileEntry : dataFileMap.entrySet()) {
       DataTreeNode treeNode = nodeFileEntry.getKey();
-      List<DataFile> dataFiles = nodeFileEntry.getValue();
+      List<PrimaryKeyedFile> dataFiles = nodeFileEntry.getValue();
       dataFiles.addAll(task.deleteFiles());
       List<DeleteFile> posDeleteList = deleteFileMap.get(treeNode);
 
@@ -98,8 +98,8 @@ public class MinorExecutor extends BaseExecutor {
             posDeleteWriter.delete(filePath, rowPosition);
             insertCount.incrementAndGet();
             if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-              LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-                  task.getTaskId(), insertCount.get(), filePath, rowPosition);
+              LOG.info("task {} of {} insert records number {} and data sampling path:{}, pos:{}",
+                  task.getTaskId(), task.getTableIdentifier(), insertCount.get(), filePath, rowPosition);
             }
           }
         }
@@ -129,7 +129,7 @@ public class MinorExecutor extends BaseExecutor {
 
       targetFiles.addAll(posDeleteWriter.complete());
     }
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
 
     return buildOptimizeResult(targetFiles);
   }
@@ -139,14 +139,14 @@ public class MinorExecutor extends BaseExecutor {
 
   }
 
-  private CloseableIterator<Record> openTask(List<DataFile> dataFiles, List<DeleteFile> posDeleteList,
+  private CloseableIterator<Record> openTask(List<PrimaryKeyedFile> dataFiles, List<DeleteFile> posDeleteList,
                                              Schema requiredSchema, Set<DataTreeNode> sourceNodes) {
     if (CollectionUtils.isEmpty(dataFiles)) {
       return CloseableIterator.empty();
     }
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
-        .map(file -> new BaseArcticFileScanTask(new DefaultKeyedFile(file), posDeleteList, table.spec()))
+        .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
         .collect(Collectors.toList());
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();

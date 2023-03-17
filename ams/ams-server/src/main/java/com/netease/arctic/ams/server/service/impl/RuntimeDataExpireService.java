@@ -37,6 +37,7 @@ public class RuntimeDataExpireService {
   private final IMetaService metaService;
   private final IOptimizeService optimizeService;
   private final ITableTaskHistoryService tableTaskHistoryService;
+  private final TableBlockerService tableBlockerService;
 
   // 1 days
   Long txDataExpireInterval = 24 * 60 * 60 * 1000L;
@@ -51,17 +52,19 @@ public class RuntimeDataExpireService {
     this.metaService = ServiceContainer.getMetaService();
     this.tableTaskHistoryService = ServiceContainer.getTableTaskHistoryService();
     this.optimizeService = ServiceContainer.getOptimizeService();
+    this.tableBlockerService = ServiceContainer.getTableBlockerService();
   }
 
   public void doExpire() {
+    try {
+      expire();
+    } catch (Throwable t) {
+      LOG.error("unexpected expire error", t);
+    }
+  }
+
+  private void expire() {
     List<TableMetadata> tableMetadata = metaService.listTables();
-    // expire and clear transaction table
-    tableMetadata.forEach(meta -> {
-      TableIdentifier identifier = meta.getTableIdentifier();
-      transactionService.expire(
-          identifier.buildTableIdentifier(),
-          System.currentTimeMillis() - this.txDataExpireInterval);
-    });
 
     // expire and clear table_task_history table
     tableMetadata.forEach(meta -> {
@@ -73,7 +76,7 @@ public class RuntimeDataExpireService {
             tableOptimizeRuntime.getLatestTaskPlanGroup(),
             System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
       } catch (Exception e) {
-        LOG.error("failed to expire and clear table_task_history table", e);
+        LOG.error("{} failed to expire and clear table_task_history table", identifier, e);
       }
     });
 
@@ -84,7 +87,17 @@ public class RuntimeDataExpireService {
         optimizeService.expireOptimizeHistory(identifier,
             System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
       } catch (Exception e) {
-        LOG.error("failed to expire and clear optimize_history table", e);
+        LOG.error("{} failed to expire and clear optimize_history table", identifier, e);
+      }
+    });
+
+    // expire and clean table_blocker
+    tableMetadata.forEach(meta -> {
+      TableIdentifier identifier = meta.getTableIdentifier();
+      try {
+        tableBlockerService.expireBlockers(identifier);
+      } catch (Exception e) {
+        LOG.error("{} failed to expire and clear table_blocker", identifier, e);
       }
     });
   }

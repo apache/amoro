@@ -22,19 +22,19 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BaseIcebergCatalog;
+import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -175,7 +175,7 @@ public class CatalogUtil {
    * @return Whether native iceberg catalog. true is native iceberg catalog, false isn't native iceberg catalog.
    */
   public static boolean isIcebergCatalog(ArcticCatalog arcticCatalog) {
-    return arcticCatalog instanceof BaseIcebergCatalog;
+    return arcticCatalog instanceof BasicIcebergCatalog;
   }
 
   /**

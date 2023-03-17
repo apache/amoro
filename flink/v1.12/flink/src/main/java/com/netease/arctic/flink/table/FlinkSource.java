@@ -140,10 +140,21 @@ public class FlinkSource {
         return buildUnkeyedTableSource();
       }
 
+      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+          DIM_TABLE_ENABLE.defaultValue());
+      RowType rowType;
+
       if (projectedSchema == null) {
         contextBuilder.project(arcticTable.schema());
+        rowType = FlinkSchemaUtil.convert(arcticTable.schema());
       } else {
         contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), filterWatermark(projectedSchema)));
+        // If dim table is enabled, we reserve a RowTime field in Emitter.
+        if (dimTable) {
+          rowType = toRowType(projectedSchema);
+        } else {
+          rowType = toRowType(filterWatermark(projectedSchema));
+        }
       }
       contextBuilder.fromProperties(properties);
       ArcticScanContext scanContext = contextBuilder.build();
@@ -157,20 +168,6 @@ public class FlinkSource {
           scanContext.caseSensitive(),
           arcticTable.io()
       );
-
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
-          DIM_TABLE_ENABLE.defaultValue());
-      RowType rowType;
-      if (projectedSchema != null) {
-        // If dim table is enabled, we reserve a RowTime field in Emitter.
-        if (dimTable) {
-          rowType = toRowType(projectedSchema);
-        } else {
-          rowType = toRowType(filterWatermark(projectedSchema));
-        }
-      } else {
-        rowType = FlinkSchemaUtil.convert(scanContext.project());
-      }
 
       return env.fromSource(
           new ArcticSource<>(tableLoader, scanContext, rowDataReaderFunction,

@@ -30,7 +30,7 @@ import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.BaseUnkeyedTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
@@ -39,12 +39,14 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.Map;
+
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
+public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, SupportHive {
 
   private final HMSClientPool hiveClient;
   private final String tableLocation;
@@ -57,8 +59,9 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       ArcticFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
-      HMSClientPool hiveClient) {
-    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, true);
+      HMSClientPool hiveClient,
+      Map<String, String> catalogProperties) {
+    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties, true);
   }
 
   public UnkeyedHiveTable(
@@ -68,8 +71,9 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       String tableLocation,
       AmsClient client,
       HMSClientPool hiveClient,
+      Map<String, String> catalogProperties,
       boolean syncHiveChange) {
-    super(tableIdentifier, icebergTable, arcticFileIO, client);
+    super(tableIdentifier, icebergTable, arcticFileIO, client, catalogProperties);
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
     this.syncHiveChange = syncHiveChange;

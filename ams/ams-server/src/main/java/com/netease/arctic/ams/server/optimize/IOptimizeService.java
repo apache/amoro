@@ -27,6 +27,8 @@ import java.util.List;
 
 public interface IOptimizeService {
 
+  boolean isInited();
+
   /**
    * Check optimize check tasks, add tasks of new tables, and clean tasks of removed table.
    */
@@ -70,6 +72,13 @@ public interface IOptimizeService {
    * @return list of OptimizeHistory
    */
   List<OptimizeHistory> getOptimizeHistory(TableIdentifier tableIdentifier);
+
+  /**
+   * Get the latest commit time of a table
+   * @param identifier
+   * @return
+   */
+  Long getLatestCommitTime(TableIdentifier identifier);
 
   /**
    * Get max optimize history id.

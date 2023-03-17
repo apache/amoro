@@ -19,27 +19,24 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TableFileUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveFullOptimizePlan.class);
@@ -50,11 +47,9 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   protected final Set<String> excludeLocations = new HashSet<>();
 
   public SupportHiveFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                      List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
-                                      Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                                      Predicate<Long> snapshotIsCached) {
-    super(arcticTable, tableOptimizeRuntime, baseTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
+                                     List<FileScanTask> baseFileScanTasks, int queueId, long currentTime,
+                                     long baseSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, baseFileScanTasks, queueId, currentTime, baseSnapshotId);
 
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();
@@ -65,11 +60,9 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
-    long current = System.currentTimeMillis();
 
-    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
-    List<DataFile> baseFiles = new ArrayList<>();
-    partitionFileTree.get(partitionToPath).collectBaseFiles(baseFiles);
+    List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
+    List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
     Map<DataTreeNode, Long> nodeSmallFileCount = new HashMap<>();
     boolean nodeHaveTwoSmallFiles = false;
     boolean notInHiveFile = false;
@@ -80,7 +73,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         LOG.info("table {} has in not hive location files", arcticTable.id());
         break;
       } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
-        DataTreeNode node = TableFileUtils.parseFileNodeFromFileName(baseFile.path().toString());
+        DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
         if (nodeSmallFileCount.get(node) != null) {
           nodeHaveTwoSmallFiles = true;
           LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",
@@ -100,13 +93,11 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
     // check full optimize interval
-    if (checkFullOptimizeInterval(current, partitionToPath) && partitionNeedPlan) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
+    if (checkOptimizeInterval(partitionToPath) && partitionNeedPlan) {
       return true;
     }
 

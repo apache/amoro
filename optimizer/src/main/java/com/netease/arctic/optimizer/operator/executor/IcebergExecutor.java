@@ -19,7 +19,8 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
@@ -51,7 +52,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public class IcebergExecutor extends BaseExecutor {
+public class IcebergExecutor extends AbstractExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
 
@@ -61,7 +62,8 @@ public class IcebergExecutor extends BaseExecutor {
 
   @Override
   public OptimizeTaskResult execute() throws Exception {
-    LOG.info("Start processing iceberg table optimize task: {}", task);
+    LOG.info("Start processing iceberg table optimize task {} of {}: {}", task.getTaskId(), task.getTableIdentifier(),
+        task);
 
 
     List<? extends ContentFile<?>> targetFiles;
@@ -112,20 +114,20 @@ public class IcebergExecutor extends BaseExecutor {
 
         insertCount.incrementAndGet();
         if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-              task.getTaskId(), insertCount.get(), filePath, rowPosition);
+          LOG.info("task {} of {} insert records number {} and data sampling path:{}, pos:{}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount.get(), filePath, rowPosition);
         }
       }
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount.get());
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount.get());
 
     return icebergPosDeleteWriter.complete();
   }
 
   private CombinedIcebergScanTask buildIcebergScanTask() {
-    return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new IcebergContentFile[]{}),
-        task.allIcebergDeleteFiles().toArray(new IcebergContentFile[]{}),
+    return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new DataFileWithSequence[0]),
+        task.allIcebergDeleteFiles().toArray(new DeleteFileWithSequence[0]),
         table.spec(), task.getPartition());
   }
 
@@ -165,8 +167,8 @@ public class IcebergExecutor extends BaseExecutor {
 
         insertCount++;
         if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling {}",
-              task.getTaskId(), insertCount, record);
+          LOG.info("task {} of {} insert records number {} and data sampling {}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount, record);
         }
       }
     }
@@ -176,7 +178,7 @@ public class IcebergExecutor extends BaseExecutor {
       result.add(writer.toDataFile());
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
     return result;
   }
 

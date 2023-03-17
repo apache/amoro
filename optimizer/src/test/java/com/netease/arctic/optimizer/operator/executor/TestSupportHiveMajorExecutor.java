@@ -19,11 +19,10 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -32,6 +31,7 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -150,7 +150,21 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
   }
 
   private NodeTask constructNodeTask(ArcticTable arcticTable, OptimizeType optimizeType) {
-    NodeTask nodeTask = new NodeTask();
+
+    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
+        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+
+    String fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
+
+    List<ContentFileWithSequence<?>> base =
+        baseDataFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, baseTable.spec(),
+            fileFormat)).collect(Collectors.toList());
+    List<ContentFileWithSequence<?>> pos =
+        posDeleteFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, baseTable.spec(),
+            fileFormat)).collect(Collectors.toList());
+
+    NodeTask nodeTask = new NodeTask(base, null, null, pos, true);
     nodeTask.setSourceNodes(baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
         .collect(Collectors.toSet()));
@@ -158,22 +172,6 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
     nodeTask.setTaskId(new OptimizeTaskId(optimizeType, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
     nodeTask.setPartition(FILE_A.partition());
-
-    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
-        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
-
-    String fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
-        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
-    for (DataFileInfo fileInfo : baseDataFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), fileFormat),
-          DataFileType.BASE_FILE);
-    }
-    for (DataFileInfo fileInfo : posDeleteFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), fileFormat),
-          DataFileType.POS_DELETE_FILE);
-    }
 
     return nodeTask;
   }

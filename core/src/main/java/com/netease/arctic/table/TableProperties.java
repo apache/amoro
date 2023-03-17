@@ -38,8 +38,7 @@ public class TableProperties {
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
-  public static final String PARTITION_MAX_TRANSACTION_ID = "max-txId";
-  public static final long PARTITION_MAX_TRANSACTION_ID_DEFAULT = -1L;
+  public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
 
   public static final String LOCATION = "location";
 
@@ -71,10 +70,10 @@ public class TableProperties {
    */
   public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
-  
+
   public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
-  
+
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
   public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
 
@@ -88,7 +87,7 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
 
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
-  public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 100000;
+  public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 10000;
 
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
@@ -108,11 +107,11 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL = "self-optimizing.major.trigger.interval";
   public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
-  
+
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
   public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
-  
-  
+
+
   /**
    * deprecated table optimize related properties
    */
@@ -181,6 +180,21 @@ public class TableProperties {
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
 
+  public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
+  public static final boolean ENABLE_TABLE_TRASH_DEFAULT = false;
+
+  public static final String TABLE_TRASH_CUSTOM_ROOT_LOCATION = "table-trash.custom-root-location";
+
+  public static final String TABLE_TRASH_KEEP_DAYS = "table-trash.keep.days";
+  public static final int TABLE_TRASH_KEEP_DAYS_DEFAULT = 7; // 7 Days
+
+  public static final String TABLE_TRASH_FILE_PATTERN = "table-trash.file-pattern";
+  public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT = ".+\\.parquet" +
+      "|.*snap-[0-9]+-[0-9]+-.+\\.avro" + // snap-1515213806302741636-1-UUID.avro
+      "|.*version-hint.text" + // version-hint.text
+      "|.*v[0-9]+\\.metadata\\.json" + // v123.metadata.json
+      "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
+
   /**
    * table write related properties
    */
@@ -225,11 +239,19 @@ public class TableProperties {
 
   /**
    * table read related properties
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
    */
+  @Deprecated
   public static final String READ_DISTRIBUTION_MODE = "read.distribution-mode";
   public static final String READ_DISTRIBUTION_MODE_NONE = "none";
   public static final String READ_DISTRIBUTION_MODE_HASH = "hash";
-  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_HASH;
+  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_NONE;
+  /**
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
+   */
+  @Deprecated
   public static final String READ_DISTRIBUTION_HASH_MODE = "read.distribution.hash-mode";
   public static final String READ_DISTRIBUTION_HASH_PARTITION = "partition-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
@@ -254,7 +276,9 @@ public class TableProperties {
   public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
-  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
+  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = LOG_STORE_STORAGE_TYPE_KAFKA;
 
   public static final String LOG_STORE_ADDRESS = "log-store.address";
 
@@ -265,6 +289,8 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
+  
+  public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
 
@@ -280,7 +306,7 @@ public class TableProperties {
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     READ_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     READ_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
@@ -289,7 +315,7 @@ public class TableProperties {
 
 
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     WRITE_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);

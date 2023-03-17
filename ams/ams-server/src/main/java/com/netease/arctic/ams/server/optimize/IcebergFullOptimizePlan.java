@@ -19,11 +19,12 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,16 +44,17 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
+public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergFullOptimizePlan.class);
 
-  protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+  private final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+  // cache partitionDeleteFileTotalSize
+  private final Map<String, Long> partitionDeleteFileTotalSize = new HashMap<>();
 
   public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                  List<FileScanTask> fileScanTasks,
-                                 Map<String, Boolean> partitionTaskRunning,
-                                 int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
+                                 int queueId, long currentTime, long currentSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, fileScanTasks, queueId, currentTime, currentSnapshotId);
   }
 
   protected void addOptimizeFiles() {
@@ -60,12 +63,10 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     for (FileScanTask fileScanTask : fileScanTasks) {
       DataFile dataFile = fileScanTask.file();
       String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
-      currentPartitions.add(partitionPath);
-      if (!anyTaskRunning(partitionPath)) {
-        List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
-        fileScanTasks.add(fileScanTask);
-        addCnt.getAndIncrement();
-      }
+      allPartitions.add(partitionPath);
+      List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
+      fileScanTasks.add(fileScanTask);
+      addCnt.getAndIncrement();
     }
 
     LOG.debug("{} ==== {} add {} data files" + " After added, partition cnt of tree: {}",
@@ -74,19 +75,10 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
-    List<FileScanTask> partitionFileScanTasks = partitionFileList.get(partitionToPath);
-    if (CollectionUtils.isEmpty(partitionFileScanTasks)) {
-      LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, there are no data files",
-          tableId(), getOptimizeType(), partitionToPath);
+    long deleteFilesTotalSize = getPartitionDeleteFileTotalSize(partitionToPath);
+    if (deleteFilesTotalSize == 0) {
       return false;
     }
-
-    Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
-    for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
-      partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
-    }
-
-    double deleteFilesTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
 
     long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -96,7 +88,6 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
         TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
     // delete files total size reach target_size * duplicate_ratio
     if (deleteFilesTotalSize > targetSize * duplicateRatio) {
-      partitionOptimizeType.put(partitionToPath, getOptimizeType());
       LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
               "delete files totalSize is {}, target size is {}",
           tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
@@ -110,6 +101,58 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
   }
 
   @Override
+  protected long getMaxOptimizeInterval() {
+    return CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT);
+  }
+
+  @Override
+  protected long getLatestOptimizeTime(String partition) {
+    return tableOptimizeRuntime.getLatestFullOptimizeTime(partition);
+  }
+
+  private long getPartitionDeleteFileTotalSize(String partitionToPath) {
+    Long cached = partitionDeleteFileTotalSize.get(partitionToPath);
+    if (cached != null) {
+      return cached;
+    }
+    List<FileScanTask> partitionFileScanTasks = partitionFileList.get(partitionToPath);
+    if (CollectionUtils.isEmpty(partitionFileScanTasks)) {
+      LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, there are no data files",
+          tableId(), getOptimizeType(), partitionToPath);
+      return 0;
+    }
+
+    Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
+    for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
+      partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
+    }
+
+    long deleteFileTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
+    partitionDeleteFileTotalSize.put(partitionToPath, deleteFileTotalSize);
+    return deleteFileTotalSize;
+  }
+
+  @Override
+  protected PartitionWeight getPartitionWeight(String partitionToPath) {
+    return new IcebergFullPartitionWeight(getPartitionDeleteFileTotalSize(partitionToPath));
+  }
+
+  protected static class IcebergFullPartitionWeight implements PartitionWeight {
+    private final long deleteFileSize;
+
+    public IcebergFullPartitionWeight(long deleteFileSize) {
+      this.deleteFileSize = deleteFileSize;
+    }
+
+    @Override
+    public int compareTo(PartitionWeight o) {
+      return Long.compare(((IcebergFullPartitionWeight) o).deleteFileSize, this.deleteFileSize);
+    }
+  }
+
+  @Override
   protected OptimizeType getOptimizeType() {
     return OptimizeType.FullMajor;
   }
@@ -119,13 +162,12 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
   }
 
   @Override
-  protected List<BaseOptimizeTask> collectTask(String partition) {
-    List<BaseOptimizeTask> collector = new ArrayList<>();
+  protected List<BasicOptimizeTask> collectTask(String partition) {
+    List<BasicOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null, null,
-        commitGroup, planGroup, getOptimizeType(), createTime, "");
+    TaskConfig taskPartitionConfig = new TaskConfig(getOptimizeType(), partition, commitGroup, planGroup, createTime);
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
 
     fileScanTasks = filterRepeatFileScanTask(fileScanTasks);
@@ -143,8 +185,6 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
             eqDeleteFiles, posDeleteFiles, taskPartitionConfig));
       }
     }
-
-
     return collector;
   }
 }

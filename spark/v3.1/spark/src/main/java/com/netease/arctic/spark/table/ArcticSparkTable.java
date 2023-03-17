@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.table;
 
+import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -42,7 +42,6 @@ import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,24 +59,29 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
+  private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table) {
+  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
         return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
       }
     }
-    return new ArcticSparkTable(table, false);
+    return new ArcticSparkTable(table, false, catalog);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly) {
-    this(arcticTable, null, refreshEagerly);
+  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
+    this(arcticTable, null, refreshEagerly, catalog);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
+  public ArcticSparkTable(ArcticTable arcticTable,
+                          StructType requestedSchema,
+                          boolean refreshEagerly,
+                          ArcticCatalog catalog) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
+    this.catalog = catalog;
 
     if (requestedSchema != null) {
       // convert the requested schema to throw an exception if any requested fields are unknown
@@ -184,7 +188,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
-    return new ArcticSparkWriteBuilder(arcticTable, info);
+    return new ArcticSparkWriteBuilder(arcticTable, info, catalog);
   }
 
 

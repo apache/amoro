@@ -19,13 +19,36 @@
 package com.netease.arctic.flink.util;
 
 import org.apache.flink.api.common.JobStatus;
+import org.apache.flink.api.common.time.Deadline;
 import org.apache.flink.core.execution.JobClient;
+import org.apache.flink.runtime.concurrent.FutureUtils;
+import org.apache.flink.runtime.messages.Acknowledge;
+import org.apache.flink.runtime.minicluster.MiniCluster;
+import org.apache.flink.runtime.testutils.CommonTestUtils;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class TestUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestUtil.class);
+
+  /**
+   * get ut method name without parameters.
+   */
+  public static String getUtMethodName(TestName testName) {
+    int i = testName.getMethodName().indexOf("[");
+    if (i == -1) {
+      return testName.getMethodName();
+    }
+    return testName.getMethodName().substring(0, i);
+  }
 
   public static void cancelJob(JobClient jobClient) {
     if (isJobTerminated(jobClient)) {
@@ -56,6 +79,45 @@ public class TestUtil {
           "Failed to get job status so we assume that the job has terminated. Some data might be lost.",
           e);
       return true;
+    }
+  }
+
+  public static void cancelAllJobs(MiniCluster miniCluster) {
+    try {
+      final Deadline jobCancellationDeadline =
+          Deadline.fromNow(Duration.ofSeconds(10));
+
+      final List<CompletableFuture<Acknowledge>> jobCancellationFutures =
+          miniCluster.listJobs()
+              .get(
+                  jobCancellationDeadline.timeLeft().toMillis(),
+                  TimeUnit.MILLISECONDS)
+              .stream()
+              .filter(status -> !status.getJobState().isGloballyTerminalState())
+              .map(status -> miniCluster.cancelJob(status.getJobId()))
+              .collect(Collectors.toList());
+
+      FutureUtils.waitForAll(jobCancellationFutures)
+          .get(jobCancellationDeadline.timeLeft().toMillis(), TimeUnit.MILLISECONDS);
+
+      CommonTestUtils.waitUntilCondition(
+          () -> {
+            final long unfinishedJobs =
+                miniCluster.listJobs()
+                    .get(
+                        jobCancellationDeadline.timeLeft().toMillis(),
+                        TimeUnit.MILLISECONDS)
+                    .stream()
+                    .filter(
+                        status ->
+                            !status.getJobState()
+                                .isGloballyTerminalState())
+                    .count();
+            return unfinishedJobs == 0;
+          },
+          jobCancellationDeadline);
+    } catch (Exception e) {
+      LOG.warn("Exception while shutting down remaining jobs.", e);
     }
   }
 

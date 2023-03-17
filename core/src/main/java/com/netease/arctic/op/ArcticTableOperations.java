@@ -39,7 +39,7 @@ public class ArcticTableOperations implements TableOperations {
 
   @Override
   public TableMetadata current() {
-    return arcticFileIO.doAs(() -> ops.current());
+    return ops.current();
   }
 
   @Override

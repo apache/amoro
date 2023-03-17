@@ -19,6 +19,8 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import io.javalin.http.Context;
@@ -28,7 +30,6 @@ import java.io.Serializable;
 
 /**
  * login controller.
-
  */
 public class LoginController {
 
@@ -46,12 +47,17 @@ public class LoginController {
   public static void login(Context ctx) {
     // ok
     JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (postBody.get("user").equals("admin") && (postBody.get("password").equals("admin"))) {
-      ctx.sessionAttribute("user", new SessionInfo("admin", System.currentTimeMillis() + ""));
+    if (ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_USERNAME).equals(postBody.get("user")) &&
+        (ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_PASSWORD).equals(postBody.get("password")))) {
+      ctx.sessionAttribute(
+          "user",
+          new SessionInfo(
+              ArcticMetaStore.conf.get(ArcticMetaStoreConf.LOGIN_USERNAME),
+              System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "bad user " + postBody.get("user") + "or password!",
-              null));
+          null));
     }
   }
 

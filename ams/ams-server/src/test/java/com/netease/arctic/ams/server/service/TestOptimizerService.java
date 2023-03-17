@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
@@ -54,6 +55,7 @@ public class TestOptimizerService {
     OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
     optimizeQueueMeta.setName(optimizerGroupName);
     optimizeQueueMeta.setContainer(containerName);
+    optimizeQueueMeta.setSchedulingPolicy(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA);
     Map<String, String> properties = Maps.newHashMap();
     optimizeQueueMeta.setProperties(properties);
     ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);

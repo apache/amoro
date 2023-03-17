@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BaseIcebergCatalog;
+import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.lang3.StringUtils;
@@ -89,7 +89,7 @@ public class CatalogUtil {
 
   public static boolean isIcebergCatalog(String name) {
     ArcticCatalog ac = getArcticCatalog(name);
-    return ac instanceof BaseIcebergCatalog;
+    return ac instanceof BasicIcebergCatalog;
   }
 
   public static boolean isHiveCatalog(String name) {

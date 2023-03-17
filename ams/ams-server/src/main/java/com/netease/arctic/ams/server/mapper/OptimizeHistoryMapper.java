@@ -28,6 +28,7 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface OptimizeHistoryMapper {
@@ -41,7 +42,7 @@ public interface OptimizeHistoryMapper {
       "total_file_cnt_after,total_file_size_after,snapshot_id, total_size, " +
       "added_files, removed_files, added_records, removed_records, added_files_size, " +
       "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
-      "max_change_transaction_id from " + TABLE_NAME + " where " +
+      "partition_optimized_sequence from " + TABLE_NAME + " where " +
       "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
       "and table_name = #{tableIdentifier.tableName}")
   @Results({
@@ -57,7 +58,7 @@ public interface OptimizeHistoryMapper {
       @Result(column = "duration", property = "duration"),
       @Result(column = "partition_cnt", property = "partitionCnt"),
       @Result(column = "partitions", property = "partitions"),
-      @Result(column = "max_change_transaction_id", property = "baseTableMaxTransactionId"),
+      @Result(column = "partition_optimized_sequence", property = "partitionOptimizedSequence"),
       @Result(column = "catalog_name", property = "tableIdentifier.catalog"),
       @Result(column = "db_name", property = "tableIdentifier.database"),
       @Result(column = "table_name", property = "tableIdentifier.tableName"),
@@ -86,6 +87,11 @@ public interface OptimizeHistoryMapper {
   })
   List<OptimizeHistory> selectOptimizeHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
+  @Select("select max(commit_time) from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName}")
+  Timestamp latestCommitTime(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
   @Delete("delete from " + TABLE_NAME + " where catalog_name = #{tableIdentifier.catalog} and " +
       "db_name = #{tableIdentifier.database} and table_name = #{tableIdentifier.tableName}")
   void deleteOptimizeRecord(@Param("tableIdentifier") TableIdentifier tableIdentifier);
@@ -100,7 +106,7 @@ public interface OptimizeHistoryMapper {
           "total_file_cnt_after, total_file_size_after,snapshot_id, total_size," +
           "added_files, removed_files, added_records, removed_records, added_files_size, " +
           "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
-          "max_change_transaction_id) values (" +
+          "partition_optimized_sequence) values (" +
           "#{optimizeHistory.tableIdentifier.catalog}, " +
           "#{optimizeHistory.tableIdentifier.database}, " +
           "#{optimizeHistory.tableIdentifier.tableName}, #{optimizeHistory.optimizeRange}," +
@@ -135,7 +141,7 @@ public interface OptimizeHistoryMapper {
           "#{optimizeHistory.snapshotInfo.totalFiles}, " +
           "#{optimizeHistory.snapshotInfo.totalRecords}, " +
           "#{optimizeHistory.partitionCnt}, #{optimizeHistory.partitions}, " +
-          "#{optimizeHistory.baseTableMaxTransactionId})")
+          "#{optimizeHistory.partitionOptimizedSequence})")
   void insertOptimizeHistory(@Param("optimizeHistory") OptimizeHistory optimizeHistory);
 
   @Select("select max(history_id) from " + TABLE_NAME)

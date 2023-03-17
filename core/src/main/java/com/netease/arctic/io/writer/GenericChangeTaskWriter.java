@@ -40,11 +40,22 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
   private final InternalRecordWrapper wrapper;
   private final ChangeAction writeAction;
 
-  public GenericChangeTaskWriter(FileFormat format, FileAppenderFactory<Record> appenderFactory,
-                          OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                          long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec,
-                          ChangeAction writeAction) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+  public GenericChangeTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<Record> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      ChangeAction writeAction,
+      boolean orderedWriter) {
+    super(
+        format, appenderFactory, outputFileFactory, io,
+        targetFileSize, mask, schema, spec, primaryKeySpec,orderedWriter
+    );
     this.joinSchema = SchemaUtil.changeWriteSchema(schema);
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
     this.writeAction = writeAction;

@@ -111,11 +111,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
   }
 
   private FlinkBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    if (table.isKeyedTable()) {
-      Preconditions.checkNotNull(transactionId);
-    } else {
-      Preconditions.checkArgument(transactionId == null);
-    }
+    Preconditions.checkArgument(transactionId == null);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -163,7 +159,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
-    Preconditions.checkNotNull(transactionId);
+    Preconditions.checkArgument(transactionId == null);
 
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
@@ -185,12 +181,14 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
             keyedTable.properties(), keyedTable.spec()) :
         new FlinkAppenderFactory(
         changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
+    boolean upsert = table.isKeyedTable() && PropertyUtil.propertyAsBoolean(table.properties(),
+        TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
     return new FlinkChangeTaskWriter(
         fileFormat,
         appenderFactory,
         outputFileFactory,
         keyedTable.io(), fileSizeBytes, mask,
-        selectSchema, flinkSchema, keyedTable.spec(), keyedTable.primaryKeySpec());
+        selectSchema, flinkSchema, keyedTable.spec(), keyedTable.primaryKeySpec(), upsert);
   }
 
   @Override

@@ -89,8 +89,11 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * AbstractFetcher}.
  *
  * @param <T> The type of records produced by this data source
+ * <p>
+ * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
+@Deprecated
 public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFunction<T>
     implements CheckpointListener, ResultTypeQueryable<T>, CheckpointedFunction {
 

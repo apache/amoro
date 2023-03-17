@@ -19,11 +19,17 @@
 package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import com.netease.arctic.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
 /**
  * PropertyUtil compatible with legacy flink properties
@@ -106,5 +112,38 @@ public class CompatibleFlinkPropertyUtil {
       return ArcticValidator.DIM_TABLE_ENABLE_LEGACY;
     }
     return null;
+  }
+
+  /**
+   * Get log-store properties from table properties and flink options, whose prefix is
+   * {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
+   *
+   * @param tableOptions including table properties and flink options
+   * @return Properties. The keys in it have no {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
+   */
+  public static Properties fetchLogstorePrefixProperties(Map<String, String> tableOptions) {
+    final Properties properties = new Properties();
+
+    if (hasPrefix(tableOptions, TableProperties.LOG_STORE_PROPERTIES_PREFIX)) {
+      tableOptions.keySet().stream()
+          .filter(key -> key.startsWith(TableProperties.LOG_STORE_PROPERTIES_PREFIX))
+          .forEach(
+              key -> {
+                final String value = tableOptions.get(key);
+                final String subKey = key.substring((TableProperties.LOG_STORE_PROPERTIES_PREFIX).length());
+                properties.put(subKey, value);
+              });
+    }
+    return properties;
+  }
+
+  public static boolean hasPrefix(Map<String, String> tableOptions, String prefix) {
+    return tableOptions.keySet().stream().anyMatch(k -> k.startsWith(prefix));
+  }
+
+  public static List<String> getLogTopic(Map<String, String> tableProperties) {
+    Configuration conf = new Configuration();
+    conf.setString(TOPIC.key(), tableProperties.get(TableProperties.LOG_STORE_MESSAGE_TOPIC));
+    return conf.get(TOPIC);
   }
 }
