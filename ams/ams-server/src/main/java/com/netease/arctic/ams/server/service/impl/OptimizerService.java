@@ -249,24 +249,24 @@ public class OptimizerService extends IJDBCService {
       return;
     }
 
-    //考虑新的也为null的情况
+    //If there is no status identifier in optimizerState, it is skipped
     String statusIdentification = newReportData.optimizerState
             .get(STATUS_IDENTIFICATION);
     if (!statusIdentification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
             stateInfo.get(STATUS_IDENTIFICATION) != null) {
 
       LOG.info("Optimizer " + newReportData.optimizerId + " retry occurred");
-      //出问题，任务重试过
-      //通过optimizer的id
+      //The flink status has changed. Procedure
       long optimizerId = newReportData.optimizerId;
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizeTasksMapper optimizeTasksMapper = getMapper(sqlSession, OptimizeTasksMapper.class);
-        //获取运行中的任务
+        //Gets the task in execution of the optimizer
         List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper
                 .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
-          //由于optimzer可能是先poll任务再heartbeat,只将createtime 小于 statusIdentification的合并任务设置为失败
+          //Since optimzer may poll tasks before heartbeat,
+          //only tasks whose createtime is less than status Identification are set to fail
           if (baseOptimizeTask.getCreateTime()  < Long.parseLong(statusIdentification)) {
             OptimizeTaskId taskId = baseOptimizeTask.taskId;
 

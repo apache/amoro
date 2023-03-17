@@ -42,6 +42,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
+import static org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.getExecutionEnvironment;
+
 public class FlinkReporter extends AbstractStreamOperator<Void>
         implements OneInputStreamOperator<OptimizeTaskStat, Void> {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkReporter.class);
@@ -125,11 +127,11 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
 
   private void addLastModification(Map<String, String> state) throws IOException {
 
-    String yarnApp = StreamExecutionEnvironment.getExecutionEnvironment()
-            .getStreamGraph().getJobGraph().getJobID().toString();
+    String yarnApp = getContainingTask().getEnvironment().getTaskManagerInfo()
+            .getConfiguration().toMap().get(HIGH_AVAILABILITY_CLUSTER_ID);
 
     if (StringUtils.isNotEmpty(restApiPrefix) && StringUtils.isNotEmpty(yarnApp)) {
-      //http://knox.inner.youdao.com/gateway/eadhadoop/yarn/proxy/{application_id}/jobs/overview
+      //http://xxxxxx/{application_id}/jobs/overview
       String restApiUrl = restApiPrefix + yarnApp + JOB_OVERVIEW_REST_API;
 
       URL url = new URL(restApiUrl);
@@ -141,7 +143,6 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
 
       if (conn.getResponseCode() == 200) {
         InputStream is  = conn.getInputStream();
-        //面对获取的输入流进行读取
         BufferedReader br =  new BufferedReader(new InputStreamReader(is));
         String line;
         while ((line = br.readLine()) != null) {
@@ -154,6 +155,8 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
         state.put(STATUS_IDENTIFICATION, String.valueOf(lastModification));
 
       }
+
+      conn.disconnect();
 
     }
   }

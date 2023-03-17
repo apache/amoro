@@ -28,11 +28,11 @@ public class GetLastModificationTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
         //a application id
         String yarnApp = "application_1676556061024_178049";
-        String restApiPrefix = "http://knox.inner.youdao.com/gateway/eadhadoop/yarn/proxy/";
+        String restApiPrefix = "http://xxxxxx";
 
 
         if (StringUtils.isNotEmpty(restApiPrefix) && StringUtils.isNotEmpty(yarnApp)) {
-            //http://knox.inner.youdao.com/gateway/eadhadoop/yarn/proxy/{application_id}/jobs/overview
+            //http://xxxxxx/{application_id}/jobs/overview
             String restApiUrl = restApiPrefix + yarnApp + JOB_OVERVIEW_REST_API;
 
             URL url = new URL(restApiUrl);
