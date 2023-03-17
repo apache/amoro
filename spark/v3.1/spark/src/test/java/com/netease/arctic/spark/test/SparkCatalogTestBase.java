@@ -36,24 +36,23 @@ public abstract class SparkCatalogTestBase extends SparkTestBase {
     if ("SESSION".equalsIgnoreCase(catalogType)) {
       return "spark_catalog";
     } else {
-      return catalogNameInAMS(catalogType);
+      return env.amsCatalogName(catalogType);
     }
   }
 
   protected String arcticCatalog() {
     String catalogType = catalogType();
     if ("SESSION".equalsIgnoreCase(catalogType)) {
-      return catalogNameInAMS("hive");
+      return env.amsCatalogName("hive");
     } else {
-      return catalogNameInAMS(catalogType);
+      return env.amsCatalogName(catalogType);
     }
   }
 
   protected String catalogUrl() {
-    return AMS.getServerUrl() + "/" + arcticCatalog();
+    return env.amsServerUrl() + "/" + arcticCatalog();
   }
 
-  @Override
   protected Map<String, String> testSparkConf() {
     Map<String, String> conf = Maps.newHashMap();
     if ("Session".equalsIgnoreCase(catalogType())) {

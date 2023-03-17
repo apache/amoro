@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test;
 
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
@@ -46,14 +45,6 @@ public abstract class SparkTableTestBase extends SparkCatalogTestBase {
     return "test_table";
   }
 
-  protected TableFormat tableFormat() {
-    if ("session".equalsIgnoreCase(catalogType()) || "hive".equalsIgnoreCase(catalogType())) {
-      return TableFormat.MIXED_HIVE;
-    } else {
-      return TableFormat.MIXED_ICEBERG;
-    }
-  }
-
   @Before
   public void setupDatabase() {
     sql("USE " + catalog());
@@ -71,35 +62,10 @@ public abstract class SparkTableTestBase extends SparkCatalogTestBase {
     return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog(), database(), table()));
   }
 
-  int _id = 0;
-
-  public int nextId() {
-    return ++_id;
-  }
-
-  protected Types.NestedField optionalTimestampNestedField(String name) {
-    return timestampNestedField(name, true);
-  }
-
-  protected Types.NestedField timestampNestedField(String name, Boolean optional) {
-
-    switch (tableFormat()) {
-      case MIXED_ICEBERG:
-      case ICEBERG:
-        if (useTimestampWithoutZoneInNewTable()) {
-          return Types.NestedField.of(nextId(), optional, name, Types.TimestampType.withoutZone());
-        }
-      case MIXED_HIVE:
-        return Types.NestedField.of(nextId(), optional, name, Types.TimestampType.withoutZone());
-      default:
-        return Types.NestedField.of(nextId(), optional, name, Types.TimestampType.withZone());
-    }
-  }
-
   /**
    * assert table schema equal to expect schema
    */
-  protected void assertTableSchema(
+  protected static void assertTableSchema(
       ArcticTable actual, Schema expectSchema, PartitionSpec expectPartitionSpec, PrimaryKeySpec expectKeySpec
   ) {
     Assert.assertEquals(expectKeySpec.primaryKeyExisted(), actual.isKeyedTable());
@@ -134,7 +100,7 @@ public abstract class SparkTableTestBase extends SparkCatalogTestBase {
     assertType(expectSchema.asStruct(), actual.schema().asStruct());
   }
 
-  protected void assertType(Type expect, Type actual) {
+  protected static void assertType(Type expect, Type actual) {
     Assert.assertEquals(
         "type should be same",
         expect.isPrimitiveType(), actual.isPrimitiveType());

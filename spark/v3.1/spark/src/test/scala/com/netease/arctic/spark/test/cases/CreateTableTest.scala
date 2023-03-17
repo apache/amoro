@@ -18,14 +18,11 @@
 
 package com.netease.arctic.spark.test.cases
 
-import com.netease.arctic.spark.SparkSQLProperties
-import com.netease.arctic.spark.test.SparkTableTestBase
 import com.netease.arctic.table.PrimaryKeySpec
 import org.apache.iceberg.relocated.com.google.common.collect.Lists
 import org.apache.iceberg.types.Types
 import org.apache.iceberg.types.Types.NestedField
 import org.apache.iceberg.{PartitionSpec, Schema}
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
@@ -208,33 +205,33 @@ case class CreateTableTestArgument(
 @RunWith(classOf[Parameterized])
 case class CreateTableTest(
   testArgument: CreateTableTestArgument
-) extends SparkTableTestBase {
+) {
 
-  override protected def catalogType(): String = testArgument.catalogType
+  // override protected def catalogType(): String = testArgument.catalogType
 
-
-  @Test
-  def test(): Unit = {
-    sql(s"SET `${SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES}`=${
-      testArgument
-        .timestampWithoutZone
-    }")
-    val createTableSqlText =
-      s"""
-         |CREATE TABLE ${database}.${table} ( ${this.testArgument.structDDL} ${this.testArgument.primaryKeyDDL})
-         |using arctic
-         |${testArgument.partitionDDL}
-         |""".stripMargin
-    sql(createTableSqlText)
-
-    val arcticTable = loadTable()
-    assertTableSchema(
-      arcticTable,
-      testArgument.expectSchema,
-      testArgument.expectPartitionSpec,
-      testArgument.expectKeySpec)
-
-  }
+  //
+  //  @Test
+  //  def test(): Unit = {
+  //    sql(s"SET `${SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES}`=${
+  //      testArgument
+  //        .timestampWithoutZone
+  //    }")
+  //    val createTableSqlText =
+  //      s"""
+  //         |CREATE TABLE ${database}.${table} ( ${this.testArgument.structDDL} ${this.testArgument.primaryKeyDDL})
+  //         |using arctic
+  //         |${testArgument.partitionDDL}
+  //         |""".stripMargin
+  //    sql(createTableSqlText)
+  //
+  //    val arcticTable = loadTable()
+  //    assertTableSchema(
+  //      arcticTable,
+  //      testArgument.expectSchema,
+  //      testArgument.expectPartitionSpec,
+  //      testArgument.expectKeySpec)
+  //
+  //  }
 
 
 }

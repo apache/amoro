@@ -16,34 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.junit4;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public abstract class SparkTestBase {
+public interface SupportExecuteSQL {
+  Dataset<Row> sql(String sqlText);
 
-  public static final Logger LOG = LoggerFactory.getLogger("SparkUnitTests");
-
-  @RegisterExtension
-  public static final SparkTestEnvironmentExtension env = new SparkTestEnvironmentExtension();
-
-  @TableTest.Database
-  protected String database = "spark_test_database";
-
-  @TableTest.Table
-  protected String table = "test_table";
-
-  public Dataset<Row> sql(String sqlText) {
-    return env.sql(sqlText);
-  }
-
-  // protected ArcticTable loadTable(String sparkCatalogName) {
-  //
-  //   ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl());
-  //   return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog(), database(), table()));
-  // }
+  String catalog();
 }

@@ -16,11 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.junit4;
 
-import org.apache.spark.sql.SparkSession;
+public interface SupportSetupDatabaseAndCleanTable extends SupportExecuteSQL {
 
-public interface SupportSparkContext {
-
-  SparkSession spark();
 }

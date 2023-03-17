@@ -50,7 +50,7 @@
             <artifactId>libthrift</artifactId>
             <version>${thrift.version}</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-optimizer</artifactId>
@@ -402,7 +402,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -540,7 +539,8 @@
                 <configuration>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>${project.build.outputDirectory}/arctic/git.properties</generateGitPropertiesFilename>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/arctic/git.properties
+                    </generateGitPropertiesFilename>
                     <includeOnlyProperties>
                         <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
                         <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>

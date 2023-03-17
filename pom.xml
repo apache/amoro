@@ -92,7 +92,9 @@
         <mysql.version>8.0.20</mysql.version>
         <slf4j.version>1.7.30</slf4j.version>
         <flink.version>1.12.7</flink.version>
-        <junit.version>4.13</junit.version>
+        <junit4.version>4.13</junit4.version>
+        <junit5.jupiter.version>5.9.1</junit5.jupiter.version>
+        <junit5.platform.version>1.9.1</junit5.platform.version>
         <commons-pool2.version>2.10.0</commons-pool2.version>
         <cglib.version>2.2.2</cglib.version>
         <mockito.version>2.23.4</mockito.version>
@@ -282,7 +284,25 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit4.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit5.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit5.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit5.platform.version}</version>
                 <scope>test</scope>
             </dependency>
 
