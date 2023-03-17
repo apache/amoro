@@ -86,5 +86,4 @@ public interface OptimizeTaskRuntimesMapper {
       " where trace_id = #{optimizeTaskRuntime.optimizeTaskId.traceId}")
   void updateOptimizeTaskRuntime(
       @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
-
 }

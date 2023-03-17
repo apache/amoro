@@ -116,9 +116,7 @@ public class OptimizerService extends IJDBCService {
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
-
       checkOptimizerRetry(reportData,optimizer);
-
       if (!container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
         OptimizerFactory factory =
                 ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
@@ -136,7 +134,6 @@ public class OptimizerService extends IJDBCService {
           optimizerinstance = factory.serialize(instance);
         }
       }
-
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
         Map<String, String> stateInfo = optimizer.getStateInfo();
@@ -145,7 +142,6 @@ public class OptimizerService extends IJDBCService {
         } else {
           stateInfo = reportData.optimizerState;
         }
-
         optimizerMapper.updateOptimizerState(reportData.optimizerId, optimizerinstance,
                 stateInfo, TableTaskStatus.RUNNING.name());
       }
@@ -196,12 +192,12 @@ public class OptimizerService extends IJDBCService {
 
 
   public void insertOptimizer(
-          String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
-          int coreNumber, long memory, int parallelism, String container) {
+      String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
+      int coreNumber, long memory, int parallelism, String container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       optimizerMapper.insertOptimizer(optimizerName, queueId, queueName, status, startTime, coreNumber, memory,
-              parallelism, container);
+          parallelism, container);
     }
   }
 
@@ -227,8 +223,8 @@ public class OptimizerService extends IJDBCService {
     String currentTime = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date());
     String optimizerName = "arctic_optimizer_" + currentTime;
     insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
-            TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
-            registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
+        TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
+        registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
     return getOptimizer(optimizerName).convertToDescriptor();
   }
 
@@ -271,7 +267,7 @@ public class OptimizerService extends IJDBCService {
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
           //由于optimzer可能是先poll任务再heartbeat,只将createtime 小于 statusIdentification的合并任务设置为失败
-          if (baseOptimizeTask.getCreateTime() / 1000 < Long.parseLong(statusIdentification)) {
+          if (baseOptimizeTask.getCreateTime()  < Long.parseLong(statusIdentification)) {
             OptimizeTaskId taskId = baseOptimizeTask.taskId;
 
             TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();

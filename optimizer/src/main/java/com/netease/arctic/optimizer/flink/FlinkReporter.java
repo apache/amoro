@@ -25,6 +25,7 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -123,8 +124,10 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   }
 
   private void addLastModification(Map<String, String> state) throws IOException {
-    String yarnApp = getContainingTask().getEnvironment().getTaskManagerInfo()
-            .getConfiguration().toMap().get(HIGH_AVAILABILITY_CLUSTER_ID);
+
+    String yarnApp = StreamExecutionEnvironment.getExecutionEnvironment()
+            .getStreamGraph().getJobGraph().getJobID().toString();
+
     if (StringUtils.isNotEmpty(restApiPrefix) && StringUtils.isNotEmpty(yarnApp)) {
       //http://knox.inner.youdao.com/gateway/eadhadoop/yarn/proxy/{application_id}/jobs/overview
       String restApiUrl = restApiPrefix + yarnApp + JOB_OVERVIEW_REST_API;
