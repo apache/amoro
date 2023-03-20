@@ -29,7 +29,6 @@ import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.utils.TableIdentifierUtil;
 import org.apache.thrift.TException;
 
 public class OptimizeManagerHandler implements OptimizeManager.Iface {
@@ -63,7 +62,7 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
   @Override
   public void stopOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
     try {
-      ServiceContainer.getOptimizeService().stopOptimize(TableIdentifierUtil.convert(tableIdentifier));
+      ServiceContainer.getOptimizeService().stopOptimize(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
     } catch (Exception e) {
       throw new OperationErrorException(e.getMessage());
     }
@@ -72,7 +71,7 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
   @Override
   public void startOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
     try {
-      ServiceContainer.getOptimizeService().startOptimize(TableIdentifierUtil.convert(tableIdentifier));
+      ServiceContainer.getOptimizeService().startOptimize(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
     } catch (Exception e) {
       throw new OperationErrorException(e.getMessage());
     }

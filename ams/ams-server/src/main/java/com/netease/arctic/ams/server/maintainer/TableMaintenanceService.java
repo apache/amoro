@@ -20,10 +20,12 @@ package com.netease.arctic.ams.server.maintainer;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.client.OptimizeManagerEntrypoint;
+import com.netease.arctic.ams.api.OptimizeManager;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.ams.server.maintainer.command.CallCommand;
 import com.netease.arctic.ams.server.maintainer.command.CallFactory;
 import com.netease.arctic.ams.server.maintainer.command.CommandParser;
+import com.netease.arctic.ams.server.maintainer.command.Context;
 import com.netease.arctic.ams.server.maintainer.command.DefaultCallFactory;
 import com.netease.arctic.ams.server.maintainer.command.SimpleRegexCommandParser;
 import com.netease.arctic.ams.server.utils.terminal.TerminalOutput;
@@ -50,11 +52,11 @@ public class TableMaintenanceService implements TerminalService {
       context.setCatalog(maintainerConfig.getCatalogName());
     }
     CatalogManager catalogManager = new CatalogManager(amsAddress);
-    OptimizeManagerEntrypoint optimizeManagerClient = new OptimizeManagerEntrypoint(amsAddress);
+    OptimizeManager.Iface client = OptimizeManagerClientPools.getClient(amsAddress);
     AmsClient amsClient = new PooledAmsClient(amsAddress);
 
     CallFactory callFactory =
-        new DefaultCallFactory(maintainerConfig, catalogManager, optimizeManagerClient, amsClient);
+        new DefaultCallFactory(maintainerConfig, catalogManager, client, amsClient);
     this.commandParser = new SimpleRegexCommandParser(callFactory);
   }
 
@@ -73,7 +75,7 @@ public class TableMaintenanceService implements TerminalService {
   @Override
   public String welcome() {
     return
-        "█████╗ ██████╗  ██████╗████████╗██╗ ██████╗     ███╗   ███╗ █████╗ ██╗███╗   ██╗████████╗ █████╗ ██╗███╗   ██╗███████╗██████╗ \n" +
+            "█████╗ ██████╗  ██████╗████████╗██╗ ██████╗     ███╗   ███╗ █████╗ ██╗███╗   ██╗████████╗ █████╗ ██╗███╗   ██╗███████╗██████╗ \n" +
             "██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██║██╔════╝    ████╗ ████║██╔══██╗██║████╗  ██║╚══██╔══╝██╔══██╗██║████╗  ██║██╔════╝██╔══██╗\n" +
             "███████║██████╔╝██║        ██║   ██║██║         ██╔████╔██║███████║██║██╔██╗ ██║   ██║   ███████║██║██╔██╗ ██║█████╗  ██████╔╝\n" +
             "██╔══██║██╔══██╗██║        ██║   ██║██║         ██║╚██╔╝██║██╔══██║██║██║╚██╗██║   ██║   ██╔══██║██║██║╚██╗██║██╔══╝  ██╔══██╗\n" +

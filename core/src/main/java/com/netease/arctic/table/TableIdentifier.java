@@ -38,41 +38,13 @@ public class TableIdentifier implements Serializable {
   }
 
   private TableIdentifier(String catalog, String database, String tableName) {
-    this.catalog = catalog;
-    this.database = database;
-    this.tableName = tableName;
+    this.catalog = Preconditions.checkNotNull(catalog, "Catalog name must not be null.");
+    this.database = Preconditions.checkNotNull(database, "Database name must not be null.");
+    this.tableName = Preconditions.checkNotNull(tableName, "Table name must not be null.");
   }
 
   public static TableIdentifier of(String catalog, String database, String tableName) {
     return new TableIdentifier(catalog, database, tableName);
-  }
-
-  public static TableIdentifier of(String objectPath) {
-    Preconditions.checkNotNull(objectPath);
-    String catalog = null;
-    String db = null;
-    String table = null;
-
-    String[] names = objectPath.split("\\.");
-    switch (names.length) {
-      case 3: {
-        catalog = names[0];
-        db = names[1];
-        table = names[2];
-        break;
-      }
-      case 2: {
-        db = names[0];
-        table = names[1];
-        break;
-      }
-      case 1: {
-        table = names[0];
-        break;
-      }
-      default: throw new IllegalArgumentException("illegal path");
-    }
-    return of(catalog, db, table);
   }
 
   public static TableIdentifier of(com.netease.arctic.ams.api.TableIdentifier identifier) {

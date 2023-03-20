@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.maintainer;
+package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.command.TableAnalyzeResult;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.LinkedHashMap;
@@ -37,6 +36,8 @@ public class Context {
           return size() > 10;
         }
   };
+
+  private RepairProperty property = new RepairProperty();
 
   public String getCatalog() {
     return catalog;
@@ -64,5 +65,17 @@ public class Context {
 
   public void clean(TableIdentifier identifier) {
     tableAvailableResultMap.remove(identifier);
+  }
+
+  public void setProperty(String name, String value) {
+    property.set(name, value);
+  }
+
+  public Object getProperty(String name) {
+    return property.get(name);
+  }
+
+  public Integer getIntProperty(String name) {
+    return property.getInt(name);
   }
 }

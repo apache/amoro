@@ -21,6 +21,8 @@ package com.netease.arctic.ams.server.maintainer.command;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.OptimizeManager;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.ams.api.client.OptimizeManagerEntrypoint;
 import com.netease.arctic.ams.server.maintainer.MaintainerConfig;
 import com.netease.arctic.catalog.CatalogManager;
@@ -40,9 +42,9 @@ public class CallCommandTestBase extends TableDataTestBase {
   private static final Integer maxRollbackSnapNum = 100;
 
   public static CallFactory callFactory = new DefaultCallFactory(
-      new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME, maxFindSnapshotNum, maxRollbackSnapNum),
+      new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME),
       new CatalogManager(TEST_AMS.getServerUrl()),
-      new OptimizeManagerEntrypoint(TEST_AMS.getServerUrl()),
+      OptimizeManagerClientPools.getClient(TEST_AMS.getServerUrl()),
       new PooledAmsClient(TEST_AMS.getServerUrl())
   );
 

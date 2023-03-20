@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.DamageType;
 import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
@@ -52,7 +51,7 @@ public class TableAnalyzeResult {
 
   private UnkeyedTable arcticTable;
 
-  private DamageType damageType;
+  private ResultType resultType;
 
   private Integer metadataVersion;
 
@@ -70,7 +69,7 @@ public class TableAnalyzeResult {
 
   private TableAnalyzeResult(
       TableIdentifier tableIdentifier,
-      DamageType damageType,
+      ResultType resultType,
       Integer metadataVersion,
       Snapshot snapshot,
       List<ManifestFile> manifestFiles,
@@ -80,7 +79,7 @@ public class TableAnalyzeResult {
       RepairTableOperation tableOperations,
       LocationKind locationKind) {
     this.identifier = tableIdentifier;
-    this.damageType = damageType;
+    this.resultType = resultType;
     this.metadataVersion = metadataVersion;
     this.snapshot = snapshot;
     this.manifestFiles = manifestFiles;
@@ -90,47 +89,47 @@ public class TableAnalyzeResult {
     this.tableOperations = tableOperations;
     this.locationKind = locationKind;
 
-    if (damageType == DamageType.METADATA_LOSE) {
+    if (resultType == ResultType.METADATA_LOSE) {
       checkNotNull(locationKind);
       checkNotNull(tableOperations);
-    } else if (damageType == DamageType.MANIFEST_LIST_LOST ||
-        damageType == DamageType.MANIFEST_LOST ||
-        damageType == DamageType.FILE_LOSE) {
+    } else if (resultType == ResultType.MANIFEST_LIST_LOST ||
+        resultType == ResultType.MANIFEST_LOST ||
+        resultType == ResultType.FILE_LOSE) {
       checkNotNull(arcticTable);
     }
   }
 
   public static TableAnalyzeResult available(TableIdentifier identifier) {
-    return new TableAnalyzeResult(identifier, DamageType.OK, null,null,
+    return new TableAnalyzeResult(identifier, ResultType.OK, null,null,
         null, null, null, null, null, null);
   }
 
   public static TableAnalyzeResult tableNotFound(TableIdentifier identifier) {
-    return new TableAnalyzeResult(identifier, DamageType.TABLE_NOT_FOUND, null,null,
+    return new TableAnalyzeResult(identifier, ResultType.TABLE_NOT_FOUND, null,null,
         null, null, null, null, null, null);
   }
 
   public static TableAnalyzeResult metadataLose(TableIdentifier identifier, Integer metadataVersion,
       RepairTableOperation tableOperations, LocationKind locationKind) {
-    return new TableAnalyzeResult(identifier, DamageType.METADATA_LOSE, metadataVersion,null,
+    return new TableAnalyzeResult(identifier, ResultType.METADATA_LOSE, metadataVersion,null,
         null, null, null, null, tableOperations, locationKind);
   }
 
   public static TableAnalyzeResult manifestListLose(TableIdentifier identifier,
       Snapshot snapshot, UnkeyedTable arcticTable) {
-    return new TableAnalyzeResult(identifier, DamageType.MANIFEST_LIST_LOST, null, snapshot,
+    return new TableAnalyzeResult(identifier, ResultType.MANIFEST_LIST_LOST, null, snapshot,
         null, null, null, arcticTable, null, null);
   }
 
   public static TableAnalyzeResult manifestLost(TableIdentifier identifier,
       List<ManifestFile> manifestFiles, UnkeyedTable arcticTable) {
-    return new TableAnalyzeResult(identifier, DamageType.MANIFEST_LOST, null,null,
+    return new TableAnalyzeResult(identifier, ResultType.MANIFEST_LOST, null,null,
         manifestFiles, null, null, arcticTable, null, null);
   }
 
   public static TableAnalyzeResult filesLose(TableIdentifier identifier, List<ContentFile> files,
       UnkeyedTable arcticTable) {
-    return new TableAnalyzeResult(identifier, DamageType.FILE_LOSE, null,
+    return new TableAnalyzeResult(identifier, ResultType.FILE_LOSE, null,
         null, null, files, null, arcticTable, null, null);
   }
 
@@ -155,8 +154,8 @@ public class TableAnalyzeResult {
     return identifier;
   }
 
-  public DamageType getDamageType() {
-    return damageType;
+  public ResultType getDamageType() {
+    return resultType;
   }
 
   public UnkeyedTable getArcticTable() {
@@ -192,7 +191,7 @@ public class TableAnalyzeResult {
   }
 
   public boolean isOk() {
-    return damageType == DamageType.OK;
+    return resultType == ResultType.OK;
   }
 
   /**
@@ -221,7 +220,7 @@ public class TableAnalyzeResult {
       return Arrays.asList(RepairWay.FIND_BACK);
     }
     List<RepairWay> ways = new ArrayList<>();
-    switch (damageType) {
+    switch (resultType) {
       case METADATA_LOSE: {
         ways.add(RepairWay.ROLLBACK_OR_DROP_TABLE);
         break;
@@ -259,7 +258,7 @@ public class TableAnalyzeResult {
     }
 
     //resolve metadata first
-    if (damageType == DamageType.METADATA_LOSE) {
+    if (resultType == ResultType.METADATA_LOSE) {
       List<Path> metadataCandidateFiles = tableOperations.getMetadataCandidateFiles(metadataVersion);
       for (Path path: metadataCandidateFiles) {
         if (tableTrashManager.fileExistInTrash(path.toString())) {
@@ -275,5 +274,15 @@ public class TableAnalyzeResult {
       }
     }
     return this.canFindBack = true;
+  }
+
+  public enum ResultType {
+    OK,
+    TABLE_NOT_FOUND,
+    FILE_LOSE,
+    MANIFEST_LOST,
+    MANIFEST_LIST_LOST,
+    METADATA_LOSE,
+    TABLE_SPACE_LOSE
   }
 }

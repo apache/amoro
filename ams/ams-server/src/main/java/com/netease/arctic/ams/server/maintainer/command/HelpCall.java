@@ -1,7 +1,5 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.Context;
-
 public class HelpCall implements CallCommand {
   @Override
   public String call(Context context) {

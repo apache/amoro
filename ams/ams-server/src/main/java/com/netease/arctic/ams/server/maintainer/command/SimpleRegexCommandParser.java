@@ -37,6 +37,8 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String FILE_CACHE = "FILE_CACHE";
   private static final String SHOW = "SHOW";
   private static final String TABLE = "TABLE";
+
+  private static final String PROPERTY = "PROPERTY";
   private static final String ANALYZE_EXCEPTION_MESSAGE =
       "Please check if your command is correct! Pattern: ANALYZE ${table_name}";
   private static final String REPAIR_EXCEPTION_MESSAGE =
@@ -55,6 +57,11 @@ public class SimpleRegexCommandParser implements CommandParser {
   private static final String SHOW_EXCEPTION_MESSAGE =
       "Please check if your command is correct! " +
           "Pattern: SHOW [ CATALOGS | DATABASES | TABLES ]";
+
+  private static final String PROPERTY_EXCEPTION_MESSAGE =
+      "Please check if your command is correct! " +
+          "Pattern: PROPERTY [ GET xxx | SET xxx xxx]";
+
 
   private CallFactory callFactory;
 
@@ -135,6 +142,28 @@ public class SimpleRegexCommandParser implements CommandParser {
           throw new IllegalCommandException(SHOW_EXCEPTION_MESSAGE);
         }
         return callFactory.generateShowCall(namespaces);
+      case PROPERTY:
+        PropertyCall.PropertyOperate propertyOperate;
+        try {
+          propertyOperate = PropertyCall.PropertyOperate.valueOf(commandSplit[1].toUpperCase());
+        } catch (IllegalArgumentException e) {
+          throw new IllegalCommandException(SHOW_EXCEPTION_MESSAGE);
+        }
+
+        //set
+        if (propertyOperate == PropertyCall.PropertyOperate.SET) {
+          if (commandSplit.length != 4) {
+            throw new IllegalCommandException(PROPERTY_EXCEPTION_MESSAGE);
+          }
+          return callFactory.generatePropertyCall(propertyOperate, commandSplit[2], commandSplit[3]);
+        }
+
+        //get
+        if (commandSplit.length != 3) {
+          throw new IllegalCommandException(PROPERTY_EXCEPTION_MESSAGE);
+        }
+        return callFactory.generatePropertyCall(propertyOperate, commandSplit[2], null);
+
     }
     return callFactory.generateHelpCall();
   }

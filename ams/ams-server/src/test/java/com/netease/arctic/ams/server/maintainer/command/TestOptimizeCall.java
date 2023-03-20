@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.server.maintainer.Context;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,7 +26,7 @@ import org.junit.Test;
 public class TestOptimizeCall extends CallCommandTestBase {
 
   @Test
-  public void test() throws TException, CallCommand.FullTableNameException {
+  public void test() throws Exception {
     Assert.assertEquals("optimize has started",
         callFactory.generateOptimizeCall(
             OptimizeCall.Action.START,

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.Context;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public interface CallCommand {
 
@@ -30,22 +30,47 @@ public interface CallCommand {
   }
 
   default TableIdentifier fullTableName(Context context, String tablePath) {
-    TableIdentifier tableIdentifier = TableIdentifier.of(tablePath);
-    if (tableIdentifier.getCatalog() == null) {
+
+    Preconditions.checkNotNull(tablePath);
+    String catalog = null;
+    String db = null;
+    String table = null;
+
+    String[] names = tablePath.split("\\.");
+    switch (names.length) {
+      case 3: {
+        catalog = names[0];
+        db = names[1];
+        table = names[2];
+        break;
+      }
+      case 2: {
+        db = names[0];
+        table = names[1];
+        break;
+      }
+      case 1: {
+        table = names[0];
+        break;
+      }
+      default: throw new IllegalArgumentException("illegal path");
+    }
+
+    if (catalog == null) {
       if (context.getCatalog() == null) {
         throw new FullTableNameException("Can not find catalog name, your can support full table path or use 'USE " +
             "{catalog}' statement");
       }
-      tableIdentifier.setCatalog(context.getCatalog());
+      catalog = context.getCatalog();
     }
-    if (tableIdentifier.getDatabase() == null) {
+    if (db == null) {
       if (context.getDb() == null) {
         throw new FullTableNameException("Can not find db name, your can support full table path or use 'USE " +
             "{database}' statement");
       }
-      tableIdentifier.setDatabase(context.getDb());
+      db = context.getDb();
     }
-    return tableIdentifier;
+    return TableIdentifier.of(catalog, db, table);
   }
 
   class FullTableNameException extends RuntimeException {

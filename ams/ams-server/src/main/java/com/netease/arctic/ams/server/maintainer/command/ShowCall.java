@@ -1,6 +1,5 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.Context;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.lang3.StringUtils;

@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.ams.api.ArcticTableMetastore;
-import com.netease.arctic.ams.server.maintainer.Context;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.hive.table.SupportHive;

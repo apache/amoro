@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.server.maintainer.Context;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;

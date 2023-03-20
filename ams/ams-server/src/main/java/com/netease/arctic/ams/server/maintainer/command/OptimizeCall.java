@@ -1,18 +1,17 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.api.client.OptimizeEntrypoint;
-import com.netease.arctic.ams.server.maintainer.Context;
+import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.table.TableIdentifier;
 
 public class OptimizeCall implements CallCommand {
 
   private String tablePath;
-  private OptimizeEntrypoint entrypoint;
+  private OptimizeManager.Iface entrypoint;
   private Action action;
   private static final String START_RESULT = "optimize has started";
   private static final String STOP_RESULT = "optimize has stopped";
 
-  public OptimizeCall(OptimizeEntrypoint entrypoint, Action action, String tablePath) {
+  public OptimizeCall(OptimizeManager.Iface entrypoint, Action action, String tablePath) {
     this.entrypoint = entrypoint;
     this.action = action;
     this.tablePath = tablePath;

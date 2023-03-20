@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.client.OptimizeEntrypoint;
+import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.server.maintainer.MaintainerConfig;
 import com.netease.arctic.catalog.CatalogManager;
 
@@ -29,14 +29,14 @@ public class DefaultCallFactory implements CallFactory {
 
   private CatalogManager catalogManager;
 
-  private OptimizeEntrypoint entrypoint;
+  private OptimizeManager.Iface entrypoint;
 
   private AmsClient amsClient;
 
   public DefaultCallFactory(
       MaintainerConfig config,
       CatalogManager catalogManager,
-      OptimizeEntrypoint entrypoint, AmsClient amsClient) {
+      OptimizeManager.Iface entrypoint, AmsClient amsClient) {
     this.config = config;
     this.catalogManager = catalogManager;
     this.entrypoint = entrypoint;
@@ -45,7 +45,7 @@ public class DefaultCallFactory implements CallFactory {
 
   @Override
   public AnalyzeCall generateAnalyzeCall(String tablePath) {
-    return new AnalyzeCall(tablePath, catalogManager, config.getMaxFindSnapshotNum(), config.getMaxRollbackSnapNum());
+    return new AnalyzeCall(tablePath, catalogManager);
   }
 
   @Override
@@ -76,5 +76,10 @@ public class DefaultCallFactory implements CallFactory {
 
   public TableCall generateTableCall(String tablePath, TableCall.TableOperation tableOperation) {
     return new TableCall(amsClient, catalogManager, tablePath, tableOperation);
+  }
+
+  @Override
+  public PropertyCall generatePropertyCall(PropertyCall.PropertyOperate operate, String name, String value) {
+    return new PropertyCall(operate, name, value);
   }
 }

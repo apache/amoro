@@ -33,4 +33,6 @@ public interface CallFactory {
   UseCall generateUseCall(String namespace);
 
   TableCall generateTableCall(String tablePath, TableCall.TableOperation tableOperation);
+
+  PropertyCall generatePropertyCall(PropertyCall.PropertyOperate operate, String name, String value);
 }

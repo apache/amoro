@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +16,36 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.utils;
+package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.table.TableIdentifier;
+/**
+ * Temporary implementation
+ */
+public class PropertyCall implements CallCommand {
 
-public class TableIdentifierUtil {
-  public static TableIdentifier convert(com.netease.arctic.ams.api.TableIdentifier identifier) {
-    return TableIdentifier.of(identifier);
+  private PropertyOperate operate;
+
+  private String name;
+
+  private String value;
+
+  public PropertyCall(PropertyOperate operate, String name, String value) {
+    this.operate = operate;
+    this.name = name;
+    this.value = value;
+  }
+
+  @Override
+  public String call(Context context) throws Exception {
+    if (operate == PropertyOperate.GET) {
+      return context.getProperty(name).toString();
+    }
+    context.setProperty(name, value);
+    return ok();
+  }
+
+  public enum PropertyOperate {
+    SET,
+    GET
   }
 }

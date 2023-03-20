@@ -19,8 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.server.maintainer.Context;
-import com.netease.arctic.ams.server.maintainer.DamageType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -59,7 +57,7 @@ public class TestAnalyzeCall extends CallCommandTestBase {
   @Test
   public void testMetadataLose() {
     removeMetadata();
-    Assert.assertTrue(call().contains(DamageType.METADATA_LOSE.name()));
+    Assert.assertTrue(call().contains(TableAnalyzeResult.ResultType.METADATA_LOSE.name()));
   }
 
   private String call() {

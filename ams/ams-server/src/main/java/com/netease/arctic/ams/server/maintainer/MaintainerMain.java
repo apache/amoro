@@ -18,10 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer;
 
-import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.ams.server.config.ConfigFileProperties;
-import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.ams.server.utils.terminal.SimpleShellTerminal;
 import com.netease.arctic.ams.server.utils.terminal.TerminalService;
 import org.apache.commons.lang3.StringUtils;
@@ -58,18 +55,6 @@ public class MaintainerMain {
     String thriftUrlWithoutCatalog =
         arcticThriftUrl.schema() + "://" + arcticThriftUrl.host() + ":" + arcticThriftUrl.port();
 
-    Integer maxFindSnapshotNum = null;
-    Integer maxRollbackSnapNum = null;
-    if (args.length == 2) {
-      String configPath = args[1];
-      JSONObject yamlConfig = YamlUtils.load(configPath);
-      JSONObject repairProperties = yamlConfig.getJSONObject(ConfigFileProperties.REPAIR_PROPERTIES);
-      if (repairProperties != null) {
-        maxFindSnapshotNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_FIND_SNAPSHOT_NUM);
-        maxRollbackSnapNum = repairProperties.getInteger(ConfigFileProperties.REPAIR_MAX_ROLL_BACK_SNAPSHOT_NUM);
-      }
-    }
-
-    return new MaintainerConfig(thriftUrlWithoutCatalog, catalogName, maxFindSnapshotNum, maxRollbackSnapNum);
+    return new MaintainerConfig(thriftUrlWithoutCatalog, catalogName);
   }
 }

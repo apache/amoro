@@ -18,8 +18,6 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.Context;
-import com.netease.arctic.ams.server.maintainer.DamageType;
 import com.netease.arctic.ams.server.maintainer.MaintainerException;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogManager;
@@ -40,9 +38,10 @@ import org.apache.iceberg.Table;
 
 import java.util.List;
 
-import static com.netease.arctic.ams.server.maintainer.DamageType.FILE_LOSE;
-import static com.netease.arctic.ams.server.maintainer.DamageType.MANIFEST_LOST;
 import static com.netease.arctic.ams.server.maintainer.command.RepairWay.SYNC_METADATA;
+import static com.netease.arctic.ams.server.maintainer.command.TableAnalyzeResult.ResultType.FILE_LOSE;
+import static com.netease.arctic.ams.server.maintainer.command.TableAnalyzeResult.ResultType.MANIFEST_LOST;
+
 
 public class RepairCall implements CallCommand {
 
@@ -87,14 +86,14 @@ public class RepairCall implements CallCommand {
       throw new MaintainerException(String.format("No %s this option", way));
     }
 
-    DamageType damageType = tableAnalyzeResult.getDamageType();
+    TableAnalyzeResult.ResultType resultType = tableAnalyzeResult.getDamageType();
 
-    if (damageType == DamageType.TABLE_NOT_FOUND) {
+    if (resultType == TableAnalyzeResult.ResultType.TABLE_NOT_FOUND) {
       throw new MaintainerException("Table is not found, If you also have data " +
           "you can recreate the table through hive upgrade");
     }
 
-    if (damageType == DamageType.METADATA_LOSE) {
+    if (resultType == TableAnalyzeResult.ResultType.METADATA_LOSE) {
       repairMetadataLose(identifier, tableAnalyzeResult);
       return success(identifier, context);
     }
@@ -114,7 +113,7 @@ public class RepairCall implements CallCommand {
         return success(identifier, context);
       }
       case SYNC_METADATA: {
-        switch (damageType) {
+        switch (resultType) {
           case MANIFEST_LOST: {
             syncMetadataForManifestLose(tableAnalyzeResult.getArcticTable(), tableAnalyzeResult.getManifestFiles());
             return success(identifier, context);

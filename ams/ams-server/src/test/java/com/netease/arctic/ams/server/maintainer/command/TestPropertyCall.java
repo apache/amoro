@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,17 +18,33 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestTableCall extends CallCommandTestBase {
-
+public class TestPropertyCall extends CallCommandTestBase {
 
   @Test
-  public void testRefresh() throws Exception {
-    Assert.assertEquals("OK",
-        callFactory.generateTableCall(TableTestHelpers.TEST_TABLE_ID.toString(), TableCall.TableOperation.REFRESH)
-            .call(new Context()));
+  public void test() throws Exception {
+    Context context = new Context();
+    {
+      PropertyCall get = callFactory.generatePropertyCall(
+          PropertyCall.PropertyOperate.GET,
+          RepairProperty.MAX_ROLLBACK_SNAPSHOT_NUM,
+          null);
+      Assert.assertEquals("10", get.call(context));
+    }
+
+    PropertyCall set = callFactory.generatePropertyCall(PropertyCall.PropertyOperate.SET,
+        RepairProperty.MAX_ROLLBACK_SNAPSHOT_NUM, "100");
+    set.call(context);
+
+    {
+      PropertyCall get = callFactory.generatePropertyCall(
+          PropertyCall.PropertyOperate.GET,
+          RepairProperty.MAX_ROLLBACK_SNAPSHOT_NUM,
+          null);
+      Assert.assertEquals("100", get.call(context));
+    }
+
   }
 }

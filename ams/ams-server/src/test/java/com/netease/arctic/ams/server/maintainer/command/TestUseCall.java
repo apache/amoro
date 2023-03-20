@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.server.maintainer.Context;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;

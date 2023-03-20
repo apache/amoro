@@ -13,8 +13,6 @@ public class TestGetMaintainerConfig {
     });
     Assert.assertEquals("my_catalog", maintainerConfig.getCatalogName());
     Assert.assertEquals("thrift://localhost:1260", maintainerConfig.getThriftUrl());
-    Assert.assertEquals(666, maintainerConfig.getMaxFindSnapshotNum().intValue());
-    Assert.assertEquals(888, maintainerConfig.getMaxRollbackSnapNum().intValue());
 
     MaintainerConfig maintainerConfig2 = MaintainerMain.getMaintainerConfig(new String[]{
         "thrift://localhost:1260",
@@ -22,8 +20,7 @@ public class TestGetMaintainerConfig {
     });
     Assert.assertEquals(null, maintainerConfig2.getCatalogName());
     Assert.assertEquals("thrift://localhost:1260", maintainerConfig2.getThriftUrl());
-    Assert.assertEquals(666, maintainerConfig2.getMaxFindSnapshotNum().intValue());
-    Assert.assertEquals(888, maintainerConfig2.getMaxRollbackSnapNum().intValue());
+
   }
 
 }

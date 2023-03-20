@@ -18,8 +18,6 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.ams.server.maintainer.Context;
-import com.netease.arctic.ams.server.maintainer.DamageType;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Snapshot;
@@ -36,26 +34,19 @@ public class AnalyzeCall implements CallCommand {
 
   private CatalogManager catalogManager;
 
-  private Integer maxFindSnapshotNum;
-
-  private Integer maxRollbackSnapNum;
-
   public AnalyzeCall(
       String tablePath,
-      CatalogManager catalogManager,
-      Integer maxFindSnapshotNum,
-      Integer maxRollbackSnapNum) {
+      CatalogManager catalogManager) {
     this.tablePath = tablePath;
     this.catalogManager = catalogManager;
-    this.maxFindSnapshotNum = maxFindSnapshotNum;
-    this.maxRollbackSnapNum = maxRollbackSnapNum;
   }
 
   @Override
   public String call(Context context) throws FullTableNameException {
     TableIdentifier identifier = fullTableName(context, tablePath);
     TableAvailableAnalyzer availableAnalyzer = new TableAvailableAnalyzer(catalogManager, identifier,
-        maxFindSnapshotNum, maxRollbackSnapNum);
+        context.getIntProperty(RepairProperty.MAX_FIND_SNAPSHOT_NUM),
+        context.getIntProperty(RepairProperty.MAX_ROLLBACK_SNAPSHOT_NUM));
     TableAnalyzeResult availableResult = availableAnalyzer.analyze();
     context.setTableAvailableResult(availableResult);
     return format(availableResult);
@@ -83,9 +74,9 @@ public class AnalyzeCall implements CallCommand {
       return root.print();
     }
 
-    DamageType damageType = availableResult.getDamageType();
-    LikeYmlFormat damageTypeFormat = root.child(damageType.name());
-    if (damageType == DamageType.METADATA_LOSE) {
+    TableAnalyzeResult.ResultType resultType = availableResult.getDamageType();
+    LikeYmlFormat damageTypeFormat = root.child(resultType.name());
+    if (resultType == TableAnalyzeResult.ResultType.METADATA_LOSE) {
       damageTypeFormat.child(availableResult.getMetadataVersion().toString());
     } else {
       for (String path : availableResult.lostFiles()) {
