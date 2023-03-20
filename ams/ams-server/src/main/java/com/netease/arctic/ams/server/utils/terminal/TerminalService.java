@@ -23,14 +23,29 @@ package com.netease.arctic.ams.server.utils.terminal;
  */
 public interface TerminalService {
 
+  /**
+   * Method to resolve all line input by console.
+   */
   void resolve(String line, TerminalOutput terminalOutput) throws Exception;
 
+  /**
+   * The method will be called when the console is closed
+   */
   void close();
 
+  /**
+   * Print welcome statement to the console.
+   */
   String welcome();
 
+  /**
+   * These keywords will have character completion applied.
+   */
   String[] keyWord();
 
+  /**
+   * The console enters the prompt on the left.
+   */
   String prompt();
 
 }

@@ -18,10 +18,16 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
+/**
+ * Parser to transform String to CallCommand
+ */
 public interface CommandParser {
 
   CallCommand parse(String line) throws IllegalCommandException;
 
+  /**
+   * Reserved keywords
+   */
   String[] keywords();
 
 }

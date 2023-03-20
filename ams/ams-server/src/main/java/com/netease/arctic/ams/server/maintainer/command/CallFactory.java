@@ -18,6 +18,9 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
+/**
+ * Factory to generate all {@link CallCommand}
+ */
 public interface CallFactory {
 
   AnalyzeCall generateAnalyzeCall(String tablePath);

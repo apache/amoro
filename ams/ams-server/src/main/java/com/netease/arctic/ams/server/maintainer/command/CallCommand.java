@@ -21,6 +21,9 @@ package com.netease.arctic.ams.server.maintainer.command;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+/**
+ * The interface of all command.
+ */
 public interface CallCommand {
 
   String call(Context context)  throws Exception;
