@@ -36,9 +36,6 @@ import org.apache.iceberg.io.CloseableIterable;
 
 public class CallCommandTestBase extends TableDataTestBase {
 
-  private static final Integer maxFindSnapshotNum = 100;
-  private static final Integer maxRollbackSnapNum = 100;
-
   public static CallFactory callFactory = new DefaultCallFactory(
       new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME),
       new CatalogManager(TEST_AMS.getServerUrl()),
