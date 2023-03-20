@@ -19,10 +19,8 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.optimizer.OptimizerConfig;
@@ -30,10 +28,10 @@ import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;

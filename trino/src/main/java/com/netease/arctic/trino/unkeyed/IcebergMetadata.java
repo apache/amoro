@@ -379,7 +379,7 @@ public class IcebergMetadata
           false,
           Optional.empty());
     }
-    return new AdaptHiveIcebergTableHandle(
+    return new IcebergTableHandle(
         tableName.getSchemaName(),
         name.getTableName(),
         name.getTableType(),

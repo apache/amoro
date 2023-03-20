@@ -8,21 +8,33 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "trino/**"
-      - "core/**"
-      - "hive/**"
-      - "ams/ams-api/**"
+    paths-ignpore:
+      - ".github/**"
+      - ".idea/**"
+      - "dev/**"
+      - "dist/**"
+      - "docker/**"
+      - "site/**"
+      - "style/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
 
   pull_request:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "trino/**"
-      - "core/**"
-      - "hive/**"
-      - "ams/ams-api/**"
+    paths-ignpore:
+      - ".github/**"
+      - ".idea/**"
+      - "dev/**"
+      - "dist/**"
+      - "docker/**"
+      - "site/**"
+      - "style/**"
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
 
 jobs:
   build:
@@ -35,7 +47,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
       - name: Install dependency with Maven
         run: mvn install -DskipTests -pl 'ams/ams-api,core,hive' -am
+
       - name: Build with Maven
         run: mvn test -pl 'trino'
+
+      - name: Code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          verbose: true
+          flags: trino

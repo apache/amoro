@@ -33,6 +33,7 @@ import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -73,6 +74,7 @@ import java.util.Map;
  */
 public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
+  private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
@@ -81,18 +83,12 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   public BasicUnkeyedTable(
       TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client) {
+      AmsClient client, Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
     this.arcticFileIO = arcticFileIO;
     this.client = client;
-  }
-
-  public BasicUnkeyedTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO) {
-    this.tableIdentifier = tableIdentifier;
-    this.icebergTable = icebergTable;
-    this.arcticFileIO = arcticFileIO;
-    this.client = null;
+    this.catalogProperties = catalogProperties;
   }
 
   @Override
@@ -147,7 +143,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public Map<String, String> properties() {
-    return icebergTable.properties();
+    if (catalogProperties == null) {
+      return icebergTable.properties();
+    } else {
+      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+    }
   }
 
   @Override

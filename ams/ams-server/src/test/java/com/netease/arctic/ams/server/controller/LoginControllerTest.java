@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoginControllerTest extends TestCase {
-  private final Logger LOG = LoggerFactory.getLogger("LoginControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(LoginControllerTest.class);
 
   @Test
   public void testGetCurrent() {
@@ -36,7 +36,6 @@ public class LoginControllerTest extends TestCase {
       app.get("/", ctx -> LoginController.getCurrent(ctx));
       final okhttp3.Response resp = client.get("/", x -> {});
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -52,7 +51,6 @@ public class LoginControllerTest extends TestCase {
       requestJson.put("password", "admin");
       final okhttp3.Response resp = client.post("/", requestJson, x -> {});
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 403;
     });
   }
