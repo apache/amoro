@@ -41,9 +41,10 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
+
   private final TableMetaStore tableMetaStore;
 
-  public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
+  ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
     this.tableMetaStore = tableMetaStore;
   }
@@ -74,17 +75,19 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean deleteFileWithResult(String path, boolean recursive) {
-    return tableMetaStore.doAs(() -> {
+  public void deleteDirectoryRecursively(String path) {
+    tableMetaStore.doAs(() -> {
       Path toDelete = new Path(path);
       FileSystem fs = getFs(toDelete);
-      boolean result;
       try {
-        result = fs.delete(toDelete, recursive);
+        if (!fs.delete(toDelete, true)) {
+          throw new IOException("Fail to delete directory:" + path + " recursively, " +
+              "file system return false, need to check the hdfs path");
+        }
       } catch (IOException e) {
-        result = false;
+        throw new UncheckedIOException("Fail to delete directory:" + path + " recursively", e);
       }
-      return result;
+      return null;
     });
   }
 
@@ -159,16 +162,20 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean rename(String src, String dts) {
-    return tableMetaStore.doAs(() -> {
+  public void rename(String src, String dts) {
+    tableMetaStore.doAs(() -> {
       Path srcPath = new Path(src);
       Path dtsPath = new Path(dts);
       FileSystem fs = getFs(srcPath);
       try {
-        return fs.rename(srcPath, dtsPath);
+        if (!fs.rename(srcPath, dtsPath)) {
+          throw new IOException("Fail to rename: from " + src + " to " + dts +
+              " and file system return false, need to check the hdfs path");
+        }
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
+        throw new UncheckedIOException("Fail to rename: from " + src + " to " + dts, e);
       }
+      return null;
     });
   }
 
@@ -191,15 +198,19 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public boolean mkdirs(String path) {
-    return tableMetaStore.doAs(() -> {
+  public void mkdirs(String path) {
+    tableMetaStore.doAs(() -> {
       Path filePath = new Path(path);
       FileSystem fs = getFs(filePath);
       try {
-        return fs.mkdirs(filePath);
+        if (!fs.mkdirs(filePath)) {
+          throw new IOException("Fail to mkdirs: path " + path +
+              " and file system return false,, need to check the hdfs path");
+        }
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
+        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
       }
+      return null;
     });
   }
 

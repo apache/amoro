@@ -73,7 +73,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
     Set<TableIdentifier> ids = tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
     cleanTasks.checkRunningTask(ids,
-        t -> CHECK_INTERVAL,
+        () -> 0L,
+        () -> CHECK_INTERVAL,
         TableOrphanFileClean::new,
         true);
     LOG.info("Schedule Orphan Cleaner finished with {} tasks", ids.size());

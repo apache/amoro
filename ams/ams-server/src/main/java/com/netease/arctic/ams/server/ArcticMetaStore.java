@@ -237,6 +237,7 @@ public class ArcticMetaStore {
         startOptimizeCommit(conf.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE));
         startExpiredClean();
         startOrphanClean();
+        startTrashClean();
         startSupportHiveSync();
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
@@ -312,6 +313,14 @@ public class ArcticMetaStore {
   private static void startOrphanClean() {
     ThreadPool.getPool(ThreadPool.Type.ORPHAN).scheduleWithFixedDelay(
         ServiceContainer.getOrphanFilesCleanService()::checkOrphanFilesCleanTasks,
+        3 * 1000L,
+        60 * 1000L,
+        TimeUnit.MILLISECONDS);
+  }
+
+  private static void startTrashClean() {
+    ThreadPool.getPool(ThreadPool.Type.TRASH_CLEAN).scheduleWithFixedDelay(
+        ServiceContainer.getTrashCleanService()::checkTrashCleanTasks,
         3 * 1000L,
         60 * 1000L,
         TimeUnit.MILLISECONDS);

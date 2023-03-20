@@ -34,6 +34,7 @@ import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -66,13 +67,13 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
  */
 public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
+  private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
@@ -81,18 +82,12 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   public BaseUnkeyedTable(
       TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client) {
+      AmsClient client, Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
     this.arcticFileIO = arcticFileIO;
     this.client = client;
-  }
-
-  public BaseUnkeyedTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO) {
-    this.tableIdentifier = tableIdentifier;
-    this.icebergTable = icebergTable;
-    this.arcticFileIO = arcticFileIO;
-    this.client = null;
+    this.catalogProperties = catalogProperties;
   }
 
   @Override
@@ -142,7 +137,11 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public Map<String, String> properties() {
-    return icebergTable.properties();
+    if (catalogProperties == null) {
+      return icebergTable.properties();
+    } else {
+      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+    }
   }
 
   @Override

@@ -21,7 +21,6 @@ package com.netease.arctic.hive.utils;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
-import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -206,11 +205,11 @@ public class HiveMetaSynchronizer {
   }
 
   private static List<DataFile> listHivePartitionFiles(ArcticTable arcticTable, Map<String, String> partitionValueMap,
-      String partitionLocation) {
+                                                       String partitionLocation) {
     return arcticTable.io().doAs(() -> TableMigrationUtil.listPartition(partitionValueMap, partitionLocation,
         arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
             TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
-        arcticTable.spec(), ((ArcticHadoopFileIO)arcticTable.io()).getTableMetaStore().getConfiguration(),
+        arcticTable.spec(), arcticTable.io().getConf(),
         MetricsConfig.fromProperties(arcticTable.properties()), NameMappingParser.fromJson(
             arcticTable.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING))));
   }
