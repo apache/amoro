@@ -16,8 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.junit4;
+package com.netease.arctic.spark.test;
 
-public interface SupportSetupDatabaseAndCleanTable extends SupportExecuteSQL {
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.ANNOTATION_TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@ArgumentsSource(TestArgumentsProvider.class)
+public @interface TestArguments {
+
+  @interface TestArg {
+    String[] value();
+  }
+
+  TestArg[] value();
 }

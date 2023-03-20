@@ -18,8 +18,10 @@
 
 package com.netease.arctic.spark.test;
 
+import com.netease.arctic.ams.api.CatalogMeta;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,19 +33,30 @@ public abstract class SparkTestBase {
   @RegisterExtension
   public static final SparkTestEnvironmentExtension env = new SparkTestEnvironmentExtension();
 
-  @TableTest.Database
-  protected String database = "spark_test_database";
-
-  @TableTest.Table
-  protected String table = "test_table";
+  public static final String SESSION_CATALOG = "spark_catalog";
+  public static final String INTERNAL_CATALOG = "arctic_catalog";
+  public static final String HIVE_CATALOG = "hive_catalog";
 
   public Dataset<Row> sql(String sqlText) {
     return env.sql(sqlText);
   }
 
-  // protected ArcticTable loadTable(String sparkCatalogName) {
-  //
-  //   ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl());
-  //   return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog(), database(), table()));
-  // }
+  public String catalogUrl(String sparkCatalog) {
+    return env.getSparkConf("spark.sql.catalog." + sparkCatalog + ".url");
+  }
+
+  public String arcticCatalogName(String sparkCatalog) {
+    String url = catalogUrl(sparkCatalog);
+    return url.substring(url.lastIndexOf('/') + 1);
+  }
+
+  public boolean isHiveCatalog(String sparkCatalog) {
+    String catalogName = arcticCatalogName(sparkCatalog);
+    try {
+      CatalogMeta meta = env.AMS.getAmsHandler().getCatalog(catalogName);
+      return "HIVE".equalsIgnoreCase(meta.getCatalogType());
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

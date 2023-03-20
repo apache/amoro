@@ -21,103 +21,42 @@ package com.netease.arctic.spark.test;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.CollectionHelper;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.thrift.TException;
 
-import java.util.List;
+public class SparkTableTestBase extends SparkTestBase {
 
-public abstract class SparkTableTestBase extends SparkCatalogTestBase {
+  protected String database = "spark_test_database";
 
-  protected String database() {
-    return "spark_unit_test";
+  protected String table = "test_table";
+
+  protected void testInCatalog(String catalog, Runnable test) {
+    doTest(catalog, database, table, test);
   }
 
-  protected String table() {
-    return "test_table";
-  }
+  protected void doTest(String catalog, String database, String table, Runnable runnable) {
+    sql("USE " + catalog);
+    sql("CREATE DATABASE IF NOT EXISTS " + database);
 
-  @Before
-  public void setupDatabase() {
-    sql("USE " + catalog());
-    sql("CREATE DATABASE IF NOT EXISTS " + database());
-  }
-
-  @After
-  public void cleanTable() {
-    sql("USE " + catalog());
-    sql("DROP TABLE IF EXISTS " + database() + "." + table());
-  }
-
-  protected ArcticTable loadTable() {
-    ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl());
-    return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog(), database(), table()));
-  }
-
-  /**
-   * assert table schema equal to expect schema
-   */
-  protected static void assertTableSchema(
-      ArcticTable actual, Schema expectSchema, PartitionSpec expectPartitionSpec, PrimaryKeySpec expectKeySpec
-  ) {
-    Assert.assertEquals(expectKeySpec.primaryKeyExisted(), actual.isKeyedTable());
-    Assert.assertEquals(expectPartitionSpec.isPartitioned(), actual.spec().isPartitioned());
-
-    if (expectKeySpec.primaryKeyExisted()) {
-      Assert.assertTrue("the table should be keyed table", actual.isKeyedTable());
-      PrimaryKeySpec actualKeySpec = actual.asKeyedTable().primaryKeySpec();
-      Assert.assertEquals(
-          "the table keySpec size not expected",
-          expectKeySpec.fieldNames().size(), actualKeySpec.fieldNames().size());
-
-      List<Pair<String, String>> zipValues = CollectionHelper.zip(
-          expectKeySpec.fieldNames(),
-          actual.asKeyedTable().primaryKeySpec().fieldNames());
-      for (Pair<String, String> assertPair : zipValues) {
-        Assert.assertEquals("primary key spec should match",
-            assertPair.getLeft(), assertPair.getRight());
-      }
+    try {
+      runnable.run();
+    } finally {
+      sql("USE " + catalog);
+      sql("DROP TABLE IF EXISTS " + database + "." + table);
     }
-
-    if (expectPartitionSpec.isPartitioned()) {
-      Assert.assertEquals(expectPartitionSpec.fields().size(), actual.spec().fields().size());
-
-      CollectionHelper.zip(expectPartitionSpec.fields(), actual.spec().fields())
-          .forEach(x -> {
-            Assert.assertEquals(x.getLeft().name(), x.getRight().name());
-            Assert.assertEquals(x.getLeft().transform(), x.getRight().transform());
-          });
-    }
-
-    assertType(expectSchema.asStruct(), actual.schema().asStruct());
   }
 
-  protected static void assertType(Type expect, Type actual) {
-    Assert.assertEquals(
-        "type should be same",
-        expect.isPrimitiveType(), actual.isPrimitiveType());
-    if (expect.isPrimitiveType()) {
-      Assert.assertEquals(expect, actual);
-    } else {
-      List<Types.NestedField> expectFields = expect.asNestedType().fields();
-      List<Types.NestedField> actualFields = actual.asNestedType().fields();
-      Assert.assertEquals(expectFields.size(), actualFields.size());
+  protected ArcticTable loadTable(String sparkCatalog, String database, String table) {
+    ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl(sparkCatalog));
+    return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog.name(), database, table));
+  }
 
-      CollectionHelper.zip(expectFields, actualFields)
-          .forEach(x -> {
-            Assert.assertEquals(x.getLeft().name(), x.getRight().name());
-            Assert.assertEquals(x.getLeft().isOptional(), x.getRight().isOptional());
-            Assert.assertEquals(x.getLeft().doc(), x.getRight().doc());
-            assertType(x.getLeft().type(), x.getRight().type());
-          });
+  protected Table loadHiveTable(String database, String table) {
+    try {
+      return env.HMS.getHiveClient().getTable(database, table);
+    } catch (TException e) {
+      throw new RuntimeException(e);
     }
   }
 }

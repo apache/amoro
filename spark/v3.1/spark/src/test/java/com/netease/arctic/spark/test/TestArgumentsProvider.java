@@ -16,13 +16,28 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.junit4;
+package com.netease.arctic.spark.test;
 
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.support.AnnotationConsumer;
 
-public interface SupportExecuteSQL {
-  Dataset<Row> sql(String sqlText);
+import java.util.stream.Stream;
 
-  String catalog();
+public class TestArgumentsProvider
+    implements AnnotationConsumer<TestArguments>, ArgumentsProvider {
+  TestArguments.TestArg[] args;
+
+  @Override
+  public void accept(TestArguments testArguments) {
+    this.args = (testArguments).value();
+  }
+
+  @Override
+  public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+    return Stream.of(args)
+        .map(TestArguments.TestArg::value)
+        .map(Arguments::of);
+  }
 }

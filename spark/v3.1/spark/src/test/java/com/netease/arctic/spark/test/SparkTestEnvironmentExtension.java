@@ -167,15 +167,15 @@ public class SparkTestEnvironmentExtension
   private void initSparkSession(boolean arcticSessionCatalog) {
     Map<String, String> configs = Maps.newHashMap();
     configs.put("spark.sql.catalog." + amsCatalogName("arctic"), ArcticSparkCatalog.class.getName());
-    configs.put("spark.sqk.catalog." + amsCatalogName("arctic") + ".url"
+    configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url"
         , amsServerUrl() + "/" + amsCatalogName("arctic"));
     configs.put("spark.sql.catalog." + amsCatalogName("hive"), ArcticSparkCatalog.class.getName());
-    configs.put("spark.sqk.catalog." + amsCatalogName("hive") + ".url"
+    configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url"
         , amsServerUrl() + "/" + amsCatalogName("hive"));
     if (arcticSessionCatalog) {
       configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
       configs.put(
-          "spark.sqk.catalog.spark_catalog.url",
+          "spark.sql.catalog.spark_catalog.url",
           amsServerUrl() + "/" + amsCatalogName("hive"));
     }
 
@@ -216,5 +216,9 @@ public class SparkTestEnvironmentExtension
       ds.show();
     }
     return ds;
+  }
+
+  public String getSparkConf(String key) {
+    return spark.sessionState().conf().getConfString(key);
   }
 }
