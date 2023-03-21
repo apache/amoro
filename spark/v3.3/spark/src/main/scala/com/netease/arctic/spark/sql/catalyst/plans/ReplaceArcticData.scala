@@ -20,7 +20,7 @@
 package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReplaceIcebergData, V2WriteCommand, V2WriteCommandLike}
 import org.apache.spark.sql.connector.write.Write
 
 case class ReplaceArcticData(
@@ -28,15 +28,12 @@ case class ReplaceArcticData(
   query: LogicalPlan,
   writeOptions: Map[String, String],
   write: Option[Write] = None
-) extends V2WriteCommand {
+) extends V2WriteCommandLike {
 
   def isByName: Boolean = false
-
-  def withNewQuery(newQuery: LogicalPlan): ReplaceArcticData = copy(query = newQuery)
-
-  def withNewTable(newTable: NamedRelation): ReplaceArcticData = copy(table = newTable)
-
   override def outputResolved = true
 
-  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = query
+  override protected def withNewChildInternal(newChild: LogicalPlan): ReplaceArcticData = {
+    copy(query = newChild)
+  }
 }

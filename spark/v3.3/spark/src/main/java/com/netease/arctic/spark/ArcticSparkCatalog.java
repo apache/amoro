@@ -45,6 +45,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
+import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
@@ -463,7 +464,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace) {
+  public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;

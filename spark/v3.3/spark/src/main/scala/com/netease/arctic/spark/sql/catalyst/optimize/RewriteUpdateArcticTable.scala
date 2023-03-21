@@ -24,6 +24,7 @@ import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -53,7 +54,9 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(arcticRelation, query, options)
+      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(arcticRelation.table, query.schema, options)
+      val write = writeBuilder.build()
+      ReplaceArcticData(arcticRelation, query, options, Some(write))
 
     case _ => plan
   }

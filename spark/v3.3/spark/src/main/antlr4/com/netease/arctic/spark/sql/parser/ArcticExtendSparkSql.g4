@@ -17,7 +17,7 @@
  */
 
 grammar ArcticExtendSparkSql;
-import SqlBase;
+import SqlBaseParser;
 
 
 arcticCommand

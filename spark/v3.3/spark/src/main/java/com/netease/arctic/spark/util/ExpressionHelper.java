@@ -18,14 +18,14 @@
 
 package com.netease.arctic.spark.util;
 
-import org.apache.spark.sql.arctic.catalyst.ArcticSpark31CatalystHelper;
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
+import org.apache.spark.sql.connector.expressions.NullOrdering;
+import org.apache.spark.sql.connector.expressions.SortDirection;
+import org.apache.spark.sql.connector.expressions.SortOrder;
 import org.apache.spark.sql.connector.expressions.Transform;
-import org.apache.spark.sql.connector.iceberg.expressions.NullOrdering;
-import org.apache.spark.sql.connector.iceberg.expressions.SortDirection;
-import org.apache.spark.sql.connector.iceberg.expressions.SortOrder;
 
 public class ExpressionHelper {
 
@@ -64,12 +64,17 @@ public class ExpressionHelper {
       public String describe() {
         return String.format("%s %s %s", expr.describe(), direction, nullOrdering);
       }
+
+      @Override
+      public Expression[] children() {
+        return new Expression[0];
+      }
     };
   }
 
   public org.apache.spark.sql.catalyst.expressions.Expression toCatalyst(
       Expression expr, LogicalPlan plan
   ) {
-    return ArcticSpark31CatalystHelper.toCatalyst(expr, plan);
+    return ArcticSpark33Helper.toCatalyst(expr, plan);
   }
 }

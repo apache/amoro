@@ -1,22 +1,4 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.7
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.8
 package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -104,6 +86,20 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitUse(ArcticSqlCommandParser.UseContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code useNamespace}
+	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUseNamespace(ArcticSqlCommandParser.UseNamespaceContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code setCatalog}
+	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSetCatalog(ArcticSqlCommandParser.SetCatalogContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code createNamespace}
 	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
@@ -399,6 +395,13 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitShowCurrentNamespace(ArcticSqlCommandParser.ShowCurrentNamespaceContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code showCatalogs}
+	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitShowCatalogs(ArcticSqlCommandParser.ShowCatalogsContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code describeFunction}
 	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
 	 * @param ctx the parse tree
@@ -553,6 +556,20 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitResetConfiguration(ArcticSqlCommandParser.ResetConfigurationContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code createIndex}
+	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCreateIndex(ArcticSqlCommandParser.CreateIndexContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code dropIndex}
+	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDropIndex(ArcticSqlCommandParser.DropIndexContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#configKey}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -665,6 +682,12 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitNamespace(ArcticSqlCommandParser.NamespaceContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#namespaces}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamespaces(ArcticSqlCommandParser.NamespacesContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#describeFuncName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -701,29 +724,29 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCreateTableClauses(ArcticSqlCommandParser.CreateTableClausesContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyList}.
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#propertyList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTablePropertyList(ArcticSqlCommandParser.TablePropertyListContext ctx);
+	T visitPropertyList(ArcticSqlCommandParser.PropertyListContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#tableProperty}.
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#property}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTableProperty(ArcticSqlCommandParser.TablePropertyContext ctx);
+	T visitProperty(ArcticSqlCommandParser.PropertyContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyKey}.
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#propertyKey}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTablePropertyKey(ArcticSqlCommandParser.TablePropertyKeyContext ctx);
+	T visitPropertyKey(ArcticSqlCommandParser.PropertyKeyContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyValue}.
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#propertyValue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTablePropertyValue(ArcticSqlCommandParser.TablePropertyValueContext ctx);
+	T visitPropertyValue(ArcticSqlCommandParser.PropertyValueContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#constantList}.
 	 * @param ctx the parse tree
@@ -981,6 +1004,12 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFromClause(ArcticSqlCommandParser.FromClauseContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#temporalClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTemporalClause(ArcticSqlCommandParser.TemporalClauseContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#aggregationClause}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -1214,6 +1243,18 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMultipartIdentifier(ArcticSqlCommandParser.MultipartIdentifierContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierPropertyList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMultipartIdentifierPropertyList(ArcticSqlCommandParser.MultipartIdentifierPropertyListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierProperty}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMultipartIdentifierProperty(ArcticSqlCommandParser.MultipartIdentifierPropertyContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#tableIdentifier}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -1352,6 +1393,12 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArithmeticUnary(ArcticSqlCommandParser.ArithmeticUnaryContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ArcticSqlCommandParser#datetimeUnit}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDatetimeUnit(ArcticSqlCommandParser.DatetimeUnitContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code struct}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -1365,6 +1412,48 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitDereference(ArcticSqlCommandParser.DereferenceContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code timestampadd}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTimestampadd(ArcticSqlCommandParser.TimestampaddContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code substring}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubstring(ArcticSqlCommandParser.SubstringContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code cast}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCast(ArcticSqlCommandParser.CastContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code lambda}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambda(ArcticSqlCommandParser.LambdaContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code parenthesizedExpression}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code trim}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTrim(ArcticSqlCommandParser.TrimContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code simpleCase}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
@@ -1422,26 +1511,19 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSubscript(ArcticSqlCommandParser.SubscriptContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code timestampdiff}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTimestampdiff(ArcticSqlCommandParser.TimestampdiffContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code subqueryExpression}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitSubqueryExpression(ArcticSqlCommandParser.SubqueryExpressionContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code substring}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSubstring(ArcticSqlCommandParser.SubstringContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code cast}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCast(ArcticSqlCommandParser.CastContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code constantDefault}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
@@ -1450,20 +1532,6 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitConstantDefault(ArcticSqlCommandParser.ConstantDefaultContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code lambda}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLambda(ArcticSqlCommandParser.LambdaContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code parenthesizedExpression}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code extract}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -1471,12 +1539,12 @@ public interface ArcticSqlCommandVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExtract(ArcticSqlCommandParser.ExtractContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code trim}
+	 * Visit a parse tree produced by the {@code percentile}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTrim(ArcticSqlCommandParser.TrimContext ctx);
+	T visitPercentile(ArcticSqlCommandParser.PercentileContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code functionCall}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.

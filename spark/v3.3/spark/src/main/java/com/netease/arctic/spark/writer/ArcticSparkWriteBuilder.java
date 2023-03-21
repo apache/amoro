@@ -30,6 +30,7 @@ import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.LogicalWriteInfo;
 import org.apache.spark.sql.connector.write.SupportsDynamicOverwrite;
 import org.apache.spark.sql.connector.write.SupportsOverwrite;
+import org.apache.spark.sql.connector.write.Write;
 import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
@@ -54,7 +55,10 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
   protected Expression overwriteExpr = null;
 
   private WriteMode writeMode = WriteMode.APPEND;
-  private final ArcticWrite write;
+//  private final ArcticWrite write;
+  private final ArcticTable table;
+  private final LogicalWriteInfo info;
+  private final ArcticCatalog catalog;
 
   public ArcticSparkWriteBuilder(ArcticTable table,
                                  LogicalWriteInfo info,
@@ -63,12 +67,10 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
     }
+    this.table = table;
+    this.info = info;
+    this.catalog = catalog;
 
-    if (table.isKeyedTable()) {
-      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info, catalog);
-    } else {
-      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info, catalog);
-    }
   }
 
   @Override
@@ -91,20 +93,47 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
   }
 
   @Override
-  public BatchWrite buildForBatch() {
-    switch (writeMode) {
-      case APPEND:
-        return write.asBatchAppend();
-      case OVERWRITE_BY_FILTER:
-        return write.asOverwriteByFilter(overwriteExpr);
-      case OVERWRITE_DYNAMIC:
-        return write.asDynamicOverwrite();
-      case UPSERT:
-        return write.asUpsertWrite();
-      case MERGE:
-        return write.asMergeBatchWrite();
-      default:
-        throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
+  public Write build() {
+    if (table.isKeyedTable()) {
+      return new KeyedSparkBatchWrite(table.asKeyedTable(), info, catalog) {
+        @Override
+        public BatchWrite toBatch() {
+          switch (writeMode) {
+            case APPEND:
+              return asBatchAppend();
+            case OVERWRITE_BY_FILTER:
+              return asOverwriteByFilter(overwriteExpr);
+            case OVERWRITE_DYNAMIC:
+              return asDynamicOverwrite();
+            case UPSERT:
+              return asUpsertWrite();
+            case MERGE:
+              return asMergeBatchWrite();
+            default:
+              throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
+          }
+        }
+      };
+    } else {
+      return new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info, catalog) {
+        @Override
+        public BatchWrite toBatch() {
+          switch (writeMode) {
+            case APPEND:
+              return asBatchAppend();
+            case OVERWRITE_BY_FILTER:
+              return asOverwriteByFilter(overwriteExpr);
+            case OVERWRITE_DYNAMIC:
+              return asDynamicOverwrite();
+            case UPSERT:
+              return asUpsertWrite();
+            case MERGE:
+              return asMergeBatchWrite();
+            default:
+              throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
+          }
+        }
+      };
     }
   }
 }

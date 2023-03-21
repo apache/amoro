@@ -48,4 +48,7 @@ case class MergeRows(
     s"MergeRows${truncatedString(output, "[", ", ", "]", maxFields)}"
   }
 
+  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    copy(child = newChild)
+  }
 }

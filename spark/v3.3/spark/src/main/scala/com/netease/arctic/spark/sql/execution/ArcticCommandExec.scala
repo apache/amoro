@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.util.truncatedString
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 
 
@@ -48,5 +49,9 @@ abstract class ArcticCommandExec(command: ArcticSparkCommand) extends V2CommandE
   }
 }
 
-case class MigrateToArcticExec(command: MigrateToArcticCommand) extends ArcticCommandExec(command)
+case class MigrateToArcticExec(command: MigrateToArcticCommand) extends ArcticCommandExec(command) {
+  override def children: Seq[SparkPlan] = ???
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
+}
 

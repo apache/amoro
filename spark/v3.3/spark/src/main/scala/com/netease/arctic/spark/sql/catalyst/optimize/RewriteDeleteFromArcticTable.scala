@@ -24,23 +24,31 @@ import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
+
+import java.util.UUID
 
 case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
 
   private val opCol = SupportsUpsert.UPSERT_OP_COLUMN_NAME
   private val opDel = SupportsUpsert.UPSERT_OP_VALUE_DELETE
+  import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
+
+
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case u@DeleteFromTable(table, condition) if isArcticRelation(table) =>
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
-      if (condition != null) {
+      if (condition.asInstanceOf[Literal].value.toString.equals("true")) {
         val cond = Literal.TrueLiteral
         pushFilter(scanBuilder, cond, r.output)
       } else {
@@ -49,7 +57,9 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(r, query, options)
+      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, options)
+      val write = writeBuilder.build()
+      ReplaceArcticData(r, query, options, Some(write))
   }
 
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Expression): LogicalPlan = {
@@ -66,7 +76,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
     val valuesRelation = DataSourceV2ScanRelation(r, scan, outputAttr)
 
-    val matchValueQuery = if (condition != null) {
+    val matchValueQuery = if (!condition.asInstanceOf[Literal].value.toString.equals("true")) {
       Filter(condition, valuesRelation)
     } else {
       valuesRelation

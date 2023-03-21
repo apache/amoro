@@ -35,10 +35,10 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.apache.spark.sql.connector.distributions.ClusteredDistribution;
+import org.apache.spark.sql.connector.distributions.Distributions;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.Transform;
-import org.apache.spark.sql.connector.iceberg.distributions.Distribution;
-import org.apache.spark.sql.connector.iceberg.distributions.Distributions;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.UTF8String;
 import org.slf4j.Logger;
@@ -86,7 +86,7 @@ public class ArcticSparkUtils {
     }
   }
 
-  public static Distribution buildRequiredDistribution(ArcticSparkTable arcticSparkTable) {
+  public static ClusteredDistribution buildRequiredDistribution(ArcticSparkTable arcticSparkTable) {
     // Fallback to use distribution mode parsed from table properties .
     String modeName = PropertyUtil.propertyAsString(
         arcticSparkTable.properties(),

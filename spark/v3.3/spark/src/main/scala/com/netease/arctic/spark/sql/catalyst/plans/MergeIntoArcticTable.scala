@@ -58,4 +58,6 @@ case class MergeIntoArcticTable(
   } else {
     targetTable :: sourceTable :: Nil
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = targetTable
 }

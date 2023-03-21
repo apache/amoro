@@ -29,6 +29,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
@@ -222,6 +223,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
       case _ => false
     }
   }
+
+  override def parseQuery(sqlText: String): LogicalPlan = parsePlan(sqlText)
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */

@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, GenericRowWithSchema}
 import org.apache.spark.sql.connector.catalog._
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
 
@@ -145,9 +146,10 @@ case class DescribeKeyedTableExec(table: Table,
 
   private def emptyRow(): InternalRow = toCatalystRow("", "", "")
 
-  private def toCatalystRow(strs: String*): InternalRow = {
-    toRow(new GenericRowWithSchema(strs.toArray, schema)).copy()
-  }
 
   override def output: Seq[Attribute] = outputAttrs
+
+  override def children: Seq[SparkPlan] = ???
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
 }

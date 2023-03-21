@@ -7,6 +7,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, WriterCommitMessage}
+import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.{LongAccumulator, Utils}
@@ -31,6 +32,8 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
 
 
   override def output: Seq[Attribute] = Nil
+
+  protected val customMetrics: Map[String, SQLMetric] = Map.empty
 
   var commitProgress: Option[StreamWriterCommitProgress] = None
 
@@ -74,11 +77,13 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
     logInfo(s"Start processing data source write support: $batchWrite. " +
       s"The input RDD has ${messages.length} partitions.")
 
+    val writeMetrics: Map[String, SQLMetric] = customMetrics
+
     try {
       sparkContext.runJob(
         rdd,
         (context: TaskContext, iter: Iterator[InternalRow]) => {
-          DataWritingSparkTask.run(writerFactory, context, iter, useCommitCoordinator)
+          DataWritingSparkTask.run(writerFactory, context, iter, useCommitCoordinator, writeMetrics)
         },
         rdd.partitions.indices,
         (index, result: DataWritingSparkTaskResult) => {

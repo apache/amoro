@@ -47,4 +47,6 @@ case class CreateArcticTableAsSelect(catalog: TableCatalog,
   override def withPartitioning(rewritten: Seq[Transform]): V2CreateTablePlan = {
     this.copy(partitioning = rewritten)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = query
 }

@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.plans
 
 import com.netease.arctic.spark.command.{ArcticSparkCommand, MigrateToArcticCommand}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.catalyst.plans.logical.Command
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 import org.apache.spark.sql.catalyst.util.truncatedString
 
 abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Command {
@@ -33,4 +33,8 @@ abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Com
   }
 }
 
-case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)  extends ArcticCommandLogicalPlan (command)
+case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)  extends ArcticCommandLogicalPlan (command) {
+  override def children: Seq[LogicalPlan] = ???
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = ???
+}

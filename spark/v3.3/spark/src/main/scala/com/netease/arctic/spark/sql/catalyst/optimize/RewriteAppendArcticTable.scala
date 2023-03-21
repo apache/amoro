@@ -23,6 +23,7 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
@@ -55,7 +56,9 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
             if (checkDuplicatesEnabled()) {
               AppendArcticData(arcticRelation, newQuery, validateQuery, options)
             } else {
-              ReplaceArcticData(arcticRelation, newQuery, options)
+              val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, newQuery.schema, options)
+              val write = writeBuilder.build()
+              ReplaceArcticData(arcticRelation, newQuery, options, Some(write))
             }
           } else {
             a

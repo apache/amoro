@@ -28,7 +28,7 @@ import com.netease.arctic.spark.sql.utils.{FieldReference, ProjectingInternalRow
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
+import org.apache.spark.sql.arctic.catalyst.{ArcticSpark33Helper, ExpressionHelper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, IsNotNull, Literal}
@@ -209,7 +209,9 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     val projections = buildWriteQueryProjections(
       mergeRows, source, rowAttrs, rowIdAttrs,
       ArcticExtensionUtils.isKeyedTable(relation))
-    ArcticRowLevelWrite(writeRelation, mergeRows, options, projections)
+    val writeBuilder = ArcticSpark33Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
+    val write = writeBuilder.build()
+    ArcticRowLevelWrite(writeRelation, mergeRows, options, projections, Some(write))
   }
 
   private def actionCondition(action: MergeAction): Expression = {

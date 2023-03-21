@@ -206,7 +206,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-3.1_2.12</artifactId>
+            <artifactId>iceberg-spark-3.3_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -218,7 +218,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-extensions-3.1_2.12</artifactId>
+            <artifactId>iceberg-spark-extensions-3.3_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -291,6 +291,7 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.8</version>
                 <configuration>
                     <visitor>true</visitor>
                     <listener>true</listener>

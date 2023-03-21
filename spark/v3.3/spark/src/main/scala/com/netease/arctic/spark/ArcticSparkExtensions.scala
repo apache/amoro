@@ -20,12 +20,12 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, ResolveMergeIntoTableReferences, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
+import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, MergeIntoIcebergTableResolutionCheck, RewriteDeleteFromIcebergTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
 
 class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
@@ -40,21 +40,19 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectResolutionRule { spark => RewriteMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
-    // iceberg analyzer rules
-    extensions.injectPostHocResolutionRule { _ => AlignRowLevelOperations }
 
     // arctic optimizer rules
     extensions.injectPostHocResolutionRule { spark => RewriteAppendArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteDeleteFromArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
-    extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
+    extensions.injectCheckRule { _ => MergeIntoIcebergTableResolutionCheck }
+    extensions.injectCheckRule { _ => AlignedRowLevelIcebergCommandCheck }
 
     // iceberg optimizer rules
-    extensions.injectOptimizerRule { _ => OptimizeConditionsInRowLevelOperations }
-    extensions.injectOptimizerRule { _ => PullupCorrelatedPredicatesInRowLevelOperations }
-    extensions.injectOptimizerRule { spark => RewriteDelete(spark) }
-    extensions.injectOptimizerRule { spark => RewriteUpdate(spark) }
-    extensions.injectOptimizerRule { spark => RewriteMergeInto(spark) }
+    extensions.injectOptimizerRule { _ => ExtendedSimplifyConditionalsInPredicate }
+    extensions.injectOptimizerRule { _ => ExtendedReplaceNullWithFalseInPredicate }
+    extensions.injectResolutionRule { _ => RewriteDeleteFromIcebergTable }
+    extensions.injectResolutionRule { _ => RewriteUpdateTable }
 
     // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)

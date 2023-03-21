@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
 import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types._
 
@@ -126,4 +127,7 @@ case class AlterArcticTableDropPartitionExec(
 
   override def output: Seq[Attribute] = Nil
 
+  override def children: Seq[SparkPlan] = ???
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
 }

@@ -1,22 +1,4 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.7
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.8
 package com.netease.arctic.spark.sql.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -173,6 +155,30 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitUse(ArcticSqlCommandParser.UseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterUseNamespace(ArcticSqlCommandParser.UseNamespaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUseNamespace(ArcticSqlCommandParser.UseNamespaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSetCatalog(ArcticSqlCommandParser.SetCatalogContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSetCatalog(ArcticSqlCommandParser.SetCatalogContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -682,6 +688,18 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterShowCatalogs(ArcticSqlCommandParser.ShowCatalogsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitShowCatalogs(ArcticSqlCommandParser.ShowCatalogsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDescribeFunction(ArcticSqlCommandParser.DescribeFunctionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -946,6 +964,30 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterCreateIndex(ArcticSqlCommandParser.CreateIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCreateIndex(ArcticSqlCommandParser.CreateIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDropIndex(ArcticSqlCommandParser.DropIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDropIndex(ArcticSqlCommandParser.DropIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterConfigKey(ArcticSqlCommandParser.ConfigKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1162,6 +1204,18 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterNamespaces(ArcticSqlCommandParser.NamespacesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNamespaces(ArcticSqlCommandParser.NamespacesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDescribeFuncName(ArcticSqlCommandParser.DescribeFuncNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1234,49 +1288,49 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyList(ArcticSqlCommandParser.TablePropertyListContext ctx) { }
+	@Override public void enterPropertyList(ArcticSqlCommandParser.PropertyListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyList(ArcticSqlCommandParser.TablePropertyListContext ctx) { }
+	@Override public void exitPropertyList(ArcticSqlCommandParser.PropertyListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTableProperty(ArcticSqlCommandParser.TablePropertyContext ctx) { }
+	@Override public void enterProperty(ArcticSqlCommandParser.PropertyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTableProperty(ArcticSqlCommandParser.TablePropertyContext ctx) { }
+	@Override public void exitProperty(ArcticSqlCommandParser.PropertyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyKey(ArcticSqlCommandParser.TablePropertyKeyContext ctx) { }
+	@Override public void enterPropertyKey(ArcticSqlCommandParser.PropertyKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyKey(ArcticSqlCommandParser.TablePropertyKeyContext ctx) { }
+	@Override public void exitPropertyKey(ArcticSqlCommandParser.PropertyKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyValue(ArcticSqlCommandParser.TablePropertyValueContext ctx) { }
+	@Override public void enterPropertyValue(ArcticSqlCommandParser.PropertyValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyValue(ArcticSqlCommandParser.TablePropertyValueContext ctx) { }
+	@Override public void exitPropertyValue(ArcticSqlCommandParser.PropertyValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1762,6 +1816,18 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTemporalClause(ArcticSqlCommandParser.TemporalClauseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTemporalClause(ArcticSqlCommandParser.TemporalClauseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAggregationClause(ArcticSqlCommandParser.AggregationClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2206,6 +2272,30 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterMultipartIdentifierPropertyList(ArcticSqlCommandParser.MultipartIdentifierPropertyListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMultipartIdentifierPropertyList(ArcticSqlCommandParser.MultipartIdentifierPropertyListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMultipartIdentifierProperty(ArcticSqlCommandParser.MultipartIdentifierPropertyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMultipartIdentifierProperty(ArcticSqlCommandParser.MultipartIdentifierPropertyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterTableIdentifier(ArcticSqlCommandParser.TableIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2458,6 +2548,18 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDatetimeUnit(ArcticSqlCommandParser.DatetimeUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDatetimeUnit(ArcticSqlCommandParser.DatetimeUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterStruct(ArcticSqlCommandParser.StructContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2477,6 +2579,78 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitDereference(ArcticSqlCommandParser.DereferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTimestampadd(ArcticSqlCommandParser.TimestampaddContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTimestampadd(ArcticSqlCommandParser.TimestampaddContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSubstring(ArcticSqlCommandParser.SubstringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubstring(ArcticSqlCommandParser.SubstringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCast(ArcticSqlCommandParser.CastContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCast(ArcticSqlCommandParser.CastContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambda(ArcticSqlCommandParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambda(ArcticSqlCommandParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTrim(ArcticSqlCommandParser.TrimContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTrim(ArcticSqlCommandParser.TrimContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -2578,6 +2752,18 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTimestampdiff(ArcticSqlCommandParser.TimestampdiffContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTimestampdiff(ArcticSqlCommandParser.TimestampdiffContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSubqueryExpression(ArcticSqlCommandParser.SubqueryExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2585,30 +2771,6 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitSubqueryExpression(ArcticSqlCommandParser.SubqueryExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSubstring(ArcticSqlCommandParser.SubstringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSubstring(ArcticSqlCommandParser.SubstringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterCast(ArcticSqlCommandParser.CastContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitCast(ArcticSqlCommandParser.CastContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -2626,30 +2788,6 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLambda(ArcticSqlCommandParser.LambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLambda(ArcticSqlCommandParser.LambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterExtract(ArcticSqlCommandParser.ExtractContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2662,13 +2800,13 @@ public class ArcticSqlCommandBaseListener implements ArcticSqlCommandListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTrim(ArcticSqlCommandParser.TrimContext ctx) { }
+	@Override public void enterPercentile(ArcticSqlCommandParser.PercentileContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTrim(ArcticSqlCommandParser.TrimContext ctx) { }
+	@Override public void exitPercentile(ArcticSqlCommandParser.PercentileContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

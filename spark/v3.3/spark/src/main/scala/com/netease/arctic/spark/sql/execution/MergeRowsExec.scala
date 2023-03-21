@@ -45,6 +45,10 @@ case class MergeRowsExec(
     child.execute().mapPartitions(processPartition)
   }
 
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan = {
+    copy(child = newChild)
+  }
+
   private def createProjection(exprs: Seq[Expression], attrs: Seq[Attribute]): UnsafeProjection = {
     UnsafeProjection.create(exprs, attrs)
   }

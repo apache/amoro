@@ -1,22 +1,4 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
+// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.8
 package com.netease.arctic.spark.sql.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -221,6 +203,30 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitUse(ArcticExtendSparkSqlParser.UseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterUseNamespace(ArcticExtendSparkSqlParser.UseNamespaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUseNamespace(ArcticExtendSparkSqlParser.UseNamespaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSetCatalog(ArcticExtendSparkSqlParser.SetCatalogContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSetCatalog(ArcticExtendSparkSqlParser.SetCatalogContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -730,6 +736,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterShowCatalogs(ArcticExtendSparkSqlParser.ShowCatalogsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitShowCatalogs(ArcticExtendSparkSqlParser.ShowCatalogsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDescribeFunction(ArcticExtendSparkSqlParser.DescribeFunctionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -994,6 +1012,30 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterCreateIndex(ArcticExtendSparkSqlParser.CreateIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCreateIndex(ArcticExtendSparkSqlParser.CreateIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDropIndex(ArcticExtendSparkSqlParser.DropIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDropIndex(ArcticExtendSparkSqlParser.DropIndexContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterConfigKey(ArcticExtendSparkSqlParser.ConfigKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1210,6 +1252,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterNamespaces(ArcticExtendSparkSqlParser.NamespacesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNamespaces(ArcticExtendSparkSqlParser.NamespacesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDescribeFuncName(ArcticExtendSparkSqlParser.DescribeFuncNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1282,49 +1336,49 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyList(ArcticExtendSparkSqlParser.TablePropertyListContext ctx) { }
+	@Override public void enterPropertyList(ArcticExtendSparkSqlParser.PropertyListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyList(ArcticExtendSparkSqlParser.TablePropertyListContext ctx) { }
+	@Override public void exitPropertyList(ArcticExtendSparkSqlParser.PropertyListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTableProperty(ArcticExtendSparkSqlParser.TablePropertyContext ctx) { }
+	@Override public void enterProperty(ArcticExtendSparkSqlParser.PropertyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTableProperty(ArcticExtendSparkSqlParser.TablePropertyContext ctx) { }
+	@Override public void exitProperty(ArcticExtendSparkSqlParser.PropertyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyKey(ArcticExtendSparkSqlParser.TablePropertyKeyContext ctx) { }
+	@Override public void enterPropertyKey(ArcticExtendSparkSqlParser.PropertyKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyKey(ArcticExtendSparkSqlParser.TablePropertyKeyContext ctx) { }
+	@Override public void exitPropertyKey(ArcticExtendSparkSqlParser.PropertyKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTablePropertyValue(ArcticExtendSparkSqlParser.TablePropertyValueContext ctx) { }
+	@Override public void enterPropertyValue(ArcticExtendSparkSqlParser.PropertyValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTablePropertyValue(ArcticExtendSparkSqlParser.TablePropertyValueContext ctx) { }
+	@Override public void exitPropertyValue(ArcticExtendSparkSqlParser.PropertyValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1810,6 +1864,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTemporalClause(ArcticExtendSparkSqlParser.TemporalClauseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTemporalClause(ArcticExtendSparkSqlParser.TemporalClauseContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAggregationClause(ArcticExtendSparkSqlParser.AggregationClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2254,6 +2320,30 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterMultipartIdentifierPropertyList(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMultipartIdentifierPropertyList(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMultipartIdentifierProperty(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMultipartIdentifierProperty(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterTableIdentifier(ArcticExtendSparkSqlParser.TableIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2506,6 +2596,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDatetimeUnit(ArcticExtendSparkSqlParser.DatetimeUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDatetimeUnit(ArcticExtendSparkSqlParser.DatetimeUnitContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterStruct(ArcticExtendSparkSqlParser.StructContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2525,6 +2627,78 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitDereference(ArcticExtendSparkSqlParser.DereferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTimestampadd(ArcticExtendSparkSqlParser.TimestampaddContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTimestampadd(ArcticExtendSparkSqlParser.TimestampaddContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCast(ArcticExtendSparkSqlParser.CastContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCast(ArcticExtendSparkSqlParser.CastContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -2626,6 +2800,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTimestampdiff(ArcticExtendSparkSqlParser.TimestampdiffContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTimestampdiff(ArcticExtendSparkSqlParser.TimestampdiffContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSubqueryExpression(ArcticExtendSparkSqlParser.SubqueryExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2633,30 +2819,6 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitSubqueryExpression(ArcticExtendSparkSqlParser.SubqueryExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterCast(ArcticExtendSparkSqlParser.CastContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitCast(ArcticExtendSparkSqlParser.CastContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -2674,30 +2836,6 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterExtract(ArcticExtendSparkSqlParser.ExtractContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -2710,13 +2848,13 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { }
+	@Override public void enterPercentile(ArcticExtendSparkSqlParser.PercentileContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { }
+	@Override public void exitPercentile(ArcticExtendSparkSqlParser.PercentileContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

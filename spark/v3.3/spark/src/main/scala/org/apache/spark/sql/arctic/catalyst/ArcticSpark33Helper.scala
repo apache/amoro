@@ -27,13 +27,18 @@ import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
-import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
+import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions._
-import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder}
-import org.apache.spark.sql.types.{DataType, LongType}
+import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
+import org.apache.spark.sql.types.{DataType, LongType, StructType}
 import org.apache.spark.sql.{AnalysisException, catalyst, connector}
 
-object ArcticSpark31CatalystHelper extends SQLConfHelper {
+import java.util.UUID
+
+object ArcticSpark33Helper extends SQLConfHelper {
+
+  import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
 
 
   def toCatalyst(expr: connector.expressions.Expression, query: LogicalPlan): Expression = {
@@ -43,7 +48,7 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         case Some(attr) =>
           attr
         case None =>
-          val ref = parts.map(CatalogV2Implicits.quoteIfNeeded).mkString(".")
+          val ref = parts
           throw new AnalysisException(s"Cannot resolve '$ref' using ${query.output}")
       }
     }
@@ -128,5 +133,22 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     override def toString(): String = {
       s"ArcticFileIndexBucket($numBuckets)"
     }
+
+    override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression = null
+  }
+
+  def newWriteBuilder(
+                               table: Table,
+                               rowSchema: StructType,
+                               writeOptions: Map[String, String],
+                               rowIdSchema: StructType = null,
+                               metadataSchema: StructType = null): WriteBuilder = {
+    val info = ExtendedLogicalWriteInfoImpl(
+      queryId = UUID.randomUUID().toString,
+      rowSchema,
+      writeOptions.asOptions,
+      rowIdSchema,
+      metadataSchema)
+    table.asWritable.newWriteBuilder(info)
   }
 }

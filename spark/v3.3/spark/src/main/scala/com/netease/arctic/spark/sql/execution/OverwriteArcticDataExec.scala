@@ -28,9 +28,11 @@ case class OverwriteArcticDataExec(table: ArcticSparkTable,
   }
 
 
-  override def query: SparkPlan = queryInsert
-
   override def left: SparkPlan = queryInsert
 
   override def right: SparkPlan = validateQuery
+
+  override protected def withNewChildrenInternal(newLeft: SparkPlan, newRight: SparkPlan): SparkPlan = {
+    copy(queryInsert = newLeft, validateQuery = newRight)
+  }
 }

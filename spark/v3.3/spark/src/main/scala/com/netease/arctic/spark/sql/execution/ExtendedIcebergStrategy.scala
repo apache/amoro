@@ -21,12 +21,13 @@ package com.netease.arctic.spark.sql.execution
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{And, Expression, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
-import org.apache.spark.sql.catalyst.plans.logical.{ReplaceIcebergData, _}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
-import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
-import org.apache.spark.sql.execution.datasources.v2._
+import org.apache.spark.sql.errors.QueryCompilationErrors
+import org.apache.spark.sql.execution.datasources.DataSourceStrategy
+import org.apache.spark.sql.execution.datasources.v2.{MergeRowsExec, _}
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
 import org.apache.spark.sql.{SparkSession, Strategy}
 
@@ -34,28 +35,26 @@ import scala.collection.JavaConverters.seqAsJavaList
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case DynamicFileFilter(scanPlan, fileFilterPlan, filterable) =>
-      DynamicFileFilterExec(planLater(scanPlan), planLater(fileFilterPlan), filterable) :: Nil
+//    case DynamicFileFilter(scanPlan, fileFilterPlan, filterable) =>
+//      DynamicFileFilterExec(planLater(scanPlan), planLater(fileFilterPlan), filterable) :: Nil
+//
+//    case DynamicFileFilterWithCardinalityCheck(scanPlan, fileFilterPlan, filterable, filesAccumulator) =>
+//      DynamicFileFilterWithCardinalityCheckExec(
+//        planLater(scanPlan),
+//        planLater(fileFilterPlan),
+//        filterable,
+//        filesAccumulator) :: Nil
 
-    case DynamicFileFilterWithCardinalityCheck(scanPlan, fileFilterPlan, filterable, filesAccumulator) =>
-      DynamicFileFilterWithCardinalityCheckExec(
-        planLater(scanPlan),
-        planLater(fileFilterPlan),
-        filterable,
-        filesAccumulator) :: Nil
+    case ReplaceIcebergData(_: DataSourceV2Relation, query, r: DataSourceV2Relation, Some(write)) =>
+      // refresh the cache using the original relation
+      ReplaceDataExec(planLater(query), refreshCache(r), write) :: Nil
 
-    case PhysicalOperation(project, filters, DataSourceV2ScanRelation(_, scan: SupportsFileFilter, output, _)) =>
-      // projection and filters were already pushed down in the optimizer.
-      // this uses PhysicalOperation to get the projection and ensure that if the batch scan does
-      // not support columnar, a projection is added to convert the rows to UnsafeRow.
-      val batchExec = ExtendedBatchScanExec(output, scan)
-      withProjectAndFilter(project, filters, batchExec, !batchExec.supportsColumnar) :: Nil
+    case WriteDelta(_: DataSourceV2Relation, query, r: DataSourceV2Relation, projs, Some(write)) =>
+      // refresh the cache using the original relation
+      WriteDeltaExec(planLater(query), refreshCache(r), projs, write) :: Nil
 
-    case ReplaceData(relation, batchWrite, query) =>
-      ReplaceDataExec(batchWrite, refreshCache(relation), planLater(query)) :: Nil
-
-    case MergeInto(mergeIntoParams, output, child) =>
-      MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil
+//    case MergeInto(mergeIntoParams, output, child) =>
+//      MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil
 
     case _ =>
       Nil

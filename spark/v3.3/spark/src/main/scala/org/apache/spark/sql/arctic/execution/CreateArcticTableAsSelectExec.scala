@@ -73,4 +73,8 @@ case class CreateArcticTableAsSelectExec(
   override def left: SparkPlan = queryInsert
 
   override def right: SparkPlan = validateQuery
+
+  override protected def withNewChildrenInternal(newLeft: SparkPlan, newRight: SparkPlan): SparkPlan = {
+    copy(queryInsert = newLeft, validateQuery = newRight)
+  }
 }
