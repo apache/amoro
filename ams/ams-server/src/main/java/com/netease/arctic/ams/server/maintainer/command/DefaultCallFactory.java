@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.server.maintainer.MaintainerConfig;
 import com.netease.arctic.catalog.CatalogManager;
 
@@ -29,17 +28,14 @@ public class DefaultCallFactory implements CallFactory {
 
   private CatalogManager catalogManager;
 
-  private OptimizeManager.Iface entrypoint;
-
   private AmsClient amsClient;
 
   public DefaultCallFactory(
       MaintainerConfig config,
       CatalogManager catalogManager,
-      OptimizeManager.Iface entrypoint, AmsClient amsClient) {
+      AmsClient amsClient) {
     this.config = config;
     this.catalogManager = catalogManager;
-    this.entrypoint = entrypoint;
     this.amsClient = amsClient;
   }
 
@@ -55,7 +51,7 @@ public class DefaultCallFactory implements CallFactory {
 
   @Override
   public OptimizeCall generateOptimizeCall(OptimizeCall.Action action, String tablePath) {
-    return new OptimizeCall(entrypoint, action, tablePath);
+    return new OptimizeCall(config.getThriftUrl(), action, tablePath);
   }
 
   @Override

@@ -56,7 +56,7 @@ public class TableMaintenanceService implements TerminalService {
     AmsClient amsClient = new PooledAmsClient(amsAddress);
 
     CallFactory callFactory =
-        new DefaultCallFactory(maintainerConfig, catalogManager, client, amsClient);
+        new DefaultCallFactory(maintainerConfig, catalogManager, amsClient);
     this.commandParser = new SimpleRegexCommandParser(callFactory);
   }
 

@@ -1,24 +1,26 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.ams.api.OptimizeManager;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.table.TableIdentifier;
 
 public class OptimizeCall implements CallCommand {
 
   private String tablePath;
-  private OptimizeManager.Iface entrypoint;
+  private String amsAddress;
   private Action action;
   private static final String START_RESULT = "optimize has started";
   private static final String STOP_RESULT = "optimize has stopped";
 
-  public OptimizeCall(OptimizeManager.Iface entrypoint, Action action, String tablePath) {
-    this.entrypoint = entrypoint;
+  public OptimizeCall(String amsAddress, Action action, String tablePath) {
+    this.amsAddress = amsAddress;
     this.action = action;
     this.tablePath = tablePath;
   }
 
   @Override
   public String call(Context context) throws Exception {
+    OptimizeManager.Iface entrypoint = OptimizeManagerClientPools.getClient(amsAddress);
     TableIdentifier identifier = fullTableName(context, tablePath);
 
     switch (this.action) {

@@ -39,7 +39,6 @@ public class CallCommandTestBase extends TableDataTestBase {
   public static CallFactory callFactory = new DefaultCallFactory(
       new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME),
       new CatalogManager(TEST_AMS.getServerUrl()),
-      OptimizeManagerClientPools.getClient(TEST_AMS.getServerUrl()),
       new PooledAmsClient(TEST_AMS.getServerUrl())
   );
 
