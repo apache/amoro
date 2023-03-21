@@ -23,8 +23,11 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.provider.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.stream.Stream;
 
 public abstract class SparkTestBase {
 
@@ -58,5 +61,9 @@ public abstract class SparkTestBase {
     } catch (TException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public interface SupportTestArguments {
+    Stream<Arguments> args();
   }
 }

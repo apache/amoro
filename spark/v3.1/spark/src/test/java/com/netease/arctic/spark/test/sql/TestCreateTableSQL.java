@@ -160,7 +160,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
       Types.NestedField.required(3, "pt", Types.StringType.get())
   );
 
-  public static Stream<Arguments> argsPartitionSpec() {
+  public static Stream<Arguments> testPartitionSpec() {
 
     return Stream.of(
         Arguments.of(SESSION_CATALOG, "", PartitionSpec.unpartitioned()),
@@ -191,7 +191,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
 
   @DisplayName("Test PartitionSpec is right")
   @ParameterizedTest
-  @MethodSource("argsPartitionSpec")
+  @MethodSource()
   public void testPartitionSpec(
       String catalog, String partitionDDL, PartitionSpec expectSpec
   ) {

@@ -27,6 +27,7 @@ import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
@@ -136,8 +137,6 @@ public class SparkTestEnvironmentExtension
     return this.AMS.getServerUrl();
   }
 
-  SparkSession spark;
-
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
     boolean usingArcticSessionCatalog = isAnnotatedUsingArcticSessionCatalog(context);
@@ -146,8 +145,7 @@ public class SparkTestEnvironmentExtension
 
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
-    this.spark.close();
-    this.spark = null;
+
   }
 
   private boolean isAnnotatedUsingArcticSessionCatalog(ExtensionContext context) {
@@ -194,20 +192,63 @@ public class SparkTestEnvironmentExtension
     configs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     configs.put("spark.testing.memory", "943718400");
 
-    SparkConf sparkconf = new SparkConf()
-        .setAppName("arctic-spark-unit-tests")
-        .setMaster("local[*]");
-    configs.forEach(sparkconf::set);
-    this.spark = SparkSession
-        .builder()
-        .config(sparkconf)
-        .getOrCreate();
-    spark.sparkContext().setLogLevel("WARN");
+    initializeSparkSession(configs);
+  }
+
+  SparkSession _spark;
+  Map<String, String> _sparkConf;
+
+  private void initializeSparkSession(Map<String, String> sparkConf) {
+    boolean create = false;
+    if (_spark == null) {
+      create = true;
+    }
+    if (!isSameSparkConf(sparkConf)) {
+      create = true;
+    }
+    if (create) {
+      cleanLocalSparkSession();
+
+      SparkConf sparkconf = new SparkConf()
+          .setAppName("arctic-spark-unit-tests")
+          .setMaster("local[*]");
+      sparkConf.forEach(sparkconf::set);
+      _spark = SparkSession
+          .builder()
+          .config(sparkconf)
+          .getOrCreate();
+      _spark.sparkContext().setLogLevel("WARN");
+      _sparkConf = sparkConf;
+    }
+  }
+
+  private boolean isSameSparkConf(Map<String, String> sparkConf) {
+    if (_sparkConf == null) {
+      return false;
+    }
+    if (_sparkConf.size() != sparkConf.size()) {
+      return false;
+    }
+    for (String key : sparkConf.keySet()) {
+      String value = sparkConf.get(key);
+      String _value = _sparkConf.get(key);
+      if (!StringUtils.equals(value, _value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void cleanLocalSparkSession() {
+    if (_spark != null) {
+      _spark.close();
+      _spark = null;
+    }
   }
 
   public Dataset<Row> sql(String sqlText) {
     LOG.info("Execute SQL: " + sqlText);
-    Dataset<Row> ds = spark.sql(sqlText);
+    Dataset<Row> ds = _spark.sql(sqlText);
     if (ds.columns().length == 0) {
       LOG.info("+----------------+");
       LOG.info("|  Empty Result  |");
@@ -219,6 +260,6 @@ public class SparkTestEnvironmentExtension
   }
 
   public String getSparkConf(String key) {
-    return spark.sessionState().conf().getConfString(key);
+    return _spark.sessionState().conf().getConfString(key);
   }
 }
