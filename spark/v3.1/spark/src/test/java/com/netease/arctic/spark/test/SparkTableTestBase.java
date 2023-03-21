@@ -22,14 +22,8 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
-import org.junit.Assert;
-
-import java.util.List;
 
 public class SparkTableTestBase extends SparkTestBase {
 
@@ -50,27 +44,6 @@ public class SparkTableTestBase extends SparkTestBase {
     } finally {
       sql("USE " + catalog);
       sql("DROP TABLE IF EXISTS " + database + "." + table);
-    }
-  }
-
-  protected static void assertType(Type expect, Type actual) {
-    Assert.assertEquals(
-        "type should be same",
-        expect.isPrimitiveType(), actual.isPrimitiveType());
-    if (expect.isPrimitiveType()) {
-      Assert.assertEquals(expect, actual);
-    } else {
-      List<Types.NestedField> expectFields = expect.asNestedType().fields();
-      List<Types.NestedField> actualFields = actual.asNestedType().fields();
-      Assert.assertEquals(expectFields.size(), actualFields.size());
-
-      CollectionHelper.zip(expectFields, actualFields)
-          .forEach(x -> {
-            Assert.assertEquals(x.getLeft().name(), x.getRight().name());
-            Assert.assertEquals(x.getLeft().isOptional(), x.getRight().isOptional());
-            Assert.assertEquals(x.getLeft().doc(), x.getRight().doc());
-            assertType(x.getLeft().type(), x.getRight().type());
-          });
     }
   }
 

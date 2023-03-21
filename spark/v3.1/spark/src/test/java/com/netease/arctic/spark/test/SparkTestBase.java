@@ -19,15 +19,16 @@
 package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.params.provider.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.stream.Stream;
+import java.util.Map;
 
 public abstract class SparkTestBase {
 
@@ -63,7 +64,12 @@ public abstract class SparkTestBase {
     }
   }
 
-  public interface SupportTestArguments {
-    Stream<Arguments> args();
+  public static Map<String, String> asMap(String... kv) {
+    Preconditions.checkArgument(kv.length % 2 == 0, "number of key value pairs must even");
+    Map<String, String> map = Maps.newHashMap();
+    for (int i = 0; i < kv.length; i = i + 2) {
+      map.put(kv[i], kv[i + 1]);
+    }
+    return map;
   }
 }

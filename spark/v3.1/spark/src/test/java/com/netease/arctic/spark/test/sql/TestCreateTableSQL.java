@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.test.sql;
 
 import com.netease.arctic.spark.SparkSQLProperties;
+import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SessionCatalog;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.table.ArcticTable;
@@ -28,6 +29,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
@@ -37,6 +39,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -234,6 +237,97 @@ public class TestCreateTableSQL extends SparkTableTestBase {
           assertFalse(hiveCols.contains(specField));
         });
       }
+    });
+  }
+
+  public static Stream<Arguments> testSchemaAndProperties() {
+    Types.NestedField id = Types.NestedField.optional(1, "id", Types.IntegerType.get());
+    Types.NestedField data = Types.NestedField.required(2, "data", Types.StringType.get());
+    Types.NestedField point = Types.NestedField.optional(3, "point", Types.StructType.of(
+        Types.NestedField.required(4, "x", Types.DoubleType.get()),
+        Types.NestedField.required(5, "y", Types.DoubleType.get())
+    ));
+    Types.NestedField map = Types.NestedField.optional(6, "maps", Types.MapType.ofOptional(
+        7, 8, Types.StringType.get(), Types.StringType.get()));
+    Types.NestedField array = Types.NestedField.optional(
+        9, "arrays", Types.ListType.ofOptional(10, Types.StringType.get()));
+    Types.NestedField ptStr = Types.NestedField.optional(11, "pt", Types.StringType.get());
+    Types.NestedField ptTs = Types.NestedField.optional(11, "pt", Types.TimestampType.withoutZone());
+
+    String ptStringStructDDL = "id INT,\n" +
+        "data string NOT NULL,\n" +
+        "point struct<x: double NOT NULL, y: double NOT NULL>,\n" +
+        "maps map<string, string>,\n" +
+        "arrays array<string>,\n" +
+        "pt string ";
+    String ptTimestampStructDDL = "id INT,\n" +
+        "data string NOT NULL,\n" +
+        "point struct<x: double NOT NULL, y: double NOT NULL>,\n" +
+        "maps map<string, string>,\n" +
+        "arrays array<string>,\n" +
+        "pt timestamp ";
+
+    return Stream.of(
+        Arguments.of(
+            INTERNAL_CATALOG,
+            ptTimestampStructDDL,
+            "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
+            new Schema(Lists.newArrayList(id, data, point, map, array, ptTs)),
+            asMap("key", "value1", "catalog", "INTERNAL")),
+        Arguments.of(
+            INTERNAL_CATALOG,
+            ptTimestampStructDDL + ", PRIMARY KEY(id)",
+            "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
+            new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, ptTs)),
+            asMap("key", "value1", "catalog", "INTERNAL")),
+
+        Arguments.of(
+            HIVE_CATALOG,
+            ptStringStructDDL,
+            "tblproperties('key'='value1', 'catalog'='hive')",
+            new Schema(Lists.newArrayList(id, data, point, map, array, ptStr)),
+            asMap("key", "value1", "catalog", "hive")),
+        Arguments.of(
+            HIVE_CATALOG,
+            ptStringStructDDL + ", PRIMARY KEY(id)",
+            "tblproperties('key'='value1', 'catalog'='hive')",
+            new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, ptStr)),
+            asMap("key", "value1", "catalog", "hive")),
+
+        Arguments.of(
+            SESSION_CATALOG,
+            ptStringStructDDL,
+            "TBLPROPERTIES('key'='value1', 'CATALOG'='session')",
+            new Schema(Lists.newArrayList(id, data, point, map, array, ptStr)),
+            asMap("key", "value1", "CATALOG", "session")),
+        Arguments.of(
+            SESSION_CATALOG,
+            ptStringStructDDL + ", PRIMARY KEY(id)",
+            "tblproperties('key'='value1', 'CATALOG'='session')",
+            new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, ptStr)),
+            asMap("key", "value1", "CATALOG", "session")
+        ));
+  }
+
+  @DisplayName("Test primary key, schema and properties")
+  @ParameterizedTest
+  @MethodSource
+  public void testSchemaAndProperties(
+      String catalog, String structDDL, String propertiesDDL,
+      Schema expectSchema, Map<String, String> expectProperties
+  ) {
+    testInCatalog(catalog, () -> {
+      sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
+          + "`= true ");
+      String sqlText = "CREATE TABLE " + database + '.' + table + "(" +
+          structDDL + ") using arctic " + propertiesDDL;
+      sql(sqlText);
+
+      ArcticTable tbl = loadTable(catalog, database, table);
+
+      Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
+
+      Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
     });
   }
 }
