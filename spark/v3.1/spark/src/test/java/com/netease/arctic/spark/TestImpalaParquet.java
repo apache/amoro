@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.io;
+package com.netease.arctic.spark;
 
 import com.google.common.collect.Iterators;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import com.google.common.collect.Sets;
+import com.netease.arctic.spark.reader.SparkParquetReaders;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
-import org.apache.iceberg.data.parquet.GenericParquetWriter;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.InternalRow;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,19 +43,20 @@ import java.util.HashMap;
 public class TestImpalaParquet {
 
   @Test
-  public void genericRead() {
+  public void sparkRead() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
+
             Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
         .project(schema)
         .withNameMapping(mapping)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+        .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
     while (iterator.hasNext()) {
-      Record next = (Record)iterator.next();
-      Assert.assertTrue(next.get(0).equals("hello parquet"));
+      InternalRow next = (InternalRow)iterator.next();
+      Assert.assertTrue(next.getString(0).equals("hello parquet"));
     }
   }
 
@@ -69,7 +70,7 @@ public class TestImpalaParquet {
         .project(schema)
         .withNameMapping(mapping)
         .filter(Expressions.in("str", "aa"))
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+        .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
     Assert.assertTrue(Iterators.size(iterator) == 0);
