@@ -382,7 +382,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       LOG.info("OptimizeService init not completed, can't add new tables");
       return;
     }
-    toRemoveTables.forEach(tableIdentifier -> clearTableCache(tableIdentifier, true));
+    toRemoveTables.forEach(tableIdentifier -> {
+      clearTableCache(tableIdentifier, true);
+      unOptimizeTables.remove(tableIdentifier);
+    });
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
   }
 
