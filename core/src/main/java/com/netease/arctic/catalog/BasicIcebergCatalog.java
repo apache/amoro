@@ -37,7 +37,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
-import org.apache.iceberg.common.DynMethods;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -55,8 +54,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   private Pattern databaseFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
-  private DynMethods.BoundMethod defaultWarehouseLocation;
-
 
   @Override
   public String name() {
@@ -82,9 +79,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
           meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
-    this.defaultWarehouseLocation = DynMethods.builder("defaultWarehouseLocation")
-        .hiddenImpl(icebergCatalog.getClass(), org.apache.iceberg.catalog.TableIdentifier.class)
-        .build(icebergCatalog);
   }
 
   @Override
