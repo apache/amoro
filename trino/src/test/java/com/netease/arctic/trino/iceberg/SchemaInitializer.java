@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.testing.QueryRunner;
 import io.trino.tpch.TpchTable;
+
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;

@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
@@ -26,6 +27,8 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
+import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
@@ -51,6 +54,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +71,9 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -100,6 +107,17 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           LOG.info("OptimizeService init...");
           loadTables();
           initOptimizeTasksIntoOptimizeQueue();
+          ScheduledExecutorService refreshTableEsv = Executors.newSingleThreadScheduledExecutor(
+              new ThreadFactoryBuilder()
+                  .setDaemon(false)
+                  .setNameFormat("Optimize Refresh Tables Thread")
+                  .build()
+          );
+          refreshTableEsv.scheduleAtFixedRate(
+              this::refreshAndListTables,
+              60000L,
+              ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.OPTIMIZE_REFRESH_TABLES_INTERVAL, 60000L),
+              TimeUnit.MILLISECONDS);
           LOG.info("OptimizeService init completed");
         } catch (Exception e) {
           LOG.error("OptimizeService init failed", e);
@@ -130,13 +148,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       if (checkTasks == null) {
         checkTasks = new ScheduledTasks<>(ThreadPool.Type.OPTIMIZE_CHECK);
       }
-      List<TableIdentifier> validTables = refreshAndListTables();
       checkTasks.checkRunningTask(
-          new HashSet<>(validTables),
-          identifier -> checkInterval,
+          cachedTables.keySet(),
+          () -> 0L,
+          () -> checkInterval,
           OptimizeCheckTask::new,
           false);
-      LOG.info("Schedule Optimize Checker finished with {} valid tables", validTables.size());
+      LOG.info("Schedule Optimize Checker finished with {} valid tables", cachedTables.keySet().size());
     } catch (Throwable t) {
       LOG.error("unexpected error when checkOptimizeCheckTasks", t);
     }
@@ -173,14 +191,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     TableOptimizeItem tableItem = cachedTables.remove(tableIdentifier);
     optimizeQueueService.release(tableIdentifier);
     try {
+      tableItem.optimizeTasksClear(false);
+    } catch (Throwable t) {
+      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
+    }
+    try {
       deleteTableOptimizeRuntime(tableIdentifier);
     } catch (Throwable t) {
       LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
-    }
-    try {
-      tableItem.clearOptimizeTasks();
-    } catch (Throwable t) {
-      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
     try {
       deleteOptimizeRecord(tableIdentifier);
@@ -190,8 +208,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
-                                 boolean persistRuntime) {
+  @VisibleForTesting
+  void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
+                         boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
       String groupName = CompatiblePropertyUtil.propertyAsString(properties,

@@ -54,16 +54,14 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
 
-  protected final long currentSnapshotId;
   protected List<FileScanTask> fileScanTasks;
   protected SequenceNumberFetcher sequenceNumberFetcher;
 
   public AbstractIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                      List<FileScanTask> fileScanTasks,
                                      int queueId, long currentTime, long currentSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, queueId, currentTime);
+    super(arcticTable, tableOptimizeRuntime, queueId, currentTime, currentSnapshotId);
     this.fileScanTasks = fileScanTasks;
-    this.currentSnapshotId = currentSnapshotId;
   }
 
   protected List<FileScanTask> filterRepeatFileScanTask(Collection<FileScanTask> fileScanTasks) {
@@ -176,14 +174,9 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
 
   protected SequenceNumberFetcher seqNumberFetcher() {
     if (null == sequenceNumberFetcher) {
-      sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), currentSnapshotId);
+      sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), getCurrentSnapshotId());
     }
     return sequenceNumberFetcher;
-  }
-
-  @Override
-  protected long getCurrentSnapshotId() {
-    return currentSnapshotId;
   }
 
   private long getTargetSize() {

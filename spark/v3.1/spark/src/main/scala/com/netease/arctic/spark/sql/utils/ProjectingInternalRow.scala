@@ -19,9 +19,8 @@
 
 package com.netease.arctic.spark.sql.utils
 
-import com.netease.arctic.spark.sql.catalyst.plans.MergeRows
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.{ArrayData, MapData}
 import org.apache.spark.sql.types.{DataType, Decimal, StructField, StructType}

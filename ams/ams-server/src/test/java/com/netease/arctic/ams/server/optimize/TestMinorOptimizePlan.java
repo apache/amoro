@@ -43,7 +43,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -86,6 +85,28 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
     Assert.assertEquals(10, tasks.get(0).getInsertFileCnt());
     Assert.assertEquals(10, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testPartitionWeight() {
+    List<AbstractOptimizePlan.PartitionWeightWrapper> partitionWeights = new ArrayList<>();
+    partitionWeights.add(new AbstractOptimizePlan.PartitionWeightWrapper("p1",
+        new MinorOptimizePlan.MinorPartitionWeight(true,0)));
+    partitionWeights.add(new AbstractOptimizePlan.PartitionWeightWrapper("p2",
+        new MinorOptimizePlan.MinorPartitionWeight(true, 1)));
+    partitionWeights.add(new AbstractOptimizePlan.PartitionWeightWrapper("p3",
+        new MinorOptimizePlan.MinorPartitionWeight(false, 200)));
+    partitionWeights.add(new AbstractOptimizePlan.PartitionWeightWrapper("p4",
+        new MinorOptimizePlan.MinorPartitionWeight(false, 100)));
+
+    List<String> sortedPartitions = partitionWeights.stream()
+        .sorted()
+        .map(AbstractOptimizePlan.PartitionWeightWrapper::getPartition)
+        .collect(Collectors.toList());
+    Assert.assertEquals("p2", sortedPartitions.get(0));
+    Assert.assertEquals("p1", sortedPartitions.get(1));
+    Assert.assertEquals("p3", sortedPartitions.get(2));
+    Assert.assertEquals("p4", sortedPartitions.get(3));
   }
 
   protected List<DataFile> insertChangeDeleteFiles(ArcticTable arcticTable) throws IOException {

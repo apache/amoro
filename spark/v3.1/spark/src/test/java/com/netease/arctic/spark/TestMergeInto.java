@@ -1,9 +1,9 @@
 package com.netease.arctic.spark;
 
-import org.apache.spark.SparkException;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.junit.Assert;
+import org.apache.spark.SparkException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
