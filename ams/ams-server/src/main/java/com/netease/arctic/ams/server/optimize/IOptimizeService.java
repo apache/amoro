@@ -117,4 +117,16 @@ public interface IOptimizeService {
    * @param toRemoveTables -
    */
   void clearRemovedTables(List<TableIdentifier> toRemoveTables);
+
+  /**
+   * Start table optimize
+   * @param tableIdentifier -
+   */
+  void startOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException;
+
+  /**
+   * Stop table optimize
+   * @param tableIdentifier -
+   */
+  void stopOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException;
 }
