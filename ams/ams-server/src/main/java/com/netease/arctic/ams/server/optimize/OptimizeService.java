@@ -248,6 +248,28 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         .updateOptimizeTaskStat(optimizeTaskStat);
   }
 
+  @Override
+  public void startOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException {
+    com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog())
+        .loadTable(tableIdentifier)
+        .updateProperties()
+        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "true")
+        .commit();
+  }
+
+  @Override
+  public void stopOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException {
+    try {
+      com.netease.arctic.ams.server.utils.CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog())
+          .loadTable(tableIdentifier)
+          .updateProperties()
+          .set(TableProperties.ENABLE_SELF_OPTIMIZING, "false")
+          .commit();
+    } finally {
+      getTableOptimizeItem(tableIdentifier).optimizeTasksClear(true);
+    }
+  }
+
   private void loadTables() {
     LOG.info("init load tables");
     // load table when server start, only load table metadata
