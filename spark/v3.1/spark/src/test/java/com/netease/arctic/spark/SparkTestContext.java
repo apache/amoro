@@ -140,6 +140,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
+    configs.put("spark.sql.catalog." + catalogNameArctic + ".auth.load-from-ams", "false");
     return configs;
   }
 
@@ -172,6 +173,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
+    configs.put("spark.sql.catalog." + catalogNameHive + ".auth.load-from-ams", "false");
     return configs;
   }
 
