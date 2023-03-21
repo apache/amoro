@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,19 +55,19 @@ class BasicTableTrashManager implements TableTrashManager {
   /**
    * Generate file location in trash
    *
-   * @param tableRootLocation - table location
-   * @param fileLocation      - file location
-   * @param trashLocation     - trash location
-   * @param deleteTime        - time the file deleted
+   * @param relativeFileLocation - relative location of file
+   * @param trashLocation        - trash location
+   * @param deleteTime           - time the file deleted
    * @return file location in trash
    */
-  static String generateFileLocationInTrash(String tableRootLocation, String fileLocation, String trashLocation,
+  @VisibleForTesting
+  static String generateFileLocationInTrash(String relativeFileLocation, String trashLocation,
                                             long deleteTime) {
-    String relativeFileLocation = getRelativeFileLocation(tableRootLocation, fileLocation);
     return trashLocation + "/" + formatDate(deleteTime) + "/" + relativeFileLocation;
   }
 
-  private static String getRelativeFileLocation(String tableRootLocation, String fileLocation) {
+  @VisibleForTesting
+  static String getRelativeFileLocation(String tableRootLocation, String fileLocation) {
     tableRootLocation = TableFileUtils.getUriPath(tableRootLocation);
     fileLocation = TableFileUtils.getUriPath(fileLocation);
     if (!tableRootLocation.endsWith("/")) {
@@ -95,11 +96,16 @@ class BasicTableTrashManager implements TableTrashManager {
   public void moveFileToTrash(String path) {
     try {
       Preconditions.checkArgument(!arcticFileIO.isDirectory(path), "should not move a directory to trash " + path);
-      String targetFileLocation =
-          generateFileLocationInTrash(this.tableRootLocation, path, this.trashLocation, System.currentTimeMillis());
+      String targetFileLocation = generateFileLocationInTrash(
+          getRelativeFileLocation(this.tableRootLocation, path),
+          this.trashLocation,
+          System.currentTimeMillis());
       String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
       if (!arcticFileIO.exists(targetFileDir)) {
         arcticFileIO.mkdirs(targetFileDir);
+      }
+      if (arcticFileIO.exists(targetFileLocation)) {
+        arcticFileIO.deleteFile(targetFileLocation);
       }
       arcticFileIO.rename(path, targetFileLocation);
     } catch (Exception e) {
@@ -174,5 +180,10 @@ class BasicTableTrashManager implements TableTrashManager {
       }
     }
     return null;
+  }
+
+  @Override
+  public String getTrashLocation() {
+    return trashLocation;
   }
 }

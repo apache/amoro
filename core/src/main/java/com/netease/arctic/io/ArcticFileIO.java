@@ -18,6 +18,7 @@
 
 package com.netease.arctic.io;
 
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileIO;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.Callable;
 /**
  * Arctic extension from {@link FileIO}, adding more operations.
  */
-public interface ArcticFileIO extends FileIO {
+public interface ArcticFileIO extends FileIO, Configurable {
 
   /**
    * Run the given action with login user.

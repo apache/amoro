@@ -21,6 +21,9 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableTypeUtil;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 
@@ -36,7 +39,13 @@ public class TableTrashManagers {
    * @return TableTrashManager
    */
   public static TableTrashManager build(ArcticTable table) {
-    return build(table.id(), table.location(), table.properties(), table.io());
+    String tableRootLocation;
+    if (!TableTypeUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
+      tableRootLocation = TableFileUtils.getFileDir(table.location());
+    } else {
+      tableRootLocation = table.location();
+    }
+    return build(table.id(), tableRootLocation, table.properties(), table.io());
   }
 
   /**
@@ -63,7 +72,8 @@ public class TableTrashManagers {
    * @param customTrashRootLocation - from the table property table-trash.custom-root-location
    * @return trash location
    */
-  public static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
+  @VisibleForTesting
+  static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
                                         String customTrashRootLocation) {
     String trashParentLocation;
     if (Strings.isNullOrEmpty(customTrashRootLocation)) {
