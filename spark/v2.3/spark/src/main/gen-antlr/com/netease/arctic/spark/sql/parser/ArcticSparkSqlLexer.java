@@ -1,4 +1,4 @@
-// Generated from /Users/jinsilei/arctic/arctic/spark/v2.3/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticSparkSql.g4 by ANTLR 4.7.2
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSparkSql.g4 by ANTLR 4.3
 package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -11,13 +11,13 @@ import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class ArcticSparkSqlLexer extends Lexer {
-	static { RuntimeMetaData.checkVersion("4.7.2", RuntimeMetaData.VERSION); }
+	static { RuntimeMetaData.checkVersion("4.3", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
+		T__8=1, T__7=2, T__6=3, T__5=4, T__4=5, T__3=6, T__2=7, T__1=8, T__0=9, 
 		PRIMARY=10, KEY=11, SELECT=12, FROM=13, ADD=14, AS=15, ALL=16, DISTINCT=17, 
 		WHERE=18, GROUP=19, BY=20, GROUPING=21, SETS=22, CUBE=23, ROLLUP=24, ORDER=25, 
 		HAVING=26, LIMIT=27, AT=28, OR=29, AND=30, IN=31, NOT=32, NO=33, EXISTS=34, 
@@ -57,173 +57,87 @@ public class ArcticSparkSqlLexer extends Lexer {
 		DECIMAL_VALUE=243, DOUBLE_LITERAL=244, BIGDECIMAL_LITERAL=245, IDENTIFIER=246, 
 		BACKQUOTED_IDENTIFIER=247, SIMPLE_COMMENT=248, BRACKETED_EMPTY_COMMENT=249, 
 		BRACKETED_COMMENT=250, WS=251, UNRECOGNIZED=252;
-	public static String[] channelNames = {
-		"DEFAULT_TOKEN_CHANNEL", "HIDDEN"
-	};
-
 	public static String[] modeNames = {
 		"DEFAULT_MODE"
 	};
 
-	private static String[] makeRuleNames() {
-		return new String[] {
-			"T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
-			"PRIMARY", "KEY", "SELECT", "FROM", "ADD", "AS", "ALL", "DISTINCT", "WHERE", 
-			"GROUP", "BY", "GROUPING", "SETS", "CUBE", "ROLLUP", "ORDER", "HAVING", 
-			"LIMIT", "AT", "OR", "AND", "IN", "NOT", "NO", "EXISTS", "BETWEEN", "LIKE", 
-			"RLIKE", "IS", "NULL", "TRUE", "FALSE", "NULLS", "ASC", "DESC", "FOR", 
-			"INTERVAL", "CASE", "WHEN", "THEN", "ELSE", "END", "JOIN", "CROSS", "OUTER", 
-			"INNER", "LEFT", "SEMI", "RIGHT", "FULL", "NATURAL", "ON", "LATERAL", 
-			"WINDOW", "OVER", "PARTITION", "RANGE", "ROWS", "UNBOUNDED", "PRECEDING", 
-			"FOLLOWING", "CURRENT", "FIRST", "AFTER", "LAST", "ROW", "WITH", "VALUES", 
-			"CREATE", "TABLE", "DIRECTORY", "VIEW", "REPLACE", "INSERT", "DELETE", 
-			"INTO", "DESCRIBE", "EXPLAIN", "FORMAT", "LOGICAL", "CODEGEN", "COST", 
-			"CAST", "SHOW", "TABLES", "COLUMNS", "COLUMN", "USE", "PARTITIONS", "FUNCTIONS", 
-			"DROP", "UNION", "EXCEPT", "SETMINUS", "INTERSECT", "TO", "TABLESAMPLE", 
-			"STRATIFY", "ALTER", "RENAME", "ARRAY", "MAP", "STRUCT", "COMMENT", "SET", 
-			"RESET", "DATA", "START", "TRANSACTION", "COMMIT", "ROLLBACK", "MACRO", 
-			"IGNORE", "BOTH", "LEADING", "TRAILING", "IF", "POSITION", "EQ", "NSEQ", 
-			"NEQ", "NEQJ", "LT", "LTE", "GT", "GTE", "PLUS", "MINUS", "ASTERISK", 
-			"SLASH", "PERCENT", "DIV", "TILDE", "AMPERSAND", "PIPE", "CONCAT_PIPE", 
-			"HAT", "PERCENTLIT", "BUCKET", "OUT", "OF", "SORT", "CLUSTER", "DISTRIBUTE", 
-			"OVERWRITE", "TRANSFORM", "REDUCE", "USING", "SERDE", "SERDEPROPERTIES", 
-			"RECORDREADER", "RECORDWRITER", "DELIMITED", "FIELDS", "TERMINATED", 
-			"COLLECTION", "ITEMS", "KEYS", "ESCAPED", "LINES", "SEPARATED", "FUNCTION", 
-			"EXTENDED", "REFRESH", "CLEAR", "CACHE", "UNCACHE", "LAZY", "FORMATTED", 
-			"GLOBAL", "TEMPORARY", "OPTIONS", "UNSET", "TBLPROPERTIES", "DBPROPERTIES", 
-			"BUCKETS", "SKEWED", "STORED", "DIRECTORIES", "LOCATION", "EXCHANGE", 
-			"ARCHIVE", "UNARCHIVE", "FILEFORMAT", "TOUCH", "COMPACT", "CONCATENATE", 
-			"CHANGE", "CASCADE", "RESTRICT", "CLUSTERED", "SORTED", "PURGE", "INPUTFORMAT", 
-			"OUTPUTFORMAT", "DATABASE", "DATABASES", "DFS", "TRUNCATE", "ANALYZE", 
-			"COMPUTE", "LIST", "STATISTICS", "PARTITIONED", "EXTERNAL", "DEFINED", 
-			"REVOKE", "GRANT", "LOCK", "UNLOCK", "MSCK", "REPAIR", "RECOVER", "EXPORT", 
-			"IMPORT", "LOAD", "ROLE", "ROLES", "COMPACTIONS", "PRINCIPALS", "TRANSACTIONS", 
-			"INDEX", "INDEXES", "LOCKS", "OPTION", "ANTI", "LOCAL", "INPATH", "STRING", 
-			"BIGINT_LITERAL", "SMALLINT_LITERAL", "TINYINT_LITERAL", "INTEGER_VALUE", 
-			"DECIMAL_VALUE", "DOUBLE_LITERAL", "BIGDECIMAL_LITERAL", "IDENTIFIER", 
-			"BACKQUOTED_IDENTIFIER", "DECIMAL_DIGITS", "EXPONENT", "DIGIT", "LETTER", 
-			"SIMPLE_COMMENT", "BRACKETED_EMPTY_COMMENT", "BRACKETED_COMMENT", "WS", 
-			"UNRECOGNIZED"
-		};
-	}
-	public static final String[] ruleNames = makeRuleNames();
-
-	private static String[] makeLiteralNames() {
-		return new String[] {
-			null, "'('", "','", "')'", "'.'", "'/*+'", "'*/'", "'['", "']'", "':'", 
-			"'PRIMARY'", "'KEY'", "'SELECT'", "'FROM'", "'ADD'", "'AS'", "'ALL'", 
-			"'DISTINCT'", "'WHERE'", "'GROUP'", "'BY'", "'GROUPING'", "'SETS'", "'CUBE'", 
-			"'ROLLUP'", "'ORDER'", "'HAVING'", "'LIMIT'", "'AT'", "'OR'", "'AND'", 
-			"'IN'", null, "'NO'", "'EXISTS'", "'BETWEEN'", "'LIKE'", null, "'IS'", 
-			"'NULL'", "'TRUE'", "'FALSE'", "'NULLS'", "'ASC'", "'DESC'", "'FOR'", 
-			"'INTERVAL'", "'CASE'", "'WHEN'", "'THEN'", "'ELSE'", "'END'", "'JOIN'", 
-			"'CROSS'", "'OUTER'", "'INNER'", "'LEFT'", "'SEMI'", "'RIGHT'", "'FULL'", 
-			"'NATURAL'", "'ON'", "'LATERAL'", "'WINDOW'", "'OVER'", "'PARTITION'", 
-			"'RANGE'", "'ROWS'", "'UNBOUNDED'", "'PRECEDING'", "'FOLLOWING'", "'CURRENT'", 
-			"'FIRST'", "'AFTER'", "'LAST'", "'ROW'", "'WITH'", "'VALUES'", "'CREATE'", 
-			"'TABLE'", "'DIRECTORY'", "'VIEW'", "'REPLACE'", "'INSERT'", "'DELETE'", 
-			"'INTO'", "'DESCRIBE'", "'EXPLAIN'", "'FORMAT'", "'LOGICAL'", "'CODEGEN'", 
-			"'COST'", "'CAST'", "'SHOW'", "'TABLES'", "'COLUMNS'", "'COLUMN'", "'USE'", 
-			"'PARTITIONS'", "'FUNCTIONS'", "'DROP'", "'UNION'", "'EXCEPT'", "'MINUS'", 
-			"'INTERSECT'", "'TO'", "'TABLESAMPLE'", "'STRATIFY'", "'ALTER'", "'RENAME'", 
-			"'ARRAY'", "'MAP'", "'STRUCT'", "'COMMENT'", "'SET'", "'RESET'", "'DATA'", 
-			"'START'", "'TRANSACTION'", "'COMMIT'", "'ROLLBACK'", "'MACRO'", "'IGNORE'", 
-			"'BOTH'", "'LEADING'", "'TRAILING'", "'IF'", "'POSITION'", null, "'<=>'", 
-			"'<>'", "'!='", "'<'", null, "'>'", null, "'+'", "'-'", "'*'", "'/'", 
-			"'%'", "'DIV'", "'~'", "'&'", "'|'", "'||'", "'^'", "'PERCENT'", "'BUCKET'", 
-			"'OUT'", "'OF'", "'SORT'", "'CLUSTER'", "'DISTRIBUTE'", "'OVERWRITE'", 
-			"'TRANSFORM'", "'REDUCE'", "'USING'", "'SERDE'", "'SERDEPROPERTIES'", 
-			"'RECORDREADER'", "'RECORDWRITER'", "'DELIMITED'", "'FIELDS'", "'TERMINATED'", 
-			"'COLLECTION'", "'ITEMS'", "'KEYS'", "'ESCAPED'", "'LINES'", "'SEPARATED'", 
-			"'FUNCTION'", "'EXTENDED'", "'REFRESH'", "'CLEAR'", "'CACHE'", "'UNCACHE'", 
-			"'LAZY'", "'FORMATTED'", "'GLOBAL'", null, "'OPTIONS'", "'UNSET'", "'TBLPROPERTIES'", 
-			"'DBPROPERTIES'", "'BUCKETS'", "'SKEWED'", "'STORED'", "'DIRECTORIES'", 
-			"'LOCATION'", "'EXCHANGE'", "'ARCHIVE'", "'UNARCHIVE'", "'FILEFORMAT'", 
-			"'TOUCH'", "'COMPACT'", "'CONCATENATE'", "'CHANGE'", "'CASCADE'", "'RESTRICT'", 
-			"'CLUSTERED'", "'SORTED'", "'PURGE'", "'INPUTFORMAT'", "'OUTPUTFORMAT'", 
-			null, null, "'DFS'", "'TRUNCATE'", "'ANALYZE'", "'COMPUTE'", "'LIST'", 
-			"'STATISTICS'", "'PARTITIONED'", "'EXTERNAL'", "'DEFINED'", "'REVOKE'", 
-			"'GRANT'", "'LOCK'", "'UNLOCK'", "'MSCK'", "'REPAIR'", "'RECOVER'", "'EXPORT'", 
-			"'IMPORT'", "'LOAD'", "'ROLE'", "'ROLES'", "'COMPACTIONS'", "'PRINCIPALS'", 
-			"'TRANSACTIONS'", "'INDEX'", "'INDEXES'", "'LOCKS'", "'OPTION'", "'ANTI'", 
-			"'LOCAL'", "'INPATH'", null, null, null, null, null, null, null, null, 
-			null, null, null, "'/**/'"
-		};
-	}
-	private static final String[] _LITERAL_NAMES = makeLiteralNames();
-	private static String[] makeSymbolicNames() {
-		return new String[] {
-			null, null, null, null, null, null, null, null, null, null, "PRIMARY", 
-			"KEY", "SELECT", "FROM", "ADD", "AS", "ALL", "DISTINCT", "WHERE", "GROUP", 
-			"BY", "GROUPING", "SETS", "CUBE", "ROLLUP", "ORDER", "HAVING", "LIMIT", 
-			"AT", "OR", "AND", "IN", "NOT", "NO", "EXISTS", "BETWEEN", "LIKE", "RLIKE", 
-			"IS", "NULL", "TRUE", "FALSE", "NULLS", "ASC", "DESC", "FOR", "INTERVAL", 
-			"CASE", "WHEN", "THEN", "ELSE", "END", "JOIN", "CROSS", "OUTER", "INNER", 
-			"LEFT", "SEMI", "RIGHT", "FULL", "NATURAL", "ON", "LATERAL", "WINDOW", 
-			"OVER", "PARTITION", "RANGE", "ROWS", "UNBOUNDED", "PRECEDING", "FOLLOWING", 
-			"CURRENT", "FIRST", "AFTER", "LAST", "ROW", "WITH", "VALUES", "CREATE", 
-			"TABLE", "DIRECTORY", "VIEW", "REPLACE", "INSERT", "DELETE", "INTO", 
-			"DESCRIBE", "EXPLAIN", "FORMAT", "LOGICAL", "CODEGEN", "COST", "CAST", 
-			"SHOW", "TABLES", "COLUMNS", "COLUMN", "USE", "PARTITIONS", "FUNCTIONS", 
-			"DROP", "UNION", "EXCEPT", "SETMINUS", "INTERSECT", "TO", "TABLESAMPLE", 
-			"STRATIFY", "ALTER", "RENAME", "ARRAY", "MAP", "STRUCT", "COMMENT", "SET", 
-			"RESET", "DATA", "START", "TRANSACTION", "COMMIT", "ROLLBACK", "MACRO", 
-			"IGNORE", "BOTH", "LEADING", "TRAILING", "IF", "POSITION", "EQ", "NSEQ", 
-			"NEQ", "NEQJ", "LT", "LTE", "GT", "GTE", "PLUS", "MINUS", "ASTERISK", 
-			"SLASH", "PERCENT", "DIV", "TILDE", "AMPERSAND", "PIPE", "CONCAT_PIPE", 
-			"HAT", "PERCENTLIT", "BUCKET", "OUT", "OF", "SORT", "CLUSTER", "DISTRIBUTE", 
-			"OVERWRITE", "TRANSFORM", "REDUCE", "USING", "SERDE", "SERDEPROPERTIES", 
-			"RECORDREADER", "RECORDWRITER", "DELIMITED", "FIELDS", "TERMINATED", 
-			"COLLECTION", "ITEMS", "KEYS", "ESCAPED", "LINES", "SEPARATED", "FUNCTION", 
-			"EXTENDED", "REFRESH", "CLEAR", "CACHE", "UNCACHE", "LAZY", "FORMATTED", 
-			"GLOBAL", "TEMPORARY", "OPTIONS", "UNSET", "TBLPROPERTIES", "DBPROPERTIES", 
-			"BUCKETS", "SKEWED", "STORED", "DIRECTORIES", "LOCATION", "EXCHANGE", 
-			"ARCHIVE", "UNARCHIVE", "FILEFORMAT", "TOUCH", "COMPACT", "CONCATENATE", 
-			"CHANGE", "CASCADE", "RESTRICT", "CLUSTERED", "SORTED", "PURGE", "INPUTFORMAT", 
-			"OUTPUTFORMAT", "DATABASE", "DATABASES", "DFS", "TRUNCATE", "ANALYZE", 
-			"COMPUTE", "LIST", "STATISTICS", "PARTITIONED", "EXTERNAL", "DEFINED", 
-			"REVOKE", "GRANT", "LOCK", "UNLOCK", "MSCK", "REPAIR", "RECOVER", "EXPORT", 
-			"IMPORT", "LOAD", "ROLE", "ROLES", "COMPACTIONS", "PRINCIPALS", "TRANSACTIONS", 
-			"INDEX", "INDEXES", "LOCKS", "OPTION", "ANTI", "LOCAL", "INPATH", "STRING", 
-			"BIGINT_LITERAL", "SMALLINT_LITERAL", "TINYINT_LITERAL", "INTEGER_VALUE", 
-			"DECIMAL_VALUE", "DOUBLE_LITERAL", "BIGDECIMAL_LITERAL", "IDENTIFIER", 
-			"BACKQUOTED_IDENTIFIER", "SIMPLE_COMMENT", "BRACKETED_EMPTY_COMMENT", 
-			"BRACKETED_COMMENT", "WS", "UNRECOGNIZED"
-		};
-	}
-	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
-	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
-
-	/**
-	 * @deprecated Use {@link #VOCABULARY} instead.
-	 */
-	@Deprecated
-	public static final String[] tokenNames;
-	static {
-		tokenNames = new String[_SYMBOLIC_NAMES.length];
-		for (int i = 0; i < tokenNames.length; i++) {
-			tokenNames[i] = VOCABULARY.getLiteralName(i);
-			if (tokenNames[i] == null) {
-				tokenNames[i] = VOCABULARY.getSymbolicName(i);
-			}
-
-			if (tokenNames[i] == null) {
-				tokenNames[i] = "<INVALID>";
-			}
-		}
-	}
-
-	@Override
-	@Deprecated
-	public String[] getTokenNames() {
-		return tokenNames;
-	}
-
-	@Override
-
-	public Vocabulary getVocabulary() {
-		return VOCABULARY;
-	}
+	public static final String[] tokenNames = {
+		"'\\u0000'", "'\\u0001'", "'\\u0002'", "'\\u0003'", "'\\u0004'", "'\\u0005'", 
+		"'\\u0006'", "'\\u0007'", "'\b'", "'\t'", "'\n'", "'\\u000B'", "'\f'", 
+		"'\r'", "'\\u000E'", "'\\u000F'", "'\\u0010'", "'\\u0011'", "'\\u0012'", 
+		"'\\u0013'", "'\\u0014'", "'\\u0015'", "'\\u0016'", "'\\u0017'", "'\\u0018'", 
+		"'\\u0019'", "'\\u001A'", "'\\u001B'", "'\\u001C'", "'\\u001D'", "'\\u001E'", 
+		"'\\u001F'", "' '", "'!'", "'\"'", "'#'", "'$'", "'%'", "'&'", "'''", 
+		"'('", "')'", "'*'", "'+'", "','", "'-'", "'.'", "'/'", "'0'", "'1'", 
+		"'2'", "'3'", "'4'", "'5'", "'6'", "'7'", "'8'", "'9'", "':'", "';'", 
+		"'<'", "'='", "'>'", "'?'", "'@'", "'A'", "'B'", "'C'", "'D'", "'E'", 
+		"'F'", "'G'", "'H'", "'I'", "'J'", "'K'", "'L'", "'M'", "'N'", "'O'", 
+		"'P'", "'Q'", "'R'", "'S'", "'T'", "'U'", "'V'", "'W'", "'X'", "'Y'", 
+		"'Z'", "'['", "'\\'", "']'", "'^'", "'_'", "'`'", "'a'", "'b'", "'c'", 
+		"'d'", "'e'", "'f'", "'g'", "'h'", "'i'", "'j'", "'k'", "'l'", "'m'", 
+		"'n'", "'o'", "'p'", "'q'", "'r'", "'s'", "'t'", "'u'", "'v'", "'w'", 
+		"'x'", "'y'", "'z'", "'{'", "'|'", "'}'", "'~'", "'\\u007F'", "'\\u0080'", 
+		"'\\u0081'", "'\\u0082'", "'\\u0083'", "'\\u0084'", "'\\u0085'", "'\\u0086'", 
+		"'\\u0087'", "'\\u0088'", "'\\u0089'", "'\\u008A'", "'\\u008B'", "'\\u008C'", 
+		"'\\u008D'", "'\\u008E'", "'\\u008F'", "'\\u0090'", "'\\u0091'", "'\\u0092'", 
+		"'\\u0093'", "'\\u0094'", "'\\u0095'", "'\\u0096'", "'\\u0097'", "'\\u0098'", 
+		"'\\u0099'", "'\\u009A'", "'\\u009B'", "'\\u009C'", "'\\u009D'", "'\\u009E'", 
+		"'\\u009F'", "'\\u00A0'", "'\\u00A1'", "'\\u00A2'", "'\\u00A3'", "'\\u00A4'", 
+		"'\\u00A5'", "'\\u00A6'", "'\\u00A7'", "'\\u00A8'", "'\\u00A9'", "'\\u00AA'", 
+		"'\\u00AB'", "'\\u00AC'", "'\\u00AD'", "'\\u00AE'", "'\\u00AF'", "'\\u00B0'", 
+		"'\\u00B1'", "'\\u00B2'", "'\\u00B3'", "'\\u00B4'", "'\\u00B5'", "'\\u00B6'", 
+		"'\\u00B7'", "'\\u00B8'", "'\\u00B9'", "'\\u00BA'", "'\\u00BB'", "'\\u00BC'", 
+		"'\\u00BD'", "'\\u00BE'", "'\\u00BF'", "'\\u00C0'", "'\\u00C1'", "'\\u00C2'", 
+		"'\\u00C3'", "'\\u00C4'", "'\\u00C5'", "'\\u00C6'", "'\\u00C7'", "'\\u00C8'", 
+		"'\\u00C9'", "'\\u00CA'", "'\\u00CB'", "'\\u00CC'", "'\\u00CD'", "'\\u00CE'", 
+		"'\\u00CF'", "'\\u00D0'", "'\\u00D1'", "'\\u00D2'", "'\\u00D3'", "'\\u00D4'", 
+		"'\\u00D5'", "'\\u00D6'", "'\\u00D7'", "'\\u00D8'", "'\\u00D9'", "'\\u00DA'", 
+		"'\\u00DB'", "'\\u00DC'", "'\\u00DD'", "'\\u00DE'", "'\\u00DF'", "'\\u00E0'", 
+		"'\\u00E1'", "'\\u00E2'", "'\\u00E3'", "'\\u00E4'", "'\\u00E5'", "'\\u00E6'", 
+		"'\\u00E7'", "'\\u00E8'", "'\\u00E9'", "'\\u00EA'", "'\\u00EB'", "'\\u00EC'", 
+		"'\\u00ED'", "'\\u00EE'", "'\\u00EF'", "'\\u00F0'", "'\\u00F1'", "'\\u00F2'", 
+		"'\\u00F3'", "'\\u00F4'", "'\\u00F5'", "'\\u00F6'", "'\\u00F7'", "'\\u00F8'", 
+		"'\\u00F9'", "'\\u00FA'", "'\\u00FB'", "'\\u00FC'"
+	};
+	public static final String[] ruleNames = {
+		"T__8", "T__7", "T__6", "T__5", "T__4", "T__3", "T__2", "T__1", "T__0", 
+		"PRIMARY", "KEY", "SELECT", "FROM", "ADD", "AS", "ALL", "DISTINCT", "WHERE", 
+		"GROUP", "BY", "GROUPING", "SETS", "CUBE", "ROLLUP", "ORDER", "HAVING", 
+		"LIMIT", "AT", "OR", "AND", "IN", "NOT", "NO", "EXISTS", "BETWEEN", "LIKE", 
+		"RLIKE", "IS", "NULL", "TRUE", "FALSE", "NULLS", "ASC", "DESC", "FOR", 
+		"INTERVAL", "CASE", "WHEN", "THEN", "ELSE", "END", "JOIN", "CROSS", "OUTER", 
+		"INNER", "LEFT", "SEMI", "RIGHT", "FULL", "NATURAL", "ON", "LATERAL", 
+		"WINDOW", "OVER", "PARTITION", "RANGE", "ROWS", "UNBOUNDED", "PRECEDING", 
+		"FOLLOWING", "CURRENT", "FIRST", "AFTER", "LAST", "ROW", "WITH", "VALUES", 
+		"CREATE", "TABLE", "DIRECTORY", "VIEW", "REPLACE", "INSERT", "DELETE", 
+		"INTO", "DESCRIBE", "EXPLAIN", "FORMAT", "LOGICAL", "CODEGEN", "COST", 
+		"CAST", "SHOW", "TABLES", "COLUMNS", "COLUMN", "USE", "PARTITIONS", "FUNCTIONS", 
+		"DROP", "UNION", "EXCEPT", "SETMINUS", "INTERSECT", "TO", "TABLESAMPLE", 
+		"STRATIFY", "ALTER", "RENAME", "ARRAY", "MAP", "STRUCT", "COMMENT", "SET", 
+		"RESET", "DATA", "START", "TRANSACTION", "COMMIT", "ROLLBACK", "MACRO", 
+		"IGNORE", "BOTH", "LEADING", "TRAILING", "IF", "POSITION", "EQ", "NSEQ", 
+		"NEQ", "NEQJ", "LT", "LTE", "GT", "GTE", "PLUS", "MINUS", "ASTERISK", 
+		"SLASH", "PERCENT", "DIV", "TILDE", "AMPERSAND", "PIPE", "CONCAT_PIPE", 
+		"HAT", "PERCENTLIT", "BUCKET", "OUT", "OF", "SORT", "CLUSTER", "DISTRIBUTE", 
+		"OVERWRITE", "TRANSFORM", "REDUCE", "USING", "SERDE", "SERDEPROPERTIES", 
+		"RECORDREADER", "RECORDWRITER", "DELIMITED", "FIELDS", "TERMINATED", "COLLECTION", 
+		"ITEMS", "KEYS", "ESCAPED", "LINES", "SEPARATED", "FUNCTION", "EXTENDED", 
+		"REFRESH", "CLEAR", "CACHE", "UNCACHE", "LAZY", "FORMATTED", "GLOBAL", 
+		"TEMPORARY", "OPTIONS", "UNSET", "TBLPROPERTIES", "DBPROPERTIES", "BUCKETS", 
+		"SKEWED", "STORED", "DIRECTORIES", "LOCATION", "EXCHANGE", "ARCHIVE", 
+		"UNARCHIVE", "FILEFORMAT", "TOUCH", "COMPACT", "CONCATENATE", "CHANGE", 
+		"CASCADE", "RESTRICT", "CLUSTERED", "SORTED", "PURGE", "INPUTFORMAT", 
+		"OUTPUTFORMAT", "DATABASE", "DATABASES", "DFS", "TRUNCATE", "ANALYZE", 
+		"COMPUTE", "LIST", "STATISTICS", "PARTITIONED", "EXTERNAL", "DEFINED", 
+		"REVOKE", "GRANT", "LOCK", "UNLOCK", "MSCK", "REPAIR", "RECOVER", "EXPORT", 
+		"IMPORT", "LOAD", "ROLE", "ROLES", "COMPACTIONS", "PRINCIPALS", "TRANSACTIONS", 
+		"INDEX", "INDEXES", "LOCKS", "OPTION", "ANTI", "LOCAL", "INPATH", "STRING", 
+		"BIGINT_LITERAL", "SMALLINT_LITERAL", "TINYINT_LITERAL", "INTEGER_VALUE", 
+		"DECIMAL_VALUE", "DOUBLE_LITERAL", "BIGDECIMAL_LITERAL", "IDENTIFIER", 
+		"BACKQUOTED_IDENTIFIER", "DECIMAL_DIGITS", "EXPONENT", "DIGIT", "LETTER", 
+		"SIMPLE_COMMENT", "BRACKETED_EMPTY_COMMENT", "BRACKETED_COMMENT", "WS", 
+		"UNRECOGNIZED"
+	};
 
 
 	  /**
@@ -258,13 +172,13 @@ public class ArcticSparkSqlLexer extends Lexer {
 	public String getGrammarFileName() { return "ArcticSparkSql.g4"; }
 
 	@Override
+	public String[] getTokenNames() { return tokenNames; }
+
+	@Override
 	public String[] getRuleNames() { return ruleNames; }
 
 	@Override
 	public String getSerializedATN() { return _serializedATN; }
-
-	@Override
-	public String[] getChannelNames() { return channelNames; }
 
 	@Override
 	public String[] getModeNames() { return modeNames; }
@@ -275,39 +189,35 @@ public class ArcticSparkSqlLexer extends Lexer {
 	@Override
 	public boolean sempred(RuleContext _localctx, int ruleIndex, int predIndex) {
 		switch (ruleIndex) {
-		case 242:
-			return DECIMAL_VALUE_sempred((RuleContext)_localctx, predIndex);
-		case 243:
-			return DOUBLE_LITERAL_sempred((RuleContext)_localctx, predIndex);
-		case 244:
-			return BIGDECIMAL_LITERAL_sempred((RuleContext)_localctx, predIndex);
-		}
-		return true;
-	}
-	private boolean DECIMAL_VALUE_sempred(RuleContext _localctx, int predIndex) {
-		switch (predIndex) {
-		case 0:
-			return isValidDecimal();
+		case 242: return DECIMAL_VALUE_sempred((RuleContext)_localctx, predIndex);
+
+		case 243: return DOUBLE_LITERAL_sempred((RuleContext)_localctx, predIndex);
+
+		case 244: return BIGDECIMAL_LITERAL_sempred((RuleContext)_localctx, predIndex);
 		}
 		return true;
 	}
 	private boolean DOUBLE_LITERAL_sempred(RuleContext _localctx, int predIndex) {
 		switch (predIndex) {
-		case 1:
-			return isValidDecimal();
+		case 1: return isValidDecimal();
+		}
+		return true;
+	}
+	private boolean DECIMAL_VALUE_sempred(RuleContext _localctx, int predIndex) {
+		switch (predIndex) {
+		case 0: return isValidDecimal();
 		}
 		return true;
 	}
 	private boolean BIGDECIMAL_LITERAL_sempred(RuleContext _localctx, int predIndex) {
 		switch (predIndex) {
-		case 2:
-			return isValidDecimal();
+		case 2: return isValidDecimal();
 		}
 		return true;
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2\u00fe\u0905\b\1\4"+
+		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\2\u00fe\u0905\b\1\4"+
 		"\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n"+
 		"\4\13\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22"+
 		"\t\22\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31"+
@@ -349,8 +259,8 @@ public class ArcticSparkSqlLexer extends Lexer {
 		"\4\u00f1\t\u00f1\4\u00f2\t\u00f2\4\u00f3\t\u00f3\4\u00f4\t\u00f4\4\u00f5"+
 		"\t\u00f5\4\u00f6\t\u00f6\4\u00f7\t\u00f7\4\u00f8\t\u00f8\4\u00f9\t\u00f9"+
 		"\4\u00fa\t\u00fa\4\u00fb\t\u00fb\4\u00fc\t\u00fc\4\u00fd\t\u00fd\4\u00fe"+
-		"\t\u00fe\4\u00ff\t\u00ff\4\u0100\t\u0100\4\u0101\t\u0101\3\2\3\2\3\3\3"+
-		"\3\3\4\3\4\3\5\3\5\3\6\3\6\3\6\3\6\3\7\3\7\3\7\3\b\3\b\3\t\3\t\3\n\3\n"+
+		"\t\u00fe\4\u00ff\t\u00ff\4\u0100\t\u0100\4\u0101\t\u0101\3\2\3\2\3\2\3"+
+		"\3\3\3\3\4\3\4\3\4\3\4\3\5\3\5\3\6\3\6\3\7\3\7\3\b\3\b\3\t\3\t\3\n\3\n"+
 		"\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\f\3\f\3\f\3\f\3\r\3\r\3\r\3"+
 		"\r\3\r\3\r\3\r\3\16\3\16\3\16\3\16\3\16\3\17\3\17\3\17\3\17\3\20\3\20"+
 		"\3\20\3\21\3\21\3\21\3\21\3\22\3\22\3\22\3\22\3\22\3\22\3\22\3\22\3\22"+
@@ -541,18 +451,18 @@ public class ArcticSparkSqlLexer extends Lexer {
 		"\u00f5\u01e9\u00f6\u01eb\u00f7\u01ed\u00f8\u01ef\u00f9\u01f1\2\u01f3\2"+
 		"\u01f5\2\u01f7\2\u01f9\u00fa\u01fb\u00fb\u01fd\u00fc\u01ff\u00fd\u0201"+
 		"\u00fe\3\2\13\4\2))^^\4\2$$^^\3\2bb\4\2--//\3\2\62;\3\2C\\\4\2\f\f\17"+
-		"\17\3\2--\5\2\13\f\17\17\"\"\2\u092c\2\3\3\2\2\2\2\5\3\2\2\2\2\7\3\2\2"+
-		"\2\2\t\3\2\2\2\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2\2\2\23"+
-		"\3\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\2\31\3\2\2\2\2\33\3\2\2\2\2\35\3\2"+
-		"\2\2\2\37\3\2\2\2\2!\3\2\2\2\2#\3\2\2\2\2%\3\2\2\2\2\'\3\2\2\2\2)\3\2"+
-		"\2\2\2+\3\2\2\2\2-\3\2\2\2\2/\3\2\2\2\2\61\3\2\2\2\2\63\3\2\2\2\2\65\3"+
-		"\2\2\2\2\67\3\2\2\2\29\3\2\2\2\2;\3\2\2\2\2=\3\2\2\2\2?\3\2\2\2\2A\3\2"+
-		"\2\2\2C\3\2\2\2\2E\3\2\2\2\2G\3\2\2\2\2I\3\2\2\2\2K\3\2\2\2\2M\3\2\2\2"+
-		"\2O\3\2\2\2\2Q\3\2\2\2\2S\3\2\2\2\2U\3\2\2\2\2W\3\2\2\2\2Y\3\2\2\2\2["+
-		"\3\2\2\2\2]\3\2\2\2\2_\3\2\2\2\2a\3\2\2\2\2c\3\2\2\2\2e\3\2\2\2\2g\3\2"+
-		"\2\2\2i\3\2\2\2\2k\3\2\2\2\2m\3\2\2\2\2o\3\2\2\2\2q\3\2\2\2\2s\3\2\2\2"+
-		"\2u\3\2\2\2\2w\3\2\2\2\2y\3\2\2\2\2{\3\2\2\2\2}\3\2\2\2\2\177\3\2\2\2"+
-		"\2\u0081\3\2\2\2\2\u0083\3\2\2\2\2\u0085\3\2\2\2\2\u0087\3\2\2\2\2\u0089"+
+		"\17\3\2--\5\2\13\f\17\17\"\"\u092c\2\3\3\2\2\2\2\5\3\2\2\2\2\7\3\2\2\2"+
+		"\2\t\3\2\2\2\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2\2\2\23\3"+
+		"\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\2\31\3\2\2\2\2\33\3\2\2\2\2\35\3\2\2"+
+		"\2\2\37\3\2\2\2\2!\3\2\2\2\2#\3\2\2\2\2%\3\2\2\2\2\'\3\2\2\2\2)\3\2\2"+
+		"\2\2+\3\2\2\2\2-\3\2\2\2\2/\3\2\2\2\2\61\3\2\2\2\2\63\3\2\2\2\2\65\3\2"+
+		"\2\2\2\67\3\2\2\2\29\3\2\2\2\2;\3\2\2\2\2=\3\2\2\2\2?\3\2\2\2\2A\3\2\2"+
+		"\2\2C\3\2\2\2\2E\3\2\2\2\2G\3\2\2\2\2I\3\2\2\2\2K\3\2\2\2\2M\3\2\2\2\2"+
+		"O\3\2\2\2\2Q\3\2\2\2\2S\3\2\2\2\2U\3\2\2\2\2W\3\2\2\2\2Y\3\2\2\2\2[\3"+
+		"\2\2\2\2]\3\2\2\2\2_\3\2\2\2\2a\3\2\2\2\2c\3\2\2\2\2e\3\2\2\2\2g\3\2\2"+
+		"\2\2i\3\2\2\2\2k\3\2\2\2\2m\3\2\2\2\2o\3\2\2\2\2q\3\2\2\2\2s\3\2\2\2\2"+
+		"u\3\2\2\2\2w\3\2\2\2\2y\3\2\2\2\2{\3\2\2\2\2}\3\2\2\2\2\177\3\2\2\2\2"+
+		"\u0081\3\2\2\2\2\u0083\3\2\2\2\2\u0085\3\2\2\2\2\u0087\3\2\2\2\2\u0089"+
 		"\3\2\2\2\2\u008b\3\2\2\2\2\u008d\3\2\2\2\2\u008f\3\2\2\2\2\u0091\3\2\2"+
 		"\2\2\u0093\3\2\2\2\2\u0095\3\2\2\2\2\u0097\3\2\2\2\2\u0099\3\2\2\2\2\u009b"+
 		"\3\2\2\2\2\u009d\3\2\2\2\2\u009f\3\2\2\2\2\u00a1\3\2\2\2\2\u00a3\3\2\2"+
@@ -594,8 +504,8 @@ public class ArcticSparkSqlLexer extends Lexer {
 		"\3\2\2\2\2\u01e1\3\2\2\2\2\u01e3\3\2\2\2\2\u01e5\3\2\2\2\2\u01e7\3\2\2"+
 		"\2\2\u01e9\3\2\2\2\2\u01eb\3\2\2\2\2\u01ed\3\2\2\2\2\u01ef\3\2\2\2\2\u01f9"+
 		"\3\2\2\2\2\u01fb\3\2\2\2\2\u01fd\3\2\2\2\2\u01ff\3\2\2\2\2\u0201\3\2\2"+
-		"\2\3\u0203\3\2\2\2\5\u0205\3\2\2\2\7\u0207\3\2\2\2\t\u0209\3\2\2\2\13"+
-		"\u020b\3\2\2\2\r\u020f\3\2\2\2\17\u0212\3\2\2\2\21\u0214\3\2\2\2\23\u0216"+
+		"\2\3\u0203\3\2\2\2\5\u0206\3\2\2\2\7\u0208\3\2\2\2\t\u020c\3\2\2\2\13"+
+		"\u020e\3\2\2\2\r\u0210\3\2\2\2\17\u0212\3\2\2\2\21\u0214\3\2\2\2\23\u0216"+
 		"\3\2\2\2\25\u0218\3\2\2\2\27\u0220\3\2\2\2\31\u0224\3\2\2\2\33\u022b\3"+
 		"\2\2\2\35\u0230\3\2\2\2\37\u0234\3\2\2\2!\u0237\3\2\2\2#\u023b\3\2\2\2"+
 		"%\u0244\3\2\2\2\'\u024a\3\2\2\2)\u0250\3\2\2\2+\u0253\3\2\2\2-\u025c\3"+
@@ -663,15 +573,15 @@ public class ArcticSparkSqlLexer extends Lexer {
 		"\u08a5\3\2\2\2\u01ef\u08a9\3\2\2\2\u01f1\u08c6\3\2\2\2\u01f3\u08c8\3\2"+
 		"\2\2\u01f5\u08d1\3\2\2\2\u01f7\u08d3\3\2\2\2\u01f9\u08d5\3\2\2\2\u01fb"+
 		"\u08e6\3\2\2\2\u01fd\u08ed\3\2\2\2\u01ff\u08fd\3\2\2\2\u0201\u0903\3\2"+
-		"\2\2\u0203\u0204\7*\2\2\u0204\4\3\2\2\2\u0205\u0206\7.\2\2\u0206\6\3\2"+
-		"\2\2\u0207\u0208\7+\2\2\u0208\b\3\2\2\2\u0209\u020a\7\60\2\2\u020a\n\3"+
-		"\2\2\2\u020b\u020c\7\61\2\2\u020c\u020d\7,\2\2\u020d\u020e\7-\2\2\u020e"+
-		"\f\3\2\2\2\u020f\u0210\7,\2\2\u0210\u0211\7\61\2\2\u0211\16\3\2\2\2\u0212"+
-		"\u0213\7]\2\2\u0213\20\3\2\2\2\u0214\u0215\7_\2\2\u0215\22\3\2\2\2\u0216"+
-		"\u0217\7<\2\2\u0217\24\3\2\2\2\u0218\u0219\7R\2\2\u0219\u021a\7T\2\2\u021a"+
-		"\u021b\7K\2\2\u021b\u021c\7O\2\2\u021c\u021d\7C\2\2\u021d\u021e\7T\2\2"+
-		"\u021e\u021f\7[\2\2\u021f\26\3\2\2\2\u0220\u0221\7M\2\2\u0221\u0222\7"+
-		"G\2\2\u0222\u0223\7[\2\2\u0223\30\3\2\2\2\u0224\u0225\7U\2\2\u0225\u0226"+
+		"\2\2\u0203\u0204\7,\2\2\u0204\u0205\7\61\2\2\u0205\4\3\2\2\2\u0206\u0207"+
+		"\7*\2\2\u0207\6\3\2\2\2\u0208\u0209\7\61\2\2\u0209\u020a\7,\2\2\u020a"+
+		"\u020b\7-\2\2\u020b\b\3\2\2\2\u020c\u020d\7+\2\2\u020d\n\3\2\2\2\u020e"+
+		"\u020f\7<\2\2\u020f\f\3\2\2\2\u0210\u0211\7]\2\2\u0211\16\3\2\2\2\u0212"+
+		"\u0213\7.\2\2\u0213\20\3\2\2\2\u0214\u0215\7_\2\2\u0215\22\3\2\2\2\u0216"+
+		"\u0217\7\60\2\2\u0217\24\3\2\2\2\u0218\u0219\7R\2\2\u0219\u021a\7T\2\2"+
+		"\u021a\u021b\7K\2\2\u021b\u021c\7O\2\2\u021c\u021d\7C\2\2\u021d\u021e"+
+		"\7T\2\2\u021e\u021f\7[\2\2\u021f\26\3\2\2\2\u0220\u0221\7M\2\2\u0221\u0222"+
+		"\7G\2\2\u0222\u0223\7[\2\2\u0223\30\3\2\2\2\u0224\u0225\7U\2\2\u0225\u0226"+
 		"\7G\2\2\u0226\u0227\7N\2\2\u0227\u0228\7G\2\2\u0228\u0229\7E\2\2\u0229"+
 		"\u022a\7V\2\2\u022a\32\3\2\2\2\u022b\u022c\7H\2\2\u022c\u022d\7T\2\2\u022d"+
 		"\u022e\7Q\2\2\u022e\u022f\7O\2\2\u022f\34\3\2\2\2\u0230\u0231\7C\2\2\u0231"+
