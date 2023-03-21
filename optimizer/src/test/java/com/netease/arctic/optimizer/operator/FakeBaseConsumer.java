@@ -33,20 +33,39 @@ import java.util.concurrent.ThreadLocalRandom;
 public class FakeBaseConsumer extends BaseTaskConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(FakeBaseConsumer.class);
 
+  private OptimizeTask nextTaskToConsume;
+
   public FakeBaseConsumer(OptimizerConfig config) {
     super(config);
   }
 
+  public OptimizeTask feedTask() {
+    synchronized (this) {
+      OptimizeTask newTask = new OptimizeTask();
+      newTask.setTaskId(new OptimizeTaskId(OptimizeType.Major, UUID.randomUUID().toString()));
+      this.nextTaskToConsume = newTask;
+      this.notifyAll();
+      return newTask;
+    }
+  }
+
   @Override
   public TaskWrapper pollTask(long timeout) throws TException {
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    synchronized (this) {
+      try {
+        if (this.nextTaskToConsume == null) {
+          this.wait(timeout);
+        }
+        OptimizeTask compactTask = this.nextTaskToConsume;
+        this.nextTaskToConsume = null;
+        if (compactTask == null) {
+          return null;
+        }
+        LOG.info("get task {}", compactTask.getTaskId());
+        return new TaskWrapper(compactTask, Math.abs(ThreadLocalRandom.current().nextInt()));
+      } catch (InterruptedException e) {
+        return null;
+      }
     }
-    OptimizeTask compactTask = new OptimizeTask();
-    compactTask.setTaskId(new OptimizeTaskId(OptimizeType.Major, UUID.randomUUID().toString()));
-    LOG.info("get task {}", compactTask.getTaskId());
-    return new TaskWrapper(compactTask, Math.abs(ThreadLocalRandom.current().nextInt()));
   }
 }

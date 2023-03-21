@@ -25,15 +25,36 @@ import org.slf4j.LoggerFactory;
 
 public class FakeBaseReporter extends BaseTaskReporter {
   private static final Logger LOG = LoggerFactory.getLogger(FakeBaseReporter.class);
+  private OptimizeTaskStat optimizeTaskStat;
 
   public FakeBaseReporter(OptimizerConfig config) {
     super(config);
   }
 
+  public OptimizeTaskStat waitReportResult() throws InterruptedException {
+    synchronized (this) {
+      if (this.optimizeTaskStat != null) {
+        return takeOptimizeTaskStat();
+      }
+      this.wait(1000);
+      return takeOptimizeTaskStat();
+    }
+  }
+
+  private OptimizeTaskStat takeOptimizeTaskStat() {
+    OptimizeTaskStat returnOptimizeStat = this.optimizeTaskStat;
+    this.optimizeTaskStat = null;
+    return returnOptimizeStat;
+  }
+
   @Override
-  public boolean report(OptimizeTaskStat compactTaskStat, int maxRetry, long retryInterval)
+  public boolean report(OptimizeTaskStat optimizeTaskStat, int maxRetry, long retryInterval)
       throws InterruptedException {
-    LOG.info("report result {}", compactTaskStat.getTaskId());
-    return true;
+    synchronized (this) {
+      LOG.info("report result {}", optimizeTaskStat.getTaskId());
+      this.optimizeTaskStat = optimizeTaskStat;
+      this.notifyAll();
+      return true;
+    }
   }
 }
