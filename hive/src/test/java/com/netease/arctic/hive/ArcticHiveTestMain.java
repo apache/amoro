@@ -20,6 +20,7 @@ package com.netease.arctic.hive;
 
 import com.netease.arctic.hive.catalog.TestArcticHiveCatalog;
 import com.netease.arctic.hive.io.TestAdaptHiveWriter;
+import com.netease.arctic.hive.io.TestImpalaParquet;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
 import com.netease.arctic.hive.op.TestOverwriteFiles;
@@ -33,6 +34,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    TestImpalaParquet.class,
     TestArcticHiveCatalog.class,
     TestRewritePartitions.class,
     TestOverwriteFiles.class,
