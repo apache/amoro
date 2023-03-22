@@ -185,6 +185,11 @@ public class BasicIcebergCatalog implements ArcticCatalog {
     return BasicTableBlockerManager.build(tableIdentifier, client);
   }
 
+  @Override
+  public Map<String, String> properties() {
+    return meta.getCatalogProperties();
+  }
+
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(
         Namespace.of(tableIdentifier.getDatabase()),
