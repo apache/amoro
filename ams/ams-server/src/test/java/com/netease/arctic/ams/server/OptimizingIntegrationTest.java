@@ -56,6 +56,7 @@ public class OptimizingIntegrationTest {
   private static final TableIdentifier TB_9 = TableIdentifier.of(HIVE_CATALOG, DATABASE, "hive_table9");
   private static final TableIdentifier TB_10 = TableIdentifier.of(HIVE_CATALOG, DATABASE, "hive_table10");
   private static final TableIdentifier TB_11 = TableIdentifier.of(CATALOG, DATABASE, "test_table11");
+  private static final TableIdentifier TB_12 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "iceberg_table12");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -162,6 +163,14 @@ public class OptimizingIntegrationTest {
     assertTableExist(TB_7);
     IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_7, table, getOptimizeHistoryStartId());
     testCase.testPartitionIcebergTableOptimizing();
+  }
+
+  @Test
+  public void testPartitionIcebergTablePartialOptimizing() throws IOException {
+    Table table = createIcebergTable(TB_12, SPEC);
+    assertTableExist(TB_12);
+    IcebergHadoopOptimizingTest testCase = new IcebergHadoopOptimizingTest(TB_12, table, getOptimizeHistoryStartId());
+    testCase.testPartitionIcebergTablePartialOptimizing();
   }
 
   @Test
