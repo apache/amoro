@@ -294,4 +294,20 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table);
   }
 
+  @Test
+  public void testLoadTable() throws TException {
+    sql("use {0}", catalogNameHive);
+    sql("create table {0}.{1} ( id int, data string) using arctic", database, table_D);
+    sql("insert overwrite {0}.{1} values \n" +
+        "(1, ''aaa''), \n " +
+        "(2, ''bbb''), \n " +
+        "(3, ''ccc'') \n ", database, table_D);
+    Table tableA = hms.getClient().getTable(database, table_D);
+    Assert.assertNotNull(tableA);
+    sql("use spark_catalog");
+    rows = sql("select * from {0}.{1}", database, table_D);
+    Assert.assertEquals(rows.size(), 3);
+    sql("drop table {0}.{1}", database, table_D);
+  }
+
 }
