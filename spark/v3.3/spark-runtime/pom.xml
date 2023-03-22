@@ -60,13 +60,13 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
-                                    <include>com.netease.arctic:arctic-spark-3.1</include>
+                                    <include>com.netease.arctic:arctic-spark-3.3</include>
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
                                     <incluede>com.netease.arctic:arctic-hive</incluede>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
-                                    <include>org.apache.iceberg:iceberg-spark-3.1_2.12</include>
+                                    <include>org.apache.iceberg:iceberg-spark-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-common</include>
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
@@ -81,7 +81,7 @@
                                     <include>org.apache.iceberg:iceberg-arrow</include>
                                     <include>org.apache.iceberg:iceberg-hive-metastore</include>
                                     <include>org.apache.iceberg:iceberg-spark</include>
-                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.1_2.12</include>
+                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
 
                                     <include>org.apache.thrift:libthrift</include>
