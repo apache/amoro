@@ -165,9 +165,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier identifier) {
-    if (!this.catalogName.equals(identifier.getCatalog())) {
-      throw new IllegalArgumentException("catalog name miss match");
-    }
+    validate(identifier);
     TableMeta meta = getArcticTableMeta(identifier);
     if (meta.getLocations() == null) {
       throw new IllegalStateException("load table failed, lack locations info");
@@ -176,13 +174,17 @@ public class BasicArcticCatalog implements ArcticCatalog {
   }
 
   protected ArcticTable loadTableByMeta(TableMeta meta) {
-    if (meta.getKeySpec() != null &&
-        meta.getKeySpec().getFields() != null &&
-        meta.getKeySpec().getFields().size() > 0) {
+    if (isKeyedTable(meta)) {
       return loadKeyedTable(meta);
     } else {
       return loadUnKeyedTable(meta);
     }
+  }
+
+  protected boolean isKeyedTable(TableMeta meta) {
+    return meta.getKeySpec() != null &&
+        meta.getKeySpec().getFields() != null &&
+        meta.getKeySpec().getFields().size() > 0;
   }
 
   protected KeyedTable loadKeyedTable(TableMeta tableMeta) {
@@ -245,6 +247,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
+    validate(identifier);
     TableMeta meta;
     try {
       meta = getArcticTableMeta(identifier);
@@ -303,6 +306,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
+    validate(identifier);
     return new ArcticTableBuilder(identifier, schema);
   }
 
@@ -317,7 +321,13 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
+    validate(tableIdentifier);
     return BasicTableBlockerManager.build(tableIdentifier, client);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return catalogMeta.getCatalogProperties();
   }
 
   public TableMetaStore getTableMetaStore() {
@@ -409,6 +419,14 @@ public class BasicArcticCatalog implements ArcticCatalog {
       internalTables.dropTable(internalTableLocation, purge);
       return null;
     });
+  }
+
+  private void validate(TableIdentifier identifier) {
+    if (StringUtils.isEmpty(identifier.getCatalog())) {
+      identifier.setCatalog(this.catalogName);
+    } else if (!this.catalogName.equals(identifier.getCatalog())) {
+      throw new IllegalArgumentException("catalog name miss match");
+    }
   }
 
   protected class ArcticTableBuilder implements TableBuilder {
