@@ -2,6 +2,7 @@ package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.catalog.HiveTableTestBase;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -28,6 +29,8 @@ public class TestCleanOrphanFiles extends HiveTableTestBase {
 
   private String valuePath = null;
 
+  private UnkeyedTable operationTable;
+
   public TestCleanOrphanFiles(
       boolean keyedTable,
       boolean partitionedTable) {
@@ -39,7 +42,19 @@ public class TestCleanOrphanFiles extends HiveTableTestBase {
 
   @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
   public static Object[][] parameters() {
-    return new Object[][] {{false, true}, {false, false}};
+    return new Object[][] {{false, true}, {false, false}, {true, true}, {true, false}};
+  }
+
+  private UnkeyedTable getOperationTable() {
+    if (operationTable == null) {
+      ArcticTable arcticTable = getArcticTable();
+      if (isKeyedTable()) {
+        operationTable = arcticTable.asKeyedTable().baseTable();
+      } else {
+        operationTable = arcticTable.asUnkeyedTable();
+      }
+    }
+    return operationTable;
   }
 
   @Test
@@ -49,7 +64,7 @@ public class TestCleanOrphanFiles extends HiveTableTestBase {
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a2.parquet"),
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a3.parquet")
     );
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    UnkeyedTable table = getOperationTable();
     table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
     AppendFiles appendFiles = table.newAppend();
     MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, TEST_HMS.getHiveClient());
@@ -86,7 +101,7 @@ public class TestCleanOrphanFiles extends HiveTableTestBase {
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a2.parquet"),
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a3.parquet")
     );
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    UnkeyedTable table = getOperationTable();
     table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
     AppendFiles appendFiles = table.newAppend();
     MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, TEST_HMS.getHiveClient());
@@ -123,7 +138,7 @@ public class TestCleanOrphanFiles extends HiveTableTestBase {
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a2.parquet"),
         Maps.immutableEntry(valuePath, "/test_path/partition/orphan-a3.parquet")
     );
-    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    UnkeyedTable table = getOperationTable();
     AppendFiles appendFiles = table.newAppend();
     MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, TEST_HMS.getHiveClient());
     List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);
