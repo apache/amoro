@@ -105,7 +105,7 @@ class AdaptHiveParquetConversions {
     }
 
     //string
-    if (icebergType.typeId() == Type.TypeID.STRING &&
+    if (icebergType != null && icebergType.typeId() == Type.TypeID.STRING &&
         parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
       return binary -> StandardCharsets.UTF_8.decode(((Binary) binary).toByteBuffer());
     }
