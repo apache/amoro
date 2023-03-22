@@ -27,7 +27,8 @@ public class HelpCall implements CallCommand {
             "DROP_METADATA ] " +
             "        -- Operate table --\n" +
             "\n" +
-            "QUIT                                                        -- Exit --" +
+            "PROPERTY [GET xxx | SET xxx xxx]" +
+            "QUIT                                                        -- Exit --\n" +
             "The steps to recover table safely is 'OPTIMIZE STOP -> TABLE REFRESH -> REPAIR -> TABLE REFRESH -> " +
             "OPTIMIZE START'"
         ;
