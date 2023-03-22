@@ -68,4 +68,11 @@ public interface TableTrashManager extends Serializable {
    * @param expirationDate -
    */
   void cleanFiles(LocalDate expirationDate);
+
+  /**
+   * Get the root location of table trash.
+   *
+   * @return trash root location
+   */
+  String getTrashLocation();
 }
