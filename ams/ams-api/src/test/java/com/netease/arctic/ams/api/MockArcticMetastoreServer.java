@@ -53,6 +53,7 @@ public class MockArcticMetastoreServer implements Runnable {
   private boolean started = false;
   private final Object lock = new Object();
   private final AmsHandler amsHandler = new AmsHandler();
+  private final OptimizeManagerHandler optimizeManagerHandler = new OptimizeManagerHandler();
 
   private TServer server;
 
@@ -152,6 +153,11 @@ public class MockArcticMetastoreServer implements Runnable {
       ArcticTableMetastore.Processor<AmsHandler> amsProcessor =
           new ArcticTableMetastore.Processor<>(amsHandler);
       processor.registerProcessor("TableMetastore", amsProcessor);
+
+
+      OptimizeManager.Processor<OptimizeManagerHandler> optimizerManProcessor =
+          new OptimizeManager.Processor<>(optimizeManagerHandler);
+      processor.registerProcessor("OptimizeManager", optimizerManProcessor);
 
       TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
           .processor(processor)
