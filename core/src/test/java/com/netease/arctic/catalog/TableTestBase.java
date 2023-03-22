@@ -30,6 +30,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.IOException;
 import java.util.Map;
 
 public abstract class TableTestBase extends CatalogTestBase {
