@@ -426,9 +426,9 @@ public class BaseOptimizeCommit {
     return result;
   }
 
-  private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
+  private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, long snapshotId) {
     long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(table);
-    if (currentSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+    if (currentSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID || snapshotId == currentSnapshotId) {
       return Collections.emptySet();
     }
 
