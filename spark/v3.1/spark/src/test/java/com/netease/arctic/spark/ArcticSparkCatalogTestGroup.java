@@ -47,6 +47,7 @@ import java.util.Map;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    TestImpalaParquet.class,
     TestKeyedHiveInsertOverwriteDynamic.class,
     TestKeyedHiveInsertOverwriteStatic.class,
     TestUnkeyedHiveInsertOverwriteDynamic.class,
