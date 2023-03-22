@@ -46,7 +46,6 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.HashMap;
@@ -141,7 +140,7 @@ public class FlinkSource {
         return buildUnkeyedTableSource();
       }
 
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+      boolean dimTable =  PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
           DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
 

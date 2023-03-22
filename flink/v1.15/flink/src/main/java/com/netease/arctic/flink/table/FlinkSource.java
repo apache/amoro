@@ -23,7 +23,6 @@ import com.netease.arctic.flink.read.ArcticSource;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -153,7 +152,7 @@ public class FlinkSource {
         return buildUnkeyedTableSource();
       }
 
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+      boolean dimTable = PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
           DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
 
