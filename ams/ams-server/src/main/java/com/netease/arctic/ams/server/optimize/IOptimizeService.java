@@ -92,4 +92,17 @@ public interface IOptimizeService {
    * @param expireTime min timestamp which record need to retain
    */
   void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
+
+
+  /**
+   * Start table optimize
+   * @param tableIdentifier -
+   */
+  void startOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException;
+
+  /**
+   * Stop table optimize
+   * @param tableIdentifier -
+   */
+  void stopOptimize(TableIdentifier tableIdentifier) throws NoSuchObjectException;
 }

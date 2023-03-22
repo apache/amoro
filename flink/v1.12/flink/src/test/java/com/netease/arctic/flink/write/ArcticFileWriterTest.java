@@ -20,7 +20,10 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
+import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -50,7 +53,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
   @Parameterized.Parameters(name = "submitEmptySnapshots = {0}")
   public static Object[][] parameters() {
-    return new Object[][] {
+    return new Object[][]{
         {false},
         {true}
     };
@@ -62,11 +65,22 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
   public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createArcticStreamWriter(
       ArcticTableLoader tableLoader) throws Exception {
-    return createArcticStreamWriter(tableLoader, true);
+    return createArcticStreamWriter(tableLoader, true, null);
   }
 
   public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createArcticStreamWriter(
-      ArcticTableLoader tableLoader, boolean submitEmptySnapshots) throws Exception {
+      ArcticTableLoader tableLoader, boolean submitEmptySnapshots, Long restoredCheckpointId) throws Exception {
+    OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
+        doCreateArcticStreamWriter(tableLoader, submitEmptySnapshots, restoredCheckpointId);
+
+    harness.setup();
+    harness.open();
+
+    return harness;
+  }
+
+  public static OneInputStreamOperatorTestHarness<RowData, WriteResult> doCreateArcticStreamWriter(
+      ArcticTableLoader tableLoader, boolean submitEmptySnapshots, Long restoredCheckpointId) throws Exception {
     tableLoader.open();
     ArcticTable arcticTable = tableLoader.loadArcticTable();
     arcticTable.properties().put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
@@ -76,18 +90,16 @@ public class ArcticFileWriterTest extends FlinkTestBase {
         false,
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
         tableLoader);
-    OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
-        new OneInputStreamOperatorTestHarness<>(
-            streamWriter, 1, 1, 0);
-
-    harness.setup();
-    harness.open();
+    OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
+        new OneInputStreamOperatorInternTest<>(
+            streamWriter, 1, 1, 0, restoredCheckpointId,
+            new TestGlobalAggregateManager());
 
     return harness;
   }
 
   public static TaskWriter<RowData> createUnkeyedTaskWriter(Table table, long targetFileSize, FileFormat format,
-                                                     RowType rowType) {
+                                                            RowType rowType) {
     TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
     taskWriterFactory.initialize(1, 1);
@@ -126,6 +138,47 @@ public class ArcticFileWriterTest extends FlinkTestBase {
       List<WriteResult> completedFiles = testHarness.extractOutputValues();
       Assert.assertEquals(2, completedFiles.size());
       Assert.assertEquals(3, completedFiles.get(1).dataFiles().length);
+    }
+  }
+
+  @Test
+  public void testFailover() throws Exception {
+    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    long checkpointId = 1L;
+
+    OperatorSubtaskState state;
+    try (
+        OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = doCreateArcticStreamWriter(
+            tableLoader, submitEmptySnapshots, null)) {
+      testHarness.setup();
+      testHarness.initializeEmptyState();
+      testHarness.open();
+      // The first checkpoint
+      testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
+      testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
+      testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
+
+      testHarness.prepareSnapshotPreBarrier(checkpointId);
+      state = testHarness.snapshot(checkpointId, 1L);
+      testHarness.notifyOfCompletedCheckpoint(checkpointId);
+
+      testHarness.prepareSnapshotPreBarrier(checkpointId + 1);
+      testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
+      testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
+      testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
+
+      testHarness.snapshot(checkpointId + 1, 2L);
+    }
+
+    try (
+        OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = doCreateArcticStreamWriter(
+            tableLoader, submitEmptySnapshots, 1L)) {
+      testHarness.setup();
+      testHarness.initializeState(state);
+      testHarness.open();
+
+      ArcticFileWriter fileWriter = (ArcticFileWriter) testHarness.getOneInputOperator();
+      Assert.assertEquals(checkpointId + 1, fileWriter.getCheckpointId());
     }
   }
 
@@ -266,7 +319,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     long excepted = submitEmptySnapshots ? 1 : 0;
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
-            tableLoader, submitEmptySnapshots)) {
+            tableLoader, submitEmptySnapshots, null)) {
       // The first checkpoint
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertEquals(excepted, testHarness.extractOutputValues().size());

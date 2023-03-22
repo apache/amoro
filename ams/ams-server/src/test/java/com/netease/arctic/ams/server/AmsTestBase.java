@@ -28,12 +28,22 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.maintainer.TestCommandParser;
+import com.netease.arctic.ams.server.maintainer.TestGetMaintainerConfig;
+import com.netease.arctic.ams.server.maintainer.command.TestAnalyzeCall;
+import com.netease.arctic.ams.server.maintainer.command.TestOptimizeCall;
+import com.netease.arctic.ams.server.maintainer.command.TestRepairCall;
+import com.netease.arctic.ams.server.maintainer.command.TestShowCall;
+import com.netease.arctic.ams.server.maintainer.command.TestTableCall;
+import com.netease.arctic.ams.server.maintainer.command.TestUseCall;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItemTest;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOptimizeService;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
@@ -42,16 +52,18 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
-import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
+import com.netease.arctic.ams.server.service.impl.TrashCleanServiceTest;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -84,6 +96,14 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
+    TestGetMaintainerConfig.class,
+    TestCommandParser.class,
+    TestAnalyzeCall.class,
+    TestOptimizeCall.class,
+    TestRepairCall.class,
+    TestShowCall.class,
+    TestTableCall.class,
+    TestUseCall.class,
     OptimizerControllerTest.class,
     TableControllerTest.class,
     TerminalControllerTest.class,
@@ -100,7 +120,12 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class})
+    TestOrphanFileCleanSupportHive.class,
+    TrashCleanServiceTest.class,
+    UnKeyedTableUtilTest.class,
+    TestOptimizeService.class,
+    TableOptimizeItemTest.class
+})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -157,6 +182,8 @@ public class AmsTestBase {
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
+    AdaptHiveService adaptHiveService = new AdaptHiveService();
+    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     JDBCMetaService metaService = new JDBCMetaService();
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
 

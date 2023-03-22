@@ -32,7 +32,7 @@ import java.util.Collections;
  */
 public class ContinuousEnumerationResult {
   public static final ContinuousEnumerationResult EMPTY =
-      new ContinuousEnumerationResult(Collections.emptyList(), null, ArcticEnumeratorOffset.EMPTY);
+      new ContinuousEnumerationResult(Collections.emptyList(), null, ArcticEnumeratorOffset.empty());
 
   private final Collection<ArcticSplit> splits;
   private final ArcticEnumeratorOffset fromOffset;

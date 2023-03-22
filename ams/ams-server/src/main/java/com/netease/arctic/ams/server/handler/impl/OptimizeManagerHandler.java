@@ -20,10 +20,12 @@ package com.netease.arctic.ams.server.handler.impl;
 
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import org.apache.thrift.TException;
 
@@ -48,5 +50,23 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
   @Override
   public void reportOptimizerState(OptimizerStateReport reportData) throws TException {
     ServiceContainer.getOptimizerService().updateOptimizerState(reportData);
+  }
+
+  @Override
+  public void stopOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+    try {
+      ServiceContainer.getOptimizeService().stopOptimize(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
+    } catch (Exception e) {
+      throw new OperationErrorException(e.getMessage());
+    }
+  }
+
+  @Override
+  public void startOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+    try {
+      ServiceContainer.getOptimizeService().startOptimize(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
+    } catch (Exception e) {
+      throw new OperationErrorException(e.getMessage());
+    }
   }
 }

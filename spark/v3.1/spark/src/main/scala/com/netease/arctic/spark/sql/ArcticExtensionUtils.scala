@@ -18,12 +18,16 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsUpsert}
-import org.apache.spark.sql.connector.catalog.Table
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import org.apache.iceberg.spark.Spark3Util
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
+import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
-import scala.annotation.tailrec
+import scala.collection.JavaConverters.seqAsJavaList
 
 
 object ArcticExtensionUtils {
@@ -49,6 +53,7 @@ object ArcticExtensionUtils {
       ArcticExtensionUtils.asTableRelation(plan)
     }
   }
+
   def isArcticRelation(plan: LogicalPlan): Boolean = {
     def isArcticTable(relation: DataSourceV2Relation): Boolean = relation.table match {
       case _: ArcticSparkTable => true
@@ -57,8 +62,23 @@ object ArcticExtensionUtils {
 
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
-      case s: SubqueryAlias => s.child.children.exists{ case p: DataSourceV2Relation => isArcticTable(p)}
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+      case _ => false
     }
+  }
+
+  def isArcticCatalog(catalog: TableCatalog): Boolean = {
+    catalog match {
+      case _: ArcticSparkCatalog => true
+      case _: ArcticSparkSessionCatalog[_] => true
+      case _ => false
+    }
+  }
+
+  def isArcticTable(table: Table): Boolean = table match {
+    case _: ArcticSparkTable => true
+    case _: ArcticIcebergSparkTable => true
+    case _ => false
   }
 
   def asTableRelation(plan: LogicalPlan): DataSourceV2Relation = {
@@ -70,4 +90,22 @@ object ArcticExtensionUtils {
     }
   }
 
+  def isKeyedTable(relation: DataSourceV2Relation): Boolean = {
+    relation.table match {
+      case arctic: ArcticSparkTable =>
+        arctic.table().isKeyedTable
+      case _ => false
+    }
+  }
+
+  def buildCatalogAndIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
+    var identifier: Seq[String] = Seq.empty[String]
+    identifier :+= originIdentifier.database.get
+    identifier :+= originIdentifier.table
+    val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
+    catalogAndIdentifier.catalog() match {
+      case a: TableCatalog => (a, catalogAndIdentifier.identifier())
+      case _ => throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
+    }
+  }
 }

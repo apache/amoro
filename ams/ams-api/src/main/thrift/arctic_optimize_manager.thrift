@@ -107,4 +107,10 @@ service OptimizeManager {
     void reportOptimizeResult(1:OptimizeTaskStat optimizeTaskStat)
 
     void reportOptimizerState(1: OptimizerStateReport reportData)
+
+    void stopOptimize(1: arctic_commons.TableIdentifier tableIdentifier)
+        throws (1: arctic_commons.OperationErrorException e)
+
+    void startOptimize(1: arctic_commons.TableIdentifier tableIdentifier)
+        throws (1: arctic_commons.OperationErrorException e)
 }

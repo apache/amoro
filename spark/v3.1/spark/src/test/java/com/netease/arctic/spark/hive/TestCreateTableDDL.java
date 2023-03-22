@@ -431,17 +431,82 @@ public class TestCreateTableDDL extends SparkTestBase {
         " ts timestamp , \n" +
         " primary key (id) \n" +
         ") using arctic \n" +
-        " partitioned by ( ts ) \n" +
+        " partitioned by ( ts ) \n" , database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} " +
+        " using arctic" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
-        " ''props.test2'' = ''val2'' ) ", database, tableB);
-
-    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+        " ''props.test2'' = ''val2'' ) ", database, tableA, database, tableB);
     sql("desc table {0}.{1}", database, tableA);
     assertDescResult(rows, Lists.newArrayList("id"));
 
     sql("desc table extended {0}.{1}", database, tableA);
     assertDescResult(rows, Lists.newArrayList("id"));
+
+    ArcticTable loadTable = loadTable(identifier);
+    Assert.assertTrue(loadTable.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", loadTable.properties().get("props.test1"));
+    Assert.assertTrue(loadTable.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", loadTable.properties().get("props.test2"));
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateTableLikeUsingHiveSource() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp \n" +
+        ") STORED AS parquet \n" +
+        " partitioned by ( ts )", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic " +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableA, database, tableB);
+
+    assertTableExist(identifier);
+    ArcticTable loadTable = loadTable(identifier);
+    Assert.assertTrue(loadTable.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", loadTable.properties().get("props.test1"));
+    Assert.assertTrue(loadTable.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", loadTable.properties().get("props.test2"));
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateTableLikeUsingIcebergSource() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp \n" +
+        ") using iceberg \n" +
+        " partitioned by ( ts )", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic " +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableA, database, tableB);
+
+    assertTableExist(identifier);
+    ArcticTable loadTable = loadTable(identifier);
+    Assert.assertTrue(loadTable.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", loadTable.properties().get("props.test1"));
+    Assert.assertTrue(loadTable.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", loadTable.properties().get("props.test2"));
 
     sql("drop table {0}.{1}", database, tableA);
 
@@ -475,6 +540,51 @@ public class TestCreateTableDDL extends SparkTestBase {
 
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateTableLikeWithNoProvider() throws TException {
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `true`");
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
+    TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp," +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3}", database, tableA, database, tableB);
+    Table hiveTable1 = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTable1);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifierA).schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    Table hiveTable2 = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTable2);
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifierA).schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, tableA);
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifierB);
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `false`");
   }
 
   @Test

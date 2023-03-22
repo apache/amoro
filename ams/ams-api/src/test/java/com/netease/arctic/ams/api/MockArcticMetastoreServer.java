@@ -321,5 +321,47 @@ public class MockArcticMetastoreServer implements Runnable {
         }
       }
     }
+
+    @Override
+    public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+
+    }
+  }
+
+  public class OptimizeManagerHandler implements OptimizeManager.Iface {
+
+    public void cleanUp() {
+    }
+
+    @Override
+    public void ping() throws TException {
+
+    }
+
+    @Override
+    public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
+        throws NoSuchObjectException, TException {
+      return null;
+    }
+
+    @Override
+    public void reportOptimizeResult(OptimizeTaskStat optimizeTaskStat) throws TException {
+
+    }
+
+    @Override
+    public void reportOptimizerState(OptimizerStateReport reportData) throws TException {
+
+    }
+
+    @Override
+    public void stopOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+
+    }
+
+    @Override
+    public void startOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+
+    }
   }
 }

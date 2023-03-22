@@ -158,4 +158,25 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     Assert.assertEquals("Should be partitioned by pt",
         expectedSpec, loadTable(identifier).spec());
   }
+
+  @Test
+  public void testCTASWriteToBase() {
+    sql("create table {0}.{1} primary key(id) using arctic  AS SELECT * from {2}.{3}.{4}",
+        database, table, catalogNameArctic, database, sourceTable);
+    assertTableExist(identifier);
+    Schema expectedSchema = new Schema(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "data", Types.StringType.get()),
+        Types.NestedField.optional(3, "pt", Types.StringType.get())
+    );
+    Assert.assertEquals("Should have expected nullable schema",
+        expectedSchema.asStruct(), loadTable(identifier).schema().asStruct());
+    Assert.assertEquals("Should be an unpartitioned table",
+        0, loadTable(identifier).spec().fields().size());
+    assertEquals("Should have rows matching the source table",
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
+    rows = sql("select * from {0}.{1}.change", database, table);
+    Assert.assertEquals(0, rows.size());
+  }
 }

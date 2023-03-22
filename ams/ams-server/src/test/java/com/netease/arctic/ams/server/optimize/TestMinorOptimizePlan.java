@@ -70,7 +70,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     changeTableFilesInfo.addAll(changeDeleteFilesInfo);
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+        new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -79,7 +79,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(10, tasks.get(0).getDeleteFileCnt());
   }
 
-  protected void insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+  protected List<DataFile> insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withChangeAction(ChangeAction.DELETE)
         .withTransactionId(transactionId)
@@ -103,6 +103,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     changeDeleteFilesInfo = changeDeleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable))
         .collect(Collectors.toList());
+    return changeDeleteFiles;
   }
 
   protected List<DataFile> insertChangeDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {

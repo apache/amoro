@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
+import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -199,5 +200,15 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     }
     return ServiceContainer.getArcticTransactionService().allocateTransactionId(tableIdentifier,
         transactionSignature, 5);
+  }
+
+  @Override
+  public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+    try {
+      ServiceContainer.getFileInfoCacheService()
+          .deleteTableCache(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
+    } catch (Exception e) {
+      throw new OperationErrorException(e.getMessage());
+    }
   }
 }

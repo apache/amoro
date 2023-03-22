@@ -237,6 +237,7 @@ public class ArcticMetaStore {
         startOptimizeCommit(conf.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE));
         startExpiredClean();
         startOrphanClean();
+        startTrashClean();
         startSupportHiveSync();
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
@@ -317,6 +318,14 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
+  private static void startTrashClean() {
+    ThreadPool.getPool(ThreadPool.Type.TRASH_CLEAN).scheduleWithFixedDelay(
+        ServiceContainer.getTrashCleanService()::checkTrashCleanTasks,
+        3 * 1000L,
+        60 * 1000L,
+        TimeUnit.MILLISECONDS);
+  }
+
   private static void startSupportHiveSync() {
     ThreadPool.getPool(ThreadPool.Type.HIVE_SYNC).scheduleWithFixedDelay(
         ServiceContainer.getSupportHiveSyncService()::checkHiveSyncTasks,
@@ -354,7 +363,7 @@ public class ArcticMetaStore {
           LOG.error("sync and expired file info cache error", e);
         }
         try {
-          Thread.sleep(5 * 60 * 1000);
+          Thread.sleep(ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.TABLE_FILE_INFO_CACHE_INTERVAL));
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
           return;

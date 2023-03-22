@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
@@ -104,5 +105,9 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
 
   protected TaskWriter<RowData> createTaskWriter(boolean base) {
     return createKeyedTaskWriter(testKeyedTable, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), base);
+  }
+
+  protected TaskWriter<RowData> createTaskWriter(KeyedTable keyedTable, boolean base) {
+    return createKeyedTaskWriter(keyedTable, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), base);
   }
 }

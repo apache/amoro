@@ -26,6 +26,7 @@ import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -33,6 +34,8 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
+
+import java.util.Map;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
@@ -51,15 +54,23 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
   @Override
   public void refresh() {
     super.refresh();
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
 
@@ -68,22 +79,30 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
     return ((SupportHive)baseTable()).hiveLocation();
   }
 
-  private void syncHiveSchemaToArctic() {
-    if (PropertyUtil.propertyAsBoolean(
+  @Override
+  public boolean enableSyncHiveSchemaToArctic() {
+    return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
-      HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
-    }
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
-  private void syncHiveDataToArctic() {
-    if (PropertyUtil.propertyAsBoolean(
+  @Override
+  public void syncHiveSchemaToArctic() {
+    HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+  }
+
+  @Override
+  public boolean enableSyncHiveDataToArctic() {
+    return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
-      HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
-    }
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+  }
+
+  @Override
+  public void syncHiveDataToArctic(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
   }
 
   @Override
@@ -95,13 +114,24 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+        AmsClient client, Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
     }
 
     @Override
     public UpdateSchema updateSchema() {
       return new BaseSchemaUpdate(this, super.updateSchema());
+    }
+  }
+
+  public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
+
+    public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
+                                 ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
+                                 HMSClientPool hiveClient, Map<String, String> catalogProperties,
+                                 boolean syncHiveChange) {
+      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
+          syncHiveChange);
     }
   }
 }

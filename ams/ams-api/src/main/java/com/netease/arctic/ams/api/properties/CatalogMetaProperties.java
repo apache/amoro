@@ -55,4 +55,9 @@ public class CatalogMetaProperties {
     public static final String AUTH_CONFIGS_KEY_KEYTAB_ENCODE = "auth.kerberos.keytab.encode";
     public static final String AUTH_CONFIGS_KEY_KRB_PATH = "auth.kerberos.krb.path";
     public static final String AUTH_CONFIGS_KEY_KRB_ENCODE = "auth.kerberos.krb.encode";
+
+    // properties in table level set by catalog
+    public static final String TABLE_PROPERTIES_PREFIX = "table.";
+    public static  final String LOG_STORE_PROPERTIES_PREFIX = "log-store.";
+    public static  final String OPTIMIZE_PROPERTIES_PREFIX = "optimize.";
 }

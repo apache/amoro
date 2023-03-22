@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-spark_2.3</artifactId>
+    <artifactId>arctic-spark-2.3</artifactId>
     <packaging>jar</packaging>
 
     <properties>

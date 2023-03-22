@@ -6,7 +6,7 @@ ams:
   arctic.ams.optimize.commit.thread.pool-size: 10
   arctic.ams.expire.thread.pool-size: 10
   arctic.ams.orphan.clean.thread.pool-size: 10
-  arctic.ams.file.sync.thread.pool-size: 10
+  arctic.ams.file.sync.thread.pool-size: 1
   # derby config.sh
   arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver
   arctic.ams.mybatis.ConnectionURL: jdbc:derby:/tmp/arctic/derby;create=true

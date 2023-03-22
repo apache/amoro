@@ -123,4 +123,7 @@ service ArcticTableMetastore {
     void tableCommit(1: TableCommitMeta commit) throws (1: arctic_commons.MetaException e1)
 
     i64 allocateTransactionId(1:arctic_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
+
+    void refreshTable(1:arctic_commons.TableIdentifier tableIdentifier)
+         throws(1: arctic_commons.OperationErrorException e);
 }

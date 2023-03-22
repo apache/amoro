@@ -97,6 +97,12 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all orphan file clean processes.");
+  public static final ConfigOption<Integer> TRASH_CLEAN_THREAD_POOL_SIZE =
+      ConfigOptions.key("arctic.ams.trash.clean.thread.pool-size")
+          .intType()
+          .defaultValue(3)
+          .withDescription("Number of threads in the thread pool.  " +
+              "These will be used to execute all table trash clean processes.");
   public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.support.hive.sync.thread.pool-size")
           .intType()
@@ -106,7 +112,7 @@ public class ArcticMetaStoreConf {
   public static final ConfigOption<Integer> SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.file.sync.thread.pool-size")
           .intType()
-          .defaultValue(10)
+          .defaultValue(1)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all file sync processes.");
   public static final ConfigOption<String> THRIFT_BIND_HOST =

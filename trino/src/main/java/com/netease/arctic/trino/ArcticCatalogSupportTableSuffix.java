@@ -144,6 +144,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     return arcticCatalog.newTableBuilder(identifier, schema);
   }
 
+  @Override
+  public Map<String, String> properties() {
+    return arcticCatalog.properties();
+  }
+
   public TableMetaStore getTableMetaStore() {
     return ((BaseArcticCatalog) arcticCatalog).getTableMetaStore();
   }

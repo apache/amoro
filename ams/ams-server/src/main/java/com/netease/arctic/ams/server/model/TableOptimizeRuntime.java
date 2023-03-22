@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class TableOptimizeRuntime {
+public class TableOptimizeRuntime implements Cloneable {
   public static final long INVALID_SNAPSHOT_ID = -1L;
 
   private TableIdentifier tableIdentifier;
@@ -41,7 +41,6 @@ public class TableOptimizeRuntime {
   private final Map<String, Long> latestFullOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskPlanGroup;
-  private volatile boolean isRunning;
 
   public TableOptimizeRuntime() {
   }
@@ -52,6 +51,37 @@ public class TableOptimizeRuntime {
 
   public TableOptimizeRuntime(String catalog, String database, String tableName) {
     this.tableIdentifier = TableIdentifier.of(catalog, database, tableName);
+  }
+
+  @Override
+  public TableOptimizeRuntime clone() {
+    TableOptimizeRuntime newTableOptimizeRuntime = new TableOptimizeRuntime(this.tableIdentifier.getCatalog(),
+        this.tableIdentifier.getDatabase(), this.tableIdentifier.getTableName());
+    newTableOptimizeRuntime.currentSnapshotId = this.currentSnapshotId;
+    newTableOptimizeRuntime.currentChangeSnapshotId = this.currentChangeSnapshotId;
+    newTableOptimizeRuntime.optimizeStatus = this.optimizeStatus;
+    newTableOptimizeRuntime.optimizeStatusStartTime = this.optimizeStatusStartTime;
+    newTableOptimizeRuntime.latestMajorOptimizeTime.putAll(this.latestMajorOptimizeTime);
+    newTableOptimizeRuntime.latestFullOptimizeTime.putAll(this.latestFullOptimizeTime);
+    newTableOptimizeRuntime.latestMinorOptimizeTime.putAll(this.latestMinorOptimizeTime);
+    newTableOptimizeRuntime.latestTaskPlanGroup = this.latestTaskPlanGroup;
+    return newTableOptimizeRuntime;
+  }
+
+  public void restoreTableOptimizeRuntime(TableOptimizeRuntime old) {
+    this.tableIdentifier = TableIdentifier.of(old.tableIdentifier.getCatalog(),
+        old.tableIdentifier.getDatabase(), old.tableIdentifier.getTableName());
+    this.currentSnapshotId = old.currentSnapshotId;
+    this.currentChangeSnapshotId = old.currentChangeSnapshotId;
+    this.optimizeStatus = old.optimizeStatus;
+    this.optimizeStatusStartTime = old.optimizeStatusStartTime;
+    this.latestMajorOptimizeTime.clear();
+    this.latestMajorOptimizeTime.putAll(old.latestMajorOptimizeTime);
+    this.latestFullOptimizeTime.clear();
+    this.latestFullOptimizeTime.putAll(old.latestFullOptimizeTime);
+    this.latestMinorOptimizeTime.clear();
+    this.latestMinorOptimizeTime.putAll(old.latestMinorOptimizeTime);
+    this.latestTaskPlanGroup = old.latestTaskPlanGroup;
   }
 
   public TableIdentifier getTableIdentifier() {
@@ -160,14 +190,6 @@ public class TableOptimizeRuntime {
     this.latestTaskPlanGroup = latestTaskPlanGroup;
   }
 
-  public boolean isRunning() {
-    return isRunning;
-  }
-
-  public void setRunning(boolean running) {
-    isRunning = running;
-  }
-
   @Override
   public String toString() {
     return "TableOptimizeRuntime{" +
@@ -180,7 +202,6 @@ public class TableOptimizeRuntime {
         ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
-        ", isRunning=" + isRunning +
         '}';
   }
 }

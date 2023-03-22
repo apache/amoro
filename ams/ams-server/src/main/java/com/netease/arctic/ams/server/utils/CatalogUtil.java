@@ -18,6 +18,8 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +46,20 @@ public class CatalogUtil {
         if (catalogCache.get(name) == null) {
           String catalogThriftUrl = String.format("thrift://%s:%d/%s", thriftHost, thriftPort, name);
           ArcticCatalog catalog = CatalogLoader.load(catalogThriftUrl, new HashMap<>());
+          catalogCache.put(name, catalog);
+          return catalog;
+        }
+      }
+    }
+    return catalogCache.get(name);
+  }
+
+  public static ArcticCatalog getArcticCatalog(String name) {
+    if (catalogCache.get(name) == null) {
+      synchronized (CatalogUtil.class) {
+        if (catalogCache.get(name) == null) {
+          AmsClient client = ServiceContainer.getTableMetastoreHandler();
+          ArcticCatalog catalog = CatalogLoader.load(client, name);
           catalogCache.put(name, catalog);
           return catalog;
         }

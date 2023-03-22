@@ -34,6 +34,7 @@ import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -66,13 +67,13 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
  */
 public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
+  private final Map<String, String> catalogProperties;
   private final TableIdentifier tableIdentifier;
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
@@ -81,18 +82,12 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   public BaseUnkeyedTable(
       TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client) {
+      AmsClient client, Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
     this.arcticFileIO = arcticFileIO;
     this.client = client;
-  }
-
-  public BaseUnkeyedTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO) {
-    this.tableIdentifier = tableIdentifier;
-    this.icebergTable = icebergTable;
-    this.arcticFileIO = arcticFileIO;
-    this.client = null;
+    this.catalogProperties = catalogProperties;
   }
 
   @Override
@@ -142,7 +137,11 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public Map<String, String> properties() {
-    return icebergTable.properties();
+    if (catalogProperties == null) {
+      return icebergTable.properties();
+    } else {
+      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+    }
   }
 
   @Override
@@ -172,7 +171,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
+    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client, false));
   }
 
   @Override
@@ -184,7 +183,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = icebergTable.updateProperties();
     if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client);
+      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client, false);
       return new TracedUpdateProperties(updateProperties, tracer);
     } else {
       return updateProperties;
@@ -205,7 +204,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public AppendFiles newAppend() {
     AppendFiles appendFiles = icebergTable.newAppend();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client, true);
       return new TracedAppendFiles(appendFiles, tracer);
     } else {
       return appendFiles;
@@ -216,7 +215,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public AppendFiles newFastAppend() {
     AppendFiles appendFiles = icebergTable.newFastAppend();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client, true);
       return new TracedAppendFiles(appendFiles, tracer);
     } else {
       return appendFiles;
@@ -227,7 +226,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public RewriteFiles newRewrite() {
     RewriteFiles rewriteFiles = icebergTable.newRewrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.REPLACE, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.REPLACE, client, true);
       return new TracedRewriteFiles(rewriteFiles, tracer);
     } else {
       return rewriteFiles;
@@ -243,7 +242,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public OverwriteFiles newOverwrite() {
     OverwriteFiles overwriteFiles = icebergTable.newOverwrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client, true);
       return new TracedOverwriteFiles(overwriteFiles, tracer);
     } else {
       return overwriteFiles;
@@ -254,7 +253,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public RowDelta newRowDelta() {
     RowDelta rowDelta = icebergTable.newRowDelta();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client, true);
       return new TracedRowDelta(rowDelta, tracer);
     } else {
       return rowDelta;
@@ -265,7 +264,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public ReplacePartitions newReplacePartitions() {
     ReplacePartitions replacePartitions = icebergTable.newReplacePartitions();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client, true);
       return new TracedReplacePartitions(replacePartitions, tracer);
     } else {
       return replacePartitions;
@@ -276,7 +275,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public DeleteFiles newDelete() {
     DeleteFiles deleteFiles = icebergTable.newDelete();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.DELETE, client);
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.DELETE, client, true);
       return new TracedDeleteFiles(deleteFiles, tracer);
     } else {
       return deleteFiles;
@@ -302,7 +301,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(transaction, new AmsTableTracer(this, client, false));
     } else {
       return transaction;
     }
