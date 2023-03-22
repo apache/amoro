@@ -328,6 +328,10 @@ public class TestCreateTableSQL extends SparkTableTestBase {
       Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
 
       Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
+      if (isHiveCatalog(catalog)) {
+        Table hiveTable = loadHiveTable();
+        Asserts.assertHiveSchema(hiveTable, expectSchema);
+      }
     });
   }
 }

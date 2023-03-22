@@ -47,9 +47,17 @@ public class SparkTableTestBase extends SparkTestBase {
     }
   }
 
+  protected ArcticTable loadTable(String sparkCatalog) {
+    return loadTable(sparkCatalog, database, table);
+  }
+
   protected ArcticTable loadTable(String sparkCatalog, String database, String table) {
     ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl(sparkCatalog));
     return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog.name(), database, table));
+  }
+
+  protected Table loadHiveTable() {
+    return loadHiveTable(database, table);
   }
 
   protected Table loadHiveTable(String database, String table) {

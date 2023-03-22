@@ -28,6 +28,7 @@ import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -52,6 +53,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `false`");
   }
 
+  @Ignore
   @Test
   public void testCreateKeyedTable() {
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
@@ -85,7 +87,6 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, table);
     assertTableNotExist(identifier);
   }
-
 
   @Test
   public void testCreateKeyedTableLike() {
@@ -191,7 +192,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " ''props.test2'' = ''val2'' ) ", database, table);
 
     ArcticTable arcticTable = loadTable(identifier);
-    String expectLocation = testArcticDir.getPath() + "/" +database + "/"+ table + "/base";
+    String expectLocation = testArcticDir.getPath() + "/" + database + "/" + table + "/base";
     Assert.assertEquals(expectLocation, arcticTable.location());
     sql("drop table {0}.{1}", database, table);
     assertTableNotExist(identifier);

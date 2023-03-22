@@ -19,6 +19,9 @@
 package com.netease.arctic.spark.test;
 
 import com.netease.arctic.utils.CollectionHelper;
+import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.hive.HiveSchemaUtil;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -56,5 +59,14 @@ public class Asserts {
       V _actual = actual.get(key);
       Assertions.assertEquals(_expect, _actual);
     }
+  }
+
+  public static void assertHiveSchema(Table hiveTable, Schema expectSchema) {
+    CollectionHelper.zip(hiveTable.getSd().getCols(), expectSchema.columns())
+        .forEach(x -> {
+          Assert.assertEquals(x.getLeft().getName(), x.getRight().name());
+          String expectTypeInfoString = HiveSchemaUtil.convert(x.getRight().type()).toString();
+          Assert.assertEquals(x.getLeft().getType(), expectTypeInfoString);
+        });
   }
 }
