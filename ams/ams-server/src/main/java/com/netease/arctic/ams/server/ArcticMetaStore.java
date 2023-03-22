@@ -584,7 +584,7 @@ public class ArcticMetaStore {
       initContainerConfig();
       initOptimizeGroupConfig();
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.error("init ams config error", e);
       System.exit(1);
     }
   }
