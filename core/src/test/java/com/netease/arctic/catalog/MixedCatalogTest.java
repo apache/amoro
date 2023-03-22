@@ -23,6 +23,8 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.RecoverableArcticFileIO;
+import com.netease.arctic.io.TableTrashManager;
+import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -131,7 +133,7 @@ public class MixedCatalogTest extends CatalogTestBase {
   }
 
   @Test
-  public void testRecoverableFileIO() throws TException {
+  public void testUnkeyedRecoverableFileIO() throws TException {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
@@ -147,7 +149,7 @@ public class MixedCatalogTest extends CatalogTestBase {
     getCatalog().refresh();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertTrue(table.io() instanceof RecoverableArcticFileIO);
+    assertRecoverableFileIO(table);
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     createTable = getCatalog()
@@ -155,7 +157,52 @@ public class MixedCatalogTest extends CatalogTestBase {
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    Assert.assertTrue(createTable.io() instanceof RecoverableArcticFileIO);
+    assertRecoverableFileIO(createTable);
+  }
+
+  @Test
+  public void testKeyedRecoverableFileIO() throws TException {
+    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
+    KeyedTable createTable = getCatalog()
+        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .withPrimaryKeySpec(TableTestHelpers.PRIMARY_KEY_SPEC)
+        .create()
+        .asKeyedTable();
+    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(createTable.changeTable().io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(createTable.baseTable().io() instanceof RecoverableArcticFileIO);
+
+    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
+    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+        "true");
+    getCatalog().refresh();
+
+    ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    assertRecoverableFileIO(table);
+    assertRecoverableFileIO(table.asKeyedTable().changeTable());
+    assertRecoverableFileIO(table.asKeyedTable().baseTable());
+
+    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
+    createTable = getCatalog()
+        .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .withPrimaryKeySpec(TableTestHelpers.PRIMARY_KEY_SPEC)
+        .create()
+        .asKeyedTable();
+    assertRecoverableFileIO(createTable);
+    assertRecoverableFileIO(table.asKeyedTable().changeTable());
+    assertRecoverableFileIO(table.asKeyedTable().baseTable());
+  }
+
+  private void assertRecoverableFileIO(ArcticTable arcticTable) {
+    Assert.assertTrue(arcticTable.io() instanceof RecoverableArcticFileIO);
+    RecoverableArcticFileIO io = (RecoverableArcticFileIO) arcticTable.io();
+    TableTrashManager expected = TableTrashManagers.build(arcticTable);
+    Assert.assertEquals(expected.getTrashLocation(), io.getTrashManager().getTrashLocation());
+    Assert.assertEquals(expected.tableId(), io.getTrashManager().tableId());
+    Assert.assertEquals(TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT, io.getTrashFilePattern());
   }
 
   @Test

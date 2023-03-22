@@ -296,6 +296,7 @@ public class ArcticMetaStore {
         startOptimizeCommit(conf.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE));
         startExpiredClean();
         startOrphanClean();
+        startTrashClean();
         startSupportHiveSync();
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
