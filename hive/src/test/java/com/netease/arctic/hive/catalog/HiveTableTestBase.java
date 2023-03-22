@@ -29,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -86,20 +87,25 @@ public abstract class HiveTableTestBase extends TableTestBase {
         properties, TEST_HMS.getHiveConf());
   }
 
-  public static void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
-    TableIdentifier identifier = table.id();
-    final String database = identifier.getDatabase();
-    final String tableName = identifier.getTableName();
-
-    List<Partition> partitions = TEST_HMS.getHiveClient().listPartitions(
-        database,
-        tableName,
-        (short) -1);
-
+  public void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
     List<String> fileNameList = new ArrayList<>();
-    for (Partition p : partitions) {
-      fileNameList.addAll(table.io().list(p.getSd().
-          getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    if (isPartitionedTable()) {
+      TableIdentifier identifier = table.id();
+      final String database = identifier.getDatabase();
+      final String tableName = identifier.getTableName();
+
+      List<Partition> partitions = TEST_HMS.getHiveClient().listPartitions(
+          database,
+          tableName,
+          (short) -1);
+      for (Partition p : partitions) {
+        fileNameList.addAll(table.io().list(p.getSd().
+            getLocation()).stream().map(f -> f.getPath().getName()).sorted().collect(Collectors.toList()));
+      }
+    } else {
+      Table hiveTable = TEST_HMS.getHiveClient().getTable(table.id().getDatabase(), table.name());
+      fileNameList.addAll(table.io().list(hiveTable.getSd().
+          getLocation()).stream().map(f -> f.getPath().getName()).sorted().collect(Collectors.toList()));
     }
     Assert.assertEquals(exceptedFiles, fileNameList);
   }
