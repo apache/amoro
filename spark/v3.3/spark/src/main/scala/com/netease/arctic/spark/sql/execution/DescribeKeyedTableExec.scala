@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, GenericRowWithSchema}
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
+import org.apache.spark.sql.execution.datasources.v2.{LeafV2CommandExec, V2CommandExec}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
 
 import scala.collection.JavaConverters.mapAsScalaMapConverter
@@ -35,7 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 case class DescribeKeyedTableExec(table: Table,
                                   catalog: TableCatalog,
                                   ident: Identifier,
-                                  isExtended: Boolean) extends V2CommandExec {
+                                  isExtended: Boolean) extends LeafV2CommandExec {
   val outputAttrs: Seq[AttributeReference] =  Seq(
     AttributeReference("col_name", StringType, nullable = false,
       new MetadataBuilder().putString("comment", "name of the column").build())(),
@@ -148,8 +148,4 @@ case class DescribeKeyedTableExec(table: Table,
 
 
   override def output: Seq[Attribute] = outputAttrs
-
-  override def children: Seq[SparkPlan] = ???
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
 }

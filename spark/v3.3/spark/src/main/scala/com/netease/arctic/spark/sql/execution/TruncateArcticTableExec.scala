@@ -28,9 +28,9 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
+import org.apache.spark.sql.execution.datasources.v2.{LeafV2CommandExec, V2CommandExec}
 
-case class TruncateArcticTableExec(table: Table) extends V2CommandExec {
+case class TruncateArcticTableExec(table: Table) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     table match {
       case arctic: ArcticSparkTable =>
@@ -54,8 +54,4 @@ case class TruncateArcticTableExec(table: Table) extends V2CommandExec {
   }
 
   override def output: Seq[Attribute] = Nil
-
-  override def children: Seq[SparkPlan] = ???
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
 }

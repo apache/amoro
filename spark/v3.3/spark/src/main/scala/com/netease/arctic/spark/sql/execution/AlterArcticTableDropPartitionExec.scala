@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitio
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
+import org.apache.spark.sql.execution.datasources.v2.{LeafV2CommandExec, V2CommandExec}
 import org.apache.spark.sql.types._
 
 import java.util
@@ -38,7 +38,7 @@ case class AlterArcticTableDropPartitionExec(
   table: Table,
   parts: Seq[PartitionSpec],
   retainData: Boolean
-) extends V2CommandExec {
+) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     // build partitions
     val specs = parts.map {
@@ -126,8 +126,4 @@ case class AlterArcticTableDropPartitionExec(
   }
 
   override def output: Seq[Attribute] = Nil
-
-  override def children: Seq[SparkPlan] = ???
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
 }
