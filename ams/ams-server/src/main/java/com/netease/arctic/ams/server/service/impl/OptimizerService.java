@@ -190,7 +190,6 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
-
   public void insertOptimizer(
       String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {
