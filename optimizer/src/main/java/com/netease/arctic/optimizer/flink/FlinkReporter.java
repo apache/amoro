@@ -25,7 +25,6 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -41,8 +40,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
-
-import static org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.getExecutionEnvironment;
 
 public class FlinkReporter extends AbstractStreamOperator<Void>
         implements OneInputStreamOperator<OptimizeTaskStat, Void> {
