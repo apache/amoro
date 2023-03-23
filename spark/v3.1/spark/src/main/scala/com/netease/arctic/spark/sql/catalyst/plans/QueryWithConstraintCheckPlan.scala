@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.util.truncatedString
 import org.apache.spark.sql.catalyst.utils.SetAccumulator
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
 
-case class QueryWithConstraintCheck(
+case class QueryWithConstraintCheckPlan(
     scanPlan: LogicalPlan,
     fileFilterPlan: LogicalPlan) extends BinaryNode {
 

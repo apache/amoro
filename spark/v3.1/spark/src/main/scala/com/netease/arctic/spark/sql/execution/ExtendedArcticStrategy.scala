@@ -61,7 +61,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
-    case QueryWithConstraintCheck(scanPlan, fileFilterPlan) =>
+    case QueryWithConstraintCheckPlan(scanPlan, fileFilterPlan) =>
       QueryWithConstraintCheckExec(planLater(scanPlan), planLater(fileFilterPlan)) :: Nil
 
     case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>

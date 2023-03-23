@@ -40,7 +40,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
       val upsertWrite = arcticRelation.table.asUpsertWrite
       val (newQuery, options, projections) = if (upsertWrite.appendAsUpsert()) {
@@ -54,75 +54,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
         (insertQuery, writeOptions, projections)
       }
-
-      arcticRelation.table match {
-        case tbl: ArcticSparkTable =>
-          if (tbl.table().isKeyedTable) {
-            if (checkDuplicatesEnabled()) {
-              val writeOption = options + ("optimize.enabled" -> "true")
-              val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-              val checkDataQuery = QueryWithConstraintCheck(newQuery, validateQuery)
-              ArcticRowLevelWrite(arcticRelation, checkDataQuery, writeOption, projections)
-            } else {
-              ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
-            }
-          } else {
-            a
-          }
-      }
-    case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _)
-      if checkDuplicatesEnabled() =>
-      val arcticRelation = asTableRelation(r)
-      arcticRelation.table match {
-        case table: ArcticSparkTable =>
-          if (table.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
-            a.copy(query = checkDataQuery)
-          } else {
-            a
-          }
-        case _ =>
-          a
-      }
-
-    case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, _, _)
-      if checkDuplicatesEnabled() =>
-      val arcticRelation = asTableRelation(r)
-      arcticRelation.table match {
-        case table: ArcticSparkTable =>
-          if (table.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            var finalExpr: Expression = deleteExpr
-            deleteExpr match {
-              case expr: EqualNullSafe =>
-                finalExpr = expr.copy(query.output.last, expr.right)
-              case _ =>
-            }
-            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
-            a.copy(query = checkDataQuery)
-          } else {
-            a
-          }
-        case _ =>
-          a
-      }
-
-    case c @ CreateTableAsSelect(catalog, _, _, query, props, _, _)
-      if checkDuplicatesEnabled() =>
-      catalog match {
-        case _: ArcticSparkCatalog =>
-          if (props.contains("primary.keys")) {
-            val primaries = props("primary.keys").split(",")
-            val validateQuery = buildValidatePrimaryKeyDuplication(primaries, query)
-            val checkDataQuery = QueryWithConstraintCheck(query, validateQuery)
-            c.copy(query = checkDataQuery)
-          } else {
-            c
-          }
-        case _ =>
-          c
-      }
+      ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
   }
 
   def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
@@ -139,47 +71,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       (null, backRowProjection)
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
-  }
-
-  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
-    r.table match {
-      case arctic: ArcticSparkTable =>
-        if (arctic.table().isKeyedTable) {
-          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val attributes = query.output.filter(p => primaries.contains(p.name))
-          val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
-          val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)
-          val sumAttr = findOutputAttr(aggPlan.output, SUM_ROW_ID_ALIAS_NAME)
-          val havingExpr = GreaterThan(sumAttr, Literal(1L))
-          Filter(havingExpr, aggPlan)
-        } else {
-          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
-        }
-    }
-  }
-
-  def buildValidatePrimaryKeyDuplication(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
-    val attributes = query.output.filter(p => primaries.contains(p.name))
-    val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
-    val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)
-    val sumAttr = findOutputAttr(aggPlan.output, SUM_ROW_ID_ALIAS_NAME)
-    val havingExpr = GreaterThan(sumAttr, Literal(1L))
-    Filter(havingExpr, aggPlan)
-  }
-
-  protected def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
-    attrs.find(attr => resolver(attr.name, attrName)).getOrElse {
-      throw new UnsupportedOperationException(s"Cannot find $attrName in $attrs")
-    }
-  }
-
-  private final val SUM_ROW_ID_ALIAS_NAME = "_sum_"
-
-  def checkDuplicatesEnabled(): Boolean = {
-    java.lang.Boolean.valueOf(spark.sessionState.conf.
-      getConfString(
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
   def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression = {
