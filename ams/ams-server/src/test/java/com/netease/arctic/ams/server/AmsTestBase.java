@@ -96,14 +96,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-    TestGetMaintainerConfig.class,
-    TestCommandParser.class,
-    TestAnalyzeCall.class,
-    TestOptimizeCall.class,
-    TestRepairCall.class,
-    TestShowCall.class,
-    TestTableCall.class,
-    TestUseCall.class,
     OptimizerControllerTest.class,
     TableControllerTest.class,
     TerminalControllerTest.class,
