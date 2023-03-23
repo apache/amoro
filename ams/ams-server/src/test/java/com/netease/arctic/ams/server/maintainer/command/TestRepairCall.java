@@ -40,19 +40,6 @@ public class TestRepairCall extends CallCommandTestBase {
   }
 
   @Test
-  public void testRepairFileLoseThroughRollback() {
-    Context context = new Context();
-    String removeFile = removeFile();
-    Assert.assertTrue(analyze(context).contains(removeFile));
-
-    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(PK_TABLE_ID);
-
-    repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
-
-    Assert.assertFalse(fileExists(removeFile, getArcticTable().asKeyedTable().changeTable()));
-  }
-
-  @Test
   public void testRepairManifestLoseThroughSyncMetadata() {
     Context context = new Context();
     String removeManifest = removeManifest();

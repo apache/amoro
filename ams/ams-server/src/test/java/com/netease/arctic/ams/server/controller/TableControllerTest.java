@@ -185,7 +185,7 @@ public class TableControllerTest {
   @AfterClass
   public static void stopMetastore() throws IOException, SQLException {
     AmsClientPools.cleanAll();
-    ams.stopAndCleanUp();
+    // ams.stopAndCleanUp();
   }
 
   @Test
