@@ -39,6 +39,8 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.data.TableMigrationUtil;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.collect.ListMultimap;
@@ -214,8 +216,16 @@ public class HiveMetaSynchronizer {
     String arcticTransientTime = arcticTable.partitionProperty().containsKey(partitionData) ?
         arcticTable.partitionProperty().get(partitionData)
             .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+
     // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
     // find out if the partition is changed.
+    String hiveLocation = hivePartition.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(partitionData) ?
+        arcticTable.partitionProperty().get(partitionData)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
+    }
     if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
       return true;
     }
@@ -229,6 +239,13 @@ public class HiveMetaSynchronizer {
     if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
       arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
           .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+    }
+    String hiveLocation = table.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT) ?
+        arcticTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
     }
     if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
       return true;
@@ -266,6 +283,7 @@ public class HiveMetaSynchronizer {
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);
         filesToAdd.forEach(overwriteBaseFiles::addFile);
         overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
+        overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysTrue());
         overwriteBaseFiles.commit();
       } else {
         OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();
