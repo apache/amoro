@@ -103,6 +103,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       this.temporalJoinSplits = enumState.temporalJoinSplits();
     }
     this.dimTable = dimTable;
+    LOG.info("dimTable: {}", dimTable);
   }
 
   @Override
