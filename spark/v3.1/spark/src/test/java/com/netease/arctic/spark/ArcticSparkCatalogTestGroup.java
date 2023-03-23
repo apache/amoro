@@ -42,7 +42,6 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestImpalaParquet.class,
     TestKeyedHiveInsertOverwriteDynamic.class,
     TestKeyedHiveInsertOverwriteStatic.class,
     TestUnkeyedHiveInsertOverwriteDynamic.class,

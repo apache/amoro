@@ -34,7 +34,6 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestImpalaParquet.class,
     TestArcticHiveCatalog.class,
     TestRewritePartitions.class,
     TestOverwriteFiles.class,
