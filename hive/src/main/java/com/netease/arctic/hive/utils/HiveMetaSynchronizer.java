@@ -283,7 +283,6 @@ public class HiveMetaSynchronizer {
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);
         filesToAdd.forEach(overwriteBaseFiles::addFile);
         overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
-        overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysTrue());
         overwriteBaseFiles.commit();
       } else {
         OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();
