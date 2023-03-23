@@ -25,8 +25,10 @@ import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, Rewrit
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, MergeIntoIcebergTableResolutionCheck, RewriteDeleteFromIcebergTable, RewriteUpdateTable}
+import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelCommandAssignments, AlignedRowLevelIcebergCommandCheck, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveProcedures, RewriteDeleteFromIcebergTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
+import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromIcebergTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
+import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
 
 class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
@@ -45,20 +47,32 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule { spark => RewriteAppendArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteDeleteFromArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
+
+    // iceberg extensions
+    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
+    extensions.injectResolutionRule { _ => CheckMergeIntoTableConditions }
+    extensions.injectResolutionRule { _ => ProcedureArgumentCoercion }
+    extensions.injectResolutionRule { _ => AlignRowLevelCommandAssignments }
+    extensions.injectResolutionRule { _ => RewriteDeleteFromIcebergTable }
+    extensions.injectResolutionRule { _ => RewriteUpdateTable }
     extensions.injectCheckRule { _ => MergeIntoIcebergTableResolutionCheck }
     extensions.injectCheckRule { _ => AlignedRowLevelIcebergCommandCheck }
 
-    // iceberg optimizer rules
+    // optimizer extensions
     extensions.injectOptimizerRule { _ => ExtendedSimplifyConditionalsInPredicate }
     extensions.injectOptimizerRule { _ => ExtendedReplaceNullWithFalseInPredicate }
-    extensions.injectResolutionRule { _ => RewriteDeleteFromIcebergTable }
-    extensions.injectResolutionRule { _ => RewriteUpdateTable }
+    // pre-CBO rules run only once and the order of the rules is important
+    // - metadata deletes have to be attempted immediately after the operator optimization
+    // - dynamic filters should be added before replacing commands with rewrite plans
+    // - scans must be planned before building writes
+    extensions.injectPreCBORule { _ => OptimizeMetadataOnlyDeleteFromIcebergTable }
+    extensions.injectPreCBORule { _ => RowLevelCommandScanRelationPushDown }
+    extensions.injectPreCBORule { _ => ExtendedV2Writes }
+    extensions.injectPreCBORule { spark => RowLevelCommandDynamicPruning(spark) }
+    extensions.injectPreCBORule { _ => ReplaceRewrittenRowLevelCommand }
 
-    // arctic optimizer rules
-    extensions.injectPreCBORule(OptimizeWriteRule)
-
-    // iceberg strategy rules
-    extensions.injectPlannerStrategy { spark => execution.ExtendedIcebergStrategy(spark) }
+    // planner extensions
+    extensions.injectPlannerStrategy { spark => ExtendedDataSourceV2Strategy(spark) }
 
     // arctic strategy rules
     extensions.injectPlannerStrategy { spark => execution.ExtendedArcticStrategy(spark) }

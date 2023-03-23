@@ -26,13 +26,15 @@ import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
+import org.apache.iceberg.spark.Spark3Util
+import org.apache.iceberg.spark.source.SparkTable
 import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
+import org.apache.spark.sql.catalyst.plans.logical.{DeleteFromIcebergTable, DeleteFromTable, LogicalPlan, MergeIntoContext, MergeIntoTable, UnresolvedMergeIntoIcebergTable, UpdateIcebergTable, UpdateTable}
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
@@ -191,6 +193,49 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
     case m @ MergeIntoTable(UnresolvedArcticTable(aliasedTable), _, _, _, _) =>
       plans.MergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
+
+    case DeleteFromTable(UnresolvedIcebergTable(aliasedTable), condition) =>
+      DeleteFromIcebergTable(aliasedTable, Some(condition))
+
+    case UpdateTable(UnresolvedIcebergTable(aliasedTable), assignments, condition) =>
+      UpdateIcebergTable(aliasedTable, assignments, condition)
+
+    case MergeIntoTable(UnresolvedIcebergTable(aliasedTable), source, cond, matchedActions, notMatchedActions) =>
+      // cannot construct MergeIntoIcebergTable right away as MERGE operations require special resolution
+      // that's why the condition and actions must be hidden from the regular resolution rules in Spark
+      // see ResolveMergeIntoTableReferences for details
+      val context = MergeIntoContext(cond, matchedActions, notMatchedActions)
+      UnresolvedMergeIntoIcebergTable(aliasedTable, source, context)
+  }
+
+  object UnresolvedIcebergTable {
+
+    def unapply(plan: LogicalPlan): Option[LogicalPlan] = {
+      EliminateSubqueryAliases(plan) match {
+        case UnresolvedRelation(multipartIdentifier, _, _) if isIcebergTable(multipartIdentifier) =>
+          Some(plan)
+        case _ =>
+          None
+      }
+    }
+
+    private def isIcebergTable(multipartIdent: Seq[String]): Boolean = {
+      val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(SparkSession.active, multipartIdent.asJava)
+      catalogAndIdentifier.catalog match {
+        case tableCatalog: TableCatalog =>
+          Try(tableCatalog.loadTable(catalogAndIdentifier.identifier))
+            .map(isIcebergTable)
+            .getOrElse(false)
+
+        case _ =>
+          false
+      }
+    }
+
+    private def isIcebergTable(table: Table): Boolean = table match {
+      case _: SparkTable => true
+      case _ => false
+    }
   }
 
   object UnresolvedArcticTable {
