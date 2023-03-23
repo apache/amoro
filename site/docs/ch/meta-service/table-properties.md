@@ -9,8 +9,6 @@
 | read.split.open-file-cost          | 4194304（4MB）    | 打开文件预估的开销                          |
 | read.split.planning-lookback       | 10               | 合并读取任务时同时考虑的任务个数               |
 | read.split.target-size              | 134217728（128MB）| 合并读取任务时的目标大小                     |
-| read.distribution-mode              | hash            | 读取时的数据分区方式，支持 none、hash          |
-| read.distribution.hash-mode         | auto            | 使用 hash 的分区读取方式时，使用的 hash 键，支持 primary-key、partition-key、primary-partition-key 和 auto                     |
 
 ### 表写入配置
 
