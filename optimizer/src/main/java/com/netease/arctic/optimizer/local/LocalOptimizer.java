@@ -29,6 +29,8 @@ import com.netease.arctic.optimizer.operator.BaseTaskConsumer;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import com.netease.arctic.optimizer.operator.DefaultOperatorFactory;
+import com.netease.arctic.optimizer.operator.OperatorFactory;
 import com.netease.arctic.optimizer.util.OptimizerUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
@@ -52,6 +54,9 @@ import java.util.concurrent.TimeUnit;
 public class LocalOptimizer implements StatefulOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizer.class);
   private static final long serialVersionUID = 1L;
+  private static final long POLL_INTERVAL = 5000; // 5s
+  
+  private final OperatorFactory operatorFactory;
 
   private OptimizerConfig config;
 
@@ -62,6 +67,8 @@ public class LocalOptimizer implements StatefulOptimizer {
   private Map<String, String> properties;
 
   private static final String STATE_JOB_ID = "local-job-id";
+  private static final String HADOOP_CONF_DIR = "HADOOP_CONF_DIR";
+  private static final String HADOOP_USER_NAME = "HADOOP_USER_NAME";
 
   private ExecutorService executeThreadPool;
 
@@ -70,9 +77,15 @@ public class LocalOptimizer implements StatefulOptimizer {
   private volatile boolean stopped = false;
 
   public LocalOptimizer() {
+    this(new DefaultOperatorFactory());
+  }
+
+  public LocalOptimizer(OperatorFactory operatorFactory) {
+    this.operatorFactory = operatorFactory;
   }
 
   public LocalOptimizer(Map<String, String> properties) {
+    this();
     this.properties = properties;
   }
 
@@ -130,6 +143,14 @@ public class LocalOptimizer implements StatefulOptimizer {
       }
       if (containerProperties != null && containerProperties.containsKey("java_home")) {
         String[] tmpCmd = {"/bin/sh", "-c", "export JAVA_HOME=" + containerProperties.getString("java_home")};
+        runtime.exec(tmpCmd);
+      }
+      if (containerProperties.containsKey(HADOOP_CONF_DIR)) {
+        String[] tmpCmd = {"/bin/sh", "-c", "export HADOOP_CONF_DIR=" + containerProperties.get(HADOOP_CONF_DIR)};
+        runtime.exec(tmpCmd);
+      }
+      if (containerProperties.containsKey(HADOOP_USER_NAME)) {
+        String[] tmpCmd = {"/bin/sh", "-c", "export HADOOP_USER_NAME=" + containerProperties.get(HADOOP_USER_NAME)};
         runtime.exec(tmpCmd);
       }
       String[] finalCmd = {"/bin/sh", "-c", cmd};
@@ -219,40 +240,26 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskConsumer baseTaskConsumer;
 
     public Consumer() {
-      this.baseTaskConsumer = new BaseTaskConsumer(config);
+      this.baseTaskConsumer = operatorFactory.buildTaskConsumer(config);
     }
 
     public TaskWrapper pollTask() throws InterruptedException {
-      int retry = 0;
       while (!stopped) {
         try {
-          TaskWrapper task = baseTaskConsumer.pollTask();
+          TaskWrapper task = baseTaskConsumer.pollTask(0);
           if (task != null) {
             LOG.info("poll task {}", task);
             return task;
           } else {
-            LOG.info("poll no task");
+            LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
+            Thread.sleep(POLL_INTERVAL);
           }
         } catch (Throwable e) {
           if (stopped) {
             break;
           }
-          // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-          LOG.error("failed to poll task, retry {}", retry, e);
-          retry++;
-        } finally {
-          if (retry >= 3) {
-            //stop = true;
-            retry = 0;
-            LOG.error("consumer has tried too many times, and the subscription message is suspended." +
-                " Please check for errors");
-            try {
-              Thread.sleep(10000);
-            } catch (InterruptedException e) {
-              LOG.warn("consumer interrupted");
-              throw e;
-            }
-          }
+          LOG.error("failed to poll task", e);
+          Thread.sleep(POLL_INTERVAL);
         }
       }
       return null;
@@ -266,8 +273,8 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseTaskReporter baseTaskReporter;
 
     public Executor() {
-      this.baseTaskExecutor = new BaseTaskExecutor(config);
-      this.baseTaskReporter = new BaseTaskReporter(config);
+      this.baseTaskExecutor = operatorFactory.buildTaskExecutor(config);
+      this.baseTaskReporter = operatorFactory.buildTaskReporter(config);
     }
 
     @Override
@@ -287,7 +294,7 @@ public class LocalOptimizer implements StatefulOptimizer {
           LOG.info("get task to execute {}", task.getTask().getTaskId());
           OptimizeTaskStat result = baseTaskExecutor.execute(task);
           LOG.info("execute {} {}", result.getStatus(), task.getTask().getTaskId());
-          baseTaskReporter.report(result, 20, 10000);
+          baseTaskReporter.report(result);
           LOG.info("report success {}", result.getTaskId());
         } catch (InterruptedException e) {
           LOG.warn("execute interrupted");
@@ -305,7 +312,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     private final BaseToucher toucher;
 
     public Toucher() {
-      this.toucher = new BaseToucher(config);
+      this.toucher = operatorFactory.buildToucher(config);
     }
 
     @Override

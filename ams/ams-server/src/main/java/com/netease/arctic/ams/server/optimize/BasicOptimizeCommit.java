@@ -88,8 +88,8 @@ public class BasicOptimizeCommit {
         LOG.info("{} get no tasks to commit", arcticTable.id());
         return true;
       }
-      LOG.info("{} get tasks to commit for partitions {}", arcticTable.id(),
-          optimizeTasksToCommit.keySet());
+      LOG.info("{} get tasks to commit with from snapshot id = {}, for partitions {} ", arcticTable.id(),
+          baseSnapshotId, optimizeTasksToCommit.keySet());
 
       // collect files
       PartitionSpec spec = arcticTable.spec();

@@ -63,6 +63,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
@@ -139,6 +140,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
+    configs.put("spark.sql.catalog." + catalogNameArctic + ".auth.load-from-ams", "false");
     return configs;
   }
 
@@ -171,6 +173,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
+    configs.put("spark.sql.catalog." + catalogNameHive + ".auth.load-from-ams", "false");
     return configs;
   }
 
@@ -607,5 +610,19 @@ public class SparkTestContext extends ExternalResource {
 
   protected interface Action {
     void invoke();
+  }
+
+  public static Row recordToRow(Record record) {
+    Object[] values = new Object[record.size()];
+    for (int i = 0; i < values.length; i++) {
+      Object v = record.get(i);
+      if (v instanceof LocalDateTime) {
+        v = new Timestamp(((LocalDateTime) v).atOffset(ZoneOffset.UTC).toInstant().toEpochMilli());
+      } else if (v instanceof OffsetDateTime) {
+        v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
+      }
+      values[i] = v;
+    }
+    return RowFactory.create(values);
   }
 }
