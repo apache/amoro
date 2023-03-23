@@ -31,7 +31,7 @@ import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
-case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
+case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
   def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
     EliminateSubqueryAliases(aliasedTable) match {

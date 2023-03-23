@@ -20,12 +20,12 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand, RewriteArcticMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelCommandAssignments, AlignedRowLevelIcebergCommandCheck, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveProcedures, RewriteDeleteFromIcebergTable, RewriteUpdateTable}
+import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelCommandAssignments, AlignedRowLevelIcebergCommandCheck, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromIcebergTable, RewriteMergeIntoTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromIcebergTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning
@@ -38,8 +38,8 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     }
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
-    extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoTableReferences(spark) }
-    extensions.injectResolutionRule { spark => RewriteMergeIntoTable(spark) }
+    extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoArcticTableReferences(spark) }
+    extensions.injectResolutionRule { spark => RewriteArcticMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
 
@@ -50,11 +50,13 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     // iceberg extensions
     extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
+    extensions.injectResolutionRule { spark => ResolveMergeIntoTableReferences(spark) }
     extensions.injectResolutionRule { _ => CheckMergeIntoTableConditions }
     extensions.injectResolutionRule { _ => ProcedureArgumentCoercion }
     extensions.injectResolutionRule { _ => AlignRowLevelCommandAssignments }
     extensions.injectResolutionRule { _ => RewriteDeleteFromIcebergTable }
     extensions.injectResolutionRule { _ => RewriteUpdateTable }
+    extensions.injectResolutionRule { _ => RewriteMergeIntoTable }
     extensions.injectCheckRule { _ => MergeIntoIcebergTableResolutionCheck }
     extensions.injectCheckRule { _ => AlignedRowLevelIcebergCommandCheck }
 

@@ -43,7 +43,7 @@ import org.apache.spark.sql.types.{IntegerType, StructType}
 import scala.collection.{Seq, mutable}
 
 
-case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] {
+case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
   private final val ROW_FROM_SOURCE = "__row_from_source"
   private final val ROW_FROM_TARGET = "__row_from_target"
