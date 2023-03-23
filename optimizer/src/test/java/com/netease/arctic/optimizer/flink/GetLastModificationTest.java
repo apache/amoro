@@ -44,7 +44,7 @@ public class GetLastModificationTest {
 
             if (conn.getResponseCode() == 200) {
                 InputStream is = conn.getInputStream();
-                //面对获取的输入流进行读取
+
                 BufferedReader br = new BufferedReader(new InputStreamReader(is));
                 String line;
                 while ((line = br.readLine()) != null) {
