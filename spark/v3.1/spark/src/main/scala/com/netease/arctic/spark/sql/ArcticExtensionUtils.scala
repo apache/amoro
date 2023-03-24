@@ -146,6 +146,11 @@ object ArcticExtensionUtils {
     }
   }
 
+  def isUpsert(relation: DataSourceV2Relation): Boolean = {
+    val upsertWrite = relation.table.asUpsertWrite
+    upsertWrite.appendAsUpsert()
+  }
+
   def isArcticIcebergRelation(plan: LogicalPlan): Boolean = {
     def isArcticIcebergTable(relation: DataSourceV2Relation): Boolean = relation.table match {
       case _: ArcticIcebergSparkTable => true

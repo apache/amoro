@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -25,18 +26,20 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class WriteTaskCommit implements WriterCommitMessage {
-  private final DataFile[] taskFiles;
+  private final DataFile[] dataFiles;
   private final DeleteFile[] deleteFiles;
 
-  WriteTaskCommit(DataFile[] taskFiles, DeleteFile[] deleteFiles) {
-    this.taskFiles = taskFiles;
-    this.deleteFiles = deleteFiles;
+  WriteTaskCommit(List<DataFile> dataFiles, List<DeleteFile> deleteFiles) {
+    this.dataFiles = dataFiles.toArray(new DataFile[0]);
+    this.deleteFiles = deleteFiles.toArray(new DeleteFile[0]);
   }
 
   DataFile[] files() {
-    return taskFiles;
+    return dataFiles;
   }
 
   public static Iterable<DataFile> files(WriterCommitMessage[] messages) {
@@ -59,5 +62,50 @@ public class WriteTaskCommit implements WriterCommitMessage {
           ImmutableList.of()));
     }
     return ImmutableList.of();
+  }
+
+  public static class Builder {
+    private final List<DataFile> dataFiles;
+    private final List<DeleteFile> deleteFiles;
+
+    Builder() {
+      this.dataFiles = Lists.newArrayList();
+      this.deleteFiles = Lists.newArrayList();
+    }
+
+    public WriteTaskCommit.Builder add(WriteTaskCommit result) {
+      addDataFiles(result.dataFiles);
+      addDeleteFiles(result.deleteFiles);
+      return this;
+    }
+
+    public WriteTaskCommit.Builder addAll(Iterable<WriteTaskCommit> results) {
+      results.forEach(this::add);
+      return this;
+    }
+
+    public WriteTaskCommit.Builder addDataFiles(DataFile... files) {
+      Collections.addAll(dataFiles, files);
+      return this;
+    }
+
+    public WriteTaskCommit.Builder addDataFiles(Iterable<DataFile> files) {
+      Iterables.addAll(dataFiles, files);
+      return this;
+    }
+
+    public WriteTaskCommit.Builder addDeleteFiles(DeleteFile... files) {
+      Collections.addAll(deleteFiles, files);
+      return this;
+    }
+
+    public WriteTaskCommit.Builder addDeleteFiles(Iterable<DeleteFile> files) {
+      Iterables.addAll(deleteFiles, files);
+      return this;
+    }
+
+    public WriteTaskCommit build() {
+      return new WriteTaskCommit(dataFiles, deleteFiles);
+    }
   }
 }

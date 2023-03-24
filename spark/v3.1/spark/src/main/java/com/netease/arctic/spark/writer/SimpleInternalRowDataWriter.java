@@ -42,7 +42,10 @@ public class SimpleInternalRowDataWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new WriteTaskCommit(result.dataFiles(), new DeleteFile[0]);
+    return new WriteTaskCommit.Builder()
+        .addDataFiles(result.dataFiles())
+        .addDeleteFiles(result.deleteFiles())
+        .build();
   }
 
   @Override

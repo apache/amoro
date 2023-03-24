@@ -29,20 +29,24 @@ import org.apache.spark.sql.types.StructType;
 import java.io.IOException;
 
 public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
-  final TaskWriter<InternalRow> writer;
-  
-  final StructType schema;
-  final boolean isKeyedTable;
+  private final TaskWriter<InternalRow> insertWriter;
+  private final TaskWriter<InternalRow> deleteWrite;
 
-  public SimpleRowLevelDataWriter(TaskWriter<InternalRow> writer, StructType schema, boolean isKeyedTable) {
-    this.writer = writer;
+  private final StructType schema;
+  private final boolean isKeyedTable;
+
+  public SimpleRowLevelDataWriter(TaskWriter<InternalRow> insertWriter,
+                                  TaskWriter<InternalRow> deleteWrite,
+                                  StructType schema, boolean isKeyedTable) {
+    this.insertWriter = insertWriter;
+    this.deleteWrite = deleteWrite;
     this.schema = schema;
     this.isKeyedTable = isKeyedTable;
   }
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.DELETE, schema));
+    deleteWrite.write(new SparkInternalRowCastWrapper(row, ChangeAction.DELETE, schema));
   }
 
   @Override
@@ -57,10 +61,9 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
       insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.INSERT, schema);
     }
     if (!rowIsAllNull(delete)) {
-      writer.write(delete);
+      insertWriter.write(delete);
     }
-    writer.write(insert);
-
+    insertWriter.write(insert);
   }
 
   private boolean rowIsAllNull(SparkInternalRowCastWrapper row) {
@@ -75,26 +78,38 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.INSERT, schema));
+    insertWriter.write(new SparkInternalRowCastWrapper(row, ChangeAction.INSERT, schema));
   }
 
   @Override
   public WriterCommitMessage commit() throws IOException {
-    WriteResult result = writer.complete();
-    return new WriteTaskCommit(result.dataFiles(), result.deleteFiles());
+    WriteResult insert = this.insertWriter.complete();
+    WriteResult delete = this.deleteWrite.complete();
+    return new WriteTaskCommit.Builder()
+        .addDataFiles(insert.dataFiles())
+        .addDataFiles(delete.dataFiles())
+        .addDeleteFiles(insert.deleteFiles())
+        .addDeleteFiles(delete.deleteFiles())
+        .build();
   }
 
   @Override
   public void abort() throws IOException {
-    if (this.writer != null) {
-      this.writer.abort();
+    if (this.insertWriter != null) {
+      this.insertWriter.abort();
+    }
+    if (this.deleteWrite != null) {
+      this.deleteWrite.abort();
     }
   }
 
   @Override
   public void close() throws IOException {
-    if (this.writer != null) {
-      writer.close();
+    if (this.insertWriter != null) {
+      this.insertWriter.close();
+    }
+    if (this.deleteWrite != null) {
+      this.deleteWrite.close();
     }
   }
 }

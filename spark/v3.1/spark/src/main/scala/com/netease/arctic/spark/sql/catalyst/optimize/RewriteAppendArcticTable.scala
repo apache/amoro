@@ -40,21 +40,17 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
-      val arcticRelation = asTableRelation(r)
-      val upsertWrite = arcticRelation.table.asUpsertWrite
-      val (newQuery, options, projections) = if (upsertWrite.appendAsUpsert()) {
-        val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
-        val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
-        val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
-        val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
-        (insertQuery, upsertOptions, projections)
-      } else {
-        val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)()) ++ query.output, query)
-        val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
-        (insertQuery, writeOptions, projections)
-      }
-      ArcticRowLevelWrite(arcticRelation, newQuery, options, projections)
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) && isUpsert(r) =>
+      val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
+      val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
+      val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
+      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
+      ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections)
+
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) && !isUpsert(r) =>
+      val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)()) ++ query.output, query)
+      val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
+      ArcticRowLevelWrite(r, insertQuery, writeOptions, projections)
   }
 
   def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
