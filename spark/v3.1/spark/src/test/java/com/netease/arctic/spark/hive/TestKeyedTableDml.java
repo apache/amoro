@@ -336,7 +336,7 @@ public class TestKeyedTableDml extends SparkTestBase {
   @Test
   public void testExplain() {
     rows = sql("explain insert into {0}.{1} values (1, ''aaa'', ''aaaa'')", database, notUpsertTable);
-    Assert.assertTrue(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
+    Assert.assertFalse(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
     rows = sql("explain delete from {0}.{1} where id = 3", database, notUpsertTable);
     Assert.assertTrue(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
     rows = sql("explain update {0}.{1} set name = ''aaa'' where id = 3", database, notUpsertTable);
