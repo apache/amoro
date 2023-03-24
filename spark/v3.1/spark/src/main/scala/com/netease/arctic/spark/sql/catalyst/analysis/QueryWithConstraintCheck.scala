@@ -35,9 +35,19 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case a @ AppendData(r: DataSourceV2Relation, query, _, _) if isArcticRelation(r) && checkDuplicatesEnabled() =>
-      val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-      val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
-      a.copy(query = checkDataQuery)
+      val arcticRelation = asTableRelation(r)
+      arcticRelation.table match {
+        case table: ArcticSparkTable =>
+          if (table.table().isKeyedTable) {
+            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
+            val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
+            a.copy(query = checkDataQuery)
+          } else {
+            a
+          }
+        case _ =>
+          a
+      }
     case a@OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _)
       if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)

@@ -19,18 +19,15 @@
 package com.netease.arctic.spark.sql.catalyst.optimize
 
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 import java.util
@@ -46,11 +43,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
       val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
       ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections)
-
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) && !isUpsert(r) =>
-      val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)()) ++ query.output, query)
-      val projections = buildInsertProjections(insertQuery, r.output, isUpsert = false)
-      ArcticRowLevelWrite(r, insertQuery, writeOptions, projections)
   }
 
   def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
