@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.writer;
 
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.spark.sql.catalyst.InternalRow;
