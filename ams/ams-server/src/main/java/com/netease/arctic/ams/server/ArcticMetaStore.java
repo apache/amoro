@@ -186,6 +186,12 @@ public class ArcticMetaStore {
   }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
+    //prepare env
+    if (conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
+      DerbyService derbyService = new DerbyService();
+      derbyService.createTable();
+    }
+
     // init config
     initConfig();
     try {
@@ -195,11 +201,6 @@ public class ArcticMetaStore {
       int queueSizePerSelector = conf.getInteger(ArcticMetaStoreConf.THRIFT_QUEUE_SIZE_PER_THREAD);
       boolean useCompactProtocol = conf.get(ArcticMetaStoreConf.USE_THRIFT_COMPACT_PROTOCOL);
       int port = conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
-
-      if (conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
-        DerbyService derbyService = new DerbyService();
-        derbyService.createTable();
-      }
 
       LOG.info("Starting arctic metastore on port " + port);
 
