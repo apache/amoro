@@ -214,6 +214,18 @@ public class HiveMetaSynchronizer {
     String arcticTransientTime = arcticTable.partitionProperty().containsKey(partitionData) ?
         arcticTable.partitionProperty().get(partitionData)
             .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+    String hiveLocation = hivePartition.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(partitionData) ?
+        arcticTable.partitionProperty().get(partitionData)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+
+    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // side to the arctic
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
+    }
+
     // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
     // find out if the partition is changed.
     if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
@@ -230,6 +242,20 @@ public class HiveMetaSynchronizer {
       arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
           .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
     }
+    String hiveLocation = table.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT) ?
+        arcticTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+
+    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // side to the arctic
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
+    }
+
+    // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+    // find out if the partition is changed.
     if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
       return true;
     }
