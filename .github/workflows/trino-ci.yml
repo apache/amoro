@@ -8,17 +8,15 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "site/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "optimizer/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
   pull_request:
     branches:

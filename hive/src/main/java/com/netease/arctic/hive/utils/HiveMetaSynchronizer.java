@@ -124,12 +124,16 @@ public class HiveMetaSynchronizer {
     return update;
   }
 
+  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient) {
+    syncHiveDataToArctic(table, hiveClient, false);
+  }
+
   /**
    * Synchronize the data change of the hive table to arctic table
    * @param table arctic table to accept the data change
    * @param hiveClient hive client
    */
-  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient) {
+  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient, boolean force) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -140,14 +144,7 @@ public class HiveMetaSynchronizer {
       if (table.spec().isUnpartitioned()) {
         Table hiveTable =
             hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
-        String hiveTransientTime =  hiveTable.getParameters().get("transient_lastDdlTime");
-        StructLikeMap<Map<String, String>> structLikeMap = baseStore.partitionProperty();
-        String arcticTransientTime = null;
-        if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-          arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
-              .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
-        }
-        if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
+        if (force || tableHasModified(baseStore, hiveTable)) {
           List<DataFile> hiveDataFiles = listHivePartitionFiles(table, Maps.newHashMap(),
               hiveTable.getSd().getLocation());
           List<DataFile> deleteFiles = Lists.newArrayList();
@@ -180,13 +177,7 @@ public class HiveMetaSynchronizer {
         for (Partition hivePartition : hivePartitions) {
           StructLike partitionData = HivePartitionUtil.buildPartitionData(hivePartition.getValues(), table.spec());
           icebergPartitions.remove(partitionData);
-          String hiveTransientTime =  hivePartition.getParameters().get("transient_lastDdlTime");
-          String arcticTransientTime = baseStore.partitionProperty().containsKey(partitionData) ?
-              baseStore.partitionProperty().get(partitionData)
-                  .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
-          // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
-          // find out if the partition is changed.
-          if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
+          if (force || partitionHasModified(baseStore, hivePartition, partitionData)) {
             List<DataFile> hiveDataFiles = listHivePartitionFiles(table,
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
                 hivePartition.getSd().getLocation());
@@ -215,6 +206,60 @@ public class HiveMetaSynchronizer {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to get hive table:" + table.id(), e);
     }
+  }
+
+  private static boolean partitionHasModified(UnkeyedTable arcticTable, Partition hivePartition,
+      StructLike partitionData) {
+    String hiveTransientTime =  hivePartition.getParameters().get("transient_lastDdlTime");
+    String arcticTransientTime = arcticTable.partitionProperty().containsKey(partitionData) ?
+        arcticTable.partitionProperty().get(partitionData)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+    String hiveLocation = hivePartition.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(partitionData) ?
+        arcticTable.partitionProperty().get(partitionData)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+
+    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // side to the arctic
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
+    }
+
+    // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+    // find out if the partition is changed.
+    if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
+    String hiveTransientTime =  table.getParameters().get("transient_lastDdlTime");
+    StructLikeMap<Map<String, String>> structLikeMap = arcticTable.partitionProperty();
+    String arcticTransientTime = null;
+    if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
+      arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
+          .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+    }
+    String hiveLocation = table.getSd().getLocation();
+    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT) ?
+        arcticTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+
+    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // side to the arctic
+    if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
+      return false;
+    }
+
+    // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+    // find out if the partition is changed.
+    if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
+      return true;
+    }
+    return false;
   }
 
   private static List<DataFile> listHivePartitionFiles(ArcticTable arcticTable, Map<String, String> partitionValueMap,
