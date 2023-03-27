@@ -211,6 +211,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         optimizeTable -> checkIfDisabledSelfOptimizing(optimizeTables.get(optimizeTable).getArcticTable()));
 
     LOG.info("Refresh tables complete, cost {} ms", System.currentTimeMillis() - startTimestamp);
+    tablesSvc.shutdown();
     return new ArrayList<>(optimizeTables.keySet());
   }
 
@@ -220,11 +221,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
    * @param pureDelete whether delete history records and table runtime in sysdb
    */
   private void clearOptimizeTable(TableIdentifier tableIdentifier, boolean pureDelete) {
+    if (!optimizeTables.containsKey(tableIdentifier)) {
+      return;
+    }
     TableOptimizeItem tableItem = optimizeTables.remove(tableIdentifier);
     optimizeQueueService.release(tableIdentifier);
     try {
       tableItem.optimizeTasksClear(false);
-    } catch (NullPointerException ignore){
     } catch (Throwable t) {
       LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
@@ -402,7 +405,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     LOG.info("add tables[{}] {}", toAddTables.size(), toAddTables);
   }
 
-  private void parallelProcessTables(Iterable<TableIdentifier> tableIdentifiers, Tasks.Task<TableIdentifier, RuntimeException> task) {
+  private void parallelProcessTables(Iterable<TableIdentifier> tableIdentifiers,
+      Tasks.Task<TableIdentifier, RuntimeException> task) {
     if (!inited) {
       LOG.info("OptimizeService init not completed, can't update tables");
       return;
