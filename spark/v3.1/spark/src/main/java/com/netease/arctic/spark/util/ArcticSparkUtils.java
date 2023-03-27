@@ -18,10 +18,8 @@
 
 package com.netease.arctic.spark.util;
 
-import com.netease.arctic.table.ArcticTable;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.Spark3Util;
@@ -38,9 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ArcticSparkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkUtils.class);
@@ -99,21 +95,5 @@ public class ArcticSparkUtils {
       default:
     }
     return value;
-  }
-
-  public static boolean isPrimaryKeyIncludeAllPartitions(ArcticTable table) {
-    Preconditions.checkArgument(table.isKeyedTable(), "it's must be a keyed table");
-    List<String> pkCols = table.asKeyedTable().primaryKeySpec().fieldNames();
-    PartitionSpec ptSpec = table.spec();
-
-    boolean withTransform = ptSpec.fields().stream()
-        .anyMatch(f -> !f.transform().isIdentity());
-    if (withTransform) {
-      return false;
-    }
-    List<String> ptCols = ptSpec.fields().stream()
-        .map(f -> table.schema().findField(f.sourceId()).name())
-        .collect(Collectors.toList());
-    return new HashSet<>(pkCols).containsAll(ptCols);
   }
 }

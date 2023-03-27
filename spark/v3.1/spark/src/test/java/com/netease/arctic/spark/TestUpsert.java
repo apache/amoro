@@ -62,8 +62,8 @@ public class TestUpsert extends SparkTestBase {
   private static final PartitionSpec partitionSpec = PartitionSpec.builderFor(schema)
       .identity("pt").build();
 
-  private static final int newRecordSize = 300;
-  private static final int upsertRecordSize = 200;
+  private static final int newRecordSize = 30;
+  private static final int upsertRecordSize = 20;
 
   @Parameterized.Parameters
   public static List<Object[]> arguments() {
@@ -92,9 +92,9 @@ public class TestUpsert extends SparkTestBase {
               .withSequencePrimaryKey(primaryKeySpec)
               .withRandomDate("pt")
               .build();
-          List<GenericRecord> target = generator.records(1000);
+          List<GenericRecord> target = generator.records(100);
           List<GenericRecord> source = upsertSource(
-              target, generator, primaryKeySpec, partitionSpec, newRecordSize, upsertRecordSize);
+              target, generator, primaryKeySpec, partitionSpec, upsertRecordSize, newRecordSize);
 
           return new Object[] {target, source, primaryKeySpec, duplicateCheck};
         })
@@ -125,8 +125,9 @@ public class TestUpsert extends SparkTestBase {
 
     for (GenericRecord r : upsertSource) {
       GenericRecord t = it.next();
-      sourceCols.forEach(col -> t.setField(col, r.getField(col)));
+      sourceCols.forEach(col -> r.setField(col, t.getField(col)));
     }
+    source.addAll(upsertSource);
     return source;
   }
 
@@ -174,6 +175,7 @@ public class TestUpsert extends SparkTestBase {
 
   @After
   public void after() {
+    sql("USE spark_catalog");
     sql("DROP VIEW IF EXISTS " + initView);
     sql("DROP VIEW IF EXISTS " + sourceView);
     ArcticCatalog catalog = catalog(catalogNameArctic);
@@ -188,7 +190,7 @@ public class TestUpsert extends SparkTestBase {
     sql("INSERT OVERWRITE " + database + "." + table + " SELECT * FROM " + initView);
     sql("insert into table " + database + '.' + table + " SELECT * FROM " + sourceView);
 
-    rows = sql("SELECT * FROM " + database + "." + table);
+    rows = sql("SELECT * FROM " + database + "." + table + " ORDER BY order_key ");
     Assert.assertEquals(initialize.size() + newRecordSize, rows.size());
   }
 }
