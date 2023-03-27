@@ -90,7 +90,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
-  private final ExecutorService tablesSvc;
+  private ExecutorService tablesSvc;
   private volatile boolean inited = false;
 
   public OptimizeService() {
@@ -103,7 +103,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private ExecutorService getProcessTablesThreadPool() {
     if (tablesSvc == null || tablesSvc.isShutdown() || tablesSvc.isTerminated()) {
-      return Executors.newFixedThreadPool(loadTablePoolSize());
+      tablesSvc = Executors.newFixedThreadPool(loadTablePoolSize());
     }
     return tablesSvc;
   }
