@@ -457,7 +457,12 @@ public class TableOptimizeItem extends IJDBCService {
       // if the table is planning, should not update the optimizing status
       return;
     }
+    if (tableOptimizeRuntime.getOptimizeStatus() == TableOptimizeRuntime.OptimizeStatus.Pending) {
+      // if the table is Pending, should not plan again
+      return;
+    }
     if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+      arcticTable.asUnkeyedTable().refresh();
       Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
       if (currentSnapshot == null) {
         tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
