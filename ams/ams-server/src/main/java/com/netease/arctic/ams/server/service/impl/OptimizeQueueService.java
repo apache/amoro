@@ -759,6 +759,11 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
+          if (tableItem.getTableOptimizeRuntime().getOptimizeStatus() != TableOptimizeRuntime.OptimizeStatus.Pending) {
+            // only table in pending should plan
+            continue;
+          }
+
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
           if (tableItem.startPlanIfNot()) {
             try {
