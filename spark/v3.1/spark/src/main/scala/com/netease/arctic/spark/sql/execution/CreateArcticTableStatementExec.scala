@@ -26,6 +26,7 @@ import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.StructType
+
 import scala.collection.JavaConverters
 
 case class CreateArcticTableStatementExec(catalog: TableCatalog,

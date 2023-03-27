@@ -56,12 +56,13 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.type.TypeManager;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weakref.jmx.guice.MBeanModule;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.google.inject.Scopes.SINGLETON;
 

@@ -26,7 +26,6 @@ import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -99,7 +98,7 @@ public class FileNameGenerator {
   public static DefaultKeyedFile.FileMeta parseChange(String path, long sequenceNumber) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       DataFileType type;
       long transactionId;
       long nodeId = Long.parseLong(matcher.group(1));
@@ -123,7 +122,7 @@ public class FileNameGenerator {
   public static DefaultKeyedFile.FileMeta parseBase(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
       DataFileType type = DataFileType.ofShortName(matcher.group(2));
       if (type == DataFileType.INSERT_FILE) {
@@ -146,7 +145,7 @@ public class FileNameGenerator {
   public static DataFileType parseFileTypeForChange(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       return DataFileType.ofShortName(matcher.group(2));
     } else {
       return DataFileType.INSERT_FILE;
@@ -162,7 +161,7 @@ public class FileNameGenerator {
   public static DataFileType parseFileTypeForBase(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       DataFileType type;
       type = DataFileType.ofShortName(matcher.group(2));
       if (type == DataFileType.INSERT_FILE) {
@@ -200,7 +199,7 @@ public class FileNameGenerator {
   public static DataTreeNode parseFileNodeFromFileName(String path) {
     path = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(path);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
       return DataTreeNode.ofId(nodeId);
     } else {
@@ -217,11 +216,22 @@ public class FileNameGenerator {
   public static long parseTransactionId(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    if (matcher.matches()) {
+    if (matchArcticFileFormat(matcher)) {
       return Long.parseLong(matcher.group(3));
     } else {
       return 0L;
     }
+  }
+
+  /**
+   * Parse transaction id of change file.
+   *
+   * @param path path
+   * @return transactionId, return 0 if path is not arctic file format.
+   */
+  public static long parseChangeTransactionId(String path, long sequenceNumber) {
+    long transactionId = parseTransactionId(path);
+    return transactionId == 0 ? sequenceNumber : transactionId;
   }
 
   /**
@@ -233,6 +243,20 @@ public class FileNameGenerator {
   public static boolean isArcticFileFormat(String path) {
     String fileName = TableFileUtils.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    return matcher.matches();
+    return matchArcticFileFormat(matcher);
+  }
+
+
+  private static boolean matchArcticFileFormat(Matcher fileNameMatcher) {
+    return fileNameMatcher.matches() && validFileType(fileNameMatcher.group(2));
+  }
+
+  private static boolean validFileType(String typeName) {
+    try {
+      DataFileType.ofShortName(typeName);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 }

@@ -21,7 +21,6 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -41,7 +40,7 @@ case class TruncateArcticTableExec(table: Table,
           val txId = arctic.table().asKeyedTable().beginTransaction(null);
           val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue())
-          overwriteBaseFiles.updateMaxTransactionIdDynamically(txId)
+          overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()
         } else {
           val overwriteFiles = arctic.table().asUnkeyedTable().newOverwrite()

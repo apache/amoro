@@ -147,10 +147,10 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
 
-    StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    StructLikeMap<Long> optimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testKeyedTable);
     for (StructLike partitionDatum : partitionData) {
       Assert.assertEquals(testKeyedTable.changeTable().currentSnapshot().sequenceNumber(),
-          (long) maxTxId.get(partitionDatum));
+          (long) optimizedSequence.get(partitionDatum));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
@@ -229,8 +229,8 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         });
 
     Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();
-    StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
-    Assert.assertEquals(snapshot.sequenceNumber(), (long) maxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+    StructLikeMap<Long> optimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testNoPartitionTable);
+    Assert.assertEquals(snapshot.sequenceNumber(), (long) optimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT));
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
@@ -268,18 +268,18 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    StructLikeMap<Long> oldOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testKeyedTable);
     for (StructLike partitionDatum : partitionData) {
-      Assert.assertNull(oldMaxTxId.get(partitionDatum));
+      Assert.assertNull(oldOptimizedSequence.get(partitionDatum));
     }
 
     BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testKeyedTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
-    StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    StructLikeMap<Long> newOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testKeyedTable);
     for (StructLike partitionDatum : partitionData) {
       Assert.assertEquals(testKeyedTable.changeTable().currentSnapshot().sequenceNumber(),
-          (long) newMaxTxId.get(partitionDatum));
+          (long) newOptimizedSequence.get(partitionDatum));
     }
   }
 
@@ -314,15 +314,15 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
-    Assert.assertNull(oldMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+    StructLikeMap<Long> oldOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testNoPartitionTable);
+    Assert.assertNull(oldOptimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT));
 
     BasicOptimizeCommit optimizeCommit = new BasicOptimizeCommit(testNoPartitionTable, partitionTasks);
     optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
 
     Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();
-    StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
-    Assert.assertEquals(snapshot.sequenceNumber(), (long) newMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+    StructLikeMap<Long> newOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(testNoPartitionTable);
+    Assert.assertEquals(snapshot.sequenceNumber(), (long) newOptimizedSequence.get(TablePropertyUtil.EMPTY_STRUCT));
   }
 
   private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<PrimaryKeyedFile> dataFiles) throws Exception {

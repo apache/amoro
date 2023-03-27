@@ -27,6 +27,9 @@ import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.PartitionSpec;
 
+/**
+ * Tools for handling the ContentFile which in Iceberg
+ */
 public class ContentFileUtil {
 
   public static ContentFileWithSequence<?> buildContentFile(DataFileInfo dataFileInfo,

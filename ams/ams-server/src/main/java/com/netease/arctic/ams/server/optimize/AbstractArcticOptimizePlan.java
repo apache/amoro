@@ -30,16 +30,12 @@ import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -59,7 +55,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +64,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractArcticOptimizePlan.class);
 
-  private final List<ArcticFileScanTask> changeFileScanTasks;
+  private final List<ContentFileWithSequence<?>> changeFiles;
   protected final List<FileScanTask> baseFileScanTasks;
   // Whether to customize the directory
   protected boolean isCustomizeDir;
@@ -77,24 +72,21 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
 
-  // for base table or unKeyed table
-  private final long currentBaseSnapshotId;
   // for change table
   protected final long currentChangeSnapshotId;
 
-  protected long changeTableMaxTransactionId;
-  protected final Map<String, Long> changeTableMinTransactionId = new HashMap<>();
+  protected Long changeStoreToSequence;
+  protected final Map<String, Long> changeStoreFromSequence = new HashMap<>();
 
   public AbstractArcticOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                List<ArcticFileScanTask> changeFileScanTasks,
-                                List<FileScanTask> baseFileScanTasks,
-                                int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
-    super(arcticTable, tableOptimizeRuntime, queueId, currentTime);
+                                    List<ContentFileWithSequence<?>> changeFiles,
+                                    List<FileScanTask> baseFileScanTasks,
+                                    int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
+    super(arcticTable, tableOptimizeRuntime, queueId, currentTime, baseSnapshotId);
     this.baseFileScanTasks = baseFileScanTasks;
-    this.changeFileScanTasks = changeFileScanTasks;
+    this.changeFiles = changeFiles;
     this.isCustomizeDir = false;
     this.currentChangeSnapshotId = changeSnapshotId;
-    this.currentBaseSnapshotId = baseSnapshotId;
   }
 
   protected BasicOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
@@ -172,12 +164,12 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
               new TreeNode(node.getMask(), node.getIndex()))
           .collect(Collectors.toList()));
     }
-    if (taskConfig.getMaxTransactionId() != null) {
-      optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
+    if (taskConfig.getToSequence() != null) {
+      optimizeTask.setToSequence(taskConfig.getToSequence());
     }
 
-    if (taskConfig.getMinTransactionId() != null) {
-      optimizeTask.setMinChangeTransactionId(taskConfig.getMinTransactionId());
+    if (taskConfig.getFromSequence() != null) {
+      optimizeTask.setFromSequence(taskConfig.getFromSequence());
     }
 
     // table ams url
@@ -185,7 +177,13 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) +
         optimizeTask.getPosDeleteFiles().size() + "");
-    properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, taskConfig.getCustomHiveSubdirectory());
+    String customHiveSubdirectory = taskConfig.getCustomHiveSubdirectory();
+    if (customHiveSubdirectory != null) {
+      properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, customHiveSubdirectory);
+    }
+    if (taskConfig.isMoveFilesToHiveLocation()) {
+      properties.put(OptimizeTaskProperties.MOVE_FILES_TO_HIVE_LOCATION, true + "");
+    }
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -208,57 +206,23 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     LOG.debug("{} start {} plan change files", tableId(), getOptimizeType());
     ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
 
-    Set<String> changeFiles = new HashSet<>();
-    List<PrimaryKeyedFile> unOptimizedChangeFiles = changeFileScanTasks.stream().map(task -> {
-      PrimaryKeyedFile file = task.file();
-      String partition = changeTable.spec().partitionToPath(file.partition());
-      currentPartitions.add(partition);
-      if (changeFiles.contains(file.path().toString())) {
-        return null;
-      }
-      changeFiles.add(file.path().toString());
-      return file;
-    }).filter(Objects::nonNull).collect(Collectors.toList());
-
-    long maxTransactionIdLimit = getMaxTransactionIdLimit(unOptimizedChangeFiles);
-
+    Set<String> changeFileSet = new HashSet<>();
     AtomicInteger addCnt = new AtomicInteger();
-    unOptimizedChangeFiles.forEach(file -> {
-      long transactionId = file.transactionId();
-
-      if (transactionId >= maxTransactionIdLimit) {
+    this.changeFiles.forEach(file -> {
+      String partition = changeTable.spec().partitionToPath(file.partition());
+      allPartitions.add(partition);
+      if (changeFileSet.contains(file.path().toString())) {
         return;
       }
-      String partition = changeTable.spec().partitionToPath(file.partition());
-      putChangeFileIntoFileTree(partition, file, file.type(), transactionId);
-      markChangeTransactionId(partition, transactionId);
+      changeFileSet.add(file.path().toString());
+
+      putChangeFileIntoFileTree(partition, file);
+      markChangeStoreSequence(partition, file.getSequenceNumber());
 
       addCnt.getAndIncrement();
     });
-    LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
-        tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
-  }
-
-  private long getMaxTransactionIdLimit(List<PrimaryKeyedFile> unOptimizedChangeFiles) {
-    final int maxChangeFiles =
-        CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
-            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
-    long maxTransactionIdLimit;
-    if (unOptimizedChangeFiles.size() <= maxChangeFiles) {
-      maxTransactionIdLimit = Long.MAX_VALUE;
-      // For normal cases, files count is less than optimize.max-file-count(default=100000), return all files
-      LOG.debug("{} start plan change files with all files, max-cnt limit {}, current file cnt {}", tableId(),
-          maxChangeFiles, unOptimizedChangeFiles.size());
-    } else {
-      List<Long> sortedTransactionIds = unOptimizedChangeFiles.stream().map(PrimaryKeyedFile::transactionId)
-          .sorted(Long::compareTo)
-          .collect(Collectors.toList());
-      maxTransactionIdLimit = sortedTransactionIds.get(maxChangeFiles - 1);
-      // If files count is more than optimize.max-file-count, only keep files with small file transaction id
-      LOG.debug("{} start plan change files with max-cnt limit {}, current file cnt {}, less than transaction id {}",
-          tableId(), maxChangeFiles, unOptimizedChangeFiles.size(), maxTransactionIdLimit);
-    }
-    return maxTransactionIdLimit;
+    LOG.debug("{} ==== {} add {} change files into tree." + " After added, partition cnt of tree: {}",
+        tableId(), getOptimizeType(), addCnt, partitionFileTree.size());
   }
 
   protected void addBaseFilesIntoFileTree() {
@@ -272,7 +236,7 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
       List<DeleteFile> deletes = task.deletes();
       String partition = baseTable.spec().partitionToPath(baseFile.partition());
 
-      currentPartitions.add(partition);
+      allPartitions.add(partition);
       if (!baseFileShouldOptimize(baseFile, partition)) {
         return;
       }
@@ -305,13 +269,11 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     treeRoot.putNodeIfAbsent(node).addFile(wrap, fileType);
   }
 
-  protected void putChangeFileIntoFileTree(String partition, ContentFile<?> contentFile, DataFileType fileType,
-                                           long sequence) {
+  protected void putChangeFileIntoFileTree(String partition, ContentFileWithSequence<?> changeFile) {
     FileTree treeRoot = partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
-    DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(contentFile.path().toString());
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseChange(contentFile.path().toString(), sequence);
-    ContentFileWithSequence<?> wrap = WrapFileWithSequenceNumberHelper.wrap(contentFile, fileMeta.transactionId());
-    treeRoot.putNodeIfAbsent(node).addFile(wrap, fileType);
+    DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(changeFile.path().toString());
+    DataFileType fileType = FileNameGenerator.parseFileTypeForChange(changeFile.path().toString());
+    treeRoot.putNodeIfAbsent(node).addFile(changeFile, fileType);
   }
 
   protected UnkeyedTable getBaseTable() {
@@ -365,13 +327,12 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   }
 
   /**
-   * check whether node task need to build
-   * @param posDeleteFiles pos-delete files in node
-   * @param baseFiles base files in node
-   * @return whether the node task need to build. If true, build task, otherwise skip.
+   * Check a base file should optimize
+   *
+   * @param baseFile  - base file
+   * @param partition - partition
+   * @return true if the file should optimize
    */
-  protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
-
   protected abstract boolean baseFileShouldOptimize(DataFile baseFile, String partition);
 
   protected boolean hasFileToOptimize() {
@@ -379,24 +340,19 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
   }
 
   @Override
-  protected long getCurrentSnapshotId() {
-    return currentBaseSnapshotId;
-  }
-
-  @Override
   protected long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
   }
 
-  private void markChangeTransactionId(String partition, long fileTid) {
-    if (this.changeTableMaxTransactionId < fileTid) {
-      this.changeTableMaxTransactionId = fileTid;
+  private void markChangeStoreSequence(String partition, long sequence) {
+    if (this.changeStoreToSequence == null || this.changeStoreToSequence < sequence) {
+      this.changeStoreToSequence = sequence;
     }
-    Long tid = changeTableMinTransactionId.get(partition);
-    if (tid == null) {
-      changeTableMinTransactionId.put(partition, fileTid);
-    } else if (fileTid < tid) {
-      changeTableMinTransactionId.put(partition, fileTid);
+    Long fromSequence = changeStoreFromSequence.get(partition);
+    if (fromSequence == null) {
+      changeStoreFromSequence.put(partition, sequence);
+    } else if (sequence < fromSequence) {
+      changeStoreFromSequence.put(partition, sequence);
     }
   }
 

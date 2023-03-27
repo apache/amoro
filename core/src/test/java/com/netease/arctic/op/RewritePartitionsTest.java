@@ -49,19 +49,19 @@ public class RewritePartitionsTest extends TableDataTestBase {
     List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
     RewritePartitions rewritePartitions = getArcticTable().asKeyedTable().newRewritePartitions();
     newFiles.forEach(rewritePartitions::addDataFile);
-    rewritePartitions.withTransactionId(txId);
+    rewritePartitions.updateOptimizedSequenceDynamically(txId);
     rewritePartitions.commit();
     // rewrite 1 partition by data file
 
-    StructLikeMap<Long> partitionMaxTxId =
-        TablePropertyUtil.getPartitionMaxTransactionId(getArcticTable().asKeyedTable());
+    StructLikeMap<Long> partitionOptimizedSequence =
+        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(
         txId,
-        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
-    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
-    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
-    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
+        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
     List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]

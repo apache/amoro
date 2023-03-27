@@ -20,8 +20,6 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.blocker.Blocker;
-import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

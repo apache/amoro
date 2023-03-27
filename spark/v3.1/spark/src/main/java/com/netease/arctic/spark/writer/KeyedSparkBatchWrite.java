@@ -190,7 +190,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public void commit(WriterCommitMessage[] messages) {
       checkBlocker(tableBlockerManager);
       RewritePartitions rewritePartitions = table.newRewritePartitions();
-      rewritePartitions.withTransactionId(txId);
+      rewritePartitions.updateOptimizedSequenceDynamically(txId);
 
       for (DataFile file : files(messages)) {
         rewritePartitions.addDataFile(file);
@@ -218,7 +218,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       checkBlocker(tableBlockerManager);
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-      overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
+      overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
 
       for (DataFile file : files(messages)) {

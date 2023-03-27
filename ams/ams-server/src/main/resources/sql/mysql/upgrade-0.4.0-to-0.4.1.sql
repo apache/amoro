@@ -12,3 +12,6 @@ CREATE TABLE `table_blocker` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
 
 ALTER TABLE `optimize_group` ADD COLUMN `scheduling_policy`   varchar(20) COMMENT 'Optimize group scheduling policy' after `name`;
+ALTER TABLE `optimize_task` CHANGE `max_change_transaction_id` `to_sequence` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'to sequence';
+ALTER TABLE `optimize_task` CHANGE `min_change_transaction_id` `from_sequence` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'from sequence';
+ALTER TABLE `optimize_history` CHANGE `max_change_transaction_id` `partition_optimized_sequence` mediumtext COMMENT 'optimized sequence of these tasks';

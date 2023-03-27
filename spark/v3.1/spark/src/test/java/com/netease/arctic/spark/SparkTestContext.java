@@ -58,14 +58,15 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
-import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -139,6 +140,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
+    configs.put("spark.sql.catalog." + catalogNameArctic + ".auth.load-from-ams", "false");
     return configs;
   }
 
@@ -171,6 +173,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
+    configs.put("spark.sql.catalog." + catalogNameHive + ".auth.load-from-ams", "false");
     return configs;
   }
 
@@ -488,7 +491,7 @@ public class SparkTestContext extends ExternalResource {
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.updateMaxTransactionIdDynamically(txId);
+      overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
@@ -607,5 +610,19 @@ public class SparkTestContext extends ExternalResource {
 
   protected interface Action {
     void invoke();
+  }
+
+  public static Row recordToRow(Record record) {
+    Object[] values = new Object[record.size()];
+    for (int i = 0; i < values.length; i++) {
+      Object v = record.get(i);
+      if (v instanceof LocalDateTime) {
+        v = new Timestamp(((LocalDateTime) v).atOffset(ZoneOffset.UTC).toInstant().toEpochMilli());
+      } else if (v instanceof OffsetDateTime) {
+        v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
+      }
+      values[i] = v;
+    }
+    return RowFactory.create(values);
   }
 }

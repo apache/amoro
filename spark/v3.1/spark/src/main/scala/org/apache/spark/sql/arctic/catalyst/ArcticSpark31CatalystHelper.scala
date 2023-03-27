@@ -65,6 +65,8 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
+      case TruncateTransform(n, ref) =>
+        IcebergTruncateTransform(resolve(ref.fieldNames), width = n)
       case sort: SortOrder =>
         val catalystChild = toCatalyst(sort.expression(), query)
         catalyst.expressions.SortOrder(
@@ -99,6 +101,26 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         case _ =>
           None
       }
+      case _ => None
+    }
+  }
+
+  private object Lit {
+    def unapply[T](literal: Literal[T]): Some[(T, DataType)] = {
+      Some((literal.value(), literal.dataType()))
+    }
+  }
+
+  private object TruncateTransform {
+    def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
+      case ApplyTransform(name, args) if name.equalsIgnoreCase("truncate") =>
+        args match {
+          case Seq(ref: NamedReference, Lit(value: Int, IntegerType)) =>
+            Some(value, FieldReference(ref.fieldNames()))
+          case Seq(Lit(value: Int, IntegerType), ref: NamedReference) =>
+            Some(value, FieldReference(ref.fieldNames()))
+          case _ => None
+        }
       case _ => None
     }
   }
