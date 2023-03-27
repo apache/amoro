@@ -133,7 +133,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public boolean isInited() {
-    LOG.info("OptimizeService inited {}", inited);
     return inited;
   }
 
