@@ -62,13 +62,13 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       a.copy(query = newQuery, writeOptions = options)
 
     case a @ AppendArcticData(r: DataSourceV2Relation, query, _, writeOptions)
-      if isArcticRelation(r) && isPrimaryKeyIncludePartitions(r) =>
+      if isArcticRelation(r) && optimizeForRowLevelOperation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
 
     case a @ ReplaceArcticData(r: DataSourceV2Relation, query, writeOptions)
-      if isArcticRelation(r) && isPrimaryKeyIncludePartitions(r) =>
+      if isArcticRelation(r) && optimizeForRowLevelOperation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
@@ -97,8 +97,11 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
-  def isPrimaryKeyIncludePartitions(r: DataSourceV2Relation): Boolean = {
+  def optimizeForRowLevelOperation(r: DataSourceV2Relation): Boolean = {
     val table = r.table.asArcticTable
+    if (table.table().isUnkeyedTable) {
+      return false
+    }
     ArcticSparkUtils.isPrimaryKeyIncludeAllPartitions(table.table())
   }
 
