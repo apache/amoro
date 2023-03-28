@@ -90,7 +90,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
-  private final ExecutorService tablesSvc;
+  private volatile ExecutorService tablesSvc;
   private volatile boolean inited = false;
 
   public OptimizeService() {
@@ -103,7 +103,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private ExecutorService getProcessTablesThreadPool() {
     if (tablesSvc == null || tablesSvc.isShutdown() || tablesSvc.isTerminated()) {
-      return Executors.newFixedThreadPool(loadTablePoolSize());
+      tablesSvc = Executors.newFixedThreadPool(loadTablePoolSize());
     }
     return tablesSvc;
   }
@@ -201,13 +201,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     clearRemovedTables(toRemoveTables);
 
     // update optimizing tables set
-    parallelProcessTables(unOptimizeTables, unOptimizeTable ->
-        checkIfEnabledSelfOptimizing(com.netease.arctic.ams.server.utils.CatalogUtil
-            .getArcticCatalog(unOptimizeTable.getCatalog())
-            .loadTable(unOptimizeTable)));
+    addOptimizingTables();
     // clean tasks when self-optimizing disabled
-    parallelProcessTables(optimizeTables.keySet(),
-        optimizeTable -> checkIfDisabledSelfOptimizing(optimizeTables.get(optimizeTable).getArcticTable()));
+    clearUnOptimizingTables();
 
     LOG.info("Refresh tables complete, cost {} ms", System.currentTimeMillis() - startTimestamp);
     tablesSvc.shutdown();
@@ -320,27 +316,23 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     // load tables from catalog
     Set<TableIdentifier> tableIdentifiers = com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog();
 
-    Tasks.foreach(tableIdentifiers)
-        .suppressFailureWhenFinished()
-        .noRetry()
-        .executeWith(getProcessTablesThreadPool())
-        .run(tableIdentifier -> {
-          List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
+    parallelProcessTables(tableIdentifiers, tableIdentifier -> {
+      List<OptimizeTaskItem> tableOptimizeTasks = optimizeTasks.remove(tableIdentifier);
 
-          TableMetadata tableMetadata = buildTableMetadata(tableIdentifier);
-          TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
-          TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
-          arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
-              .initOptimizeTasks(tableOptimizeTasks);
-          if (CompatiblePropertyUtil.propertyAsBoolean(tableMetadata.getProperties(),
-              TableProperties.ENABLE_SELF_OPTIMIZING,
-              TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
-            addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
-          } else {
-            unOptimizeTables.add(tableIdentifier);
-            persistTableRuntime(arcticTableItem.getTableOptimizeRuntime());
-          }
-        });
+      TableMetadata tableMetadata = buildTableMetadata(tableIdentifier);
+      TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
+      TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
+      arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
+          .initOptimizeTasks(tableOptimizeTasks);
+      if (CompatiblePropertyUtil.propertyAsBoolean(tableMetadata.getProperties(),
+          TableProperties.ENABLE_SELF_OPTIMIZING,
+          TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
+        addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
+      } else {
+        unOptimizeTables.add(tableIdentifier);
+        persistTableRuntime(arcticTableItem.getTableOptimizeRuntime());
+      }
+    });
     tablesSvc.shutdown();
 
     if (!optimizeTasks.isEmpty()) {
@@ -397,6 +389,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public void addNewTables(List<TableIdentifier> toAddTables) {
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, can't add new tables");
+      return;
+    }
     parallelProcessTables(toAddTables, table ->
         checkIfEnabledSelfOptimizing(com.netease.arctic.ams.server.utils.CatalogUtil
             .getArcticCatalog(table.getCatalog())
@@ -404,12 +400,19 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     LOG.info("add tables[{}] {}", toAddTables.size(), toAddTables);
   }
 
-  private void parallelProcessTables(Iterable<TableIdentifier> tableIdentifiers,
-      Tasks.Task<TableIdentifier, RuntimeException> task) {
+  private void addOptimizingTables() {
     if (!inited) {
-      LOG.info("OptimizeService init not completed, can't update tables");
+      LOG.info("OptimizeService init not completed, can't add optimizing tables");
       return;
     }
+    parallelProcessTables(unOptimizeTables, unOptimizeTable ->
+        checkIfEnabledSelfOptimizing(com.netease.arctic.ams.server.utils.CatalogUtil
+            .getArcticCatalog(unOptimizeTable.getCatalog())
+            .loadTable(unOptimizeTable)));
+  }
+
+  private void parallelProcessTables(Iterable<TableIdentifier> tableIdentifiers,
+      Tasks.Task<TableIdentifier, RuntimeException> task) {
     if (Iterables.isEmpty(tableIdentifiers)) {
       return;
     }
@@ -423,11 +426,24 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public void clearRemovedTables(List<TableIdentifier> toRemoveTables) {
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, can't remove tables");
+      return;
+    }
     parallelProcessTables(toRemoveTables, toRemoveTable -> {
       clearOptimizeTable(toRemoveTable, true);
       unOptimizeTables.remove(toRemoveTable);
     });
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
+  }
+
+  private void clearUnOptimizingTables() {
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, can't update un-optimizing tables");
+      return;
+    }
+    parallelProcessTables(optimizeTables.keySet(),
+        optimizeTable -> checkIfDisabledSelfOptimizing(optimizeTables.get(optimizeTable).getArcticTable()));
   }
 
   private int loadTablePoolSize() {
