@@ -40,7 +40,6 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,9 +79,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     TABLE_META_STORE_CACHE.put(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()),
         tableMetadata.getMetaStore());
     try {
-      List<TableIdentifier> toAddTables = new ArrayList<>();
-      toAddTables.add(tableMetadata.getTableIdentifier());
-      ServiceContainer.getOptimizeService().addNewTables(toAddTables);
+      ServiceContainer.getOptimizeService().addNewTable(tableMetadata.getTableIdentifier());
     } catch (Exception e) {
       LOG.warn("createTable success but failed to refresh optimize table cache", e);
     }
@@ -144,9 +141,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
 
     TABLE_META_STORE_CACHE.remove(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()));
     try {
-      List<TableIdentifier> toRemoveTables = new ArrayList<>();
-      toRemoveTables.add(tableMetadata.getTableIdentifier());
-      ServiceContainer.getOptimizeService().clearRemovedTables(toRemoveTables);
+      ServiceContainer.getOptimizeService().clearRemovedTable(tableMetadata.getTableIdentifier());
     } catch (Exception e) {
       LOG.warn("dropTable success but failed to refresh optimize table cache", e);
     }
