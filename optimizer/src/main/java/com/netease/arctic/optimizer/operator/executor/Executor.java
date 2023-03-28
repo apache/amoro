@@ -19,6 +19,12 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 public interface Executor {
+  /**
+   * Execute and return the execute result.
+   *
+   * @return OptimizeTaskResult - only the Prepared task.
+   * @throws Exception - exception
+   */
   OptimizeTaskResult execute() throws Exception;
 
   void close();
