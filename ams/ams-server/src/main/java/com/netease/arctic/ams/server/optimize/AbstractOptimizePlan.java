@@ -132,7 +132,7 @@ public abstract class AbstractOptimizePlan {
   }
 
   private boolean reachMaxFileCount() {
-    return this.collectFileCnt >= getMaxFileCntLimit() || this.collectFileSize > getMaxFileSizeLimit();
+    return this.collectFileCnt >= getMaxFileCntLimit() || this.collectFileSize >= getMaxFileSizeLimit();
   }
 
   private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
