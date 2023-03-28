@@ -15,7 +15,7 @@
       </p>
     </div>
   </RecycleScroller>
-  <a-empty v-if="!items.length && !loading" :image="simpleImage"></a-empty>
+  <a-empty class="theme-dark" v-if="!items.length && !loading" :image="simpleImage"></a-empty>
 </template>
 
 <script lang="ts">
@@ -78,6 +78,9 @@ export default defineComponent ({
   padding: 4px 0 0 4px;
   margin-top: 4px;
   box-sizing: border-box;
+  :deep(.vue-recycle-scroller__item-view) {
+    padding-right: 4px;
+  }
 }
 .desc {
   display: flex;
@@ -85,25 +88,25 @@ export default defineComponent ({
   align-items: center;
   padding: 10px 12px;
   height: 40px;
-  color: #102048;
+  color: rgba(255,255,255,0.8);
   cursor: pointer;
   &.active,
   &:hover {
     .name {
-      color: @primary-color !important;
+      color: #fff !important;
     }
-    background-color: #f6f7fa;
-    color: @primary-color;
+    background-color: @dark-gray-color;
+    color: #fff;
   }
   &.hive-table {
     .name {
-      color: #79809a;
+      color: #9ea4aa;
     }
     &:hover {
       .name {
-        color: @primary-color;
+        color: #fff;
       }
-      background-color: #f6f7fa;
+      background-color: @dark-gray-color;
     }
   }
   .name {
