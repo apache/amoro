@@ -35,6 +35,7 @@ public class TestKeyedTableMergeInto extends SparkTestBase {
 
   @After
   public void cleanUp() {
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tgTableA);
     sql("drop table {0}.{1}", database, srcTableA);
     sql("drop table {0}.{1}", database, hiveTable);
@@ -289,7 +290,7 @@ public class TestKeyedTableMergeInto extends SparkTestBase {
   @Test
   public void testMergeIntoTableUseFromDifferentCatalog() {
     sql("use {0}", catalogNameArctic);
-    sql("create database {0}", database);
+    sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( id int, data string) stored as parquet", database, tgTableB);
     sql("insert overwrite {0}.{1} values \n" +
         "(1, ''c''), \n " +
@@ -312,8 +313,8 @@ public class TestKeyedTableMergeInto extends SparkTestBase {
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("select * from {0}.{1}.{2} ORDER BY id", catalogNameHive, database, tgTableA));
-    sql("drop table {0}.{1}", database, tgTableB);
-    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}.{2}", catalogNameArctic, database, tgTableB);
+    sql("drop database if exists {0}", database);
   }
 
   @Test
@@ -342,6 +343,5 @@ public class TestKeyedTableMergeInto extends SparkTestBase {
     assertEquals("Should have expected rows", expectedRows,
         sql("select * from {0}.{1}.{2} ORDER BY id", catalogNameHive, database, tgTableA));
     sql("drop table {0}.{1}", database, tgTableB);
-    sql("use " + catalogNameHive);
   }
 }
