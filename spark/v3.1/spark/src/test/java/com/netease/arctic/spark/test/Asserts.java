@@ -18,8 +18,10 @@
 
 package com.netease.arctic.spark.test;
 
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.hive.HiveSchemaUtil;
 import org.apache.iceberg.types.Type;
@@ -51,6 +53,28 @@ public class Asserts {
             assertType(x.getLeft().type(), x.getRight().type());
           });
     }
+  }
+
+  public static void assertPartition(PartitionSpec expectSpec, PartitionSpec actualSpec) {
+    Schema expectSchema = expectSpec.schema();
+    Schema actualSchema = actualSpec.schema();
+    Assertions.assertEquals(expectSpec.fields().size(), actualSpec.fields().size());
+    CollectionHelper.zip(expectSpec.fields(), actualSpec.fields())
+        .forEach(x -> {
+          Assertions.assertEquals(x.getLeft().transform(), x.getRight().transform());
+          Assertions.assertEquals(
+              expectSchema.findField(x.getLeft().sourceId()).name(),
+              actualSchema.findField(x.getRight().sourceId()).name());
+        });
+  }
+
+  public static void assertPrimaryKey(PrimaryKeySpec expect, PrimaryKeySpec actual) {
+    Assertions.assertEquals(expect.fields().size(), actual.fields().size());
+
+    CollectionHelper.zip(expect.fields(), actual.fields())
+        .forEach(x -> {
+          Assertions.assertEquals(x.getLeft().fieldName(), x.getRight().fieldName());
+        });
   }
 
   public static <K, V> void assertHashMapContainExpect(Map<K, V> expect, Map<K, V> actual) {

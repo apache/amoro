@@ -19,9 +19,8 @@
 package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.CatalogMeta;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import com.netease.arctic.utils.CollectionHelper;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.thrift.TException;
@@ -68,36 +67,29 @@ public abstract class SparkTestBase {
   }
 
   public static Map<String, String> asMap(String... kv) {
-    Preconditions.checkArgument(kv.length % 2 == 0, "number of key value pairs must even");
-    Map<String, String> map = Maps.newHashMap();
-    for (int i = 0; i < kv.length; i = i + 2) {
-      map.put(kv[i], kv[i + 1]);
-    }
-    return map;
+    return CollectionHelper.asMap(kv);
   }
 
   protected abstract static class TestContext<T> {
-    private List<Runnable> beforeHocks = Lists.newArrayList();
-    private List<Runnable> afterHocks = Lists.newArrayList();
+    private List<Consumer<T>> beforeHocks = Lists.newArrayList();
+    private List<Consumer<T>> afterHocks = Lists.newArrayList();
 
-    public TestContext<T> before(Runnable before) {
+    public TestContext<T> before(Consumer<T> before) {
       this.beforeHocks.add(before);
       return this;
     }
 
-    public TestContext<T> after(Runnable after) {
+    public TestContext<T> after(Consumer<T> after) {
       this.afterHocks.add(after);
       return this;
     }
 
     public void test(Consumer<T> test) {
-      for (Runnable r : beforeHocks) {
-        r.run();
-      }
+      beforeHocks.forEach(b -> b.accept(testEnv()));
       try {
         test.accept(testEnv());
       } finally {
-        afterHocks.forEach(Runnable::run);
+        afterHocks.forEach(a -> a.accept(testEnv()));
       }
     }
 

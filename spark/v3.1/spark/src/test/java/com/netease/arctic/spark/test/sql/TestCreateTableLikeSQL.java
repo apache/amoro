@@ -18,19 +18,32 @@
 
 package com.netease.arctic.spark.test.sql;
 
+import com.netease.arctic.spark.SparkSQLProperties;
+import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SessionCatalog;
 import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.CollectionHelper;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
+
+import static com.netease.arctic.spark.test.helper.TestTableHelper.IcebergSchema;
+import static com.netease.arctic.spark.test.helper.TestTableHelper.PtSpec;
+import static com.netease.arctic.spark.test.helper.TestTableHelper.hivePartition;
+import static com.netease.arctic.spark.test.helper.TestTableHelper.hiveSchema;
+import static com.netease.arctic.spark.test.helper.TestTableHelper.hiveTable;
 
 @SessionCatalog(usingArcticSessionCatalog = true)
 public class TestCreateTableLikeSQL extends SparkTableTestBase {
@@ -39,26 +52,113 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
 
   //3. using arctic 测试 (Session catalog, 非Session catalog)
 
-  static final Types.NestedField id = Types.NestedField.optional(1, "id", Types.IntegerType.get());
-  static final Types.NestedField data = Types.NestedField.optional(2, "data", Types.StringType.get());
-  static final Types.NestedField tsWoZ = Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone());
-  static final Types.NestedField tsWz = Types.NestedField.optional(3, "ts", Types.TimestampType.withZone());
+  public static Stream<Arguments> testCreateTableLikeHiveTable() {
+    return Stream.of(
+        Arguments.of(hiveTable(hiveSchema, hivePartition).build(),
+            IcebergSchema.NO_PK_WITHOUT_ZONE, PtSpec.hive_pt_spec
+        ),
+        Arguments.of(hiveTable(hiveSchema, null).withProperties("k1", "v1").build(),
+            IcebergSchema.NO_PK_NO_PT_WITHOUT_ZONE, PartitionSpec.unpartitioned()
+        )
+    );
+  }
 
-  static final String structDDL = "id INT, " +
-      "data STRING, " +
-      "ts TIMESTAMP NOT NULL";
+  @DisplayName("Test SQL: CREATE TABLE LIKE hive table")
+  @ParameterizedTest
+  @MethodSource
+  public void testCreateTableLikeHiveTable(
+      Table hiveTable,
+      Schema expectSchema, PartitionSpec expectPtSpec
+  ) {
+    test().inSparkCatalog(SESSION_CATALOG)
+        .withHiveTable(hiveTable)
+        .execute(context -> {
+          String sqlText = "CREATE TABLE " + context.databaseAndTable +
+              " LIKE " + context.sourceDatabaseAndTable + " USING arctic";
+          sql(sqlText);
+          ArcticTable table = context.loadTable();
+          Asserts.assertType(expectSchema.asStruct(), table.schema().asStruct());
+          Asserts.assertPartition(expectPtSpec, table.spec());
+          // CREATE TABLE LIKE do not copy properties.
+          Assertions.assertFalse(table.properties().containsKey("k1"));
+        });
+  }
 
-  static final String structDDLWithPk = structDDL + ",\n" +
-      "PRIMARY KEY(id) ";
+  public static Stream<Arguments> testCreateTableLikeDataLakeTable() {
+    return Stream.of(
+        Arguments.of(
+            SESSION_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, PtSpec.hive_pt_spec,
+            TestTableHelper.PkSpec.pk_include_pt
+        ),
+        Arguments.of(
+            SESSION_CATALOG, IcebergSchema.NO_PK_WITHOUT_ZONE, PtSpec.hive_pt_spec,
+            PrimaryKeySpec.noPrimaryKey()
+        ),
+        Arguments.of(
+            HIVE_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, PtSpec.hive_pt_spec,
+            TestTableHelper.PkSpec.pk_include_pt
+        ),
+        Arguments.of(
+            HIVE_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, PartitionSpec.unpartitioned(),
+            TestTableHelper.PkSpec.pk_include_pt
+        ),
+        Arguments.of(
+            INTERNAL_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, PtSpec.hive_pt_spec,
+            TestTableHelper.PkSpec.pk_include_pt
+        ),
+        Arguments.of(
+            INTERNAL_CATALOG, IcebergSchema.NO_PK_WITHOUT_ZONE, PtSpec.hive_pt_spec,
+            PrimaryKeySpec.noPrimaryKey()
+        ),
+        Arguments.of(
+            INTERNAL_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, PartitionSpec.unpartitioned(),
+            TestTableHelper.PkSpec.pk_include_pt
+        )
+    );
+  }
+
+  @DisplayName("Test SQL: CREATE TABLE LIKE data-lake table")
+  @ParameterizedTest
+  @MethodSource
+  public void testCreateTableLikeDataLakeTable(
+      String catalog, Schema schema, PartitionSpec partitionSpec, PrimaryKeySpec primaryKeySpec
+  ) {
+    test().inSparkCatalog(catalog)
+        .cleanSourceTable()
+        .execute(context -> {
+          ArcticTable expect = context.arcticCatalog.newTableBuilder(context.sourceTableIdentifier, schema)
+              .withPartitionSpec(partitionSpec)
+              .withPrimaryKeySpec(primaryKeySpec)
+              .withProperties(CollectionHelper.asMap("k1", "v1"))
+              .create();
+
+          sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
+              + true);
+          String sqlText = "CREATE TABLE " + context.databaseAndTable +
+              " LIKE " + context.sourceDatabaseAndTable + " USING arctic";
+          sql(sqlText);
+
+          ArcticTable table = context.loadTable();
+          Asserts.assertType(expect.schema().asStruct(), table.schema().asStruct());
+          Asserts.assertPartition(expect.spec(), table.spec());
+          Assertions.assertEquals(expect.isKeyedTable(), table.isKeyedTable());
+          Assertions.assertFalse(table.properties().containsKey("k1"));
+          if (expect.isKeyedTable()) {
+            Asserts.assertPrimaryKey(expect.asKeyedTable().primaryKeySpec(), table.asKeyedTable().primaryKeySpec());
+          }
+        });
+  }
 
   public static Stream<Arguments> testCreateTableLikeTimestampZone() {
     return Stream.of(
-        Arguments.of(SESSION_CATALOG, structDDL, true, tsWoZ.type()),
-        Arguments.of(SESSION_CATALOG, structDDLWithPk, false, tsWoZ.type()),
-        Arguments.of(HIVE_CATALOG, structDDL, true, tsWoZ.type()),
-        Arguments.of(HIVE_CATALOG, structDDLWithPk, false, tsWoZ.type()),
-        Arguments.of(INTERNAL_CATALOG, structDDL, true, tsWoZ.type()),
-        Arguments.of(INTERNAL_CATALOG, structDDLWithPk, false, tsWz.type())
+        Arguments.of(
+            INTERNAL_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, false,
+            Types.TimestampType.withZone()
+        ),
+        Arguments.of(
+            INTERNAL_CATALOG, IcebergSchema.PK_WITHOUT_ZONE, true,
+            Types.TimestampType.withoutZone()
+        )
     );
   }
 
@@ -66,29 +166,52 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   @ParameterizedTest
   @MethodSource
   public void testCreateTableLikeTimestampZone(
-      String catalog, String sourceTableDDL, boolean newTableTimestampWithoutZone,
+      String catalog, Schema schema, boolean newTableTimestampWithoutZone,
       Type expectTimestampType
   ) {
+    test().inSparkCatalog(catalog)
+        .cleanSourceTable()
+        .execute(context -> {
+          ArcticTable expect = context.arcticCatalog.newTableBuilder(context.sourceTableIdentifier, schema)
+              .withProperties(CollectionHelper.asMap("k1", "v1"))
+              .create();
 
+          sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
+              + newTableTimestampWithoutZone);
+          sql("CREATE TABLE " + context.databaseAndTable + " LIKE " +
+              context.sourceDatabaseAndTable + " USING arctic");
+
+          ArcticTable table = context.loadTable();
+          Types.NestedField tsField = table.schema().findField("ts");
+          Asserts.assertType(expectTimestampType, tsField.type());
+        });
   }
 
-  @DisplayName("TestSQL: CREATE TABLE LIKE")
-  @ParameterizedTest
-  @MethodSource
-  public void testCreateTableLike(
-      String catalog, String sourceTableDDL,
-      Schema expectSchema, PartitionSpec expectSpec, PrimaryKeySpec expectKeySpec
-  ) {
-
+  public static Stream<Arguments> testCreateTableWithoutProviderInSessionCatalog() {
+    return Stream.of(
+        Arguments.of(
+            "", false
+        ),
+        Arguments.of(
+            "USING arctic", true
+        )
+    );
   }
 
   @DisplayName("TestSQL: CREATE TABLE LIKE without USING ARCTIC")
-  @ParameterizedTest
+  @ParameterizedTest(name = "{index} provider = {0} ")
   @MethodSource
-  public void testCreateTableWithoutProvider(
-      String catalog, String sourceTableDDL, String provider,
-      boolean expectCreate
+  public void testCreateTableWithoutProviderInSessionCatalog(
+      String provider, boolean expectCreate
   ) {
-
+    Table hiveTable = hiveTable(hiveSchema, hivePartition).build();
+    test().inSparkCatalog(SESSION_CATALOG)
+        .withHiveTable(hiveTable)
+        .execute(context -> {
+          sql("CREATE TABLE " + context.databaseAndTable + " LIKE " +
+              context.sourceDatabaseAndTable + " " + provider);
+          Assertions.assertEquals(expectCreate, context.tableExists());
+          sql("DROP TABLE IF EXISTS " + context.databaseAndTable);
+        });
   }
 }

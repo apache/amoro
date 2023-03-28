@@ -29,11 +29,14 @@ import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
+import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -261,5 +264,17 @@ public class SparkTestEnvironmentExtension
 
   public String getSparkConf(String key) {
     return _spark.sessionState().conf().getConfString(key);
+  }
+
+  public void createHiveDatabaseIfNotExist(String database) {
+    Database db = new Database();
+    db.setName(database);
+    try {
+      HMS.getHiveClient().createDatabase(db);
+    } catch (AlreadyExistsException e) {
+      // pass
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

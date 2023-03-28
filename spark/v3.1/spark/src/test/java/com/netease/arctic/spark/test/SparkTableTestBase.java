@@ -22,14 +22,18 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
+import org.junit.jupiter.api.Assertions;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public class SparkTableTestBase extends SparkTestBase {
-   
+
   public TableTestBuilder test() {
     return new TableTestBuilder();
   }
@@ -42,17 +46,36 @@ public class SparkTableTestBase extends SparkTestBase {
     public final ArcticCatalog arcticCatalog;
     public final TableIdentifier tableIdentifier;
     public final String databaseAndTable;
+    public String sourceDatabaseAndTable;
+    public TableIdentifier sourceTableIdentifier;
 
-    protected TableTestContext(String sparkCatalog, TableIdentifier tableId) {
+    protected TableTestContext(
+        String sparkCatalog, TableIdentifier tableId
+    ) {
       this.sparkCatalogName = sparkCatalog;
       this.arcticCatalogName = arcticCatalogName(sparkCatalog);
       this.arcticCatalog = CatalogLoader.load(catalogUrl(arcticCatalogName));
       this.tableIdentifier = TableIdentifier.of(arcticCatalogName, tableId.getDatabase(), tableId.getTableName());
       this.databaseAndTable = tableId.getDatabase() + "." + tableId.getTableName();
+
+      this.sourceTableIdentifier = TableIdentifier.of(
+          arcticCatalogName, tableId.getDatabase(), "source_tbl");
+      this.sourceDatabaseAndTable = this.sourceTableIdentifier.getDatabase() + "."
+          + this.sourceTableIdentifier.getTableName();
+    }
+
+    private void sourceHiveTable(Table hiveTable) {
+      this.sourceDatabaseAndTable = hiveTable.getDbName() + "." + hiveTable.getTableName();
+      this.sourceTableIdentifier = TableIdentifier.of(arcticCatalogName, hiveTable.getDbName(),
+          hiveTable.getTableName());
     }
 
     public ArcticTable loadTable() {
       return arcticCatalog.loadTable(this.tableIdentifier);
+    }
+
+    public boolean tableExists() {
+      return arcticCatalog.tableExists(this.tableIdentifier);
     }
 
     public Table loadHiveTable() {
@@ -75,22 +98,16 @@ public class SparkTableTestBase extends SparkTestBase {
 
   protected class TableTestBuilder {
     private String catalog;
-    private String database = "spark_table_test_db";
-    private String table = "test_tbl";
+    private final String database = "spark_table_test_db";
 
-    private boolean autoCreateDB = true;
+    private final boolean autoCreateDB = true;
+    private final List<Consumer<TableTestContext>> beforeHocks = Lists.newArrayList();
+    private final List<Consumer<TableTestContext>> afterHocks = Lists.newArrayList();
+    private Table sourceHiveTable;
 
     public TableTestBuilder inSparkCatalog(String catalog) {
       this.catalog = catalog;
-      return this;
-    }
-
-    public void execute(Consumer<TableTestContext> test) {
-      TableTestContext context = new TableTestContext(
-          this.catalog,
-          TableIdentifier.of(this.catalog, database, table));
-
-      context.before(() -> {
+      this.beforeHocks.add(context -> {
         sql("USE " + catalog);
         if (autoCreateDB) {
           try {
@@ -98,10 +115,59 @@ public class SparkTableTestBase extends SparkTestBase {
           } catch (AlreadyExistsException e) {//pass
           }
         }
-      }).after(() ->
+      });
+
+      this.afterHocks.add(context ->
           context.arcticCatalog.dropTable(context.tableIdentifier, true)
       );
+      return this;
+    }
 
+    public TableTestBuilder cleanSourceTable() {
+      this.afterHocks.add(context -> {
+        context.arcticCatalog.dropTable(context.sourceTableIdentifier, true);
+      });
+      return this;
+    }
+
+    public TableTestBuilder withHiveTable(Table table) {
+      this.beforeHocks.add(context -> {
+        Assertions.assertTrue(
+            context.isHiveCatalog(),
+            "withHiveTable only work when current is a hive catalog");
+        env.createHiveDatabaseIfNotExist(table.getDbName());
+        try {
+          env.HMS.getHiveClient().createTable(table);
+        } catch (TException e) {
+          throw new RuntimeException(e);
+        }
+      });
+
+      this.afterHocks.add(context -> {
+        try {
+          env.HMS.getHiveClient().dropTable(table.getDbName(), table.getTableName());
+        } catch (NoSuchObjectException e) {
+          // pass
+        } catch (TException e) {
+          throw new RuntimeException(e);
+        }
+      });
+      this.sourceHiveTable = table;
+      return this;
+    }
+
+    public void execute(Consumer<TableTestContext> test) {
+      String table = "test_tbl";
+      TableTestContext context = new TableTestContext(
+          this.catalog,
+          TableIdentifier.of(this.catalog, database, table)
+      );
+      if (sourceHiveTable != null) {
+        context.sourceHiveTable(this.sourceHiveTable);
+      }
+
+      beforeHocks.forEach(context::before);
+      afterHocks.forEach(context::after);
       context.test(test);
     }
   }

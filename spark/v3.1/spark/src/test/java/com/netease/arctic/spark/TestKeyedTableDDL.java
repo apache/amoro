@@ -88,6 +88,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableNotExist(identifier);
   }
 
+  @Ignore
   @Test
   public void testCreateKeyedTableLike() {
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
@@ -116,6 +117,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableNotExist(identifier);
   }
 
+  @Ignore
   @Test
   public void testCreateUnKeyedTableLike() {
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
@@ -144,6 +146,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableNotExist(identifier);
   }
 
+  @Ignore
   @Test
   public void testCreateTimestampWithZone() {
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
