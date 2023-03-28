@@ -67,23 +67,24 @@ public class TestCreateTableSQL extends SparkTableTestBase {
       String catalog, boolean usingTimestampWithoutZone, Types.TimestampType expectType
   ) {
 
-    testInCatalog(catalog, () -> {
-      sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-          + "`=" + usingTimestampWithoutZone);
+    test().inSparkCatalog(catalog)
+        .execute(c -> {
+          sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
+              + "`=" + usingTimestampWithoutZone);
 
-      String sqlText = "CREATE TABLE " + database + "." + table + "(\n" +
-          "id INT, \n" +
-          "ts TIMESTAMP \n) using arctic ";
+          String sqlText = "CREATE TABLE " + c.databaseAndTable + "(\n" +
+              "id INT, \n" +
+              "ts TIMESTAMP \n) using arctic ";
 
-      Schema schema = new Schema(
-          Types.NestedField.optional(1, "id", Types.IntegerType.get()),
-          Types.NestedField.optional(2, "ts", expectType)
-      );
-      sql(sqlText);
-      ArcticTable actual = loadTable(catalog, database, table);
-      Type actualType = actual.schema().findField("ts").type();
-      Assertions.assertEquals(expectType, actualType);
-    });
+          Schema schema = new Schema(
+              Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+              Types.NestedField.optional(2, "ts", expectType)
+          );
+          sql(sqlText);
+          ArcticTable actual = c.loadTable();
+          Type actualType = actual.schema().findField("ts").type();
+          Assertions.assertEquals(expectType, actualType);
+        });
   }
 
   public static Stream<Arguments> argsPrimaryKeyFieldNotNull() {
@@ -112,17 +113,18 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPrimaryKeyFieldNotNull(
       String catalog, String idFieldTypeDDL, String primaryKeyDDL, boolean expectRequired
   ) {
-    testInCatalog(catalog, () -> {
-      String sqlText = "CREATE TABLE " + database + '.' + table + "(\n" +
-          "id " + idFieldTypeDDL + ",\n" +
-          "DATA string " + primaryKeyDDL + "\n" +
-          ") using arctic";
+    test().inSparkCatalog(catalog)
+        .execute(c -> {
+          String sqlText = "CREATE TABLE " + c.databaseAndTable + "(\n" +
+              "id " + idFieldTypeDDL + ",\n" +
+              "DATA string " + primaryKeyDDL + "\n" +
+              ") using arctic";
 
-      sql(sqlText);
-      Schema actualSchema = loadTable(catalog, database, table).schema();
-      Types.NestedField idField = actualSchema.findField("id");
-      Assertions.assertEquals(idField.isRequired(), expectRequired);
-    });
+          sql(sqlText);
+          Schema actualSchema = c.loadTable().schema();
+          Types.NestedField idField = actualSchema.findField("id");
+          Assertions.assertEquals(idField.isRequired(), expectRequired);
+        });
   }
 
   public static Stream<Arguments> argsPrimaryKeySpecExist() {
@@ -140,20 +142,21 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPrimaryKeySpecExist(
       String catalog, String primaryKeyDDL, boolean expectKeyedTable
   ) {
-    testInCatalog(catalog, () -> {
-      String sqlText = "CREATE TABLE " + database + '.' + table + " ( \n" +
-          "id int, data string " + primaryKeyDDL + " ) using arctic";
-      sql(sqlText);
+    test().inSparkCatalog(catalog)
+        .execute(c -> {
+          String sqlText = "CREATE TABLE " + c.databaseAndTable + " ( \n" +
+              "id int, data string " + primaryKeyDDL + " ) using arctic";
+          sql(sqlText);
 
-      ArcticTable actualTable = loadTable(catalog, database, table);
+          ArcticTable actualTable = c.loadTable();
 
-      Assertions.assertEquals(actualTable.isKeyedTable(), expectKeyedTable);
-      if (expectKeyedTable) {
-        PrimaryKeySpec keySpec = actualTable.asKeyedTable().primaryKeySpec();
-        Assertions.assertEquals(1, keySpec.fields().size());
-        Assertions.assertTrue(keySpec.fieldNames().contains("id"));
-      }
-    });
+          Assertions.assertEquals(actualTable.isKeyedTable(), expectKeyedTable);
+          if (expectKeyedTable) {
+            PrimaryKeySpec keySpec = actualTable.asKeyedTable().primaryKeySpec();
+            Assertions.assertEquals(1, keySpec.fields().size());
+            Assertions.assertTrue(keySpec.fieldNames().contains("id"));
+          }
+        });
   }
 
   static Schema schema = new Schema(
@@ -198,46 +201,47 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPartitionSpec(
       String catalog, String partitionDDL, PartitionSpec expectSpec
   ) {
-    testInCatalog(catalog, () -> {
-      String sqlText = "CREATE TABLE " + database + '.' + table + " ( \n" +
-          "id int, " +
-          "data string, " +
-          "ts timestamp, " +
-          "pt string, " +
-          " PRIMARY KEY(id) ) using arctic " + partitionDDL;
+    test().inSparkCatalog(catalog)
+        .execute(c -> {
+          String sqlText = "CREATE TABLE " + c.databaseAndTable + " ( \n" +
+              "id int, " +
+              "data string, " +
+              "ts timestamp, " +
+              "pt string, " +
+              " PRIMARY KEY(id) ) using arctic " + partitionDDL;
 
-      sql(sqlText);
+          sql(sqlText);
 
-      ArcticTable actualTable = loadTable(catalog, database, table);
-      assertEquals(actualTable.spec().isPartitioned(), expectSpec.isPartitioned());
-      if (expectSpec.isPartitioned()) {
-        PartitionSpec spec = actualTable.spec();
-        assertEquals(expectSpec.fields().size(), spec.fields().size());
-        CollectionHelper.zip(expectSpec.fields(), spec.fields())
-            .forEach(x -> {
-              assertEquals(x.getLeft().name(), x.getRight().name());
-              assertEquals(x.getLeft().transform(), x.getRight().transform());
-            });
-      }
-      if (isHiveCatalog(catalog)) {
-        Table hiveTable = loadHiveTable(database, table);
-        List<String> hivePartitions =
-            hiveTable.getPartitionKeys().stream()
+          ArcticTable actualTable = c.loadTable();
+          assertEquals(actualTable.spec().isPartitioned(), expectSpec.isPartitioned());
+          if (expectSpec.isPartitioned()) {
+            PartitionSpec spec = actualTable.spec();
+            assertEquals(expectSpec.fields().size(), spec.fields().size());
+            CollectionHelper.zip(expectSpec.fields(), spec.fields())
+                .forEach(x -> {
+                  assertEquals(x.getLeft().name(), x.getRight().name());
+                  assertEquals(x.getLeft().transform(), x.getRight().transform());
+                });
+          }
+          if (c.isHiveCatalog()) {
+            Table hiveTable = c.loadHiveTable();
+            List<String> hivePartitions =
+                hiveTable.getPartitionKeys().stream()
+                    .map(FieldSchema::getName)
+                    .collect(Collectors.toList());
+            assertEquals(expectSpec.fields().size(), hivePartitions.size());
+            CollectionHelper.zip(expectSpec.fields(), hivePartitions)
+                .forEach(x -> assertEquals(x.getLeft().name(), x.getRight()));
+
+            List<String> hiveCols = hiveTable.getSd().getCols().stream()
                 .map(FieldSchema::getName)
                 .collect(Collectors.toList());
-        assertEquals(expectSpec.fields().size(), hivePartitions.size());
-        CollectionHelper.zip(expectSpec.fields(), hivePartitions)
-            .forEach(x -> assertEquals(x.getLeft().name(), x.getRight()));
-
-        List<String> hiveCols = hiveTable.getSd().getCols().stream()
-            .map(FieldSchema::getName)
-            .collect(Collectors.toList());
-        expectSpec.fields().forEach(x -> {
-          String specField = schema.findField(x.sourceId()).name();
-          assertFalse(hiveCols.contains(specField));
+            expectSpec.fields().forEach(x -> {
+              String specField = schema.findField(x.sourceId()).name();
+              assertFalse(hiveCols.contains(specField));
+            });
+          }
         });
-      }
-    });
   }
 
   public static Stream<Arguments> testSchemaAndProperties() {
@@ -316,22 +320,24 @@ public class TestCreateTableSQL extends SparkTableTestBase {
       String catalog, String structDDL, String propertiesDDL,
       Schema expectSchema, Map<String, String> expectProperties
   ) {
-    testInCatalog(catalog, () -> {
-      sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-          + "`= true ");
-      String sqlText = "CREATE TABLE " + database + '.' + table + "(" +
-          structDDL + ") using arctic " + propertiesDDL;
-      sql(sqlText);
 
-      ArcticTable tbl = loadTable(catalog, database, table);
+    test().inSparkCatalog(catalog)
+        .execute(c -> {
+          sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
+              + "`= true ");
+          String sqlText = "CREATE TABLE " + c.databaseAndTable + "(" +
+              structDDL + ") using arctic " + propertiesDDL;
+          sql(sqlText);
 
-      Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
+          ArcticTable tbl = c.loadTable();
 
-      Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
-      if (isHiveCatalog(catalog)) {
-        Table hiveTable = loadHiveTable();
-        Asserts.assertHiveSchema(hiveTable, expectSchema);
-      }
-    });
+          Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
+
+          Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
+          if (isHiveCatalog(catalog)) {
+            Table hiveTable = c.loadHiveTable();
+            Asserts.assertHiveSchema(hiveTable, expectSchema);
+          }
+        });
   }
 }

@@ -23,48 +23,86 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.thrift.TException;
 
+import java.util.function.Consumer;
+
 public class SparkTableTestBase extends SparkTestBase {
-
-  protected String database = "spark_test_database";
-
-  protected String table = "test_table";
-
-  protected void testInCatalog(String catalog, Runnable test) {
-    doTest(catalog, database, table, test);
+   
+  public TableTestBuilder test() {
+    return new TableTestBuilder();
   }
 
-  protected void doTest(String catalog, String database, String table, Runnable runnable) {
-    sql("USE " + catalog);
-    sql("CREATE DATABASE IF NOT EXISTS " + database);
+  protected class TableTestContext extends TestContext<TableTestContext> {
 
-    try {
-      runnable.run();
-    } finally {
-      sql("USE " + catalog);
-      sql("DROP TABLE IF EXISTS " + database + "." + table);
+    public final String sparkCatalogName;
+    public final String arcticCatalogName;
+
+    public final ArcticCatalog arcticCatalog;
+    public final TableIdentifier tableIdentifier;
+    public final String databaseAndTable;
+
+    protected TableTestContext(String sparkCatalog, TableIdentifier tableId) {
+      this.sparkCatalogName = sparkCatalog;
+      this.arcticCatalogName = arcticCatalogName(sparkCatalog);
+      this.arcticCatalog = CatalogLoader.load(catalogUrl(arcticCatalogName));
+      this.tableIdentifier = TableIdentifier.of(arcticCatalogName, tableId.getDatabase(), tableId.getTableName());
+      this.databaseAndTable = tableId.getDatabase() + "." + tableId.getTableName();
+    }
+
+    public ArcticTable loadTable() {
+      return arcticCatalog.loadTable(this.tableIdentifier);
+    }
+
+    public Table loadHiveTable() {
+      try {
+        return env.HMS.getHiveClient().getTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+      } catch (TException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public boolean isHiveCatalog() {
+      return SparkTableTestBase.this.isHiveCatalog(sparkCatalogName);
+    }
+
+    @Override
+    TableTestContext testEnv() {
+      return this;
     }
   }
 
-  protected ArcticTable loadTable(String sparkCatalog) {
-    return loadTable(sparkCatalog, database, table);
-  }
+  protected class TableTestBuilder {
+    private String catalog;
+    private String database = "spark_table_test_db";
+    private String table = "test_tbl";
 
-  protected ArcticTable loadTable(String sparkCatalog, String database, String table) {
-    ArcticCatalog arcticCatalog = CatalogLoader.load(catalogUrl(sparkCatalog));
-    return arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog.name(), database, table));
-  }
+    private boolean autoCreateDB = true;
 
-  protected Table loadHiveTable() {
-    return loadHiveTable(database, table);
-  }
+    public TableTestBuilder inSparkCatalog(String catalog) {
+      this.catalog = catalog;
+      return this;
+    }
 
-  protected Table loadHiveTable(String database, String table) {
-    try {
-      return env.HMS.getHiveClient().getTable(database, table);
-    } catch (TException e) {
-      throw new RuntimeException(e);
+    public void execute(Consumer<TableTestContext> test) {
+      TableTestContext context = new TableTestContext(
+          this.catalog,
+          TableIdentifier.of(this.catalog, database, table));
+
+      context.before(() -> {
+        sql("USE " + catalog);
+        if (autoCreateDB) {
+          try {
+            context.arcticCatalog.createDatabase(database);
+          } catch (AlreadyExistsException e) {//pass
+          }
+        }
+      }).after(() ->
+          context.arcticCatalog.dropTable(context.tableIdentifier, true)
+      );
+
+      context.test(test);
     }
   }
 }

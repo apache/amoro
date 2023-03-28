@@ -20,6 +20,7 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -28,7 +29,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public abstract class SparkTestBase {
 
@@ -71,5 +74,33 @@ public abstract class SparkTestBase {
       map.put(kv[i], kv[i + 1]);
     }
     return map;
+  }
+
+  protected abstract static class TestContext<T> {
+    private List<Runnable> beforeHocks = Lists.newArrayList();
+    private List<Runnable> afterHocks = Lists.newArrayList();
+
+    public TestContext<T> before(Runnable before) {
+      this.beforeHocks.add(before);
+      return this;
+    }
+
+    public TestContext<T> after(Runnable after) {
+      this.afterHocks.add(after);
+      return this;
+    }
+
+    public void test(Consumer<T> test) {
+      for (Runnable r : beforeHocks) {
+        r.run();
+      }
+      try {
+        test.accept(testEnv());
+      } finally {
+        afterHocks.forEach(Runnable::run);
+      }
+    }
+
+    abstract T testEnv();
   }
 }

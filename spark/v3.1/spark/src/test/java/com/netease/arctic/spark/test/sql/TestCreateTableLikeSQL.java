@@ -54,7 +54,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   public static Stream<Arguments> testCreateTableLikeTimestampZone() {
     return Stream.of(
         Arguments.of(SESSION_CATALOG, structDDL, true, tsWoZ.type()),
-        Arguments.of(SESSION_CATALOG, structDDL, false, tsWoZ.type()),
+        Arguments.of(SESSION_CATALOG, structDDLWithPk, false, tsWoZ.type()),
         Arguments.of(HIVE_CATALOG, structDDL, true, tsWoZ.type()),
         Arguments.of(HIVE_CATALOG, structDDLWithPk, false, tsWoZ.type()),
         Arguments.of(INTERNAL_CATALOG, structDDL, true, tsWoZ.type()),
@@ -69,7 +69,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
       String catalog, String sourceTableDDL, boolean newTableTimestampWithoutZone,
       Type expectTimestampType
   ) {
-    
+
   }
 
   @DisplayName("TestSQL: CREATE TABLE LIKE")
