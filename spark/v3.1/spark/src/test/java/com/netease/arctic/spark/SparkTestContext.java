@@ -625,4 +625,12 @@ public class SparkTestContext extends ExternalResource {
     }
     return RowFactory.create(values);
   }
+
+  public Map<String, String> properties(String... kv) {
+    Map<String, String> props = Maps.newHashMap();
+    for (int i = 0; i < kv.length; i = i + 2) {
+      props.put(kv[i], kv[i + 1]);
+    }
+    return props;
+  }
 }
