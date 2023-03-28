@@ -29,12 +29,14 @@ import org.apache.spark.sql.types.StructType
 
 import scala.collection.JavaConverters
 
-case class CreateArcticTableStatementExec(catalog: TableCatalog,
-                                          ident: Identifier,
-                                          structType: StructType,
-                                          partitioning: Seq[Transform],
-                                          map: Map[String, String],
-                                          ignoreIfExists: Boolean) extends V2CommandExec {
+case class CreateArcticTableStatementExec(
+  catalog: TableCatalog,
+  ident: Identifier,
+  structType: StructType,
+  partitioning: Seq[Transform],
+  map: Map[String, String],
+  ignoreIfExists: Boolean
+) extends V2CommandExec {
 
   override protected def run(): Seq[InternalRow] = {
     if (!catalog.tableExists(ident)) {

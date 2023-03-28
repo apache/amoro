@@ -433,28 +433,30 @@
                     </executions>
                 </plugin>
                 <plugin>
-                  <groupId>org.scalastyle</groupId>
-                  <artifactId>scalastyle-maven-plugin</artifactId>
-                  <version>${maven.plugin.scalastyle.version}</version>
-                  <configuration>
-                    <verbose>false</verbose>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <failOnWarning>false</failOnWarning>
-                    <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
-                    <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
-                    <configLocation>style/scalastyle-config.xml</configLocation>
-                    <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
-                    <outputEncoding>UTF-8</outputEncoding>
-                    <skip>${maven.scalastyle.skip}</skip>
-                  </configuration>
-                  <executions>
-                    <execution>
-                      <goals>
-                        <goal>check</goal>
-                      </goals>
-                    </execution>
-                  </executions>
+                    <groupId>org.scalastyle</groupId>
+                    <artifactId>scalastyle-maven-plugin</artifactId>
+                    <version>${maven.plugin.scalastyle.version}</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                        <failOnViolation>true</failOnViolation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <failOnWarning>false</failOnWarning>
+                        <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                        <configLocation>style/scalastyle-config.xml</configLocation>
+                        <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
+                        <outputEncoding>UTF-8</outputEncoding>
+                        <skip>${maven.scalastyle.skip}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -507,10 +509,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-              <groupId>org.scalastyle</groupId>
-              <artifactId>scalastyle-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
