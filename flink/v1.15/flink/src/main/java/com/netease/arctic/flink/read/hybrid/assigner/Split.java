@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.assigner;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.util.Preconditions;
 
 /**
@@ -49,8 +50,13 @@ public class Split {
     this.split = split;
   }
 
+  @VisibleForTesting
   public Status status() {
     return status;
+  }
+
+  public boolean isAvailable() {
+    return status == Status.AVAILABLE;
   }
 
   public ArcticSplit split() {

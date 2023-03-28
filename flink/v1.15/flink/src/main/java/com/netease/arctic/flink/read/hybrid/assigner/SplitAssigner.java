@@ -24,7 +24,6 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 
 import java.io.Closeable;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,12 +34,9 @@ public interface SplitAssigner extends Closeable {
   default void open() {
   }
 
-  Optional<ArcticSplit> getNext();
+  Split getNext();
 
-  @Deprecated
-  Optional<ArcticSplit> getNext(int subtaskId);
-
-  Split getNextSplit(int subtaskId);
+  Split getNext(int subtaskId);
 
   /**
    * Add new splits discovered by enumerator

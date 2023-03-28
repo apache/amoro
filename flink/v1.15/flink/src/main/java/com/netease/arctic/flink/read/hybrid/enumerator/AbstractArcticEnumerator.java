@@ -129,8 +129,8 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
       }
 
       final int awaitingSubtask = nextAwaiting.getKey();
-      final Split nextSplit = assigner.getNextSplit(awaitingSubtask);
-      if (nextSplit.status() == Split.Status.AVAILABLE) {
+      final Split nextSplit = assigner.getNext(awaitingSubtask);
+      if (nextSplit.isAvailable()) {
         ArcticSplit arcticSplit = nextSplit.split();
         LOG.info("assign a arctic split to subtaskId {}, taskIndex {}, arcticSplit {}.",
             awaitingSubtask, arcticSplit.taskIndex(), arcticSplit);

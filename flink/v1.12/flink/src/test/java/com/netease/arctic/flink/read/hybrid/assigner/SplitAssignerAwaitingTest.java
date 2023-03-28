@@ -35,7 +35,7 @@ public class SplitAssignerAwaitingTest extends ShuffleSplitAssignerTest {
   @Test
   public void testEmpty() {
     ShuffleSplitAssigner splitAssigner = instanceSplitAssigner(1);
-    Split split = splitAssigner.getNextSplit(0);
+    Split split = splitAssigner.getNext(0);
     Assert.assertNotNull(split);
     Assert.assertEquals(Split.Status.UNAVAILABLE, split.status());
   }
@@ -104,7 +104,7 @@ public class SplitAssignerAwaitingTest extends ShuffleSplitAssignerTest {
   }
 
   private void assertGetNext(ShuffleSplitAssigner assigner, Split.Status expectedStatus) {
-    Split result = assigner.getNextSplit(0);
+    Split result = assigner.getNext(0);
     Assert.assertEquals(expectedStatus, result.status());
     switch (expectedStatus) {
       case AVAILABLE:

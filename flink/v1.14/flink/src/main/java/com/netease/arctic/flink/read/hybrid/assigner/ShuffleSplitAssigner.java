@@ -87,12 +87,11 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public Optional<ArcticSplit> getNext() {
+  public Split getNext() {
     throw new UnsupportedOperationException("ShuffleSplitAssigner couldn't support this operation.");
   }
 
-  @Override
-  public Optional<ArcticSplit> getNext(int subTaskId) {
+  private Optional<ArcticSplit> getNextSplit(int subTaskId) {
     int currentParallelism = enumeratorContext.currentParallelism();
     if (totalParallelism != currentParallelism) {
       throw new FlinkRuntimeException(
@@ -124,8 +123,8 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   @Override
-  public Split getNextSplit(int subtaskId) {
-    return getNext(subtaskId).map(Split::of).orElseGet(Split::unavailable);
+  public Split getNext(int subtaskId) {
+    return getNextSplit(subtaskId).map(Split::of).orElseGet(Split::unavailable);
   }
 
   @Override
