@@ -393,6 +393,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       }
     }
   }
+
   private void addNewTables(List<TableIdentifier> toAddTables) {
     if (!inited) {
       LOG.info("OptimizeService init not completed, can't add new tables");
