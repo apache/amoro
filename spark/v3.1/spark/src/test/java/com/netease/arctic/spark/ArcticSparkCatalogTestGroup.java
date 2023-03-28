@@ -77,7 +77,9 @@ import java.util.Map;
     TestHiveTableDropPartitions.class,
     TestHiveTableTruncate.class,
     TestKeyedTableMergeInto.class,
-    TestUnKeyedTableMergeInto.class})
+    TestUnKeyedTableMergeInto.class,
+    TestUpsert.class
+})
 public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass
