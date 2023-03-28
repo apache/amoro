@@ -79,7 +79,7 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
 
     int subtaskId = 2;
     while (subtaskId >= 0) {
-      Split splitOpt = shuffleSplitAssigner.getNext(0);
+      Split splitOpt = shuffleSplitAssigner.getNext(subtaskId);
       if (splitOpt.isAvailable()) {
         actual.add(splitOpt.split());
       } else {
