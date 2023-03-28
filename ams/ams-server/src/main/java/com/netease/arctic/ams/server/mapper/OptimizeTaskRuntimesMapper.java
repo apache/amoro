@@ -33,7 +33,7 @@ public interface OptimizeTaskRuntimesMapper {
 
   @Select("select trace_id, optimize_type, status, pending_time, execute_time, prepared_time, report_time," +
       " commit_time, job_type, job_id, retry, attempt_id, fail_reason, fail_time, new_file_size," +
-      " new_file_cnt, cost_time from " + TABLE_NAME)
+      " new_file_cnt, cost_time, subtask_id from " + TABLE_NAME)
   @Results({
       @Result(property = "optimizeTaskId.traceId", column = "trace_id"),
       @Result(property = "optimizeTaskId.type", column = "optimize_type"),
@@ -57,12 +57,14 @@ public interface OptimizeTaskRuntimesMapper {
       @Result(property = "attemptId", column = "attempt_id"),
       @Result(property = "errorMessage.failTime", column = "fail_time",
           typeHandler = Long2TsConvertor.class),
-      @Result(property = "errorMessage.failReason", column = "fail_reason")
+      @Result(property = "errorMessage.failReason", column = "fail_reason"),
+      @Result(property = "subtaskId", column = "subtask_id")
   })
   List<OptimizeTaskRuntime> selectAllOptimizeTaskRuntimes();
 
   @Update("update " + TABLE_NAME + " set" +
       " status = #{optimizeTaskRuntime.status}," +
+      " subtask_id = #{optimizeTaskRuntime.subtaskId}," +
       " pending_time = #{optimizeTaskRuntime.pendingTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +
       " execute_time = #{optimizeTaskRuntime.executeTime, " +

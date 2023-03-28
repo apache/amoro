@@ -29,6 +29,7 @@ public class TableTaskHistory {
   private long endTime;
   private long costTime;
   private int queueId;
+  private int subtaskId;
 
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;
@@ -94,6 +95,14 @@ public class TableTaskHistory {
     this.queueId = queueId;
   }
 
+  public int getSubtaskId() {
+    return subtaskId;
+  }
+
+  public void setSubtaskId(int subtaskId) {
+    this.subtaskId = subtaskId;
+  }
+
   @Override
   public String toString() {
     return "TableTaskHistory{" +
@@ -103,6 +112,7 @@ public class TableTaskHistory {
         ", endTime=" + endTime +
         ", costTime=" + costTime +
         ", queueId=" + queueId +
+        ", subtaskId=" + subtaskId +
         ", taskTraceId=" + taskTraceId +
         ", retry=" + retry +
         '}';

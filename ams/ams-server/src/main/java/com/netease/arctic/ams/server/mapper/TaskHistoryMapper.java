@@ -75,7 +75,7 @@ public interface TaskHistoryMapper {
   List<TableTaskHistory> selectTaskHistoryByTraceId(@Param("taskTraceId") String taskTraceId);
 
   @Insert("insert into " + TABLE_NAME + "(task_trace_id, retry, catalog_name, db_name, table_name, " +
-      "task_plan_group, start_time, end_time, cost_time, queue_id) values ( " +
+      "task_plan_group, start_time, end_time, cost_time, queue_id, subtask_id) values ( " +
       "#{taskHistory.taskTraceId}, " +
       "#{taskHistory.retry}, " +
       "#{taskHistory.tableIdentifier.catalog}, " +
@@ -87,7 +87,8 @@ public interface TaskHistoryMapper {
       "#{taskHistory.endTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +
       "#{taskHistory.costTime}, " +
-      "#{taskHistory.queueId}) ")
+      "#{taskHistory.queueId}, " +
+      "#{taskHistory.subtaskId}) ")
   void insertTaskHistory(@Param("taskHistory") TableTaskHistory taskHistory);
 
   @Update("update " + TABLE_NAME + " set " +

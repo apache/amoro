@@ -106,7 +106,7 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  public TableTaskHistory onExecuting(JobId jobId, String attemptId) {
+  public TableTaskHistory onExecuting(JobId jobId, String attemptId, int subtaskId) {
     lock.lock();
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
@@ -120,6 +120,7 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setPreparedTime(OptimizeTaskRuntime.INVALID_TIME);
       newRuntime.setCostTime(0);
       newRuntime.setErrorMessage(null);
+      newRuntime.setSubtaskId(subtaskId);
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
       return constructNewTableTaskHistory(currentTime);
@@ -179,6 +180,7 @@ public class OptimizeTaskItem extends IJDBCService {
       }
       newRuntime.setPreparedTime(preparedTime);
       newRuntime.setStatus(OptimizeStatus.Prepared);
+      newRuntime.setErrorMessage(null);
       newRuntime.setReportTime(reportTime);
       newRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       newRuntime.setNewFileSize(newFileSize);
@@ -346,6 +348,7 @@ public class OptimizeTaskItem extends IJDBCService {
     tableTaskHistory.setRetry(optimizeRuntime.getRetry());
     tableTaskHistory.setStartTime(currentTime);
     tableTaskHistory.setQueueId(optimizeTask.getQueueId());
+    tableTaskHistory.setSubtaskId(optimizeRuntime.getSubtaskId());
 
     return tableTaskHistory;
   }
@@ -428,7 +431,7 @@ public class OptimizeTaskItem extends IJDBCService {
           getMapper(sqlSession, OptimizeTasksMapper.class);
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
-      
+
       try {
         optimizeTasksMapper.deleteOptimizeTask(taskId.getTraceId());
         internalTableFilesMapper.deleteOptimizeTaskFile(taskId);

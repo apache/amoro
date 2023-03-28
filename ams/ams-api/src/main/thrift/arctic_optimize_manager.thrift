@@ -119,7 +119,7 @@ service OptimizeManager {
 
     void ping()
 
-    OptimizeTask pollTask(1:i32 queueId, 2:JobId jobId, 3:string attemptId, 4:i64 waitTime)
+    OptimizeTask pollTask(1:i32 queueId, 2:JobId jobId, 3:string attemptId, 4:i64 waitTime, 5:i32 subtaskId)
         throws (1: arctic_commons.NoSuchObjectException e1)
 
     void reportOptimizeResult(1:OptimizeTaskStat optimizeTaskStat)

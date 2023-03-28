@@ -50,7 +50,7 @@ public class FakeBaseConsumer extends BaseTaskConsumer {
   }
 
   @Override
-  public TaskWrapper pollTask(long timeout) throws TException {
+  public TaskWrapper pollTask(int subtaskId, long timeout) throws TException {
     synchronized (this) {
       try {
         if (this.nextTaskToConsume == null) {

@@ -56,8 +56,8 @@ public class BaseTaskConsumer implements Serializable {
    *
    * @return - return null if got no task
    */
-  public TaskWrapper pollTask() throws TException {
-    return pollTask(DEFAULT_POLL_WAIT_TIMEOUT);
+  public TaskWrapper pollTask(int subtaskId) throws TException {
+    return pollTask(subtaskId, DEFAULT_POLL_WAIT_TIMEOUT);
   }
 
   /**
@@ -65,16 +65,16 @@ public class BaseTaskConsumer implements Serializable {
    *
    * @return - return null if got no task
    */
-  public TaskWrapper pollTask(long timeout) throws TException {
+  public TaskWrapper pollTask(int subtaskId, long timeout) throws TException {
     int attemptId = Math.abs(ThreadLocalRandom.current().nextInt());
-    OptimizeTask task = pollTask(attemptId, timeout);
+    OptimizeTask task = pollTask(subtaskId, attemptId, timeout);
     return task == null ? null : new TaskWrapper(task, attemptId);
   }
 
-  private OptimizeTask pollTask(int attemptId, long timeout) throws TException {
+  private OptimizeTask pollTask(int subtaskId, int attemptId, long timeout) throws TException {
     try {
       OptimizeManager.Iface optimizeManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
-      return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout);
+      return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
     } catch (NoSuchObjectException e) {
       return null;
     }

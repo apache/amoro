@@ -150,6 +150,7 @@ CREATE TABLE `optimize_task`
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `properties`                text COMMENT 'Task properties',
     `queue_id`                  int(11) NOT NULL COMMENT 'Task group id',
+    `subtask_id`                int(11) DEFAULT NULL COMMENT 'Optimizer task subtask id',
     `insert_files`              int(11) DEFAULT NULL COMMENT 'Insert file cnt',
     `delete_files`              int(11) DEFAULT NULL COMMENT 'Delete file cnt',
     `base_files`                int(11) DEFAULT NULL COMMENT 'Base file cnt',
@@ -246,6 +247,7 @@ CREATE TABLE `optimize_task_history`
     `end_time`          datetime(3) DEFAULT NULL COMMENT 'Task end time',
     `cost_time`         bigint(20) DEFAULT NULL COMMENT 'Task cost time',
     `queue_id`          int(11) DEFAULT NULL COMMENT 'Queue id which execute task',
+    `subtask_id`        int(11) DEFAULT NULL COMMENT 'Optimizer task subtask id',
     PRIMARY KEY (`task_trace_id`, `retry`),
     KEY `table_end_time_plan_group_index` (`catalog_name`, `db_name`, `table_name`, `end_time`, `task_plan_group`),
     KEY `table_plan_group_index` (`catalog_name`, `db_name`, `table_name`, `task_plan_group`)

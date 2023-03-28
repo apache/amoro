@@ -331,10 +331,10 @@ public class OptimizeQueueService extends IJDBCService {
     }
   }
 
-  public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
+  public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime, int subtaskId)
       throws NoSuchObjectException, TException {
     try {
-      OptimizeTask task = getQueue(queueId).poll(jobId, attemptId, waitTime);
+      OptimizeTask task = getQueue(queueId).poll(jobId, attemptId, waitTime, subtaskId);
       if (task != null) {
         LOG.info("{} pollTask success, {}", jobId, task);
       } else {
@@ -529,7 +529,7 @@ public class OptimizeQueueService extends IJDBCService {
           optimizeQueue.getOptimizeQueueMeta().getQueueId();
     }
 
-    public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime) {
+    public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime, int subtaskId) {
       long startTime = System.currentTimeMillis();
       OptimizeTaskItem task = pollValidTask();
       if (task == null) {
@@ -537,19 +537,19 @@ public class OptimizeQueueService extends IJDBCService {
         task = waitForTask(startTime, waitTime);
         if (task == null) {
           return null;
-        } 
-      } 
-      return onExecuteOptimizeTask(task, jobId, attemptId);
+        }
+      }
+      return onExecuteOptimizeTask(task, jobId, attemptId, subtaskId);
     }
 
-    private OptimizeTask onExecuteOptimizeTask(OptimizeTaskItem task, JobId jobId, String attemptId) {
+    private OptimizeTask onExecuteOptimizeTask(OptimizeTaskItem task, JobId jobId, String attemptId, int subtaskId) {
       TableTaskHistory tableTaskHistory;
       try {
         // load files from sysdb
         task.setFiles();
         // update max execute time
         task.setMaxExecuteTime();
-        tableTaskHistory = task.onExecuting(jobId, attemptId);
+        tableTaskHistory = task.onExecuting(jobId, attemptId, subtaskId);
       } catch (Exception e) {
         task.clearFiles();
         LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);

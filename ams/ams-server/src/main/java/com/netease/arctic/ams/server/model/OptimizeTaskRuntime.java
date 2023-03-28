@@ -39,6 +39,7 @@ public class OptimizeTaskRuntime implements Cloneable {
 
   private JobId jobId;
   private String attemptId;
+  private int subtaskId;
 
   private int retry = 0;
   private ErrorMessage errorMessage = null;
@@ -182,11 +183,20 @@ public class OptimizeTaskRuntime implements Cloneable {
     this.targetFiles = targetFiles;
   }
 
+  public int getSubtaskId() {
+    return subtaskId;
+  }
+
+  public void setSubtaskId(int subtaskId) {
+    this.subtaskId = subtaskId;
+  }
+
   @Override
   public String toString() {
     return "BaseOptimizeRuntime{" +
         "optimizeTaskId=" + optimizeTaskId +
         ", status=" + status +
+        ", subtaskId=" + subtaskId +
         ", pendingTime=" + pendingTime +
         ", executeTime=" + executeTime +
         ", preparedTime=" + preparedTime +
