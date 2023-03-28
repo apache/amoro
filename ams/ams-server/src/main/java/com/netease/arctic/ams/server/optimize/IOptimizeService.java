@@ -107,16 +107,16 @@ public interface IOptimizeService {
   void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
 
   /**
-   * Add new tables into cache
-   * @param toAddTables -
+   * Add new table into cache
+   * @param toAddTable -
    */
-  void addNewTables(List<TableIdentifier> toAddTables);
+  void addNewTable(TableIdentifier toAddTable);
 
   /**
-   * Clear removed tables from cache
-   * @param toRemoveTables -
+   * Clear removed table from cache
+   * @param toRemoveTable -
    */
-  void clearRemovedTables(List<TableIdentifier> toRemoveTables);
+  void clearRemovedTable(TableIdentifier toRemoveTable);
 
   /**
    * Start table optimize
