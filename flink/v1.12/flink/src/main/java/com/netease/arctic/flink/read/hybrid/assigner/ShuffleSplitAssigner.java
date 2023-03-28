@@ -91,6 +91,11 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     throw new UnsupportedOperationException("ShuffleSplitAssigner couldn't support this operation.");
   }
 
+  @Override
+  public Split getNext(int subtaskId) {
+    return getNextSplit(subtaskId).map(Split::of).orElseGet(Split::unavailable);
+  }
+
   private Optional<ArcticSplit> getNextSplit(int subTaskId) {
     int currentParallelism = enumeratorContext.currentParallelism();
     if (totalParallelism != currentParallelism) {
@@ -120,11 +125,6 @@ public class ShuffleSplitAssigner implements SplitAssigner {
       LOG.debug("Subtask {}, it's an idle subtask due to the empty queue with this subtask.", subTaskId);
       return Optional.empty();
     }
-  }
-
-  @Override
-  public Split getNext(int subtaskId) {
-    return getNextSplit(subtaskId).map(Split::of).orElseGet(Split::unavailable);
   }
 
   @Override
