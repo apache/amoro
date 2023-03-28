@@ -18,19 +18,23 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import com.netease.arctic.spark.ArcticSparkCatalog
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticCatalog, isArcticTable}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.arctic.execution.CreateArcticTableAsSelectExec
-import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
+import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedDBObjectName, ResolvedTable}
+import org.apache.spark.sql.catalyst.catalog.CatalogUtils
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
-import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan, TableSpec}
+import org.apache.spark.sql.connector.catalog.{Identifier, StagingTableCatalog}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.execution.datasources.v2._
+import org.apache.spark.sql.internal.StaticSQLConf.WAREHOUSE_PATH
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
@@ -40,12 +44,14 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists)
-      if isArcticCatalog(catalog) =>
+    case CreateTableAsSelect(ResolvedDBObjectName(catalog, ident), parts, query: DataSourceV2Relation, tableSpec,
+    options, ifNotExists) =>
       val writeOptions = new CaseInsensitiveStringMap(options.asJava)
-      CreateArcticTableAsSelectExec(
-        catalog, ident, parts, query, planLater(query), planLater(validateQuery),
-        props, writeOptions, ifNotExists) :: Nil
+      catalog match {
+        case c : ArcticSparkCatalog =>
+          CreateTableAsSelectExec(c, Identifier.of(ident.init.toArray, ident.last), parts, query,
+            planLater(query), tableSpec, writeOptions, ifNotExists) :: Nil
+      }
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended, _)
       if isArcticTable(r.table) =>
