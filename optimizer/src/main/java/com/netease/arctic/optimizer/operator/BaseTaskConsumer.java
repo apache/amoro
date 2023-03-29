@@ -26,6 +26,7 @@ import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
+import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ public class BaseTaskConsumer implements Serializable {
 
   private final OptimizerConfig config;
   private final JobId jobId;
+  private boolean useLegacyIface = false;
 
   public BaseTaskConsumer(OptimizerConfig config) {
     this.config = config;
@@ -74,7 +76,19 @@ public class BaseTaskConsumer implements Serializable {
   private OptimizeTask pollTask(int subtaskId, int attemptId, long timeout) throws TException {
     try {
       OptimizeManager.Iface optimizeManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
-      return optimizeManager.pollTaskWithSubtaskId(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
+      if (useLegacyIface) {
+        return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout);
+      } else {
+        return optimizeManager.pollTaskWithSubtaskId(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
+      }
+    } catch (TApplicationException e) {
+      LOG.warn("Please upgrade your optimizer to the newly version.");
+      if ("Invalid method name: 'pollTaskWithSubtaskId'".equals(e.getMessage())) {
+        useLegacyIface = true;
+        return null;
+      } else {
+        throw e;
+      }
     } catch (NoSuchObjectException e) {
       return null;
     }
