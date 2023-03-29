@@ -26,10 +26,8 @@ import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
-import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
-import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.Optimizer;
@@ -241,7 +239,8 @@ public class OptimizerService extends IJDBCService {
   /**
    * If lastmodification is not null and is not the same as before, then the task has occurred retry and returns true.
    */
-  private void checkOptimizerRetry(OptimizerStateReport newReportData, Optimizer oldOptimizer) throws NoSuchObjectException {
+  private void checkOptimizerRetry(OptimizerStateReport newReportData, Optimizer oldOptimizer)
+          throws NoSuchObjectException {
 
     Map<String, String> stateInfo = oldOptimizer.getStateInfo();
     if (stateInfo == null || newReportData.optimizerState == null ||
