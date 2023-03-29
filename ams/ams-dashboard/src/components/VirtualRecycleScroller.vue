@@ -8,8 +8,8 @@
     v-if="items.length && !loading"
   >
     <div :class="{'active': activeItem === item.label, 'hive-table': item.type === 'HIVE'}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
-      <table-outlined v-if="iconName === 'tableOutlined'" class="g-mr-8" />
-      <svg-icon v-if="iconName === 'database'" icon-class="database" class="g-mr-8" />
+      <svg-icon v-if="iconName === 'database'" icon-class="database" class="table-icon g-mr-8" />
+      <svg-icon v-else :icon-class="tableTypeIconMap[item.type]" class="table-icon g-mr-8" />
       <p :title="item.label" class="name g-text-nowrap">
         {{ item.label }}
       </p>
@@ -22,13 +22,11 @@
 import { defineComponent } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
-import { TableOutlined } from '@ant-design/icons-vue'
-import { IMap } from '@/types/common.type'
+import { IMap, tableTypeIconMap } from '@/types/common.type'
 import { Empty } from 'ant-design-vue'
 
 export default defineComponent ({
   components: {
-    TableOutlined,
     RecycleScroller
   },
   emits: ['mouseEnter', 'handleClickTable'],
@@ -43,6 +41,7 @@ export default defineComponent ({
 
     return {
       simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
+      tableTypeIconMap: tableTypeIconMap,
       handleMouseEnter,
       handleClickTable
     }
@@ -92,25 +91,15 @@ export default defineComponent ({
   cursor: pointer;
   &.active,
   &:hover {
-    .name {
-      color: #fff !important;
-    }
     background-color: @dark-gray-color;
     color: #fff;
   }
-  &.hive-table {
-    .name {
-      color: #9ea4aa;
-    }
-    &:hover {
-      .name {
-        color: #fff;
-      }
-      background-color: @dark-gray-color;
-    }
-  }
   .name {
     max-width: 200px;
+    margin-top: -2px;
+  }
+  .table-icon {
+    font-size: 14px;
   }
 }
 </style>
