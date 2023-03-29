@@ -246,7 +246,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     public TaskWrapper pollTask() throws InterruptedException {
       while (!stopped) {
         try {
-          TaskWrapper task = baseTaskConsumer.pollTask(0,0);
+          TaskWrapper task = baseTaskConsumer.pollTask(0, 0);
           if (task != null) {
             LOG.info("poll task {}", task);
             return task;
