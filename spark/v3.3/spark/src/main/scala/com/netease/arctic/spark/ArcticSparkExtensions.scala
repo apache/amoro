@@ -49,7 +49,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
 
     // iceberg extensions
-    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
+//    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
     extensions.injectResolutionRule { spark => ResolveMergeIntoTableReferences(spark) }
     extensions.injectResolutionRule { _ => CheckMergeIntoTableConditions }
     extensions.injectResolutionRule { _ => ProcedureArgumentCoercion }

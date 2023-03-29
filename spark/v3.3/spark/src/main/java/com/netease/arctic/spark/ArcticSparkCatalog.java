@@ -464,7 +464,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException, NonEmptyNamespaceException {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;

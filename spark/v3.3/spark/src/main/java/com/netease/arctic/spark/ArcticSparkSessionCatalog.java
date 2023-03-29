@@ -114,7 +114,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException, NonEmptyNamespaceException {
     return getSessionCatalog().dropNamespace(namespace, cascade);
   }
 

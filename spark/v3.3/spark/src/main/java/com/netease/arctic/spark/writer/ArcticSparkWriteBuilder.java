@@ -55,7 +55,7 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
   protected Expression overwriteExpr = null;
 
   private WriteMode writeMode = WriteMode.APPEND;
-//  private final ArcticWrite write;
+  //private final ArcticWrite write;
   private final ArcticTable table;
   private final LogicalWriteInfo info;
   private final ArcticCatalog catalog;

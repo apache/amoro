@@ -164,7 +164,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException, NonEmptyNamespaceException {
     return this.delegateCatalog.dropNamespace(namespace, cascade);
   }
 
@@ -364,7 +365,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     }
 
     @Override
-    public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
+    public boolean dropNamespace(String[] namespace, boolean cascade)
+        throws NoSuchNamespaceException, NonEmptyNamespaceException {
       return holder.dropNamespace(namespace, cascade);
     }
 
