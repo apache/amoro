@@ -74,7 +74,7 @@ public class BaseTaskConsumer implements Serializable {
   private OptimizeTask pollTask(int subtaskId, int attemptId, long timeout) throws TException {
     try {
       OptimizeManager.Iface optimizeManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
-      return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
+      return optimizeManager.pollTaskWithSubtaskId(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
     } catch (NoSuchObjectException e) {
       return null;
     }

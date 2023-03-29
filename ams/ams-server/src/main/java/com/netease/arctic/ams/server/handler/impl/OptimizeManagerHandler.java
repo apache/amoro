@@ -39,7 +39,13 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
   }
 
   @Override
-  public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime, int subtaskId)
+  public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
+      throws TException {
+    return ServiceContainer.getOptimizeQueueService().pollTask(queueId, jobId, attemptId, waitTime, -1);
+  }
+
+  @Override
+  public OptimizeTask pollTaskWithSubtaskId(int queueId, JobId jobId, String attemptId, long waitTime, int subtaskId)
       throws TException {
     return ServiceContainer.getOptimizeQueueService().pollTask(queueId, jobId, attemptId, waitTime, subtaskId);
   }

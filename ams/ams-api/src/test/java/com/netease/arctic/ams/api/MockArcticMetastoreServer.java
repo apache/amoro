@@ -383,8 +383,14 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime, int subtaskId)
+    public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
         throws NoSuchObjectException, TException {
+      return null;
+    }
+
+    @Override
+    public OptimizeTask pollTaskWithSubtaskId(int queueId, JobId jobId, String attemptId, long waitTime, int subtaskId)
+        throws TException {
       return null;
     }
 
