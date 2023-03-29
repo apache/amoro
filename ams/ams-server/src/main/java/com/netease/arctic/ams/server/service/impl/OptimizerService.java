@@ -22,22 +22,22 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
+import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -112,7 +112,7 @@ public class OptimizerService extends IJDBCService {
       return;
     }
     Optimizer optimizer = getOptimizer(reportData.optimizerId);
-    byte[] optimizerinstance = null;
+    byte[] optimizerInstance = null;
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
@@ -131,7 +131,7 @@ public class OptimizerService extends IJDBCService {
             state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(reportData.optimizerState));
           }
           ((StatefulOptimizer) instance).updateState(state);
-          optimizerinstance = factory.serialize(instance);
+          optimizerInstance = factory.serialize(instance);
         }
       }
       try (SqlSession sqlSession = getSqlSession(true)) {
@@ -142,7 +142,7 @@ public class OptimizerService extends IJDBCService {
         } else {
           stateInfo = reportData.optimizerState;
         }
-        optimizerMapper.updateOptimizerState(reportData.optimizerId, optimizerinstance,
+        optimizerMapper.updateOptimizerState(reportData.optimizerId, optimizerInstance,
                 stateInfo, TableTaskStatus.RUNNING.name());
       }
     }
@@ -241,7 +241,7 @@ public class OptimizerService extends IJDBCService {
   /**
    * If lastmodification is not null and is not the same as before, then the task has occurred retry and returns true.
    */
-  private void checkOptimizerRetry(OptimizerStateReport newReportData,Optimizer oldOptimizer) {
+  private void checkOptimizerRetry(OptimizerStateReport newReportData, Optimizer oldOptimizer) throws NoSuchObjectException {
 
     Map<String, String> stateInfo = oldOptimizer.getStateInfo();
     if (stateInfo == null || newReportData.optimizerState == null ||
@@ -254,32 +254,28 @@ public class OptimizerService extends IJDBCService {
             .get(STATUS_IDENTIFICATION);
     if (!statusIdentification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
             stateInfo.get(STATUS_IDENTIFICATION) != null) {
-
       LOG.info("Optimizer " + newReportData.optimizerId + " retry occurred");
       //The flink status has changed. Procedure
-      long optimizerId = newReportData.optimizerId;
-      try (SqlSession sqlSession = getSqlSession(true)) {
-        OptimizeTasksMapper optimizeTasksMapper = getMapper(sqlSession, OptimizeTasksMapper.class);
-        //Gets the task in execution of the optimizer
-        List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper
-                .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
-        for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
+      String optimizerId = String.valueOf(newReportData.optimizerId);
 
-          //Since optimzer may poll tasks before heartbeat,
-          //only tasks whose createtime is less than status Identification are set to fail
-          if (baseOptimizeTask.getCreateTime()  < Long.parseLong(statusIdentification)) {
-            OptimizeTaskId taskId = baseOptimizeTask.taskId;
+      //get all arctic table from cache
+      List<com.netease.arctic.table.TableIdentifier> tableIdentifiers =
+              ServiceContainer.getOptimizeService().listCachedTables();
+      for (com.netease.arctic.table.TableIdentifier tableIdentifier : tableIdentifiers) {
+        //get all optimize task from cache for arctic table
+        TableOptimizeItem tableOptimizeItem =
+                ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+        List<OptimizeTaskItem> optimizeTasks = tableOptimizeItem.getOptimizeTasks();
+        for (OptimizeTaskItem optimizeTask : optimizeTasks) {
 
-            TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
-
-            TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService()
-                    .getTableOptimizeItem(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
-
-            tableOptimizeItem.taskFailedForOptimizerRetry(taskId);
+          OptimizeTaskRuntime optimizeRuntime = optimizeTask.getOptimizeRuntime();
+          //Retry only the task whose state is Executing
+          if (optimizerId.equals(optimizeRuntime.getJobId().getId()) &&
+              OptimizeStatus.Executing.equals(optimizeRuntime.getStatus()) &&
+              optimizeRuntime.getExecuteTime() < Long.parseLong(statusIdentification)) {
+            tableOptimizeItem.taskFailedForOptimizerRetry(optimizeTask.getTaskId());
           }
         }
-      } catch (NoSuchObjectException e) {
-        throw new RuntimeException(e);
       }
 
     }

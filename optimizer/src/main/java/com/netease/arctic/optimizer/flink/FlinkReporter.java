@@ -18,31 +18,17 @@
 
 package com.netease.arctic.optimizer.flink;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
-
-import static org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.getExecutionEnvironment;
 
 public class FlinkReporter extends AbstractStreamOperator<Void>
         implements OneInputStreamOperator<OptimizeTaskStat, Void> {
@@ -60,8 +46,8 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   private final BaseTaskReporter taskReporter;
   private final BaseToucher toucher;
   private final long heartBeatInterval;
+  private long createTime;
 
-  private String restApiPrefix;
 
   private volatile boolean stopped = false;
   private Thread thread;
@@ -76,7 +62,8 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
     this.taskReporter = new BaseTaskReporter(config);
     this.toucher = new BaseToucher(config);
     this.heartBeatInterval = config.getHeartBeat();
-    this.restApiPrefix = config.getRestApiPrefix();
+    this.createTime = System.currentTimeMillis();
+    System.out.println("FlinkReporter: " + this.createTime);
   }
 
   @Override
@@ -90,7 +77,8 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
           try {
             String jobId = getContainingTask().getEnvironment().getJobID().toString();
             state.put(STATE_JOB_ID, jobId);
-            addLastModification(state);
+            state.put(STATUS_IDENTIFICATION, String.valueOf(createTime));
+            //addLastModification(state);
           } catch (Exception e) {
             LOG.error("failed to get joId, ignore", e);
           }
@@ -122,42 +110,6 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
       LOG.info("report success {}", element.getValue() == null ? null : element.getValue().getTaskId());
     } else {
       LOG.warn("get empty task stat");
-    }
-  }
-
-  private void addLastModification(Map<String, String> state) throws IOException {
-
-    String yarnApp = getContainingTask().getEnvironment().getTaskManagerInfo()
-            .getConfiguration().toMap().get(HIGH_AVAILABILITY_CLUSTER_ID);
-
-    if (StringUtils.isNotEmpty(restApiPrefix) && StringUtils.isNotEmpty(yarnApp)) {
-      //http://xxxxxx/{application_id}/jobs/overview
-      String restApiUrl = restApiPrefix + yarnApp + JOB_OVERVIEW_REST_API;
-
-      URL url = new URL(restApiUrl);
-      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-      conn.setRequestMethod("GET");
-      conn.connect();
-      StringBuilder  sb = new StringBuilder();
-
-      if (conn.getResponseCode() == 200) {
-        InputStream is  = conn.getInputStream();
-        BufferedReader br =  new BufferedReader(new InputStreamReader(is));
-        String line;
-        while ((line = br.readLine()) != null) {
-          sb.append(line);
-        }
-
-        String jsonStr = sb.toString();
-        JSONArray jobs = JSON.parseObject(jsonStr).getJSONArray("jobs");
-        Long lastModification = jobs.getJSONObject(0).getLong(LAST_MODIFICATION);
-        state.put(STATUS_IDENTIFICATION, String.valueOf(lastModification));
-
-      }
-
-      conn.disconnect();
-
     }
   }
 }
