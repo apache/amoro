@@ -75,13 +75,14 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
       // This is a partial-read schema from Flink engine view, should reassign schema id to selected-schema
       Schema selectedSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkTableSchema), arcticTable.schema());
 
-      assertRecords(selectedSchema, arcticTable, expected, flinkTableSchema);
+      assertRecords(arcticTable.schema(), selectedSchema, arcticTable, expected, flinkTableSchema);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   default void assertRecords(
+      Schema tableSchema,
       Schema selectedSchema,
       ArcticTable arcticTable,
       RowData expected,
@@ -91,6 +92,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
       records =
           recordsOfKeyedTable(
               arcticTable.asKeyedTable(),
+              tableSchema,
               selectedSchema,
               arcticTable.io());
     } else {
@@ -136,6 +138,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
 
   default List<RowData> recordsOfKeyedTable(
       KeyedTable table,
+      Schema tableSchema,
       Schema projectedSchema,
       ArcticFileIO io) {
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, new AtomicInteger(0));
@@ -143,7 +146,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
     RowDataReaderFunction rowDataReaderFunction =
         new RowDataReaderFunction(
             new Configuration(),
-            projectedSchema,
+            tableSchema,
             projectedSchema,
             PRIMARY_KEY_SPEC,
             null,

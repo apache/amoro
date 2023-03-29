@@ -24,10 +24,14 @@ import com.netease.arctic.flink.util.DataUtil;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.RowData;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.types.TypeUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static com.netease.arctic.TableTestHelpers.COLUMN_NAME_ID;
@@ -57,7 +61,7 @@ public class FlinkArcticTaskWriterBuilderTest extends TableTestBase implements F
   }
 
   @Test
-  public void testWriteToArcticWithPartialSchema() {
+  public void testWriteToArcticWithPartialSchema() throws IOException {
     TableSchema flinkPartialSchema = TableSchema.builder()
         .field(COLUMN_NAME_ID, DataTypes.INT())
         .field(COLUMN_NAME_NAME, DataTypes.STRING())
@@ -65,21 +69,45 @@ public class FlinkArcticTaskWriterBuilderTest extends TableTestBase implements F
         .build();
     RowData expected = DataUtil.toRowData(1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0"));
     testWriteAndReadArcticTable(getArcticTable(), flinkPartialSchema, expected);
+
+    // All field data is read from the Arctic table through the flink engine.
+    // And the field order is different from the field order of the table definition
+    TableSchema flinkFullSchema = TableSchema.builder()
+        .field(COLUMN_NAME_TS, DataTypes.BIGINT())
+        .field(COLUMN_NAME_NAME, DataTypes.STRING())
+        .field(COLUMN_NAME_ID, DataTypes.INT())
+        .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
+        .build();
+    expected = DataUtil.toRowData(null, "a", 1000004, LocalDateTime.parse("2022-06-18T10:10:11.0"));
+    Schema selectedSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkFullSchema), getArcticTable().schema());
+    assertRecords(getArcticTable().schema(), selectedSchema, getArcticTable(), expected, flinkFullSchema);
   }
 
   /**
    * The order of flink table schema fields is different from that of arctic table schema fields.
    */
   @Test
-  public void testWriteToArcticWithOutOfOrderFieldsAndPK() {
+  public void testWriteToArcticWithOutOfOrderFieldsAndPK() throws IOException {
     TableSchema flinkTableSchemaOutOfOrderFields = TableSchema.builder()
         .field(COLUMN_NAME_TS, DataTypes.BIGINT())
         .field(COLUMN_NAME_ID, DataTypes.INT())
         .field(COLUMN_NAME_NAME, DataTypes.STRING())
         .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
         .build();
-    RowData expected = DataUtil.toRowData(System.currentTimeMillis(), 1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0"));
+    RowData expected = DataUtil.toRowData(10000L, 1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0"));
     testWriteAndReadArcticTable(getArcticTable(), flinkTableSchemaOutOfOrderFields, expected);
+
+    // All field data is read from the Arctic table through the flink engine.
+    // And the field order is different from the field order of the table definition
+    TableSchema flinkFullSchema = TableSchema.builder()
+        .field(COLUMN_NAME_TS, DataTypes.BIGINT())
+        .field(COLUMN_NAME_NAME, DataTypes.STRING())
+        .field(COLUMN_NAME_ID, DataTypes.INT())
+        .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
+        .build();
+    expected = DataUtil.toRowData(10000L, "a", 1000004, LocalDateTime.parse("2022-06-18T10:10:11.0"));
+    Schema selectedSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkFullSchema), getArcticTable().schema());
+    assertRecords(getArcticTable().schema(), selectedSchema, getArcticTable(), expected, flinkFullSchema);
   }
 
   @Override

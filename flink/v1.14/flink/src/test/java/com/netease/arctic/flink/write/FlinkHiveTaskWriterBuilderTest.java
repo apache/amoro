@@ -24,14 +24,19 @@ import com.netease.arctic.hive.catalog.HiveTableTestBase;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -75,7 +80,7 @@ public class FlinkHiveTaskWriterBuilderTest extends HiveTableTestBase implements
   }
 
   @Test
-  public void testPartialWriteToArctic() {
+  public void testPartialWriteToArctic() throws IOException {
     TableSchema flinkPartialSchema = TableSchema.builder()
         .field(COLUMN_NAME_ID, DataTypes.INT())
         .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
@@ -83,18 +88,45 @@ public class FlinkHiveTaskWriterBuilderTest extends HiveTableTestBase implements
         .build();
     RowData expected = DataUtil.toRowData(1000004, LocalDateTime.parse("2022-06-18T10:10:11.0"), "a");
     testWriteAndReadArcticTable(getArcticTable(), flinkPartialSchema, expected);
+
+    // All field data is read from the Arctic table through the flink engine.
+    // And the field order is different from the field order of the table definition
+    TableSchema flinkFullSchema = TableSchema.builder()
+        .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
+        .field(COLUMN_NAME_ID, DataTypes.INT())
+        .field(COLUMN_NAME_OP_TIME_WITH_ZONE, DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+        .field(COLUMN_NAME_D, DataTypes.DECIMAL(10, 0))
+        .field(COLUMN_NAME_NAME, DataTypes.STRING())
+        .build();
+    expected = DataUtil.toRowData(LocalDateTime.parse("2022-06-18T10:10:11.0"), 1000004, null, null, "a");
+    Schema selectedSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkFullSchema), getArcticTable().schema());
+    assertRecords(getArcticTable().schema(), selectedSchema, getArcticTable(), expected, flinkFullSchema);
   }
 
   @Test
-  public void testWriteOutOfOrderFieldsFromArctic() {
+  public void testWriteOutOfOrderFieldsFromArctic() throws IOException {
     TableSchema flinkTableSchemaOutOfOrderFields = TableSchema.builder()
-        .field(COLUMN_NAME_D, DataTypes.STRING())
+        .field(COLUMN_NAME_D, DataTypes.DECIMAL(10, 0))
         .field(COLUMN_NAME_ID, DataTypes.INT())
         .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
         .field(COLUMN_NAME_NAME, DataTypes.STRING())
         .build();
-    RowData expected = DataUtil.toRowData("dd", 1000004, LocalDateTime.parse("2022-06-18T10:10:11.0"), "a");
+    DecimalData dd = DecimalData.fromBigDecimal(BigDecimal.valueOf(33.33d), 10, 0);
+    RowData expected = DataUtil.toRowData(dd, 1000004, LocalDateTime.parse("2022-06-18T10:10:11.0"), "a");
     testWriteAndReadArcticTable(getArcticTable(), flinkTableSchemaOutOfOrderFields, expected);
+
+    // All field data is read from the Arctic table through the flink engine.
+    // And the field order is different from the field order of the table definition
+    TableSchema flinkFullSchema = TableSchema.builder()
+        .field(COLUMN_NAME_OP_TIME, DataTypes.TIMESTAMP())
+        .field(COLUMN_NAME_ID, DataTypes.INT())
+        .field(COLUMN_NAME_OP_TIME_WITH_ZONE, DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+        .field(COLUMN_NAME_D, DataTypes.DECIMAL(10, 0))
+        .field(COLUMN_NAME_NAME, DataTypes.STRING())
+        .build();
+    expected = DataUtil.toRowData(LocalDateTime.parse("2022-06-18T10:10:11.0"), 1000004, null, dd, "a");
+    Schema selectedSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkFullSchema), getArcticTable().schema());
+    assertRecords(getArcticTable().schema(), selectedSchema, getArcticTable(), expected, flinkFullSchema);
   }
 
   @Override
