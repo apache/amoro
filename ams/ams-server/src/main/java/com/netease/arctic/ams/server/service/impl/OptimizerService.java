@@ -31,7 +31,7 @@ import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
-import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.OptimizerGroup;
@@ -260,16 +260,16 @@ public class OptimizerService extends IJDBCService {
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizeTasksMapper optimizeTasksMapper = getMapper(sqlSession, OptimizeTasksMapper.class);
         //Gets the task in execution of the optimizer
-        List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper
+        List<BasicOptimizeTask> basicOptimizeTasks = optimizeTasksMapper
                 .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
-        for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
+        for (BasicOptimizeTask basicOptimizeTask : basicOptimizeTasks) {
 
           //Since optimzer may poll tasks before heartbeat,
           //only tasks whose createtime is less than status Identification are set to fail
-          if (baseOptimizeTask.getCreateTime()  < Long.parseLong(statusIdentification)) {
-            OptimizeTaskId taskId = baseOptimizeTask.taskId;
+          if (basicOptimizeTask.getCreateTime()  < Long.parseLong(statusIdentification)) {
+            OptimizeTaskId taskId = basicOptimizeTask.taskId;
 
-            TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
+            TableIdentifier tableIdentifier = basicOptimizeTask.getTableIdentifier();
 
             TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService()
                     .getTableOptimizeItem(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
