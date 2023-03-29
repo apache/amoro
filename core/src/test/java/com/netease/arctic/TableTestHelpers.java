@@ -37,6 +37,10 @@ public class TableTestHelpers {
   public static final String TEST_CATALOG_NAME = "test_catalog";
   public static final String TEST_DB_NAME = "test_db";
   public static final String TEST_TABLE_NAME = "test_table";
+  public static final String COLUMN_NAME_ID = "id";
+  public static final String COLUMN_NAME_NAME = "name";
+  public static final String COLUMN_NAME_TS = "ts";
+  public static final String COLUMN_NAME_OP_TIME = "op_time";
 
   public static final TableIdentifier TEST_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, TEST_TABLE_NAME);
@@ -45,22 +49,22 @@ public class TableTestHelpers {
       org.apache.iceberg.catalog.TableIdentifier.of(TEST_DB_NAME, TEST_TABLE_NAME);
 
   public static final Schema TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "ts", Types.LongType.get()),
-      Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone())
+      Types.NestedField.required(1, COLUMN_NAME_ID, Types.IntegerType.get()),
+      Types.NestedField.required(2, COLUMN_NAME_NAME, Types.StringType.get()),
+      Types.NestedField.required(3, COLUMN_NAME_TS, Types.LongType.get()),
+      Types.NestedField.required(4, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone())
   );
 
   public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .day("op_time").build();
+      .day(COLUMN_NAME_OP_TIME).build();
 
   public static final PartitionSpec IDENTIFY_SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .identity("op_time").build();
+      .identity(COLUMN_NAME_OP_TIME).build();
 
   public static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
 
   public static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
-      .addColumn("id").build();
+      .addColumn(COLUMN_NAME_ID).build();
 
   private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
@@ -104,6 +108,4 @@ public class TableTestHelpers {
     }
     return fileBuilder.build();
   }
-
-
 }

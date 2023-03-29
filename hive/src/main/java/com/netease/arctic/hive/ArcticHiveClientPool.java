@@ -50,7 +50,7 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
     super(poolSize, TTransportException.class, true);
     this.hiveConf = new HiveConf(tableMetaStore.getConfiguration(), ArcticHiveClientPool.class);
     this.hiveConf.addResource(tableMetaStore.getConfiguration());
-    this.hiveConf.addResource(tableMetaStore.getHiveSiteLocation().orElse(null));
+    tableMetaStore.getHiveSiteLocation().ifPresent(this.hiveConf::addResource);
     this.metaStore = tableMetaStore;
   }
 

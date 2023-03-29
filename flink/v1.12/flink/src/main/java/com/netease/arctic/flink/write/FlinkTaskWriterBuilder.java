@@ -144,9 +144,9 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
     FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
+        new AdaptHiveFlinkAppenderFactory(selectSchema, flinkSchema, table.properties(), table.spec()) :
         new FlinkAppenderFactory(
-            schema, flinkSchema, table.properties(), table.spec());
+            selectSchema, flinkSchema, table.properties(), table.spec());
     return new FlinkBaseTaskWriter(
         fileFormat,
         appenderFactory,
@@ -170,17 +170,17 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     KeyedTable keyedTable = table.asKeyedTable();
     Schema selectSchema = TypeUtil.reassignIds(
         FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), keyedTable.baseTable().schema());
-    Schema changeSchemaWithMeta = SchemaUtil.changeWriteSchema(keyedTable.baseTable().schema());
-    RowType flinkSchemaWithMeta = FlinkSchemaUtil.convert(changeSchemaWithMeta);
+    Schema selectedSchemaWithMeta = SchemaUtil.changeWriteSchema(selectSchema);
+    RowType flinkSchemaWithMeta = FlinkSchemaUtil.convert(selectedSchemaWithMeta);
 
     OutputFileFactory outputFileFactory = new CommonOutputFileFactory(keyedTable.changeLocation(),
         keyedTable.spec(), fileFormat, keyedTable.io(), keyedTable.baseTable().encryption(), partitionId,
         taskId, transactionId);
     FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveFlinkAppenderFactory(changeSchemaWithMeta, flinkSchemaWithMeta,
+        new AdaptHiveFlinkAppenderFactory(selectedSchemaWithMeta, flinkSchemaWithMeta,
             keyedTable.properties(), keyedTable.spec()) :
         new FlinkAppenderFactory(
-        changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
+            selectedSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
     boolean upsert = table.isKeyedTable() && PropertyUtil.propertyAsBoolean(table.properties(),
         TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
     return new FlinkChangeTaskWriter(
