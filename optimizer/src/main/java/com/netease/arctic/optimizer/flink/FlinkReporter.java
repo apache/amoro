@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 public class FlinkReporter extends AbstractStreamOperator<Void>
-        implements OneInputStreamOperator<OptimizeTaskStat, Void> {
+    implements OneInputStreamOperator<OptimizeTaskStat, Void> {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkReporter.class);
   public static final String STATE_JOB_ID = "flink-job-id";
 
@@ -47,8 +47,6 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   private final BaseToucher toucher;
   private final long heartBeatInterval;
   private long createTime;
-
-
   private volatile boolean stopped = false;
   private Thread thread;
 
@@ -63,7 +61,6 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
     this.toucher = new BaseToucher(config);
     this.heartBeatInterval = config.getHeartBeat();
     this.createTime = System.currentTimeMillis();
-    System.out.println("FlinkReporter: " + this.createTime);
   }
 
   @Override

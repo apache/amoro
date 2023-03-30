@@ -55,9 +55,6 @@ public class OptimizerConfig implements Serializable {
   @Option(name = "-rp", aliases = "--rock-base-path", usage = "rocks db base path")
   private String rocksDBBasePath;
 
-  @Option(name = "-rf", aliases = "--rest-prefix", usage = "The url prefix for flink's restapi")
-  private String restApiPrefix;
-
 
   public OptimizerConfig() {
   }
@@ -147,14 +144,6 @@ public class OptimizerConfig implements Serializable {
     this.rocksDBBasePath = rocksDBBasePath;
   }
 
-  public String getRestApiPrefix() {
-    return restApiPrefix;
-  }
-
-  public void setRestApiPrefix(String restApiPrefix) {
-    this.restApiPrefix = restApiPrefix;
-  }
-
   @Override
   public String toString() {
     return "OptimizerConfig{" +
@@ -166,7 +155,6 @@ public class OptimizerConfig implements Serializable {
         ", enableSpillMap='" + enableSpillMap + '\'' +
         ", maxInMemorySize=" + maxInMemorySize +
         ", rocksDBBasePath='" + rocksDBBasePath + '\'' +
-        ", restApiPrefix=" + restApiPrefix + '\'' +
         '}';
   }
 
