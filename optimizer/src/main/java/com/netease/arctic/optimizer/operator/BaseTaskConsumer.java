@@ -82,8 +82,8 @@ public class BaseTaskConsumer implements Serializable {
         return optimizeManager.pollTaskWithSubtaskId(config.getQueueId(), jobId, attemptId + "", timeout, subtaskId);
       }
     } catch (TApplicationException e) {
-      LOG.warn("Please upgrade your optimizer to the newly version.");
       if ("Invalid method name: 'pollTaskWithSubtaskId'".equals(e.getMessage())) {
+        LOG.warn("Please upgrade your AMS to the newly version.");
         useLegacyIface = true;
         return null;
       } else {
