@@ -35,6 +35,31 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
+            <source>../flink/v1.12/flink-runtime/target/arctic-flink-runtime-1.12-${project.version}.jar</source>
+            <outputDirectory>plugin/flink</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../flink/v1.14/flink-runtime/target/arctic-flink-runtime-1.14-${project.version}.jar</source>
+            <outputDirectory>plugin/flink</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../flink/v1.15/flink-runtime/target/arctic-flink-runtime-1.15-${project.version}.jar</source>
+            <outputDirectory>plugin/flink</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../spark/v2.3/spark-runtime/target/arctic-spark-2.3-runtime-${project.version}.jar</source>
+            <outputDirectory>plugin/spark</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>../spark/v3.1/spark-runtime/target/arctic-spark-3.1-runtime-${project.version}.jar</source>
+            <outputDirectory>plugin/spark</outputDirectory>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
             <source>../ams/ams-server/target/arctic-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
             <destName>arctic-ams-server-${project.version}.jar</destName>
