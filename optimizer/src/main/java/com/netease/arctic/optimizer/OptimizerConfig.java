@@ -55,7 +55,6 @@ public class OptimizerConfig implements Serializable {
   @Option(name = "-rp", aliases = "--rock-base-path", usage = "rocks db base path")
   private String rocksDBBasePath;
 
-
   public OptimizerConfig() {
   }
 

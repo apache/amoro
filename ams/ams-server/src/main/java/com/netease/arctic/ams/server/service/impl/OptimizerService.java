@@ -188,7 +188,6 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
-
   public void insertOptimizer(
       String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {
@@ -266,7 +265,6 @@ public class OptimizerService extends IJDBCService {
                 ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
         List<OptimizeTaskItem> optimizeTasks = tableOptimizeItem.getOptimizeTasks();
         for (OptimizeTaskItem optimizeTask : optimizeTasks) {
-
           OptimizeTaskRuntime optimizeRuntime = optimizeTask.getOptimizeRuntime();
           //Retry only the task whose state is Executing
           if (optimizerId.equals(optimizeRuntime.getJobId().getId()) &&

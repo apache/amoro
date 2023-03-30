@@ -28,6 +28,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 public class FlinkReporter extends AbstractStreamOperator<Void>
