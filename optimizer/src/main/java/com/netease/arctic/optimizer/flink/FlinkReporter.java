@@ -76,7 +76,6 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
             String jobId = getContainingTask().getEnvironment().getJobID().toString();
             state.put(STATE_JOB_ID, jobId);
             state.put(STATUS_IDENTIFICATION, String.valueOf(createTime));
-            //addLastModification(state);
           } catch (Exception e) {
             LOG.error("failed to get joId, ignore", e);
           }
