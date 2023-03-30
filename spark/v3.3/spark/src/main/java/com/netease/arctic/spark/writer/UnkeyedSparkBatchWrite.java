@@ -283,6 +283,22 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
       TaskWriter<InternalRow> writer = builder.newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);
     }
+
+    public TaskWriter<InternalRow> newDeleteWriter(int partitionId, long taskId, StructType schema) {
+      return TaskWriters.of(table)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newUnkeyedUpsertWriter();
+    }
+
+    public TaskWriter<InternalRow> newInsertWriter(int partitionId, long taskId, StructType schema) {
+      return TaskWriters.of(table)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newUnkeyedUpsertWriter();
+    }
   }
 
   private static class DeltaUpsertWriteFactory extends WriterFactory {
@@ -295,13 +311,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      TaskWriter<InternalRow> internalRowUnkeyedUpsertSparkWriter = TaskWriters.of(table)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(schema)
-          .newUnkeyedUpsertWriter();
-
-      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedUpsertSparkWriter, dsSchema);
+      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
+          newDeleteWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
     }
   }
 
@@ -315,12 +326,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(schema)
-          .newUnkeyedUpsertWriter();
-      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
+          newDeleteWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
     }
   }
 

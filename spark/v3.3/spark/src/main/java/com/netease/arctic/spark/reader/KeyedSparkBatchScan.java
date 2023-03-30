@@ -137,7 +137,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   @Override
   public int hashCode() {
     return Objects.hash(
-        table.id(), readSchema(), filterExpressions.toString());
+        table.id(), readSchema());
   }
 
   private List<CombinedScanTask> tasks() {

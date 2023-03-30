@@ -18,10 +18,9 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsRowLevelOperator}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.Spark3Util
-import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
@@ -43,9 +42,9 @@ object ArcticExtensionUtils {
       }
     }
 
-    def asUpsertWrite: SupportsUpsert = {
+    def asUpsertWrite: SupportsRowLevelOperator = {
       table match {
-        case arcticTable: SupportsUpsert => arcticTable
+        case arcticTable: SupportsRowLevelOperator => arcticTable
         case _ => throw new IllegalArgumentException(s"$table is not an upsert-able table")
       }
     }

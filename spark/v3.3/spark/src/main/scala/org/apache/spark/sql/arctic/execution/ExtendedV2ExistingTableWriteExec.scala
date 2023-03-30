@@ -22,25 +22,23 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriter, PhysicalWriteInfoImpl, WriterCommitMessage}
-import org.apache.spark.sql.execution.datasources.v2.{StreamWriterCommitProgress, V2CommandExec}
+import org.apache.spark.sql.execution.datasources.v2.{StreamWriterCommitProgress, V2CommandExec, V2ExistingTableWriteExec}
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.util.LongAccumulator
 import org.apache.spark.{SparkException, TaskContext}
 
 import scala.util.control.NonFatal
 
-trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2CommandExec with UnaryExecNode with Serializable {
+trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2ExistingTableWriteExec with UnaryExecNode with Serializable {
   def writingTask: WritingSparkTask[W]
 
   def query: SparkPlan
-
-  var commitProgress: Option[StreamWriterCommitProgress] = None
 
   override def child: SparkPlan = query
 
   override def output: Seq[Attribute] = Nil
 
-  protected def writeWithV2(batchWrite: BatchWrite): Seq[InternalRow] = {
+  protected override def writeWithV2(batchWrite: BatchWrite): Seq[InternalRow] = {
     val rdd: RDD[InternalRow] = {
       val tempRdd = query.execute()
       // SPARK-23271 If we are attempting to write a zero partition rdd, create a dummy single

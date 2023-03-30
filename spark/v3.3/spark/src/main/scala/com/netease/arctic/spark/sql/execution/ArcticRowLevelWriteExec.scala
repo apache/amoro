@@ -55,7 +55,9 @@ case class ArcticRowLevelWriteExec(
     DeltaWithMetadataWritingSparkTask(projections)
   }
 
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan = query
+  override protected def withNewChildInternal(newChild: SparkPlan): ArcticRowLevelWriteExec = {
+    copy(query = newChild)
+  }
 }
 
 case class DeltaWithMetadataWritingSparkTask(

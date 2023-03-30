@@ -45,7 +45,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsUpsert {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsRowLevelOperator {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,

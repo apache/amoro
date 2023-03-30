@@ -20,7 +20,7 @@
 package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommandLike}
 import org.apache.spark.sql.connector.write.Write
 
 case class AppendArcticData(
@@ -29,8 +29,10 @@ case class AppendArcticData(
   validateQuery: LogicalPlan,
   writeOptions: Map[String, String],
   write: Option[Write] = None
-) extends Command {
-  override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
+) extends V2WriteCommandLike {
+  override def outputResolved = true
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = query
+  override protected def withNewChildInternal(newChild: LogicalPlan): AppendArcticData = {
+    copy(query = newChild)
+  }
 }

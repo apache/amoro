@@ -25,7 +25,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
-import com.netease.arctic.spark.table.SupportsUpsert;
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
@@ -262,6 +262,33 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       this.transactionId = transactionId;
       this.orderedWrite = orderedWrite;
     }
+
+    public TaskWriter<InternalRow> newDeleteWriter(int partitionId, long taskId, StructType schema) {
+      return TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newChangeWriter();
+    }
+
+    public TaskWriter<InternalRow> newInsertWriter(int partitionId, long taskId, StructType schema) {
+      if (orderedWrite) {
+        return TaskWriters.of(table)
+            .withTransactionId(transactionId)
+            .withPartitionId(partitionId)
+            .withTaskId(taskId)
+            .withDataSourceSchema(schema)
+            .withOrderedWriter(true)
+            .newChangeWriter();
+      }
+      return TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newChangeWriter();
+    }
   }
 
   private static class BaseWriterFactory extends AbstractWriterFactory {
@@ -302,13 +329,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withTransactionId(transactionId)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(dsSchema)
-          .newChangeWriter();
-      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, false);
+      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, dsSchema),
+          newDeleteWriter(partitionId, taskId, dsSchema), dsSchema, true);
     }
   }
 
@@ -321,15 +343,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields())
-          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
-      TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withTransactionId(transactionId)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(schema)
-          .withOrderedWriter(orderedWrite)
-          .newChangeWriter();
-      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+          .filter(field -> !field.name().equals(RowDeltaUtils.OPERATION_COLUMN())).toArray(StructField[]::new));
+      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
+          newDeleteWriter(partitionId, taskId, schema), dsSchema, true);
     }
   }
 
@@ -362,14 +378,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withTransactionId(transactionId)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(dsSchema)
-          .withOrderedWriter(orderedWrite)
-          .newChangeWriter();
-      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, dsSchema),
+          newDeleteWriter(partitionId, taskId, dsSchema), dsSchema, table.isKeyedTable());
     }
   }
 }

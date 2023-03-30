@@ -364,11 +364,11 @@ public class SparkTestContext extends ExternalResource {
     if (args.length == 0) {
       sql = query;
     }
-    LOG.info("execute sql: " + sql);
+    LOG.warn("execute sql: " + sql);
     Dataset<Row> result = spark.sql(sql);
     List<Row> rows = result.collectAsList();
     if (rows.size() < 1) {
-      LOG.info("empty result");
+      LOG.warn("empty result");
       this.rows = new ArrayList<>();
       return ImmutableList.of();
     }

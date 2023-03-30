@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark;
 
-import java.io.IOException;
-import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -27,6 +25,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * test base class for normal spark tests.

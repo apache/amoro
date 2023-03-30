@@ -18,14 +18,17 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import com.netease.arctic.spark.SparkSQLProperties
+import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.catalyst.plans._
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -39,87 +42,30 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _, Some(write)) if isArcticRelation(r) =>
-      val arcticRelation = asTableRelation(r)
-      val upsertWrite = arcticRelation.table.asUpsertWrite
-      val (newQuery, options) = if (upsertWrite.appendAsUpsert()) {
-        val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
-        val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
-        (upsertQuery, upsertOptions)
-      } else {
-        (query, writeOptions)
-      }
-      arcticRelation.table match {
-        case tbl: ArcticSparkTable =>
-          if (tbl.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            if (checkDuplicatesEnabled()) {
-              AppendArcticData(arcticRelation, newQuery, validateQuery, options)
-            } else {
-              val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, newQuery.schema, options)
-              val write = writeBuilder.build()
-              ReplaceArcticData(arcticRelation, newQuery, options, Some(write))
-            }
-          } else {
-            a
-          }
-      }
-    case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _, Some(write))
-      if checkDuplicatesEnabled() =>
-      val arcticRelation = asTableRelation(r)
-      arcticRelation.table match {
-        case table: ArcticSparkTable =>
-          if (table.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            OverwriteArcticPartitionsDynamic(arcticRelation, query, validateQuery, writeOptions)
-          } else {
-            a
-          }
-        case _ =>
-          a
-      }
+    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _, _) if isArcticRelation(r) && isUpsert(r) =>
+      val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
+      val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
+      val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
+      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
+      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
+      val write = writeBuilder.build()
+      ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections, Some(write))
+  }
 
-    case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, writeOptions, _, Some(write))
-      if checkDuplicatesEnabled() =>
-      val arcticRelation = asTableRelation(r)
-      arcticRelation.table match {
-        case table: ArcticSparkTable =>
-          if (table.table().isKeyedTable) {
-            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            var finalExpr: Expression = deleteExpr
-            deleteExpr match {
-              case expr: EqualNullSafe =>
-                finalExpr = expr.copy(query.output.last, expr.right)
-              case _ =>
-            }
-            OverwriteArcticDataByExpression(arcticRelation, finalExpr, query, validateQuery, writeOptions)
-
-          } else {
-            a
-          }
-        case _ =>
-          a
-      }
-
-//    case c @ CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
-//      if checkDuplicatesEnabled() =>
-//      catalog match {
-//        case _: ArcticSparkCatalog =>
-//          if (props.contains("primary.keys")) {
-//            val primaries = props("primary.keys").split(",")
-//            val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
-//            val alias = Alias(than, "count")()
-//            val attributes = query.output.filter(p => primaries.contains(p.name))
-//            val validateQuery = Aggregate(attributes, Seq(alias), query)
-//            CreateArcticTableAsSelect(
-//              catalog, ident, parts, query, validateQuery,
-//              props, options, ifNotExists)
-//          } else {
-//            c
-//          }
-//        case _ =>
-//          c
-//      }
+  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
+                             isUpsert: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isUpsert) {
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = false, 0)
+      (frontRowProjection, backRowProjection)
+    } else {
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
+      (null, backRowProjection)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
   }
 
   def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
@@ -135,6 +81,11 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           throw new UnsupportedOperationException(s"UnKeyed table can not validate")
         }
     }
+  }
+
+  def isUpsert(relation: DataSourceV2Relation): Boolean = {
+    val upsertWrite = relation.table.asUpsertWrite
+    upsertWrite.appendAsUpsert()
   }
 
   def checkDuplicatesEnabled(): Boolean = {
