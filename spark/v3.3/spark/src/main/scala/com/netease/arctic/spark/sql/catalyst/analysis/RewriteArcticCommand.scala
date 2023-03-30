@@ -40,9 +40,9 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     import com.netease.arctic.spark.sql.ArcticExtensionUtils._
     plan match {
       // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
-      case a@DropPartitions(r: ResolvedTable, parts, ifExists, purge)
-        if isArcticTable(r.table) =>
-        AlterArcticTableDropPartition(a.child, parts, ifExists, purge, retainData = false)
+//      case a@DropPartitions(r: ResolvedTable, parts, ifExists, purge)
+//        if isArcticTable(r.table) =>
+//        AlterArcticTableDropPartition(a.child, parts, ifExists, purge, retainData = false)
       case t@TruncateTable(r: ResolvedTable)
         if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)

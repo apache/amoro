@@ -29,7 +29,7 @@ case class MergeIntoArcticTable(
   matchedActions: Seq[MergeAction],
   notMatchedActions: Seq[MergeAction],
   rewritePlan: Option[LogicalPlan] = None
-) extends Command {
+) extends BinaryCommand {
 
   lazy val aligned: Boolean = {
     val matchedActionsAligned = matchedActions.forall {
@@ -53,11 +53,11 @@ case class MergeIntoArcticTable(
 
   def condition: Option[Expression] = Some(mergeCondition)
 
-  override def children: Seq[LogicalPlan] = if (rewritePlan.isDefined) {
-    targetTable :: sourceTable :: rewritePlan.get :: Nil
-  } else {
-    targetTable :: sourceTable :: Nil
-  }
+  override def left: LogicalPlan = targetTable
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = targetTable
+  override def right: LogicalPlan = sourceTable
+
+  override protected def withNewChildrenInternal(newLeft: LogicalPlan, newRight: LogicalPlan): LogicalPlan = {
+    copy(targetTable = newLeft, sourceTable = newRight)
+  }
 }

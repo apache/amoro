@@ -18,7 +18,9 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
+import com.netease.arctic.spark.sql.catalyst.analysis.ResolveMergeIntoArcticTableReferences
 import com.netease.arctic.spark.sql.catalyst.plans
+import com.netease.arctic.spark.sql.catalyst.plans.UnresolvedMergeIntoArcticTable
 import com.netease.arctic.spark.sql.parser._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
@@ -191,8 +193,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   private def replaceMergeIntoCommands(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsDown {
 
-    case m @ MergeIntoTable(UnresolvedArcticTable(aliasedTable), _, _, _, _) =>
-      plans.MergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
+    case m @ MergeIntoTable(UnresolvedArcticTable(aliasedTable), source, cond, matchedActions, notMatchedActions) =>
+      UnresolvedMergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
 
     case DeleteFromTable(UnresolvedIcebergTable(aliasedTable), condition) =>
       DeleteFromIcebergTable(aliasedTable, Some(condition))

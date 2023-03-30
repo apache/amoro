@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
+import com.netease.arctic.spark.sql.catalyst.plans.{MergeIntoArcticTable, UnresolvedMergeIntoArcticTable}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
@@ -52,7 +52,7 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
-    case m@MergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions, None) =>
+    case m@UnresolvedMergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions) =>
       checkConditionIsPrimaryKey(aliasedTable, cond)
 
       val resolvedMatchedActions = matchedActions.map {
@@ -62,6 +62,15 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
 
         case UpdateAction(cond, _) =>
           val resolvedUpdateCondition = cond.map(resolveCond("UPDATE", _, m))
+          val assignments = aliasedTable.output.map { attr =>
+            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+          }
+          // for UPDATE *, the value must be from the source table
+          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          UpdateAction(resolvedUpdateCondition, resolvedAssignments)
+
+        case UpdateStarAction(updateCondition) =>
+          val resolvedUpdateCondition = updateCondition.map(resolveCond("UPDATE", _, m))
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
@@ -81,6 +90,15 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           }
           val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)
+        case InsertStarAction(cond) =>
+          // the insert action is used when not matched, so its condition and value can only
+          // access columns from the source table
+          val resolvedCond = cond.map(resolveCond("INSERT", _, Project(Nil, m.sourceTable)))
+          val assignments = aliasedTable.output.map { attr =>
+            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+          }
+          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          InsertAction(resolvedCond, resolvedAssignments)
 
 
         case _ =>
@@ -89,7 +107,7 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
 
       val resolvedMergeCondition = resolveCond("SEARCH", cond, m)
 
-      plans.MergeIntoArcticTable(
+      MergeIntoArcticTable(
         aliasedTable,
         source,
         mergeCondition = resolvedMergeCondition,
@@ -223,7 +241,7 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   // copied from ResolveReferences in Spark
   private def resolveAssignments(
                                   assignments: Seq[Assignment],
-                                  mergeInto: MergeIntoArcticTable,
+                                  mergeInto: UnresolvedMergeIntoArcticTable,
                                   resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
     assignments.map { assign =>
       val resolvedKey = assign.key match {

@@ -20,7 +20,7 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, RewriteArcticCommand, RewriteArcticMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, ResolveMergeIntoArcticTableReferences, RewriteArcticCommand, RewriteArcticMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
@@ -38,7 +38,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     }
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
-    extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoArcticTableReferences(spark) }
+    extensions.injectResolutionRule { spark => ResolveMergeIntoArcticTableReferences(spark) }
     extensions.injectResolutionRule { spark => RewriteArcticMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
@@ -50,7 +50,6 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule { spark => RewriteUpdateArcticTable(spark) }
 
     // iceberg extensions
-//    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
     extensions.injectResolutionRule { spark => ResolveMergeIntoTableReferences(spark) }
     extensions.injectResolutionRule { _ => CheckMergeIntoTableConditions }
     extensions.injectResolutionRule { _ => ProcedureArgumentCoercion }

@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.writer;
 
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -69,8 +69,8 @@ public class WriteTaskCommit implements WriterCommitMessage {
     private final List<DeleteFile> deleteFiles;
 
     Builder() {
-      this.dataFiles = Lists.newArrayList();
-      this.deleteFiles = Lists.newArrayList();
+      this.dataFiles = new ArrayList<>();
+      this.deleteFiles = new ArrayList<>();
     }
 
     public Builder add(WriteTaskCommit result) {
