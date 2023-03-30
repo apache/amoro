@@ -177,6 +177,11 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     this.options = options;
+    try {
+      this.arcticCatalog = buildSparkCatalog(name, options);
+    } catch (Exception e) {
+      this.arcticCatalog = null;
+    }
   }
 
   @Override
