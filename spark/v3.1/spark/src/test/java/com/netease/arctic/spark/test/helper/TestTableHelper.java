@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.test.helper;
 
 import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.spark.util.RecordGenerator;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -28,8 +29,15 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,8 +86,27 @@ public class TestTableHelper {
         .build();
   }
 
+  public static class DataGen {
+    public static final RecordGenerator.Builder builder = RecordGenerator.buildFor(IcebergSchema.PK_WITH_ZONE)
+        .withSequencePrimaryKey(PkSpec.pk_include_pt);
+  }
+
   public static HiveTableBuilder hiveTable(List<FieldSchema> hiveSchema, List<FieldSchema> hivePartition) {
     return new HiveTableBuilder(hiveSchema, hivePartition);
+  }
+
+  public static Row recordToRow(Record record) {
+    Object[] values = new Object[record.size()];
+    for (int i = 0; i < values.length; i++) {
+      Object v = record.get(i);
+      if (v instanceof LocalDateTime) {
+        v = new Timestamp(((LocalDateTime) v).atOffset(ZoneOffset.UTC).toInstant().toEpochMilli());
+      } else if (v instanceof OffsetDateTime) {
+        v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
+      }
+      values[i] = v;
+    }
+    return RowFactory.create(values);
   }
 
   public static class HiveTableBuilder {

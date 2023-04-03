@@ -33,8 +33,6 @@ import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -210,7 +208,7 @@ public class SparkTestEnvironmentExtension
       create = true;
     }
     if (create) {
-      cleanLocalSparkSession();
+      cleanLocalSparkContext();
 
       SparkConf sparkconf = new SparkConf()
           .setAppName("arctic-spark-unit-tests")
@@ -242,28 +240,11 @@ public class SparkTestEnvironmentExtension
     return true;
   }
 
-  private void cleanLocalSparkSession() {
+  private void cleanLocalSparkContext() {
     if (_spark != null) {
       _spark.close();
       _spark = null;
     }
-  }
-
-  public Dataset<Row> sql(String sqlText) {
-    LOG.info("Execute SQL: " + sqlText);
-    Dataset<Row> ds = _spark.sql(sqlText);
-    if (ds.columns().length == 0) {
-      LOG.info("+----------------+");
-      LOG.info("|  Empty Result  |");
-      LOG.info("+----------------+");
-    } else {
-      ds.show();
-    }
-    return ds;
-  }
-
-  public String getSparkConf(String key) {
-    return _spark.sessionState().conf().getConfString(key);
   }
 
   public void createHiveDatabaseIfNotExist(String database) {
@@ -276,5 +257,12 @@ public class SparkTestEnvironmentExtension
     } catch (TException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public SparkSession spark() {
+    if (this._spark == null) {
+      throw new IllegalStateException("spark context is not initialized");
+    }
+    return this._spark.cloneSession();
   }
 }

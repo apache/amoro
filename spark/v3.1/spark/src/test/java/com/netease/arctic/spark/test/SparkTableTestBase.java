@@ -20,12 +20,15 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.spark.test.helper.TestSource;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.Assertions;
 
@@ -123,9 +126,29 @@ public class SparkTableTestBase extends SparkTestBase {
       return this;
     }
 
+    public TableTestBuilder registerSourceView(TestSource source) {
+      Dataset<Row> ds = source.toSparkDataset(spark);
+      final String sourceView = "source_view";
+
+      this.beforeHocks.add(context -> {
+        ds.createOrReplaceTempView(sourceView);
+        context.sourceTableIdentifier = null;
+        context.sourceDatabaseAndTable = sourceView;
+      });
+
+      this.afterHocks.add(context -> {
+        spark.catalog().dropTempView(sourceView);
+        context.sourceDatabaseAndTable = "";
+      });
+
+      return this;
+    }
+
     public TableTestBuilder cleanSourceTable() {
       this.afterHocks.add(context -> {
-        context.arcticCatalog.dropTable(context.sourceTableIdentifier, true);
+        if (context.sourceTableIdentifier != null) {
+          context.arcticCatalog.dropTable(context.sourceTableIdentifier, true);
+        }
       });
       return this;
     }
