@@ -54,6 +54,7 @@ object LogicalExpressions {
  * Allows Spark to rewrite the given references of the transform during analysis.
  */
 sealed trait RewritableTransform extends Transform {
+
   /** Creates a copy of this transform with the new analyzed references. */
   def withReferences(newReferences: Seq[NamedReference]): Transform
 }
@@ -76,14 +77,14 @@ abstract class SingleColumnTransform(ref: NamedReference) extends RewritableTran
   protected def withNewRef(ref: NamedReference): Transform
 
   override def withReferences(newReferences: Seq[NamedReference]): Transform = {
-    assert(newReferences.length == 1,
+    assert(
+      newReferences.length == 1,
       s"Tried rewriting a single column transform (${this}) with multiple references.")
     withNewRef(newReferences.head)
   }
 }
 
-final case class BucketTransform(numBuckets: Literal[Int],
-                                 columns: Seq[NamedReference])
+final case class BucketTransform(numBuckets: Literal[Int], columns: Seq[NamedReference])
   extends RewritableTransform {
 
   override val name: String = "bucket"
@@ -105,9 +106,11 @@ final case class BucketTransform(numBuckets: Literal[Int],
 
 object BucketTransform {
   def unapply(transform: Transform): Option[(Int, NamedReference)] = transform match {
-    case NamedTransform("bucket", Seq(
-    Lit(value: Int, IntegerType),
-    Ref(seq: Seq[String]))) =>
+    case NamedTransform(
+          "bucket",
+          Seq(
+            Lit(value: Int, IntegerType),
+            Ref(seq: Seq[String]))) =>
       Some((value, FieldReference(seq)))
     case _ =>
       None
@@ -115,8 +118,8 @@ object BucketTransform {
 }
 
 final case class ApplyTransform(
-                                              name: String,
-                                              args: Seq[Expression]) extends Transform {
+    name: String,
+    args: Seq[Expression]) extends Transform {
 
   override def arguments: Array[Expression] = args.toArray
 
@@ -206,6 +209,3 @@ object FieldReference {
     LogicalExpressions.parseReference(column)
   }
 }
-
-
-

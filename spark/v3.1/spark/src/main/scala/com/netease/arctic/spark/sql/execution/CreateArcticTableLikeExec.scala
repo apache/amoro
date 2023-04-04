@@ -18,6 +18,9 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters
+import scala.collection.JavaConverters.seqAsJavaList
+
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
@@ -30,17 +33,15 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
-import scala.collection.JavaConverters
-import scala.collection.JavaConverters.seqAsJavaList
 
-
-case class CreateArcticTableLikeExec(sparkSession: SparkSession,
-                                     targetTable: TableIdentifier,
-                                     sourceTable: TableIdentifier,
-                                     fileFormat: CatalogStorageFormat,
-                                     provider: Option[String],
-                                     properties: Map[String, String] = Map.empty,
-                                     ifNotExists: Boolean) extends V2CommandExec  {
+case class CreateArcticTableLikeExec(
+    sparkSession: SparkSession,
+    targetTable: TableIdentifier,
+    sourceTable: TableIdentifier,
+    fileFormat: CatalogStorageFormat,
+    provider: Option[String],
+    properties: Map[String, String] = Map.empty,
+    ifNotExists: Boolean) extends V2CommandExec {
   protected def run(): Seq[InternalRow] = {
     val sourceIdentifier = buildArcticIdentifier(sparkSession, sourceTable)
     val targetIdentifier = buildArcticIdentifier(sparkSession, targetTable)
@@ -58,16 +59,20 @@ case class CreateArcticTableLikeExec(sparkSession: SparkSession,
         }
       case _ =>
     }
-    arcticCatalog.createTable(targetIdentifier.identifier(),
-      table.schema(), table.partitioning(), JavaConverters.mapAsJavaMap(targetProperties))
+    arcticCatalog.createTable(
+      targetIdentifier.identifier(),
+      table.schema(),
+      table.partitioning(),
+      JavaConverters.mapAsJavaMap(targetProperties))
     Seq.empty[InternalRow]
   }
 
-  private def buildArcticIdentifier(sparkSession: SparkSession,
-                                    originIdentifier: TableIdentifier): CatalogAndIdentifier = {
+  private def buildArcticIdentifier(
+      sparkSession: SparkSession,
+      originIdentifier: TableIdentifier): CatalogAndIdentifier = {
     var identifier: Seq[String] = Seq.empty[String]
-    identifier:+= originIdentifier.database.get
-    identifier:+= originIdentifier.table
+    identifier :+= originIdentifier.database.get
+    identifier :+= originIdentifier.table
     Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
   }
 

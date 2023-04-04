@@ -35,7 +35,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
 
   def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
     EliminateSubqueryAliases(aliasedTable) match {
-      case r@DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
+      case r @ DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
         tbl match {
           case arctic: ArcticSparkTable =>
             if (arctic.table().isKeyedTable) {
@@ -53,7 +53,13 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
-    case m@MergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions, None) =>
+    case m @ MergeIntoArcticTable(
+          aliasedTable,
+          source,
+          cond,
+          matchedActions,
+          notMatchedActions,
+          None) =>
       checkConditionIsPrimaryKey(aliasedTable, resolveCond("SEARCH", cond, m))
 
       val resolvedMatchedActions = matchedActions.map {
@@ -67,11 +73,13 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
           // for UPDATE *, the value must be from the source table
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           UpdateAction(resolvedUpdateCondition, resolvedAssignments)
 
         case _ =>
-          throw new UnsupportedOperationException("Matched actions can only contain UPDATE or DELETE")
+          throw new UnsupportedOperationException(
+            "Matched actions can only contain UPDATE or DELETE")
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
@@ -80,9 +88,9 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)
-
 
         case _ =>
           throw new UnsupportedOperationException("Not matched actions can only contain INSERT")
@@ -99,9 +107,9 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
   }
 
   private def resolveLiteralFunction(
-                                      nameParts: Seq[String],
-                                      attribute: UnresolvedAttribute,
-                                      plan: LogicalPlan): Option[Expression] = {
+      nameParts: Seq[String],
+      attribute: UnresolvedAttribute,
+      plan: LogicalPlan): Option[Expression] = {
     if (nameParts.length != 1) return None
     val isNamedExpression = plan match {
       case Aggregate(_, aggregateExpressions, _) => aggregateExpressions.contains(attribute)
@@ -119,8 +127,8 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
   }
 
   def resolveExpressionByArcticPlanChildren(
-                                 e: Expression,
-                                 q: LogicalPlan): Expression = {
+      e: Expression,
+      q: LogicalPlan): Expression = {
     resolveExpression(
       e,
       resolveColumnByName = nameParts => {
@@ -146,12 +154,11 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
     resolvedCond
   }
 
-
   def resolver: Resolver = conf.resolver
 
   def resolveExpressionByPlanChildren(
-                                       e: Expression,
-                                       q: LogicalPlan): Expression = {
+      e: Expression,
+      q: LogicalPlan): Expression = {
     resolveExpression(
       e,
       resolveColumnByName = nameParts => {
@@ -165,10 +172,10 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
   }
 
   private def resolveExpression(
-                                 expr: Expression,
-                                 resolveColumnByName: Seq[String] => Option[Expression],
-                                 getAttrCandidates: () => Seq[Attribute],
-                                 throws: Boolean): Expression = {
+      expr: Expression,
+      resolveColumnByName: Seq[String] => Option[Expression],
+      getAttrCandidates: () => Seq[Attribute],
+      throws: Boolean): Expression = {
     def innerResolve(e: Expression, isTopLevel: Boolean): Expression = {
       if (e.resolved) return e
       e match {
@@ -179,8 +186,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           assert(ordinal >= 0 && ordinal < attrCandidates.length)
           attrCandidates(ordinal)
 
-
-        case u@UnresolvedAttribute(nameParts) =>
+        case u @ UnresolvedAttribute(nameParts) =>
           val result = withPosition(u) {
             resolveColumnByName(nameParts).map {
               case Alias(child, _) if !isTopLevel => child
@@ -190,7 +196,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           logDebug(s"Resolving $u to $result")
           result
 
-        case u@UnresolvedExtractValue(child, fieldName) =>
+        case u @ UnresolvedExtractValue(child, fieldName) =>
           val newChild = innerResolve(child, isTopLevel = false)
           if (newChild.resolved) {
             withOrigin(u.origin) {
@@ -213,9 +219,9 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
 
   // copied from ResolveReferences in Spark
   private def resolveAssignments(
-                                  assignments: Seq[Assignment],
-                                  mergeInto: MergeIntoArcticTable,
-                                  resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
+      assignments: Seq[Assignment],
+      mergeInto: MergeIntoArcticTable,
+      resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
     assignments.map { assign =>
       val resolvedKey = assign.key match {
         case c if !c.resolved =>

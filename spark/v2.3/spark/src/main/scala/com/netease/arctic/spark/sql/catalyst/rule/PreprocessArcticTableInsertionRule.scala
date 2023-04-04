@@ -28,7 +28,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.{DDLPreprocessingUtils, PartitioningUtils}
 
-
 /**
  * process insert overwrite or insert into for arctic table.
  * 1. check query column size match with table schema.
@@ -47,7 +46,6 @@ case class PreprocessArcticTableInsertionRule(spark: SparkSession) extends Rule[
       }
   }
 
-
   def process(
       insert: InsertIntoTable,
       table: ArcticSparkTable,
@@ -55,7 +53,10 @@ case class PreprocessArcticTableInsertionRule(spark: SparkSession) extends Rule[
       partColNames: Seq[String]): LogicalPlan = {
 
     val normalizedPartSpec = PartitioningUtils.normalizePartitionSpec(
-      insert.partition, partColNames, table.name(), conf.resolver)
+      insert.partition,
+      partColNames,
+      table.name(),
+      conf.resolver)
 
     val staticPartCols = normalizedPartSpec.filter(_._2.isDefined).keySet
     val expectedColumns = insert.table.output.filterNot(a => staticPartCols.contains(a.name))
@@ -69,7 +70,9 @@ case class PreprocessArcticTableInsertionRule(spark: SparkSession) extends Rule[
     }
 
     val newQuery = DDLPreprocessingUtils.castAndRenameQueryOutput(
-      query, expectedColumns, conf)
+      query,
+      expectedColumns,
+      conf)
 
     newQuery
 

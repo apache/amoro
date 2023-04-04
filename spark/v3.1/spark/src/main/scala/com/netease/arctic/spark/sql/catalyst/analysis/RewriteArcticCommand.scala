@@ -36,7 +36,9 @@ import org.apache.spark.sql.execution.command.CreateTableLikeCommand
  */
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
-  def isCreateArcticTableLikeCommand(targetTable: TableIdentifier, provider: Option[String]): Boolean = {
+  def isCreateArcticTableLikeCommand(
+      targetTable: TableIdentifier,
+      provider: Option[String]): Boolean = {
     val (targetCatalog, _) = buildCatalogAndIdentifier(sparkSession, targetTable)
     targetCatalog match {
       case _: ArcticSparkCatalog =>
@@ -57,13 +59,14 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     import com.netease.arctic.spark.sql.ArcticExtensionUtils._
     plan match {
       // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
-      case a@AlterTableDropPartition(r: ResolvedTable, parts, ifExists, purge, retainData)
-        if isArcticTable(r.table) =>
+      case a @ AlterTableDropPartition(r: ResolvedTable, parts, ifExists, purge, retainData)
+          if isArcticTable(r.table) =>
         AlterArcticTableDropPartition(a.child, parts, ifExists, purge, retainData)
-      case t@TruncateTable(r: ResolvedTable, partitionSpec)
-        if isArcticTable(r.table) =>
+      case t @ TruncateTable(r: ResolvedTable, partitionSpec)
+          if isArcticTable(r.table) =>
         TruncateArcticTable(t.child, partitionSpec)
-      case c@CreateTableAsSelect(catalog, _, _, _, props, options, _) if isArcticCatalog(catalog) =>
+      case c @ CreateTableAsSelect(catalog, _, _, _, props, options, _)
+          if isArcticCatalog(catalog) =>
         var propertiesMap: Map[String, String] = props
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
@@ -73,8 +76,14 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
         }
         c.copy(properties = propertiesMap, writeOptions = optionsMap)
-      case c@CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-        if isCreateArcticTableLikeCommand(targetTable, provider) => {
+      case c @ CreateTableLikeCommand(
+            targetTable,
+            sourceTable,
+            storage,
+            provider,
+            properties,
+            ifNotExists)
+          if isCreateArcticTableLikeCommand(targetTable, provider) => {
         val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)
@@ -86,8 +95,13 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           case _ =>
         }
         targetProperties += ("provider" -> "arctic")
-        CreateV2Table(targetCatalog, targetIdentifier,
-          table.schema(), table.partitioning(), targetProperties, ifNotExists)
+        CreateV2Table(
+          targetCatalog,
+          targetIdentifier,
+          table.schema(),
+          table.partitioning(),
+          targetProperties,
+          ifNotExists)
       }
       case _ => plan
     }

@@ -30,13 +30,14 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 
-case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
+case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
+  with ArcticRewriteHelper {
 
   private val opCol = SupportsUpsert.UPSERT_OP_COLUMN_NAME
   private val opDel = SupportsUpsert.UPSERT_OP_VALUE_DELETE
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case u@DeleteFromTable(table, condition) if isArcticRelation(table) =>
+    case u @ DeleteFromTable(table, condition) if isArcticRelation(table) =>
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
@@ -52,9 +53,11 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       ReplaceArcticData(r, query, options)
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert,
-                       scanBuilder: SupportsExtendIdentColumns,
-                       condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(
+      r: DataSourceV2Relation,
+      upsert: SupportsUpsert,
+      scanBuilder: SupportsExtendIdentColumns,
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
       case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {

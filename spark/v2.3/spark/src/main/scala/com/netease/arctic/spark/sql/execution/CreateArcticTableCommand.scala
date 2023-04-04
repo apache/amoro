@@ -18,15 +18,19 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters._
+
 import com.netease.arctic.spark.source.ArcticSource
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.internal.StaticSQLConf
-import scala.collection.JavaConverters._
 
-case class CreateArcticTableCommand(arctic: ArcticSource, catalogTable: CatalogTable, ignoreIfExists: Boolean)
+case class CreateArcticTableCommand(
+    arctic: ArcticSource,
+    catalogTable: CatalogTable,
+    ignoreIfExists: Boolean)
   extends RunnableCommand {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     assert(catalogTable.tableType != CatalogTableType.VIEW)
@@ -34,9 +38,12 @@ case class CreateArcticTableCommand(arctic: ArcticSource, catalogTable: CatalogT
     val spark = SparkSession.getActiveSession.get
     val sparkCatalogImpl = spark.conf.get(StaticSQLConf.CATALOG_IMPLEMENTATION.key)
     if (!"hive".equalsIgnoreCase(sparkCatalogImpl)) {
-      throw AnalysisException.message(s"failed to create table ${catalogTable.identifier} not use hive catalog")
+      throw AnalysisException.message(
+        s"failed to create table ${catalogTable.identifier} not use hive catalog")
     }
-    arctic.createTable(catalogTable.identifier, catalogTable.schema,
+    arctic.createTable(
+      catalogTable.identifier,
+      catalogTable.schema,
       catalogTable.partitionColumnNames.asJava,
       catalogTable.properties.asJava)
     Seq.empty[Row]

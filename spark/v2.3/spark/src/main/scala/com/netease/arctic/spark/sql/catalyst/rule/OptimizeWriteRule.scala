@@ -87,7 +87,6 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
-
   def resolveRef[T <: NamedExpression](ref: NamedReference, plan: LogicalPlan): T = {
     plan.resolve(ref.fieldNames.toSeq, conf.resolver) match {
       case Some(namedExpr) =>
@@ -98,15 +97,14 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
-
   private object ArcticBucketTransform {
     def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
       case bt: BucketTransform => bt.columns match {
-        case Seq(nf: NamedReference) =>
-          Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
-        case _ =>
-          None
-      }
+          case Seq(nf: NamedReference) =>
+            Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
+          case _ =>
+            None
+        }
       case _ => None
     }
   }

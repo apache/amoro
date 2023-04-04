@@ -24,11 +24,11 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
 case class OverwriteArcticDataByExpression(
-                                            table: NamedRelation,
-                                            deleteExpr: Expression,
-                                            query: LogicalPlan,
-                                            validateQuery: LogicalPlan,
-                                            writeOptions: Map[String, String]) extends Command {
+    table: NamedRelation,
+    deleteExpr: Expression,
+    query: LogicalPlan,
+    validateQuery: LogicalPlan,
+    writeOptions: Map[String, String]) extends Command {
   override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
 
   override def output: Seq[Attribute] = table.output

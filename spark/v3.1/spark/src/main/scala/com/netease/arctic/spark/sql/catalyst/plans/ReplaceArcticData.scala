@@ -23,10 +23,9 @@ import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
 
 case class ReplaceArcticData(
-  table: NamedRelation,
-  query: LogicalPlan,
-  writeOptions: Map[String, String]
-) extends V2WriteCommand {
+    table: NamedRelation,
+    query: LogicalPlan,
+    writeOptions: Map[String, String]) extends V2WriteCommand {
 
   def isByName: Boolean = false
 

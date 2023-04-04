@@ -18,8 +18,11 @@
 
 package org.apache.spark.sql.execution.datasources.v2
 
-import com.netease.arctic.spark.table.ArcticSparkTable
 import java.util.UUID
+
+import scala.util.control.NonFatal
+
+import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -30,7 +33,6 @@ import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfoImpl, P
 import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.{LongAccumulator, Utils}
-import scala.util.control.NonFatal
 
 /**
  * This trait will be removed in 0.5.0,
@@ -45,7 +47,6 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   def validateQuery: SparkPlan
 
   var count: Long = 0L
-
 
   override def output: Seq[Attribute] = Nil
 
@@ -84,8 +85,9 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
     val totalNumRowsAccumulator = new LongAccumulator()
 
     if (rdd.count() != count) {
-      throw new UnsupportedOperationException(s"${table.table().asKeyedTable().primaryKeySpec().toString} " +
-        s"can not be duplicate")
+      throw new UnsupportedOperationException(
+        s"${table.table().asKeyedTable().primaryKeySpec().toString} " +
+          s"can not be duplicate")
     }
 
     logInfo(s"Start processing data source write support: $batchWrite. " +
@@ -103,8 +105,7 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
           messages(index) = commitMessage
           totalNumRowsAccumulator.add(result.numRows)
           batchWrite.onDataWriterCommit(commitMessage)
-        }
-      )
+        })
 
       logInfo(s"Data source write support $batchWrite is committing.")
       batchWrite.commit(messages)
@@ -133,11 +134,10 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   }
 
   protected def writeToTable(
-    catalog: TableCatalog,
-    table: Table,
-    writeOptions: CaseInsensitiveStringMap,
-    ident: Identifier
-  ): Seq[InternalRow] = {
+      catalog: TableCatalog,
+      table: Table,
+      writeOptions: CaseInsensitiveStringMap,
+      ident: Identifier): Seq[InternalRow] = {
     Utils.tryWithSafeFinallyAndFailureCallbacks({
       table match {
         case table: SupportsWrite =>

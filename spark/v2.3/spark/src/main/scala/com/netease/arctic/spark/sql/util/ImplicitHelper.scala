@@ -29,7 +29,6 @@ object ImplicitHelper {
       types.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
   }
 
-
   implicit class IdentifierImplicitHelper(parts: Seq[String]) {
     if (parts.isEmpty) {
       throw AnalysisException.message("multi-part identifier cannot be empty.")

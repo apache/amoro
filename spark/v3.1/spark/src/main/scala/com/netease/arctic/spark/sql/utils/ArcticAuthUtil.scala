@@ -22,15 +22,14 @@ import com.netease.arctic.spark.sql.utils.ArcticAuthUtil.ArcticActionType.Arctic
 import com.netease.arctic.spark.sql.utils.ArcticAuthUtil.ArcticCommandType.ArcticCommandType
 import com.netease.arctic.spark.sql.utils.ArcticAuthUtil.ArcticOperationType.ArcticOperationType
 
-
 object ArcticAuthUtil {
 
   def operationType(command: String): ArcticOperationType = {
     command match {
       case "ReplaceArcticData" |
-           "AppendArcticData" |
-           "OverwriteArcticData" |
-           "OverwriteArcticDataByExpression" => ArcticOperationType.QUERY
+          "AppendArcticData" |
+          "OverwriteArcticData" |
+          "OverwriteArcticDataByExpression" => ArcticOperationType.QUERY
       case "CreateArcticTableAsSelect" => ArcticOperationType.CREATETABLE_AS_SELECT
     }
   }
@@ -38,8 +37,8 @@ object ArcticAuthUtil {
   def actionType(command: String): ArcticActionType = {
     command match {
       case "ReplaceArcticData" |
-           "OverwriteArcticData" |
-           "OverwriteArcticDataByExpression" => ArcticActionType.UPDATE
+          "OverwriteArcticData" |
+          "OverwriteArcticDataByExpression" => ArcticActionType.UPDATE
       case "AppendArcticData" => ArcticActionType.INSERT
       case "CreateArcticTableAsSelect" => ArcticActionType.OTHER
     }
@@ -48,15 +47,12 @@ object ArcticAuthUtil {
   def commandType(command: String): Seq[ArcticCommandType] = {
     command match {
       case "ReplaceArcticData" | "AppendArcticData" =>
-        Seq(ArcticCommandType.HasTableAsIdentifierOption,
-        ArcticCommandType.HasQueryAsLogicalPlan)
+        Seq(ArcticCommandType.HasTableAsIdentifierOption, ArcticCommandType.HasQueryAsLogicalPlan)
       case "OverwriteArcticData" |
-           "OverwriteArcticDataByExpression" =>
-        Seq(ArcticCommandType.HasTableAsIdentifierOption,
-        ArcticCommandType.HasQueryAsLogicalPlan)
+          "OverwriteArcticDataByExpression" =>
+        Seq(ArcticCommandType.HasTableAsIdentifierOption, ArcticCommandType.HasQueryAsLogicalPlan)
       case "CreateArcticTableAsSelect" =>
-        Seq(ArcticCommandType.HasTableNameAsIdentifier,
-        ArcticCommandType.HasQueryAsLogicalPlan)
+        Seq(ArcticCommandType.HasTableNameAsIdentifier, ArcticCommandType.HasQueryAsLogicalPlan)
     }
   }
 
@@ -67,7 +63,7 @@ object ArcticAuthUtil {
   object ArcticCommandType extends Enumeration {
     type ArcticCommandType = Value
     val HasChildAsIdentifier, HasQueryAsLogicalPlan, HasTableAsIdentifier,
-    HasTableAsIdentifierOption, HasTableNameAsIdentifier = Value
+        HasTableAsIdentifierOption, HasTableNameAsIdentifier = Value
   }
 
   object ArcticActionType extends Enumeration {
@@ -83,5 +79,3 @@ object ArcticAuthUtil {
   }
 
 }
-
-

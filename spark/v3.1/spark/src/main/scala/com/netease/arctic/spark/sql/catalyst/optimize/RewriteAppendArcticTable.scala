@@ -18,11 +18,12 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import java.util
+
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import java.util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
@@ -61,7 +62,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           }
       }
     case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _)
-      if checkDuplicatesEnabled() =>
+        if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
         case table: ArcticSparkTable =>
@@ -76,7 +77,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
 
     case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, writeOptions, _)
-      if checkDuplicatesEnabled() =>
+        if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
         case table: ArcticSparkTable =>
@@ -88,7 +89,12 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
                 finalExpr = expr.copy(query.output.last, expr.right)
               case _ =>
             }
-            OverwriteArcticDataByExpression(arcticRelation, finalExpr, query, validateQuery, writeOptions)
+            OverwriteArcticDataByExpression(
+              arcticRelation,
+              finalExpr,
+              query,
+              validateQuery,
+              writeOptions)
 
           } else {
             a
@@ -98,19 +104,26 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
 
     case c @ CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
-      if checkDuplicatesEnabled() =>
+        if checkDuplicatesEnabled() =>
       catalog match {
         case _: ArcticSparkCatalog =>
           if (props.contains("primary.keys")) {
             val primaries = props("primary.keys").split(",")
-            val than = GreaterThan(AggregateExpression(Count(Literal(1)),
-              Complete, isDistinct = false), Cast(Literal(1), LongType))
+            val than = GreaterThan(
+              AggregateExpression(Count(Literal(1)), Complete, isDistinct = false),
+              Cast(Literal(1), LongType))
             val alias = Alias(than, "count")()
             val attributes = query.output.filter(p => primaries.contains(p.name))
             val validateQuery = Aggregate(attributes, Seq(alias), query)
             CreateArcticTableAsSelect(
-              catalog, ident, parts, query, validateQuery,
-              props, options, ifNotExists)
+              catalog,
+              ident,
+              parts,
+              query,
+              validateQuery,
+              props,
+              options,
+              ifNotExists)
           } else {
             c
           }
@@ -119,13 +132,16 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
   }
 
-  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
+  def buildValidatePrimaryKeyDuplication(
+      r: DataSourceV2Relation,
+      query: LogicalPlan): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)),
-            Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val than = GreaterThan(
+            AggregateExpression(Count(Literal(1)), Complete, isDistinct = false),
+            Cast(Literal(1), LongType))
           val alias = Alias(than, "count")()
           val attributes = query.output.filter(p => primaries.contains(p.name))
           Aggregate(attributes, Seq(alias), query)
@@ -136,20 +152,23 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def checkDuplicatesEnabled(): Boolean = {
-    java.lang.Boolean.valueOf(spark.sessionState.conf.
-      getConfString(
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
+    java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
-  def buildJoinCondition(primaries: util.List[String], tableScan: LogicalPlan, insertPlan: LogicalPlan): Expression = {
+  def buildJoinCondition(
+      primaries: util.List[String],
+      tableScan: LogicalPlan,
+      insertPlan: LogicalPlan): Expression = {
     var i = 0
     var joinCondition: Expression = null
     val expressions = new util.ArrayList[Expression]
     while (i < primaries.size) {
       val primary = primaries.get(i)
       val primaryAttr = insertPlan.output.find(_.name == primary).get
-      val joinAttribute = tableScan.output.find(_.name.replace("_arctic_before_", "") == primary).get
+      val joinAttribute =
+        tableScan.output.find(_.name.replace("_arctic_before_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
       expressions.add(experssion)
       i += 1
@@ -165,9 +184,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def rewriteAppendAsUpsertQuery(
-    r: DataSourceV2Relation,
-    query: LogicalPlan
-  ): LogicalPlan = {
+      r: DataSourceV2Relation,
+      query: LogicalPlan): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {

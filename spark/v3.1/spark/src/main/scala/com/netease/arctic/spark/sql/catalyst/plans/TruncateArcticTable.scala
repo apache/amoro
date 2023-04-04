@@ -22,7 +22,7 @@ package com.netease.arctic.spark.sql.catalyst.plans
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
-case class TruncateArcticTable(child: LogicalPlan,
-                               partitionSpec: Option[TablePartitionSpec]) extends Command {
+case class TruncateArcticTable(child: LogicalPlan, partitionSpec: Option[TablePartitionSpec])
+  extends Command {
   override def children: Seq[LogicalPlan] = child :: Nil
 }

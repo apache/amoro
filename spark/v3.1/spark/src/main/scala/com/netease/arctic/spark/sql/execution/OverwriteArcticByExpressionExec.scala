@@ -27,12 +27,13 @@ import org.apache.spark.sql.execution.datasources.v2.{ArcticTableWriteExec, Batc
 import org.apache.spark.sql.sources.{AlwaysTrue, Filter}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-case class OverwriteArcticByExpressionExec(table: ArcticSparkTable,
-                                           deleteWhere: Array[Filter],
-                                           writeOptions: CaseInsensitiveStringMap,
-                                           queryInsert: SparkPlan,
-                                           validateQuery: SparkPlan,
-                                           refreshCache: () => Unit) extends ArcticTableWriteExec
+case class OverwriteArcticByExpressionExec(
+    table: ArcticSparkTable,
+    deleteWhere: Array[Filter],
+    writeOptions: CaseInsensitiveStringMap,
+    queryInsert: SparkPlan,
+    validateQuery: SparkPlan,
+    refreshCache: () => Unit) extends ArcticTableWriteExec
   with BatchWriteHelper {
 
   private def isTruncate(filters: Array[Filter]): Boolean = {
@@ -53,7 +54,6 @@ case class OverwriteArcticByExpressionExec(table: ArcticSparkTable,
     refreshCache()
     writtenRows
   }
-
 
   override def query: SparkPlan = queryInsert
 

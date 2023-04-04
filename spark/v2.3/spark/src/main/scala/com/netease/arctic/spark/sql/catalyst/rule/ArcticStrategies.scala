@@ -36,7 +36,8 @@ case class ArcticStrategies() extends Strategy {
       }
       val writer = optWriter.get() match {
         case w: SupportsDynamicOverwrite => w.overwriteDynamicPartitions()
-        case _ => throw AnalysisException.message(s"table ${table.identifier} does not support dynamic overwrite")
+        case _ => throw AnalysisException.message(
+            s"table ${table.identifier} does not support dynamic overwrite")
       }
       WriteToDataSourceV2Exec(writer, planLater(query)) :: Nil
 
@@ -44,6 +45,5 @@ case class ArcticStrategies() extends Strategy {
       CreateArcticTableAsSelectExec(arctic, tableDesc, planLater(query)) :: Nil
     case _ => Nil
   }
-
 
 }
