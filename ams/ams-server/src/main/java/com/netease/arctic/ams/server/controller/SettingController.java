@@ -66,7 +66,9 @@ public class SettingController extends RestBaseController {
       }
 
       config.forEach((k, v) -> {
-        result.put(k, JSON.toJSONString(v));
+        if (!(v instanceof String)) {
+          result.put(k, JSON.toJSONString(v));
+        }
       });
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
