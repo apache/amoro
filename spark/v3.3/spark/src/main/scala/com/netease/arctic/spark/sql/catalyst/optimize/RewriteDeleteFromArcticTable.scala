@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.optimize
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
-import com.netease.arctic.spark.sql.catalyst.plans.{ArcticRowLevelWrite, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERATION_COLUMN}
 import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}

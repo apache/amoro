@@ -18,27 +18,16 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.ArcticSparkCatalog
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticCatalog, isArcticTable}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticTable}
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.writer.WriteMode
-import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
-import org.apache.spark.sql.arctic.execution.CreateArcticTableAsSelectExec
-import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, NamedRelation, ResolvedDBObjectName, ResolvedTable}
-import org.apache.spark.sql.catalyst.catalog.CatalogUtils
+import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
-import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan, TableSpec}
-import org.apache.spark.sql.connector.catalog.{Identifier, StagingTableCatalog}
+import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.execution.datasources.v2._
-import org.apache.spark.sql.internal.StaticSQLConf.WAREHOUSE_PATH
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
-import scala.collection.JavaConverters
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
@@ -55,49 +44,10 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       println("create migrate to arctic command logical")
       MigrateToArcticExec(command) :: Nil
 
-    case ReplaceArcticData(d: DataSourceV2Relation, query, options, Some(write)) =>
-      AppendDataExec(
-        planLater(query), refreshCache(d), write) :: Nil
-
-    case AppendArcticData(d: DataSourceV2Relation, query, validateQuery, options, Some(write)) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          AppendInsertDataExec(
-            t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
-            planLater(validateQuery), refreshCache(d), write) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
-      }
-
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs, Some(write)) =>
       ArcticRowLevelWriteExec(
         table.table.asArcticTable, planLater(query),
         new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table), write) :: Nil
-
-    case OverwriteArcticPartitionsDynamic(d: DataSourceV2Relation, query, validateQuery, options, Some(write)) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          OverwriteArcticDataExec(
-            t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
-            planLater(validateQuery), refreshCache(d), write) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot overwrite to non-Arctic table: $table")
-      }
-
-    case OverwriteArcticDataByExpression(d: DataSourceV2Relation, deleteExpr, query, validateQuery, options, Some(write)) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          val filters = splitConjunctivePredicates(deleteExpr).map {
-            filter =>
-              ExpressionHelper.translateFilter(deleteExpr).getOrElse(
-                throw new UnsupportedOperationException("Cannot translate expression to source filter"))
-          }.toArray
-          OverwriteArcticByExpressionExec(
-            t, filters, new CaseInsensitiveStringMap(options.asJava), planLater(query),
-            planLater(validateQuery), refreshCache(d), write) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot overwrite by filter to non-Arctic table: $table")
-      }
 
     case MergeRows(
     isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
