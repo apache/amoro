@@ -22,11 +22,11 @@ import com.netease.arctic.spark.sql.utils.WriteQueryProjections
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.RowLevelWriter
 import org.apache.spark.SparkException
-import org.apache.spark.sql.arctic.execution.{ExtendedV2ExistingTableWriteExec, WritingSparkTask}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.write.Write
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.datasources.v2.{ExtendedV2ExistingTableWriteExec, WritingSparkTask}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 /**
