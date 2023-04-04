@@ -71,6 +71,27 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     this.valueSizeEstimator = valueSizeEstimator;
   }
 
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
+                               @Nullable String backendBaseDir,
+                               boolean concurrent,
+                               SerializationUtils.SimpleSerializer<K> keySerializer,
+                               SerializationUtils.SimpleSerializer<T> valueSerializer,
+                               SizeEstimator<K> keySizeEstimator,
+                               SizeEstimator<T> valueSizeEstimator) {
+    if (concurrent) {
+      this.memoryMap = Maps.newConcurrentMap();
+    } else {
+      this.memoryMap = Maps.newHashMap();
+    }
+    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
+    this.backendBaseDir = backendBaseDir;
+    this.currentInMemoryMapSize = 0L;
+    this.keySerializer = keySerializer;
+    this.valueSerializer = valueSerializer;
+    this.keySizeEstimator = keySizeEstimator;
+    this.valueSizeEstimator = valueSizeEstimator;
+  }
+
   /**
    * Number of bytes spilled to disk.
    */
@@ -94,12 +115,12 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
   public boolean containsKey(K key) {
     return memoryMap.containsKey(key) ||
-            diskBasedMap.map(diskMap -> diskMap.containsKey(key)).orElse(false);
+        diskBasedMap.map(diskMap -> diskMap.containsKey(key)).orElse(false);
   }
 
   public T get(K key) {
     return Optional.ofNullable(memoryMap.get(key))
-            .orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
+        .orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
   }
 
   public void put(K key, T value) {
@@ -107,7 +128,7 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
       this.estimatedPayloadSize = keySizeEstimator.sizeEstimate(key) + valueSizeEstimator.sizeEstimate(value);
     } else if (++putCount % RECORDS_TO_SKIP_FOR_ESTIMATING == 0) {
       this.estimatedPayloadSize = (long) (this.estimatedPayloadSize * 0.9 +
-              (keySizeEstimator.sizeEstimate(key) + valueSizeEstimator.sizeEstimate(value)) * 0.1);
+          (keySizeEstimator.sizeEstimate(key) + valueSizeEstimator.sizeEstimate(value)) * 0.1);
       this.currentInMemoryMapSize = this.memoryMap.size() * this.estimatedPayloadSize;
     }
 
@@ -139,7 +160,7 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   }
 
   protected class SimpleSpilledMap<K, T>
-          implements SimpleMap<K, T> {
+      implements SimpleMap<K, T> {
 
     private final RocksDBBackend rocksDB;
 
@@ -151,8 +172,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
     public SimpleSpilledMap(
         SerializationUtil.SimpleSerializer<K> keySerializer,
-                            SerializationUtil.SimpleSerializer<T> valueSerializer,
-                            @Nullable String backendBaseDir) {
+        SerializationUtil.SimpleSerializer<T> valueSerializer,
+        @Nullable String backendBaseDir) {
       rocksDB = RocksDBBackend.getOrCreateInstance(backendBaseDir);
       rocksDB.addColumnFamily(columnFamily);
       this.keySerializer = keySerializer;

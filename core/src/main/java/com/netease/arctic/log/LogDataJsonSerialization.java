@@ -74,22 +74,24 @@ public class LogDataJsonSerialization<T> implements Serializable {
     }
 
     // append n bytes data bytes
+    byte[] rowBytes = serializeRow(element);
+    messageBytes.append(rowBytes);
+
+    return messageBytes.toBytes();
+  }
+
+  public byte[] serializeRow(LogData<T> element) {
     if (node == null) {
       node = mapper.createObjectNode();
-      converterContext =
-          new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
-              mapper, node
-          );
+      converterContext = new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(mapper, node);
     }
 
     try {
       convertRow(element);
-      byte[] actualDataBytes = mapper.writeValueAsBytes(node);
-      messageBytes.append(actualDataBytes);
+      return mapper.writeValueAsBytes(node);
     } catch (Throwable t) {
       throw new RuntimeException("Could not serialize row '" + element + "'. ", t);
     }
-    return messageBytes.toBytes();
   }
 
   void convertRow(LogData<T> element) {

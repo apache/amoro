@@ -217,6 +217,38 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .withDescription("Mark the time to start double writing (the logstore of arctic table catches up with the" +
           " historical data).");
 
+  public static final ConfigOption<Long> LOOKUP_CACHE_MAX_ROWS = ConfigOptions
+      .key("lookup.cache.max-rows")
+      .longType()
+      .defaultValue(10000L)
+      .withDescription("The maximum number of rows in the lookup cache, beyond which the oldest row will expire." +
+          " By default, lookup cache is 10000.");
+
+  public static final ConfigOption<Duration> LOOKUP_CACHE_TTL_AFTER_WRITE = ConfigOptions
+      .key("lookup.cache.ttl-after-write")
+      .durationType()
+      .defaultValue(Duration.ZERO)
+      .withDescription("The TTL after which the row will expire in the lookup cache.");
+
+  public static final ConfigOption<Duration> LOOKUP_RELOADING_INTERVAL = ConfigOptions
+      .key("lookup.reloading.interval")
+      .durationType()
+      .defaultValue(Duration.ofSeconds(10))
+      .withDescription("Configuration option for specifying the interval in seconds to reload lookup data in RocksDB.\n" +
+          "The default value is 10 seconds.");
+  public static final ConfigOption<Boolean> ROCKSDB_AUTO_COMPACTIONS = ConfigOptions
+      .key("rocksdb.auto-compactions")
+      .booleanType()
+      .defaultValue(false)
+      .withDescription("Enable automatic compactions during the initialization process." +
+          "\nAfter the initialization completed, will enable the auto_compaction.");
+
+  public static final ConfigOption<Integer> ROCKSDB_WRITING_THREADS = ConfigOptions
+      .key("rocksdb.writing-threads")
+      .intType()
+      .defaultValue(5)
+      .withDescription("Writing data into rocksDB thread number.");
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE.key());

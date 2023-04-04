@@ -104,12 +104,16 @@ public class LogDataJsonDeserialization<T> implements Serializable {
       }
 
       byte[] actualValueBytes = Bytes.subByte(message, 18, message.length - 18);
-      final JsonNode root = objectMapper.readTree(actualValueBytes);
-      actualValue = (T) jsonToLogDataConverter.convert(root, null);
+      actualValue = deserializeRow(actualValueBytes);
       return factory.create(actualValue, versionBytes, upstreamIdBytes, epicNo, false, changeActionByte);
     } catch (Throwable t) {
       LOG.error("", t);
       throw t;
     }
+  }
+
+  public T deserializeRow(byte[] actualValueBytes) throws IOException {
+    final JsonNode root = objectMapper.readTree(actualValueBytes);
+    return (T) jsonToLogDataConverter.convert(root, null);
   }
 }

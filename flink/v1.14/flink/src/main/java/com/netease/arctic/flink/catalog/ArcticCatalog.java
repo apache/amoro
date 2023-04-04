@@ -472,6 +472,14 @@ public class ArcticCatalog extends AbstractCatalog {
 
   @Override
   public Optional<Factory> getFactory() {
-    return Optional.of(new DynamicTableFactory(this, catalogBuilder, internalCatalog.name()));
+    return Optional.of(new DynamicTableFactory(this, catalogBuilder, amsCatalogName()));
+  }
+
+  public InternalCatalogBuilder catalogBuilder() {
+    return catalogBuilder;
+  }
+
+  public String amsCatalogName() {
+    return internalCatalog.name();
   }
 }

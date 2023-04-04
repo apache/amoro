@@ -36,7 +36,7 @@
         <testcontainers.version>1.16.2</testcontainers.version>
         <flink.version>1.14.6</flink.version>
     </properties>
-
+    å
     <dependencies>
         <!--arctic-->
         <dependency>
@@ -46,6 +46,10 @@
                 <exclusion>
                     <groupId>org.ow2.asm</groupId>
                     <artifactId>asm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.rocksdb</groupId>
+                    <artifactId>rocksdbjni</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -132,6 +136,12 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ververica</groupId>
+            <artifactId>frocksdbjni</artifactId>
+            <version>6.20.3-ververica-1.0</version>
         </dependency>
 
         <!-- format dependencies -->
