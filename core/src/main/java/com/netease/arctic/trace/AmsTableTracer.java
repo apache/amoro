@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -279,7 +278,7 @@ public class AmsTableTracer implements TableTracer {
       }
 
       return new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
-          snapshot.sequenceNumber(), parentSnapshotId);
+          parentSnapshotId, snapshot.sequenceNumber());
     }
   }
 

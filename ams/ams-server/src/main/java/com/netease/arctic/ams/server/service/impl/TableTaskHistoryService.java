@@ -90,6 +90,9 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
 
   @Override
   public void expireTaskHistory(TableIdentifier identifier, String latestTaskHistoryId, long expireTime) {
+    if (latestTaskHistoryId == null) {
+      return;
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);

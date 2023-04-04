@@ -102,20 +102,20 @@ public class TablePropertyUtil {
     return value;
   }
 
-  public static StructLikeMap<Long> getPartitionMaxTransactionId(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
+  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
+    StructLikeMap<Long> partitionOptimizedSequence = StructLikeMap.create(keyedTable.spec().partitionType());
 
     StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID) == null) ?
-          null : Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
+          propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE) == null) ?
+          null : Long.parseLong(propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE));
       if (maxTxId != null) {
-        baseTableMaxTransactionId.put(partitionKey, maxTxId);
+        partitionOptimizedSequence.put(partitionKey, maxTxId);
       }
     });
 
-    return baseTableMaxTransactionId;
+    return partitionOptimizedSequence;
   }
 
   public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {

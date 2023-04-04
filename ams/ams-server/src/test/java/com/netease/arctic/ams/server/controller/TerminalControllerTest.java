@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TerminalControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger("TerminalControllerTest");
+  private final Logger LOG = LoggerFactory.getLogger(TerminalControllerTest.class);
 
   protected static final Object ANY = new Object();
 
@@ -48,7 +48,6 @@ public class TerminalControllerTest {
       app.get("/", ctx -> TerminalController.getExamples(ctx));
       final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -59,7 +58,6 @@ public class TerminalControllerTest {
       app.get("/{exampleName}/", ctx -> TerminalController.getSqlExamples(ctx));
       final okhttp3.Response resp = client.get("/CreateTable/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }
@@ -75,7 +73,6 @@ public class TerminalControllerTest {
       final okhttp3.Response resp1 = client.post("/" + AmsTestBase.catalog.name() + "/", requestJson, x -> {
       });
       OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
 
@@ -84,7 +81,6 @@ public class TerminalControllerTest {
       app.get("/", ctx -> TerminalController.getLatestInfo(ctx));
       final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
 
@@ -93,7 +89,6 @@ public class TerminalControllerTest {
       app.get("/{sessionId}/", ctx -> TerminalController.getLogs(ctx));
       final okhttp3.Response resp3 = client.get("/1/", x -> {});
       OkResponse result = JSONObject.parseObject(resp3.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
 
@@ -102,7 +97,6 @@ public class TerminalControllerTest {
       app.get("/{sessionId}/", ctx -> TerminalController.getSqlResult(ctx));
       final okhttp3.Response resp4 = client.get("/1/", x -> {});
       OkResponse result = JSONObject.parseObject(resp4.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
 
@@ -111,7 +105,6 @@ public class TerminalControllerTest {
       app.put("/{sessionId}/", ctx -> TerminalController.stopSql(ctx));
       final okhttp3.Response resp5 = client.put("/1/", new JSONObject(), x -> {});
       OkResponse result = JSONObject.parseObject(resp5.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
   }

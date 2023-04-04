@@ -24,8 +24,7 @@ import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteAr
 import java.util.Locale
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.arctic.AnalysisException
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation, SessionCatalog}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule

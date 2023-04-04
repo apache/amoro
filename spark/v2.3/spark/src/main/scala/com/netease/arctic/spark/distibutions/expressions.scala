@@ -20,7 +20,6 @@ package com.netease.arctic.spark.distibutions
 
 import com.netease.arctic.spark.distributions.{Expression, Literal, NamedReference, Transform}
 import org.apache.spark.sql.catalyst
-import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.types.{DataType, IntegerType, StringType}
 
 /**

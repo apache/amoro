@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
+import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.data.file.FileNameGenerator;
@@ -31,7 +32,6 @@ import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
@@ -133,7 +133,7 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
     for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
       BasicOptimizeTask optimizeTask = optimizeTaskItem.getOptimizeTask();
       boolean isMajorTaskSupportHive = optimizeTask.getTaskId().getType() == OptimizeType.Major &&
-          CollectionUtils.isEmpty(optimizeTask.getPosDeleteFiles());
+          optimizeTask.getProperties().containsKey(OptimizeTaskProperties.MOVE_FILES_TO_HIVE_LOCATION);
       if (!isMajorTaskSupportHive) {
         LOG.info("{} is not major task support hive for partitions {}", arcticTable.id(), partition);
         return false;

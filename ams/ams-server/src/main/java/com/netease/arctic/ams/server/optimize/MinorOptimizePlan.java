@@ -24,7 +24,7 @@ import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -37,15 +37,19 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MinorOptimizePlan.class);
+  // cache partition change file count
+  private final Map<String, Integer> partitionChangeFileCount = new HashMap<>();
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<FileScanTask> baseFileScanTasks,
-                           List<ArcticFileScanTask> changeFileScanTasks,
+                           List<ContentFileWithSequence<?>> changeFileScanTasks,
                            int queueId, long currentTime, long changeSnapshotId, long baseSnapshotId) {
     super(arcticTable, tableOptimizeRuntime, changeFileScanTasks, baseFileScanTasks,
         queueId, currentTime, changeSnapshotId, baseSnapshotId);
@@ -53,33 +57,69 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
 
   @Override
   public boolean partitionNeedPlan(String partitionToPath) {
-    long current = System.currentTimeMillis();
-    List<DataFile> deleteFiles = getDeleteFilesFromFileTree(partitionToPath);
+    int changeFileCount = getChangeFileCount(partitionToPath);
 
-    // check delete file count
-    if (CollectionUtils.isNotEmpty(deleteFiles)) {
-      // file count
-      if (deleteFiles.size() >= CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
-          TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
-          TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT)) {
-        return true;
-      }
+    // file count
+    if (changeFileCount >= CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT)) {
+      return true;
     }
 
     // optimize interval
-    if (current - tableOptimizeRuntime.getLatestMinorOptimizeTime(partitionToPath) >=
-        CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT)) {
+    if (checkOptimizeInterval(partitionToPath)) {
       return true;
     }
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
     return false;
   }
 
+  private int getChangeFileCount(String partition) {
+    Integer cached = partitionChangeFileCount.get(partition);
+    if (cached != null) {
+      return cached;
+    }
+    int changeFileCount = getInsertFilesFromFileTree(partition).size() + getDeleteFilesFromFileTree(partition).size();
+    partitionChangeFileCount.put(partition, changeFileCount);
+    return changeFileCount;
+  }
+
   @Override
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
-    throw new UnsupportedOperationException("Minor optimize not check with this method");
+  protected long getLatestOptimizeTime(String partition) {
+    return tableOptimizeRuntime.getLatestMinorOptimizeTime(partition);
+  }
+
+  @Override
+  protected long getMaxOptimizeInterval() {
+    return CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT);
+  }
+
+  @Override
+  protected PartitionWeight getPartitionWeight(String partition) {
+    return new MinorPartitionWeight(checkOptimizeInterval(partition), getChangeFileCount(partition));
+  }
+
+  protected static class MinorPartitionWeight implements PartitionWeight {
+    private final boolean reachInterval;
+
+    private final int changeFileCount;
+
+    public MinorPartitionWeight(boolean reachInterval, int changeFileCount) {
+      this.reachInterval = reachInterval;
+      this.changeFileCount = changeFileCount;
+    }
+
+    @Override
+    public int compareTo(PartitionWeight o) {
+      MinorPartitionWeight that = (MinorPartitionWeight) o;
+      int compare = Boolean.compare(that.reachInterval, this.reachInterval);
+      if (compare != 0) {
+        return compare;
+      }
+      return Integer.compare(that.changeFileCount, this.changeFileCount);
+    }
   }
 
   @Override
@@ -110,9 +150,8 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId,
-        changeTableMinTransactionId.get(partition),
-        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
+    TaskConfig taskPartitionConfig = new TaskConfig(OptimizeType.Minor, partition, commitGroup, planGroup, createTime,
+        changeStoreToSequence, changeStoreFromSequence.get(partition));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitFileTree(subTrees, new SplitIfNoFileExists());
