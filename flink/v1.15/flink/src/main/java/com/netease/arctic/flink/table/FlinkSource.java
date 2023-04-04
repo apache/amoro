@@ -206,7 +206,7 @@ public class FlinkSource {
           .flinkConf(flinkConf)
           .limit(limit)
           .build();
-      return wrapKrb(origin);
+      return wrapKrb(origin).assignTimestampsAndWatermarks(watermarkStrategy);
     }
 
     /**
