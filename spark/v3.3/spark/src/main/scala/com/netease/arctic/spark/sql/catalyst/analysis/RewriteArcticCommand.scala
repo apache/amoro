@@ -37,15 +37,15 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     import com.netease.arctic.spark.sql.ArcticExtensionUtils._
     plan match {
       // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
-      case a@DropPartitions(r: ResolvedTable, parts, ifExists, purge)
+      case DropPartitions(r: ResolvedTable, parts, ifExists, purge)
         if isArcticTable(r.table) =>
         AlterArcticTableDropPartition(r, parts, ifExists, purge)
       case t@TruncateTable(r: ResolvedTable)
         if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)
 
-      case c@CreateTableAsSelect(ResolvedDBObjectName(catalog, ident), parts, query, tableSpec,
-      options, ifNotExists) if isArcticCatalog(catalog) =>
+      case c@CreateTableAsSelect(ResolvedDBObjectName(catalog, _), _, _, tableSpec,
+      options, _) if isArcticCatalog(catalog) =>
         var propertiesMap: Map[String, String] = tableSpec.properties
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
@@ -56,7 +56,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         }
         val newTableSpec = tableSpec.copy(properties =  propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
-      case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
+      case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists)
         if provider.get != null && provider.get.equals("arctic") =>
           val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
           val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)

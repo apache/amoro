@@ -43,7 +43,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _, _) if isArcticRelation(r) && isUpsert(r) =>
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _, _) if isArcticRelation(r) && isUpsert(r) =>
       val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
       val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
       val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)

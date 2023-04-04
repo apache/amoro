@@ -33,9 +33,6 @@ import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  private lazy val analyzer: Analyzer = spark.sessionState.analyzer
-
-
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case a @ AppendData(r: DataSourceV2Relation, query, _, _, _) if isArcticRelation(r) && checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
@@ -94,7 +91,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
         case _: ArcticSparkCatalog =>
           if (tableSpec.properties.contains("primary.keys")) {
             val primaries = tableSpec.properties("primary.keys").split(",")
-            val validateQuery = buildValidatePrimaryKeyDuplicationByPrimaryies(primaries, query)
+            val validateQuery = buildValidatePrimaryKeyDuplicationByPrimaries(primaries, query)
             val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
             c.copy(query = checkDataQuery)
           } else {
@@ -129,7 +126,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  def buildValidatePrimaryKeyDuplicationByPrimaryies(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
+  def buildValidatePrimaryKeyDuplicationByPrimaries(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
     val attributes = query.output.filter(p => primaries.contains(p.name))
     val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
     val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)

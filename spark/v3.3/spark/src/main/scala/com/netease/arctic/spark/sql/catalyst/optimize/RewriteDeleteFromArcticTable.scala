@@ -52,7 +52,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case u@DeleteFromTable(table, condition) if isArcticRelation(table) =>
+    case DeleteFromTable(table, condition) if isArcticRelation(table) =>
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)

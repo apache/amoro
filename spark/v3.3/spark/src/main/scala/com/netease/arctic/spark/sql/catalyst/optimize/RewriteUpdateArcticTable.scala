@@ -73,7 +73,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         pushFilter(scanBuilder, u.condition.get, arcticRelation.output)
       }
       val upsertQuery = buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
-      var query = upsertQuery
+      val query = upsertQuery
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       val writeBuilder = ArcticSpark33Helper.newWriteBuilder(arcticRelation.table, query.schema, options)
