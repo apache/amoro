@@ -25,7 +25,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Resolver
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
-import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
@@ -161,6 +161,14 @@ object ArcticExtensionUtils {
   }
 
   def isArcticCatalog(catalog: TableCatalog): Boolean = {
+    catalog match {
+      case _: ArcticSparkCatalog => true
+      case _: ArcticSparkSessionCatalog[_] => true
+      case _ => false
+    }
+  }
+
+  def isArcticCatalog(catalog: CatalogPlugin): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] => true

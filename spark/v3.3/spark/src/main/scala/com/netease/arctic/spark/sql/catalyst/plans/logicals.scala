@@ -34,7 +34,7 @@ abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Com
 }
 
 case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)  extends ArcticCommandLogicalPlan (command) {
-  override def children: Seq[LogicalPlan] = ???
+  override def children: Seq[LogicalPlan] = Nil
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = ???
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = null
 }

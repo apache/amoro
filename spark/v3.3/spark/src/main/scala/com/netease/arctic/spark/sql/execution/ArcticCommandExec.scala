@@ -50,8 +50,8 @@ abstract class ArcticCommandExec(command: ArcticSparkCommand) extends V2CommandE
 }
 
 case class MigrateToArcticExec(command: MigrateToArcticCommand) extends ArcticCommandExec(command) {
-  override def children: Seq[SparkPlan] = ???
+  override def children: Seq[SparkPlan] = Nil
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = ???
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = null
 }
 

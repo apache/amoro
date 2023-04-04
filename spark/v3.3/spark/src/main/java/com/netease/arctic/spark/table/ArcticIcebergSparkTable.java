@@ -19,12 +19,19 @@
 package com.netease.arctic.spark.table;
 
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException;
+import org.apache.spark.sql.catalyst.analysis.PartitionAlreadyExistsException;
+import org.apache.spark.sql.connector.catalog.SupportsPartitionManagement;
+import org.apache.spark.sql.types.StructType;
 
 import java.util.Map;
 
-public class ArcticIcebergSparkTable extends SparkTable {
+public class ArcticIcebergSparkTable extends SparkTable implements SupportsPartitionManagement {
   private final UnkeyedTable unkeyedTable;
 
   public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
@@ -43,5 +50,35 @@ public class ArcticIcebergSparkTable extends SparkTable {
     properties.putAll(super.properties());
     properties.put("provider", "arctic");
     return properties;
+  }
+
+  @Override
+  public StructType partitionSchema() {
+    return SparkSchemaUtil.convert(new Schema(table().spec().partitionType().fields()));
+  }
+
+  @Override
+  public void createPartition(InternalRow ident, Map<String, String> properties) throws PartitionAlreadyExistsException, UnsupportedOperationException {
+
+  }
+
+  @Override
+  public boolean dropPartition(InternalRow ident) {
+    return false;
+  }
+
+  @Override
+  public void replacePartitionMetadata(InternalRow ident, Map<String, String> properties) throws NoSuchPartitionException, UnsupportedOperationException {
+
+  }
+
+  @Override
+  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+    return null;
+  }
+
+  @Override
+  public InternalRow[] listPartitionIdentifiers(String[] names, InternalRow ident) {
+    return new InternalRow[0];
   }
 }

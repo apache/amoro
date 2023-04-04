@@ -177,7 +177,7 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     sql("insert into " + database + "." + table +
         " values (1, 'aaaa', 'abcd' )");
 
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
         () -> sql("insert overwrite " + database + "." + insertTable +
                 " select * from {0}.{1} group by id, data, dt",
             database, table));
