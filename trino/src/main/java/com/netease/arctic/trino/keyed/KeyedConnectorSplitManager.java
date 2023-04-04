@@ -89,6 +89,7 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
     }
 
     KeyedTableScan tableScan = arcticTable.newScan()
+        .enableSplitTaskByDeleteRatio()
         .filter(toIcebergExpression(
             icebergTableHandle.getEnforcedPredicate().intersect(icebergTableHandle.getUnenforcedPredicate())));
 

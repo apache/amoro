@@ -41,4 +41,9 @@ public interface KeyedTableScan {
    */
   CloseableIterable<CombinedScanTask> planTasks();
 
+  /**
+   * Config if to split task by delete ratio, default is false
+   */
+  KeyedTableScan enableSplitTaskByDeleteRatio();
+
 }

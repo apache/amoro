@@ -24,6 +24,7 @@ import com.netease.arctic.scan.expressions.BasicPartitionEvaluator;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
+import java.util.Arrays;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
@@ -64,6 +65,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private final int lookBack;
   private final long openFileCost;
   private final long splitSize;
+  private final double splitTaskByDeleteRatio;
+  private boolean enableSplitTaskByDelete;
   private Expression expression;
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
@@ -72,6 +75,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         TableProperties.SPLIT_OPEN_FILE_COST, TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
     splitSize = PropertyUtil.propertyAsLong(table.properties(),
         TableProperties.SPLIT_SIZE, TableProperties.SPLIT_SIZE_DEFAULT);
+    splitTaskByDeleteRatio = PropertyUtil.propertyAsLong(table.properties(),
+        TableProperties.SPLIT_TASK_BY_DELETE_RATIO, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     lookBack = PropertyUtil.propertyAsInt(table.properties(),
         TableProperties.SPLIT_LOOKBACK, TableProperties.SPLIT_LOOKBACK_DEFAULT);
   }
@@ -121,6 +126,12 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         splitSize, lookBack, openFileCost);
   }
 
+  @Override
+  public KeyedTableScan enableSplitTaskByDeleteRatio() {
+    this.enableSplitTaskByDelete = true;
+    return this;
+  }
+
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
     TableScan scan = table.baseTable().newScan();
     if (this.expression != null) {
@@ -149,16 +160,41 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private void split() {
     fileScanTasks.forEach((structLike, fileScanTasks1) -> {
       for (NodeFileScanTask task : fileScanTasks1) {
-        if (task.cost() <= splitSize) {
-          splitTasks.add(task);
-          continue;
-        }
         if (task.dataTasks().size() < 2) {
           splitTasks.add(task);
           continue;
         }
-        CloseableIterable<NodeFileScanTask> tasksIterable = splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
-            task.arcticEquityDeletes(), splitSize, lookBack, openFileCost);
+
+        if (enableSplitTaskByDelete) {
+          long deleteWeight = task.arcticEquityDeletes().stream().mapToLong(s -> s.file().fileSizeInBytes()).sum();
+          if (deleteWeight == 0) {
+            splitTasks.addAll(task.dataTasks().stream()
+                .map(s -> new NodeFileScanTask(Arrays.asList(s))).collect(Collectors.toList()));
+            continue;
+          }
+
+          long dataWeight = task.dataTasks().stream().mapToLong(s -> s.file().fileSizeInBytes()).sum();
+          double deleteRatio = deleteWeight / dataWeight;
+
+          if (deleteRatio < splitTaskByDeleteRatio) {
+            long targetSize = new Double(deleteWeight/deleteRatio).longValue();
+            CloseableIterable<NodeFileScanTask> tasksIterable =
+                splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
+                    task.arcticEquityDeletes(), targetSize, lookBack, openFileCost);
+            List<NodeFileScanTask> tasks =
+                Lists.newArrayList(tasksIterable);
+            splitTasks.addAll(tasks);
+            continue;
+          }
+        }
+
+        if (task.cost() <= splitSize) {
+          splitTasks.add(task);
+          continue;
+        }
+        CloseableIterable<NodeFileScanTask> tasksIterable =
+            splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
+                task.arcticEquityDeletes(), splitSize, lookBack, openFileCost);
         List<NodeFileScanTask> tasks =
             Lists.newArrayList(tasksIterable);
         splitTasks.addAll(tasks);
