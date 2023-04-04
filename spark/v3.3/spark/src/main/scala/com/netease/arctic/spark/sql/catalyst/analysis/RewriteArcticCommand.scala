@@ -19,11 +19,14 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
+import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
@@ -53,32 +56,34 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         }
         val newTableSpec = tableSpec.copy(properties =  propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
-//      case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-//        if provider.get != null && provider.get.equals("arctic") =>
-//          val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
-//          val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
-//          val table = sourceCatalog.loadTable(sourceIdentifier)
-//          var targetProperties = properties
-//          targetProperties += ("provider" -> "arctic")
-//          table match {
-//            case keyedTable: ArcticSparkTable =>
-//              keyedTable.table() match {
-//                case table: KeyedTable =>
-//                  targetProperties += ("primary.keys" -> String.join(",", table.primaryKeySpec().fieldNames()))
-//                case _ =>
-//              }
-//            case _ =>
-//          }
-//        val tableSpec = TableSpec(
-//          properties = targetProperties.toMap,
-//          provider = provider,
-//          options = Map.empty,
-//          location = None,
-//          comment = None,
-//          serde = None,
-//          external = false)
-//        CreateTable(targetCatalog, targetIdentifier,
-//            table.schema(), table.partitioning(), tableSpec, ifNotExists)
+      case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
+        if provider.get != null && provider.get.equals("arctic") =>
+          val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
+          val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
+          val table = sourceCatalog.loadTable(sourceIdentifier)
+          var targetProperties = properties
+          targetProperties += ("provider" -> "arctic")
+          table match {
+            case keyedTable: ArcticSparkTable =>
+              keyedTable.table() match {
+                case table: KeyedTable =>
+                  targetProperties += ("primary.keys" -> String.join(",", table.primaryKeySpec().fieldNames()))
+                case _ =>
+              }
+            case _ =>
+          }
+        val tableSpec = TableSpec(
+          properties = targetProperties.toMap,
+          provider = provider,
+          options = Map.empty,
+          location = None,
+          comment = None,
+          serde = None,
+          external = false)
+        val seq: Seq[String] = Seq(targetTable.database.get, targetTable.identifier)
+        val name = ResolvedDBObjectName(targetCatalog, seq)
+        CreateTable(name,
+            table.schema(), table.partitioning(), tableSpec, ifNotExists)
       case _ => plan
     }
   }
