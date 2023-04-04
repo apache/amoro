@@ -27,6 +27,7 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter

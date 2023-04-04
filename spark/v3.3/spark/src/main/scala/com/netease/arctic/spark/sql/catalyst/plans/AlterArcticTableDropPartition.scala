@@ -1,16 +1,14 @@
 package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.PartitionSpec
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2PartitionCommand}
 
 case class AlterArcticTableDropPartition(
-                                          child: LogicalPlan,
+                                          table: LogicalPlan,
                                           parts: Seq[PartitionSpec],
                                           ifExists: Boolean,
-                                          purge: Boolean,
-                                          retainData: Boolean) extends Command {
-
-  override def children: Seq[LogicalPlan] = child :: Nil
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = child
+                                          purge: Boolean) extends V2PartitionCommand {
+  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    copy(table = newChild)
+  }
 }

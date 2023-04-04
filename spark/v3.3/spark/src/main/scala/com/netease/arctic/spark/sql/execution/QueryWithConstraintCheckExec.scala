@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, SortOrder}
 import org.apache.spark.sql.catalyst.plans.physical
 import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
+import org.apache.spark.sql.vectorized.ColumnarBatch
 
 case class QueryWithConstraintCheckExec(
     scanExec: SparkPlan,
@@ -60,6 +61,15 @@ case class QueryWithConstraintCheckExec(
     val result = scanExec.execute()
     if (result.partitions.length == 0) {
       sparkContext.parallelize(Array.empty[InternalRow], 1)
+    } else {
+      result
+    }
+  }
+
+  override protected def doExecuteColumnar(): RDD[ColumnarBatch] = {
+    val result = scanExec.executeColumnar()
+    if (result.partitions.length == 0) {
+      sparkContext.parallelize(Array.empty[ColumnarBatch], 1)
     } else {
       result
     }

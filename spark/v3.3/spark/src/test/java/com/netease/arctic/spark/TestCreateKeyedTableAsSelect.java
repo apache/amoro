@@ -24,6 +24,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.SparkException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,7 +37,6 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
   private final String database = "db_def";
   private final String table = "testA";
   private final String sourceTable = "test_table";
-  private final String duplicateDataTable= "dt_table";
   private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
   @Before
@@ -92,14 +92,9 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
                     "( 1, ''aaaa'', ''0001'')",
             database, sourceTable);
     sql("select * from {0}.{1} group by id, data, pt", database, sourceTable);
-    boolean condition = false;
-    try {
-      sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
-          database, table, catalogNameArctic, database, sourceTable);
-    } catch(UnsupportedOperationException e) {
-      condition = true;
-    }
-    Assert.assertTrue(condition);
+    Assert.assertThrows(SparkException.class,
+        () -> sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
+          database, table, catalogNameArctic, database, sourceTable));
   }
 
   @Test

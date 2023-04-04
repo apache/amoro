@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-import com.netease.arctic.spark.sql.catalyst.analysis.ResolveMergeIntoArcticTableReferences
-import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.UnresolvedMergeIntoArcticTable
 import com.netease.arctic.spark.sql.parser._
 import com.netease.arctic.spark.table.ArcticSparkTable
@@ -31,12 +29,11 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.source.SparkTable
 import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
-import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation, UnresolvedTable}
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.logical.{DeleteFromIcebergTable, DeleteFromTable, LogicalPlan, MergeIntoContext, MergeIntoTable, UnresolvedMergeIntoIcebergTable, UpdateIcebergTable, UpdateTable}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}

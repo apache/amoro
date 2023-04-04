@@ -19,17 +19,10 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
-import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.writer.WriteMode
-import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.ResolvedTable
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-
-import scala.collection.{JavaConverters, mutable}
-import scala.concurrent.JavaConversions
 
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
@@ -40,22 +33,12 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
     import com.netease.arctic.spark.sql.ArcticExtensionUtils._
     plan match {
       // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
-//      case a@DropPartitions(r: ResolvedTable, parts, ifExists, purge)
-//        if isArcticTable(r.table) =>
-//        AlterArcticTableDropPartition(a.child, parts, ifExists, purge, retainData = false)
+      case a@DropPartitions(r: ResolvedTable, parts, ifExists, purge)
+        if isArcticTable(r.table) =>
+        AlterArcticTableDropPartition(r, parts, ifExists, purge)
       case t@TruncateTable(r: ResolvedTable)
         if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)
-//      case c@CreateTableAsSelect(catalog, _, _, _, props, options, _) if isArcticCatalog(catalog) =>
-//        var propertiesMap: Map[String, String] = props
-//        var optionsMap: Map[String, String] = options
-//        if (options.contains("primary.keys")) {
-//          propertiesMap += ("primary.keys" -> options("primary.keys"))
-//        }
-//        if (propertiesMap.contains("primary.keys")) {
-//          optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
-//        }
-//        c.copy(properties = propertiesMap, writeOptions = optionsMap)
 //      case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
 //        if provider.get != null && provider.get.equals("arctic") =>
 //          val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)

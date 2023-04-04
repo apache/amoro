@@ -23,6 +23,7 @@ import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.{Analyzer, ResolvedDBObjectName}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -31,6 +32,8 @@ import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPlan] {
+
+  private lazy val analyzer: Analyzer = spark.sessionState.analyzer
 
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
@@ -85,21 +88,21 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
           a
       }
 
-//    case c@CreateTableAsSelect(catalog, _, _, query, props, _, _, _)
-//      if checkDuplicatesEnabled() =>
-//      catalog match {
-//        case _: ArcticSparkCatalog =>
-//          if (props.contains("primary.keys")) {
-//            val primaries = props("primary.keys").split(",")
-//            val validateQuery = buildValidatePrimaryKeyDuplication(primaries, query)
-//            val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
-//            c.copy(query = checkDataQuery)
-//          } else {
-//            c
-//          }
-//        case _ =>
-//          c
-//      }
+    case c@CreateTableAsSelect(ResolvedDBObjectName(catalog, _), _, query, tableSpec, _, _)
+      if checkDuplicatesEnabled() =>
+      catalog match {
+        case _: ArcticSparkCatalog =>
+          if (tableSpec.properties.contains("primary.keys")) {
+            val primaries = tableSpec.properties("primary.keys").split(",")
+            val validateQuery = buildValidatePrimaryKeyDuplicationByPrimaryies(primaries, query)
+            val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
+            c.copy(query = checkDataQuery)
+          } else {
+            c
+          }
+        case _ =>
+          c
+      }
   }
 
   def checkDuplicatesEnabled(): Boolean = {
@@ -126,7 +129,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  def buildValidatePrimaryKeyDuplication(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
+  def buildValidatePrimaryKeyDuplicationByPrimaryies(primaries: Array[String], query: LogicalPlan): LogicalPlan = {
     val attributes = query.output.filter(p => primaries.contains(p.name))
     val aggSumCol = Alias(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), SUM_ROW_ID_ALIAS_NAME)()
     val aggPlan = Aggregate(attributes, Seq(aggSumCol), query)

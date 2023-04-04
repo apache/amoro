@@ -25,7 +25,7 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.arctic.execution.CreateArcticTableAsSelectExec
-import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedDBObjectName, ResolvedTable}
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, NamedRelation, ResolvedDBObjectName, ResolvedTable}
 import org.apache.spark.sql.catalyst.catalog.CatalogUtils
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan, TableSpec}
@@ -44,9 +44,13 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateTableAsSelect(ResolvedDBObjectName(catalog, ident), parts, query: DataSourceV2Relation, tableSpec,
+    case CreateTableAsSelect(ResolvedDBObjectName(catalog, ident), parts, query, tableSpec,
     options, ifNotExists) =>
-      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
+      var optionsMap: Map[String, String] = options
+      if (tableSpec.properties.contains("primary.keys")) {
+        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
+      }
+      val writeOptions = new CaseInsensitiveStringMap(optionsMap.asJava)
       catalog match {
         case c : ArcticSparkCatalog =>
           CreateTableAsSelectExec(c, Identifier.of(ident.init.toArray, ident.last), parts, query,
@@ -117,8 +121,8 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
-    case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
-      AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil
+    case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _) =>
+      AlterArcticTableDropPartitionExec(r.table, d.parts) :: Nil
 
     case QueryWithConstraintCheckPlan(scanPlan, fileFilterPlan) =>
       QueryWithConstraintCheckExec(planLater(scanPlan), planLater(fileFilterPlan)) :: Nil

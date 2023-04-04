@@ -20,52 +20,52 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.spark.SparkFilters
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitionSpec}
+import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, ResolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.{LeafV2CommandExec, V2CommandExec}
+import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
 import org.apache.spark.sql.types._
 
 import java.util
-import scala.collection.JavaConverters.asJavaIterableConverter
 
 case class AlterArcticTableDropPartitionExec(
   table: Table,
-  parts: Seq[PartitionSpec],
-  retainData: Boolean
+  parts: Seq[PartitionSpec]
 ) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     // build partitions
-    val specs = parts.map {
-      case part: UnresolvedPartitionSpec =>
-        part.spec.map(s => s._1 + "=" + s._2).asJava
+    val rows: Seq[InternalRow] = parts.map {
+      case ResolvedPartitionSpec(_, ident, _) =>
+        ident
     }
-    val ident = specs.mkString.replace(", ", "/")
-      .replace("[", "")
-      .replace("]", "")
-    val partitions = ident.split("/")
-    // build expressions
-    var i = 0
-    var deleteExpr: Expression = null
+    val names:Seq[Seq[String]] = parts.map {
+      case ResolvedPartitionSpec(names, _, _) =>
+        names
+    }
     val expressions = new util.ArrayList[Expression]
-    while (i < partitions.size) {
-      val partitionData = partitions.apply(i).split("=")
-
-      val dataType = table.schema().apply(partitionData.apply(0)).dataType
-      val data = convertDataByType(dataType, partitionData.apply(1))
-      val experssion = EqualNullSafe(
-        AttributeReference(
-          partitionData.apply(0),
-          dataType)(),
-        Literal(data))
-      expressions.add(experssion)
-      i += 1
+    var index = 0;
+    while (index < names.size) {
+      var i = 0
+      val name = names.apply(index)
+      val row = rows.apply(index)
+      while (i < name.size) {
+        val dataType = table.schema().apply(name.apply(i)).dataType
+        val data = convertInternalRowDataByType(dataType, row, i)
+        val experssion = EqualNullSafe(
+          AttributeReference(
+            name.apply(i),
+            dataType)(),
+          Literal(data))
+        expressions.add(experssion)
+        i += 1
+      }
+      index += 1
     }
+
+    var deleteExpr: Expression = null
     expressions.forEach(exp => {
       if (deleteExpr == null) {
         deleteExpr = exp
@@ -109,17 +109,17 @@ case class AlterArcticTableDropPartitionExec(
     }
   }
 
-  def convertDataByType(dataType: DataType, data: String): Any = {
+  def convertInternalRowDataByType(dataType: DataType, data: InternalRow, index: Int): Any = {
     dataType match {
-      case BinaryType => data.toByte
-      case IntegerType => data.toInt
-      case BooleanType => data.toBoolean
-      case LongType => data.toLong
-      case DoubleType => data.toDouble
-      case FloatType => data.toFloat
-      case ShortType => data.toShort
-      case ByteType => data.toByte
-      case StringType => data
+      case BinaryType => data.getBinary(index)
+      case IntegerType => data.getInt(index)
+      case BooleanType => data.getBoolean(index)
+      case LongType => data.getLong(index)
+      case DoubleType => data.getDouble(index)
+      case FloatType => data.getFloat(index)
+      case ShortType => data.getShort(index)
+      case ByteType => data.getByte(index)
+      case StringType => data.getString(index)
       case _ =>
         throw new UnsupportedOperationException("Cannot convert data by this type")
     }

@@ -31,6 +31,10 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException;
+import org.apache.spark.sql.catalyst.analysis.PartitionAlreadyExistsException;
+import org.apache.spark.sql.connector.catalog.SupportsPartitionManagement;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
 import org.apache.spark.sql.connector.catalog.SupportsWrite;
 import org.apache.spark.sql.connector.catalog.Table;
@@ -45,7 +49,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsRowLevelOperator {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsRowLevelOperator, SupportsPartitionManagement {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
@@ -207,5 +211,35 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
     return arcticTable.isKeyedTable() &&
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(
                 TableProperties.UPSERT_ENABLED, "false"));
+  }
+
+  @Override
+  public StructType partitionSchema() {
+    return SparkSchemaUtil.convert(new Schema(table().spec().partitionType().fields()));
+  }
+
+  @Override
+  public void createPartition(InternalRow ident, Map<String, String> properties) throws PartitionAlreadyExistsException, UnsupportedOperationException {
+
+  }
+
+  @Override
+  public boolean dropPartition(InternalRow ident) {
+    return false;
+  }
+
+  @Override
+  public void replacePartitionMetadata(InternalRow ident, Map<String, String> properties) throws NoSuchPartitionException, UnsupportedOperationException {
+
+  }
+
+  @Override
+  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+    return null;
+  }
+
+  @Override
+  public InternalRow[] listPartitionIdentifiers(String[] names, InternalRow ident) {
+    return new InternalRow[0];
   }
 }

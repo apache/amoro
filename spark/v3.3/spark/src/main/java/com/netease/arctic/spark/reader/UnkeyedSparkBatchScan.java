@@ -257,7 +257,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   @Override
   public int hashCode() {
     return Objects.hash(
-        table.id(), readSchema(), filterExpressions.toString());
+        table.id(), readSchema());
   }
 
   @Override
