@@ -37,9 +37,13 @@ case class AlterArcticTableDropPartitionExec(
 ) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     // build partitions
-    val (rows, names): (Seq[InternalRow] , Seq[Seq[String]]) = parts.map {
-      case ResolvedPartitionSpec(names, ident, _) =>
-        (ident, names)
+    val rows: Seq[InternalRow] = parts.map {
+      case ResolvedPartitionSpec(_, ident, _) =>
+        ident
+    }
+    val names: Seq[Seq[String]] = parts.map {
+      case ResolvedPartitionSpec(names, _, _) =>
+        names
     }
     val expressions = new util.ArrayList[Expression]
     var index = 0;
