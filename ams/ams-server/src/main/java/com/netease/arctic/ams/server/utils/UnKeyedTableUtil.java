@@ -22,23 +22,12 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
