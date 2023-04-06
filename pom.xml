@@ -482,11 +482,67 @@
                     <groupId>org.scalastyle</groupId>
                     <artifactId>scalastyle-maven-plugin</artifactId>
                     <version>${maven.plugin.scalastyle.version}</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                        <failOnViolation>true</failOnViolation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <failOnWarning>false</failOnWarning>
+                        <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                        <configLocation>style/scalastyle-config.xml</configLocation>
+                        <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
+                        <outputEncoding>UTF-8</outputEncoding>
+                        <skip>${maven.scalastyle.skip}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>validate</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven.plugin.spotless.version}</version>
+                    <configuration>
+                        <upToDateChecking>
+                            <enabled>true</enabled>
+                        </upToDateChecking>
+                        <scala>
+                            <includes>
+                                <include>src/main/scala/**/*.scala</include>
+                                <include>src/test/scala/**/*.scala</include>
+                            </includes>
+                            <scalafmt>
+                                <version>${spotless.scala.scalafmt.version}</version>
+                                <scalaMajorVersion>${scala.binary.version}</scalaMajorVersion>
+                                <file>../../../style/.scalafmt.conf</file>
+                            </scalafmt>
+                        </scala>
+                      <pom>
+                          <includes>
+                              <include>pom.xml</include>
+                          </includes>
+                          <sortPom>
+                              <encoding>${project.build.sourceEncoding}</encoding>
+                              <expandEmptyElements>true</expandEmptyElements>
+                              <indentSchemaLocation>true</indentSchemaLocation>
+                              <nrOfIndentSpace>4</nrOfIndentSpace>
+                          </sortPom>
+                      </pom>
+
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                              <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
