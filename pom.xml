@@ -520,7 +520,7 @@
                             <scalafmt>
                                 <version>${spotless.scala.scalafmt.version}</version>
                                 <scalaMajorVersion>${scala.binary.version}</scalaMajorVersion>
-                                <file>../../../style/.scalafmt.conf</file>
+                                <file>.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
                       <pom>
