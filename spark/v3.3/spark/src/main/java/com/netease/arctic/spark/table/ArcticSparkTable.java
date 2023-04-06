@@ -49,7 +49,8 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsRowLevelOperator, SupportsPartitionManagement {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
+    SupportsRowLevelOperator, SupportsPartitionManagement {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
@@ -219,7 +220,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
   }
 
   @Override
-  public void createPartition(InternalRow ident, Map<String, String> properties) throws PartitionAlreadyExistsException, UnsupportedOperationException {
+  public void createPartition(InternalRow ident, Map<String, String> properties)
+      throws PartitionAlreadyExistsException, UnsupportedOperationException {
 
   }
 
@@ -229,7 +231,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
   }
 
   @Override
-  public void replacePartitionMetadata(InternalRow ident, Map<String, String> properties) throws NoSuchPartitionException, UnsupportedOperationException {
+  public void replacePartitionMetadata(InternalRow ident, Map<String, String> properties)
+      throws NoSuchPartitionException, UnsupportedOperationException {
 
   }
 

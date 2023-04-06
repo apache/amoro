@@ -23,7 +23,8 @@ import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
- * A mix-in interface of {@link org.apache.spark.sql.connector.catalog.Table}, to indicate that can handle update or delete by upsert.
+ * A mix-in interface of {@link org.apache.spark.sql.connector.catalog.Table},
+ * to indicate that can handle update or delete by upsert.
  */
 public interface SupportsRowLevelOperator extends Table {
 

@@ -75,6 +75,8 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     // planner extensions
     extensions.injectPlannerStrategy { spark => ExtendedDataSourceV2Strategy(spark) }
+    // arctic optimizer rules
+    extensions.injectPreCBORule(OptimizeWriteRule)
 
     // arctic strategy rules
     extensions.injectPlannerStrategy { spark => execution.ExtendedArcticStrategy(spark) }
