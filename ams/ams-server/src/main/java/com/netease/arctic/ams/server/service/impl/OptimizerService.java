@@ -114,7 +114,7 @@ public class OptimizerService extends IJDBCService {
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
-      checkOptimizerRetry(reportData,optimizer);
+      checkOptimizerRetry(reportData, optimizer);
       if (!container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
         OptimizerFactory factory =
                 ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
@@ -267,14 +267,13 @@ public class OptimizerService extends IJDBCService {
         for (OptimizeTaskItem optimizeTask : optimizeTasks) {
           OptimizeTaskRuntime optimizeRuntime = optimizeTask.getOptimizeRuntime();
           //Retry only the task whose state is Executing
-          if (optimizerId.equals(optimizeRuntime.getJobId().getId()) &&
-              OptimizeStatus.Executing.equals(optimizeRuntime.getStatus()) &&
+          if (OptimizeStatus.Executing.equals(optimizeRuntime.getStatus()) &&
+              optimizerId.equals(optimizeRuntime.getJobId().getId()) &&
               optimizeRuntime.getExecuteTime() < Long.parseLong(statusIdentification)) {
             tableOptimizeItem.taskFailedForOptimizerRetry(optimizeTask.getTaskId());
           }
         }
       }
-
     }
   }
 }

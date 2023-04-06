@@ -36,18 +36,12 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   private static final Logger LOG = LoggerFactory.getLogger(FlinkReporter.class);
   public static final String STATE_JOB_ID = "flink-job-id";
 
-  private static final String JOB_OVERVIEW_REST_API = "/jobs/overview";
-
-  private static final String HIGH_AVAILABILITY_CLUSTER_ID = "high-availability.cluster-id";
-
   private static final String STATUS_IDENTIFICATION = "status_identification";
-
-  private static final String LAST_MODIFICATION = "last-modification";
 
   private final BaseTaskReporter taskReporter;
   private final BaseToucher toucher;
   private final long heartBeatInterval;
-  private long createTime;
+  private final long createTime;
   private volatile boolean stopped = false;
   private Thread thread;
 
@@ -55,6 +49,7 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
     this.taskReporter = taskReporter;
     this.toucher = toucher;
     this.heartBeatInterval = optimizerConfig.getHeartBeat();
+    this.createTime = System.currentTimeMillis();
   }
 
   public FlinkReporter(OptimizerConfig config) {
