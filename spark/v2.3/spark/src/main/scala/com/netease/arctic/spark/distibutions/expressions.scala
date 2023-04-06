@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// this file copy form apache spark
 
 package com.netease.arctic.spark.distibutions
 
