@@ -190,8 +190,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   private def replaceMergeIntoCommands(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsDown {
 
-    case m @ MergeIntoTable(UnresolvedArcticTable(aliasedTable), source, cond, matchedActions, notMatchedActions) =>
-      UnresolvedMergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
+    case MergeIntoTable(UnresolvedArcticTable(aliasedTable), source, cond, matchedActions, notMatchedActions) =>
+      UnresolvedMergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions)
 
     case DeleteFromTable(UnresolvedIcebergTable(aliasedTable), condition) =>
       DeleteFromIcebergTable(aliasedTable, Some(condition))
