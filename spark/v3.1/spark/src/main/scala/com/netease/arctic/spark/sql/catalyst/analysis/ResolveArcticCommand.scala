@@ -18,15 +18,13 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import scala.collection.JavaConverters.seqAsJavaList
+
 import com.netease.arctic.spark.command.MigrateToArcticCommand
 import com.netease.arctic.spark.sql.catalyst.plans
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-
-import scala.collection.JavaConverters.seqAsJavaList
-
-
 
 case class ResolveArcticCommand(spark: SparkSession) extends Rule[LogicalPlan] {
 
