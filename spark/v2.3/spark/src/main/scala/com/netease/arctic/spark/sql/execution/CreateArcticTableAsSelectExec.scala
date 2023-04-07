@@ -18,7 +18,11 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
+
 import com.netease.arctic.spark.source.{ArcticSource, ArcticSparkTable, SupportsDynamicOverwrite}
+import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.arctic.AnalysisException
@@ -29,11 +33,12 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.DataWritingSparkTask
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.sql.sources.v2.writer.{DataSourceWriter, SupportsWriteInternalRow, WriterCommitMessage}
-import org.apache.spark.{SparkException, TaskContext}
 
-import scala.util.control.NonFatal
-
-case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: CatalogTable, query: SparkPlan) extends SparkPlan {
+case class CreateArcticTableAsSelectExec(
+    arctic: ArcticSource,
+    tableDesc: CatalogTable,
+    query: SparkPlan)
+  extends SparkPlan {
 
   override def output: Seq[Attribute] = Nil
 
@@ -62,19 +67,23 @@ case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: Catalo
     val spark = sqlContext.sparkSession
     val sparkCatalogImpl = spark.conf.get(StaticSQLConf.CATALOG_IMPLEMENTATION.key)
     if (!"hive".equalsIgnoreCase(sparkCatalogImpl)) {
-      throw AnalysisException.message(s"failed to create table ${tableDesc.identifier} not use hive catalog")
+      throw AnalysisException.message(
+        s"failed to create table ${tableDesc.identifier} not use hive catalog")
     }
-    val table = arctic.createTable(tableDesc.identifier, tableDesc.schema,
-      scala.collection.JavaConversions.seqAsJavaList(tableDesc.partitionColumnNames),
-      scala.collection.JavaConversions.mapAsJavaMap(tableDesc.properties))
+    val table = arctic.createTable(
+      tableDesc.identifier,
+      tableDesc.schema,
+      tableDesc.partitionColumnNames.asJava,
+      tableDesc.properties.asJava)
     table
   }
 
-  def writeRows(writer: DataSourceWriter) : Unit = {
+  def writeRows(writer: DataSourceWriter): Unit = {
     val writeTask = writer match {
       case w: SupportsWriteInternalRow => w.createInternalRowWriterFactory()
-      case _ => throw AnalysisException.message(s"failed to create writer for table ${tableDesc.identifier}, " +
-        s"not support create internalRow writer factory")
+      case _ => throw AnalysisException.message(
+          s"failed to create writer for table ${tableDesc.identifier}, " +
+            s"not support create internalRow writer factory")
     }
 
     val rdd = query.execute()
@@ -90,8 +99,7 @@ case class CreateArcticTableAsSelectExec(arctic: ArcticSource, tableDesc: Catalo
         rdd,
         runTask,
         rdd.partitions.indices,
-        (index, message: WriterCommitMessage) => messages(index) = message
-      )
+        (index, message: WriterCommitMessage) => messages(index) = message)
 
       writer.commit(messages)
     } catch {
