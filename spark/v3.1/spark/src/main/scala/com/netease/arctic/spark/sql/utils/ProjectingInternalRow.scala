@@ -35,7 +35,6 @@ case class ProjectingInternalRow(schema: StructType, colOrdinals: Seq[Int]) exte
 
   private var row: InternalRow = _
 
-
   override def numFields: Int = colOrdinals.size
 
   def project(row: InternalRow): Unit = {
@@ -127,14 +126,17 @@ case class ProjectingInternalRow(schema: StructType, colOrdinals: Seq[Int]) exte
 }
 
 object ProjectingInternalRow {
-  def newProjectInternalRow(plan: LogicalPlan,
-                            attrs: Seq[Attribute],
-                            isFront: Boolean,
-                            offset: Int): ProjectingInternalRow = {
+  def newProjectInternalRow(
+      plan: LogicalPlan,
+      attrs: Seq[Attribute],
+      isFront: Boolean,
+      offset: Int): ProjectingInternalRow = {
 
-    val colOrdinals = attrs.map(attr => plan.output.indexWhere(_.name == attr.name)).filter(p => p.!=(-1))
+    val colOrdinals =
+      attrs.map(attr => plan.output.indexWhere(_.name == attr.name)).filter(p => p.!=(-1))
     val planAttrs = colOrdinals.map(plan.output(_))
-    val schema = StructType(planAttrs.map(a => StructField(a.name, a.dataType, a.nullable, a.metadata)))
+    val schema =
+      StructType(planAttrs.map(a => StructField(a.name, a.dataType, a.nullable, a.metadata)))
     if (!isFront) {
       val backColOrdinals = colOrdinals.map(c => c + colOrdinals.size + offset)
       ProjectingInternalRow(schema, backColOrdinals)

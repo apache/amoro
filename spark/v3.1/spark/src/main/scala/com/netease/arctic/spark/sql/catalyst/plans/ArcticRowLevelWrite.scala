@@ -22,10 +22,11 @@ import com.netease.arctic.spark.sql.utils.WriteQueryProjections
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
 
-case class ArcticRowLevelWrite(table: NamedRelation,
-                               query: LogicalPlan,
-                               options: Map[String, String],
-                               projections: WriteQueryProjections) extends V2WriteCommand {
+case class ArcticRowLevelWrite(
+    table: NamedRelation,
+    query: LogicalPlan,
+    options: Map[String, String],
+    projections: WriteQueryProjections) extends V2WriteCommand {
 
   def isByName: Boolean = false
 
@@ -33,5 +34,5 @@ case class ArcticRowLevelWrite(table: NamedRelation,
 
   def withNewTable(newTable: NamedRelation): ArcticRowLevelWrite = copy(table = newTable)
 
-  override def outputResolved = true
+  override def outputResolved: Boolean = true
 }

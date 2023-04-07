@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-import org.antlr.v4.runtime.misc.Interval
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.misc.Interval
 import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, Origin}
 
 /* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */

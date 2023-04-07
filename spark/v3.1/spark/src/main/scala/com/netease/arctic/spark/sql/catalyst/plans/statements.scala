@@ -20,5 +20,5 @@ package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.plans.logical.ParsedStatement
 
-
-case class MigrateToArcticStatement(source: Seq[String], target:Seq[String]) extends ParsedStatement
+case class MigrateToArcticStatement(source: Seq[String], target: Seq[String])
+  extends ParsedStatement

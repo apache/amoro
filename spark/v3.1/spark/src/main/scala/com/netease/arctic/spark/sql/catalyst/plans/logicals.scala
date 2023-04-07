@@ -33,4 +33,5 @@ abstract class ArcticCommandLogicalPlan(command: ArcticSparkCommand) extends Com
   }
 }
 
-case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)  extends ArcticCommandLogicalPlan (command)
+case class MigrateToArcticLogicalPlan(command: MigrateToArcticCommand)
+  extends ArcticCommandLogicalPlan(command)
