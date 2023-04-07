@@ -84,6 +84,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
 
   @Override
   public void abort() throws IOException {
+    close();
   }
 
   @Override
