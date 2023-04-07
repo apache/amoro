@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
 import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
@@ -30,13 +30,14 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 
-case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
+case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
+  with ArcticRewriteHelper {
 
   private val opCol = SupportsUpsert.UPSERT_OP_COLUMN_NAME
   private val opDel = SupportsUpsert.UPSERT_OP_VALUE_DELETE
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case u@DeleteFromTable(table, condition) if isArcticRelation(table) =>
+    case u @ DeleteFromTable(table, condition) if isArcticRelation(table) =>
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
@@ -46,21 +47,24 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       } else {
         pushFilter(scanBuilder, condition.get, r.output)
       }
-      val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
-      options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       ReplaceArcticData(r, query, options)
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(
+      r: DataSourceV2Relation,
+      upsert: SupportsUpsert,
+      scanBuilder: SupportsExtendIdentColumns,
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)

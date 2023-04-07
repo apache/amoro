@@ -70,6 +70,11 @@ public interface TerminalSessionFactory {
         .booleanType()
         .noDefaultValue();
 
+    public static ConfigOption<Boolean> USING_SESSION_CATALOG_FOR_HIVE = ConfigOptions
+        .key("using-session-catalog-for-hive")
+        .booleanType()
+        .defaultValue(false);
+
     public static ConfigOption<String> catalogConnector(String catalog) {
       return ConfigOptions.key("session.catalog." + catalog + ".connector")
           .stringType()
