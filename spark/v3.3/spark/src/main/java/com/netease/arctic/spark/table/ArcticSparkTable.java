@@ -222,7 +222,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   @Override
   public void createPartition(InternalRow ident, Map<String, String> properties)
       throws PartitionAlreadyExistsException, UnsupportedOperationException {
-
+    throw new UnsupportedOperationException("not supported create partition");
   }
 
   @Override
@@ -233,7 +233,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   @Override
   public void replacePartitionMetadata(InternalRow ident, Map<String, String> properties)
       throws NoSuchPartitionException, UnsupportedOperationException {
-
+    throw new UnsupportedOperationException("not supported replace partition");
   }
 
   @Override
