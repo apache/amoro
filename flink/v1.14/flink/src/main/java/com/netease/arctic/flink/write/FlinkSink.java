@@ -173,7 +173,7 @@ public class FlinkSink {
       Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkSchema), table.schema());
 
       int writeOperatorParallelism = PropertyUtil.propertyAsInt(table.properties(), SINK_PARALLELISM.key(),
-          rowDataInput.getParallelism());
+          rowDataInput.getExecutionEnvironment().getParallelism());
 
       DistributionHashMode distributionMode = getDistributionHashMode();
       LOG.info("take effect distribute mode: {}", distributionMode);
