@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.sql.util
 
-
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.types.StructType
@@ -29,7 +28,6 @@ object ImplicitHelper {
     def toAttributes: Seq[AttributeReference] =
       types.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
   }
-
 
   implicit class IdentifierImplicitHelper(parts: Seq[String]) {
     if (parts.isEmpty) {
