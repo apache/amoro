@@ -44,8 +44,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
     BatchWrite asOverwriteByFilter(Expression overwriteExpr);
 
     BatchWrite asUpsertWrite();
-
-    BatchWrite asMergeBatchWrite();
   }
 
   protected final CaseInsensitiveStringMap options;
@@ -104,8 +102,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
               return asDynamicOverwrite();
             case UPSERT:
               return asUpsertWrite();
-            case MERGE:
-              return asMergeBatchWrite();
             default:
               throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
           }
@@ -124,8 +120,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
               return asDynamicOverwrite();
             case UPSERT:
               return asUpsertWrite();
-            case MERGE:
-              return asMergeBatchWrite();
             default:
               throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
           }

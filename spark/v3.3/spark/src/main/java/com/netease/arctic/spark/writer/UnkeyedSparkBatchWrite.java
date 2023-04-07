@@ -105,11 +105,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     return new UpsertWrite();
   }
 
-  @Override
-  public BatchWrite asMergeBatchWrite() {
-    return new MergeIntoWrite();
-  }
-
   private abstract class BaseBatchWrite implements BatchWrite {
 
     protected TableBlockerManager tableBlockerManager;
@@ -313,50 +308,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
       return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
           newDeleteWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
-    }
-  }
-
-  private static class MergeWriteFactory extends WriterFactory {
-
-    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, boolean orderedWrite) {
-      super(table, dsSchema, false, null, orderedWrite);
-    }
-
-    @Override
-    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
-          !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
-          newDeleteWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
-    }
-  }
-
-  private class MergeIntoWrite extends BaseBatchWrite {
-
-
-    @Override
-    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      getBlocker();
-      return new MergeWriteFactory(table, dsSchema, orderedWriter);
-    }
-
-    @Override
-    public void commit(WriterCommitMessage[] messages) {
-      checkBlocker(tableBlockerManager);
-      RowDelta rowDelta = table.newRowDelta();
-      if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
-        for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
-          rowDelta.addDeletes(file);
-        }
-
-      }
-      if (WriteTaskCommit.files(messages).iterator().hasNext()) {
-        for (DataFile file : WriteTaskCommit.files(messages)) {
-          rowDelta.addRows(file);
-        }
-      }
-      rowDelta.commit();
-      tableBlockerManager.release(block);
     }
   }
 }

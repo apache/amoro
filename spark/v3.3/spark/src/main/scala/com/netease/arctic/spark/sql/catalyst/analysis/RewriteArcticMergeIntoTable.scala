@@ -205,7 +205,7 @@ case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[Logical
     // build a plan to write the row delta to the table
     val writeRelation = relation.copy(table = operationTable)
     var options: Map[String, String] = Map.empty
-    options += (WriteMode.WRITE_MODE_KEY -> WriteMode.MERGE.toString)
+    options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
     val projections = buildWriteQueryProjections(
       mergeRows, source, rowAttrs, rowIdAttrs,
       ArcticExtensionUtils.isKeyedTable(relation))
