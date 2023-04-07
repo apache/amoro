@@ -21,7 +21,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
 | self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
 | self-optimizing.major.trigger.file-count            | 12               | 触发 major optimizing 的最少文件数量                      |
-| self-optimizing.major.trigger.duplicate-ratio       | 0.2              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
+| self-optimizing.major.trigger.duplicate-ratio       | 0.5              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
 | self-optimizing.major.trigger.interval              | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
 | self-optimizing.full.trigger.interval               | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
 

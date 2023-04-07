@@ -1,19 +1,38 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.spark.sql.execution.datasources.v2
 
+import java.util.UUID
+
+import scala.util.control.NonFatal
+
 import com.netease.arctic.spark.table.ArcticSparkTable
+import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
 import org.apache.spark.sql.connector.catalog._
+import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
 import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, WriterCommitMessage}
 import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.{LongAccumulator, Utils}
-import org.apache.spark.{SparkException, TaskContext}
-
-import java.util.UUID
-import scala.util.control.NonFatal
 
 /**
  * This trait will be removed in 0.5.0,
@@ -28,7 +47,6 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   def validateQuery: SparkPlan
 
   var count: Long = 0L
-
 
   override def output: Seq[Attribute] = Nil
 
@@ -67,8 +85,9 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
     val totalNumRowsAccumulator = new LongAccumulator()
 
     if (rdd.count() != count) {
-      throw new UnsupportedOperationException(s"${table.table().asKeyedTable().primaryKeySpec().toString} " +
-        s"can not be duplicate")
+      throw new UnsupportedOperationException(
+        s"${table.table().asKeyedTable().primaryKeySpec().toString} " +
+          s"can not be duplicate")
     }
 
     logInfo(s"Start processing data source write support: $batchWrite. " +
@@ -86,8 +105,7 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
           messages(index) = commitMessage
           totalNumRowsAccumulator.add(result.numRows)
           batchWrite.onDataWriterCommit(commitMessage)
-        }
-      )
+        })
 
       logInfo(s"Data source write support $batchWrite is committing.")
       batchWrite.commit(messages)
@@ -116,11 +134,10 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   }
 
   protected def writeToTable(
-    catalog: TableCatalog,
-    table: Table,
-    writeOptions: CaseInsensitiveStringMap,
-    ident: Identifier
-  ): Seq[InternalRow] = {
+      catalog: TableCatalog,
+      table: Table,
+      writeOptions: CaseInsensitiveStringMap,
+      ident: Identifier): Seq[InternalRow] = {
     Utils.tryWithSafeFinallyAndFailureCallbacks({
       table match {
         case table: SupportsWrite =>

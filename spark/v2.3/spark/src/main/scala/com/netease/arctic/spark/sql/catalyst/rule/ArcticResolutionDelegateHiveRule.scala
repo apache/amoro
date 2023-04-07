@@ -18,9 +18,12 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
+import java.util.Locale
+
 import com.netease.arctic.spark.source.ArcticSource
 import com.netease.arctic.spark.sql.execution.{CreateArcticTableCommand, DropArcticTableCommand}
 import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
@@ -28,14 +31,11 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{SaveMode, SparkSession}
-
-import java.util.Locale
 
 case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -44,43 +44,44 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
     // create table
     case CreateTable(tableDesc, mode, None)
-      if tableDesc.provider.isDefined
-        && tableDesc.provider.get.equalsIgnoreCase("arctic")
-        && isDatasourceTable(tableDesc) =>
+        if tableDesc.provider.isDefined
+          && tableDesc.provider.get.equalsIgnoreCase("arctic")
+          && isDatasourceTable(tableDesc) =>
       CreateArcticTableCommand(arctic, tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
     // create table as select
     case CreateTable(tableDesc, mode, Some(query))
-      if tableDesc.provider.isDefined
-        && tableDesc.provider.get.equalsIgnoreCase("arctic")
-        && query.resolved && isDatasourceTable(tableDesc) =>
+        if tableDesc.provider.isDefined
+          && tableDesc.provider.get.equalsIgnoreCase("arctic")
+          && query.resolved && isDatasourceTable(tableDesc) =>
       val table = tableDesc.copy(schema = query.schema)
       CreateArcticTableAsSelect(arctic, table, query)
 
     // drop table
     case DropTableCommand(tableName, ifExists, isView, purge)
-      if arctic.isDelegateDropTable(tableName, isView) =>
+        if arctic.isDelegateDropTable(tableName, isView) =>
       DropArcticTableCommand(arctic, tableName, ifExists, purge)
 
     // insert into data source table
-    case i@InsertIntoTable(l: LogicalRelation, _, _, _, _)
-      if l.catalogTable.isDefined && arctic.isDelegateTable(l.catalogTable.get) =>
+    case i @ InsertIntoTable(l: LogicalRelation, _, _, _, _)
+        if l.catalogTable.isDefined && arctic.isDelegateTable(l.catalogTable.get) =>
       createArcticInsert(i, l.catalogTable.get)
 
     // insert into hive table
-    case i@InsertIntoTable(table: HiveTableRelation, _, _, _, _)
-      if arctic.isDelegateTable(table.tableMeta) =>
+    case i @ InsertIntoTable(table: HiveTableRelation, _, _, _, _)
+        if arctic.isDelegateTable(table.tableMeta) =>
       createArcticInsert(i, table.tableMeta)
 
     // scan datasource table
-    case l@LogicalRelation(_, _, table, _) if table.isDefined && arctic.isDelegateTable(table.get) =>
+    case l @ LogicalRelation(_, _, table, _)
+        if table.isDefined && arctic.isDelegateTable(table.get) =>
       val reader = createArcticReader(table.get)
       val output = reader.readSchema()
         .map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
       DataSourceV2Relation(output, reader)
 
     // scan hive table
-    case h@HiveTableRelation(tableMeta, dataCols, partitionCols)
-      if arctic.isDelegateTable(tableMeta) =>
+    case h @ HiveTableRelation(tableMeta, dataCols, partitionCols)
+        if arctic.isDelegateTable(tableMeta) =>
       val reader = createArcticReader(tableMeta)
       val output = reader.readSchema()
         .map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
@@ -90,7 +91,6 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
   def isDatasourceTable(table: CatalogTable): Boolean = {
     table.provider.isDefined && table.provider.get.toLowerCase(Locale.ROOT) != HIVE_PROVIDER
   }
-
 
   def createArcticInsert(i: InsertIntoTable, tableDesc: CatalogTable): LogicalPlan = {
     if (i.ifPartitionNotExists) {
@@ -111,8 +111,9 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
   // add any static value as a literal column
   // part copied from spark-3.0 branch Analyzer.scala
   private def addStaticPartitionColumns(
-                                         schema: StructType, partitionSpec: Map[String, Option[String]],
-                                         query: LogicalPlan): LogicalPlan = {
+      schema: StructType,
+      partitionSpec: Map[String, Option[String]],
+      query: LogicalPlan): LogicalPlan = {
     val staticPartitions = partitionSpec.filter(_._2.isDefined).mapValues(_.get)
     if (staticPartitions.isEmpty) {
       query

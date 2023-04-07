@@ -23,14 +23,15 @@ import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 
-case class CreateArcticTableAsSelect(catalog: TableCatalog,
-                                     tableName: Identifier,
-                                     partitioning: Seq[Transform],
-                                     query: LogicalPlan,
-                                     validateQuery: LogicalPlan,
-                                     properties: Map[String, String],
-                                     writeOptions: Map[String, String],
-                                     ignoreIfExists: Boolean) extends Command with V2CreateTablePlan {
+case class CreateArcticTableAsSelect(
+    catalog: TableCatalog,
+    tableName: Identifier,
+    partitioning: Seq[Transform],
+    query: LogicalPlan,
+    validateQuery: LogicalPlan,
+    properties: Map[String, String],
+    writeOptions: Map[String, String],
+    ignoreIfExists: Boolean) extends Command with V2CreateTablePlan {
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def tableSchema: StructType = query.schema
