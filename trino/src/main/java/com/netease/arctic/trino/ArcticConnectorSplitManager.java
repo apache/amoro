@@ -54,16 +54,13 @@ public class ArcticConnectorSplitManager implements ConnectorSplitManager {
   @Override
   public ConnectorSplitSource getSplits(
       ConnectorTransactionHandle transaction, ConnectorSession session,
-      ConnectorTableHandle table, SplitSchedulingStrategy splitSchedulingStrategy,
-      DynamicFilter dynamicFilter, Constraint constraint) {
+      ConnectorTableHandle table, DynamicFilter dynamicFilter, Constraint constraint) {
     if (table instanceof KeyedTableHandle) {
       return keyedConnectorSplitManager.getSplits(transaction, session,
-          table, splitSchedulingStrategy,
-          dynamicFilter, constraint);
+          table, dynamicFilter, constraint);
     } else {
       return icebergSplitManager.getSplits(transaction, session,
-          table, splitSchedulingStrategy,
-          dynamicFilter, constraint);
+          table, dynamicFilter, constraint);
     }
   }
 }

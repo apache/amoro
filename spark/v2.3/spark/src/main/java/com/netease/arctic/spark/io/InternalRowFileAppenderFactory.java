@@ -41,7 +41,6 @@ import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.AdaptHiveSparkParquetWriters;
 import org.apache.iceberg.spark.data.SparkAvroWriter;
 import org.apache.iceberg.spark.data.SparkOrcWriter;
-import org.apache.iceberg.spark.data.SparkParquetWriters;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -190,7 +189,7 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
                 .build();
           } else {
             return Parquet.write(file)
-                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(dsSchema, msgType))
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(dsSchema, msgType))
                 .setAll(properties)
                 .metricsConfig(metricsConfig)
                 .schema(writeSchema)
@@ -255,7 +254,7 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
                 .buildEqualityWriter();
           } else {
             return Parquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
                 .overwrite()
                 .rowSchema(eqDeleteRowSchema)
                 .withSpec(spec)
@@ -305,7 +304,7 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
                 .buildPositionWriter();
           } else {
             return Parquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
                 .overwrite()
                 .rowSchema(posDeleteRowSchema)
                 .withSpec(spec)

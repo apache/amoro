@@ -34,6 +34,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
 import java.util.HashMap;
@@ -127,10 +128,27 @@ public class ConvertStructUtil {
     Class<?>[] javaClasses = partitionSpec.javaClasses();
     for (int i = 0; i < javaClasses.length; i += 1) {
       PartitionField field = partitionSpec.fields().get(i);
-      String valueString = field.transform().toHumanString(get(partitionData, i, javaClasses[i]));
+      Type type = partitionSpec.partitionType().fields().get(i).type();
+      String valueString = field.transform().toHumanString(type, get(partitionData, i, javaClasses[i]));
       partitionFields.add(new PartitionFieldData(field.name(), valueString));
     }
     return partitionFields;
+  }
+
+  public static String partitionToPath(List<PartitionFieldData> partitionFieldDataList) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < partitionFieldDataList.size(); i++) {
+      if (i > 0) {
+        sb.append("/");
+      }
+      sb.append(partitionFieldDataList.get(i).getName()).append("=")
+          .append(partitionFieldDataList.get(i).getValue());
+    }
+    return sb.toString();
+  }
+
+  public static String partitionToPath(PartitionSpec partitionSpec, StructLike partitionData) {
+    return partitionToPath(partitionFields(partitionSpec, partitionData));
   }
 
   @SuppressWarnings("unchecked")

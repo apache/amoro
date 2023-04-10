@@ -22,8 +22,10 @@ package org.apache.iceberg.flink.source;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.flink.FlinkConfigOptions;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -33,7 +35,8 @@ import java.util.Map;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
- * Copy from Iceberg. only change line 68 and expand the modifier.
+ * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}.
+ * only change line 115 and expand the modifier.
  * Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
@@ -41,41 +44,70 @@ public class ScanContext implements Serializable {
   private static final long serialVersionUID = 1L;
 
   public static final ConfigOption<Long> SNAPSHOT_ID =
-      ConfigOptions.key("snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("snapshot-id").longType().defaultValue(null)
+        .withDescription("Retrieve the full data of the specified snapshot by ID, used for batch scan mode");
 
   public static final ConfigOption<Boolean> CASE_SENSITIVE =
-      ConfigOptions.key("case-sensitive").booleanType().defaultValue(false);
+      ConfigOptions.key("case-sensitive").booleanType().defaultValue(false)
+        .withDescription("Set if column names are case-sensitive");
 
   public static final ConfigOption<Long> AS_OF_TIMESTAMP =
-      ConfigOptions.key("as-of-timestamp").longType().defaultValue(null);
+      ConfigOptions.key("as-of-timestamp").longType().defaultValue(null)
+        .withDescription("Retrieve the full data of the specified snapshot at the given timestamp, " +
+          "used for batch scan mode");
+
+  public static final ConfigOption<StreamingStartingStrategy> STARTING_STRATEGY =
+      ConfigOptions.key("starting-strategy")
+      .enumType(StreamingStartingStrategy.class)
+      .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT)
+        .withDescription("Specific the starting strategy for streaming execution");
+
+  public static final ConfigOption<Long> START_SNAPSHOT_TIMESTAMP =
+      ConfigOptions.key("start-snapshot-timestamp").longType().defaultValue(null)
+        .withDescription("Specific the snapshot timestamp that streaming job starts from");
 
   public static final ConfigOption<Long> START_SNAPSHOT_ID =
-      ConfigOptions.key("start-snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("start-snapshot-id").longType().defaultValue(null)
+        .withDescription("Specific the snapshot id that streaming job starts from");
 
   public static final ConfigOption<Long> END_SNAPSHOT_ID =
-      ConfigOptions.key("end-snapshot-id").longType().defaultValue(null);
+      ConfigOptions.key("end-snapshot-id").longType().defaultValue(null)
+        .withDescription("Specific the snapshot id that streaming job to end");
 
   public static final ConfigOption<Long> SPLIT_SIZE =
-      ConfigOptions.key("split-size").longType().defaultValue(null);
+      ConfigOptions.key("split-size").longType().defaultValue(null)
+        .withDescription("Specific the target size when combining data input splits");
 
   public static final ConfigOption<Integer> SPLIT_LOOKBACK =
-      ConfigOptions.key("split-lookback").intType().defaultValue(null);
+      ConfigOptions.key("split-lookback").intType().defaultValue(null)
+        .withDescription("Specify the number of bins to consider when combining input splits");
 
   public static final ConfigOption<Long> SPLIT_FILE_OPEN_COST =
-      ConfigOptions.key("split-file-open-cost").longType().defaultValue(null);
+      ConfigOptions.key("split-file-open-cost").longType().defaultValue(null)
+        .withDescription("The estimated cost to open a file, used as a minimum weight when combining splits");
 
   public static final ConfigOption<Boolean> STREAMING =
-      ConfigOptions.key("streaming").booleanType().defaultValue(true);
+      ConfigOptions.key("streaming").booleanType().defaultValue(true)
+        .withDescription("Set if job is bounded or unbounded");
 
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
-      ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10));
+      ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10))
+        .withDescription("Specify the time interval for consecutively monitoring newly committed data files");
 
   public static final ConfigOption<Boolean> INCLUDE_COLUMN_STATS =
-      ConfigOptions.key("include-column-stats").booleanType().defaultValue(false);
+      ConfigOptions.key("include-column-stats").booleanType().defaultValue(false)
+        .withDescription("Set if loads the column stats with each file");
+
+  public static final ConfigOption<Integer> MAX_PLANNING_SNAPSHOT_COUNT =
+      ConfigOptions.key("max-planning-snapshot-count").intType().defaultValue(Integer.MAX_VALUE)
+        .withDescription("Specify the max planning snapshot count");
 
   protected final boolean caseSensitive;
+  protected final boolean exposeLocality;
   protected final Long snapshotId;
+  protected final StreamingStartingStrategy startingStrategy;
   protected final Long startSnapshotId;
+  protected final Long startSnapshotTimestamp;
   protected final Long endSnapshotId;
   protected final Long asOfTimestamp;
   protected final Long splitSize;
@@ -89,13 +121,34 @@ public class ScanContext implements Serializable {
   protected final List<Expression> filters;
   protected final long limit;
   protected final boolean includeColumnStats;
+  protected final Integer planParallelism;
+  protected final int maxPlanningSnapshotCount;
 
-  protected ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
-      Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
-      boolean isStreaming, Duration monitorInterval, String nameMapping,
-      Schema schema, List<Expression> filters, long limit, boolean includeColumnStats) {
+  protected ScanContext(
+      boolean caseSensitive,
+      Long snapshotId,
+      StreamingStartingStrategy startingStrategy,
+      Long startSnapshotTimestamp,
+      Long startSnapshotId,
+      Long endSnapshotId,
+      Long asOfTimestamp,
+      Long splitSize,
+      Integer splitLookback,
+      Long splitOpenFileCost,
+      boolean isStreaming,
+      Duration monitorInterval,
+      String nameMapping,
+      Schema schema,
+      List<Expression> filters,
+      long limit,
+      boolean includeColumnStats,
+      boolean exposeLocality,
+      Integer planParallelism,
+      int maxPlanningSnapshotCount) {
     this.caseSensitive = caseSensitive;
     this.snapshotId = snapshotId;
+    this.startingStrategy = startingStrategy;
+    this.startSnapshotTimestamp = startSnapshotTimestamp;
     this.startSnapshotId = startSnapshotId;
     this.endSnapshotId = endSnapshotId;
     this.asOfTimestamp = asOfTimestamp;
@@ -110,6 +163,32 @@ public class ScanContext implements Serializable {
     this.filters = filters;
     this.limit = limit;
     this.includeColumnStats = includeColumnStats;
+    this.exposeLocality = exposeLocality;
+    this.planParallelism = planParallelism;
+    this.maxPlanningSnapshotCount = maxPlanningSnapshotCount;
+
+    validate();
+  }
+
+  private void validate() {
+    if (isStreaming) {
+      if (startingStrategy == StreamingStartingStrategy.INCREMENTAL_FROM_SNAPSHOT_ID) {
+        Preconditions.checkArgument(
+            startSnapshotId != null,
+            "Invalid starting snapshot id for SPECIFIC_START_SNAPSHOT_ID strategy: null");
+        Preconditions.checkArgument(
+            startSnapshotTimestamp == null,
+            "Invalid starting snapshot timestamp for SPECIFIC_START_SNAPSHOT_ID strategy: not null");
+      }
+      if (startingStrategy == StreamingStartingStrategy.INCREMENTAL_FROM_SNAPSHOT_TIMESTAMP) {
+        Preconditions.checkArgument(
+            startSnapshotTimestamp != null,
+            "Invalid starting snapshot timestamp for SPECIFIC_START_SNAPSHOT_TIMESTAMP strategy: null");
+        Preconditions.checkArgument(
+            startSnapshotId == null,
+            "Invalid starting snapshot id for SPECIFIC_START_SNAPSHOT_ID strategy: not null");
+      }
+    }
   }
 
   boolean caseSensitive() {
@@ -118,6 +197,14 @@ public class ScanContext implements Serializable {
 
   Long snapshotId() {
     return snapshotId;
+  }
+
+  StreamingStartingStrategy streamingStartingStrategy() {
+    return startingStrategy;
+  }
+
+  Long startSnapshotTimestamp() {
+    return startSnapshotTimestamp;
   }
 
   Long startSnapshotId() {
@@ -172,7 +259,19 @@ public class ScanContext implements Serializable {
     return includeColumnStats;
   }
 
-  ScanContext copyWithAppendsBetween(long newStartSnapshotId, long newEndSnapshotId) {
+  boolean exposeLocality() {
+    return exposeLocality;
+  }
+
+  Integer planParallelism() {
+    return planParallelism;
+  }
+
+  int maxPlanningSnapshotCount() {
+    return maxPlanningSnapshotCount;
+  }
+
+  ScanContext copyWithAppendsBetween(Long newStartSnapshotId, long newEndSnapshotId) {
     return ScanContext.builder()
         .caseSensitive(caseSensitive)
         .useSnapshotId(null)
@@ -189,6 +288,9 @@ public class ScanContext implements Serializable {
         .filters(filters)
         .limit(limit)
         .includeColumnStats(includeColumnStats)
+        .exposeLocality(exposeLocality)
+        .planParallelism(planParallelism)
+        .maxPlanningSnapshotCount(maxPlanningSnapshotCount)
         .build();
   }
 
@@ -209,6 +311,9 @@ public class ScanContext implements Serializable {
         .filters(filters)
         .limit(limit)
         .includeColumnStats(includeColumnStats)
+        .exposeLocality(exposeLocality)
+        .planParallelism(planParallelism)
+        .maxPlanningSnapshotCount(maxPlanningSnapshotCount)
         .build();
   }
 
@@ -219,6 +324,8 @@ public class ScanContext implements Serializable {
   static class Builder {
     private boolean caseSensitive = CASE_SENSITIVE.defaultValue();
     private Long snapshotId = SNAPSHOT_ID.defaultValue();
+    private StreamingStartingStrategy startingStrategy = STARTING_STRATEGY.defaultValue();
+    private Long startSnapshotTimestamp = START_SNAPSHOT_TIMESTAMP.defaultValue();
     private Long startSnapshotId = START_SNAPSHOT_ID.defaultValue();
     private Long endSnapshotId = END_SNAPSHOT_ID.defaultValue();
     private Long asOfTimestamp = AS_OF_TIMESTAMP.defaultValue();
@@ -232,6 +339,10 @@ public class ScanContext implements Serializable {
     private List<Expression> filters;
     private long limit = -1L;
     private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
+    private boolean exposeLocality;
+    private Integer planParallelism =
+        FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
+    private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
 
     private Builder() {
     }
@@ -243,6 +354,16 @@ public class ScanContext implements Serializable {
 
     Builder useSnapshotId(Long newSnapshotId) {
       this.snapshotId = newSnapshotId;
+      return this;
+    }
+
+    Builder startingStrategy(StreamingStartingStrategy newStartingStrategy) {
+      this.startingStrategy = newStartingStrategy;
+      return this;
+    }
+
+    Builder startSnapshotTimestamp(Long newStartSnapshotTimestamp) {
+      this.startSnapshotTimestamp = newStartSnapshotTimestamp;
       return this;
     }
 
@@ -311,6 +432,21 @@ public class ScanContext implements Serializable {
       return this;
     }
 
+    Builder exposeLocality(boolean newExposeLocality) {
+      this.exposeLocality = newExposeLocality;
+      return this;
+    }
+
+    Builder planParallelism(Integer parallelism) {
+      this.planParallelism = parallelism;
+      return this;
+    }
+
+    Builder maxPlanningSnapshotCount(int newMaxPlanningSnapshotCount) {
+      this.maxPlanningSnapshotCount = newMaxPlanningSnapshotCount;
+      return this;
+    }
+
     Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
@@ -318,6 +454,8 @@ public class ScanContext implements Serializable {
       return this.useSnapshotId(config.get(SNAPSHOT_ID))
           .caseSensitive(config.get(CASE_SENSITIVE))
           .asOfTimestamp(config.get(AS_OF_TIMESTAMP))
+          .startingStrategy(config.get(STARTING_STRATEGY))
+          .startSnapshotTimestamp(config.get(START_SNAPSHOT_TIMESTAMP))
           .startSnapshotId(config.get(START_SNAPSHOT_ID))
           .endSnapshotId(config.get(END_SNAPSHOT_ID))
           .splitSize(config.get(SPLIT_SIZE))
@@ -326,14 +464,32 @@ public class ScanContext implements Serializable {
           .streaming(config.get(STREAMING))
           .monitorInterval(config.get(MONITOR_INTERVAL))
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
-          .includeColumnStats(config.get(INCLUDE_COLUMN_STATS));
+          .includeColumnStats(config.get(INCLUDE_COLUMN_STATS))
+          .maxPlanningSnapshotCount(config.get(MAX_PLANNING_SNAPSHOT_COUNT));
     }
 
     public ScanContext build() {
-      return new ScanContext(caseSensitive, snapshotId, startSnapshotId,
-          endSnapshotId, asOfTimestamp, splitSize, splitLookback,
-          splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-          filters, limit, includeColumnStats);
+      return new ScanContext(
+          caseSensitive,
+          snapshotId,
+          startingStrategy,
+          startSnapshotTimestamp,
+          startSnapshotId,
+          endSnapshotId,
+          asOfTimestamp,
+          splitSize,
+          splitLookback,
+          splitOpenFileCost,
+          isStreaming,
+          monitorInterval,
+          nameMapping,
+          projectedSchema,
+          filters,
+          limit,
+          includeColumnStats,
+          exposeLocality,
+          planParallelism,
+          maxPlanningSnapshotCount);
     }
   }
 }

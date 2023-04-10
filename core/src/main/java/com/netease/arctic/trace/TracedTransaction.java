@@ -34,11 +34,12 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
@@ -125,7 +126,8 @@ public class TracedTransaction implements Transaction {
   @Override
   public RewriteFiles newRewrite() {
     tracer.setAction(DataOperations.REPLACE);
-    return new TracedRewriteFiles(transaction.newRewrite(), new TransactionTracker());
+    return TracedRewriteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
@@ -157,7 +159,8 @@ public class TracedTransaction implements Transaction {
   @Override
   public DeleteFiles newDelete() {
     tracer.setAction(DataOperations.DELETE);
-    return new TracedDeleteFiles(transaction.newDelete(), new TransactionTracker());
+    return TracedDeleteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
@@ -384,11 +387,6 @@ public class TracedTransaction implements Transaction {
     }
 
     @Override
-    public Rollback rollback() {
-      return transactionTable.rollback();
-    }
-
-    @Override
     public ManageSnapshots manageSnapshots() {
       return transactionTable.manageSnapshots();
     }
@@ -411,6 +409,16 @@ public class TracedTransaction implements Transaction {
     @Override
     public LocationProvider locationProvider() {
       return transactionTable.locationProvider();
+    }
+
+    @Override
+    public List<StatisticsFile> statisticsFiles() {
+      return transactionTable.statisticsFiles();
+    }
+
+    @Override
+    public Map<String, SnapshotRef> refs() {
+      return transactionTable.refs();
     }
 
     @Override

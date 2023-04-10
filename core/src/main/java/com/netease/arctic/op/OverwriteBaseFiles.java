@@ -160,7 +160,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
 
       if (conflictDetectionFilter != null && baseTable.currentSnapshot() != null) {
-        overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
+        overwriteFiles.conflictDetectionFilter(conflictDetectionFilter).validateNoConflictingData();
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
       if (this.dynamic) {
