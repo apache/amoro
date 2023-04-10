@@ -400,8 +400,7 @@ public class BaseOptimizeCommit {
         .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
 
     // if full optimize or new DataFiles is empty, can delete DeleteFiles
-    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
-        CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
     }
