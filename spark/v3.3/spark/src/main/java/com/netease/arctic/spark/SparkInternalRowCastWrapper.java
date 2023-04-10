@@ -109,10 +109,10 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     return super.getFloat(ordinal);
   }
 
-  @Override
-  public double getDouble(int ordinal) {
-    return super.getDouble(ordinal);
-  }
+        @Override
+        public double getDouble(int ordinal) {
+          return super.getDouble(ordinal);
+        }
 
   @Override
   public Decimal getDecimal(int ordinal, int precision, int scale) {
@@ -186,11 +186,9 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   public InternalRow setFileOffset(Long fileOffset) {
     List<DataType> dataTypeList = Arrays
         .stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
-    List<Object> rows = new ArrayList<>(dataTypeList.size() + 1);
-    for (int i = 0; i < dataTypeList.size(); i++) {
-      rows.add(row.get(i, dataTypeList.get(i)));
-    }
-    rows.add(fileOffset);
-    return new GenericInternalRow(rows.toArray());
+    List<Object> objectSeq = new ArrayList<>(dataTypeList.size() + 1);
+    row.toSeq(schema).toStream().foreach(objectSeq::add);
+    objectSeq.add(fileOffset);
+    return new GenericInternalRow(objectSeq.toArray());
   }
 }
