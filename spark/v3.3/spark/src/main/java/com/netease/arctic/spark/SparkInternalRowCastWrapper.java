@@ -109,10 +109,10 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     return super.getFloat(ordinal);
   }
 
-        @Override
-        public double getDouble(int ordinal) {
-          return super.getDouble(ordinal);
-        }
+  @Override
+  public double getDouble(int ordinal) {
+    return super.getDouble(ordinal);
+  }
 
   @Override
   public Decimal getDecimal(int ordinal, int precision, int scale) {
