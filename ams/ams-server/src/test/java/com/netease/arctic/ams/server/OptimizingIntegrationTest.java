@@ -119,6 +119,14 @@ public class OptimizingIntegrationTest {
   }
 
   @Test
+  public void testPkTableMajorOptimizeLeftPosDelete() {
+    ArcticTable arcticTable = createArcticTable(TB_13, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    assertTableExist(TB_13);
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    testCase.testPkTableMajorOptimizeLeftPosDelete();
+  }
+
+  @Test
   public void testNoPkTableOptimizing() {
     ArcticTable arcticTable = createArcticTable(TB_3, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned());
     assertTableExist(TB_3);
