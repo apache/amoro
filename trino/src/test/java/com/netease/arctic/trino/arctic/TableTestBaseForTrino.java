@@ -67,7 +67,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
   protected static TemporaryFolder tmp = new TemporaryFolder();
 
-  protected static final MockArcticMetastoreServer AMS = MockArcticMetastoreServer.getInstance();
+  protected static MockArcticMetastoreServer AMS;
 
   protected static final TableIdentifier TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
@@ -141,6 +141,8 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
     testCatalog.dropTable(PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
+    AMS.stopAndCleanUp();
+    AMS = null;
   }
 
   protected List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {

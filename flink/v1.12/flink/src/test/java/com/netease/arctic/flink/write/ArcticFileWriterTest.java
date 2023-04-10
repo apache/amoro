@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
@@ -100,7 +101,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
   public static TaskWriter<RowData> createUnkeyedTaskWriter(Table table, long targetFileSize, FileFormat format,
                                                             RowType rowType) {
     TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
-        SerializableTable.copyOf(table), rowType, targetFileSize, format, null, false);
+        SerializableTable.copyOf(table), rowType, targetFileSize, format, new HashMap<>(), null, false);
     taskWriterFactory.initialize(1, 1);
     return taskWriterFactory.create();
   }

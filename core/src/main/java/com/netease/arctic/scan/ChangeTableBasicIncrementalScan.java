@@ -40,6 +40,7 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 
 public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalScan {
 
@@ -118,6 +119,11 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   @Override
+  public TableScan planWith(ExecutorService executorService) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public TableScan appendsBetween(long fromSnapshotId, long toSnapshotId) {
     throw new UnsupportedOperationException();
   }
@@ -148,7 +154,8 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   @Override
   public CloseableIterable<FileScanTask> planFiles() {
     return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
-        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(((DataFile) fileWithSequence),
+        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(
+            ((DataFile) fileWithSequence),
             fileWithSequence.getSequenceNumber()), null, table.spec(), null)
     );
   }
@@ -158,8 +165,9 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
     return planFilesWithSequence(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
   }
 
-  private CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence(PartitionDataFilter shouldKeepFile,
-                                                    PartitionDataFilter shouldKeepFileWithLegacyTxId) {
+  private CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence(
+      PartitionDataFilter shouldKeepFile,
+      PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
@@ -183,13 +191,15 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
       Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);
       if (shouldKeep == null) {
         String filePath = entry.getFile().path().toString();
-        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameGenerator.parseChange(filePath,
+        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameGenerator.parseChange(
+            filePath,
             sequenceNumber).transactionId());
       } else {
         return shouldKeep;
       }
     });
-    return CloseableIterable.transform(filteredEntry,
+    return CloseableIterable.transform(
+        filteredEntry,
         e -> WrapFileWithSequenceNumberHelper.wrap(e.getFile(), e.getSequenceNumber()));
   }
 

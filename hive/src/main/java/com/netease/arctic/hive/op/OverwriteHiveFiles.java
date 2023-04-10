@@ -22,30 +22,21 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-import java.util.function.Consumer;
-
-import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
-
 public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implements OverwriteFiles {
-
-  private final OverwriteFiles delegate;
 
   public OverwriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
                             HMSClientPool hmsClient, HMSClientPool transactionClient) {
-    super(transaction, insideTransaction, table, hmsClient, transactionClient);
-    this.delegate = transaction.newOverwrite();
+    super(transaction, insideTransaction, table, transaction.newOverwrite(), hmsClient, transactionClient);
   }
 
   @Override
-  SnapshotUpdate<?> getSnapshotUpdateDelegate() {
-    return delegate;
+  protected OverwriteFiles self() {
+    return this;
   }
 
   @Override
@@ -100,12 +91,6 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   }
 
   @Override
-  public OverwriteFiles validateNoConflictingAppends(Expression conflictDetectionFilter) {
-    delegate.validateNoConflictingAppends(conflictDetectionFilter);
-    return this;
-  }
-
-  @Override
   public OverwriteFiles conflictDetectionFilter(Expression conflictDetectionFilter) {
     delegate.conflictDetectionFilter(conflictDetectionFilter);
     return this;
@@ -121,45 +106,5 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   public OverwriteFiles validateNoConflictingDeletes() {
     delegate.validateNoConflictingDeletes();
     return this;
-  }
-
-  @Override
-  public OverwriteFiles set(String property, String value) {
-    if (PROPERTIES_TRANSACTION_ID.equals(property)) {
-      this.txId = Long.parseLong(value);
-    }
-
-    if (PROPERTIES_VALIDATE_LOCATION.equals(property)) {
-      this.validateLocation = Boolean.parseBoolean(value);
-    }
-
-    if (DELETE_UNTRACKED_HIVE_FILE.equals(property)) {
-      this.checkOrphanFiles = Boolean.parseBoolean(value);
-    }
-
-    delegate.set(property, value);
-    return this;
-  }
-
-  @Override
-  public OverwriteFiles deleteWith(Consumer<String> deleteFunc) {
-    delegate.deleteWith(deleteFunc);
-    return this;
-  }
-
-  @Override
-  public OverwriteFiles stageOnly() {
-    delegate.stageOnly();
-    return this;
-  }
-
-  @Override
-  public Snapshot apply() {
-    return delegate.apply();
-  }
-
-  @Override
-  public Object updateEvent() {
-    return delegate.updateEvent();
   }
 }

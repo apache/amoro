@@ -23,7 +23,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -53,7 +52,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
@@ -77,6 +75,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.utils.ConvertStructUtil.partitionToPath;
 
 public class FileInfoCacheService extends IJDBCService {
 
@@ -601,41 +601,38 @@ public class FileInfoCacheService extends IJDBCService {
     ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
     ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
         identifier.getDatabase(), identifier.getTableName()));
-    List<DeleteFile> addFiles = new ArrayList<>();
-    List<DeleteFile> deleteFiles = new ArrayList<>();
     Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
-    SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
-    snapshot.addedFiles().forEach(f -> {
+    snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
-          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          partitionToPath(arcticTable.spec(), f.partition()),
           getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
     });
-    snapshot.deletedFiles().forEach(f -> {
+    snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
-          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          partitionToPath(arcticTable.spec(), f.partition()),
           getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "remove"));
     });
-    addFiles.forEach(f -> {
+    snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
-          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          partitionToPath(arcticTable.spec(), f.partition()),
           getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
     });
-    deleteFiles.forEach(f -> {
+    snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
-          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          partitionToPath(arcticTable.spec(), f.partition()),
           getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
@@ -669,18 +666,6 @@ public class FileInfoCacheService extends IJDBCService {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getPartitionFileList(tableIdentifier, partition);
     }
-  }
-
-  private String partitionToPath(List<PartitionFieldData> partitionFieldDataList) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < partitionFieldDataList.size(); i++) {
-      if (i > 0) {
-        sb.append("/");
-      }
-      sb.append(partitionFieldDataList.get(i).getName()).append("=")
-          .append(partitionFieldDataList.get(i).getValue());
-    }
-    return sb.toString();
   }
 
   public static class SyncAndExpireFileCacheTask {

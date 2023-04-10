@@ -18,11 +18,10 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
@@ -386,7 +385,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         DataWriter<Record> writer = appenderFactory
             .newDataWriter(outputFile, FileFormat.PARQUET, partitionData);
         for (Record record : baseRecords(1, 100, opTime)) {
-          writer.add(record);
+          writer.write(record);
         }
         writer.close();
         return writer.toDataFile();

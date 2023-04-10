@@ -21,7 +21,7 @@ package com.netease.arctic.trino;
 import com.google.inject.Inject;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.table.TableMetaStore;
-import io.trino.plugin.hive.authentication.HadoopAuthentication;
+import io.trino.hdfs.authentication.HadoopAuthentication;
 import org.apache.hadoop.security.UserGroupInformation;
 
 /**

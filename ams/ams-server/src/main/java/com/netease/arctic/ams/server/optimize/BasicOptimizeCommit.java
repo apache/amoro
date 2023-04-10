@@ -441,7 +441,7 @@ public class BasicOptimizeCommit {
 
     Set<String> committedFilePath = new HashSet<>();
     for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
-      for (DataFile dataFile : snapshot.addedFiles()) {
+      for (DataFile dataFile : snapshot.addedDataFiles(table.io())) {
         committedFilePath.add(TableFileUtils.getUriPath(dataFile.path().toString()));
       }
     }

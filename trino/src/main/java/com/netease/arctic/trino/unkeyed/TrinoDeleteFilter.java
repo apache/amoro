@@ -19,8 +19,8 @@
 package com.netease.arctic.trino.unkeyed;
 
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
+import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
-import io.trino.plugin.iceberg.delete.TrinoRow;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;

@@ -18,29 +18,23 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import com.google.common.collect.ImmutableList;
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
-import io.airlift.slice.Slice;
+import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.hive.ReaderProjectionsAdapter;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.delete.IcebergPositionDeletePageSink;
-import io.trino.plugin.iceberg.delete.TrinoRow;
 import io.trino.spi.Page;
 import io.trino.spi.TrinoException;
-import io.trino.spi.block.Block;
 import io.trino.spi.connector.ConnectorPageSource;
-import io.trino.spi.connector.UpdatablePageSource;
 import io.trino.spi.type.Type;
 import org.apache.iceberg.io.CloseableIterable;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -53,7 +47,7 @@ import static java.util.Objects.requireNonNull;
  * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table type.
  */
 public class IcebergPageSource
-    implements UpdatablePageSource {
+    implements ConnectorPageSource {
   private final Type[] columnTypes;
   private final int[] expectedColumnIndexes;
   private final ConnectorPageSource delegate;
@@ -144,29 +138,6 @@ public class IcebergPageSource
       closeWithSuppression(e);
       throwIfInstanceOf(e, TrinoException.class);
       throw new TrinoException(ICEBERG_BAD_DATA, e);
-    }
-  }
-
-  @Override
-  public void deleteRows(Block rowIds) {
-    if (positionDeleteSink == null) {
-      positionDeleteSink = positionDeleteSinkSupplier.get();
-    }
-    positionDeleteSink.appendPage(new Page(rowIds));
-  }
-
-  @Override
-  public CompletableFuture<Collection<Slice>> finish() {
-    if (positionDeleteSink != null) {
-      return positionDeleteSink.finish();
-    }
-    return CompletableFuture.completedFuture(ImmutableList.of());
-  }
-
-  @Override
-  public void abort() {
-    if (positionDeleteSink != null) {
-      positionDeleteSink.abort();
     }
   }
 

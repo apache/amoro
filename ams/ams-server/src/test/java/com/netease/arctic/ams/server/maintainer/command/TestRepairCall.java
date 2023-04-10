@@ -126,7 +126,7 @@ public class TestRepairCall extends CallCommandTestBase {
 
   private boolean manifestExists(String path, Table table) {
     table.refresh();
-    return table.currentSnapshot().allManifests()
+    return table.currentSnapshot().allManifests(table.io())
         .stream().filter(s -> s.path().equals(path)).count() != 0;
   }
 }

@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.ImmutableMap;
+import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import io.trino.testing.QueryRunner;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
@@ -31,6 +32,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
+    AMS = MockArcticMetastoreServer.getInstance();
     // setupAMS();
     tmp.create();
     setupTables();
@@ -94,7 +96,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
                     "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
-  @AfterClass
+  @AfterClass(alwaysRun = true)
   public void clear(){
     clearTable();
   }
