@@ -44,7 +44,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -149,8 +148,8 @@ public class TableEntriesScan {
       return this;
     }
 
-    public Builder withMetadataTableType(MetadataTableType metadataTableType) {
-      this.metadataTableType = metadataTableType;
+    public Builder allEntries() {
+      this.metadataTableType = MetadataTableType.ALL_ENTRIES;
       return this;
     }
 
@@ -160,10 +159,10 @@ public class TableEntriesScan {
     }
   }
 
-
-  public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent, boolean includeColumnStats,
-                          Schema schema, MetadataTableType metadataTableType) {
+  private TableEntriesScan(
+      Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
+      Set<FileContent> validFileContent, boolean includeColumnStats,
+      Schema schema, MetadataTableType metadataTableType) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -171,7 +170,7 @@ public class TableEntriesScan {
     this.validFileContent = validFileContent;
     this.snapshotId = snapshotId;
     this.includeColumnStats = includeColumnStats;
-    this.schema  = schema;
+    this.schema = schema;
     this.metadataTableType = metadataTableType;
   }
 
@@ -220,7 +219,6 @@ public class TableEntriesScan {
     }
     return this.entriesTable;
   }
-
 
   private FileContent getFileContent(int contentId) {
     for (FileContent content : FileContent.values()) {
@@ -305,7 +303,8 @@ public class TableEntriesScan {
 
   @SuppressWarnings("unchecked")
   private Metrics buildMetrics(StructLike dataFile) {
-    return new Metrics(dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
+    return new Metrics(
+        dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
         (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
         (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
         (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
@@ -361,5 +360,4 @@ public class TableEntriesScan {
       return true;
     }
   }
-
 }

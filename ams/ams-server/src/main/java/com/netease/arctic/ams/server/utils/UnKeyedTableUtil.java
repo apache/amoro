@@ -54,7 +54,7 @@ public class UnKeyedTableUtil {
 
     TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES)
-        .withMetadataTableType(MetadataTableType.ALL_ENTRIES).build();
+        .allEntries().build();
     for (IcebergFileEntry entry : manifestReader.entries()) {
       validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
     }
