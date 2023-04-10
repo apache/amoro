@@ -21,8 +21,9 @@ package com.netease.arctic.trino;
 import com.netease.arctic.trino.keyed.KeyedConnectorMetadata;
 import com.netease.arctic.trino.unkeyed.IcebergMetadata;
 import io.airlift.json.JsonCodec;
-import io.trino.plugin.hive.HdfsEnvironment;
+import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.plugin.iceberg.CommitTaskData;
+import io.trino.plugin.iceberg.TableStatisticsWriter;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.type.TypeManager;
 
@@ -36,7 +37,8 @@ import static java.util.Objects.requireNonNull;
 public class ArcticMetadataFactory {
   private final TypeManager typeManager;
   private final JsonCodec<CommitTaskData> commitTaskCodec;
-  private final HdfsEnvironment hdfsEnvironment;
+  private final TrinoFileSystemFactory fileSystemFactory;
+  private final TableStatisticsWriter tableStatisticsWriter;
   private final ArcticCatalogFactory arcticCatalogFactory;
   private final TrinoCatalogFactory arcticTrinoCatalogFactory;
 
@@ -44,19 +46,21 @@ public class ArcticMetadataFactory {
   public ArcticMetadataFactory(
       TypeManager typeManager,
       JsonCodec<CommitTaskData> commitTaskCodec,
-      HdfsEnvironment hdfsEnvironment,
+      TrinoFileSystemFactory fileSystemFactory,
+      TableStatisticsWriter tableStatisticsWriter,
       ArcticCatalogFactory arcticCatalogFactory,
       TrinoCatalogFactory arcticTrinoCatalogFactory) {
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
     this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
-    this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
+    this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
+    this.tableStatisticsWriter = requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
     this.arcticCatalogFactory = arcticCatalogFactory;
     this.arcticTrinoCatalogFactory = arcticTrinoCatalogFactory;
   }
 
   public ArcticConnectorMetadata create() {
     IcebergMetadata icebergMetadata = new IcebergMetadata(typeManager, commitTaskCodec,
-        arcticTrinoCatalogFactory.create(null), hdfsEnvironment);
+        arcticTrinoCatalogFactory.create(null), fileSystemFactory, tableStatisticsWriter);
     KeyedConnectorMetadata arcticConnectorMetadata =
         new KeyedConnectorMetadata(arcticCatalogFactory.getArcticCatalog(), typeManager);
     return new ArcticConnectorMetadata(

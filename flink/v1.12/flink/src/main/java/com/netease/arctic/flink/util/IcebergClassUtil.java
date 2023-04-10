@@ -40,11 +40,14 @@ import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.StreamingReaderOperator;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.util.ThreadPools;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An util generates Apache Iceberg writer and committer operator w
@@ -72,9 +75,10 @@ public class IcebergClassUtil {
       TableLoader tableLoader, boolean replacePartitions) {
     try {
       Class<?> clazz = forName(ICEBERG_FILE_COMMITTER_CLASS);
-      Constructor<?> c = clazz.getDeclaredConstructor(TableLoader.class, boolean.class);
+      Constructor<?> c = clazz.getDeclaredConstructor(TableLoader.class, boolean.class, Map.class, Integer.class);
       c.setAccessible(true);
-      return (OneInputStreamOperator<WriteResult, Void>) c.newInstance(tableLoader, replacePartitions);
+      return (OneInputStreamOperator<WriteResult, Void>) c.newInstance(
+        tableLoader, replacePartitions, new HashMap<>(), ThreadPools.WORKER_THREAD_POOL_SIZE);
     } catch (NoSuchMethodException | IllegalAccessException |
         InvocationTargetException | InstantiationException e) {
       throw new RuntimeException(e);

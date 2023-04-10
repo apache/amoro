@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,22 +18,22 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser.{NonReservedContext, QuotedIdentifierContext}
+import java.util.Locale
+
 import com.netease.arctic.spark.sql.parser.{ArcticSparkSqlBaseListener, ArcticSparkSqlLexer, ArcticSparkSqlParser}
+import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser.{NonReservedContext, QuotedIdentifierContext}
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{DataType, StructType}
-
-import java.util.Locale
 
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface {
 
@@ -82,7 +82,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def isArcticExtendSparkStatement(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-     normalized.contains("create table") && normalized.contains("using arctic")
+    normalized.contains("create table") && normalized.contains("using arctic")
   }
 
   def buildLexer(sql: String): Option[Lexer] = {
@@ -129,8 +129,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
           // first, try parsing with potentially faster SLL mode
           parser.getInterpreter.setPredictionMode(PredictionMode.SLL)
           toLogicalResult(parser)
-        }
-        catch {
+        } catch {
           case _: ParseCancellationException =>
             // if we fail, parse with LL mode
             tokenStream.seek(0) // rewind input stream
@@ -201,9 +200,9 @@ case object ArcticSqlExtensionsPostProcessor extends ArcticSparkSqlBaseListener 
   }
 
   private def replaceTokenByIdentifier(
-                                        ctx: ParserRuleContext,
-                                        stripMargins: Int)(
-                                        f: CommonToken => CommonToken = identity): Unit = {
+      ctx: ParserRuleContext,
+      stripMargins: Int)(
+      f: CommonToken => CommonToken = identity): Unit = {
     val parent = ctx.getParent
     parent.removeLastChild()
     val token = ctx.getChild(0).getPayload.asInstanceOf[Token]
@@ -220,12 +219,12 @@ case object ArcticSqlExtensionsPostProcessor extends ArcticSparkSqlBaseListener 
 /* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
 case object ArcticParseErrorListener extends BaseErrorListener {
   override def syntaxError(
-                            recognizer: Recognizer[_, _],
-                            offendingSymbol: scala.Any,
-                            line: Int,
-                            charPositionInLine: Int,
-                            msg: String,
-                            e: RecognitionException): Unit = {
+      recognizer: Recognizer[_, _],
+      offendingSymbol: scala.Any,
+      line: Int,
+      charPositionInLine: Int,
+      msg: String,
+      e: RecognitionException): Unit = {
     val (start, stop) = offendingSymbol match {
       case token: CommonToken =>
         val start = Origin(Some(line), Some(token.getCharPositionInLine))
@@ -238,5 +237,3 @@ case object ArcticParseErrorListener extends BaseErrorListener {
     }
   }
 }
-
-

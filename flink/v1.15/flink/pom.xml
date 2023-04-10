@@ -16,17 +16,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
+        <artifactId>arctic-flink</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-flink-1.15</artifactId>
     <name>Arctic Project Flink 1.15</name>
@@ -60,7 +58,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -191,7 +189,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -310,8 +308,8 @@
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
-            <classifier>tests</classifier>
             <version>${project.version}</version>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
@@ -319,10 +317,9 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>org.apache.flink</groupId>

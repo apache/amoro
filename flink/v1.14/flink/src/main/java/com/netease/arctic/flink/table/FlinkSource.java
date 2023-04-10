@@ -187,14 +187,14 @@ public class FlinkSource {
     public DataStream<RowData> buildUnkeyedTableSource() {
       DataStream<RowData> origin = org.apache.iceberg.flink.source.FlinkSource.forRowData()
           .env(env)
-          .project(projectedSchema)
+          .project(filterWatermark(projectedSchema))
           .tableLoader(tableLoader)
           .filters(filters)
           .properties(properties)
           .flinkConf(flinkConf)
           .limit(limit)
           .build();
-      return wrapKrb(origin);
+      return wrapKrb(origin).assignTimestampsAndWatermarks(watermarkStrategy);
     }
 
     /**

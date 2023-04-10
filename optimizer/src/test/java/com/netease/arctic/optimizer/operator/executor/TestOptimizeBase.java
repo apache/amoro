@@ -18,14 +18,13 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.UnkeyedTable;
@@ -54,15 +53,16 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId,
-                                                  List<DataFileInfo> baseDataFilesInfo) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(
+      ArcticTable arcticTable, Long transactionId,
+      List<DataFileInfo> baseDataFilesInfo) throws IOException {
     Supplier<TaskWriter<Record>> writerSupplier = () ->
         arcticTable.isKeyedTable() ?
-        AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-            .withTransactionId(transactionId)
-            .buildWriter(BaseLocationKind.INSTANT) :
-        AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-            .buildWriter(BaseLocationKind.INSTANT);
+            AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+                .withTransactionId(transactionId)
+                .buildWriter(BaseLocationKind.INSTANT) :
+            AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+                .buildWriter(BaseLocationKind.INSTANT);
 
     List<DataFile> baseDataFiles = insertBaseDataFiles(writerSupplier, arcticTable.schema());
 
@@ -75,14 +75,15 @@ public interface TestOptimizeBase {
 
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable,
-            Constants.INNER_TABLE_BASE))
+            false))
         .collect(Collectors.toList()));
     return baseDataFiles;
   }
 
-  default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
-                                                       OptimizeType optimizeType,
-                                                       Long transactionId) throws IOException {
+  default List<DataFile> insertOptimizeTargetDataFiles(
+      ArcticTable arcticTable,
+      OptimizeType optimizeType,
+      Long transactionId) throws IOException {
     WriteOperationKind writeOperationKind = getWriteOperationKind(optimizeType);
 
     Supplier<TaskWriter<Record>> writerSupplier = () -> arcticTable.isKeyedTable() ?
@@ -92,7 +93,7 @@ public interface TestOptimizeBase {
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .buildWriter(writeOperationKind);
 
-    return insertBaseDataFiles(writerSupplier , arcticTable.schema());
+    return insertBaseDataFiles(writerSupplier, arcticTable.schema());
   }
 
   default WriteOperationKind getWriteOperationKind(OptimizeType optimizeType) {
@@ -107,10 +108,11 @@ public interface TestOptimizeBase {
     throw new IllegalStateException("unknown kind optimize");
   }
 
-  default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    Long transactionId,
-                                                    List<DataFileInfo> baseDataFilesInfo,
-                                                    List<DataFileInfo> posDeleteFilesInfo) throws IOException {
+  default List<DeleteFile> insertBasePosDeleteFiles(
+      ArcticTable arcticTable,
+      Long transactionId,
+      List<DataFileInfo> baseDataFilesInfo,
+      List<DataFileInfo> posDeleteFilesInfo) throws IOException {
     List<DataFile> dataFiles = insertTableBaseDataFiles(arcticTable, transactionId - 1, baseDataFilesInfo);
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -150,9 +152,10 @@ public interface TestOptimizeBase {
     return deleteFiles;
   }
 
-  default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,
-                                                           List<DataFile> dataFiles,
-                                                           Long transactionId) throws IOException {
+  default List<DeleteFile> insertOptimizeTargetDeleteFiles(
+      ArcticTable arcticTable,
+      List<DataFile> dataFiles,
+      Long transactionId) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -180,7 +183,8 @@ public interface TestOptimizeBase {
     return deleteFiles;
   }
 
-  default List<DataFile> insertBaseDataFiles(Supplier<TaskWriter<Record>> writerSupplier, Schema schema) throws IOException {
+  default List<DataFile> insertBaseDataFiles(Supplier<TaskWriter<Record>> writerSupplier, Schema schema)
+      throws IOException {
     List<DataFile> baseDataFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;

@@ -25,16 +25,14 @@ import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.utils.ManifestEntryFields;
+import com.netease.arctic.scan.TableEntriesScan;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.RowDelta;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
@@ -44,6 +42,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskWriterTest extends TableTestBase {
 
@@ -79,22 +78,24 @@ public class TaskWriterTest extends TableTestBase {
     rowDelta.commit();
 
     // check lower bounds and upper bounds of file_path
-    HadoopTables tables = new HadoopTables();
-    Table entriesTable = tables.load(getArcticTable().asKeyedTable().baseTable().location() + "#ENTRIES");
-    IcebergGenerics.read(entriesTable)
-        .build()
-        .forEach(record -> {
-          GenericRecord fileRecord = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
-          Map<Integer, ByteBuffer> lowerBounds =
-              (Map<Integer, ByteBuffer>) fileRecord.getField(DataFile.LOWER_BOUNDS.name());
-          String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
-          Map<Integer, ByteBuffer> upperBounds =
-              (Map<Integer, ByteBuffer>) fileRecord.getField(DataFile.UPPER_BOUNDS.name());
-          String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+    TableEntriesScan entriesScan = TableEntriesScan.builder(getArcticTable().asKeyedTable().baseTable())
+        .includeColumnStats()
+        .includeFileContent(FileContent.POSITION_DELETES)
+        .build();
+    AtomicInteger cnt = new AtomicInteger();
+    entriesScan.entries().forEach(entry -> {
+      cnt.getAndIncrement();
+      ContentFile<?> file = entry.getFile();
+      Map<Integer, ByteBuffer> lowerBounds = file.lowerBounds();
+      Map<Integer, ByteBuffer> upperBounds = file.upperBounds();
 
-          Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
-          Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
-        });
+      String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+      String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+
+      Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
+      Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
+    });
+    Assert.assertEquals(1, cnt.get());
   }
 
   @Test

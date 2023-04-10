@@ -55,6 +55,11 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
+  public InputFile newInputFile(String path, long length) {
+    return tableMetaStore.doAs(() -> super.newInputFile(path, length));
+  }
+
+  @Override
   public OutputFile newOutputFile(String path) {
     return tableMetaStore.doAs(() -> super.newOutputFile(path));
   }

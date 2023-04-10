@@ -23,11 +23,11 @@ import org.apache.spark.sql.catalyst.expressions.{AttributeReference, AttributeS
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.execution.datasources.v2.PushDownUtils
 
-trait ArcticRewriteHelper extends PredicateHelper with Logging{
+trait ArcticRewriteHelper extends PredicateHelper with Logging {
   def pushFilter(
-                           scanBuilder: ScanBuilder,
-                           cond: Expression,
-                           tableAttrs: Seq[AttributeReference]): Unit = {
+      scanBuilder: ScanBuilder,
+      cond: Expression,
+      tableAttrs: Seq[AttributeReference]): Unit = {
     val predicates = extractFilters(cond, tableAttrs)
     if (predicates.nonEmpty) {
       val normalizedPredicates = normalizeExprs(predicates, tableAttrs)
@@ -35,12 +35,16 @@ trait ArcticRewriteHelper extends PredicateHelper with Logging{
     }
   }
 
-  private def extractFilters(cond: Expression, tableAttrs: Seq[AttributeReference]): Seq[Expression] = {
+  private def extractFilters(
+      cond: Expression,
+      tableAttrs: Seq[AttributeReference]): Seq[Expression] = {
     val tableAttrSet = AttributeSet(tableAttrs)
     splitConjunctivePredicates(cond).filter(_.references.subsetOf(tableAttrSet))
   }
 
-  def normalizeExprs(exprs: Seq[Expression], attributes: Seq[AttributeReference]): Seq[Expression] = {
+  def normalizeExprs(
+      exprs: Seq[Expression],
+      attributes: Seq[AttributeReference]): Seq[Expression] = {
     exprs.map { e =>
       e transform {
         case a: AttributeReference =>

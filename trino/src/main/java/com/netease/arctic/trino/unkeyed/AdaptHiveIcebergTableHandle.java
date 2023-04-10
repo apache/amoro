@@ -20,6 +20,7 @@ package com.netease.arctic.trino.unkeyed;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.units.DataSize;
@@ -29,6 +30,7 @@ import io.trino.plugin.iceberg.TableType;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.predicate.TupleDomain;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -42,10 +44,15 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
   private final TableType tableType;
   private final Optional<Long> snapshotId;
   private final String tableSchemaJson;
+  // Empty means the partitioning spec is not known (can be the case for certain time travel queries).
+  private final Optional<String> partitionSpecJson;
   private final int formatVersion;
   private final String tableLocation;
   private final Map<String, String> storageProperties;
   private final RetryMode retryMode;
+
+  // UPDATE only
+  private final List<IcebergColumnHandle> updatedColumns;
 
   // Filter used during split generation and table scan, but not required to be strictly enforced by Iceberg Connector
   private final TupleDomain<IcebergColumnHandle> unenforcedPredicate;
@@ -61,12 +68,13 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
   private final Optional<DataSize> maxScannedFileSize;
 
   @JsonCreator
-  public AdaptHiveIcebergTableHandle(
+  public static AdaptHiveIcebergTableHandle fromJsonForDeserializationOnly(
       @JsonProperty("schemaName") String schemaName,
       @JsonProperty("tableName") String tableName,
       @JsonProperty("tableType") TableType tableType,
       @JsonProperty("snapshotId") Optional<Long> snapshotId,
       @JsonProperty("tableSchemaJson") String tableSchemaJson,
+      @JsonProperty("partitionSpecJson") Optional<String> partitionSpecJson,
       @JsonProperty("formatVersion") int formatVersion,
       @JsonProperty("unenforcedPredicate") TupleDomain<IcebergColumnHandle> unenforcedPredicate,
       @JsonProperty("enforcedPredicate") TupleDomain<IcebergColumnHandle> enforcedPredicate,
@@ -74,60 +82,15 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
       @JsonProperty("nameMappingJson") Optional<String> nameMappingJson,
       @JsonProperty("tableLocation") String tableLocation,
       @JsonProperty("storageProperties") Map<String, String> storageProperties,
-      @JsonProperty("retryMode") RetryMode retryMode) {
-    super(
+      @JsonProperty("retryMode") RetryMode retryMode,
+      @JsonProperty("updatedColumns") List<IcebergColumnHandle> updatedColumns) {
+    return new AdaptHiveIcebergTableHandle(
         schemaName,
         tableName,
         tableType,
         snapshotId,
         tableSchemaJson,
-        formatVersion,
-        unenforcedPredicate,
-        enforcedPredicate,
-        projectedColumns,
-        nameMappingJson,
-        tableLocation,
-        storageProperties,
-        retryMode);
-    this.schemaName = requireNonNull(schemaName, "schemaName is null");
-    this.tableName = requireNonNull(tableName, "tableName is null");
-    this.tableType = requireNonNull(tableType, "tableType is null");
-    this.snapshotId = requireNonNull(snapshotId, "snapshotId is null");
-    this.tableSchemaJson = requireNonNull(tableSchemaJson, "schemaJson is null");
-    this.formatVersion = formatVersion;
-    this.unenforcedPredicate = requireNonNull(unenforcedPredicate, "unenforcedPredicate is null");
-    this.enforcedPredicate = requireNonNull(enforcedPredicate, "enforcedPredicate is null");
-    this.projectedColumns = ImmutableSet.copyOf(requireNonNull(projectedColumns, "projectedColumns is null"));
-    this.nameMappingJson = requireNonNull(nameMappingJson, "nameMappingJson is null");
-    this.tableLocation = requireNonNull(tableLocation, "tableLocation is null");
-    this.storageProperties = ImmutableMap.copyOf(requireNonNull(storageProperties, "storageProperties is null"));
-    this.retryMode = requireNonNull(retryMode, "retryMode is null");
-    recordScannedFiles = false;
-    maxScannedFileSize = Optional.empty();
-  }
-
-  public AdaptHiveIcebergTableHandle(
-      String schemaName,
-      String tableName,
-      TableType tableType,
-      Optional<Long> snapshotId,
-      String tableSchemaJson,
-      int formatVersion,
-      TupleDomain<IcebergColumnHandle> unenforcedPredicate,
-      TupleDomain<IcebergColumnHandle> enforcedPredicate,
-      Set<IcebergColumnHandle> projectedColumns,
-      Optional<String> nameMappingJson,
-      String tableLocation,
-      Map<String, String> storageProperties,
-      RetryMode retryMode,
-      boolean recordScannedFiles,
-      Optional<DataSize> maxScannedFileSize) {
-    super(
-        schemaName,
-        tableName,
-        tableType,
-        snapshotId,
-        tableSchemaJson,
+        partitionSpecJson,
         formatVersion,
         unenforcedPredicate,
         enforcedPredicate,
@@ -136,6 +99,45 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableLocation,
         storageProperties,
         retryMode,
+        updatedColumns,
+        false,
+        Optional.empty());
+  }
+
+  public AdaptHiveIcebergTableHandle(
+      String schemaName,
+      String tableName,
+      TableType tableType,
+      Optional<Long> snapshotId,
+      String tableSchemaJson,
+      Optional<String> partitionSpecJson,
+      int formatVersion,
+      TupleDomain<IcebergColumnHandle> unenforcedPredicate,
+      TupleDomain<IcebergColumnHandle> enforcedPredicate,
+      Set<IcebergColumnHandle> projectedColumns,
+      Optional<String> nameMappingJson,
+      String tableLocation,
+      Map<String, String> storageProperties,
+      RetryMode retryMode,
+      List<IcebergColumnHandle> updatedColumns,
+      boolean recordScannedFiles,
+      Optional<DataSize> maxScannedFileSize) {
+    super(
+        schemaName,
+        tableName,
+        tableType,
+        snapshotId,
+        tableSchemaJson,
+        partitionSpecJson,
+        formatVersion,
+        unenforcedPredicate,
+        enforcedPredicate,
+        projectedColumns,
+        nameMappingJson,
+        tableLocation,
+        storageProperties,
+        retryMode,
+        updatedColumns,
         recordScannedFiles,
         maxScannedFileSize);
     this.schemaName = requireNonNull(schemaName, "schemaName is null");
@@ -143,6 +145,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
     this.tableType = requireNonNull(tableType, "tableType is null");
     this.snapshotId = requireNonNull(snapshotId, "snapshotId is null");
     this.tableSchemaJson = requireNonNull(tableSchemaJson, "schemaJson is null");
+    this.partitionSpecJson = requireNonNull(partitionSpecJson, "partitionSpecJson is null");
     this.formatVersion = formatVersion;
     this.unenforcedPredicate = requireNonNull(unenforcedPredicate, "unenforcedPredicate is null");
     this.enforcedPredicate = requireNonNull(enforcedPredicate, "enforcedPredicate is null");
@@ -151,6 +154,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
     this.tableLocation = requireNonNull(tableLocation, "tableLocation is null");
     this.storageProperties = ImmutableMap.copyOf(requireNonNull(storageProperties, "storageProperties is null"));
     this.retryMode = requireNonNull(retryMode, "retryMode is null");
+    this.updatedColumns = ImmutableList.copyOf(requireNonNull(updatedColumns, "updatedColumns is null"));
     this.recordScannedFiles = recordScannedFiles;
     this.maxScannedFileSize = requireNonNull(maxScannedFileSize, "maxScannedFileSize is null");
   }
@@ -163,6 +167,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableType,
         snapshotId,
         tableSchemaJson,
+        partitionSpecJson,
         formatVersion,
         unenforcedPredicate,
         enforcedPredicate,
@@ -171,8 +176,9 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableLocation,
         storageProperties,
         retryMode,
-        recordScannedFiles,
-        maxScannedFileSize);
+        updatedColumns,
+        false,
+        Optional.empty());
   }
 
   public AdaptHiveIcebergTableHandle withRetryMode(RetryMode retryMode) {
@@ -182,6 +188,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableType,
         snapshotId,
         tableSchemaJson,
+        partitionSpecJson,
         formatVersion,
         unenforcedPredicate,
         enforcedPredicate,
@@ -190,8 +197,9 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableLocation,
         storageProperties,
         retryMode,
-        recordScannedFiles,
-        maxScannedFileSize);
+        updatedColumns,
+        false,
+        Optional.empty());
   }
 
   public AdaptHiveIcebergTableHandle forOptimize(boolean recordScannedFiles, DataSize maxScannedFileSize) {
@@ -201,6 +209,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableType,
         snapshotId,
         tableSchemaJson,
+        partitionSpecJson,
         formatVersion,
         unenforcedPredicate,
         enforcedPredicate,
@@ -209,6 +218,7 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         tableLocation,
         storageProperties,
         retryMode,
+        updatedColumns,
         recordScannedFiles,
         Optional.of(maxScannedFileSize));
   }

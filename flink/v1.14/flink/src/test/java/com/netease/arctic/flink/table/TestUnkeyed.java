@@ -183,6 +183,61 @@ public class TestUnkeyed extends FlinkTestBase {
   }
 
   @Test
+  public void testUnkeyedWatermarkSet() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{1000021, "d", LocalDateTime.parse("2022-06-17T16:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("ts", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, ts TIMESTAMP)" +
+      " WITH (" +
+      " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
+      ")");
+
+    sql("create table user_tb (" +
+      "    rtime as cast(ts as timestamp(3))," +
+      "    WATERMARK FOR rtime as rtime" +
+      "  ) LIKE arcticCatalog." + db + "." + TABLE);
+
+    sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
+
+    TableResult result = exec("select id, name, ts from user_tb" +
+      "/*+ OPTIONS(" +
+      "'arctic.read.mode'='file'" +
+      ", 'scan.startup.mode'='earliest'" +
+      ")*/" +
+      "");
+
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        actual.add(iterator.next());
+      }
+    }
+    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
+  }
+
+  @Test
   public void testSinkBatchRead() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});

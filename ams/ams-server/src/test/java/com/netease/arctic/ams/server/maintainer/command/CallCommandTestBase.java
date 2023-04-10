@@ -53,7 +53,8 @@ public class CallCommandTestBase extends TableDataTestBase {
 
   protected String removeManifest() {
     String removeManifest =
-        getArcticTable().asKeyedTable().changeTable().currentSnapshot().allManifests().get(0).path();
+        getArcticTable().asKeyedTable().changeTable()
+            .currentSnapshot().allManifests(getArcticTable().io()).get(0).path();
     getArcticTable().io().deleteFile(removeManifest);
     return removeManifest;
   }

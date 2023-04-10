@@ -28,12 +28,17 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PendingUpdate;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Abstract implementation of {@link PendingUpdate}, adding arctic logics like tracing and watermark generating for
@@ -41,25 +46,28 @@ import java.util.Optional;
  *
  * @param <T> Java class of changes from this update; returned by {@link #apply} for validation.
  */
-public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
+public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticUpdate.class);
 
+  protected final SnapshotUpdate<T> delegate;
   private final ArcticTable arcticTable;
   private final TableTracer tracer;
   protected final Transaction transaction;
   protected final boolean autoCommitTransaction;
   protected final WatermarkGenerator watermarkGenerator;
 
-  public ArcticUpdate(ArcticTable arcticTable, TableTracer tracer) {
+  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer) {
     this.arcticTable = arcticTable;
     this.tracer = tracer;
     this.transaction = null;
     this.autoCommitTransaction = false;
     this.watermarkGenerator = null;
+    this.delegate = delegate;
   }
 
-  public ArcticUpdate(ArcticTable arcticTable, TableTracer tracer, Transaction transaction,
+  public ArcticUpdate(
+      ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer, Transaction transaction,
       boolean autoCommitTransaction) {
     this.arcticTable = arcticTable;
     this.tracer = tracer;
@@ -72,6 +80,7 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
       LOG.warn("Failed to initialize watermark generator", e);
     }
     this.watermarkGenerator = watermarkGenerator;
+    this.delegate = delegate;
   }
 
   protected Optional<TableTracer> tracer() {
@@ -118,14 +127,46 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     }
   }
 
-  /**
-   * Commit the real table operation.
-   */
-  public abstract void doCommit();
+  @Override
+  public T set(String property, String value) {
+    this.delegate.set(property, value);
+    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
+    return this.self();
+  }
+
+  @Override
+  public T deleteWith(Consumer<String> deleteFunc) {
+    this.delegate.deleteWith(deleteFunc);
+    return this.self();
+  }
+
+  @Override
+  public T stageOnly() {
+    this.delegate.stageOnly();
+    return this.self();
+  }
+
+  @Override
+  public T scanManifestsWith(ExecutorService executorService) {
+    this.delegate.scanManifestsWith(executorService);
+    return this.self();
+  }
+
+  @Override
+  public Snapshot apply() {
+    return this.delegate.apply();
+  }
+
+  @Override
+  public Object updateEvent() {
+    return this.delegate.updateEvent();
+  }
+
+  protected abstract T self();
 
   @Override
   public void commit() {
-    doCommit();
+    this.delegate.commit();
     if (transaction != null && watermarkGenerator != null) {
       long currentWatermark = TablePropertyUtil.getTableWatermark(arcticTable.properties());
       long newWatermark = watermarkGenerator.watermark();
@@ -141,7 +182,7 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     }
   }
 
-  public abstract static class Builder<T> {
+  public abstract static class Builder<T extends I, I> {
 
     protected final ArcticTable table;
     protected Table tableStore;
@@ -154,32 +195,32 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
       this.table = table;
     }
 
-    public Builder<T> onChange() {
+    public Builder<T, I> onChange() {
       this.onChangeStore = true;
       return this;
     }
 
-    public Builder<T> onTableStore(Table tableStore) {
+    public Builder<T, I> onTableStore(Table tableStore) {
       this.tableStore = tableStore;
       return this;
     }
 
-    public Builder<T> inTransaction(Transaction transaction) {
+    public Builder<T, I> inTransaction(Transaction transaction) {
       this.insideTransaction = transaction;
       return this;
     }
 
-    public Builder<T> generateWatermark() {
+    public Builder<T, I> generateWatermark() {
       this.generateWatermark = true;
       return this;
     }
 
-    public Builder<T> traceTable(TableTracer tableTracer) {
+    public Builder<T, I> traceTable(TableTracer tableTracer) {
       this.tableTracer = tableTracer;
       return this;
     }
 
-    public abstract Builder<T> traceTable(AmsClient client, UnkeyedTable traceTable);
+    public abstract Builder<T, I> traceTable(AmsClient client, UnkeyedTable traceTable);
 
     protected Table getTableStore() {
       if (tableStore == null) {
@@ -206,14 +247,22 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
           return updateWithWatermark(tableTracer, transaction, true);
         }
       } else {
-        return updateWithoutWatermark(tableTracer, tableStore);
+        if (insideTransaction != null) {
+          return updateWithoutWatermark(tableTracer, transactionDelegateSupplier(insideTransaction));
+        } else {
+          return updateWithoutWatermark(tableTracer, tableStoreDelegateSupplier(tableStore));
+        }
       }
     }
 
-    protected abstract T updateWithWatermark(TableTracer tableTracer, Transaction transaction,
+    protected abstract T updateWithWatermark(
+        TableTracer tableTracer, Transaction transaction,
         boolean autoCommitTransaction);
 
-    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Table tableStore);
-  }
+    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Supplier<I> delegateSupplier);
 
+    protected abstract Supplier<I> transactionDelegateSupplier(Transaction transaction);
+
+    protected abstract Supplier<I> tableStoreDelegateSupplier(Table tableStore);
+  }
 }
