@@ -93,7 +93,7 @@ public abstract class AbstractOptimizePlan {
 
     for (String partition : partitions) {
       List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
-      if (reachMaxFileCount()) {
+      if (reachOptimizeLimit()) {
         this.skippedPartitions = true;
         LOG.info("{} get enough files, count {}/{}, size {}/{}, ignore left partitions", tableId(), this.collectFileCnt,
             getMaxFileCntLimit(), this.collectFileSize, getMaxFileSizeLimit());
@@ -131,7 +131,7 @@ public abstract class AbstractOptimizePlan {
     return task.getBaseFileCnt() + task.getDeleteFileCnt() + task.getInsertFileCnt() + task.getPosDeleteFileCnt();
   }
 
-  private boolean reachMaxFileCount() {
+  private boolean reachOptimizeLimit() {
     return this.collectFileCnt >= getMaxFileCntLimit() || this.collectFileSize >= getMaxFileSizeLimit();
   }
 
