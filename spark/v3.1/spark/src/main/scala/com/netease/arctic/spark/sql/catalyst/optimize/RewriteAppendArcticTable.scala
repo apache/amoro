@@ -47,7 +47,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       val insertAttribute =
         insertQuery.output.filter(_.name.contains("_arctic_before_"))
       val projections = buildInsertProjections(insertQuery, insertAttribute, isUpsert = true)
-      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
+      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.mode)
       ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections)
   }
 

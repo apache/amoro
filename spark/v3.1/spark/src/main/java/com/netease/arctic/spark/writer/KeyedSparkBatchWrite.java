@@ -101,8 +101,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   }
 
   @Override
-  public BatchWrite asUpsertWrite() {
-    return new UpsertWrite();
+  public BatchWrite asDeltaWrite() {
+    return new DeltaWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -224,12 +224,12 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
   }
 
-  private class UpsertWrite extends BaseBatchWrite {
+  private class DeltaWrite extends BaseBatchWrite {
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
-      return new UpsertChangeFactory(table, dsSchema, txId, orderedWriter);
+      return new DeltaChangeFactory(table, dsSchema, txId, orderedWriter);
     }
 
     @Override
@@ -311,9 +311,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
   }
 
-  private static class UpsertChangeFactory extends AbstractWriterFactory {
+  private static class DeltaChangeFactory extends AbstractWriterFactory {
 
-    UpsertChangeFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
+    DeltaChangeFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
       super(table, dsSchema, transactionId, orderedWrite);
     }
 

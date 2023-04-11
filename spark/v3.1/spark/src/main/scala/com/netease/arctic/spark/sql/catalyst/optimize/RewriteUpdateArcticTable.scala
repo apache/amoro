@@ -80,7 +80,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
-      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
       val projections = buildUpdateProjections(
         query,
         arcticRelation.output,

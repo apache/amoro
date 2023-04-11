@@ -68,7 +68,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       }
       val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
-      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
 
       val projections =
         buildDeleteProjections(query, r.output, ArcticExtensionUtils.isKeyedTable(r))

@@ -100,8 +100,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   }
 
   @Override
-  public BatchWrite asUpsertWrite() {
-    return new UpsertWrite();
+  public BatchWrite asDeltaWrite() {
+    return new DeltaWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -217,7 +217,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     }
   }
 
-  private class UpsertWrite extends BaseBatchWrite {
+  private class DeltaWrite extends BaseBatchWrite {
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
