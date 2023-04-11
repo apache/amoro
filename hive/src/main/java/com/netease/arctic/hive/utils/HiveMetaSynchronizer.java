@@ -225,6 +225,7 @@ public class HiveMetaSynchronizer {
     if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
       return false;
     }
+
     // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
     // find out if the partition is changed.
     if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {

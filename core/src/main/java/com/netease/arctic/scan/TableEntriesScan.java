@@ -159,7 +159,6 @@ public class TableEntriesScan {
     }
   }
 
-
   private TableEntriesScan(
       Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
       Set<FileContent> validFileContent, boolean includeColumnStats,
@@ -220,7 +219,6 @@ public class TableEntriesScan {
     }
     return this.entriesTable;
   }
-
 
   private FileContent getFileContent(int contentId) {
     for (FileContent content : FileContent.values()) {

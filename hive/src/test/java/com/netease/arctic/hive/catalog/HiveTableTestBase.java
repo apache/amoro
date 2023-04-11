@@ -87,7 +87,6 @@ public abstract class HiveTableTestBase extends TableTestBase {
         properties, TEST_HMS.getHiveConf());
   }
 
-
   public void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
     List<String> fileNameList = new ArrayList<>();
     if (isPartitionedTable()) {
@@ -110,4 +109,5 @@ public abstract class HiveTableTestBase extends TableTestBase {
     }
     Assert.assertEquals(exceptedFiles, fileNameList);
   }
+
 }

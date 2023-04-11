@@ -19,8 +19,8 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
