@@ -62,8 +62,8 @@ public class TestUpsert extends SparkTestBase {
   private static final PartitionSpec partitionSpec = PartitionSpec.builderFor(schema)
       .identity("pt").build();
 
-  private static final int newRecordSize = 10;
-  private static final int upsertRecordSize = 10;
+  private static final int newRecordSize = 30;
+  private static final int upsertRecordSize = 20;
 
   @Parameterized.Parameters
   public static List<Object[]> arguments() {
@@ -92,7 +92,7 @@ public class TestUpsert extends SparkTestBase {
               .withSequencePrimaryKey(primaryKeySpec)
               .withRandomDate("pt")
               .build();
-          List<GenericRecord> target = generator.records(10);
+          List<GenericRecord> target = generator.records(100);
           List<GenericRecord> source = upsertSource(
               target, generator, primaryKeySpec, partitionSpec, upsertRecordSize, newRecordSize);
 

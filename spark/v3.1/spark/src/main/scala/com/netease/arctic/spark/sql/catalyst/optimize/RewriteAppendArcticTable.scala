@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.optimize
 
 import java.util
+
 import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
@@ -101,9 +102,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def rewriteAppendAsUpsertQuery(
-                                  r: DataSourceV2Relation,
-                                  query: LogicalPlan
-                                ): LogicalPlan = {
+      r: DataSourceV2Relation,
+      query: LogicalPlan): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
