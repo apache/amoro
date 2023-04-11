@@ -43,8 +43,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
     BatchWrite asOverwriteByFilter(Expression overwriteExpr);
 
     BatchWrite asUpsertWrite();
-
-    BatchWrite asMergeBatchWrite();
   }
 
   protected final CaseInsensitiveStringMap options;
@@ -99,8 +97,6 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
         return write.asDynamicOverwrite();
       case UPSERT:
         return write.asUpsertWrite();
-      case MERGE:
-        return write.asMergeBatchWrite();
       default:
         throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
     }
