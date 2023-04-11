@@ -183,6 +183,14 @@ public class OptimizingIntegrationTest {
   }
 
   @Test
+  public void testPartitionArcticTablePartialOptimizing() {
+    ArcticTable arcticTable = createArcticTable(TB_13, PRIMARY_KEY, SPEC);
+    assertTableExist(TB_13);
+    MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
+    testCase.testPartitionArcticTablePartialOptimizing();
+  }
+
+  @Test
   public void testV1IcebergTableOptimizing() throws IOException {
     Table table = createIcebergV1Table(TB_8, PartitionSpec.unpartitioned());
     assertTableExist(TB_8);

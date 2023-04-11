@@ -55,6 +55,7 @@ public abstract class AbstractOptimizePlan {
   private boolean skippedPartitions = false;
   
   private int collectFileCnt = 0;
+  private long collectFileSize = 0;
 
   public AbstractOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                               int queueId, long currentTime, long currentSnapshotId) {
@@ -92,10 +93,10 @@ public abstract class AbstractOptimizePlan {
 
     for (String partition : partitions) {
       List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
-      if (reachMaxFileCount()) {
+      if (reachOptimizeLimit()) {
         this.skippedPartitions = true;
-        LOG.info("{} get enough files {} > {}, ignore left partitions", tableId(), this.collectFileCnt,
-            getMaxFileCntLimit());
+        LOG.info("{} get enough files, count {}/{}, size {}/{}, ignore left partitions", tableId(), this.collectFileCnt,
+            getMaxFileCntLimit(), this.collectFileSize, getMaxFileSizeLimit());
         break;
       }
       if (optimizeTasks.size() > 0) {
@@ -113,16 +114,25 @@ public abstract class AbstractOptimizePlan {
 
   private void accumulateFileCount(List<BasicOptimizeTask> newTasks) {
     int newFileCnt = 0;
+    long newFileSize = 0;
     for (BasicOptimizeTask optimizeTask : newTasks) {
-      int taskFileCnt = optimizeTask.getBaseFileCnt() + optimizeTask.getDeleteFileCnt() +
-          optimizeTask.getInsertFileCnt() + optimizeTask.getPosDeleteFileCnt();
-      newFileCnt += taskFileCnt;
+      newFileCnt += getTaskFileCount(optimizeTask);
+      newFileSize += getTaskFileSize(optimizeTask);
     }
     this.collectFileCnt += newFileCnt;
+    this.collectFileSize += newFileSize;
   }
 
-  private boolean reachMaxFileCount() {
-    return this.collectFileCnt >= getMaxFileCntLimit();
+  protected long getTaskFileSize(BasicOptimizeTask task) {
+    return task.getBaseFileSize() + task.getInsertFileSize() + task.getDeleteFileSize() + task.getPosDeleteFileSize();
+  }
+
+  protected int getTaskFileCount(BasicOptimizeTask task) {
+    return task.getBaseFileCnt() + task.getDeleteFileCnt() + task.getInsertFileCnt() + task.getPosDeleteFileCnt();
+  }
+
+  private boolean reachOptimizeLimit() {
+    return this.collectFileCnt >= getMaxFileCntLimit() || this.collectFileSize >= getMaxFileSizeLimit();
   }
 
   private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
@@ -160,10 +170,16 @@ public abstract class AbstractOptimizePlan {
    */
   protected abstract PartitionWeight getPartitionWeight(String partition);
 
-  private long getMaxFileCntLimit() {
+  private int getMaxFileCntLimit() {
     Map<String, String> properties = arcticTable.properties();
     return CompatiblePropertyUtil.propertyAsInt(properties,
         TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+  }
+
+  private long getMaxFileSizeLimit() {
+    Map<String, String> properties = arcticTable.properties();
+    return PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES,
+        TableProperties.SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES_DEFAULT);
   }
 
   protected long getSmallFileSize(Map<String, String> properties) {
@@ -221,6 +237,10 @@ public abstract class AbstractOptimizePlan {
 
   protected int getCollectFileCnt() {
     return collectFileCnt;
+  }
+
+  protected long getCollectFileSize() {
+    return collectFileSize;
   }
 
   /**
