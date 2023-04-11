@@ -47,6 +47,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Run code checkstyle
+        run: mvn validate
+
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino'
 
