@@ -22,7 +22,9 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.flink.FlinkConfigOptions;
 import org.apache.iceberg.flink.source.ScanContext;
+import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -49,6 +51,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
   protected ArcticScanContext(
       boolean caseSensitive,
       Long snapshotId,
+      StreamingStartingStrategy startingStrategy,
+      Long startSnapshotTimestamp,
       Long startSnapshotId,
       Long endSnapshotId,
       Long asOfTimestamp,
@@ -61,9 +65,15 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       Schema schema,
       List<Expression> filters,
       long limit,
+      boolean includeColumnStats,
+      boolean exposeLocality,
+      Integer planParallelism,
+      int maxPlanningSnapshotCount,
       String scanStartupMode) {
     super(caseSensitive,
         snapshotId,
+        startingStrategy,
+        startSnapshotTimestamp,
         startSnapshotId,
         endSnapshotId,
         asOfTimestamp,
@@ -75,7 +85,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
         nameMapping,
         schema,
         filters,
-        limit);
+        limit,
+        includeColumnStats,
+        exposeLocality,
+        planParallelism,
+        maxPlanningSnapshotCount);
     this.scanStartupMode = scanStartupMode;
   }
 
@@ -146,6 +160,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
   public static class Builder {
     private boolean caseSensitive = CASE_SENSITIVE.defaultValue();
     private Long snapshotId = SNAPSHOT_ID.defaultValue();
+    private StreamingStartingStrategy startingStrategy = STARTING_STRATEGY.defaultValue();
+    private Long startSnapshotTimestamp = START_SNAPSHOT_TIMESTAMP.defaultValue();
     private Long startSnapshotId = START_SNAPSHOT_ID.defaultValue();
     private Long endSnapshotId = END_SNAPSHOT_ID.defaultValue();
     private Long asOfTimestamp = AS_OF_TIMESTAMP.defaultValue();
@@ -158,7 +174,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private Schema projectedSchema;
     private List<Expression> filters;
     private long limit = -1L;
+    private boolean exposeLocality;
+    private Integer planParallelism =
+        FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
+    private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
     private String scanStartupMode;
+    private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
 
     private Builder() {
     }
@@ -170,6 +191,16 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public Builder useSnapshotId(Long newSnapshotId) {
       this.snapshotId = newSnapshotId;
+      return this;
+    }
+
+    public Builder startingStrategy(StreamingStartingStrategy newStartingStrategy) {
+      this.startingStrategy = newStartingStrategy;
+      return this;
+    }
+
+    public Builder startSnapshotTimestamp(Long newStartSnapshotTimestamp) {
+      this.startSnapshotTimestamp = newStartSnapshotTimestamp;
       return this;
     }
 
@@ -233,8 +264,28 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    public Builder exposeLocality(boolean newExposeLocality) {
+      this.exposeLocality = newExposeLocality;
+      return this;
+    }
+
+    public Builder planParallelism(Integer parallelism) {
+      this.planParallelism = parallelism;
+      return this;
+    }
+
+    public Builder maxPlanningSnapshotCount(int newMaxPlanningSnapshotCount) {
+      this.maxPlanningSnapshotCount = newMaxPlanningSnapshotCount;
+      return this;
+    }
+
     public Builder scanStartupMode(String scanStartupMode) {
       this.scanStartupMode = scanStartupMode;
+      return this;
+    }
+
+    public Builder includeColumnStats(boolean newIncludeColumnStats) {
+      this.includeColumnStats = newIncludeColumnStats;
       return this;
     }
 
@@ -245,6 +296,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this.useSnapshotId(config.get(SNAPSHOT_ID))
           .caseSensitive(config.get(CASE_SENSITIVE))
           .asOfTimestamp(config.get(AS_OF_TIMESTAMP))
+          .startingStrategy(config.get(STARTING_STRATEGY))
+          .startSnapshotTimestamp(config.get(START_SNAPSHOT_TIMESTAMP))
           .startSnapshotId(config.get(START_SNAPSHOT_ID))
           .endSnapshotId(config.get(END_SNAPSHOT_ID))
           .splitSize(config.get(SPLIT_SIZE))
@@ -253,7 +306,9 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           .streaming(config.get(STREAMING))
           .monitorInterval(config.get(MONITOR_INTERVAL))
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
-          .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()));
+          .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()))
+          .includeColumnStats(config.get(INCLUDE_COLUMN_STATS))
+          .maxPlanningSnapshotCount(config.get(MAX_PLANNING_SNAPSHOT_COUNT));
     }
 
     public ArcticScanContext build() {
@@ -267,10 +322,28 @@ public class ArcticScanContext extends ScanContext implements Serializable {
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
           String.format("only support %s, %s when %s is %s",
               SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
-      return new ArcticScanContext(caseSensitive, snapshotId, startSnapshotId,
-          endSnapshotId, asOfTimestamp, splitSize, splitLookback,
-          splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-          filters, limit, scanStartupMode);
+      return new ArcticScanContext(
+          caseSensitive,
+          snapshotId,
+          startingStrategy,
+          startSnapshotTimestamp,
+          startSnapshotId,
+          endSnapshotId,
+          asOfTimestamp,
+          splitSize,
+          splitLookback,
+          splitOpenFileCost,
+          isStreaming,
+          monitorInterval,
+          nameMapping,
+          projectedSchema,
+          filters,
+          limit,
+          includeColumnStats,
+          exposeLocality,
+          planParallelism,
+          maxPlanningSnapshotCount,
+          scanStartupMode);
     }
   }
 }

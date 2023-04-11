@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
@@ -25,7 +26,6 @@ import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
@@ -65,7 +65,8 @@ public class TestExpiredFileClean extends TableTestBase {
   @Test
   public void testDeleteChangeFiles() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
-    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    List<StructLike> partitions =
+        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
@@ -89,7 +90,8 @@ public class TestExpiredFileClean extends TableTestBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
-    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    List<StructLike> partitions =
+        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
@@ -110,7 +112,8 @@ public class TestExpiredFileClean extends TableTestBase {
   public void testExpiredChangeTableFilesInBase() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
     testKeyedTable.baseTable().newAppend().appendFile(s1Files.get(0)).commit();
-    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    List<StructLike> partitions =
+        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);

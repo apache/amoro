@@ -18,13 +18,13 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;

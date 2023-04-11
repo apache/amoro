@@ -18,24 +18,32 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.op.ArcticUpdate;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Wrap {@link DeleteFiles} with {@link TableTracer}.
  */
-public class TracedDeleteFiles implements DeleteFiles {
+public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {
 
   private final DeleteFiles deleteFiles;
-  private final TableTracer tracer;
 
-  public TracedDeleteFiles(DeleteFiles deleteFiles, TableTracer tracer) {
+  public static Builder buildFor(ArcticTable table) {
+    return new Builder(table);
+  }
+
+  protected TracedDeleteFiles(ArcticTable table, DeleteFiles deleteFiles, TableTracer tracer) {
+    super(table, deleteFiles, tracer);
     this.deleteFiles = deleteFiles;
-    this.tracer = tracer;
   }
 
   @Override
@@ -46,7 +54,7 @@ public class TracedDeleteFiles implements DeleteFiles {
   @Override
   public DeleteFiles deleteFile(DataFile file) {
     deleteFiles.deleteFile(file);
-    tracer.deleteDataFile(file);
+    deleteIcebergDataFile(file);
     return this;
   }
 
@@ -63,32 +71,48 @@ public class TracedDeleteFiles implements DeleteFiles {
   }
 
   @Override
-  public DeleteFiles set(String property, String value) {
-    deleteFiles.set(property, value);
-    tracer.setSnapshotSummary(property, value);
+  protected DeleteFiles self() {
     return this;
   }
 
-  @Override
-  public DeleteFiles deleteWith(Consumer<String> deleteFunc) {
-    deleteFiles.deleteWith(deleteFunc);
-    return this;
-  }
+  public static class Builder extends ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> {
 
-  @Override
-  public DeleteFiles stageOnly() {
-    deleteFiles.stageOnly();
-    return this;
-  }
+    protected Builder(ArcticTable table) {
+      super(table);
+    }
 
-  @Override
-  public Snapshot apply() {
-    return deleteFiles.apply();
-  }
+    @Override
+    public ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+      if (client != null) {
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client, true);
+        traceTable(tracer);
+      }
+      return this;
+    }
 
-  @Override
-  public void commit() {
-    deleteFiles.commit();
-    tracer.commit();
+    @Override
+    protected TracedDeleteFiles updateWithWatermark(
+        TableTracer tableTracer,
+        Transaction transaction,
+        boolean autoCommitTransaction) {
+      return new TracedDeleteFiles(table, transaction.newDelete(), tableTracer);
+    }
+
+    @Override
+    protected TracedDeleteFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<DeleteFiles> delegateSupplier) {
+      return new TracedDeleteFiles(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<DeleteFiles> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newDelete;
+    }
+
+    @Override
+    protected Supplier<DeleteFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newDelete;
+    }
+
   }
 }

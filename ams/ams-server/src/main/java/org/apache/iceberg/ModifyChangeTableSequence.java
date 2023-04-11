@@ -1,34 +1,48 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.iceberg;
 
+import com.clearspring.analytics.util.Lists;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.exceptions.RuntimeIOException;
-import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ModifyChangeTableSequence extends ArcticSnapshotProducer<ModifyTableSequence> implements
-    ModifyTableSequence {
+public class ModifyChangeTableSequence
+    extends SnapshotProducer<ModifyTableSequence>
+    implements ModifyTableSequence {
   private final String tableName;
   private final TableOperations ops;
-  private final PartitionSpec spec;
   private final SnapshotSummary.Builder summaryBuilder = SnapshotSummary.builder();
-  private final List<DataFile> newFiles = Lists.newArrayList();
-  private final List<ManifestFile> appendManifests = Lists.newArrayList();
-  private final List<ManifestFile> rewrittenAppendManifests = Lists.newArrayList();
-  private ManifestFile newManifest = null;
-  private boolean hasNewFiles = false;
+
+  private long sequence;
+  private String targetBranch;
 
   public ModifyChangeTableSequence(String tableName, TableOperations ops) {
     super(ops);
     this.tableName = tableName;
     this.ops = ops;
-    this.spec = ops.current().spec();
   }
 
   @Override
@@ -39,12 +53,12 @@ public class ModifyChangeTableSequence extends ArcticSnapshotProducer<ModifyTabl
   @Override
   public ModifyTableSequence set(String property, String value) {
     summaryBuilder.set(property, value);
-    return this;
+    return self();
   }
 
   @Override
   protected String operation() {
-    return DataOperations.APPEND;
+    return DataOperations.REPLACE;
   }
 
   @Override
@@ -54,43 +68,43 @@ public class ModifyChangeTableSequence extends ArcticSnapshotProducer<ModifyTabl
     return summaryBuilder.build();
   }
 
-  private ManifestFile copyManifest(ManifestFile manifest) {
-    TableMetadata current = ops.current();
-    InputFile toCopy = ops.io().newInputFile(manifest.path());
-    OutputFile newManifestPath = newManifestOutput();
-    return ManifestFiles.copyAppendManifest(
-        current.formatVersion(), toCopy, current.specsById(), newManifestPath, snapshotId(), summaryBuilder);
-  }
+  private Map<String, String> summary(TableMetadata previous) {
+    Map<String, String> summary = summary();
+    if (summary == null) {
+      return ImmutableMap.of();
+    }
 
-  @Override
-  public List<ManifestFile> apply(TableMetadata base) {
-    List<ManifestFile> newManifests = Lists.newArrayList();
-
-    try {
-      ManifestFile manifest = writeManifest();
-      if (manifest != null) {
-        newManifests.add(manifest);
+    Map<String, String> previousSummary;
+    if (previous.currentSnapshot() != null) {
+      if (previous.currentSnapshot().summary() != null) {
+        previousSummary = previous.currentSnapshot().summary();
+      } else {
+        // previous snapshot had no summary, use an empty summary
+        previousSummary = ImmutableMap.of();
       }
-    } catch (IOException e) {
-      throw new RuntimeIOException(e, "Failed to write manifest");
+    } else {
+      // if there was no previous snapshot, default the summary to start totals at 0
+      ImmutableMap.Builder<String, String> summaryBuilder = ImmutableMap.builder();
+      summaryBuilder
+          .put(SnapshotSummary.TOTAL_RECORDS_PROP, "0")
+          .put(SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0")
+          .put(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_POS_DELETES_PROP, "0")
+          .put(SnapshotSummary.TOTAL_EQ_DELETES_PROP, "0");
+      previousSummary = summaryBuilder.build();
     }
 
-    Iterable<ManifestFile> appendManifestsWithMetadata = Iterables.transform(
-        Iterables.concat(appendManifests, rewrittenAppendManifests),
-        manifest -> GenericManifestFile.copyOf(manifest).withSnapshotId(snapshotId()).build());
-    Iterables.addAll(newManifests, appendManifestsWithMetadata);
-
-    if (base.currentSnapshot() != null) {
-      newManifests.addAll(base.currentSnapshot().allManifests());
-    }
-
-    return newManifests;
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    // copy all summary properties from the implementation
+    builder.putAll(previousSummary);
+    return builder.build();
   }
 
   @Override
   public Object updateEvent() {
     long snapshotId = snapshotId();
-    Snapshot snapshot = ops.current().snapshot(snapshotId);
+    Snapshot snapshot = current().snapshot(snapshotId);
     long sequenceNumber = snapshot.sequenceNumber();
     return new CreateSnapshotEvent(
         tableName,
@@ -102,37 +116,71 @@ public class ModifyChangeTableSequence extends ArcticSnapshotProducer<ModifyTabl
 
   @Override
   protected void cleanUncommitted(Set<ManifestFile> committed) {
-    if (newManifest != null && !committed.contains(newManifest)) {
-      deleteFile(newManifest.path());
-    }
-
-    // clean up only rewrittenAppendManifests as they are always owned by the table
-    // don't clean up appendManifests as they are added to the manifest list and are not compacted
-    for (ManifestFile manifest : rewrittenAppendManifests) {
-      if (!committed.contains(manifest)) {
-        deleteFile(manifest.path());
-      }
-    }
+    // nothing to do.
   }
 
-  private ManifestFile writeManifest() throws IOException {
-    if (hasNewFiles && newManifest != null) {
-      deleteFile(newManifest.path());
-      newManifest = null;
-    }
+  @Override
+  public ModifyTableSequence sequence(long sequence) {
+    this.sequence = sequence;
+    return self();
+  }
 
-    if (newManifest == null && newFiles.size() > 0) {
-      ManifestWriter writer = newManifestWriter(spec);
-      try {
-        writer.addAll(newFiles);
-      } finally {
-        writer.close();
+  @Override
+  protected void targetBranch(String branch) {
+    super.targetBranch(branch);
+    this.targetBranch = branch;
+  }
+
+  @Override
+  protected List<ManifestFile> apply(TableMetadata metadataToUpdate, Snapshot snapshot) {
+    return Lists.newArrayList();
+  }
+
+  @Override
+  public Snapshot apply() {
+    TableMetadata base = refresh();
+    Snapshot parentSnapshot = base.currentSnapshot();
+    if (targetBranch != null) {
+      SnapshotRef branch = base.ref(targetBranch);
+      if (branch != null) {
+        parentSnapshot = base.snapshot(branch.snapshotId());
+      } else if (base.currentSnapshot() != null) {
+        parentSnapshot = base.currentSnapshot();
       }
-
-      this.newManifest = writer.toManifestFile();
-      hasNewFiles = false;
     }
 
-    return newManifest;
+    long sequenceNumber = nextSequenceNumber(base);
+    Long parentSnapshotId = parentSnapshot == null ? null : parentSnapshot.snapshotId();
+
+    validate(base, parentSnapshot);
+    List<ManifestFile> manifests = apply(base, parentSnapshot);
+
+    OutputFile manifestList = manifestListPath();
+
+    try (ManifestListWriter writer =
+        ManifestLists.write(
+            ops.current().formatVersion(),
+            manifestList,
+            snapshotId(),
+            parentSnapshotId,
+            sequenceNumber)) {
+      // JUST CREATE A MANIFEST_LIST FILE
+    } catch (IOException e) {
+      throw new RuntimeIOException(e, "Failed to write manifest list file");
+    }
+
+    return new BaseSnapshot(
+        sequenceNumber,
+        snapshotId(),
+        parentSnapshotId,
+        System.currentTimeMillis(),
+        operation(),
+        summary(base),
+        base.currentSchemaId(),
+        manifestList.location());
+  }
+
+  protected long nextSequenceNumber(TableMetadata base) {
+    return Math.max(base.nextSequenceNumber(), this.sequence);
   }
 }

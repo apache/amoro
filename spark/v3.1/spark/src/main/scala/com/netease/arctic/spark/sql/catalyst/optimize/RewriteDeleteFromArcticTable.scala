@@ -59,7 +59,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       } else {
         pushFilter(scanBuilder, condition.get, r.output)
       }
-      val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
 
@@ -69,13 +69,12 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
 
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsRowLevelOperator, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)

@@ -67,10 +67,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   private final boolean caseSensitive;
   private final Schema expectedSchema;
   private final List<Expression> filterExpressions;
-  private final Long snapshotId;
-  private final Long startSnapshotId;
-  private final Long endSnapshotId;
-  private final Long asOfTimestamp;
+
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
 
@@ -81,25 +78,6 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     this.caseSensitive = caseSensitive;
     this.expectedSchema = expectedSchema;
     this.filterExpressions = filters;
-    this.snapshotId = Spark3Util.propertyAsLong(options, "snapshot-id", null);
-    this.asOfTimestamp = Spark3Util.propertyAsLong(options, "as-of-timestamp", null);
-
-    if (snapshotId != null && asOfTimestamp != null) {
-      throw new IllegalArgumentException(
-          "Cannot scan using both snapshot-id and as-of-timestamp to select the table snapshot");
-    }
-
-    this.startSnapshotId = Spark3Util.propertyAsLong(options, "start-snapshot-id", null);
-    this.endSnapshotId = Spark3Util.propertyAsLong(options, "end-snapshot-id", null);
-    if (snapshotId != null || asOfTimestamp != null) {
-      if (startSnapshotId != null || endSnapshotId != null) {
-        throw new IllegalArgumentException(
-            "Cannot specify start-snapshot-id and end-snapshot-id to do incremental scan when either snapshot-id or " +
-                "as-of-timestamp is specified");
-      }
-    } else if (startSnapshotId == null && endSnapshotId != null) {
-      throw new IllegalArgumentException("Cannot only specify option end-snapshot-id to do incremental scan");
-    }
   }
 
   @Override
@@ -273,18 +251,13 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     UnkeyedSparkBatchScan that = (UnkeyedSparkBatchScan) o;
     return table.id().equals(that.table.id()) &&
         readSchema().equals(that.readSchema()) &&
-        filterExpressions.toString().equals(that.filterExpressions.toString()) &&
-        Objects.equals(snapshotId, that.snapshotId) &&
-        Objects.equals(startSnapshotId, that.startSnapshotId) &&
-        Objects.equals(endSnapshotId, that.endSnapshotId) &&
-        Objects.equals(asOfTimestamp, that.asOfTimestamp);
+        filterExpressions.toString().equals(that.filterExpressions.toString());
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        table.id(), readSchema(), filterExpressions.toString(), snapshotId, startSnapshotId, endSnapshotId,
-        asOfTimestamp);
+        table.id(), readSchema(), filterExpressions.toString());
   }
 
   @Override

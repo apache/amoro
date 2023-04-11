@@ -14,7 +14,7 @@
 
 package io.trino.parquet.reader;
 
-import io.trino.parquet.RichColumnDescriptor;
+import io.trino.parquet.PrimitiveField;
 import io.trino.plugin.base.type.DecodedTimestamp;
 import io.trino.plugin.base.type.TrinoTimestampEncoder;
 import io.trino.spi.block.BlockBuilder;
@@ -29,12 +29,15 @@ import static io.trino.plugin.base.type.TrinoTimestampEncoderFactory.createTimes
 import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Copy from trino-parquet TimestampColumnReader and do some change to adapt Arctic
+ */
 public class TimestampColumnReader
     extends PrimitiveColumnReader {
   private final DateTimeZone timeZone;
 
-  public TimestampColumnReader(RichColumnDescriptor descriptor, DateTimeZone timeZone) {
-    super(descriptor);
+  public TimestampColumnReader(PrimitiveField field, DateTimeZone timeZone) {
+    super(field);
     this.timeZone = requireNonNull(timeZone, "timeZone is null");
   }
 
@@ -44,8 +47,8 @@ public class TimestampColumnReader
     if (type instanceof TimestampWithTimeZoneType) {
       DecodedTimestamp decodedTimestamp = decodeInt96Timestamp(valuesReader.readBytes());
       LongTimestampWithTimeZone longTimestampWithTimeZone =
-          LongTimestampWithTimeZone.fromEpochSecondsAndFraction(decodedTimestamp.getEpochSeconds(),
-              decodedTimestamp.getNanosOfSecond() * 1000L, UTC_KEY);
+          LongTimestampWithTimeZone.fromEpochSecondsAndFraction(decodedTimestamp.epochSeconds(),
+              decodedTimestamp.nanosOfSecond() * 1000L, UTC_KEY);
       type.writeObject(blockBuilder, longTimestampWithTimeZone);
     } else {
       TrinoTimestampEncoder<?> trinoTimestampEncoder = createTimestampEncoder((TimestampType) type, timeZone);

@@ -16,26 +16,24 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-parent</artifactId>
         <groupId>com.netease.arctic</groupId>
+        <artifactId>arctic-parent</artifactId>
         <version>0.5.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-trino</artifactId>
     <name>Arctic Project Trino</name>
     <url>https://arctic.netease.com</url>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <dep.airlift.version>214</dep.airlift.version>
-        <presto.version>380</presto.version>
+        <presto.version>406</presto.version>
     </properties>
 
     <dependencies>
@@ -188,7 +186,7 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>4.2.2</version>
+            <version>5.1.0</version>
         </dependency>
 
         <dependency>
@@ -207,7 +205,7 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>slice</artifactId>
-            <version>0.41</version>
+            <version>0.44</version>
             <scope>provided</scope>
         </dependency>
 
@@ -221,16 +219,16 @@
         <dependency>
             <groupId>org.openjdk.jol</groupId>
             <artifactId>jol-core</artifactId>
-            <version>0.2</version>
+            <version>0.16</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
+            <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
-            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -306,10 +304,10 @@
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
             <exclusions>
-<!--                <exclusion>-->
-<!--                    <groupId>org.apache.hive</groupId>-->
-<!--                    <artifactId>hive-metastore</artifactId>-->
-<!--                </exclusion>-->
+                <!--                <exclusion>-->
+                <!--                    <groupId>org.apache.hive</groupId>-->
+                <!--                    <artifactId>hive-metastore</artifactId>-->
+                <!--                </exclusion>-->
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
@@ -363,8 +361,8 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <type>test-jar</type>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
@@ -585,7 +583,7 @@
             <scope>test</scope>
         </dependency>
 
-<!--        for arctic-core-->
+        <!--        for arctic-core-->
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
@@ -600,7 +598,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -614,10 +611,10 @@
                 <executions>
                     <execution>
                         <id>make-assembly</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
                             <finalName>trino-arctic-${project.version}</finalName>
@@ -633,7 +630,7 @@
                 <configuration>
                     <verbose>true</verbose>
                     <fork>true</fork>
-                    <compilerVersion>11</compilerVersion>
+                    <compilerVersion>17</compilerVersion>
                 </configuration>
             </plugin>
 
@@ -650,6 +647,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        <sourceDirectory>src/main/java</sourceDirectory>
     </build>
 
     <profiles>
@@ -661,6 +659,14 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-toolchains-plugin</artifactId>
                         <version>3.1.0</version>
+                        <configuration>
+                            <toolchains>
+                                <jdk>
+                                    <version>17</version>
+                                    <vendor>sun</vendor>
+                                </jdk>
+                            </toolchains>
+                        </configuration>
                         <executions>
                             <execution>
                                 <goals>
@@ -668,14 +674,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <toolchains>
-                                <jdk>
-                                    <version>11</version>
-                                    <vendor>sun</vendor>
-                                </jdk>
-                            </toolchains>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

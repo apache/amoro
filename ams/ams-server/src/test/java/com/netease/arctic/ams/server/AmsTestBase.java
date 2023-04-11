@@ -214,7 +214,10 @@ public class AmsTestBase {
     when(ArcticMetaStore.getSystemSettingFromYaml()).thenAnswer((Answer<LinkedHashMap<String,Object>>) x ->
             new LinkedHashMap<String, Object>(){{
               put("a", "b");
-              put("a", "b");
+              put("b", true);
+              Map<String, String> mapType = new HashMap<>();
+              mapType.put("c1", "v1");
+              put("c", mapType);
             }});
     mockStatic(ServiceContainer.class);
     mockStatic(CatalogMetadataService.class);

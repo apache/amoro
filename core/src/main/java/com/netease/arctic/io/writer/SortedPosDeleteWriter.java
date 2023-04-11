@@ -24,6 +24,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.io.FileAppenderFactory;
@@ -152,11 +153,12 @@ public class SortedPosDeleteWriter<T> implements Closeable {
       paths.sort(Comparators.charSequences());
 
       // Write all the sorted <path, pos, row> triples.
+      PositionDelete<T> positionDelete = PositionDelete.create();
       for (CharSequence path : paths) {
         List<PosRow<T>> positions = posDeletes.get(wrapper.set(path));
         positions.sort(Comparator.comparingLong(PosRow::pos));
 
-        positions.forEach(posRow -> closeableWriter.delete(path, posRow.pos(), posRow.row()));
+        positions.forEach(posRow -> closeableWriter.write(positionDelete.set(path, posRow.pos(), posRow.row())));
       }
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to write the sorted path/pos pairs to pos-delete file: " +

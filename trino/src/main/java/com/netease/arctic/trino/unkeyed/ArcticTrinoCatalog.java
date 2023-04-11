@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.spi.TrinoException;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static java.util.Locale.ENGLISH;
 
 /**
  * A TrinoCatalog for Arctic, this is in order to reuse iceberg code
@@ -54,6 +56,18 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   public ArcticTrinoCatalog(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
+  }
+
+  @Override
+  public boolean namespaceExists(ConnectorSession session, String namespace) {
+    if (!namespace.equals(namespace.toLowerCase(ENGLISH))) {
+      // Currently, Trino schemas are always lowercase, so this one cannot exist (https://github.com/trinodb/trino/issues/17)
+      return false;
+    }
+    if (HiveUtil.isHiveSystemSchema(namespace)) {
+      return false;
+    }
+    return listNamespaces(session).contains(namespace);
   }
 
   @Override
@@ -125,6 +139,15 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
+  public void registerTable(
+      ConnectorSession session,
+      SchemaTableName tableName,
+      String tableLocation,
+      String metadataLocation) {
+    throw new TrinoException(NOT_SUPPORTED, "Unsupported create table");
+  }
+
+  @Override
   public void dropTable(ConnectorSession session, SchemaTableName schemaTableName) {
     arcticCatalog.dropTable(TableIdentifier.of(arcticCatalog.name(),
         schemaTableName.getSchemaName(), schemaTableName.getTableName()), true);
@@ -146,6 +169,19 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public void updateTableComment(ConnectorSession session, SchemaTableName schemaTableName, Optional<String> comment) {
+    throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
+  }
+
+  @Override
+  public void updateViewComment(ConnectorSession session, SchemaTableName schemaViewName, Optional<String> comment) {
+    throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
+  }
+
+  @Override
+  public void updateViewColumnComment(
+      ConnectorSession session,
+      SchemaTableName schemaViewName,
+      String columnName, Optional<String> comment) {
     throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
   }
 

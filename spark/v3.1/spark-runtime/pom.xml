@@ -16,17 +16,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
+        <artifactId>arctic-spark</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-spark-3.1-runtime</artifactId>
     <packaging>jar</packaging>
@@ -48,10 +46,10 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <!--                            <minimizeJar>true</minimizeJar>-->
                             <createSourcesJar>true</createSourcesJar>
@@ -64,9 +62,10 @@
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
                                     <incluede>com.netease.arctic:arctic-hive</incluede>
+                                    <include>com.alibaba:fastjson</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
-                                    <include>org.apache.iceberg:iceberg-spark3</include>
+                                    <include>org.apache.iceberg:iceberg-spark-3.1_2.12</include>
                                     <include>org.apache.iceberg:iceberg-common</include>
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
@@ -81,7 +80,7 @@
                                     <include>org.apache.iceberg:iceberg-arrow</include>
                                     <include>org.apache.iceberg:iceberg-hive-metastore</include>
                                     <include>org.apache.iceberg:iceberg-spark</include>
-                                    <include>org.apache.iceberg:iceberg-spark3-extensions</include>
+                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.1_2.12</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
 
                                     <include>org.apache.thrift:libthrift</include>
@@ -111,12 +110,8 @@
                                         <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
                                         <exclude>org/apache/spark/sql/catalyst/analysis/ResolveProcedures**</exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
-                                        </exclude>
-                                        <exclude>
-                                            org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
-                                        </exclude>
+                                        <exclude>org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**</exclude>
+                                        <exclude>org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**</exclude>
                                     </excludes>
                                 </filter>
 
@@ -129,13 +124,11 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst</shadedPattern>
                                     <includes>
                                         <include>org.apache.spark.sql.execution.datasources.v2.Arctic*</include>
                                     </includes>
                                 </relocation>
-
 
                                 <!-- relocation required dependencies -->
                                 <relocation>
@@ -195,6 +188,10 @@
                                     <pattern>org.apache.commons.lang3</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.commons.lang3</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>com.alibaba.fastjson</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.com.alibaba.fastjson</shadedPattern>
+                                </relocation>
 
                                 <!-- relocation iceberg -->
                                 <relocation>
@@ -203,97 +200,58 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.connector.iceberg
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.connector.iceberg</shadedPattern>
                                     <excludes>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog
-                                        </exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog</exclude>
                                         <exclude>org.apache.spark.sql.connector.iceberg.catalog.Procedure</exclude>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter
-                                        </exclude>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl
-                                        </exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl</exclude>
                                     </excludes>
                                 </relocation>
 
                                 <!-- relocation iceberg-spark3-extensions -->
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources.v2</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources.v2
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.execution.datasources.v2</shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.AddPartitionFieldExec*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.AddPartitionFieldExec*</include>
                                         <include>org.apache.spark.sql.execution.datasources.v2.CallExec*</include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DropIdentifierFields*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DropPartitionFieldExec*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterWithCardinalityCheckExec*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedBatchScanExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Implicits*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DropIdentifierFields*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DropPartitionFieldExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterWithCardinalityCheckExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedBatchScanExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Implicits*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*</include>
                                         <include>org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*</include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplaceDataExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ReplacePartitionFieldExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetIdentifierFieldsExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplaceDataExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplacePartitionFieldExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.SetIdentifierFieldsExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.execution.datasources</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.SparkExpressionConverter*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.datasources.SparkExpressionConverter*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.analysis</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.analysis
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.analysis</shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.catalyst.analysis.AlignRowLevelOperations*
-                                        </include>
-                                        <include>org.apache.spark.sql.catalyst.analysis.AssignmentAlignmentSupport*
-                                        </include>
-                                        <include>org.apache.spark.sql.catalyst.analysis.ProcedureArgumentCoercion*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.AlignRowLevelOperations*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.AssignmentAlignmentSupport*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.ProcedureArgumentCoercion*</include>
                                         <include>org.apache.spark.sql.catalyst.analysis.ResolveProcedures*</include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.expressions</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.expressions
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.expressions</shadedPattern>
                                     <includes>
                                         <include>org.apache.spark.sql.catalyst.expressions.AccumulateFiles*</include>
                                         <include>org.apache.spark.sql.catalyst.expressions.Iceberg*</include>
@@ -301,16 +259,10 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.optimizer</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.optimizer
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.optimizer</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.OptimizeConditionsInRowLevelOperations*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicatesInRowLevelOperations*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.OptimizeConditionsInRowLevelOperations*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicatesInRowLevelOperations*</include>
                                         <include>org.apache.spark.sql.catalyst.optimizer.RewriteDelete*</include>
                                         <include>org.apache.spark.sql.catalyst.optimizer.RewriteMergeInto*</include>
                                         <include>org.apache.spark.sql.catalyst.optimizer.RewriteUpdate*</include>
@@ -318,57 +270,39 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.parser.extensions</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.parser.extensions
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.parser.extensions</shadedPattern>
                                     <includes>
                                         <include>org.apache.spark.sql.catalyst.parser.extensions.Iceberg*</include>
-                                        <include>org.apache.spark.sql.catalyst.parser.extensions.UpperCaseCharStream*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.parser.extensions.UpperCaseCharStream*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.plans.logical</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.plans.logical
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.plans.logical</shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.AddPartitionField*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.AddPartitionField*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.Call*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.Drop*</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.DynamicFileFilter*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.DynamicFileFilter*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.MergeInto</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.MergeInto$</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.MergeIntoParams*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.NamedArgument*</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.PositionalArgument*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.PositionalArgument*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.ReplaceData*</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField*
-                                        </include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SortOrderParserUtil*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.SortOrderParserUtil*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.utils</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.utils
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst.utils</shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.catalyst.utils.DistributionAndOrderingUtils*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.utils.DistributionAndOrderingUtils*</include>
                                         <include>org.apache.spark.sql.catalyst.utils.PlanUtils*</include>
-                                        <include>org.apache.spark.sql.catalyst.utils.RewriteRowLevelOperationHelper*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.utils.RewriteRowLevelOperationHelper*</include>
                                         <include>org.apache.spark.sql.catalyst.utils.SetAccumulator*</include>
                                     </includes>
                                 </relocation>
@@ -394,10 +328,10 @@
                         <executions>
                             <execution>
                                 <id>empty-javadoc-jar</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <phase>package</phase>
                                 <configuration>
                                     <classifier>javadoc</classifier>
                                     <classesDirectory>${basedir}/javadoc</classesDirectory>

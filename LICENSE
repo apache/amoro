@@ -230,6 +230,9 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.parquet.ReadConf copied and modified to org.apache.iceberg.parquet.AdaptHiveReadConf
 * org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor copied and modified to org.apache.iceberg.spark.data.AdaptHiveParquetWithSparkSchemaVisitor
 * org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
+* iceberg-spark-2.4 SparkSchemaUtil and it's dependencies are copied to arctic-spark-2.3 module
+* iceberg-spark-2.4 SparkFilters and it's dependencies are copied to arctic-spark-2.3 module
+* iceberg-spark-2.4 SparkStructLike and it's dependencies are copied to arctic-spark-2.3 module
 
 
 Copyright: 2011-2019 The Apache Software Foundation

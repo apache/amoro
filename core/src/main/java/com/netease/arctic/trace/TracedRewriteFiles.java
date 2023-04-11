@@ -18,50 +18,59 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.op.ArcticUpdate;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
-import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Wrap {@link RewriteFiles} with {@link TableTracer}.
  */
-public class TracedRewriteFiles implements RewriteFiles {
+public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements RewriteFiles {
   private final RewriteFiles rewriteFiles;
-  private final TableTracer tracer;
 
-  public TracedRewriteFiles(RewriteFiles rewriteFiles, TableTracer tracer) {
+  public static Builder buildFor(ArcticTable table) {
+    return new Builder(table);
+  }
+
+  protected TracedRewriteFiles(ArcticTable table, RewriteFiles rewriteFiles, TableTracer tracer) {
+    super(table, rewriteFiles, tracer);
     this.rewriteFiles = rewriteFiles;
-    this.tracer = tracer;
   }
 
   @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
     rewriteFiles.rewriteFiles(filesToDelete, filesToAdd);
-    filesToAdd.forEach(tracer::addDataFile);
-    filesToDelete.forEach(tracer::deleteDataFile);
+    filesToAdd.forEach(this::addIcebergDataFile);
+    filesToDelete.forEach(this::deleteIcebergDataFile);
     return this;
   }
 
   @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
     rewriteFiles.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
-    filesToAdd.forEach(tracer::addDataFile);
-    filesToDelete.forEach(tracer::deleteDataFile);
+    filesToAdd.forEach(this::addIcebergDataFile);
+    filesToDelete.forEach(this::deleteIcebergDataFile);
     return this;
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> dataFilesToReplace, Set<DeleteFile> deleteFilesToReplace,
-                                   Set<DataFile> dataFilesToAdd, Set<DeleteFile> deleteFilesToAdd) {
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> dataFilesToReplace, Set<DeleteFile> deleteFilesToReplace,
+      Set<DataFile> dataFilesToAdd, Set<DeleteFile> deleteFilesToAdd) {
     rewriteFiles.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
-    dataFilesToAdd.forEach(tracer::addDataFile);
-    dataFilesToReplace.forEach(tracer::deleteDataFile);
-    deleteFilesToAdd.forEach(tracer::addDeleteFile);
-    deleteFilesToReplace.forEach(tracer::deleteDeleteFile);
+    dataFilesToAdd.forEach(this::addIcebergDataFile);
+    dataFilesToReplace.forEach(this::deleteIcebergDataFile);
+    deleteFilesToAdd.forEach(this::addIcebergDeleteFile);
+    deleteFilesToReplace.forEach(this::deleteIcebergDeleteFile);
     return this;
   }
 
@@ -72,37 +81,49 @@ public class TracedRewriteFiles implements RewriteFiles {
   }
 
   @Override
-  public RewriteFiles set(String property, String value) {
-    rewriteFiles.set(property, value);
-    tracer.setSnapshotSummary(property, value);
+  protected RewriteFiles self() {
     return this;
   }
 
-  @Override
-  public RewriteFiles deleteWith(Consumer<String> deleteFunc) {
-    rewriteFiles.deleteWith(deleteFunc);
-    return this;
-  }
+  public static class Builder extends ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> {
 
-  @Override
-  public RewriteFiles stageOnly() {
-    rewriteFiles.stageOnly();
-    return this;
-  }
+    private Builder(ArcticTable table) {
+      super(table);
+    }
 
-  @Override
-  public Snapshot apply() {
-    return rewriteFiles.apply();
-  }
+    @Override
+    public ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> traceTable(
+        AmsClient client, UnkeyedTable traceTable) {
+      if (client != null) {
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.REPLACE, client, true);
+        traceTable(tracer);
+      }
+      return this;
+    }
 
-  @Override
-  public void commit() {
-    rewriteFiles.commit();
-    tracer.commit();
-  }
+    @Override
+    protected TracedRewriteFiles updateWithWatermark(
+        TableTracer tableTracer,
+        Transaction transaction,
+        boolean autoCommitTransaction) {
+      return new TracedRewriteFiles(table, transaction.newRewrite(), tableTracer);
+    }
 
-  @Override
-  public Object updateEvent() {
-    return rewriteFiles.updateEvent();
+    @Override
+    protected TracedRewriteFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<RewriteFiles> delegateSupplier) {
+      return new TracedRewriteFiles(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<RewriteFiles> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newRewrite;
+    }
+
+    @Override
+    protected Supplier<RewriteFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newRewrite;
+    }
+
   }
 }

@@ -36,11 +36,12 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
@@ -57,8 +58,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
 
 public class CreateTableTransaction implements Transaction {
 
@@ -137,6 +140,11 @@ public class CreateTableTransaction implements Transaction {
       @Override
       public AppendFiles stageOnly() {
         throw new UnsupportedOperationException("create table transaction AppendFiles unsupported stageOnly");
+      }
+
+      @Override
+      public AppendFiles scanManifestsWith(ExecutorService executorService) {
+        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported scanManifestsWith");
       }
 
       @Override
@@ -423,10 +431,6 @@ public class CreateTableTransaction implements Transaction {
       return transactionTable.expireSnapshots();
     }
 
-    @Override
-    public Rollback rollback() {
-      return transactionTable.rollback();
-    }
 
     @Override
     public ManageSnapshots manageSnapshots() {
@@ -451,6 +455,16 @@ public class CreateTableTransaction implements Transaction {
     @Override
     public LocationProvider locationProvider() {
       return transactionTable.locationProvider();
+    }
+
+    @Override
+    public List<StatisticsFile> statisticsFiles() {
+      return transactionTable.statisticsFiles();
+    }
+
+    @Override
+    public Map<String, SnapshotRef> refs() {
+      return transactionTable.refs();
     }
 
     @Override

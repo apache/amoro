@@ -30,7 +30,7 @@ public class IcebergSchemaUtil {
   public static PartitionSpec copyPartitionSpec(PartitionSpec partitionSpec, Schema copySchema) {
     PartitionSpec.Builder builder = PartitionSpec.builderFor(copySchema);
     partitionSpec.fields().forEach(partitionField -> {
-      builder.add(partitionField.sourceId(), partitionField.name(), partitionField.transform().toString());
+      builder.add(partitionField.sourceId(), partitionField.name(), partitionField.transform());
     });
     return builder.build();
   }
@@ -47,7 +47,7 @@ public class IcebergSchemaUtil {
     SortOrder.Builder builder = SortOrder.builderFor(copySchema);
     sortOrder.fields().forEach(sortField -> {
       builder.addSortField(
-          sortField.transform().toString(),
+          sortField.transform(),
           sortField.sourceId(),
           sortField.direction(),
           sortField.nullOrder());
@@ -63,7 +63,7 @@ public class IcebergSchemaUtil {
         return;
       }
 
-      builder.add(p.sourceId(), p.name(), p.transform().toString());
+      builder.add(p.sourceId(), p.name(), p.transform());
     });
     return builder.build();
   }

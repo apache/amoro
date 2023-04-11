@@ -18,48 +18,67 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticCatalog, isArcticTable}
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
+import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.execution.datasources.v2._
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{SparkSession, Strategy}
-
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended)
-      if isArcticTable(r.table) =>
+        if isArcticTable(r.table) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
       }
       DescribeKeyedTableExec(r.table, r.catalog, r.identifier, isExtended) :: Nil
 
     case MigrateToArcticLogicalPlan(command) =>
-      println("create migrate to arctic command logical")
       MigrateToArcticExec(command) :: Nil
 
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs) =>
       ArcticRowLevelWriteExec(
-        table.table.asArcticTable, planLater(query),
-        new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table)) :: Nil
-
+        table.table.asArcticTable,
+        planLater(query),
+        new CaseInsensitiveStringMap(options.asJava),
+        projs,
+        refreshCache(table)) :: Nil
     case MergeRows(
-    isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-    notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
-    output, child) =>
+          isSourceRowPresent,
+          isTargetRowPresent,
+          matchedConditions,
+          matchedOutputs,
+          notMatchedConditions,
+          notMatchedOutputs,
+          rowIdAttrs,
+          matchedRowCheck,
+          unMatchedRowCheck,
+          emitNotMatchedTargetRows,
+          output,
+          child) =>
       MergeRowsExec(
-        isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
-        output, planLater(child)) :: Nil
+        isSourceRowPresent,
+        isTargetRowPresent,
+        matchedConditions,
+        matchedOutputs,
+        notMatchedConditions,
+        notMatchedOutputs,
+        rowIdAttrs,
+        matchedRowCheck,
+        unMatchedRowCheck,
+        emitNotMatchedTargetRows,
+        output,
+        planLater(child)) :: Nil
 
     case QueryWithConstraintCheckPlan(scanPlan, fileFilterPlan) =>
       QueryWithConstraintCheckExec(planLater(scanPlan), planLater(fileFilterPlan)) :: Nil

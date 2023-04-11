@@ -34,17 +34,17 @@ public interface ContainerMetadataMapper {
 
   @Select("select name, type, properties from " + TABLE_NAME)
   @Results({
-          @Result(property = "name", column = "name"),
-          @Result(property = "type", column = "type"),
-          @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
+      @Result(property = "name", column = "name"),
+      @Result(property = "type", column = "type"),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<Container> getContainers();
 
   @Select("select name, type, properties from " + TABLE_NAME + " where name = #{name}")
   @Results({
-          @Result(property = "name", column = "name"),
-          @Result(property = "type", column = "type"),
-          @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
+      @Result(property = "name", column = "name"),
+      @Result(property = "type", column = "type"),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   Container getContainer(@Param("name") String name);
 
@@ -52,6 +52,6 @@ public interface ContainerMetadataMapper {
   String getType(String name);
 
   @Insert("replace into " + TABLE_NAME + " (name, type, properties) values (#{container.name}, #{container.type}, " +
-          "#{container.properties, typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter})")
+      "#{container.properties, typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter})")
   void insertContainer(@Param("container") Container container);
 }
