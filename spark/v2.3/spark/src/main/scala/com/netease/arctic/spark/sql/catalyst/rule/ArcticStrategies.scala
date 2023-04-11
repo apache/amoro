@@ -26,7 +26,6 @@ import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.WriteToDataSourceV2Exec
-import org.apache.spark.sql.{SaveMode, Strategy}
 
 case class ArcticStrategies() extends Strategy {
   def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
