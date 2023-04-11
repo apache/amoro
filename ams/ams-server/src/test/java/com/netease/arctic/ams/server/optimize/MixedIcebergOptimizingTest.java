@@ -335,6 +335,42 @@ public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
     assertOptimizeHangUp(tb, startId + offset);
   }
 
+  public void testPartitionArcticTablePartialOptimizing() {
+    int offset = 1;
+    KeyedTable table = arcticTable.asKeyedTable();
+    TableIdentifier tb = table.id();
+    emptyCommit(table);
+    emptyCommit(table);
+    emptyCommit(table);
+    emptyCommit(table);
+
+    // Step1: insert base data
+    List<DataFile> dataFiles = writeBase(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3)),
+        newRecord(2, "bbb", quickDateWithZone(4)),
+        newRecord(3, "ccc", quickDateWithZone(5))
+    ));
+
+    long maxFileSizeLimit = dataFiles.get(0).fileSizeInBytes() * 4 - 100;
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES, maxFileSizeLimit + "");
+
+    // Step2: insert base data
+    writeBase(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3)),
+        newRecord(2, "bbb", quickDateWithZone(4)),
+        newRecord(3, "ccc", quickDateWithZone(5))
+    ));
+
+    // wait Major Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 2, 1);
+    assertIds(readRecords(table), 1, 1, 2, 2, 3, 3);
+
+    assertOptimizeHangUp(tb, startId + offset);
+  }
+
   private Record newRecord(Object... val) {
     return newRecord(arcticTable.schema(), val);
   }
