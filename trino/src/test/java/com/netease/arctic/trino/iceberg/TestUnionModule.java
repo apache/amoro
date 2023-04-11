@@ -54,7 +54,6 @@ import io.trino.plugin.iceberg.IcebergConfig;
 import io.trino.plugin.iceberg.IcebergFileWriterFactory;
 import io.trino.plugin.iceberg.IcebergNodePartitioningProvider;
 import io.trino.plugin.iceberg.IcebergPageSinkProvider;
-import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.plugin.iceberg.IcebergTableProperties;
 import io.trino.plugin.iceberg.RollbackToSnapshotProcedure;
 import io.trino.plugin.iceberg.TableStatisticsWriter;

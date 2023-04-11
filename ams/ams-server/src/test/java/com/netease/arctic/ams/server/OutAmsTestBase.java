@@ -18,21 +18,15 @@
 
 package com.netease.arctic.ams.server;
 
-import com.netease.arctic.ams.server.maintainer.TestCommandParser;
-import com.netease.arctic.ams.server.maintainer.TestGetMaintainerConfig;
-import com.netease.arctic.ams.server.maintainer.command.TestAnalyzeCall;
-import com.netease.arctic.ams.server.maintainer.command.TestOptimizeCall;
-import com.netease.arctic.ams.server.maintainer.command.TestRepairCall;
-import com.netease.arctic.ams.server.maintainer.command.TestShowCall;
-import com.netease.arctic.ams.server.maintainer.command.TestTableCall;
-import com.netease.arctic.ams.server.maintainer.command.TestUseCall;
+import com.netease.arctic.ams.server.utils.AmsUtilsTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestHighAvailabilityServices.class
+    TestHighAvailabilityServices.class,
+    AmsUtilsTest.class
 })
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
                   "com.amazonaws.http.conn.ssl.*",

@@ -133,6 +133,7 @@ public class UnKeyedTableUtilTest extends TableTestBase {
     getArcticTable().asKeyedTable().baseTable().expireSnapshots()
         .retainLast(1).expireOlderThan(System.currentTimeMillis()).cleanExpiredFiles(true).commit();
 
+    s1FilePath.remove(TableFileUtils.getUriPath(result.dataFiles()[0].path().toString()));
     Assert.assertEquals(s1FilePath, UnKeyedTableUtil.getAllContentFilePath(getArcticTable().asKeyedTable().baseTable()));
   }
 

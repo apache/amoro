@@ -8,17 +8,15 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "site/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "optimizer/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
   pull_request:
     branches:
@@ -52,7 +50,7 @@ jobs:
         run: mvn install -DskipTests -pl 'ams/ams-api,core,hive' -am
 
       - name: Build with Maven
-        run: mvn test -pl 'trino'
+        run: mvn clean test -pl 'trino'
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

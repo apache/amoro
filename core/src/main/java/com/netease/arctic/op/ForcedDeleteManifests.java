@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Can not confirm the consistency of data, just forced delete manifest.
@@ -44,8 +45,11 @@ public class ForcedDeleteManifests extends PublicSnapshotProducer<ForcedDeleteMa
 
   private Set<ManifestFile> deleteManifests = new HashSet<>();
 
+  private final TableOperations ops;
+
   protected ForcedDeleteManifests(TableOperations ops) {
     super(ops);
+    this.ops = ops;
   }
 
   public static ForcedDeleteManifests of(Table table) {
@@ -75,7 +79,9 @@ public class ForcedDeleteManifests extends PublicSnapshotProducer<ForcedDeleteMa
 
   @Override
   protected List<ManifestFile> apply(TableMetadata metadataToUpdate, Snapshot snapshot) {
-    return null;
+    return metadataToUpdate.currentSnapshot().allManifests(ops.io())
+        .stream().filter(s -> !deleteManifests.contains(s))
+        .collect(Collectors.toList());
   }
 
   @Override

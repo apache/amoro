@@ -116,7 +116,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
     if (isArcticTable(table)) {
-      return arcticCatalog.loadTable(ident);
+      return getArcticCatalog().loadTable(ident);
     }
     return table;
   }
@@ -177,6 +177,11 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     this.options = options;
+    try {
+      this.arcticCatalog = buildSparkCatalog(name, options);
+    } catch (Exception e) {
+      this.arcticCatalog = null;
+    }
   }
 
   @Override

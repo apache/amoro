@@ -52,7 +52,6 @@ import io.trino.plugin.iceberg.IcebergFileFormat;
 import io.trino.plugin.iceberg.IcebergInputInfo;
 import io.trino.plugin.iceberg.IcebergMergeTableHandle;
 import io.trino.plugin.iceberg.IcebergPartitioningHandle;
-import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.plugin.iceberg.IcebergTableHandle;
 import io.trino.plugin.iceberg.IcebergTableName;
 import io.trino.plugin.iceberg.IcebergUpdateHandle;

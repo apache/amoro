@@ -21,6 +21,7 @@ package com.netease.arctic.spark.sql.catalyst.rule
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite
 import com.netease.arctic.spark.sql.execution.CreateArcticTableAsSelectExec
 import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
+import org.apache.spark.sql.{SaveMode, Strategy}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
@@ -36,7 +37,8 @@ case class ArcticStrategies() extends Strategy {
       }
       val writer = optWriter.get() match {
         case w: SupportsDynamicOverwrite => w.overwriteDynamicPartitions()
-        case _ => throw AnalysisException.message(s"table ${table.identifier} does not support dynamic overwrite")
+        case _ => throw AnalysisException.message(
+            s"table ${table.identifier} does not support dynamic overwrite")
       }
       WriteToDataSourceV2Exec(writer, planLater(query)) :: Nil
 
@@ -44,6 +46,5 @@ case class ArcticStrategies() extends Strategy {
       CreateArcticTableAsSelectExec(arctic, tableDesc, planLater(query)) :: Nil
     case _ => Nil
   }
-
 
 }

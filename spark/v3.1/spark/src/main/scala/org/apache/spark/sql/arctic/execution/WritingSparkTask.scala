@@ -19,29 +19,29 @@
 package org.apache.spark.sql.arctic.execution
 
 import com.netease.arctic.spark.writer.RowLevelWriter
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory, WriterCommitMessage}
 import org.apache.spark.util.Utils
-import org.apache.spark.{SparkEnv, TaskContext}
 
 trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serializable {
 
   protected def writeFunc(writer: RowLevelWriter[InternalRow], row: InternalRow): Unit
 
   def run(
-    writerFactory: DataWriterFactory,
-    context: TaskContext,
-    iter: Iterator[InternalRow],
-    useCommitCoordinator: Boolean
-  ): DataWritingSparkTaskResult = {
+      writerFactory: DataWriterFactory,
+      context: TaskContext,
+      iter: Iterator[InternalRow],
+      useCommitCoordinator: Boolean): DataWritingSparkTaskResult = {
     val stageId = context.stageId()
     val stageAttempt = context.stageAttemptNumber()
     val partId = context.partitionId()
     val taskId = context.taskAttemptId()
     val attemptId = context.attemptNumber()
-    val dataWriter = writerFactory.createWriter(partId, taskId).asInstanceOf[RowLevelWriter[InternalRow]]
+    val dataWriter =
+      writerFactory.createWriter(partId, taskId).asInstanceOf[RowLevelWriter[InternalRow]]
 
     var count = 0L
     // write the data and commit this writer.
@@ -85,13 +85,13 @@ trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serial
         dataWriter.abort()
         logError(s"Aborted commit for partition $partId (task $taskId, attempt $attemptId, " +
           s"stage $stageId.$stageAttempt)")
-      }, finallyBlock = {
+      },
+      finallyBlock = {
         dataWriter.close()
       })
   }
 }
 
 case class DataWritingSparkTaskResult(
-  numRows: Long,
-  writerCommitMessage: WriterCommitMessage
-)
+    numRows: Long,
+    writerCommitMessage: WriterCommitMessage)
