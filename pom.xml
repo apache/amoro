@@ -461,6 +461,9 @@
                             <phase>test</phase>
                             <configuration>
                                 <outputDirectory>${project.build.directory}/codecov</outputDirectory>
+                                <includes>
+                                    <include>**/*.class</include>
+                                </includes>
                             </configuration>
                         </execution>
                     </executions>
