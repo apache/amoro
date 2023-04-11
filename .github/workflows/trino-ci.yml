@@ -50,10 +50,10 @@ jobs:
         run: mvn validate
 
       - name: Install dependency with Maven
-        run: mvn clean install -DskipTests -pl 'ams/ams-api,core,hive' -am
+        run: mvn clean install -DskipTests -Dcheckstyle.skip=true -pl 'ams/ams-api,core,hive' -am
 
       - name: Build with Maven
-        run: mvn clean test -pl 'trino'
+        run: mvn clean test -pl 'trino' -Dcheckstyle.skip=true
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
