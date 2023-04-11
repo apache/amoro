@@ -85,6 +85,11 @@ public class MinorOptimizePlan extends AbstractArcticOptimizePlan {
   }
 
   @Override
+  protected long getTaskFileSize(BasicOptimizeTask task) {
+    return task.getDeleteFileSize() + task.getInsertFileSize();
+  }
+
+  @Override
   protected long getLatestOptimizeTime(String partition) {
     return tableOptimizeRuntime.getLatestMinorOptimizeTime(partition);
   }
