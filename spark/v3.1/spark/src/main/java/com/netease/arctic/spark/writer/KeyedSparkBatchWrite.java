@@ -262,30 +262,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       this.orderedWrite = orderedWrite;
     }
 
-    public TaskWriter<InternalRow> newDeleteWriter(int partitionId, long taskId, StructType schema) {
+    public TaskWriter<InternalRow> newWriter(int partitionId, long taskId, StructType schema) {
       return TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
-          .newChangeWriter();
-    }
-
-    public TaskWriter<InternalRow> newInsertWriter(int partitionId, long taskId, StructType schema) {
-      if (orderedWrite) {
-        return TaskWriters.of(table)
-            .withTransactionId(transactionId)
-            .withPartitionId(partitionId)
-            .withTaskId(taskId)
-            .withDataSourceSchema(schema)
-            .withOrderedWriter(true)
-            .newChangeWriter();
-      }
-      return TaskWriters.of(table)
-          .withTransactionId(transactionId)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(schema)
+          .withOrderedWriter(orderedWrite)
           .newChangeWriter();
     }
   }
@@ -328,8 +311,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, dsSchema),
-          newDeleteWriter(partitionId, taskId, dsSchema), dsSchema, true);
+      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, dsSchema),
+          newWriter(partitionId, taskId, dsSchema), dsSchema, true);
     }
   }
 
@@ -343,8 +326,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields())
           .filter(field -> !field.name().equals(RowDeltaUtils.OPERATION_COLUMN())).toArray(StructField[]::new));
-      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
-          newDeleteWriter(partitionId, taskId, schema), dsSchema, true);
+      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, schema),
+          newWriter(partitionId, taskId, schema), dsSchema, true);
     }
   }
 
@@ -377,8 +360,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, dsSchema),
-          newDeleteWriter(partitionId, taskId, dsSchema), dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, dsSchema),
+          newWriter(partitionId, taskId, dsSchema), dsSchema, table.isKeyedTable());
     }
   }
 }

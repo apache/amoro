@@ -19,6 +19,8 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -36,12 +38,10 @@ import org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExecBase
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.vectorized.ColumnarBatch
 
-import scala.collection.JavaConverters._
-
 case class QueryWithConstraintCheckExec(
     scanExec: SparkPlan,
     fileFilterExec: SparkPlan)
-  extends DynamicFileFilterExecBase(scanExec, fileFilterExec)  {
+  extends DynamicFileFilterExecBase(scanExec, fileFilterExec) {
 
   override protected def doPrepare(): Unit = {
     val rows = fileFilterExec.executeCollect()
