@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
- # Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
+# Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
 
 "type:infra":
   - ".gitattributes"
