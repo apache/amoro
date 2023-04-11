@@ -89,6 +89,9 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 10000;
 
+  public static final String SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES = "self-optimizing.max-file-size-bytes";
+  public static final long SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES_DEFAULT = 8589934592L; // 8 GB
+
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
 
