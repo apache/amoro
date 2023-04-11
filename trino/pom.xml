@@ -674,14 +674,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <toolchains>
-                                <jdk>
-                                    <version>17</version>
-                                    <vendor>sun</vendor>
-                                </jdk>
-                            </toolchains>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
