@@ -147,6 +147,7 @@ public class TableEntriesScan {
       this.schema = schema;
       return this;
     }
+
     public Builder allEntries() {
       this.metadataTableType = MetadataTableType.ALL_ENTRIES;
       return this;
