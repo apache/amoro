@@ -82,9 +82,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     val expressions = new util.ArrayList[Expression]
     while (i < primaries.size) {
       val primary = primaries.get(i)
-      val primaryAttr = insertPlan.output.find(_.name == primary).get
-      val joinAttribute =
-        tableScan.output.find(_.name.replace("_arctic_before_", "") == primary).get
+      val primaryAttr = tableScan.output.find(_.name == primary).get
+      val joinAttribute = insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
       expressions.add(experssion)
       i += 1
@@ -100,16 +99,16 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def rewriteAppendAsUpsertQuery(
-      r: DataSourceV2Relation,
-      query: LogicalPlan): LogicalPlan = {
+                                  r: DataSourceV2Relation,
+                                  query: LogicalPlan
+                                ): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val tablePlan = buildKeyedTableBeforeProject(r)
-          // val insertPlan = buildKeyedTableInsertProjection(query)
-          val joinCondition = buildJoinCondition(primaries, tablePlan, query)
-          Join(query, tablePlan, RightOuter, Some(joinCondition), JoinHint.NONE)
+          val insertPlan = buildKeyedTableInsertProjection(query)
+          val joinCondition = buildJoinCondition(primaries, r, insertPlan)
+          Join(r, insertPlan, RightOuter, Some(joinCondition), JoinHint.NONE)
         } else {
           query
         }

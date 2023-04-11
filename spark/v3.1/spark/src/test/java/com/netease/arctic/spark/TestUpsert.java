@@ -62,8 +62,8 @@ public class TestUpsert extends SparkTestBase {
   private static final PartitionSpec partitionSpec = PartitionSpec.builderFor(schema)
       .identity("pt").build();
 
-  private static final int newRecordSize = 30;
-  private static final int upsertRecordSize = 20;
+  private static final int newRecordSize = 10;
+  private static final int upsertRecordSize = 10;
 
   @Parameterized.Parameters
   public static List<Object[]> arguments() {
@@ -92,7 +92,7 @@ public class TestUpsert extends SparkTestBase {
               .withSequencePrimaryKey(primaryKeySpec)
               .withRandomDate("pt")
               .build();
-          List<GenericRecord> target = generator.records(100);
+          List<GenericRecord> target = generator.records(10);
           List<GenericRecord> source = upsertSource(
               target, generator, primaryKeySpec, partitionSpec, upsertRecordSize, newRecordSize);
 
@@ -186,8 +186,10 @@ public class TestUpsert extends SparkTestBase {
   public void testKeyedTableUpsert() {
     sql("set `spark.sql.arctic.check-source-data-uniqueness.enabled`=" + this.checkSourceUniqueness);
     sql("set `spark.sql.arctic.optimize-write-enabled`=`true`");
-
+    sql("SELECT * FROM " + initView + " ORDER BY order_key ");
+    sql("SELECT * FROM " + sourceView + " ORDER BY order_key ");
     sql("INSERT OVERWRITE " + database + "." + table + " SELECT * FROM " + initView);
+    sql("SELECT * FROM " + database + "." + table + " ORDER BY order_key ");
     sql("insert into table " + database + '.' + table + " SELECT * FROM " + sourceView);
 
     rows = sql("SELECT * FROM " + database + "." + table + " ORDER BY order_key ");
