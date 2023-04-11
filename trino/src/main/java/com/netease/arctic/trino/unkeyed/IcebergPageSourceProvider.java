@@ -535,8 +535,10 @@ public class IcebergPageSourceProvider
           Type readType = getOrcReadType(column.getType(), typeManager);
 
           if (column.getType() == UUID && !"UUID".equals(orcColumn.getAttributes().get(ICEBERG_BINARY_TYPE))) {
-            throw new TrinoException(ICEBERG_BAD_DATA,
-                format("Expected ORC column for UUID data to be annotated with %s=UUID: %s",
+            throw new TrinoException(
+                ICEBERG_BAD_DATA,
+                format(
+                    "Expected ORC column for UUID data to be annotated with %s=UUID: %s",
                     ICEBERG_BINARY_TYPE,
                     orcColumn)
             );
