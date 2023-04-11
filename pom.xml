@@ -82,7 +82,7 @@
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
-        <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
+        <maven-jacoco-plugin.version>0.8.9</maven-jacoco-plugin.version>
 
         <iceberg.version>1.1.0</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
@@ -522,23 +522,23 @@
                                 <file>.scalafmt.conf</file>
                             </scalafmt>
                         </scala>
-                      <pom>
-                          <includes>
-                              <include>pom.xml</include>
-                          </includes>
-                          <sortPom>
-                              <encoding>${project.build.sourceEncoding}</encoding>
-                              <expandEmptyElements>true</expandEmptyElements>
-                              <indentSchemaLocation>true</indentSchemaLocation>
-                              <nrOfIndentSpace>4</nrOfIndentSpace>
-                          </sortPom>
-                      </pom>
+                        <pom>
+                            <includes>
+                                <include>pom.xml</include>
+                            </includes>
+                            <sortPom>
+                                <encoding>${project.build.sourceEncoding}</encoding>
+                                <expandEmptyElements>true</expandEmptyElements>
+                                <indentSchemaLocation>true</indentSchemaLocation>
+                                <nrOfIndentSpace>4</nrOfIndentSpace>
+                            </sortPom>
+                        </pom>
 
                     </configuration>
                     <executions>
                         <execution>
                             <goals>
-                              <goal>check</goal>
+                                <goal>check</goal>
                             </goals>
                         </execution>
                     </executions>
