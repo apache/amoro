@@ -47,11 +47,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run code checkstyle
-        run: mvn validate -Dmaven.scalastyle.skip=true
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Dcheckstyle.skip=true -X
+        run: mvn clean install -pl '!trino' -X
 
       - name: debug jacoco EOF problems
         if: ${{ always() }}
