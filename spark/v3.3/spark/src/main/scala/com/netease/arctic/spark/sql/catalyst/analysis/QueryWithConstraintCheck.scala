@@ -60,7 +60,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       a.copy(query = checkDataQuery)
 
     case c @ CreateTableAsSelect(ResolvedDBObjectName(catalog, _), _, query, tableSpec, _, _)
-        if checkDuplicatesEnabled() && isCreateKeyedTable(catalog, tableSpec.properties) =>
+        if checkDuplicatesEnabled() && isCreateKeyedTable(catalog, tableSpec) =>
       val primaries = tableSpec.properties("primary.keys").split(",")
       val validateQuery = buildValidatePrimaryKeyDuplicationByPrimaries(primaries, query)
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
@@ -73,12 +73,12 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
-  def isCreateKeyedTable(catalog: CatalogPlugin, props: Map[String, String]): Boolean = {
+  def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog =>
-        props("provider").equalsIgnoreCase("arctic") && props.contains("primary.keys")
+        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase("arctic") && tableSpec.properties.contains("primary.keys")
       case _: ArcticSparkSessionCatalog[_] =>
-        props("provider").equalsIgnoreCase("arctic") && props.contains("primary.keys")
+        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase("arctic") && tableSpec.properties.contains("primary.keys")
       case _ =>
         false
     }
