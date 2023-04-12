@@ -51,7 +51,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Dcheckstyle.skip=true
+        run: mvn clean install -pl '!trino' -Dcheckstyle.skip=true -X
 
       - name: debug jacoco EOF problems
         if: ${{ always() }}
