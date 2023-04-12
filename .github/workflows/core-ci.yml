@@ -49,7 +49,7 @@ jobs:
 
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -X
+        run: mvn clean install -pl '!trino' -B -X
 
       - name: debug jacoco EOF problems
         if: ${{ always() }}
