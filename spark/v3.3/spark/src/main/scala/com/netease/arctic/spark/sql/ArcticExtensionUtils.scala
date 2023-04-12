@@ -70,6 +70,27 @@ object ArcticExtensionUtils {
     }
   }
 
+  def isArcticKeyedRelation(plan: LogicalPlan): Boolean = {
+    def isArcticKeyedTable(relation: DataSourceV2Relation): Boolean = relation.table match {
+      case a: ArcticSparkTable =>
+        a.table().isKeyedTable
+      case _ => false
+    }
+
+    plan.collectLeaves().exists {
+      case p: DataSourceV2Relation => isArcticKeyedTable(p)
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
+        isArcticKeyedTable(p)
+      }
+      case _ => false
+    }
+  }
+
+  def isUpsert(relation: DataSourceV2Relation): Boolean = {
+    val upsertWrite = relation.table.asUpsertWrite
+    upsertWrite.appendAsUpsert()
+  }
+
   def isArcticIcebergRelation(plan: LogicalPlan): Boolean = {
     def isArcticIcebergTable(relation: DataSourceV2Relation): Boolean = relation.table match {
       case _: ArcticIcebergSparkTable => true
