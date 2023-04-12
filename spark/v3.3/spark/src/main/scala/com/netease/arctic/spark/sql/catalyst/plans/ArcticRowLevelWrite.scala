@@ -23,11 +23,12 @@ import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommand, V2WriteCommandLike, WriteDelta}
 import org.apache.spark.sql.connector.write.Write
 
-case class ArcticRowLevelWrite(table: NamedRelation,
-                               query: LogicalPlan,
-                               options: Map[String, String],
-                               projections: WriteQueryProjections,
-                               write: Option[Write] = None) extends V2WriteCommandLike {
+case class ArcticRowLevelWrite(
+    table: NamedRelation,
+    query: LogicalPlan,
+    options: Map[String, String],
+    projections: WriteQueryProjections,
+    write: Option[Write] = None) extends V2WriteCommandLike {
 
   def isByName: Boolean = false
 

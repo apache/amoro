@@ -37,8 +37,9 @@ case class UnresolvedMergeIntoArcticTable(
   override def left: LogicalPlan = targetTable
   override def right: LogicalPlan = sourceTable
 
-  override protected def withNewChildrenInternal(newLeft: LogicalPlan, newRight: LogicalPlan): LogicalPlan = {
+  override protected def withNewChildrenInternal(
+      newLeft: LogicalPlan,
+      newRight: LogicalPlan): LogicalPlan = {
     copy(targetTable = newLeft, sourceTable = newRight)
   }
 }
-

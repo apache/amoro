@@ -21,27 +21,28 @@ package com.netease.arctic.spark.sql.catalyst.analysis
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans.{MergeIntoArcticTable, UnresolvedMergeIntoArcticTable}
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.{caseInsensitiveResolution, withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
   def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
     EliminateSubqueryAliases(aliasedTable) match {
-      case r@DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
+      case r @ DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
         tbl match {
           case arctic: ArcticSparkTable =>
             if (arctic.table().isKeyedTable) {
               val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
               val condRefs = cond.references.filter(f => primaries.contains(f.name))
               if (condRefs.isEmpty) {
-                throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
+                throw new UnsupportedOperationException(
+                  s"Condition ${cond.references}. is not allowed because is not a primary key")
               }
             }
         }
@@ -51,7 +52,12 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
-    case m@UnresolvedMergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions) =>
+    case m @ UnresolvedMergeIntoArcticTable(
+          aliasedTable,
+          source,
+          cond,
+          matchedActions,
+          notMatchedActions) =>
       checkConditionIsPrimaryKey(aliasedTable, cond)
 
       val resolvedMatchedActions = matchedActions.map {
@@ -65,7 +71,8 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
           // for UPDATE *, the value must be from the source table
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           UpdateAction(resolvedUpdateCondition, resolvedAssignments)
 
         case UpdateStarAction(updateCondition) =>
@@ -74,11 +81,13 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
           // for UPDATE *, the value must be from the source table
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           UpdateAction(resolvedUpdateCondition, resolvedAssignments)
 
         case _ =>
-          throw new UnsupportedOperationException("Matched actions can only contain UPDATE or DELETE")
+          throw new UnsupportedOperationException(
+            "Matched actions can only contain UPDATE or DELETE")
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
@@ -87,7 +96,8 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)
         case InsertStarAction(cond) =>
           // the insert action is used when not matched, so its condition and value can only
@@ -96,9 +106,9 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
           }
-          val resolvedAssignments = resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+          val resolvedAssignments =
+            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)
-
 
         case _ =>
           throw new UnsupportedOperationException("Not matched actions can only contain INSERT")
@@ -115,9 +125,9 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   }
 
   private def resolveLiteralFunction(
-                                      nameParts: Seq[String],
-                                      attribute: UnresolvedAttribute,
-                                      plan: LogicalPlan): Option[Expression] = {
+      nameParts: Seq[String],
+      attribute: UnresolvedAttribute,
+      plan: LogicalPlan): Option[Expression] = {
     if (nameParts.length != 1) return None
     val isNamedExpression = plan match {
       case Aggregate(_, aggregateExpressions, _) => aggregateExpressions.contains(attribute)
@@ -135,14 +145,14 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   }
 
   def resolveExpressionBottomUp(
-                                 expr: Expression,
-                                 plan: LogicalPlan,
-                                 throws: Boolean = false): Expression = {
+      expr: Expression,
+      plan: LogicalPlan,
+      throws: Boolean = false): Expression = {
     if (expr.resolved) return expr
     try {
       expr transformUp {
         case GetColumnByOrdinal(ordinal, _) => plan.output(ordinal)
-        case u@UnresolvedAttribute(nameParts) =>
+        case u @ UnresolvedAttribute(nameParts) =>
           val result =
             withPosition(u) {
               plan.resolve(nameParts, resolver)
@@ -172,12 +182,11 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
     resolvedCond
   }
 
-
   def resolver: Resolver = conf.resolver
 
   def resolveExpressionByPlanChildren(
-                                       e: Expression,
-                                       q: LogicalPlan): Expression = {
+      e: Expression,
+      q: LogicalPlan): Expression = {
     resolveExpression(
       e,
       resolveColumnByName = nameParts => {
@@ -191,10 +200,10 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
   }
 
   private def resolveExpression(
-                                 expr: Expression,
-                                 resolveColumnByName: Seq[String] => Option[Expression],
-                                 getAttrCandidates: () => Seq[Attribute],
-                                 throws: Boolean): Expression = {
+      expr: Expression,
+      resolveColumnByName: Seq[String] => Option[Expression],
+      getAttrCandidates: () => Seq[Attribute],
+      throws: Boolean): Expression = {
     def innerResolve(e: Expression, isTopLevel: Boolean): Expression = {
       if (e.resolved) return e
       e match {
@@ -205,8 +214,7 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           assert(ordinal >= 0 && ordinal < attrCandidates.length)
           attrCandidates(ordinal)
 
-
-        case u@UnresolvedAttribute(nameParts) =>
+        case u @ UnresolvedAttribute(nameParts) =>
           val result = withPosition(u) {
             resolveColumnByName(nameParts).map {
               case Alias(child, _) if !isTopLevel => child
@@ -216,7 +224,7 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           logDebug(s"Resolving $u to $result")
           result
 
-        case u@UnresolvedExtractValue(child, fieldName) =>
+        case u @ UnresolvedExtractValue(child, fieldName) =>
           val newChild = innerResolve(child, isTopLevel = false)
           if (newChild.resolved) {
             withOrigin(u.origin) {
@@ -239,9 +247,9 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
 
   // copied from ResolveReferences in Spark
   private def resolveAssignments(
-                                  assignments: Seq[Assignment],
-                                  mergeInto: UnresolvedMergeIntoArcticTable,
-                                  resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
+      assignments: Seq[Assignment],
+      mergeInto: UnresolvedMergeIntoArcticTable,
+      resolveValuesWithSourceOnly: Boolean): Seq[Assignment] = {
     assignments.map { assign =>
       val resolvedKey = assign.key match {
         case c if !c.resolved =>

@@ -18,34 +18,34 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.SparkSQLProperties
-import com.netease.arctic.spark.sql.ArcticExtensionUtils
+import java.util
+
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
-import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, ResolvedTable}
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.LongType
 
-import java.util
-
 case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, _, _) if isArcticRelation(r) && isUpsert(r) =>
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _, _)
+        if isArcticRelation(r) && isUpsert(r) =>
       val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
-      val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
+      val insertQuery = Project(
+        Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output,
+        upsertQuery)
       val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
       val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
       val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
@@ -53,8 +53,10 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections, Some(write))
   }
 
-  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
-                             isUpsert: Boolean): WriteQueryProjections = {
+  def buildInsertProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      isUpsert: Boolean): WriteQueryProjections = {
     val (frontRowProjection, backRowProjection) = if (isUpsert) {
       val frontRowProjection =
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
@@ -69,12 +71,16 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     WriteQueryProjections(frontRowProjection, backRowProjection)
   }
 
-  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
+  def buildValidatePrimaryKeyDuplication(
+      r: DataSourceV2Relation,
+      query: LogicalPlan): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val than = GreaterThan(
+            AggregateExpression(Count(Literal(1)), Complete, isDistinct = false),
+            Cast(Literal(1), LongType))
           val alias = Alias(than, "count")()
           val attributes = query.output.filter(p => primaries.contains(p.name))
           Aggregate(attributes, Seq(alias), query)
@@ -89,14 +95,18 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     upsertWrite.appendAsUpsert()
   }
 
-  def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression = {
+  def buildJoinCondition(
+      primaries: util.List[String],
+      r: DataSourceV2Relation,
+      insertPlan: LogicalPlan): Expression = {
     var i = 0
     var joinCondition: Expression = null
     val expressions = new util.ArrayList[Expression]
     while (i < primaries.size) {
       val primary = primaries.get(i)
       val primaryAttr = r.output.find(_.name == primary).get
-      val joinAttribute = insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
+      val joinAttribute =
+        insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
       val experssion = EqualTo(primaryAttr, joinAttribute)
       expressions.add(experssion)
       i += 1
@@ -112,9 +122,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def rewriteAppendAsUpsertQuery(
-    r: DataSourceV2Relation,
-    query: LogicalPlan
-  ): LogicalPlan = {
+      r: DataSourceV2Relation,
+      query: LogicalPlan): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {

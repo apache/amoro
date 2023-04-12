@@ -3,24 +3,24 @@ package com.netease.arctic.spark.sql.execution
 import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, AttributeSet, BasePredicate, Expression, SortOrder, UnsafeProjection}
+import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
 import org.apache.spark.sql.catalyst.util.truncatedString
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 
 case class MergeRowsExec(
-                          isSourceRowPresent: Expression,
-                          isTargetRowPresent: Expression,
-                          matchedConditions: Seq[Expression],
-                          matchedOutputs: Seq[Seq[Expression]],
-                          notMatchedConditions: Seq[Expression],
-                          notMatchedOutputs: Seq[Seq[Expression]],
-                          rowIdAttrs: Seq[Attribute],
-                          matchedRowCheck: Boolean,
-                          unMatchedRowCheck: Boolean,
-                          emitNotMatchedTargetRows: Boolean,
-                          output: Seq[Attribute],
-                          child: SparkPlan) extends UnaryExecNode {
+    isSourceRowPresent: Expression,
+    isTargetRowPresent: Expression,
+    matchedConditions: Seq[Expression],
+    matchedOutputs: Seq[Seq[Expression]],
+    notMatchedConditions: Seq[Expression],
+    notMatchedOutputs: Seq[Seq[Expression]],
+    rowIdAttrs: Seq[Attribute],
+    matchedRowCheck: Boolean,
+    unMatchedRowCheck: Boolean,
+    emitNotMatchedTargetRows: Boolean,
+    output: Seq[Attribute],
+    child: SparkPlan) extends UnaryExecNode {
 
   override def requiredChildOrdering: Seq[Seq[SortOrder]] = {
     if (matchedRowCheck || unMatchedRowCheck) {
@@ -41,7 +41,7 @@ case class MergeRowsExec(
     s"MergeRowsExec${truncatedString(output, "[", ", ", "]", maxFields)}"
   }
 
-  protected override def doExecute(): RDD[InternalRow] = {
+  override protected def doExecute(): RDD[InternalRow] = {
     child.execute().mapPartitions(processPartition)
   }
 
@@ -58,8 +58,8 @@ case class MergeRowsExec(
   }
 
   private def applyProjection(
-                               actions: Seq[(BasePredicate, Option[UnsafeProjection])],
-                               inputRow: InternalRow): InternalRow = {
+      actions: Seq[(BasePredicate, Option[UnsafeProjection])],
+      inputRow: InternalRow): InternalRow = {
 
     // find the first action where the predicate evaluates to true
     // if there are overlapping conditions in actions, use the first matching action
@@ -129,12 +129,12 @@ case class MergeRowsExec(
               "the target table with multiple rows of the source table. ")
         }
         lastMatchedRowId = currentRowId.copy()
-      } else if (isSourceRowPresent && !isTargetRowPresent && unMatchedRowCheck){
-          val currentRowId = rowIdProj.apply(inputRow)
-          if (currentRowId == lastMatchedRowId) {
-            throw new SparkException(
-                "There are multiple duplicate primary key data in the inserted data, " +
-                "which cannot guarantee the uniqueness of the primary key. ")
+      } else if (isSourceRowPresent && !isTargetRowPresent && unMatchedRowCheck) {
+        val currentRowId = rowIdProj.apply(inputRow)
+        if (currentRowId == lastMatchedRowId) {
+          throw new SparkException(
+            "There are multiple duplicate primary key data in the inserted data, " +
+              "which cannot guarantee the uniqueness of the primary key. ")
         }
         lastMatchedRowId = currentRowId.copy()
       } else {

@@ -18,28 +18,27 @@
 
 package org.apache.spark.sql.arctic.catalyst
 
+import java.util.UUID
+
 import com.netease.arctic.data.PrimaryKeyData
 import com.netease.arctic.spark.SparkInternalRowWrapper
 import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.{catalyst, connector, AnalysisException}
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.types.{DataType, LongType, StructType}
-import org.apache.spark.sql.{AnalysisException, catalyst, connector}
-
-import java.util.UUID
 
 object ArcticSpark33Helper extends SQLConfHelper {
 
   import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
-
 
   def toCatalyst(expr: connector.expressions.Expression, query: LogicalPlan): Expression = {
     def resolve(parts: Seq[String]): NamedExpression = {
@@ -82,14 +81,16 @@ object ArcticSpark33Helper extends SQLConfHelper {
     }
   }
 
-  private def toCatalystSortDirection(direction: SortDirection): catalyst.expressions.SortDirection = {
+  private def toCatalystSortDirection(direction: SortDirection)
+      : catalyst.expressions.SortDirection = {
     direction match {
       case SortDirection.ASCENDING => catalyst.expressions.Ascending
       case SortDirection.DESCENDING => catalyst.expressions.Descending
     }
   }
 
-  private def toCatalystNullOrdering(nullOrdering: NullOrdering): catalyst.expressions.NullOrdering = {
+  private def toCatalystNullOrdering(nullOrdering: NullOrdering)
+      : catalyst.expressions.NullOrdering = {
     nullOrdering match {
       case NullOrdering.NULLS_FIRST => catalyst.expressions.NullsFirst
       case NullOrdering.NULLS_LAST => catalyst.expressions.NullsLast
@@ -99,20 +100,24 @@ object ArcticSpark33Helper extends SQLConfHelper {
   private object ArcticBucketTransform {
     def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
       case bt: BucketTransform => bt.columns match {
-        case Seq(nf: NamedReference) =>
-          Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
-        case _ =>
-          None
-      }
+          case Seq(nf: NamedReference) =>
+            Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
+          case _ =>
+            None
+        }
       case _ => None
     }
   }
 
-  case class ArcticFileIndexBucketTransform(numBuckets: Int, keyData: PrimaryKeyData, schema: Schema)
+  case class ArcticFileIndexBucketTransform(
+      numBuckets: Int,
+      keyData: PrimaryKeyData,
+      schema: Schema)
     extends Expression with CodegenFallback with NullIntolerant {
 
     @transient
-    lazy val internalRowToStruct: SparkInternalRowWrapper = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema))
+    lazy val internalRowToStruct: SparkInternalRowWrapper =
+      new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema))
 
     override def dataType: DataType = LongType
 
@@ -134,15 +139,16 @@ object ArcticSpark33Helper extends SQLConfHelper {
       s"ArcticFileIndexBucket($numBuckets)"
     }
 
-    override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression = null
+    override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression])
+        : Expression = null
   }
 
   def newWriteBuilder(
-                               table: Table,
-                               rowSchema: StructType,
-                               writeOptions: Map[String, String],
-                               rowIdSchema: StructType = null,
-                               metadataSchema: StructType = null): WriteBuilder = {
+      table: Table,
+      rowSchema: StructType,
+      writeOptions: Map[String, String],
+      rowIdSchema: StructType = null,
+      metadataSchema: StructType = null): WriteBuilder = {
     val info = ExtendedLogicalWriteInfoImpl(
       queryId = UUID.randomUUID().toString,
       rowSchema,

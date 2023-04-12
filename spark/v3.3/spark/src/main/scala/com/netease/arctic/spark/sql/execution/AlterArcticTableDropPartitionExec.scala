@@ -18,6 +18,8 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import java.util
+
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import org.apache.iceberg.spark.SparkFilters
@@ -29,12 +31,9 @@ import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
 import org.apache.spark.sql.types._
 
-import java.util
-
 case class AlterArcticTableDropPartitionExec(
-  table: Table,
-  parts: Seq[PartitionSpec]
-) extends LeafV2CommandExec {
+    table: Table,
+    parts: Seq[PartitionSpec]) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     // build partitions
     val rows: Seq[InternalRow] = parts.map {
@@ -84,7 +83,8 @@ case class AlterArcticTableDropPartitionExec(
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val txId = arctic.table().asKeyedTable().beginTransaction(null)
-          val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
+          val overwriteBaseFiles: OverwriteBaseFiles =
+            arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(expression)
           overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()

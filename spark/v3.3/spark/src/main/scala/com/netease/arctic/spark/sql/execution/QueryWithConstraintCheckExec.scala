@@ -30,7 +30,7 @@ import org.apache.spark.sql.vectorized.ColumnarBatch
 case class QueryWithConstraintCheckExec(
     scanExec: SparkPlan,
     fileFilterExec: SparkPlan)
-  extends BinaryExecNode  {
+  extends BinaryExecNode {
 
   override protected def doPrepare(): Unit = {
     val rows = fileFilterExec.executeCollect()
@@ -53,7 +53,9 @@ case class QueryWithConstraintCheckExec(
 
   override def supportsColumnar: Boolean = scanExec.supportsColumnar
 
-  override protected def withNewChildrenInternal(newLeft: SparkPlan, newRight: SparkPlan): SparkPlan = {
+  override protected def withNewChildrenInternal(
+      newLeft: SparkPlan,
+      newRight: SparkPlan): SparkPlan = {
     copy(scanExec = newLeft, fileFilterExec = newRight)
   }
 

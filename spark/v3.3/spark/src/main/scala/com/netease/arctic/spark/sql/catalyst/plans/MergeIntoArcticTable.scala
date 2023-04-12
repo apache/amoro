@@ -23,13 +23,12 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical._
 
 case class MergeIntoArcticTable(
-  targetTable: LogicalPlan,
-  sourceTable: LogicalPlan,
-  mergeCondition: Expression,
-  matchedActions: Seq[MergeAction],
-  notMatchedActions: Seq[MergeAction],
-  rewritePlan: Option[LogicalPlan] = None
-) extends BinaryCommand {
+    targetTable: LogicalPlan,
+    sourceTable: LogicalPlan,
+    mergeCondition: Expression,
+    matchedActions: Seq[MergeAction],
+    notMatchedActions: Seq[MergeAction],
+    rewritePlan: Option[LogicalPlan] = None) extends BinaryCommand {
 
   lazy val aligned: Boolean = {
     val matchedActionsAligned = matchedActions.forall {
@@ -57,7 +56,9 @@ case class MergeIntoArcticTable(
 
   override def right: LogicalPlan = sourceTable
 
-  override protected def withNewChildrenInternal(newLeft: LogicalPlan, newRight: LogicalPlan): LogicalPlan = {
+  override protected def withNewChildrenInternal(
+      newLeft: LogicalPlan,
+      newRight: LogicalPlan): LogicalPlan = {
     copy(targetTable = newLeft, sourceTable = newRight)
   }
 }

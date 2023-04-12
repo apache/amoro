@@ -20,9 +20,10 @@ package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ParsedStatement}
 
-
-case class MigrateToArcticStatement(source: Seq[String], target:Seq[String]) extends ParsedStatement {
+case class MigrateToArcticStatement(source: Seq[String], target: Seq[String])
+  extends ParsedStatement {
   override def children: Seq[LogicalPlan] = Nil
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = null
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+      : LogicalPlan = null
 }

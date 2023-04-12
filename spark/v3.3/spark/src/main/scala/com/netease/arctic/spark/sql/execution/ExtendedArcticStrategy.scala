@@ -18,23 +18,23 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticTable}
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticTable, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans._
+import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{SparkSession, Strategy}
-
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended, _)
-      if isArcticTable(r.table) =>
+        if isArcticTable(r.table) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
       }
@@ -46,17 +46,39 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
 
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs, Some(write)) =>
       ArcticRowLevelWriteExec(
-        table.table.asArcticTable, planLater(query),
-        new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table), write) :: Nil
+        table.table.asArcticTable,
+        planLater(query),
+        new CaseInsensitiveStringMap(options.asJava),
+        projs,
+        refreshCache(table),
+        write) :: Nil
 
     case MergeRows(
-    isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-    notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
-    output, child) =>
+          isSourceRowPresent,
+          isTargetRowPresent,
+          matchedConditions,
+          matchedOutputs,
+          notMatchedConditions,
+          notMatchedOutputs,
+          rowIdAttrs,
+          matchedRowCheck,
+          unMatchedRowCheck,
+          emitNotMatchedTargetRows,
+          output,
+          child) =>
       MergeRowsExec(
-        isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
-        output, planLater(child)) :: Nil
+        isSourceRowPresent,
+        isTargetRowPresent,
+        matchedConditions,
+        matchedOutputs,
+        notMatchedConditions,
+        notMatchedOutputs,
+        rowIdAttrs,
+        matchedRowCheck,
+        unMatchedRowCheck,
+        emitNotMatchedTargetRows,
+        output,
+        planLater(child)) :: Nil
 
     case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _) =>
       AlterArcticTableDropPartitionExec(r.table, d.parts) :: Nil

@@ -25,5 +25,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 case class TruncateArcticTable(child: LogicalPlan) extends Command {
   override def children: Seq[LogicalPlan] = child :: Nil
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = child
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan])
+      : LogicalPlan = child
 }

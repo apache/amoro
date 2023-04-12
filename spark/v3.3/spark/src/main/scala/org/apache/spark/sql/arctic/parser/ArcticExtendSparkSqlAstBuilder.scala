@@ -18,45 +18,46 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
+import java.util
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.{ArrayBuffer, Set}
+
 import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseVisitor, ArcticExtendSparkSqlParser}
-import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
+import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.apache.commons.codec.DecoderException
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{MultiAlias, RelationTimeTravel, UnresolvedAlias, UnresolvedAttribute, UnresolvedDBObjectName, UnresolvedExtractValue, UnresolvedFieldName, UnresolvedFieldPosition, UnresolvedFunc, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedNamespace, UnresolvedPartitionSpec, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTable, UnresolvedTableOrView, UnresolvedView}
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat}
+import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BaseGroupingSets, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentDate, CurrentRow, CurrentTimestamp, CurrentUser, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, GroupingSets, ILike, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LateralSubquery, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Lower, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RangeFrame, Remainder, RLike, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, SubqueryExpression, Substring, Subtract, TimestampAdd, TimestampDiff, TryCast, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last, PercentileCont, PercentileDisc}
-import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BaseGroupingSets, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentDate, CurrentRow, CurrentTimestamp, CurrentUser, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, GroupingSets, ILike, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LateralSubquery, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Lower, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, SubqueryExpression, Substring, Subtract, TimestampAdd, TimestampDiff, TryCast, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, DateTimeUtils, IntervalUtils}
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils._
+import org.apache.spark.sql.connector.catalog.{CatalogV2Util, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.BucketSpecHelper
 import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
-import org.apache.spark.sql.connector.catalog.{CatalogV2Util, SupportsNamespaces, TableCatalog}
-import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.Utils.isTesting
 import org.apache.spark.util.random.RandomSampler
 
-import java.util
-import java.util.Locale
-import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, Set}
-
 class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
-  extends ArcticExtendSparkSqlBaseVisitor[AnyRef] with SQLConfHelper with Logging{
+  extends ArcticExtendSparkSqlBaseVisitor[AnyRef] with SQLConfHelper with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
-  
+
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
     columns.map(c =>
       if (primary.contains(c.name)) {
@@ -67,13 +68,13 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
           metadata = c.metadata)
       } else {
         c
-      }
-    )
+      })
   }
 
-   type colListAndPk = (Seq[StructField], Seq[String])
+  type colListAndPk = (Seq[StructField], Seq[String])
 
-  private def visitColListAndPk(ctx: ArcticExtendSparkSqlParser.ColListAndPkContext): colListAndPk = {
+  private def visitColListAndPk(ctx: ArcticExtendSparkSqlParser.ColListAndPkContext)
+      : colListAndPk = {
     ctx match {
       case colWithPk: ColListWithPkContext =>
         (visitColTypeList(colWithPk.colTypeList()), visitPrimarySpec(colWithPk.primarySpec()))
@@ -84,78 +85,97 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
   }
 
-  override def visitCreateTableWithPk(ctx: ArcticExtendSparkSqlParser.CreateTableWithPkContext): LogicalPlan = withOrigin(ctx) {
+  override def visitCreateTableWithPk(ctx: ArcticExtendSparkSqlParser.CreateTableWithPkContext)
+      : LogicalPlan = withOrigin(ctx) {
     visitCreateTableWithPrimaryKey(ctx.createTableWithPrimaryKey())
   }
 
-  override def visitCreateTableWithPrimaryKey(ctx: ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext): LogicalPlan = withOrigin(ctx) {
-    val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
+  override def visitCreateTableWithPrimaryKey(
+      ctx: ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext): LogicalPlan =
+    withOrigin(ctx) {
+      val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
 
-    val colListAndPk = visitColListAndPk(ctx.colListAndPk())
-    val columns = Option(colListAndPk._1).getOrElse(Nil)
-    val provider = Option(ctx.tableProvider).map(_.multipartIdentifier.getText)
-    val (partTransforms, partCols, bucketSpec, properties, options, location, comment, serdeInfo) = {
-      visitCreateTableClauses(ctx.createTableClauses())
-    }
+      val colListAndPk = visitColListAndPk(ctx.colListAndPk())
+      val columns = Option(colListAndPk._1).getOrElse(Nil)
+      val provider = Option(ctx.tableProvider).map(_.multipartIdentifier.getText)
+      val (
+        partTransforms,
+        partCols,
+        bucketSpec,
+        properties,
+        options,
+        location,
+        comment,
+        serdeInfo) = {
+        visitCreateTableClauses(ctx.createTableClauses())
+      }
 
-    var primaryForCtas: Seq[String] = Seq.empty
-    if (columns.isEmpty) {
-      primaryForCtas = colListAndPk._2
-    }
+      var primaryForCtas: Seq[String] = Seq.empty
+      if (columns.isEmpty) {
+        primaryForCtas = colListAndPk._2
+      }
 
-    if (provider.isDefined && serdeInfo.isDefined) {
-      operationNotAllowed(s"CREATE TABLE ... USING ... ${serdeInfo.get.describe}", ctx)
-    }
+      if (provider.isDefined && serdeInfo.isDefined) {
+        operationNotAllowed(s"CREATE TABLE ... USING ... ${serdeInfo.get.describe}", ctx)
+      }
 
-    if (temp) {
-      val asSelect = if (ctx.query == null) "" else " AS ..."
-      operationNotAllowed(
-        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead", ctx)
-    }
-
-    val partitioning = partitionExpressions(partTransforms, partCols, ctx)
-
-    Option(ctx.query).map(plan) match {
-      case Some(_) if columns.nonEmpty =>
+      if (temp) {
+        val asSelect = if (ctx.query == null) "" else " AS ..."
         operationNotAllowed(
-          "Schema may not be specified in a Create Table As Select (CTAS) statement",
+          s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead",
           ctx)
+      }
 
-      case Some(_) if partCols.nonEmpty =>
-        // non-reference partition columns are not allowed because schema can't be specified
-        operationNotAllowed(
-          "Partition column types may not be specified in Create Table As Select (CTAS)",
-          ctx)
+      val partitioning = partitionExpressions(partTransforms, partCols, ctx)
 
-      case Some(query) =>
-        val propertiesMap = buildProperties(primaryForCtas, properties)
-        var writeOptions: Map[String, String] = Map.empty
-        val tableSpec = TableSpec(propertiesMap, provider, options, location, comment,
-          serdeInfo, external)
-        CreateTableAsSelect(
-          UnresolvedDBObjectName(table, isNamespace = false),
-          partitioning, query, tableSpec, Map.empty, ifNotExists)
-
-      case _ =>
-        // Note: table schema includes both the table columns list and the partition columns
-        // with data type.
-        if (primaryForCtas.nonEmpty) {
+      Option(ctx.query).map(plan) match {
+        case Some(_) if columns.nonEmpty =>
           operationNotAllowed(
-            "Primary keys do not allow this input format in a Create Table",
+            "Schema may not be specified in a Create Table As Select (CTAS) statement",
             ctx)
-        }
-        val primary = colListAndPk._2
-        // Setting the primary key not nullable
-        val newColumns = setPrimaryKeyNotNull(columns, primary)
-        val schema = StructType(newColumns ++ partCols)
-        val propertiesMap = buildProperties(primary, properties)
-        val tableSpec = TableSpec(propertiesMap, provider, options, location, comment,
-          serdeInfo, external)
-        CreateTable(
-          UnresolvedDBObjectName(table, isNamespace = false),
-          schema, partitioning, tableSpec, ignoreIfExists = ifNotExists)
+
+        case Some(_) if partCols.nonEmpty =>
+          // non-reference partition columns are not allowed because schema can't be specified
+          operationNotAllowed(
+            "Partition column types may not be specified in Create Table As Select (CTAS)",
+            ctx)
+
+        case Some(query) =>
+          val propertiesMap = buildProperties(primaryForCtas, properties)
+          var writeOptions: Map[String, String] = Map.empty
+          val tableSpec =
+            TableSpec(propertiesMap, provider, options, location, comment, serdeInfo, external)
+          CreateTableAsSelect(
+            UnresolvedDBObjectName(table, isNamespace = false),
+            partitioning,
+            query,
+            tableSpec,
+            Map.empty,
+            ifNotExists)
+
+        case _ =>
+          // Note: table schema includes both the table columns list and the partition columns
+          // with data type.
+          if (primaryForCtas.nonEmpty) {
+            operationNotAllowed(
+              "Primary keys do not allow this input format in a Create Table",
+              ctx)
+          }
+          val primary = colListAndPk._2
+          // Setting the primary key not nullable
+          val newColumns = setPrimaryKeyNotNull(columns, primary)
+          val schema = StructType(newColumns ++ partCols)
+          val propertiesMap = buildProperties(primary, properties)
+          val tableSpec =
+            TableSpec(propertiesMap, provider, options, location, comment, serdeInfo, external)
+          CreateTable(
+            UnresolvedDBObjectName(table, isNamespace = false),
+            schema,
+            partitioning,
+            tableSpec,
+            ignoreIfExists = ifNotExists)
+      }
     }
-  }
 
   /**
    * Build a properties with primary key.
@@ -169,27 +189,32 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
     propertiesMap
   }
-  
 
   type TableClauses = (
-    Seq[Transform], Seq[StructField], Option[BucketSpec], Map[String, String],
-      Map[String, String], Option[String], Option[String], Option[SerdeInfo])
+      Seq[Transform],
+      Seq[StructField],
+      Option[BucketSpec],
+      Map[String, String],
+      Map[String, String],
+      Option[String],
+      Option[String],
+      Option[SerdeInfo])
 
-
-  protected def visitPrimarySpecList(ctx: util.List[ArcticExtendSparkSqlParser.PrimarySpecContext]): Option[Seq[String]] = {
+  protected def visitPrimarySpecList(ctx: util.List[ArcticExtendSparkSqlParser.PrimarySpecContext])
+      : Option[Seq[String]] = {
     ctx.asScala.headOption.map(visitPrimarySpec)
   }
-  
 
   /**
    * Create a comment string.
    */
-  override def visitPrimarySpec(ctx: ArcticExtendSparkSqlParser.PrimarySpecContext): Seq[String] = withOrigin(ctx) {
-    visitIdentifierList(ctx.identifierList())
-  }
+  override def visitPrimarySpec(ctx: ArcticExtendSparkSqlParser.PrimarySpecContext): Seq[String] =
+    withOrigin(ctx) {
+      visitIdentifierList(ctx.identifierList())
+    }
 
-
-  override def visitCreateTableClauses(ctx: ArcticExtendSparkSqlParser.CreateTableClausesContext): TableClauses = {
+  override def visitCreateTableClauses(ctx: ArcticExtendSparkSqlParser.CreateTableClausesContext)
+      : TableClauses = {
     checkDuplicateClauses(ctx.TBLPROPERTIES, "TBLPROPERTIES", ctx)
     checkDuplicateClauses(ctx.OPTIONS, "OPTIONS", ctx)
     checkDuplicateClauses(ctx.PARTITIONED, "PARTITIONED BY", ctx)
@@ -213,7 +238,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val comment = visitCommentSpecList(ctx.commentSpec())
     val serdeInfo =
       getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
-    (partTransforms, partCols, bucketSpec, cleanedProperties, cleanedOptions, newLocation, comment,
+    (
+      partTransforms,
+      partCols,
+      bucketSpec,
+      cleanedProperties,
+      cleanedOptions,
+      newLocation,
+      comment,
       serdeInfo)
   }
 
@@ -247,17 +279,17 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitSingleTableIdentifier(
-                                           ctx: SingleTableIdentifierContext): TableIdentifier = withOrigin(ctx) {
+      ctx: SingleTableIdentifierContext): TableIdentifier = withOrigin(ctx) {
     visitTableIdentifier(ctx.tableIdentifier)
   }
 
   override def visitSingleFunctionIdentifier(
-                                              ctx: SingleFunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
+      ctx: SingleFunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
     visitFunctionIdentifier(ctx.functionIdentifier)
   }
 
   override def visitSingleMultipartIdentifier(
-                                               ctx: SingleMultipartIdentifierContext): Seq[String] = withOrigin(ctx) {
+      ctx: SingleMultipartIdentifierContext): Seq[String] = withOrigin(ctx) {
     visitMultipartIdentifier(ctx.multipartIdentifier)
   }
 
@@ -300,7 +332,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val duplicates = ctes.groupBy(_._1).filter(_._2.size > 1).keys
     if (duplicates.nonEmpty) {
       throw QueryParsingErrors.duplicateCteDefinitionNamesError(
-        duplicates.mkString("'", "', '", "'"), ctx)
+        duplicates.mkString("'", "', '", "'"),
+        ctx)
     }
     UnresolvedWith(plan, ctes.toSeq)
   }
@@ -309,7 +342,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a logical query plan for a hive-style FROM statement body.
    */
   private def withFromStatementBody(
-                                     ctx: FromStatementBodyContext, plan: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: FromStatementBodyContext,
+      plan: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     // two cases for transforms and selects
     if (ctx.transformClause != null) {
       withTransformQuerySpecification(
@@ -320,8 +354,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         ctx.aggregationClause,
         ctx.havingClause,
         ctx.windowClause,
-        plan
-      )
+        plan)
     } else {
       withSelectQuerySpecification(
         ctx,
@@ -331,8 +364,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         ctx.aggregationClause,
         ctx.havingClause,
         ctx.windowClause,
-        plan
-      )
+        plan)
     }
   }
 
@@ -341,7 +373,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val selects = ctx.fromStatementBody.asScala.map { body =>
       withFromStatementBody(body, from).
         // Add organization statements.
-        optionalMap(body.queryOrganization)(withQueryResultClauses)
+      optionalMap(body.queryOrganization)(withQueryResultClauses)
     }
     // If there are multiple SELECT just UNION them together into one query.
     if (selects.length == 1) {
@@ -357,10 +389,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * This is only used for Common Table Expressions.
    */
   override def visitNamedQuery(ctx: NamedQueryContext): SubqueryAlias = withOrigin(ctx) {
-    val subQuery: LogicalPlan = plan(ctx.query).optionalMap(ctx.columnAliases)(
-      (columnAliases, plan) =>
-        UnresolvedSubqueryColumnAliases(visitIdentifierList(columnAliases), plan)
-    )
+    val subQuery: LogicalPlan =
+      plan(ctx.query).optionalMap(ctx.columnAliases)((columnAliases, plan) =>
+        UnresolvedSubqueryColumnAliases(visitIdentifierList(columnAliases), plan))
     SubqueryAlias(ctx.name.getText, subQuery)
   }
 
@@ -385,9 +416,10 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
 
     // Build the insert clauses.
     val inserts = ctx.multiInsertQueryBody.asScala.map { body =>
-      withInsertInto(body.insertInto,
-        withFromStatementBody(body.fromStatementBody, from).
-          optionalMap(body.fromStatementBody.queryOrganization)(withQueryResultClauses))
+      withInsertInto(
+        body.insertInto,
+        withFromStatementBody(body.fromStatementBody, from).optionalMap(
+          body.fromStatementBody.queryOrganization)(withQueryResultClauses))
     }
 
     // If there are multiple INSERTS just UNION them together into one query.
@@ -402,7 +434,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a logical plan for a regular (single-insert) query.
    */
   override def visitSingleInsertQuery(
-                                       ctx: SingleInsertQueryContext): LogicalPlan = withOrigin(ctx) {
+      ctx: SingleInsertQueryContext): LogicalPlan = withOrigin(ctx) {
     withInsertInto(ctx.insertInto(), visitQuery(ctx.query))
   }
 
@@ -428,8 +460,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * operation to logical plan
    */
   private def withInsertInto(
-                              ctx: InsertIntoContext,
-                              query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: InsertIntoContext,
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     ctx match {
       case table: InsertIntoTableContext =>
         val (relation, cols, partition, ifPartitionNotExists) = visitInsertIntoTable(table)
@@ -464,7 +496,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add an INSERT INTO TABLE operation to the logical plan.
    */
   override def visitInsertIntoTable(
-                                     ctx: InsertIntoTableContext): InsertTableParams = withOrigin(ctx) {
+      ctx: InsertIntoTableContext): InsertTableParams = withOrigin(ctx) {
     val cols = Option(ctx.identifierList()).map(visitIdentifierList).getOrElse(Nil)
     val partitionKeys = Option(ctx.partitionSpec).map(visitPartitionSpec).getOrElse(Map.empty)
 
@@ -479,15 +511,17 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add an INSERT OVERWRITE TABLE operation to the logical plan.
    */
   override def visitInsertOverwriteTable(
-                                          ctx: InsertOverwriteTableContext): InsertTableParams = withOrigin(ctx) {
+      ctx: InsertOverwriteTableContext): InsertTableParams = withOrigin(ctx) {
     assert(ctx.OVERWRITE() != null)
     val cols = Option(ctx.identifierList()).map(visitIdentifierList).getOrElse(Nil)
     val partitionKeys = Option(ctx.partitionSpec).map(visitPartitionSpec).getOrElse(Map.empty)
 
     val dynamicPartitionKeys: Map[String, Option[String]] = partitionKeys.filter(_._2.isEmpty)
     if (ctx.EXISTS != null && dynamicPartitionKeys.nonEmpty) {
-      operationNotAllowed("IF NOT EXISTS with dynamic partitions: " +
-        dynamicPartitionKeys.keys.mkString(", "), ctx)
+      operationNotAllowed(
+        "IF NOT EXISTS with dynamic partitions: " +
+          dynamicPartitionKeys.keys.mkString(", "),
+        ctx)
     }
 
     (createUnresolvedRelation(ctx.multipartIdentifier), cols, partitionKeys, ctx.EXISTS() != null)
@@ -497,7 +531,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Write to a directory, returning a [[InsertIntoDir]] logical plan.
    */
   override def visitInsertOverwriteDir(
-                                        ctx: InsertOverwriteDirContext): InsertDirParams = withOrigin(ctx) {
+      ctx: InsertOverwriteDirContext): InsertDirParams = withOrigin(ctx) {
     throw QueryParsingErrors.insertOverwriteDirectoryUnsupportedError(ctx)
   }
 
@@ -505,12 +539,13 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Write to a directory, returning a [[InsertIntoDir]] logical plan.
    */
   override def visitInsertOverwriteHiveDir(
-                                            ctx: InsertOverwriteHiveDirContext): InsertDirParams = withOrigin(ctx) {
+      ctx: InsertOverwriteHiveDirContext): InsertDirParams = withOrigin(ctx) {
     throw QueryParsingErrors.insertOverwriteDirectoryUnsupportedError(ctx)
   }
 
   private def getTableAliasWithoutColumnAlias(
-                                               ctx: TableAliasContext, op: String): Option[String] = {
+      ctx: TableAliasContext,
+      op: String): Option[String] = {
     if (ctx == null) {
       None
     } else {
@@ -523,7 +558,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitDeleteFromTable(
-                                     ctx: DeleteFromTableContext): LogicalPlan = withOrigin(ctx) {
+      ctx: DeleteFromTableContext): LogicalPlan = withOrigin(ctx) {
     val table = createUnresolvedRelation(ctx.multipartIdentifier())
     val tableAlias = getTableAliasWithoutColumnAlias(ctx.tableAlias(), "DELETE")
     val aliasedTable = tableAlias.map(SubqueryAlias(_, table)).getOrElse(table)
@@ -549,10 +584,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     UpdateTable(aliasedTable, assignments, predicate)
   }
 
-  private def withAssignments(assignCtx: ArcticExtendSparkSqlParser.AssignmentListContext): Seq[Assignment] =
+  private def withAssignments(assignCtx: ArcticExtendSparkSqlParser.AssignmentListContext)
+      : Seq[Assignment] =
     withOrigin(assignCtx) {
       assignCtx.assignment().asScala.map { assign =>
-        Assignment(UnresolvedAttribute(visitMultipartIdentifier(assign.key)),
+        Assignment(
+          UnresolvedAttribute(visitMultipartIdentifier(assign.key)),
           expression(assign.value))
       }.toSeq
     }
@@ -576,42 +613,44 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val mergeCondition = expression(ctx.mergeCondition)
 
     val matchedActions = ctx.matchedClause().asScala.map {
-      clause => {
-        if (clause.matchedAction().DELETE() != null) {
-          DeleteAction(Option(clause.matchedCond).map(expression))
-        } else if (clause.matchedAction().UPDATE() != null) {
-          val condition = Option(clause.matchedCond).map(expression)
-          if (clause.matchedAction().ASTERISK() != null) {
-            UpdateStarAction(condition)
+      clause =>
+        {
+          if (clause.matchedAction().DELETE() != null) {
+            DeleteAction(Option(clause.matchedCond).map(expression))
+          } else if (clause.matchedAction().UPDATE() != null) {
+            val condition = Option(clause.matchedCond).map(expression)
+            if (clause.matchedAction().ASTERISK() != null) {
+              UpdateStarAction(condition)
+            } else {
+              UpdateAction(condition, withAssignments(clause.matchedAction().assignmentList()))
+            }
           } else {
-            UpdateAction(condition, withAssignments(clause.matchedAction().assignmentList()))
+            // It should not be here.
+            throw QueryParsingErrors.unrecognizedMatchedActionError(clause)
           }
-        } else {
-          // It should not be here.
-          throw QueryParsingErrors.unrecognizedMatchedActionError(clause)
         }
-      }
     }
     val notMatchedActions = ctx.notMatchedClause().asScala.map {
-      clause => {
-        if (clause.notMatchedAction().INSERT() != null) {
-          val condition = Option(clause.notMatchedCond).map(expression)
-          if (clause.notMatchedAction().ASTERISK() != null) {
-            InsertStarAction(condition)
-          } else {
-            val columns = clause.notMatchedAction().columns.multipartIdentifier()
-              .asScala.map(attr => UnresolvedAttribute(visitMultipartIdentifier(attr)))
-            val values = clause.notMatchedAction().expression().asScala.map(expression)
-            if (columns.size != values.size) {
-              throw QueryParsingErrors.insertedValueNumberNotMatchFieldNumberError(clause)
+      clause =>
+        {
+          if (clause.notMatchedAction().INSERT() != null) {
+            val condition = Option(clause.notMatchedCond).map(expression)
+            if (clause.notMatchedAction().ASTERISK() != null) {
+              InsertStarAction(condition)
+            } else {
+              val columns = clause.notMatchedAction().columns.multipartIdentifier()
+                .asScala.map(attr => UnresolvedAttribute(visitMultipartIdentifier(attr)))
+              val values = clause.notMatchedAction().expression().asScala.map(expression)
+              if (columns.size != values.size) {
+                throw QueryParsingErrors.insertedValueNumberNotMatchFieldNumberError(clause)
+              }
+              InsertAction(condition, columns.zip(values).map(kv => Assignment(kv._1, kv._2)).toSeq)
             }
-            InsertAction(condition, columns.zip(values).map(kv => Assignment(kv._1, kv._2)).toSeq)
+          } else {
+            // It should not be here.
+            throw QueryParsingErrors.unrecognizedNotMatchedActionError(clause)
           }
-        } else {
-          // It should not be here.
-          throw QueryParsingErrors.unrecognizedNotMatchedActionError(clause)
         }
-      }
     }
     if (matchedActions.isEmpty && notMatchedActions.isEmpty) {
       throw QueryParsingErrors.mergeStatementWithoutWhenClauseError(ctx)
@@ -638,7 +677,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a partition specification map.
    */
   override def visitPartitionSpec(
-                                   ctx: PartitionSpecContext): Map[String, Option[String]] = withOrigin(ctx) {
+      ctx: PartitionSpecContext): Map[String, Option[String]] = withOrigin(ctx) {
     val legacyNullAsString =
       conf.getConf(SQLConf.LEGACY_PARSE_NULL_PARTITION_SPEC_AS_STRING_LITERAL)
     val parts = ctx.partitionVal.asScala.map { pVal =>
@@ -661,7 +700,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a partition specification map without optional values.
    */
   protected def visitNonOptionalPartitionSpec(
-                                               ctx: PartitionSpecContext): Map[String, String] = withOrigin(ctx) {
+      ctx: PartitionSpecContext): Map[String, String] = withOrigin(ctx) {
     visitPartitionSpec(ctx).map {
       case (key, None) => throw QueryParsingErrors.emptyPartitionKeyError(key, ctx)
       case (key, Some(value)) => key -> value
@@ -674,11 +713,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * String -> Literal -> String.
    */
   protected def visitStringConstant(
-                                     ctx: ConstantContext,
-                                     legacyNullAsString: Boolean): String = withOrigin(ctx) {
+      ctx: ConstantContext,
+      legacyNullAsString: Boolean): String = withOrigin(ctx) {
     expression(ctx) match {
       case Literal(null, _) if !legacyNullAsString => null
-      case l@Literal(null, _) => l.toString
+      case l @ Literal(null, _) => l.toString
       case l: Literal =>
         // TODO For v2 commands, we will cast the string back to its actual value,
         //  which is a waste and can be improved in the future.
@@ -694,40 +733,40 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * clauses determine the shape (ordering/partitioning/rows) of the query result.
    */
   private def withQueryResultClauses(
-                                      ctx: QueryOrganizationContext,
-                                      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: QueryOrganizationContext,
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     import ctx._
 
     // Handle ORDER BY, SORT BY, DISTRIBUTE BY, and CLUSTER BY clause.
-    val withOrder = if (
-      !order.isEmpty && sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
-      // ORDER BY ...
-      Sort(order.asScala.map(visitSortItem).toSeq, global = true, query)
-    } else if (order.isEmpty && !sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
-      // SORT BY ...
-      Sort(sort.asScala.map(visitSortItem).toSeq, global = false, query)
-    } else if (order.isEmpty && sort.isEmpty && !distributeBy.isEmpty && clusterBy.isEmpty) {
-      // DISTRIBUTE BY ...
-      withRepartitionByExpression(ctx, expressionList(distributeBy), query)
-    } else if (order.isEmpty && !sort.isEmpty && !distributeBy.isEmpty && clusterBy.isEmpty) {
-      // SORT BY ... DISTRIBUTE BY ...
-      Sort(
-        sort.asScala.map(visitSortItem).toSeq,
-        global = false,
-        withRepartitionByExpression(ctx, expressionList(distributeBy), query))
-    } else if (order.isEmpty && sort.isEmpty && distributeBy.isEmpty && !clusterBy.isEmpty) {
-      // CLUSTER BY ...
-      val expressions = expressionList(clusterBy)
-      Sort(
-        expressions.map(SortOrder(_, Ascending)),
-        global = false,
-        withRepartitionByExpression(ctx, expressions, query))
-    } else if (order.isEmpty && sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
-      // [EMPTY]
-      query
-    } else {
-      throw QueryParsingErrors.combinationQueryResultClausesUnsupportedError(ctx)
-    }
+    val withOrder =
+      if (!order.isEmpty && sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
+        // ORDER BY ...
+        Sort(order.asScala.map(visitSortItem).toSeq, global = true, query)
+      } else if (order.isEmpty && !sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
+        // SORT BY ...
+        Sort(sort.asScala.map(visitSortItem).toSeq, global = false, query)
+      } else if (order.isEmpty && sort.isEmpty && !distributeBy.isEmpty && clusterBy.isEmpty) {
+        // DISTRIBUTE BY ...
+        withRepartitionByExpression(ctx, expressionList(distributeBy), query)
+      } else if (order.isEmpty && !sort.isEmpty && !distributeBy.isEmpty && clusterBy.isEmpty) {
+        // SORT BY ... DISTRIBUTE BY ...
+        Sort(
+          sort.asScala.map(visitSortItem).toSeq,
+          global = false,
+          withRepartitionByExpression(ctx, expressionList(distributeBy), query))
+      } else if (order.isEmpty && sort.isEmpty && distributeBy.isEmpty && !clusterBy.isEmpty) {
+        // CLUSTER BY ...
+        val expressions = expressionList(clusterBy)
+        Sort(
+          expressions.map(SortOrder(_, Ascending)),
+          global = false,
+          withRepartitionByExpression(ctx, expressions, query))
+      } else if (order.isEmpty && sort.isEmpty && distributeBy.isEmpty && clusterBy.isEmpty) {
+        // [EMPTY]
+        query
+      } else {
+        throw QueryParsingErrors.combinationQueryResultClausesUnsupportedError(ctx)
+      }
 
     // WINDOWS
     val withWindow = withOrder.optionalMap(windowClause)(withWindowClause)
@@ -743,14 +782,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a clause for DISTRIBUTE BY.
    */
   protected def withRepartitionByExpression(
-                                             ctx: QueryOrganizationContext,
-                                             expressions: Seq[Expression],
-                                             query: LogicalPlan): LogicalPlan = {
+      ctx: QueryOrganizationContext,
+      expressions: Seq[Expression],
+      query: LogicalPlan): LogicalPlan = {
     throw QueryParsingErrors.distributeByUnsupportedError(ctx)
   }
 
   override def visitTransformQuerySpecification(
-                                                 ctx: TransformQuerySpecificationContext): LogicalPlan = withOrigin(ctx) {
+      ctx: TransformQuerySpecificationContext): LogicalPlan = withOrigin(ctx) {
     val from = OneRowRelation().optional(ctx.fromClause) {
       visitFromClause(ctx.fromClause)
     }
@@ -762,12 +801,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       ctx.aggregationClause,
       ctx.havingClause,
       ctx.windowClause,
-      from
-    )
+      from)
   }
 
   override def visitRegularQuerySpecification(
-                                               ctx: RegularQuerySpecificationContext): LogicalPlan = withOrigin(ctx) {
+      ctx: RegularQuerySpecificationContext): LogicalPlan = withOrigin(ctx) {
     val from = OneRowRelation().optional(ctx.fromClause) {
       visitFromClause(ctx.fromClause)
     }
@@ -779,12 +817,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       ctx.aggregationClause,
       ctx.havingClause,
       ctx.windowClause,
-      from
-    )
+      from)
   }
 
   override def visitNamedExpressionSeq(
-                                        ctx: NamedExpressionSeqContext): Seq[Expression] = {
+      ctx: NamedExpressionSeqContext): Seq[Expression] = {
     Option(ctx).toSeq
       .flatMap(_.namedExpression.asScala)
       .map(typedVisit[Expression])
@@ -800,7 +837,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a logical plan using a having clause.
    */
   private def withHavingClause(
-                                ctx: HavingClauseContext, plan: LogicalPlan): LogicalPlan = {
+      ctx: HavingClauseContext,
+      plan: LogicalPlan): LogicalPlan = {
     // Note that we add a cast to non-predicate expressions. If the expression itself is
     // already boolean, the optimizer will get rid of the unnecessary cast.
     val predicate = expression(ctx.booleanExpression) match {
@@ -821,14 +859,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add a hive-style transform (SELECT TRANSFORM/MAP/REDUCE) query specification to a logical plan.
    */
   private def withTransformQuerySpecification(
-                                               ctx: ParserRuleContext,
-                                               transformClause: TransformClauseContext,
-                                               lateralView: java.util.List[LateralViewContext],
-                                               whereClause: WhereClauseContext,
-                                               aggregationClause: AggregationClauseContext,
-                                               havingClause: HavingClauseContext,
-                                               windowClause: WindowClauseContext,
-                                               relation: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: ParserRuleContext,
+      transformClause: TransformClauseContext,
+      lateralView: java.util.List[LateralViewContext],
+      whereClause: WhereClauseContext,
+      aggregationClause: AggregationClauseContext,
+      havingClause: HavingClauseContext,
+      windowClause: WindowClauseContext,
+      relation: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     if (transformClause.setQuantifier != null) {
       throw QueryParsingErrors.transformNotSupportQuantifierError(transformClause.setQuantifier)
     }
@@ -843,8 +881,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       }
       (attrs, false)
     } else {
-      (Seq(AttributeReference("key", StringType)(),
-        AttributeReference("value", StringType)()), true)
+      (
+        Seq(AttributeReference("key", StringType)(), AttributeReference("value", StringType)()),
+        true)
     }
 
     val plan = visitCommonSelectQueryClausePlan(
@@ -867,9 +906,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         transformClause.recordWriter,
         transformClause.outRowFormat,
         transformClause.recordReader,
-        schemaLess
-      )
-    )
+        schemaLess))
   }
 
   /**
@@ -880,14 +917,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Note that query hints are ignored (both by the parser and the builder).
    */
   private def withSelectQuerySpecification(
-                                            ctx: ParserRuleContext,
-                                            selectClause: SelectClauseContext,
-                                            lateralView: java.util.List[LateralViewContext],
-                                            whereClause: WhereClauseContext,
-                                            aggregationClause: AggregationClauseContext,
-                                            havingClause: HavingClauseContext,
-                                            windowClause: WindowClauseContext,
-                                            relation: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: ParserRuleContext,
+      selectClause: SelectClauseContext,
+      lateralView: java.util.List[LateralViewContext],
+      whereClause: WhereClauseContext,
+      aggregationClause: AggregationClauseContext,
+      havingClause: HavingClauseContext,
+      windowClause: WindowClauseContext,
+      relation: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     val isDistinct = selectClause.setQuantifier() != null &&
       selectClause.setQuantifier().DISTINCT() != null
 
@@ -906,14 +943,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   def visitCommonSelectQueryClausePlan(
-                                        relation: LogicalPlan,
-                                        expressions: Seq[Expression],
-                                        lateralView: java.util.List[LateralViewContext],
-                                        whereClause: WhereClauseContext,
-                                        aggregationClause: AggregationClauseContext,
-                                        havingClause: HavingClauseContext,
-                                        windowClause: WindowClauseContext,
-                                        isDistinct: Boolean): LogicalPlan = {
+      relation: LogicalPlan,
+      expressions: Seq[Expression],
+      lateralView: java.util.List[LateralViewContext],
+      whereClause: WhereClauseContext,
+      aggregationClause: AggregationClauseContext,
+      havingClause: HavingClauseContext,
+      windowClause: WindowClauseContext,
+      isDistinct: Boolean): LogicalPlan = {
     // Add lateral views.
     val withLateralView = lateralView.asScala.foldLeft(relation)(withGenerate)
 
@@ -994,12 +1031,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[ScriptInputOutputSchema]].
    */
   protected def withScriptIOSchema(
-                                    ctx: ParserRuleContext,
-                                    inRowFormat: RowFormatContext,
-                                    recordWriter: Token,
-                                    outRowFormat: RowFormatContext,
-                                    recordReader: Token,
-                                    schemaLess: Boolean): ScriptInputOutputSchema = {
+      ctx: ParserRuleContext,
+      inRowFormat: RowFormatContext,
+      recordWriter: Token,
+      outRowFormat: RowFormatContext,
+      recordReader: Token,
+      schemaLess: Boolean): ScriptInputOutputSchema = {
 
     def format(fmt: RowFormatContext): ScriptIOFormat = fmt match {
       case c: RowFormatDelimitedContext =>
@@ -1019,10 +1056,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val (outFormat, outSerdeClass, outSerdeProps, writer) = format(outRowFormat)
 
     ScriptInputOutputSchema(
-      inFormat, outFormat,
-      inSerdeClass, outSerdeClass,
-      inSerdeProps, outSerdeProps,
-      reader, writer,
+      inFormat,
+      outFormat,
+      inSerdeClass,
+      outSerdeClass,
+      inSerdeProps,
+      outSerdeProps,
+      reader,
+      writer,
       schemaLess)
   }
 
@@ -1092,8 +1133,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add a [[WithWindowDefinition]] operator to a logical plan.
    */
   private def withWindowClause(
-                                ctx: WindowClauseContext,
-                                query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: WindowClauseContext,
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     // Collect all window specifications defined in the WINDOW clause.
     val baseWindowTuples = ctx.namedWindow.asScala.map {
       wCtx =>
@@ -1132,9 +1173,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add an [[Aggregate]] to a logical plan.
    */
   private def withAggregationClause(
-                                     ctx: AggregationClauseContext,
-                                     selectExpressions: Seq[NamedExpression],
-                                     query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: AggregationClauseContext,
+      selectExpressions: Seq[NamedExpression],
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     if (ctx.groupingExpressionsWithGroupingAnalytics.isEmpty) {
       val groupByExpressions = expressionList(ctx.groupingExpressions)
       if (ctx.GROUPING != null) {
@@ -1144,9 +1185,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         // For example, `SELECT a, b, c FROM ... GROUP BY a, b, c GROUPING SETS (a, b)`, the output
         // of column `c` is always null.
         val groupingSets =
-        ctx.groupingSet.asScala.map(_.expression.asScala.map(e => expression(e)).toSeq)
-        Aggregate(Seq(GroupingSets(groupingSets.toSeq, groupByExpressions)),
-          selectExpressions, query)
+          ctx.groupingSet.asScala.map(_.expression.asScala.map(e => expression(e)).toSeq)
+        Aggregate(
+          Seq(GroupingSets(groupingSets.toSeq, groupByExpressions)),
+          selectExpressions,
+          query)
       } else {
         // GROUP BY .... (WITH CUBE | WITH ROLLUP)?
         val mappedGroupByExpressions = if (ctx.CUBE != null) {
@@ -1174,7 +1217,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitGroupingAnalytics(
-                                       groupingAnalytics: GroupingAnalyticsContext): BaseGroupingSets = {
+      groupingAnalytics: GroupingAnalyticsContext): BaseGroupingSets = {
     val groupingSets = groupingAnalytics.groupingSet.asScala
       .map(_.expression.asScala.map(e => expression(e)).toSeq)
     if (groupingAnalytics.CUBE != null) {
@@ -1207,12 +1250,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add [[UnresolvedHint]]s to a logical plan.
    */
   private def withHints(
-                         ctx: HintContext,
-                         query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: HintContext,
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     var plan = query
     ctx.hintStatements.asScala.reverse.foreach { stmt =>
-      plan = UnresolvedHint(stmt.hintName.getText,
-        stmt.parameters.asScala.map(expression).toSeq, plan)
+      plan =
+        UnresolvedHint(stmt.hintName.getText, stmt.parameters.asScala.map(expression).toSeq, plan)
     }
     plan
   }
@@ -1221,8 +1264,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add a [[Pivot]] to a logical plan.
    */
   private def withPivot(
-                         ctx: PivotClauseContext,
-                         query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: PivotClauseContext,
+      query: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     val aggregates = Option(ctx.aggregates).toSeq
       .flatMap(_.namedExpression.asScala)
       .map(typedVisit[Expression])
@@ -1230,8 +1273,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       UnresolvedAttribute.quoted(ctx.pivotColumn.identifier.getText)
     } else {
       CreateStruct(
-        ctx.pivotColumn.identifiers.asScala.map(
-          identifier => UnresolvedAttribute.quoted(identifier.getText)).toSeq)
+        ctx.pivotColumn.identifiers.asScala.map(identifier =>
+          UnresolvedAttribute.quoted(identifier.getText)).toSeq)
     }
     val pivotValues = ctx.pivotValues.asScala.map(visitPivotValue)
     Pivot(None, pivotColumn, pivotValues.toSeq, aggregates, query)
@@ -1253,8 +1296,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Add a [[Generate]] (Lateral View) to a logical plan.
    */
   private def withGenerate(
-                            query: LogicalPlan,
-                            ctx: LateralViewContext): LogicalPlan = withOrigin(ctx) {
+      query: LogicalPlan,
+      ctx: LateralViewContext): LogicalPlan = withOrigin(ctx) {
     val expressions = expressionList(ctx.expression)
     Generate(
       UnresolvedGenerator(visitFunctionName(ctx.qualifiedName), expressions),
@@ -1350,7 +1393,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       // function takes X PERCENT as the input and the range of X is [0, 100], we need to
       // adjust the fraction.
       val eps = RandomSampler.roundingEpsilon
-      validate(fraction >= 0.0 - eps && fraction <= 1.0 + eps,
+      validate(
+        fraction >= 0.0 - eps && fraction <= 1.0 + eps,
         s"Sampling fraction ($fraction) must be on interval [0, 1]",
         ctx)
       Sample(0.0, fraction, withReplacement = false, seed, query)
@@ -1386,10 +1430,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       case ctx: SampleByBucketContext if ctx.ON() != null =>
         if (ctx.identifier != null) {
           throw QueryParsingErrors.tableSampleByBytesUnsupportedError(
-            "BUCKET x OUT OF y ON colname", ctx)
+            "BUCKET x OUT OF y ON colname",
+            ctx)
         } else {
           throw QueryParsingErrors.tableSampleByBytesUnsupportedError(
-            "BUCKET x OUT OF y ON function", ctx)
+            "BUCKET x OUT OF y ON function",
+            ctx)
         }
 
       case ctx: SampleByBucketContext =>
@@ -1423,12 +1469,14 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val tableId = visitMultipartIdentifier(ctx.multipartIdentifier)
     val relation = UnresolvedRelation(tableId)
     val table = mayApplyAliasPlan(
-      ctx.tableAlias, relation.optionalMap(ctx.temporalClause)(withTimeTravel))
+      ctx.tableAlias,
+      relation.optionalMap(ctx.temporalClause)(withTimeTravel))
     table.optionalMap(ctx.sample)(withSample)
   }
 
   private def withTimeTravel(
-                              ctx: TemporalClauseContext, plan: LogicalPlan): LogicalPlan = withOrigin(ctx) {
+      ctx: TemporalClauseContext,
+      plan: LogicalPlan): LogicalPlan = withOrigin(ctx) {
     val v = ctx.version
     val version = if (ctx.INTEGER_VALUE != null) {
       Some(v.getText)
@@ -1438,11 +1486,13 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val timestamp = Option(ctx.timestamp).map(expression)
     if (timestamp.exists(_.references.nonEmpty)) {
       throw QueryParsingErrors.invalidTimeTravelSpec(
-        "timestamp expression cannot refer to any columns", ctx.timestamp)
+        "timestamp expression cannot refer to any columns",
+        ctx.timestamp)
     }
     if (timestamp.exists(e => SubqueryExpression.hasSubquery(e))) {
       throw QueryParsingErrors.invalidTimeTravelSpec(
-        "timestamp expression cannot contain subqueries", ctx.timestamp)
+        "timestamp expression cannot contain subqueries",
+        ctx.timestamp)
     }
     RelationTimeTravel(plan, timestamp, version)
   }
@@ -1574,7 +1624,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[TableIdentifier]] from a 'tableName' or 'databaseName'.'tableName' pattern.
    */
   override def visitTableIdentifier(
-                                     ctx: TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
+      ctx: TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
     TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
   }
 
@@ -1582,7 +1632,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[FunctionIdentifier]] from a 'functionName' or 'databaseName'.'functionName' pattern.
    */
   override def visitFunctionIdentifier(
-                                        ctx: FunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
+      ctx: FunctionIdentifierContext): FunctionIdentifier = withOrigin(ctx) {
     FunctionIdentifier(ctx.function.getText, Option(ctx.db).map(_.getText))
   }
 
@@ -1772,8 +1822,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
 
     def lowerLikeArgsIfNeeded(
-                               expr: Expression,
-                               patterns: Seq[UTF8String]): (Expression, Seq[UTF8String]) = ctx.kind.getType match {
+        expr: Expression,
+        patterns: Seq[UTF8String]): (Expression, Seq[UTF8String]) = ctx.kind.getType match {
       // scalastyle:off caselocale
       case ArcticExtendSparkSqlParser.ILIKE => (Lower(expr), patterns.map(_.toLowerCase))
       // scalastyle:on caselocale
@@ -1850,17 +1900,17 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       case ArcticExtendSparkSqlParser.NULL =>
         IsNull(e)
       case ArcticExtendSparkSqlParser.TRUE => ctx.NOT match {
-        case null => EqualNullSafe(e, Literal(true))
-        case _ => Not(EqualNullSafe(e, Literal(true)))
-      }
+          case null => EqualNullSafe(e, Literal(true))
+          case _ => Not(EqualNullSafe(e, Literal(true)))
+        }
       case ArcticExtendSparkSqlParser.FALSE => ctx.NOT match {
-        case null => EqualNullSafe(e, Literal(false))
-        case _ => Not(EqualNullSafe(e, Literal(false)))
-      }
+          case null => EqualNullSafe(e, Literal(false))
+          case _ => Not(EqualNullSafe(e, Literal(false)))
+        }
       case ArcticExtendSparkSqlParser.UNKNOWN => ctx.NOT match {
-        case null => IsUnknown(e)
-        case _ => IsNotUnknown(e)
-      }
+          case null => IsUnknown(e)
+          case _ => IsNotUnknown(e)
+        }
       case ArcticExtendSparkSqlParser.DISTINCT if ctx.NOT != null =>
         EqualNullSafe(e, expression(ctx.right))
       case ArcticExtendSparkSqlParser.DISTINCT =>
@@ -2078,7 +2128,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     // Call `toSeq`, otherwise `ctx.argument.asScala.map(expression)` is `Buffer` in Scala 2.13
     val arguments = ctx.argument.asScala.map(expression).toSeq match {
       case Seq(UnresolvedStar(None))
-        if name.toLowerCase(Locale.ROOT) == "count" && !isDistinct =>
+          if name.toLowerCase(Locale.ROOT) == "count" && !isDistinct =>
         // Transform COUNT(*) into COUNT(1).
         Seq(Literal(1))
       case expressions =>
@@ -2088,7 +2138,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val ignoreNulls =
       Option(ctx.nullsOption).map(_.getType == ArcticExtendSparkSqlParser.IGNORE).getOrElse(false)
     val function = UnresolvedFunction(
-      getFunctionMultiparts(ctx.functionName), arguments, isDistinct, filter, ignoreNulls)
+      getFunctionMultiparts(ctx.functionName),
+      arguments,
+      isDistinct,
+      filter,
+      ignoreNulls)
 
     // Check if the function is evaluated in a windowed context.
     ctx.windowSpec match {
@@ -2209,7 +2263,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[ScalarSubquery]] expression.
    */
   override def visitSubqueryExpression(
-                                        ctx: SubqueryExpressionContext): Expression = withOrigin(ctx) {
+      ctx: SubqueryExpressionContext): Expression = withOrigin(ctx) {
     ScalarSubquery(plan(ctx.query))
   }
 
@@ -2242,7 +2296,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    *
    * @param ctx the parse tree
-   * */
+   */
   override def visitSearchedCase(ctx: SearchedCaseContext): Expression = withOrigin(ctx) {
     val branches = ctx.whenClause.asScala.map { wCtx =>
       (expression(wCtx.condition), expression(wCtx.result))
@@ -2280,13 +2334,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   override def visitDereference(ctx: DereferenceContext): Expression = withOrigin(ctx) {
     val attr = ctx.fieldName.getText
     expression(ctx.base) match {
-      case unresolved_attr@UnresolvedAttribute(nameParts) =>
+      case unresolved_attr @ UnresolvedAttribute(nameParts) =>
         ctx.fieldName.getStart.getText match {
           case escapedIdentifier(columnNameRegex)
-            if conf.supportQuotedRegexColumnName &&
-              isRegex(columnNameRegex) && canApplyRegex(ctx) =>
-            UnresolvedRegex(columnNameRegex, Some(unresolved_attr.name),
-              conf.caseSensitiveAnalysis)
+              if conf.supportQuotedRegexColumnName &&
+                isRegex(columnNameRegex) && canApplyRegex(ctx) =>
+            UnresolvedRegex(columnNameRegex, Some(unresolved_attr.name), conf.caseSensitiveAnalysis)
           case _ =>
             UnresolvedAttribute(nameParts :+ attr)
         }
@@ -2302,8 +2355,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   override def visitColumnReference(ctx: ColumnReferenceContext): Expression = withOrigin(ctx) {
     ctx.getStart.getText match {
       case escapedIdentifier(columnNameRegex)
-        if conf.supportQuotedRegexColumnName &&
-          isRegex(columnNameRegex) && canApplyRegex(ctx) =>
+          if conf.supportQuotedRegexColumnName &&
+            isRegex(columnNameRegex) && canApplyRegex(ctx) =>
         UnresolvedRegex(columnNameRegex, None, conf.caseSensitiveAnalysis)
       case _ =>
         UnresolvedAttribute.quoted(ctx.getText)
@@ -2323,7 +2376,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * visitor cannot automatically convert the nested context into an expression.
    */
   override def visitParenthesizedExpression(
-                                             ctx: ParenthesizedExpressionContext): Expression = withOrigin(ctx) {
+      ctx: ParenthesizedExpressionContext): Expression = withOrigin(ctx) {
     expression(ctx.expression)
   }
 
@@ -2403,14 +2456,15 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
           }
 
         case "INTERVAL" =>
-          val interval = try {
-            IntervalUtils.stringToInterval(UTF8String.fromString(value))
-          } catch {
-            case e: IllegalArgumentException =>
-              val ex = QueryParsingErrors.cannotParseIntervalValueError(value, ctx)
-              ex.setStackTrace(e.getStackTrace)
-              throw ex
-          }
+          val interval =
+            try {
+              IntervalUtils.stringToInterval(UTF8String.fromString(value))
+            } catch {
+              case e: IllegalArgumentException =>
+                val ex = QueryParsingErrors.cannotParseIntervalValueError(value, ctx)
+                ex.setStackTrace(e.getStackTrace)
+                throw ex
+            }
           if (!conf.legacyIntervalEnabled) {
             val units = value
               .split("\\s")
@@ -2481,7 +2535,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a decimal literal for a regular decimal number or a scientific decimal number.
    */
   override def visitLegacyDecimalLiteral(
-                                          ctx: LegacyDecimalLiteralContext): Literal = withOrigin(ctx) {
+      ctx: LegacyDecimalLiteralContext): Literal = withOrigin(ctx) {
     Literal(BigDecimal(ctx.getText).underlying())
   }
 
@@ -2489,22 +2543,30 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a double literal for number with an exponent, e.g. 1E-30
    */
   override def visitExponentLiteral(ctx: ExponentLiteralContext): Literal = {
-    numericLiteral(ctx, ctx.getText, /* exponent values don't have a suffix */
-      Double.MinValue, Double.MaxValue, DoubleType.simpleString)(_.toDouble)
+    numericLiteral(
+      ctx,
+      ctx.getText, /* exponent values don't have a suffix */
+      Double.MinValue,
+      Double.MaxValue,
+      DoubleType.simpleString)(_.toDouble)
   }
 
   /** Create a numeric literal expression. */
   private def numericLiteral(
-                              ctx: NumberContext,
-                              rawStrippedQualifier: String,
-                              minValue: BigDecimal,
-                              maxValue: BigDecimal,
-                              typeName: String)(converter: String => Any): Literal = withOrigin(ctx) {
+      ctx: NumberContext,
+      rawStrippedQualifier: String,
+      minValue: BigDecimal,
+      maxValue: BigDecimal,
+      typeName: String)(converter: String => Any): Literal = withOrigin(ctx) {
     try {
       val rawBigDecimal = BigDecimal(rawStrippedQualifier)
       if (rawBigDecimal < minValue || rawBigDecimal > maxValue) {
         throw QueryParsingErrors.invalidNumericLiteralRangeError(
-          rawStrippedQualifier, minValue, maxValue, typeName, ctx)
+          rawStrippedQualifier,
+          minValue,
+          maxValue,
+          typeName,
+          ctx)
       }
       Literal(converter(rawStrippedQualifier))
     } catch {
@@ -2518,8 +2580,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    */
   override def visitTinyIntLiteral(ctx: TinyIntLiteralContext): Literal = {
     val rawStrippedQualifier = ctx.getText.substring(0, ctx.getText.length - 1)
-    numericLiteral(ctx, rawStrippedQualifier,
-      Byte.MinValue, Byte.MaxValue, ByteType.simpleString)(_.toByte)
+    numericLiteral(ctx, rawStrippedQualifier, Byte.MinValue, Byte.MaxValue, ByteType.simpleString)(
+      _.toByte)
   }
 
   /**
@@ -2527,8 +2589,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    */
   override def visitSmallIntLiteral(ctx: SmallIntLiteralContext): Literal = {
     val rawStrippedQualifier = ctx.getText.substring(0, ctx.getText.length - 1)
-    numericLiteral(ctx, rawStrippedQualifier,
-      Short.MinValue, Short.MaxValue, ShortType.simpleString)(_.toShort)
+    numericLiteral(
+      ctx,
+      rawStrippedQualifier,
+      Short.MinValue,
+      Short.MaxValue,
+      ShortType.simpleString)(_.toShort)
   }
 
   /**
@@ -2536,8 +2602,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    */
   override def visitBigIntLiteral(ctx: BigIntLiteralContext): Literal = {
     val rawStrippedQualifier = ctx.getText.substring(0, ctx.getText.length - 1)
-    numericLiteral(ctx, rawStrippedQualifier,
-      Long.MinValue, Long.MaxValue, LongType.simpleString)(_.toLong)
+    numericLiteral(ctx, rawStrippedQualifier, Long.MinValue, Long.MaxValue, LongType.simpleString)(
+      _.toLong)
   }
 
   /**
@@ -2545,8 +2611,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    */
   override def visitFloatLiteral(ctx: FloatLiteralContext): Literal = {
     val rawStrippedQualifier = ctx.getText.substring(0, ctx.getText.length - 1)
-    numericLiteral(ctx, rawStrippedQualifier,
-      Float.MinValue, Float.MaxValue, FloatType.simpleString)(_.toFloat)
+    numericLiteral(
+      ctx,
+      rawStrippedQualifier,
+      Float.MinValue,
+      Float.MaxValue,
+      FloatType.simpleString)(_.toFloat)
   }
 
   /**
@@ -2554,8 +2624,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    */
   override def visitDoubleLiteral(ctx: DoubleLiteralContext): Literal = {
     val rawStrippedQualifier = ctx.getText.substring(0, ctx.getText.length - 1)
-    numericLiteral(ctx, rawStrippedQualifier,
-      Double.MinValue, Double.MaxValue, DoubleType.simpleString)(_.toDouble)
+    numericLiteral(
+      ctx,
+      rawStrippedQualifier,
+      Double.MinValue,
+      Double.MaxValue,
+      DoubleType.simpleString)(_.toDouble)
   }
 
   /**
@@ -2597,7 +2671,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create an [[UnresolvedRelation]] from a multi-part identifier context.
    */
   private def createUnresolvedRelation(
-                                        ctx: MultipartIdentifierContext): UnresolvedRelation = withOrigin(ctx) {
+      ctx: MultipartIdentifierContext): UnresolvedRelation = withOrigin(ctx) {
     UnresolvedRelation(visitMultipartIdentifier(ctx))
   }
 
@@ -2605,9 +2679,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create an [[UnresolvedTable]] from a multi-part identifier context.
    */
   private def createUnresolvedTable(
-                                     ctx: MultipartIdentifierContext,
-                                     commandName: String,
-                                     relationTypeMismatchHint: Option[String] = None): UnresolvedTable = withOrigin(ctx) {
+      ctx: MultipartIdentifierContext,
+      commandName: String,
+      relationTypeMismatchHint: Option[String] = None): UnresolvedTable = withOrigin(ctx) {
     UnresolvedTable(visitMultipartIdentifier(ctx), commandName, relationTypeMismatchHint)
   }
 
@@ -2615,10 +2689,10 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create an [[UnresolvedView]] from a multi-part identifier context.
    */
   private def createUnresolvedView(
-                                    ctx: MultipartIdentifierContext,
-                                    commandName: String,
-                                    allowTemp: Boolean = true,
-                                    relationTypeMismatchHint: Option[String] = None): UnresolvedView = withOrigin(ctx) {
+      ctx: MultipartIdentifierContext,
+      commandName: String,
+      allowTemp: Boolean = true,
+      relationTypeMismatchHint: Option[String] = None): UnresolvedView = withOrigin(ctx) {
     UnresolvedView(visitMultipartIdentifier(ctx), commandName, allowTemp, relationTypeMismatchHint)
   }
 
@@ -2626,9 +2700,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create an [[UnresolvedTableOrView]] from a multi-part identifier context.
    */
   private def createUnresolvedTableOrView(
-                                           ctx: MultipartIdentifierContext,
-                                           commandName: String,
-                                           allowTempView: Boolean = true): UnresolvedTableOrView = withOrigin(ctx) {
+      ctx: MultipartIdentifierContext,
+      commandName: String,
+      allowTempView: Boolean = true): UnresolvedTableOrView = withOrigin(ctx) {
     UnresolvedTableOrView(visitMultipartIdentifier(ctx), commandName, allowTempView)
   }
 
@@ -2637,9 +2711,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * units represented as a [[Seq]] of [[String]].
    */
   private def constructMultiUnitsIntervalLiteral(
-                                                  ctx: ParserRuleContext,
-                                                  calendarInterval: CalendarInterval,
-                                                  units: Seq[String]): Literal = {
+      ctx: ParserRuleContext,
+      calendarInterval: CalendarInterval,
+      units: Seq[String]): Literal = {
     val yearMonthFields = Set.empty[Byte]
     val dayTimeFields = Set.empty[Byte]
     for (unit <- units) {
@@ -2661,8 +2735,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       }
       Literal(
         calendarInterval.months,
-        YearMonthIntervalType(yearMonthFields.min, yearMonthFields.max)
-      )
+        YearMonthIntervalType(yearMonthFields.min, yearMonthFields.max))
     } else {
       Literal(
         IntervalUtils.getDuration(calendarInterval, TimeUnit.MICROSECONDS),
@@ -2684,7 +2757,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       // can be derived from INTERVAL '0-0' YEAR TO MONTH as well as from
       // INTERVAL '0 00:00:00' DAY TO SECOND.
       val fromUnit =
-      ctx.errorCapturingUnitToUnitInterval.body.from.getText.toLowerCase(Locale.ROOT)
+        ctx.errorCapturingUnitToUnitInterval.body.from.getText.toLowerCase(Locale.ROOT)
       val toUnit = ctx.errorCapturingUnitToUnitInterval.body.to.getText.toLowerCase(Locale.ROOT)
       if (toUnit == "month") {
         assert(calendarInterval.days == 0 && calendarInterval.microseconds == 0)
@@ -2795,9 +2868,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
           case ("year", "month") =>
             IntervalUtils.fromYearMonthString(value)
           case ("day", "hour") | ("day", "minute") | ("day", "second") | ("hour", "minute") |
-               ("hour", "second") | ("minute", "second") =>
-            IntervalUtils.fromDayTimeString(value,
-              DayTimeIntervalType.stringToField(from), DayTimeIntervalType.stringToField(to))
+              ("hour", "second") | ("minute", "second") =>
+            IntervalUtils.fromDayTimeString(
+              value,
+              DayTimeIntervalType.stringToField(from),
+              DayTimeIntervalType.stringToField(to))
           case _ =>
             throw QueryParsingErrors.fromToIntervalUnsupportedError(from, to, ctx)
         }
@@ -2844,7 +2919,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         DecimalType(precision.getText.toInt, scale.getText.toInt)
       case ("void", Nil) => NullType
       case ("interval", Nil) => CalendarIntervalType
-      case (dt@("character" | "char" | "varchar"), Nil) =>
+      case (dt @ ("character" | "char" | "varchar"), Nil) =>
         throw QueryParsingErrors.charTypeMissingLengthError(dt, ctx)
       case (dt, params) =>
         val dtStr = if (params.nonEmpty) s"$dt(${params.mkString(",")})" else dt
@@ -2940,7 +3015,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[StructType]] from a number of column definitions.
    */
   override def visitComplexColTypeList(
-                                        ctx: ComplexColTypeListContext): Seq[StructField] = withOrigin(ctx) {
+      ctx: ComplexColTypeListContext): Seq[StructField] = withOrigin(ctx) {
     ctx.complexColType().asScala.map(visitComplexColType).toSeq
   }
 
@@ -3010,7 +3085,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * This should be called through [[visitPropertyKeyValues]] or [[visitPropertyKeys]].
    */
   override def visitPropertyList(
-                                  ctx: PropertyListContext): Map[String, String] = withOrigin(ctx) {
+      ctx: PropertyListContext): Map[String, String] = withOrigin(ctx) {
     val properties = ctx.property.asScala.map { property =>
       val key = visitPropertyKey(property.key)
       val value = visitPropertyValue(property.value)
@@ -3029,7 +3104,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val badKeys = props.collect { case (key, null) => key }
     if (badKeys.nonEmpty) {
       operationNotAllowed(
-        s"Values must be specified for key(s): ${badKeys.mkString("[", ",", "]")}", ctx)
+        s"Values must be specified for key(s): ${badKeys.mkString("[", ",", "]")}",
+        ctx)
     }
     props
   }
@@ -3042,7 +3118,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val badKeys = props.filter { case (_, v) => v != null }.keys
     if (badKeys.nonEmpty) {
       operationNotAllowed(
-        s"Values should not be specified for key(s): ${badKeys.mkString("[", ",", "]")}", ctx)
+        s"Values should not be specified for key(s): ${badKeys.mkString("[", ",", "]")}",
+        ctx)
     }
     props.keys.toSeq
   }
@@ -3085,7 +3162,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Validate a create table statement and return the [[TableIdentifier]].
    */
   override def visitCreateTableHeader(
-                                       ctx: CreateTableHeaderContext): TableHeader = withOrigin(ctx) {
+      ctx: CreateTableHeaderContext): TableHeader = withOrigin(ctx) {
     val temporary = ctx.TEMPORARY != null
     val ifNotExists = ctx.EXISTS != null
     if (temporary && ifNotExists) {
@@ -3106,7 +3183,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Parse a list of transforms or columns.
    */
   override def visitPartitionFieldList(
-                                        ctx: PartitionFieldListContext): (Seq[Transform], Seq[StructField]) = withOrigin(ctx) {
+      ctx: PartitionFieldListContext): (Seq[Transform], Seq[StructField]) = withOrigin(ctx) {
     val (transforms, columns) = ctx.fields.asScala.map {
       case transform: PartitionTransformContext =>
         (Some(visitPartitionTransform(transform)), None)
@@ -3118,10 +3195,10 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   override def visitPartitionTransform(
-                                        ctx: PartitionTransformContext): Transform = withOrigin(ctx) {
+      ctx: PartitionTransformContext): Transform = withOrigin(ctx) {
     def getFieldReference(
-                           ctx: ApplyTransformContext,
-                           arg: V2Expression): FieldReference = {
+        ctx: ApplyTransformContext,
+        arg: V2Expression): FieldReference = {
       lazy val name: String = ctx.identifier.getText
       arg match {
         case ref: FieldReference =>
@@ -3132,8 +3209,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
 
     def getSingleFieldReference(
-                                 ctx: ApplyTransformContext,
-                                 arguments: Seq[V2Expression]): FieldReference = {
+        ctx: ApplyTransformContext,
+        arguments: Seq[V2Expression]): FieldReference = {
       lazy val name: String = ctx.identifier.getText
       if (arguments.size > 1) {
         throw QueryParsingErrors.tooManyArgumentsForTransformError(name, ctx)
@@ -3204,18 +3281,22 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   private def cleanNamespaceProperties(
-                                        properties: Map[String, String],
-                                        ctx: ParserRuleContext): Map[String, String] = withOrigin(ctx) {
+      properties: Map[String, String],
+      ctx: ParserRuleContext): Map[String, String] = withOrigin(ctx) {
     import SupportsNamespaces._
     val legacyOn = conf.getConf(SQLConf.LEGACY_PROPERTY_NON_RESERVED)
     properties.filter {
       case (PROP_LOCATION, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedNamespacePropertyError(
-          PROP_LOCATION, ctx, "please use the LOCATION clause to specify it")
+          PROP_LOCATION,
+          ctx,
+          "please use the LOCATION clause to specify it")
       case (PROP_LOCATION, _) => false
       case (PROP_OWNER, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedNamespacePropertyError(
-          PROP_OWNER, ctx, "it will be set to the current user")
+          PROP_OWNER,
+          ctx,
+          "it will be set to the current user")
       case (PROP_OWNER, _) => false
       case _ => true
     }
@@ -3343,25 +3424,34 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
 
   def cleanTableProperties(
-                            ctx: ParserRuleContext, properties: Map[String, String]): Map[String, String] = {
+      ctx: ParserRuleContext,
+      properties: Map[String, String]): Map[String, String] = {
     import TableCatalog._
     val legacyOn = conf.getConf(SQLConf.LEGACY_PROPERTY_NON_RESERVED)
     properties.filter {
       case (PROP_PROVIDER, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedTablePropertyError(
-          PROP_PROVIDER, ctx, "please use the USING clause to specify it")
+          PROP_PROVIDER,
+          ctx,
+          "please use the USING clause to specify it")
       case (PROP_PROVIDER, _) => false
       case (PROP_LOCATION, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedTablePropertyError(
-          PROP_LOCATION, ctx, "please use the LOCATION clause to specify it")
+          PROP_LOCATION,
+          ctx,
+          "please use the LOCATION clause to specify it")
       case (PROP_LOCATION, _) => false
       case (PROP_OWNER, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedTablePropertyError(
-          PROP_OWNER, ctx, "it will be set to the current user")
+          PROP_OWNER,
+          ctx,
+          "it will be set to the current user")
       case (PROP_OWNER, _) => false
       case (PROP_EXTERNAL, _) if !legacyOn =>
         throw QueryParsingErrors.cannotCleanReservedTablePropertyError(
-          PROP_EXTERNAL, ctx, "please use CREATE EXTERNAL TABLE")
+          PROP_EXTERNAL,
+          ctx,
+          "please use CREATE EXTERNAL TABLE")
       case (PROP_EXTERNAL, _) => false
       // It's safe to set whatever table comment, so we don't make it a reserved table property.
       case (PROP_COMMENT, _) => true
@@ -3369,16 +3459,18 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         val isReserved = CatalogV2Util.TABLE_RESERVED_PROPERTIES.contains(k)
         if (!legacyOn && isReserved) {
           throw QueryParsingErrors.cannotCleanReservedTablePropertyError(
-            k, ctx, "please remove it from the TBLPROPERTIES list.")
+            k,
+            ctx,
+            "please remove it from the TBLPROPERTIES list.")
         }
         !isReserved
     }
   }
 
   def cleanTableOptions(
-                         ctx: ParserRuleContext,
-                         options: Map[String, String],
-                         location: Option[String]): (Map[String, String], Option[String]) = {
+      ctx: ParserRuleContext,
+      options: Map[String, String],
+      location: Option[String]): (Map[String, String], Option[String]) = {
     var path = location
     val filtered = cleanTableProperties(ctx, options).filter {
       case (k, v) if k.equalsIgnoreCase("path") && path.nonEmpty =>
@@ -3450,7 +3542,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a delimited row format properties object.
    */
   override def visitRowFormatDelimited(
-                                        ctx: RowFormatDelimitedContext): SerdeInfo = withOrigin(ctx) {
+      ctx: RowFormatDelimitedContext): SerdeInfo = withOrigin(ctx) {
     // Collect the entries if any.
     def entry(key: String, value: Token): Seq[(String, String)] = {
       Option(value).toSeq.map(x => key -> string(x))
@@ -3485,9 +3577,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * ROW FORMAT ... STORED AS INPUTFORMAT ... OUTPUTFORMAT ...
    */
   protected def validateRowFormatFileFormat(
-                                             rowFormatCtx: RowFormatContext,
-                                             createFileFormatCtx: CreateFileFormatContext,
-                                             parentCtx: ParserRuleContext): Unit = {
+      rowFormatCtx: RowFormatContext,
+      createFileFormatCtx: CreateFileFormatContext,
+      parentCtx: ParserRuleContext): Unit = {
     if (rowFormatCtx == null || createFileFormatCtx == null) {
       return
     }
@@ -3505,7 +3597,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         ffGeneric.identifier.getText.toLowerCase(Locale.ROOT) match {
           case "textfile" => // OK
           case fmt => operationNotAllowed(
-            s"ROW FORMAT DELIMITED is only compatible with 'textfile', not '$fmt'", parentCtx)
+              s"ROW FORMAT DELIMITED is only compatible with 'textfile', not '$fmt'",
+              parentCtx)
         }
       case _ =>
         // should never happen
@@ -3520,18 +3613,18 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   protected def validateRowFormatFileFormat(
-                                             rowFormatCtx: Seq[RowFormatContext],
-                                             createFileFormatCtx: Seq[CreateFileFormatContext],
-                                             parentCtx: ParserRuleContext): Unit = {
+      rowFormatCtx: Seq[RowFormatContext],
+      createFileFormatCtx: Seq[CreateFileFormatContext],
+      parentCtx: ParserRuleContext): Unit = {
     if (rowFormatCtx.size == 1 && createFileFormatCtx.size == 1) {
       validateRowFormatFileFormat(rowFormatCtx.head, createFileFormatCtx.head, parentCtx)
     }
   }
 
   protected def getSerdeInfo(
-                              rowFormatCtx: Seq[RowFormatContext],
-                              createFileFormatCtx: Seq[CreateFileFormatContext],
-                              ctx: ParserRuleContext): Option[SerdeInfo] = {
+      rowFormatCtx: Seq[RowFormatContext],
+      createFileFormatCtx: Seq[CreateFileFormatContext],
+      ctx: ParserRuleContext): Option[SerdeInfo] = {
     validateRowFormatFileFormat(rowFormatCtx, createFileFormatCtx, ctx)
     val rowFormatSerdeInfo = rowFormatCtx.map(visitRowFormat)
     val fileFormatSerdeInfo = createFileFormatCtx.map(visitCreateFileFormat)
@@ -3539,9 +3632,9 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
   private def partitionExpressions(
-                                    partTransforms: Seq[Transform],
-                                    partCols: Seq[StructField],
-                                    ctx: ParserRuleContext): Seq[Transform] = {
+      partTransforms: Seq[Transform],
+      partCols: Seq[StructField],
+      ctx: ParserRuleContext): Seq[Transform] = {
     if (partTransforms.nonEmpty) {
       if (partCols.nonEmpty) {
         val references = partTransforms.map(_.describe()).mkString(", ")
@@ -3551,7 +3644,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         operationNotAllowed(
           s"""PARTITION BY: Cannot mix partition expressions and partition columns:
              |Expressions: $references
-             |Columns: $columns""".stripMargin, ctx)
+             |Columns: $columns""".stripMargin,
+          ctx)
 
       }
       partTransforms
@@ -3606,13 +3700,13 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     if (temp) {
       val asSelect = if (ctx.query == null) "" else " AS ..."
       operationNotAllowed(
-        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead", ctx)
+        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead",
+        ctx)
     }
 
     val partitioning =
       partitionExpressions(partTransforms, partCols, ctx) ++ bucketSpec.map(_.asTransform)
-    val tableSpec = TableSpec(properties, provider, options, location, comment,
-      serdeInfo, external)
+    val tableSpec = TableSpec(properties, provider, options, location, comment, serdeInfo, external)
 
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
@@ -3629,7 +3723,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       case Some(query) =>
         CreateTableAsSelect(
           UnresolvedDBObjectName(table, isNamespace = false),
-          partitioning, query, tableSpec, Map.empty, ifNotExists)
+          partitioning,
+          query,
+          tableSpec,
+          Map.empty,
+          ifNotExists)
 
       case _ =>
         // Note: table schema includes both the table columns list and the partition columns
@@ -3637,7 +3735,10 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         val schema = StructType(columns ++ partCols)
         CreateTable(
           UnresolvedDBObjectName(table, isNamespace = false),
-          schema, partitioning, tableSpec, ignoreIfExists = ifNotExists)
+          schema,
+          partitioning,
+          tableSpec,
+          ignoreIfExists = ifNotExists)
     }
   }
 
@@ -3682,8 +3783,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
 
     val partitioning =
       partitionExpressions(partTransforms, partCols, ctx) ++ bucketSpec.map(_.asTransform)
-    val tableSpec = TableSpec(properties, provider, options, location, comment,
-      serdeInfo, false)
+    val tableSpec = TableSpec(properties, provider, options, location, comment, serdeInfo, false)
 
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
@@ -3700,7 +3800,11 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       case Some(query) =>
         ReplaceTableAsSelect(
           UnresolvedDBObjectName(table, isNamespace = false),
-          partitioning, query, tableSpec, writeOptions = Map.empty, orCreate = orCreate)
+          partitioning,
+          query,
+          tableSpec,
+          writeOptions = Map.empty,
+          orCreate = orCreate)
 
       case _ =>
         // Note: table schema includes both the table columns list and the partition columns
@@ -3708,7 +3812,10 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
         val schema = StructType(columns ++ partCols)
         ReplaceTable(
           UnresolvedDBObjectName(table, isNamespace = false),
-          schema, partitioning, tableSpec, orCreate = orCreate)
+          schema,
+          partitioning,
+          tableSpec,
+          orCreate = orCreate)
     }
   }
 
@@ -3758,7 +3865,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Create a [[ShowTableExtended]] command.
    */
   override def visitShowTableExtended(
-                                       ctx: ShowTableExtendedContext): LogicalPlan = withOrigin(ctx) {
+      ctx: ShowTableExtendedContext): LogicalPlan = withOrigin(ctx) {
     val multiPart = Option(ctx.multipartIdentifier).map(visitMultipartIdentifier)
     val partitionKeys = Option(ctx.partitionSpec).map { specCtx =>
       UnresolvedPartitionSpec(visitNonOptionalPartitionSpec(specCtx), None)
@@ -3790,7 +3897,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * Parse new column info from ADD COLUMN into a QualifiedColType.
    */
   override def visitQualifiedColTypeWithPosition(
-                                                  ctx: QualifiedColTypeWithPositionContext): QualifiedColType = withOrigin(ctx) {
+      ctx: QualifiedColTypeWithPositionContext): QualifiedColType = withOrigin(ctx) {
     val name = typedVisit[Seq[String]](ctx.name)
     QualifiedColType(
       path = if (name.length > 1) Some(UnresolvedFieldName(name.init)) else None,
@@ -3815,8 +3922,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     val colToken = if (ctx.COLUMN() != null) "COLUMN" else "COLUMNS"
     AddColumns(
       createUnresolvedTable(ctx.multipartIdentifier, s"ALTER TABLE ... ADD $colToken"),
-      ctx.columns.qualifiedColTypeWithPosition.asScala.map(typedVisit[QualifiedColType]).toSeq
-    )
+      ctx.columns.qualifiedColTypeWithPosition.asScala.map(typedVisit[QualifiedColType]).toSeq)
   }
 
   /**
@@ -3828,7 +3934,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitRenameTableColumn(
-                                       ctx: RenameTableColumnContext): LogicalPlan = withOrigin(ctx) {
+      ctx: RenameTableColumnContext): LogicalPlan = withOrigin(ctx) {
     RenameColumn(
       createUnresolvedTable(ctx.table, "ALTER TABLE ... RENAME COLUMN"),
       UnresolvedFieldName(typedVisit[Seq[String]](ctx.from)),
@@ -3849,7 +3955,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitAlterTableAlterColumn(
-                                           ctx: AlterTableAlterColumnContext): LogicalPlan = withOrigin(ctx) {
+      ctx: AlterTableAlterColumnContext): LogicalPlan = withOrigin(ctx) {
     val action = ctx.alterColumnAction
     val verb = if (ctx.CHANGE != null) "CHANGE" else "ALTER"
     if (action == null) {
@@ -3908,12 +4014,17 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     }
     val columnNameParts = typedVisit[Seq[String]](ctx.colName)
     if (!conf.resolver(columnNameParts.last, ctx.colType().colName.getText)) {
-      throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError("Renaming column",
-        "ALTER COLUMN", ctx, Some("please run RENAME COLUMN instead"))
+      throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError(
+        "Renaming column",
+        "ALTER COLUMN",
+        ctx,
+        Some("please run RENAME COLUMN instead"))
     }
     if (ctx.colType.NULL != null) {
       throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError(
-        "NOT NULL", "ALTER COLUMN", ctx,
+        "NOT NULL",
+        "ALTER COLUMN",
+        ctx,
         Some("please run ALTER COLUMN ... SET/DROP NOT NULL instead"))
     }
 
@@ -3923,12 +4034,12 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       dataType = Option(ctx.colType().dataType()).map(typedVisit[DataType]),
       nullable = None,
       comment = Option(ctx.colType().commentSpec()).map(visitCommentSpec),
-      position = Option(ctx.colPosition).map(
-        pos => UnresolvedFieldPosition(typedVisit[ColumnPosition](pos))))
+      position = Option(ctx.colPosition).map(pos =>
+        UnresolvedFieldPosition(typedVisit[ColumnPosition](pos))))
   }
 
   override def visitHiveReplaceColumns(
-                                        ctx: HiveReplaceColumnsContext): LogicalPlan = withOrigin(ctx) {
+      ctx: HiveReplaceColumnsContext): LogicalPlan = withOrigin(ctx) {
     if (ctx.partitionSpec != null) {
       operationNotAllowed("ALTER TABLE table PARTITION partition_spec REPLACE COLUMNS", ctx)
     }
@@ -3937,20 +4048,25 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       ctx.columns.qualifiedColTypeWithPosition.asScala.map { colType =>
         if (colType.NULL != null) {
           throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError(
-            "NOT NULL", "REPLACE COLUMNS", ctx)
+            "NOT NULL",
+            "REPLACE COLUMNS",
+            ctx)
         }
         if (colType.colPosition != null) {
           throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError(
-            "Column position", "REPLACE COLUMNS", ctx)
+            "Column position",
+            "REPLACE COLUMNS",
+            ctx)
         }
         val col = typedVisit[QualifiedColType](colType)
         if (col.path.isDefined) {
           throw QueryParsingErrors.operationInHiveStyleCommandUnsupportedError(
-            "Replacing with a nested column", "REPLACE COLUMNS", ctx)
+            "Replacing with a nested column",
+            "REPLACE COLUMNS",
+            ctx)
         }
         col
-      }.toSeq
-    )
+      }.toSeq)
   }
 
   /**
@@ -3963,7 +4079,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitDropTableColumns(
-                                      ctx: DropTableColumnsContext): LogicalPlan = withOrigin(ctx) {
+      ctx: DropTableColumnsContext): LogicalPlan = withOrigin(ctx) {
     val ifExists = ctx.EXISTS() != null
     val columnsToDrop = ctx.columns.multipartIdentifier.asScala.map(typedVisit[Seq[String]])
     DropColumns(
@@ -3984,7 +4100,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitSetTableProperties(
-                                        ctx: SetTablePropertiesContext): LogicalPlan = withOrigin(ctx) {
+      ctx: SetTablePropertiesContext): LogicalPlan = withOrigin(ctx) {
     val properties = visitPropertyKeyValues(ctx.propertyList)
     val cleanedTableProperties = cleanTableProperties(ctx, properties)
     if (ctx.VIEW != null) {
@@ -4015,7 +4131,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitUnsetTableProperties(
-                                          ctx: UnsetTablePropertiesContext): LogicalPlan = withOrigin(ctx) {
+      ctx: UnsetTablePropertiesContext): LogicalPlan = withOrigin(ctx) {
     val properties = visitPropertyKeys(ctx.propertyList)
     val cleanedProperties = cleanTableProperties(ctx, properties.map(_ -> "").toMap).keys.toSeq
 
@@ -4211,8 +4327,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       path = string(ctx.path),
       isLocal = ctx.LOCAL != null,
       isOverwrite = ctx.OVERWRITE != null,
-      partition = Option(ctx.partitionSpec).map(visitNonOptionalPartitionSpec)
-    )
+      partition = Option(ctx.partitionSpec).map(visitNonOptionalPartitionSpec))
   }
 
   /**
@@ -4245,7 +4360,8 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
     if (query.isDefined && tableName.length > 1) {
       val catalogAndNamespace = tableName.init
       throw QueryParsingErrors.addCatalogInCacheTableAsSelectNotAllowedError(
-        catalogAndNamespace.quoted, ctx)
+        catalogAndNamespace.quoted,
+        ctx)
     }
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val isLazy = ctx.LAZY != null
@@ -4349,7 +4465,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitRecoverPartitions(
-                                       ctx: RecoverPartitionsContext): LogicalPlan = withOrigin(ctx) {
+      ctx: RecoverPartitionsContext): LogicalPlan = withOrigin(ctx) {
     RecoverPartitions(
       createUnresolvedTable(
         ctx.multipartIdentifier,
@@ -4370,7 +4486,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * is associated with physical tables
    */
   override def visitAddTablePartition(
-                                       ctx: AddTablePartitionContext): LogicalPlan = withOrigin(ctx) {
+      ctx: AddTablePartitionContext): LogicalPlan = withOrigin(ctx) {
     if (ctx.VIEW != null) {
       operationNotAllowed("ALTER VIEW ... ADD PARTITION", ctx)
     }
@@ -4398,7 +4514,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitRenameTablePartition(
-                                          ctx: RenameTablePartitionContext): LogicalPlan = withOrigin(ctx) {
+      ctx: RenameTablePartitionContext): LogicalPlan = withOrigin(ctx) {
     RenamePartitions(
       createUnresolvedTable(
         ctx.multipartIdentifier,
@@ -4422,7 +4538,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * is associated with physical tables
    */
   override def visitDropTablePartitions(
-                                         ctx: DropTablePartitionsContext): LogicalPlan = withOrigin(ctx) {
+      ctx: DropTablePartitionsContext): LogicalPlan = withOrigin(ctx) {
     if (ctx.VIEW != null) {
       operationNotAllowed("ALTER VIEW ... DROP PARTITION", ctx)
     }
@@ -4503,7 +4619,7 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
    * }}}
    */
   override def visitShowTblProperties(
-                                       ctx: ShowTblPropertiesContext): LogicalPlan = withOrigin(ctx) {
+      ctx: ShowTblPropertiesContext): LogicalPlan = withOrigin(ctx) {
     ShowTableProperties(
       createUnresolvedTableOrView(ctx.table, "SHOW TBLPROPERTIES"),
       Option(ctx.key).map(visitPropertyKey))
@@ -4651,4 +4767,3 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   }
 
 }
-

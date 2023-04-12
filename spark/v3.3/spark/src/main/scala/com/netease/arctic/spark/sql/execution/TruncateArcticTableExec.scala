@@ -36,7 +36,8 @@ case class TruncateArcticTableExec(table: Table) extends LeafV2CommandExec {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val txId = arctic.table().asKeyedTable().beginTransaction(null);
-          val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
+          val overwriteBaseFiles: OverwriteBaseFiles =
+            arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue())
           overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()

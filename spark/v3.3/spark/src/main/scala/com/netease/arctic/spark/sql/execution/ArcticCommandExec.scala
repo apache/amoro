@@ -27,20 +27,20 @@ import org.apache.spark.sql.catalyst.util.truncatedString
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 
-
-abstract class ArcticCommandExec(command: ArcticSparkCommand) extends V2CommandExec{
+abstract class ArcticCommandExec(command: ArcticSparkCommand) extends V2CommandExec {
 
   val rowEncoder: ExpressionEncoder[Row] = RowEncoder(command.outputType()).resolveAndBind()
 
   override def run(): Seq[InternalRow] = {
     val rows = command.execute().toSeq
 //    val encoder = RowEncoder(command.outputType()).resolveAndBind().createSerializer()
-    val m = rows.map( r => rowEncoder.createSerializer()(r))
+    val m = rows.map(r => rowEncoder.createSerializer()(r))
     m
   }
 
   override def output: Seq[Attribute] = {
-    val out = command.outputType().map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
+    val out = command.outputType().map(f =>
+      AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
     out
   }
 
@@ -52,6 +52,6 @@ abstract class ArcticCommandExec(command: ArcticSparkCommand) extends V2CommandE
 case class MigrateToArcticExec(command: MigrateToArcticCommand) extends ArcticCommandExec(command) {
   override def children: Seq[SparkPlan] = Nil
 
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan = null
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan =
+    null
 }
-

@@ -18,11 +18,13 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import java.util
+
 import com.netease.arctic.spark.sql.ArcticExtensionUtils
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
@@ -33,16 +35,16 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 
-import java.util
-
-
 /**
  * rewrite update table plan as append upsert data.
  */
-case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
+case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
+  with ArcticRewriteHelper {
 
-  def buildUpdateProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
-                             isKeyedTable: Boolean): WriteQueryProjections = {
+  def buildUpdateProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      isKeyedTable: Boolean): WriteQueryProjections = {
     val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
       val frontRowProjection =
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
@@ -52,14 +54,17 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     } else {
       val attributes = plan.output.filter(r => r.name.equals("_file") || r.name.equals("_pos"))
       val frontRowProjection =
-        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs ++ attributes, isFront = true, 0))
+        Some(ProjectingInternalRow.newProjectInternalRow(
+          plan,
+          targetRowAttrs ++ attributes,
+          isFront = true,
+          0))
       val backRowProjection =
         ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
       (frontRowProjection, backRowProjection)
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
   }
-
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case u: UpdateTable if isArcticRelation(u.table) =>
@@ -72,21 +77,29 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       } else {
         pushFilter(scanBuilder, u.condition.get, arcticRelation.output)
       }
-      val upsertQuery = buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
+      val upsertQuery =
+        buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       val query = upsertQuery
       var options: Map[String, String] = Map.empty
-      options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(arcticRelation.table, query.schema, options)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
+      val writeBuilder =
+        ArcticSpark33Helper.newWriteBuilder(arcticRelation.table, query.schema, options)
       val write = writeBuilder.build()
-      val projections = buildUpdateProjections(query, arcticRelation.output, ArcticExtensionUtils.isKeyedTable(arcticRelation))
+      val projections = buildUpdateProjections(
+        query,
+        arcticRelation.output,
+        ArcticExtensionUtils.isKeyedTable(arcticRelation))
       ArcticRowLevelWrite(arcticRelation, query, options, projections, Some(write))
 
     case _ => plan
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsRowLevelOperator, scanBuilder: SupportsExtendIdentColumns,
-                       assignments: Seq[Assignment],
-                       condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(
+      r: DataSourceV2Relation,
+      upsert: SupportsRowLevelOperator,
+      scanBuilder: SupportsExtendIdentColumns,
+      assignments: Seq[Assignment],
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
       case table: ArcticSparkTable => {
         if (table.table().isUnkeyedTable) {
@@ -107,17 +120,21 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     r.table match {
       case a: ArcticSparkTable =>
         if (a.table().isKeyedTable) {
-          val updatedRowsQuery = buildKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
+          val updatedRowsQuery =
+            buildKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val primaries = a.table().asKeyedTable().primaryKeySpec().fieldNames()
           validatePrimaryKey(primaries, assignments)
           updatedRowsQuery
         } else {
-          val updatedRowsQuery = buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
-          val deleteQuery = Project(Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)())
-            ++ matchedRowsQuery.output.iterator,
+          val updatedRowsQuery =
+            buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
+          val deleteQuery = Project(
+            Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)())
+              ++ matchedRowsQuery.output.iterator,
             matchedRowsQuery)
-          val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)())
-            ++ updatedRowsQuery.output.iterator,
+          val insertQuery = Project(
+            Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)())
+              ++ updatedRowsQuery.output.iterator,
             updatedRowsQuery)
           Union(deleteQuery, insertQuery)
         }
@@ -125,17 +142,17 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def validatePrimaryKey(primaries: util.List[String], assignments: Seq[Assignment]): Unit = {
-    assignments.map(_.key).foreach(
-      f => {
-        val name = f.asInstanceOf[AttributeReference].name
-        if (primaries.contains(name)) {
-          throw new UnsupportedOperationException(s"primary key: ${name} can not be updated")
-        }
+    assignments.map(_.key).foreach(f => {
+      val name = f.asInstanceOf[AttributeReference].name
+      if (primaries.contains(name)) {
+        throw new UnsupportedOperationException(s"primary key: ${name} can not be updated")
       }
-    )
+    })
   }
 
-  protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
+  protected def toOutputAttrs(
+      schema: StructType,
+      attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
     val nameToAttr = attrs.map(_.name).zip(attrs).toMap
     schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)()).map {
       a =>
@@ -150,20 +167,19 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  private def buildKeyedTableUpdateInsertProjection(relation: LogicalPlan,
-                                    scanPlan: LogicalPlan,
-                                    assignments: Seq[Assignment]): LogicalPlan = {
+  private def buildKeyedTableUpdateInsertProjection(
+      relation: LogicalPlan,
+      scanPlan: LogicalPlan,
+      assignments: Seq[Assignment]): LogicalPlan = {
     val output = relation.output
-    val assignmentMap = assignments.map(
-      a =>
-        if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
-          a.key.asInstanceOf[AttributeReference].name -> a.value
-        } else {
-          a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
-        }
-    ).toMap
-    val outputWithValues = relation.output ++ output.map( a => {
-      if(assignmentMap.contains(a.name)) {
+    val assignmentMap = assignments.map(a =>
+      if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
+        a.key.asInstanceOf[AttributeReference].name -> a.value
+      } else {
+        a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
+      }).toMap
+    val outputWithValues = relation.output ++ output.map(a => {
+      if (assignmentMap.contains(a.name)) {
         Alias(assignmentMap(a.name), "_arctic_after_" + a.name)()
       } else {
         Alias(a, "_arctic_after_" + a.name)()
@@ -172,18 +188,17 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ outputWithValues, scanPlan)
   }
 
-  private def buildUnKeyedTableUpdateInsertProjection(relation: LogicalPlan,
-                                                    scanPlan: LogicalPlan,
-                                                    assignments: Seq[Assignment]): LogicalPlan = {
+  private def buildUnKeyedTableUpdateInsertProjection(
+      relation: LogicalPlan,
+      scanPlan: LogicalPlan,
+      assignments: Seq[Assignment]): LogicalPlan = {
     val output = relation.output
-    val assignmentMap = assignments.map(
-      a =>
-        if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
-          a.key.asInstanceOf[AttributeReference].name -> a.value
-        } else {
-          a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
-        }
-    ).toMap
+    val assignmentMap = assignments.map(a =>
+      if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
+        a.key.asInstanceOf[AttributeReference].name -> a.value
+      } else {
+        a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
+      }).toMap
     val outputWithValues = output.map(a => {
       if (assignmentMap.contains(a.name)) {
         Alias(assignmentMap(a.name), a.name)()

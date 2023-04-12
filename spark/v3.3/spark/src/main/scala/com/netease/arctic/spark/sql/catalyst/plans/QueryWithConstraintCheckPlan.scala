@@ -38,7 +38,9 @@ case class QueryWithConstraintCheckPlan(
     s"QueryWithConstraintCheck${truncatedString(output, "[", ", ", "]", maxFields)}"
   }
 
-  override protected def withNewChildrenInternal(newLeft: LogicalPlan, newRight: LogicalPlan): LogicalPlan = {
+  override protected def withNewChildrenInternal(
+      newLeft: LogicalPlan,
+      newRight: LogicalPlan): LogicalPlan = {
     copy(scanPlan = newLeft, fileFilterPlan = newRight)
   }
 }

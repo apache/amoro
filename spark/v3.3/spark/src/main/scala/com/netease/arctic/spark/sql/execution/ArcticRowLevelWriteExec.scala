@@ -33,13 +33,12 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
  * Physical plan node to write a delta of rows to an existing table.
  */
 case class ArcticRowLevelWriteExec(
-  table: ArcticSparkTable,
-  query: SparkPlan,
-  writeOptions: CaseInsensitiveStringMap,
-  projections: WriteQueryProjections,
-  refreshCache: () => Unit,
-  write: Write
-) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] {
+    table: ArcticSparkTable,
+    query: SparkPlan,
+    writeOptions: CaseInsensitiveStringMap,
+    projections: WriteQueryProjections,
+    refreshCache: () => Unit,
+    write: Write) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] {
 
   override protected def run(): Seq[InternalRow] = {
     val writtenRows = writeWithV2(write.toBatch)
@@ -61,8 +60,7 @@ case class ArcticRowLevelWriteExec(
 }
 
 case class DeltaWithMetadataWritingSparkTask(
-  projs: WriteQueryProjections
-) extends WritingSparkTask[RowLevelWriter[InternalRow]] {
+    projs: WriteQueryProjections) extends WritingSparkTask[RowLevelWriter[InternalRow]] {
 
   private lazy val frontRowProjection = projs.frontRowProjection.orNull
   private lazy val backRowProjection = projs.backRowProjection
