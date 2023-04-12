@@ -75,9 +75,9 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
   def isCreateKeyedTable(catalog: TableCatalog, props: Map[String, String]): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog =>
-        props.contains("primary.keys")
+        props("provider").equalsIgnoreCase("arctic") && props.contains("primary.keys")
       case _: ArcticSparkSessionCatalog[_] =>
-        props.contains("primary.keys")
+        props("provider").equalsIgnoreCase("arctic") && props.contains("primary.keys")
       case _ =>
         false
     }
