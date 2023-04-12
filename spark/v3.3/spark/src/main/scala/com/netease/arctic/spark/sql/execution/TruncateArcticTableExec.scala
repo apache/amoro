@@ -21,14 +21,11 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
-import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.expressions.Expressions
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.{LeafV2CommandExec, V2CommandExec}
+import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
 
 case class TruncateArcticTableExec(table: Table) extends LeafV2CommandExec {
   override protected def run(): Seq[InternalRow] = {
