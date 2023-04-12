@@ -317,13 +317,15 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType,
+      boolean base) {
     return createKeyedTaskWriter(keyedTable, rowType, base, 3);
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base, long mask) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType,
+      boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setMask(mask);
@@ -331,4 +333,18 @@ public class FlinkTestBase extends TableTestBase {
     return taskWriterFactory.create();
   }
 
+  static {
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public synchronized void start() {
+        LOG.info("JACOCO SHUTDOWN HOOK START");
+        super.start();
+      }
+
+      @Override
+      public void run() {
+        LOG.info("JACOCO SHUTDOWN HOOK RUN");
+      }
+    });
+  }
 }
