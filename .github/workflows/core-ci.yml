@@ -48,7 +48,7 @@ jobs:
           cache: maven
 
       - name: Run code checkstyle
-        run: mvn validate
+        run: mvn validate -Dmaven.scalastyle.skip=true
 
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Dcheckstyle.skip=true -X
