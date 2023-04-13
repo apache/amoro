@@ -90,7 +90,7 @@ AS SELECT ...
 `CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区复制到新表中，但不会复制数据。
 
 ``` 
-use arctic_catalog;
+USE arctic_catalog;
 CREATE TABLE db.sample
 LIKE db.sample2
 USING arctic
