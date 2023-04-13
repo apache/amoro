@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
@@ -28,11 +29,14 @@ import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
 import com.netease.arctic.ams.server.model.Container;
+import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
+import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.optimizer.StatefulOptimizer;
@@ -50,6 +54,9 @@ import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZE
 
 public class OptimizerService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerService.class);
+
+  //identify whether a retry has occurred in the optimizer task
+  private static final String STATUS_IDENTIFICATION = "status_identification";
 
   public List<Optimizer> getOptimizers(String optimizerGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -103,26 +110,27 @@ public class OptimizerService extends IJDBCService {
       return;
     }
     Optimizer optimizer = getOptimizer(reportData.optimizerId);
+    byte[] optimizerInstance = null;
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
-      if (container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
-        updateOptimizerStatus(reportData.getOptimizerId(), TableTaskStatus.RUNNING);
-        return;
-      }
-      OptimizerFactory factory =
-          ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
-      com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
-      if (instance instanceof StatefulOptimizer) {
-        Map<String, String> state = ((StatefulOptimizer) instance).getState();
-        if (state.containsKey(OPTIMIZER_LAUNCHER_INFO)) {
-          JSONObject old = JSONObject.parseObject(state.get(OPTIMIZER_LAUNCHER_INFO));
-          old.putAll(reportData.optimizerState);
-          state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(old));
-        } else {
-          state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(reportData.optimizerState));
+      checkOptimizerRetry(reportData, optimizer);
+      if (!container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
+        OptimizerFactory factory =
+                ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
+        com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
+        if (instance instanceof StatefulOptimizer) {
+          Map<String, String> state = ((StatefulOptimizer) instance).getState();
+          if (state.containsKey(OPTIMIZER_LAUNCHER_INFO)) {
+            JSONObject old = JSONObject.parseObject(state.get(OPTIMIZER_LAUNCHER_INFO));
+            old.putAll(reportData.optimizerState);
+            state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(old));
+          } else {
+            state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(reportData.optimizerState));
+          }
+          ((StatefulOptimizer) instance).updateState(state);
+          optimizerInstance = factory.serialize(instance);
         }
-        ((StatefulOptimizer) instance).updateState(state);
       }
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
@@ -132,8 +140,8 @@ public class OptimizerService extends IJDBCService {
         } else {
           stateInfo = reportData.optimizerState;
         }
-        optimizerMapper.updateOptimizerState(reportData.optimizerId, factory.serialize(instance),
-            stateInfo, TableTaskStatus.RUNNING.name());
+        optimizerMapper.updateOptimizerState(reportData.optimizerId, optimizerInstance,
+                stateInfo, TableTaskStatus.RUNNING.name());
       }
     }
   }
@@ -225,6 +233,48 @@ public class OptimizerService extends IJDBCService {
     Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
     optimizer.setContainerType(container.getType());
     return optimizer;
+  }
+
+  /**
+   * If lastmodification is not null and is not the same as before, then the task has occurred retry and returns true.
+   */
+  private void checkOptimizerRetry(OptimizerStateReport newReportData, Optimizer oldOptimizer)
+          throws NoSuchObjectException {
+
+    Map<String, String> stateInfo = oldOptimizer.getStateInfo();
+    if (stateInfo == null || newReportData.optimizerState == null ||
+            newReportData.optimizerState.get(STATUS_IDENTIFICATION) == null) {
+      return;
+    }
+
+    //If there is no status identifier in optimizerState, it is skipped
+    String statusIdentification = newReportData.optimizerState
+            .get(STATUS_IDENTIFICATION);
+    if (!statusIdentification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
+            stateInfo.get(STATUS_IDENTIFICATION) != null) {
+      LOG.info("Optimizer " + newReportData.optimizerId + " retry occurred");
+      //The flink status has changed. Procedure
+      String optimizerId = String.valueOf(newReportData.optimizerId);
+
+      //get all arctic table from cache
+      List<com.netease.arctic.table.TableIdentifier> tableIdentifiers =
+              ServiceContainer.getOptimizeService().listCachedTables();
+      for (com.netease.arctic.table.TableIdentifier tableIdentifier : tableIdentifiers) {
+        //get all optimize task from cache for arctic table
+        TableOptimizeItem tableOptimizeItem =
+                ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+        List<OptimizeTaskItem> optimizeTasks = tableOptimizeItem.getOptimizeTasks();
+        for (OptimizeTaskItem optimizeTask : optimizeTasks) {
+          OptimizeTaskRuntime optimizeRuntime = optimizeTask.getOptimizeRuntime();
+          //Retry only the task whose state is Executing
+          if (OptimizeStatus.Executing.equals(optimizeRuntime.getStatus()) &&
+              optimizerId.equals(optimizeRuntime.getJobId().getId()) &&
+              optimizeRuntime.getExecuteTime() < Long.parseLong(statusIdentification)) {
+            tableOptimizeItem.taskFailedForOptimizerRetry(optimizeTask.getTaskId());
+          }
+        }
+      }
+    }
   }
 }
 
