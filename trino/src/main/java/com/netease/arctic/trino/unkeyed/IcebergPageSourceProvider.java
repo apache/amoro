@@ -366,7 +366,7 @@ public class IcebergPageSourceProvider
         dataPageSource.get(),
         projectionsAdapter,
         //                Optional.of(deleteFilter).filter(filter -> filter.hasPosDeletes() || filter.hasEqDeletes()),
-        //In order to be compatible with iceberg version 0.12
+        // In order to be compatible with iceberg version 0.12
         useIcebergDelete ? Optional.of(deleteFilter) : Optional.empty(),
         positionDeleteSink);
   }

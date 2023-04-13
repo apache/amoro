@@ -44,6 +44,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.SerializableMap;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -304,13 +306,13 @@ public class TableEntriesScan {
   @SuppressWarnings("unchecked")
   private Metrics buildMetrics(StructLike dataFile) {
     return new Metrics(
-        dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
+        new Long(dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class)),
+        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class)),
+        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class)),
+        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class)),
+        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class)));
   }
 
   private int entryFieldIndex(String fieldName) {

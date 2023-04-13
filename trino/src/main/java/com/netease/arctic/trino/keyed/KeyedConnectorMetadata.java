@@ -50,6 +50,7 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
@@ -72,9 +73,11 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
 import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
@@ -95,6 +98,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   private TypeManager typeManager;
 
   private ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap = new ConcurrentHashMap<>();
+
+  private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
 
   public KeyedConnectorMetadata(ArcticCatalog arcticCatalog, TypeManager typeManager) {
     this.arcticCatalog = arcticCatalog;
@@ -372,6 +377,46 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         newProjections,
         outputAssignments,
         false));
+  }
+
+  @Override
+  public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
+    if (!isArcticStatisticsEnabled(session)) {
+      return TableStatistics.empty();
+    }
+
+    KeyedTableHandle keyedTableHandle = (KeyedTableHandle) tableHandle;
+    IcebergTableHandle originalHandle = keyedTableHandle.getIcebergTableHandle();
+    // Certain table handle attributes are not applicable to select queries (which need stats).
+    // If this changes, the caching logic may here may need to be revised.
+    checkArgument(originalHandle.getUpdatedColumns().isEmpty(), "Unexpected updated columns");
+    checkArgument(!originalHandle.isRecordScannedFiles(), "Unexpected scanned files recording set");
+    checkArgument(originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
+
+    return tableStatisticsCache.computeIfAbsent(
+        new IcebergTableHandle(
+            originalHandle.getSchemaName(),
+            originalHandle.getTableName(),
+            originalHandle.getTableType(),
+            originalHandle.getSnapshotId(),
+            originalHandle.getTableSchemaJson(),
+            originalHandle.getPartitionSpecJson(),
+            originalHandle.getFormatVersion(),
+            originalHandle.getUnenforcedPredicate(),
+            originalHandle.getEnforcedPredicate(),
+            ImmutableSet.of(), // projectedColumns don't affect stats
+            originalHandle.getNameMappingJson(),
+            originalHandle.getTableLocation(),
+            originalHandle.getStorageProperties(),
+            NO_RETRIES, // retry mode doesn't affect stats
+            originalHandle.getUpdatedColumns(),
+            originalHandle.isRecordScannedFiles(),
+            originalHandle.getMaxScannedFileSize()),
+        handle -> {
+          ArcticTable arcticTable = getArcticTable(new SchemaTableName(
+              originalHandle.getSchemaName(), originalHandle.getTableName()));
+          return KeyedTableStatisticsMaker.getTableStatistics(typeManager, session, handle, arcticTable);
+        });
   }
 
   private static Set<Integer> identityPartitionColumnsInAllSpecs(ArcticTable table) {

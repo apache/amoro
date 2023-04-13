@@ -25,6 +25,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrino {
 
@@ -39,13 +40,24 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
     initData();
     return ArcticQueryRunner.builder()
         .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s",AMS.port(), TEST_CATALOG_NAME)))
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
         .build();
   }
 
   @Test
+  public void testStats() {
+    assertThat(query("SHOW STATS FOR " + PK_TABLE_FULL_NAME))
+        .skippingTypesCheck()
+        .matches("VALUES " +
+            "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
+            "('name$name', 356e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), " +
+            "(NULL, NULL, NULL, NULL, 5e0, NULL, NULL)");
+  }
+
+  @Test
   public void tableMOR() throws InterruptedException {
-    assertQuery("select id from " + PK_TABLE_FULL_NAME,  "VALUES 1, 2, 3, 6");
+    assertQuery("select id from " + PK_TABLE_FULL_NAME, "VALUES 1, 2, 3, 6");
   }
 
   @Test
@@ -58,22 +70,22 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   }
 
   @Test
-  public void baseQuery(){
-    assertQuery("select id from " + "arctic.test_db.\"test_pk_table#base\"",  "VALUES 1, 2, 3");
+  public void baseQuery() {
+    assertQuery("select id from " + "arctic.test_db.\"test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
-  public void baseQueryWhenTableNameContainCatalogAndDataBase(){
-    assertQuery("select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"",  "VALUES 1, 2, 3");
+  public void baseQueryWhenTableNameContainCatalogAndDataBase() {
+    assertQuery("select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
-  public void baseQueryWhenTableNameContainDataBase(){
-    assertQuery("select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"",  "VALUES 1, 2, 3");
+  public void baseQueryWhenTableNameContainDataBase() {
+    assertQuery("select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
-  public void changeQuery(){
+  public void changeQuery() {
     assertQuery("select * from " + "arctic.test_db.\"test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
@@ -81,23 +93,23 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   }
 
   @Test
-  public void changeQueryWhenTableNameContainCatalogAndDataBase(){
+  public void changeQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery("select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
-            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @Test
-  public void changeQueryWhenTableNameContainDataBase(){
+  public void changeQueryWhenTableNameContainDataBase() {
     assertQuery("select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
-            "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
-                    "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @AfterClass(alwaysRun = true)
-  public void clear(){
+  public void clear() {
     clearTable();
   }
 }

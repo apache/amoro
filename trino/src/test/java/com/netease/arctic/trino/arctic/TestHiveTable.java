@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestHiveTable extends TestHiveTableBaseForTrino{
+public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   private final String TEST_HIVE_TABLE_FULL_NAME = "arctic." + HIVE_TABLE_ID.getDatabase() + "." + HIVE_TABLE_ID.getTableName();
 
@@ -87,7 +87,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
     return ArcticQueryRunner.builder()
         .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s",AMS.port(), HIVE_CATALOG_NAME)))
+            String.format("thrift://localhost:%s/%s", AMS.port(), HIVE_CATALOG_NAME)))
         .build();
   }
 
@@ -145,18 +145,34 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
         + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE, ImmutableList.of(v1, v2, v3, v4));
   }
 
+  @Test
+  public void testStats() {
+    assertThat(query("SHOW STATS FOR " + TEST_HIVE_PK_TABLE_FULL_NAME))
+        .skippingTypesCheck()
+        .matches("VALUES " +
+            "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
+            "('op_time', NULL, NULL, 0e0, NULL, NULL, NULL), " +
+            "('op_time_with_zone', NULL, NULL, 0e0, NULL, NULL, NULL), " +
+            "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), " +
+            "('map_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
+            "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
+            "('struct_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
+            "('name', 458e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "(NULL, NULL, NULL, NULL, 3e0, NULL, NULL)");
+  }
+
 
   private void assertCommon(String query, List<List<String>> values) {
     QueryAssertions.QueryAssert queryAssert = assertThat(query(query));
     StringJoiner stringJoiner = new StringJoiner(",", "VALUES", "");
-    for (List<String> value: values) {
+    for (List<String> value : values) {
       stringJoiner.add(value.stream().collect(Collectors.joining(",", "(", ")")));
     }
     queryAssert.skippingTypesCheck().matches(stringJoiner.toString());
   }
 
   @AfterClass(alwaysRun = true)
-  public void clear(){
+  public void clear() {
     clearTable();
     stopMetastore();
   }
@@ -174,7 +190,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
         .withTransactionId(table.isKeyedTable() ? txid++ : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
-    for (Record record: records) {
+    for (Record record : records) {
       changeWrite.write(record);
     }
     WriteResult complete = changeWrite.complete();
@@ -195,7 +211,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
     }
   }
 
-  private CloseableIterable<Record> readParquet(Schema schema, String path){
+  private CloseableIterable<Record> readParquet(Schema schema, String path) {
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
             Files.localInput(new File(path)))
         .project(schema)
