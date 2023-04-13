@@ -158,7 +158,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
             "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('struct_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('name', 458e0, NULL, 0e0, NULL, NULL, NULL), " +
-            "(NULL, NULL, NULL, NULL, 3e0, NULL, NULL)");
+            "(NULL, NULL, NULL, NULL, 9e0, NULL, NULL)");
   }
 
 

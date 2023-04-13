@@ -136,11 +136,7 @@ final class KeyedTableStatistics {
     }
 
     public void acceptDataFile(DataFile dataFile, PartitionSpec partitionSpec, DataFileType dataFileType) {
-      if (dataFileType == DataFileType.EQ_DELETE_FILE) {
-        recordCount -= dataFile.recordCount();
-      } else {
-        recordCount += dataFile.recordCount();
-      }
+      recordCount += dataFile.recordCount();
       fileCount++;
       size += dataFile.fileSizeInBytes();
 
