@@ -98,10 +98,8 @@ public class ArcticThriftUrl {
             retryCount++;
             logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount));
             try {
-              // 获取与当前线程关联的Subject
               Subject subject = Subject.getSubject(java.security.AccessController.getContext());
 
-              // 如果Subject不为空，则尝试登出
               if (subject != null) {
                 LoginContext loginContext = new LoginContext("", subject);
                 loginContext.logout();
