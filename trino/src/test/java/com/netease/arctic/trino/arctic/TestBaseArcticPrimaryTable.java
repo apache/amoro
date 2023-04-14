@@ -52,7 +52,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
             "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
             "('name$name', 356e0, NULL, 0e0, NULL, NULL, NULL), " +
             "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), " +
-            "(NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+            "(NULL, NULL, NULL, NULL, 6e0, NULL, NULL)");
   }
 
   @Test
