@@ -108,6 +108,8 @@ public class ArcticThriftUrl {
               logger.error("Failed to logout", e);
             }
           } catch (Exception e) {
+            retryCount++;
+            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount));
             throw new RuntimeException(String.format("invalid ams url %s", url));
           }
 
