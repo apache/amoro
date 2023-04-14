@@ -20,7 +20,12 @@ package com.netease.arctic.ams.api.client;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
-
+import org.apache.zookeeper.KeeperException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
@@ -28,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArcticThriftUrl {
+  private static final Logger logger = LoggerFactory.getLogger(ArcticThriftUrl.class);
   public static final String PARAM_SOCKET_TIMEOUT = "socketTimeout";
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
   public static final String ZOOKEEPER_FLAG = "zookeeper";
@@ -74,17 +80,43 @@ public class ArcticThriftUrl {
           zkServerAddress = m.group(1);
           cluster = m.group(2);
         }
-        ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
-        AmsServerInfo serverInfo = null;
-        try {
-          serverInfo = JSONObject.parseObject(
-              zkService.getData(AmsHAProperties.getMasterPath(cluster)),
-              AmsServerInfo.class);
-        } catch (Exception e) {
-          throw new RuntimeException("get master server info from zookeeper error", e);
+        int maxRetries = 3;
+        int retryCount = 0;
+        boolean success = false;
+
+        while (!success && retryCount < maxRetries) {
+          try {
+            ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
+            AmsServerInfo serverInfo = null;
+            serverInfo = JSONObject.parseObject(
+                zkService.getData(AmsHAProperties.getMasterPath(cluster)),
+                AmsServerInfo.class);
+            url =
+                String.format(THRIFT_URL_FORMAT, serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
+            success = true;
+          } catch (KeeperException.AuthFailedException authFailedException) {
+            retryCount++;
+            try {
+              // 获取与当前线程关联的Subject
+              Subject subject = Subject.getSubject(java.security.AccessController.getContext());
+
+              // 如果Subject不为空，则尝试登出
+              if (subject != null) {
+                LoginContext loginContext = new LoginContext("", subject);
+                loginContext.logout();
+              }
+            } catch (LoginException e) {
+              logger.error("Failed to logout", e);
+            }
+          } catch (Exception e) {
+            retryCount++;
+            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+          }
+
+          if (!success) {
+            logger.error(String.format("get master server info from zookeeper error, url: %s", url));
+          }
         }
-        url =
-            String.format(THRIFT_URL_FORMAT, serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
       } else {
         throw new RuntimeException(String.format("invalid ams url %s", url));
       }
