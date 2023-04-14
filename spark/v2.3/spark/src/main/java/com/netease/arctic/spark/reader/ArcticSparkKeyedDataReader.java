@@ -43,7 +43,7 @@ public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReade
       String nameMapping,
       boolean caseSensitive) {
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        ArcticSparkUtil::convertConstant, false);
+        ArcticSparkUtil::convertConstant, true);
   }
 
   @Override
@@ -56,7 +56,8 @@ public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReade
   @Override
   protected Function<Schema, Function<Row, StructLike>> toStructLikeFunction() {
     return schema -> {
-      return row -> new SparkStructLike(schema.asStruct()).wrap(row);
+      SparkStructLike structLike = new SparkStructLike(schema.asStruct());
+      return row -> structLike.wrap(row);
     };
   }
 }
