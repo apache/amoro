@@ -96,7 +96,7 @@ public class ArcticThriftUrl {
             success = true;
           } catch (KeeperException.AuthFailedException authFailedException) {
             retryCount++;
-            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount));
             try {
               // 获取与当前线程关联的Subject
               Subject subject = Subject.getSubject(java.security.AccessController.getContext());
