@@ -96,6 +96,7 @@ public class ArcticThriftUrl {
             success = true;
           } catch (KeeperException.AuthFailedException authFailedException) {
             retryCount++;
+            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
             try {
               // 获取与当前线程关联的Subject
               Subject subject = Subject.getSubject(java.security.AccessController.getContext());
@@ -109,8 +110,7 @@ public class ArcticThriftUrl {
               logger.error("Failed to logout", e);
             }
           } catch (Exception e) {
-            retryCount++;
-            logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+            throw new RuntimeException(String.format("invalid ams url %s", url));
           }
 
           if (!success) {
