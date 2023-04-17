@@ -36,7 +36,7 @@ import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 public final class ArcticSessionProperties
     implements SessionPropertiesProvider {
 
-  private static final String ARCTIC_STATISTICS_ENABLED = "arctic.statistics_enabled";
+  private static final String ARCTIC_STATISTICS_ENABLED = "arctic_table_statistics_enabled";
   private final List<PropertyMetadata<?>> sessionProperties;
 
   @Inject

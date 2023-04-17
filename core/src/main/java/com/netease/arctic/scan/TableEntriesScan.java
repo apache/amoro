@@ -306,10 +306,10 @@ public class TableEntriesScan {
   private Metrics buildMetrics(StructLike dataFile) {
     return new Metrics(
         new Long(dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class)),
-        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class)),
-        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class)),
-        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class)),
-        Maps.newHashMap(dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class)),
         SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class)),
         SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class)));
   }
