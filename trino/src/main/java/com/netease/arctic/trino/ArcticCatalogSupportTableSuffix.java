@@ -20,6 +20,7 @@ package com.netease.arctic.trino;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -148,6 +149,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
+    return arcticCatalog.newTableBuilder(identifier, schema, format);
+  }
+
+  @Override
   public void refresh() {
     arcticCatalog.refresh();
   }
@@ -182,6 +188,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public TableScan newScan() {
       return table.newScan();
+    }
+
+    @Override
+    public TableFormat format() {
+      return table.format();
     }
 
     @Override

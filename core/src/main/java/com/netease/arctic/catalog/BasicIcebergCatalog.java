@@ -21,22 +21,31 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -168,7 +177,14 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
-    throw new UnsupportedOperationException("unsupported new iceberg table for now.");
+    return this.newTableBuilder(identifier, schema, TableFormat.ICEBERG);
+  }
+
+  @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
+    Preconditions.checkArgument(TableFormat.ICEBERG.equals(format),
+        "Catalog {0} only supports Iceberg tables.", this.name());
+    return new IcebergTableBuilder(identifier, schema);
   }
 
   @Override
@@ -196,7 +212,68 @@ public class BasicIcebergCatalog implements ArcticCatalog {
         tableIdentifier.getTableName());
   }
 
+
+  protected class IcebergTableBuilder implements TableBuilder {
+    Catalog.TableBuilder icebergTableBuilder;
+    final TableIdentifier identifier;
+
+    public IcebergTableBuilder(TableIdentifier identifier, Schema schema) {
+      this.icebergTableBuilder = icebergCatalog.buildTable(
+          toIcebergTableIdentifier(identifier),
+          schema
+      );
+      this.identifier = identifier;
+    }
+
+    @Override
+    public TableBuilder withPartitionSpec(PartitionSpec partitionSpec) {
+      this.icebergTableBuilder.withPartitionSpec(partitionSpec);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withSortOrder(SortOrder sortOrder) {
+      this.icebergTableBuilder.withSortOrder(sortOrder);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withProperties(Map<String, String> properties) {
+      this.icebergTableBuilder.withProperties(properties);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withProperty(String key, String value) {
+      this.icebergTableBuilder.withProperty(key, value);
+      return this;
+    }
+
+    @Override
+    public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
+      throw new UnsupportedOperationException("Iceberg does not support primary keys.");
+    }
+
+    @Override
+    public ArcticTable create() {
+      Table icebergTable = this.icebergTableBuilder.create();
+      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+      return new BasicIcebergTable(identifier, icebergTable, arcticFileIO,meta.getCatalogProperties());
+    }
+
+    @Override
+    public Transaction newCreateTableTransaction() {
+      return this.icebergTableBuilder.createTransaction();
+    }
+  }
+
+
   public static class BasicIcebergTable extends BasicUnkeyedTable {
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.ICEBERG;
+    }
 
     public BasicIcebergTable(
         TableIdentifier tableIdentifier,

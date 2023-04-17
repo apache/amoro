@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
@@ -110,6 +111,11 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   @Override
   public String name() {
     return id().getTableName();
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
   }
 
   @Override

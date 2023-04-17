@@ -19,6 +19,7 @@
 package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
@@ -104,6 +105,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public IncrementalAppendScan newIncrementalAppendScan() {
     return icebergTable.newIncrementalAppendScan();
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_ICEBERG;
   }
 
   @Override

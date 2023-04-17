@@ -20,6 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -134,8 +135,22 @@ public interface ArcticCatalog {
    * @param identifier a table identifier
    * @param schema     a schema
    * @return the builder to build a table
+   * @deprecated This method has been deprecated and should no longer be used.
+   *  Please use the {@link #newTableBuilder(TableIdentifier, Schema, TableFormat)} method instead.
    */
+  @Deprecated
   TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema);
+
+
+  /**
+   * Instantiate a builder to build a table.
+   *
+   * @param identifier a table identifier
+   * @param schema     a schema
+   * @param format     format of table to be created
+   * @return the builder to build a table
+   */
+  TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format);
 
   /**
    * Refresh catalog meta

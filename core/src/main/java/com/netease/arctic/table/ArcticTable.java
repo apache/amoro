@@ -18,6 +18,7 @@
 
 package com.netease.arctic.table;
 
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -31,6 +32,8 @@ import java.util.Map;
  * Represents an arctic table.
  */
 public interface ArcticTable extends Serializable {
+
+  TableFormat format();
 
   /**
    * Returns the {@link TableIdentifier} of this table

@@ -26,6 +26,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.TableTrashManagers;
@@ -306,6 +307,11 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
+    return this.newTableBuilder(identifier, schema, TableFormat.MIXED_ICEBERG);
+  }
+
+  @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
     validate(identifier);
     return new ArcticTableBuilder(identifier, schema);
   }
