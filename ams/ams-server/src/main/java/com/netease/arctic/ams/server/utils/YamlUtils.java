@@ -18,7 +18,8 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
@@ -29,7 +30,7 @@ import java.util.Map;
 
 public class YamlUtils {
 
-  public static JSONObject load(String path) {
+  public static JsonNode load(String path) {
     InputStream inputStream = null;
     try {
       inputStream = new FileInputStream(path);
@@ -37,6 +38,7 @@ public class YamlUtils {
       e.printStackTrace();
     }
     Yaml yaml = new Yaml();
-    return new JSONObject(yaml.loadAs(inputStream, Map.class));
+    ObjectMapper objMapper = new ObjectMapper();
+    return objMapper.valueToTree(yaml.loadAs(inputStream, Map.class));
   }
 }

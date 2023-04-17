@@ -19,7 +19,7 @@ ams:
   #arctic.ams.database.type: mysql
 
   #HA config
-  #arctic.ams.ha.enabled: true
+  arctic.ams.ha.enabled: true
   #arctic.ams.cluster.name: default
   #arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
@@ -41,14 +41,14 @@ containers:
     properties:
       hadoop_home: /opt/hadoop
       # java_home: /opt/java
-#  - name: flinkContainer
-#    type: flink
-#    properties:
-#      FLINK_HOME: /opt/flink/        #flink install home
-#      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
-#      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
-#      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
-#      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
+  - name: flinkContainer
+    type: flink
+    properties:
+      FLINK_HOME: /opt/flink/        #flink install home
+      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
+      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
+      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
+      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
 
 
 
