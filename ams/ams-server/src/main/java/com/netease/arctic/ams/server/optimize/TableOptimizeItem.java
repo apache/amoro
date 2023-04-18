@@ -1469,4 +1469,13 @@ public class TableOptimizeItem extends IJDBCService {
       this.minTransactionIdAfter = minTransactionIdAfter;
     }
   }
+
+  public void taskFailedForOptimizerRetry(OptimizeTaskId optimizeTaskId) {
+    OptimizeTaskItem optimizeTaskItem = optimizeTasks.get(optimizeTaskId);
+
+    optimizeTaskItem.onFailed(new ErrorMessage(System.currentTimeMillis(), "optimizer job has occurred retry"),
+            System.currentTimeMillis() - optimizeTaskItem.getOptimizeRuntime().getExecuteTime());
+    LOG.error("{} optimizer job has occurred retry, change to Failed", optimizeTaskItem.getTaskId());
+
+  }
 }
