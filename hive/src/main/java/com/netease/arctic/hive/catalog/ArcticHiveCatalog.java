@@ -33,6 +33,7 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -99,8 +100,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     } catch (AlreadyExistsException e) {
       throw new org.apache.iceberg.exceptions.AlreadyExistsException(
           e, "Database '%s' already exists!", databaseName);
-
-    }  catch (TException | InterruptedException e) {
+    } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to create database:" + databaseName, e);
     }
   }
@@ -164,8 +164,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
+    ArcticHadoopFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+            tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -187,8 +188,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
+    ArcticHadoopFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+            tableMetaStore, catalogMeta.getCatalogProperties());
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
         catalogMeta.getCatalogProperties());
@@ -197,7 +199,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   public HMSClientPool getHMSClient() {
     return hiveClientPool;
   }
-
 
   class ArcticHiveTableBuilder extends ArcticTableBuilder {
 
@@ -290,12 +291,14 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         meta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
       }
 
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore, catalogMeta.getCatalogProperties());
+      ArcticHadoopFileIO fileIO =
+          ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+              tableMetaStore, catalogMeta.getCatalogProperties());
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
-          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+          createTable.updateProperties().set(
+              org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
           return createTable;
         } catch (Exception e) {
@@ -310,7 +313,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
-          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+          createTable.updateProperties().set(
+              org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
           return createTable;
         } catch (Exception e) {
@@ -326,7 +330,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       try {
         hiveClientPool.run(client -> {
           if (allowExistedHiveTable) {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
+                tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.putAll(constructProperties());
@@ -361,7 +366,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         try {
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
           // set name mapping using true schema
-          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+          createTable.updateProperties().set(
+              org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
           return createTable;
         } catch (Exception e) {
@@ -371,7 +377,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       try {
         hiveClientPool.run(client -> {
           if (allowExistedHiveTable) {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
+                tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.putAll(constructProperties());
@@ -391,8 +398,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
 
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore, catalogMeta.getCatalogProperties());
+      ArcticHadoopFileIO fileIO =
+          ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+              tableMetaStore, catalogMeta.getCatalogProperties());
       return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
           catalogMeta.getCatalogProperties());
@@ -444,7 +452,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
         try {
           hiveClientPool.run(client -> {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
+                tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);

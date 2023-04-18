@@ -28,7 +28,7 @@ import java.util.Map;
 
 public class ArcticFileIOs {
 
-  public static ArcticFileIO buildTableFileIO(
+  public static ArcticHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier, String tableLocation,
       Map<String, String> tableProperties, TableMetaStore tableMetaStore,
       Map<String, String> catalogProperties) {
@@ -41,13 +41,13 @@ public class ArcticFileIOs {
       String trashFilePattern = PropertyUtil.propertyAsString(tableProperties, TableProperties.TABLE_TRASH_FILE_PATTERN,
           TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
 
-      return new RecoverableArcticFileIO(tableMetaStore, trashManager, trashFilePattern);
+      return new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
     } else {
       return new ArcticHadoopFileIO(tableMetaStore);
     }
   }
 
-  public static ArcticFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
+  public static ArcticHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
     return new ArcticHadoopFileIO(tableMetaStore);
   }
 }

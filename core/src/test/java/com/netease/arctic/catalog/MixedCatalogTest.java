@@ -22,7 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.io.RecoverableArcticFileIO;
+import com.netease.arctic.io.RecoverableHadoopFileIO;
 import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
@@ -119,7 +119,8 @@ public class MixedCatalogTest extends CatalogTestBase {
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
         "false");
     getCatalog().refresh();
@@ -140,10 +141,11 @@ public class MixedCatalogTest extends CatalogTestBase {
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(createTable.io() instanceof RecoverableHadoopFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
         "true");
     getCatalog().refresh();
@@ -169,12 +171,13 @@ public class MixedCatalogTest extends CatalogTestBase {
         .withPrimaryKeySpec(TableTestHelpers.PRIMARY_KEY_SPEC)
         .create()
         .asKeyedTable();
-    Assert.assertFalse(createTable.io() instanceof RecoverableArcticFileIO);
-    Assert.assertFalse(createTable.changeTable().io() instanceof RecoverableArcticFileIO);
-    Assert.assertFalse(createTable.baseTable().io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(createTable.io() instanceof RecoverableHadoopFileIO);
+    Assert.assertFalse(createTable.changeTable().io() instanceof RecoverableHadoopFileIO);
+    Assert.assertFalse(createTable.baseTable().io() instanceof RecoverableHadoopFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
         "true");
     getCatalog().refresh();
@@ -197,8 +200,8 @@ public class MixedCatalogTest extends CatalogTestBase {
   }
 
   private void assertRecoverableFileIO(ArcticTable arcticTable) {
-    Assert.assertTrue(arcticTable.io() instanceof RecoverableArcticFileIO);
-    RecoverableArcticFileIO io = (RecoverableArcticFileIO) arcticTable.io();
+    Assert.assertTrue(arcticTable.io() instanceof RecoverableHadoopFileIO);
+    RecoverableHadoopFileIO io = (RecoverableHadoopFileIO) arcticTable.io();
     TableTrashManager expected = TableTrashManagers.build(arcticTable);
     Assert.assertEquals(expected.getTrashLocation(), io.getTrashManager().getTrashLocation());
     Assert.assertEquals(expected.tableId(), io.getTrashManager().tableId());

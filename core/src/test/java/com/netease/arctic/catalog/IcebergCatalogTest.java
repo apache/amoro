@@ -22,7 +22,7 @@ import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.io.RecoverableArcticFileIO;
+import com.netease.arctic.io.RecoverableHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
@@ -53,21 +53,22 @@ public class IcebergCatalogTest extends CatalogTestBase {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
         "true");
     getCatalog().refresh();
 
     table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);
 
     getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
     createIcebergTable();
     table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertFalse(table.io() instanceof RecoverableArcticFileIO);
+    Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);
   }
 
   @After

@@ -1,39 +1,28 @@
 package com.netease.arctic.io;
 
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.TableFileUtils;
-import org.apache.hadoop.conf.Configurable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 /**
  * Implementation of {@link ArcticFileIO} with deleted files recovery support.
  */
-public class RecoverableArcticFileIO extends ArcticHadoopFileIO implements SupportFileRecycleOperations {
-  private static final Logger LOG = LoggerFactory.getLogger(RecoverableArcticFileIO.class);
+public class RecoverableHadoopFileIO extends ArcticHadoopFileIO implements SupportFileRecycleOperations {
+  private static final Logger LOG = LoggerFactory.getLogger(RecoverableHadoopFileIO.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   private final TableTrashManager trashManager;
   private final String trashFilePattern;
   private final Pattern pattern;
 
-  RecoverableArcticFileIO(
+  RecoverableHadoopFileIO(
       TableMetaStore tableMetaStore,
       TableTrashManager trashManager,
       String trashFilePattern) {

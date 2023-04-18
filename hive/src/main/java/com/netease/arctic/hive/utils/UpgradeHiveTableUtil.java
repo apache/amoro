@@ -21,6 +21,7 @@ package com.netease.arctic.hive.utils;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -50,12 +51,13 @@ public class UpgradeHiveTableUtil {
    * Upgrade a hive table to an Arctic table.
    *
    * @param arcticHiveCatalog A arctic catalog adapt hive
-   * @param tableIdentifier A table identifier
-   * @param pkList The name of the columns that needs to be set as the primary key
-   * @param properties Properties to be added to the target table
+   * @param tableIdentifier   A table identifier
+   * @param pkList            The name of the columns that needs to be set as the primary key
+   * @param properties        Properties to be added to the target table
    */
-  public static void upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
-                                      List<String> pkList, Map<String, String> properties) throws Exception {
+  public static void upgradeHiveTable(
+      ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
+      List<String> pkList, Map<String, String> properties) throws Exception {
     if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
       throw new IllegalArgumentException("Only support storage format is parquet");
     }
@@ -80,7 +82,7 @@ public class UpgradeHiveTableUtil {
           .withProperty(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
           .create();
       upgradeHive = true;
-      UpgradeHiveTableUtil.hiveDataMigration(arcticTable, arcticHiveCatalog, tableIdentifier);
+      UpgradeHiveTableUtil.hiveDataMigration((SupportHive) arcticTable, arcticHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
         arcticHiveCatalog.dropTableButNotDropHiveTable(tableIdentifier);
@@ -89,8 +91,9 @@ public class UpgradeHiveTableUtil {
     }
   }
 
-  private static void hiveDataMigration(ArcticTable arcticTable, ArcticHiveCatalog arcticHiveCatalog,
-                                        TableIdentifier tableIdentifier)
+  private static void hiveDataMigration(
+      SupportHive arcticTable, ArcticHiveCatalog arcticHiveCatalog,
+      TableIdentifier tableIdentifier)
       throws Exception {
     Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
@@ -136,7 +139,7 @@ public class UpgradeHiveTableUtil {
   /**
    * Check whether Arctic supports the hive table storage formats.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient      Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return Support or not
    */

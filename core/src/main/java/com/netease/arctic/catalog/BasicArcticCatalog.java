@@ -193,8 +193,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+            tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -227,8 +228,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+            tableMetaStore, catalogMeta.getCatalogProperties());
     return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         fileIO, tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
   }
@@ -632,8 +634,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
       fillTableProperties(meta);
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore, catalogMeta.getCatalogProperties());
+      ArcticFileIO fileIO =
+          ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+              tableMetaStore, catalogMeta.getCatalogProperties());
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
@@ -675,8 +678,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
           throw new IllegalStateException("create table failed", e);
         }
       });
-      ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, meta.getProperties(),
-          tableMetaStore, catalogMeta.getCatalogProperties());
+      ArcticFileIO fileIO =
+          ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, meta.getProperties(),
+              tableMetaStore, catalogMeta.getCatalogProperties());
       return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client, catalogMeta.getCatalogProperties());
     }
