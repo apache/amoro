@@ -446,11 +446,6 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${maven-jacoco-plugin.version}</version>
-                    <configuration>
-                        <includes>
-                            <include>**/*.class</include>
-                        </includes>
-                    </configuration>
                     <executions>
                         <execution>
                             <id>pre-test</id>
