@@ -168,7 +168,7 @@ public class BasicOptimizeTask extends OptimizeTask {
 
   @Override
   public String toString() {
-    return "BaseOptimizeTask{" +
+    return "BasicOptimizeTask{" +
         "taskCommitGroup='" + taskCommitGroup + '\'' +
         ", taskPlanGroup='" + taskPlanGroup + '\'' +
         ", partition='" + partition + '\'' +
