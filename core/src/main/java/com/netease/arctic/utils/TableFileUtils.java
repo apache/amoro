@@ -60,16 +60,12 @@ public class TableFileUtils {
     return fileLocation.substring(tableIndex + tableLocation.length(), fileIndex - 1);
   }
 
-  public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath) {
-    deleteEmptyDirectory(io, directoryPath, Collections.emptySet());
-  }
-
   /**
    * Try to recursiveDelete the empty directory
    *
-   * @param io   arcticTableFileIo
+   * @param io            arcticTableFileIo
    * @param directoryPath directory location
-   * @param exclude the directory will not be deleted
+   * @param exclude       the directory will not be deleted
    */
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath, Set<String> exclude) {
     Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
@@ -89,8 +85,9 @@ public class TableFileUtils {
 
   /**
    * Get the file path after move file to target directory
+   *
    * @param newDirectory target directory
-   * @param filePath file
+   * @param filePath     file
    * @return new file path
    */
   public static String getNewFilePath(String newDirectory, String filePath) {
@@ -99,6 +96,7 @@ public class TableFileUtils {
 
   /**
    * remove Uniform Resource Identifier (URI) in file path
+   *
    * @param path file path with Uniform Resource Identifier (URI)
    * @return file path without Uniform Resource Identifier (URI)
    */

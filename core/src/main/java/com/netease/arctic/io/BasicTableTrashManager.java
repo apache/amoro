@@ -44,8 +44,9 @@ class BasicTableTrashManager implements TableTrashManager {
   private final String tableRootLocation;
   private final String trashLocation;
 
-  BasicTableTrashManager(TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
-                         String tableRootLocation, String trashLocation) {
+  BasicTableTrashManager(
+      TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
+      String tableRootLocation, String trashLocation) {
     this.tableIdentifier = tableIdentifier;
     this.arcticFileIO = arcticFileIO;
     this.tableRootLocation = tableRootLocation;
@@ -61,8 +62,9 @@ class BasicTableTrashManager implements TableTrashManager {
    * @return file location in trash
    */
   @VisibleForTesting
-  static String generateFileLocationInTrash(String relativeFileLocation, String trashLocation,
-                                            long deleteTime) {
+  static String generateFileLocationInTrash(
+      String relativeFileLocation, String trashLocation,
+      long deleteTime) {
     return trashLocation + "/" + formatDate(deleteTime) + "/" + relativeFileLocation;
   }
 
@@ -73,7 +75,8 @@ class BasicTableTrashManager implements TableTrashManager {
     if (!tableRootLocation.endsWith("/")) {
       tableRootLocation = tableRootLocation + "/";
     }
-    Preconditions.checkArgument(fileLocation.startsWith(tableRootLocation),
+    Preconditions.checkArgument(
+        fileLocation.startsWith(tableRootLocation),
         String.format("file %s is not in table location %s", fileLocation, tableRootLocation));
     return fileLocation.replaceFirst(tableRootLocation, "");
   }
@@ -95,7 +98,9 @@ class BasicTableTrashManager implements TableTrashManager {
   @Override
   public void moveFileToTrash(String path) {
     try {
-      Preconditions.checkArgument(!arcticFileIO.isDirectory(path), "should not move a directory to trash " + path);
+      Preconditions.checkArgument(
+          !arcticFileIO.supportDirectoryOperation() || !arcticFileIO.asDirectoryFileIO().isDirectory(path),
+          "should not move a directory to trash " + path);
       String targetFileLocation = generateFileLocationInTrash(
           getRelativeFileLocation(this.tableRootLocation, path),
           this.trashLocation,
@@ -153,7 +158,7 @@ class BasicTableTrashManager implements TableTrashManager {
         LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.getPath().toString(), e);
         continue;
       }
-      if (localDate.compareTo(expirationDate) < 0) {
+      if (localDate.isBefore(expirationDate)) {
         arcticFileIO.deleteDirectoryRecursively(datePath.getPath().toString());
         LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
             datePath.getPath().toString());

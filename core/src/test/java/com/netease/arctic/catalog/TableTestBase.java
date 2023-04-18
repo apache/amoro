@@ -24,6 +24,8 @@ import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -40,6 +42,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   private final Map<String, String> tableProperties;
 
   private ArcticTable arcticTable;
+  private TableMetaStore tableMetaStore;
 
   public TableTestBase(
       TableFormat testFormat, Schema tableSchema, PrimaryKeySpec primaryKeySpec,
@@ -70,6 +73,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @Before
   public void setupTable() {
+    this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -111,6 +115,10 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   protected ArcticTable getArcticTable() {
     return arcticTable;
+  }
+
+  protected TableMetaStore getTableMetaStore() {
+    return this.tableMetaStore;
   }
 
   protected boolean isKeyedTable() {

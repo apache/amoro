@@ -70,7 +70,7 @@ public abstract class CatalogTestBase {
 
   protected CatalogMeta buildCatalogMeta() throws IOException {
     Map<String, String> properties = Maps.newHashMap();
-    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, temp.newFolder().getPath());
+    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, "file:/" + temp.newFolder().getPath().replace("\\", "/"));
     return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
         properties, testFormat);
   }

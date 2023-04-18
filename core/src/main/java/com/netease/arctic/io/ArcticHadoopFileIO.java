@@ -26,23 +26,28 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
-public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
+public class ArcticHadoopFileIO extends HadoopFileIO
+    implements ArcticFileIO, SupportsPrefixOperations, SupportsDirectoryOperations {
 
   private final TableMetaStore tableMetaStore;
+  private boolean fileRecycleEnabled;
 
   ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
@@ -138,6 +143,23 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
+  public void makeDirectories(String path) {
+    tableMetaStore.doAs(() -> {
+      Path filePath = new Path(path);
+      FileSystem fs = getFs(filePath);
+      try {
+        if (!fs.mkdirs(filePath)) {
+          throw new IOException("Fail to mkdirs: path " + path +
+              " and file system return false,, need to check the hdfs path");
+        }
+      } catch (IOException e) {
+        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
+      }
+      return null;
+    });
+  }
+
+  @Override
   public boolean isDirectory(String location) {
     return tableMetaStore.doAs(() -> {
       Path path = new Path(location);
@@ -204,19 +226,39 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
 
   @Override
   public void mkdirs(String path) {
+    this.makeDirectories(path);
+  }
+
+  @Override
+  public Iterable<FileInfo> listPrefix(String prefix) {
+    return tableMetaStore.doAs(() -> super.listPrefix(prefix));
+  }
+
+  @Override
+  public void deletePrefix(String prefix) {
     tableMetaStore.doAs(() -> {
-      Path filePath = new Path(path);
-      FileSystem fs = getFs(filePath);
+      Path toDelete = new Path(prefix);
+      FileSystem fs = getFs(toDelete);
       try {
-        if (!fs.mkdirs(filePath)) {
-          throw new IOException("Fail to mkdirs: path " + path +
-              " and file system return false,, need to check the hdfs path");
+        if (!fs.delete(toDelete, true)) {
+          throw new IOException("Fail to delete directory:" + prefix + " recursively, " +
+              "file system return false, need to check the hdfs path");
         }
       } catch (IOException e) {
-        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
+        throw new UncheckedIOException("Fail to delete directory:" + prefix + " recursively", e);
       }
       return null;
     });
+  }
+
+  @Override
+  public boolean supportPrefixOperation() {
+    return true;
+  }
+
+  @Override
+  public boolean supportDirectoryOperation() {
+    return true;
   }
 
   public TableMetaStore getTableMetaStore() {

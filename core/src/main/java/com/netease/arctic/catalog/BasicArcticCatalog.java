@@ -239,7 +239,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
     return location;
   }
 
-
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
     throw new UnsupportedOperationException("unsupported rename arctic table for now.");
@@ -284,9 +283,9 @@ public class BasicArcticCatalog implements ArcticCatalog {
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
-      if (fileIO.exists(tableLocation) && purge) {
+      if (fileIO.exists(tableLocation) && purge && fileIO.supportPrefixOperation()) {
         LOG.info("try to delete table directory location is " + tableLocation);
-        fileIO.deleteDirectoryRecursively(tableLocation);
+        fileIO.asPrefixFileIO().deletePrefix(tableLocation);
       }
       // delete custom trash location
       Map<String, String> mergedProperties =
@@ -295,8 +294,8 @@ public class BasicArcticCatalog implements ArcticCatalog {
       if (customTrashLocation != null) {
         TableIdentifier tableId = TableIdentifier.of(meta.getTableIdentifier());
         String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableId, customTrashLocation);
-        if (fileIO.exists(trashParentLocation)) {
-          fileIO.deleteDirectoryRecursively(trashParentLocation);
+        if (fileIO.exists(trashParentLocation) && fileIO.supportPrefixOperation()) {
+          fileIO.asPrefixFileIO().deletePrefix(trashParentLocation);
         }
       }
     } catch (Exception e) {
@@ -541,12 +540,15 @@ public class BasicArcticCatalog implements ArcticCatalog {
       boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(properties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
-        Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+        Preconditions.checkArgument(
+            properties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
             "log-store.topic must not be null when log-store.enabled is true.");
-        Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+        Preconditions.checkArgument(
+            properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
             "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = properties.get(LOG_STORE_TYPE);
-        Preconditions.checkArgument(logStoreType == null ||
+        Preconditions.checkArgument(
+            logStoreType == null ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA) ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
             String.format(
@@ -660,7 +662,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
           primaryKeySpec, client, baseTable, changeTable);
     }
 
-
     protected UnkeyedTable createUnKeyedTable(TableMeta meta) {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
@@ -717,10 +718,10 @@ public class BasicArcticCatalog implements ArcticCatalog {
     protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
         String catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
-            CatalogMetaProperties.KEY_WAREHOUSE,null);
+            CatalogMetaProperties.KEY_WAREHOUSE, null);
         if (catalogWarehouse == null) {
           catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
-              CatalogMetaProperties.KEY_WAREHOUSE_DIR,null);
+              CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
         }
         if (catalogWarehouse == null) {
           throw new NullPointerException("Catalog warehouse is null.");

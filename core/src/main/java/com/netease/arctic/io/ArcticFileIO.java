@@ -18,23 +18,23 @@
 
 package com.netease.arctic.io;
 
-import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileIO;
-
+import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
  * Arctic extension from {@link FileIO}, adding more operations.
  */
-public interface ArcticFileIO extends FileIO, Configurable {
+public interface ArcticFileIO extends FileIO {
 
   /**
    * Run the given action with login user.
    *
    * @param callable the method to execute
-   * @param <T> the return type of the run method
+   * @param <T>      the return type of the run method
    * @return the value from the run method
    */
   <T> T doAs(Callable<T> callable);
@@ -45,13 +45,17 @@ public interface ArcticFileIO extends FileIO, Configurable {
    * @param path source pathmkdir
    * @return true if the path exists;
    */
-  boolean exists(String path);
+  default boolean exists(String path) {
+    InputFile inputFile = newInputFile(path);
+    return inputFile.exists();
+  }
 
   /**
    * Create a new directory and all non-existent parents directories.
    *
    * @param path source path
    */
+  @Deprecated
   void mkdirs(String path);
 
   /**
@@ -60,16 +64,72 @@ public interface ArcticFileIO extends FileIO, Configurable {
    * @param oldPath source path
    * @param newPath target path
    */
+  @Deprecated
   void rename(String oldPath, String newPath);
 
-  /** Delete a directory recursively
+  /**
+   * Delete a directory recursively
    *
    * @param path the path to delete.
    */
+  @Deprecated
   void deleteDirectoryRecursively(String path);
 
-  //TODO FileStatus is a hadoop object, need to be replaced
+  @Deprecated
+    //TODO FileStatus is a hadoop object, need to be replaced
   List<FileStatus> list(String location);
+
+  /**
+   * Returns true if this tableIo is an {@link SupportsPrefixOperations}
+   */
+  default boolean supportPrefixOperation() {
+    return false;
+  }
+
+  /**
+   * Return this cast to {@link SupportsPrefixOperations} if it is.
+   */
+  default SupportsPrefixOperations asPrefixFileIO() {
+    if (supportPrefixOperation()) {
+      return (SupportsPrefixOperations) this;
+    } else {
+      throw new IllegalStateException("Doesn't support prefix operations");
+    }
+  }
+
+  /**
+   * Returns true if this tableIo is an {@link SupportsDirectoryOperations}
+   */
+  default boolean supportDirectoryOperation() {
+    return false;
+  }
+
+  /**
+   * Return this cast to {@link SupportsDirectoryOperations} if it is.
+   */
+  default SupportsDirectoryOperations asDirectoryFileIO() {
+    if (supportDirectoryOperation()) {
+      return (SupportsDirectoryOperations) this;
+    }
+    throw new IllegalStateException("Doesn't support directory operations");
+  }
+
+  /**
+   * Return true if this tableIo support file trash and could recover file be deleted.
+   */
+  default boolean supportsFileRecycle() {
+    return false;
+  }
+
+  /**
+   * Return this cast to {@link SupportFileRecycleOperations} if it is.
+   */
+  default SupportFileRecycleOperations fileRecycleIO() {
+    if (supportsFileRecycle()) {
+      return (SupportFileRecycleOperations) this;
+    }
+    throw new IllegalStateException("Doesn't support file recycle");
+  }
 
   /**
    * Check if a location is a directory.
@@ -77,6 +137,7 @@ public interface ArcticFileIO extends FileIO, Configurable {
    * @param location source location
    * @return true if the location is a directory
    */
+  @Deprecated
   boolean isDirectory(String location);
 
   /**
@@ -85,5 +146,6 @@ public interface ArcticFileIO extends FileIO, Configurable {
    * @param location source location
    * @return true if the location is an empty directory
    */
+  @Deprecated
   boolean isEmptyDirectory(String location);
 }

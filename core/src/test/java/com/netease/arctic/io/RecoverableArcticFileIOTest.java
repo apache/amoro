@@ -49,7 +49,8 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
     trashManager = TableTrashManagers.build(arcticTable.id(), arcticTable.location(),
         arcticTable.properties(), arcticTable.io());
     recoverableArcticFileIO =
-        new RecoverableArcticFileIO(arcticTable.io(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
+        new RecoverableArcticFileIO(
+            getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
     arcticFileIO = arcticTable.io();
 
     file1 = getArcticTable().location() + "/base/test/test1/test1.parquet";
