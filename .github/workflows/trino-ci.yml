@@ -50,7 +50,7 @@ jobs:
         run: mvn clean install -DskipTests -pl 'ams/ams-api,core,hive' -am -B
 
       - name: Build with Maven
-        run: mvn clean test -pl 'trino' -B
+        run: mvn clean test -pl 'trino' -B -ntp
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
