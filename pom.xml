@@ -106,8 +106,6 @@
         <maven.scalastyle.skip>false</maven.scalastyle.skip>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
-        <spotless.python.includes></spotless.python.includes>
-        <spotless.python.black.version>22.3.0</spotless.python.black.version>
         <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
     </properties>
 
