@@ -164,18 +164,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark2</artifactId>
-            <version>${iceberg.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <version>1.7.5</version>

@@ -48,7 +48,7 @@ jobs:
           cache: maven
 
       - name: Build all module with Maven
-        run: mvn install -pl '!trino'
+        run: mvn clean install -pl '!trino'
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

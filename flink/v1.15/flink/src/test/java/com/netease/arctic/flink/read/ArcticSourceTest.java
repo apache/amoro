@@ -91,6 +91,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -209,6 +210,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
     FlinkSink
         .forRowData(streamFailingInTheMiddleOfReading)
+        .context(Optional::of)
         .table(testFailoverTable)
         .tableLoader(ArcticTableLoader.of(FAIL_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)
@@ -546,6 +548,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
     FlinkSink
         .forRowData(input)
+        .context(Optional::of)
         .table(testFailoverTable)
         .tableLoader(ArcticTableLoader.of(FAIL_TABLE_ID, catalogBuilder))
         .flinkSchema(FLINK_SCHEMA)

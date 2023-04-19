@@ -69,7 +69,7 @@
         <root.dir>${project.basedir}</root.dir>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
@@ -84,7 +84,7 @@
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
 
-        <iceberg.version>0.13.2</iceberg.version>
+        <iceberg.version>1.1.0</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
@@ -435,7 +435,6 @@
                     <configuration>
                         <configLocation>style/arctic-checkstyle.xml</configLocation>
                         <suppressionsLocation>style/suppressions.xml</suppressionsLocation>
-                        <encoding>UTF-8</encoding>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <violationSeverity>warning</violationSeverity>

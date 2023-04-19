@@ -19,8 +19,8 @@
 package com.netease.arctic.trino;
 
 import com.netease.arctic.table.TableMetaStore;
-import io.trino.plugin.hive.authentication.GenericExceptionAction;
-import io.trino.plugin.hive.authentication.HdfsAuthentication;
+import io.trino.hdfs.authentication.GenericExceptionAction;
+import io.trino.hdfs.authentication.HdfsAuthentication;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.security.ConnectorIdentity;
 

@@ -18,10 +18,10 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;

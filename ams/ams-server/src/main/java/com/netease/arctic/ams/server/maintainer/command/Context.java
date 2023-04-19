@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.maintainer.command;
 
 import com.netease.arctic.table.TableIdentifier;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -35,7 +34,7 @@ public class Context {
         protected boolean removeEldestEntry(Map.Entry<TableIdentifier, TableAnalyzeResult> eldest) {
           return size() > 10;
         }
-  };
+      };
 
   private RepairProperty property = new RepairProperty();
 

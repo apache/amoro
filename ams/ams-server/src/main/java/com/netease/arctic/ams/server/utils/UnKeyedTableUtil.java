@@ -18,24 +18,16 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -60,18 +52,11 @@ public class UnKeyedTableUtil {
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    Table manifestTable =
-        MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) internalTable).operations(),
-            internalTable.name(), metadataTableName(internalTable.name(), MetadataTableType.ALL_ENTRIES),
-            MetadataTableType.ALL_ENTRIES);
-    try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
-      for (Record entry : entries) {
-        GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
-        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-        validFilesPath.add(TableFileUtils.getUriPath(filePath));
-      }
-    } catch (IOException e) {
-      LOG.error("close manifest file error", e);
+    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
+        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES)
+        .allEntries().build();
+    for (IcebergFileEntry entry : manifestReader.entries()) {
+      validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
     }
 
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)

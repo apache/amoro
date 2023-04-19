@@ -57,44 +57,44 @@ public interface FileInfoCacheMapper {
   void updateCache(@Param("cache") CacheFileInfo cache);
 
   @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when " +
-          "#{transactionId} then 'remove' else 'add' end as operation from " + TABLE_NAME +
-          " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} and (add_snapshot_id = #{transactionId} or delete_snapshot_id = " +
-          "#{transactionId}) order by commit_time desc")
+      "#{transactionId} then 'remove' else 'add' end as operation from " + TABLE_NAME +
+      " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
+      ".TableIdentifier2StringConverter} and (add_snapshot_id = #{transactionId} or delete_snapshot_id = " +
+      "#{transactionId}) order by commit_time desc")
   @Results({
-          @Result(column = "file_path", property = "path"),
-          @Result(column = "partition_name", property = "partition"),
-          @Result(column = "file_type", property = "type"),
-          @Result(column = "file_size", property = "fileSize"),
-          @Result(column = "operation", property = "operation"),
-          @Result(column = "commit_time", property = "commitTime",
-                  typeHandler = Long2TsConvertor.class),
-          @Result(column = "add_snapshot_sequence", property = "sequence")
+      @Result(column = "file_path", property = "path"),
+      @Result(column = "partition_name", property = "partition"),
+      @Result(column = "file_type", property = "type"),
+      @Result(column = "file_size", property = "fileSize"),
+      @Result(column = "operation", property = "operation"),
+      @Result(column = "commit_time", property = "commitTime",
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<AMSDataFileInfo> getDatafilesInfo(
-          @Param("tableIdentifier") TableIdentifier tableIdentifier,
-          @Param("transactionId") Long transactionId);
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("transactionId") Long transactionId);
 
   @Select("select file_path, file_type, file_size, file_mask, file_index, record_count, spec_id, partition_name," +
       " commit_time, add_snapshot_sequence from " + TABLE_NAME + " where table_identifier = #{tableIdentifier," +
       " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and" +
       " inner_table = #{innerTable} and delete_snapshot_id is null")
   @Results({
-          @Result(column = "file_path", property = "path"),
-          @Result(column = "file_type", property = "type"),
-          @Result(column = "file_size", property = "size"),
-          @Result(column = "file_mask", property = "mask"),
-          @Result(column = "file_index", property = "index"),
-          @Result(column = "record_count", property = "recordCount"),
-          @Result(column = "spec_id", property = "specId"),
-          @Result(column = "partition_name", property = "partition"),
-          @Result(column = "commit_time", property = "commitTime",
-                  typeHandler = Long2TsConvertor.class),
-          @Result(column = "add_snapshot_sequence", property = "sequence")
+      @Result(column = "file_path", property = "path"),
+      @Result(column = "file_type", property = "type"),
+      @Result(column = "file_size", property = "size"),
+      @Result(column = "file_mask", property = "mask"),
+      @Result(column = "file_index", property = "index"),
+      @Result(column = "record_count", property = "recordCount"),
+      @Result(column = "spec_id", property = "specId"),
+      @Result(column = "partition_name", property = "partition"),
+      @Result(column = "commit_time", property = "commitTime",
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<DataFileInfo> getOptimizeDatafiles(
-          @Param("tableIdentifier") TableIdentifier tableIdentifier,
-          @Param("innerTable") String innerTable);
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("innerTable") String innerTable);
 
   /**
    * Get files with snapshot, like Time Travel.
@@ -141,43 +141,43 @@ public interface FileInfoCacheMapper {
 
   @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{innerTable}")
-  void deleteInnerTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+  void deleteInnerTableCache(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("innerTable") String innerTable);
 
   @Select("select partition_name, count(1) as file_count, sum(file_size) as size," +
-          "max(commit_time) as lastCommitTime from " + TABLE_NAME +
-          " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
-          ".ams.server.mybatis.TableIdentifier2StringConverter} and delete_snapshot_id is null group by " +
-          "partition_name order by partition_name desc")
+      "max(commit_time) as lastCommitTime from " + TABLE_NAME +
+      " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
+      ".ams.server.mybatis.TableIdentifier2StringConverter} and delete_snapshot_id is null group by " +
+      "partition_name order by partition_name desc")
   @Results({
-          @Result(column = "partition_name", property = "partition"),
-          @Result(column = "file_count", property = "fileCount"),
-          @Result(column = "size", property = "fileSize"),
-          @Result(column = "lastCommitTime", property = "lastCommitTime")
+      @Result(column = "partition_name", property = "partition"),
+      @Result(column = "file_count", property = "fileCount"),
+      @Result(column = "size", property = "fileSize"),
+      @Result(column = "lastCommitTime", property = "lastCommitTime")
   })
   List<PartitionBaseInfo> getPartitionBaseInfoList(
-          @Param("tableIdentifier") TableIdentifier tableIdentifier);
-
+      @Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   @Select("<script>" +
-          "select add_snapshot_id, partition_name, file_path, partition_name, " +
-          "file_type, file_size, commit_time from " + TABLE_NAME +
-          " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} and delete_snapshot_id is null " +
-          "<if test='partition!=null'> and partition_name = #{partition}</if>" +
-          " order by commit_time desc </script>"
+      "select add_snapshot_id, partition_name, file_path, partition_name, " +
+      "file_type, file_size, commit_time from " + TABLE_NAME +
+      " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
+      ".TableIdentifier2StringConverter} and delete_snapshot_id is null " +
+      "<if test='partition!=null'> and partition_name = #{partition}</if>" +
+      " order by commit_time desc </script>"
   )
   @Results({
-          @Result(column = "add_snapshot_id", property = "commitId"),
-          @Result(column = "partition_name", property = "partitionName"),
-          @Result(column = "file_path", property = "path"),
-          @Result(column = "partition_name", property = "partitionName"),
-          @Result(column = "file_type", property = "fileType"),
-          @Result(column = "file_size", property = "fileSize"),
-          @Result(column = "commit_time", property = "commitTime", typeHandler = Long2TsConvertor.class)
+      @Result(column = "add_snapshot_id", property = "commitId"),
+      @Result(column = "partition_name", property = "partitionName"),
+      @Result(column = "file_path", property = "path"),
+      @Result(column = "partition_name", property = "partitionName"),
+      @Result(column = "file_type", property = "fileType"),
+      @Result(column = "file_size", property = "fileSize"),
+      @Result(column = "commit_time", property = "commitTime", typeHandler = Long2TsConvertor.class)
   })
   List<PartitionFileBaseInfo> getPartitionFileList(
-          @Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("partition") String partition);
+      @Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("partition") String partition);
 
   @Select("select file_path, file_type, file_size, file_mask, file_index, record_count, spec_id, partition_name, " +
       "commit_time, add_snapshot_sequence from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
@@ -198,7 +198,8 @@ public interface FileInfoCacheMapper {
           typeHandler = Long2TsConvertor.class),
       @Result(column = "add_snapshot_sequence", property = "sequence")
   })
-  List<DataFileInfo> getChangeTableTTLDataFiles(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-                                                @Param("innerTable") String innerTable,
-                                                @Param("ttl") long ttl);
+  List<DataFileInfo> getChangeTableTTLDataFiles(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("innerTable") String innerTable,
+      @Param("ttl") long ttl);
 }

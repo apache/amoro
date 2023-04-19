@@ -178,7 +178,7 @@ public class TableAvailableAnalyzer {
     }
 
     //check manifest
-    List<ManifestFile> manifestFiles = currentSnapshot.allManifests();
+    List<ManifestFile> manifestFiles = currentSnapshot.allManifests(table.io());
 
     List<ManifestFile> loseManifests =
         manifestFiles.stream().filter(s -> !exists(s.path())).collect(Collectors.toList());

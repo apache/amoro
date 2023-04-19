@@ -102,6 +102,11 @@ public class IcebergMinorOptimizePlan extends AbstractIcebergOptimizePlan {
   }
 
   @Override
+  protected long getTaskFileSize(BasicOptimizeTask task) {
+    return task.getInsertFileSize() + task.getDeleteFileSize() + task.getPosDeleteFileSize();
+  }
+
+  @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
     int smallFileCount = getPartitionSmallFileCount(partitionToPath);
 

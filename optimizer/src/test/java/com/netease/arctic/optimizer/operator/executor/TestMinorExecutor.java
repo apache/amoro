@@ -19,7 +19,7 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.DataFileInfoUtils;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
@@ -30,7 +30,6 @@ import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
-import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.AppendFiles;
@@ -63,7 +62,8 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
+    MinorExecutor minorExecutor =
+        new MinorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
@@ -82,7 +82,8 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
+    MinorExecutor minorExecutor =
+        new MinorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
@@ -92,7 +93,8 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
   }
 
   private NodeTask constructNodeTask() {
-    String fileFormat = testKeyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+    String fileFormat = testKeyedTable.properties().getOrDefault(
+        TableProperties.DEFAULT_FILE_FORMAT,
         TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     List<ContentFileWithSequence<?>> base =
         baseDataFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, testKeyedTable.baseTable().spec(),
@@ -121,7 +123,6 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
 
   protected void insertChangeDeleteFiles(long transactionId) throws IOException {
 
-
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     // delete 1000 records in 2 partitions(2022-1-1\2022-1-2)
     int length = 100;
@@ -141,8 +142,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable,
-            Constants.INNER_TABLE_CHANGE))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable, true))
         .collect(Collectors.toList());
   }
 
@@ -169,7 +169,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
 
     changeInsertFilesInfo = changeInsertFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable,
-            Constants.INNER_TABLE_CHANGE))
+            true))
         .collect(Collectors.toList());
   }
 }
