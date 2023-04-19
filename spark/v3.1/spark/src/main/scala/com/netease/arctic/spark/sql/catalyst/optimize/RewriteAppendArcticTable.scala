@@ -20,14 +20,14 @@ package com.netease.arctic.spark.sql.catalyst.optimize
 
 import java.util
 
-import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
+import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, EqualTo, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -38,16 +38,23 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) && isUpsert(r) =>
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _)
+        if isArcticRelation(r) && isUpsert(r) =>
       val upsertQuery = rewriteAppendAsUpsertQuery(r, query)
-      val insertQuery = Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output, upsertQuery)
-      val projections = buildInsertProjections(insertQuery, r.output, isUpsert = true)
-      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
+      val insertQuery = Project(
+        Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ upsertQuery.output,
+        upsertQuery)
+      val insertAttribute =
+        insertQuery.output.filter(_.name.contains("_arctic_before_"))
+      val projections = buildInsertProjections(insertQuery, insertAttribute, isUpsert = true)
+      val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.mode)
       ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections)
   }
 
-  def buildInsertProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
-                             isUpsert: Boolean): WriteQueryProjections = {
+  def buildInsertProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[Attribute],
+      isUpsert: Boolean): WriteQueryProjections = {
     val (frontRowProjection, backRowProjection) = if (isUpsert) {
       val frontRowProjection =
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
@@ -60,6 +67,12 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       (null, backRowProjection)
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
+  }
+
+  def checkDuplicatesEnabled(): Boolean = {
+    java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
   def buildJoinCondition(

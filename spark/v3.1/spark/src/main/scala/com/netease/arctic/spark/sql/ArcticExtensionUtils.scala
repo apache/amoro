@@ -18,9 +18,9 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsRowLevelOperator}
 import scala.collection.JavaConverters.seqAsJavaList
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsRowLevelOperator}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -144,6 +144,22 @@ object ArcticExtensionUtils {
       case p: DataSourceV2Relation => isArcticTable(p)
       case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
           isArcticTable(p)
+        }
+      case _ => false
+    }
+  }
+
+  def isArcticKeyedRelation(plan: LogicalPlan): Boolean = {
+    def isArcticKeyedTable(relation: DataSourceV2Relation): Boolean = relation.table match {
+      case a: ArcticSparkTable =>
+        a.table().isKeyedTable
+      case _ => false
+    }
+
+    plan.collectLeaves().exists {
+      case p: DataSourceV2Relation => isArcticKeyedTable(p)
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
+          isArcticKeyedTable(p)
         }
       case _ => false
     }

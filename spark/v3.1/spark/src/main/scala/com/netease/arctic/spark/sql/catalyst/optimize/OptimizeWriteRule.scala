@@ -62,14 +62,6 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
 
-    case a @ ArcticRowLevelWrite(r: DataSourceV2Relation, query, writeOptions, _)
-      if isArcticRelation(r) &&
-        writeOptions.contains("optimize.enabled") &&
-        writeOptions("optimize.enabled").equals("true") =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
-      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
-      a.copy(query = newQuery, options = options)
-
     case a @ AppendData(r: DataSourceV2Relation, query, _, _)
         if isArcticIcebergRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)

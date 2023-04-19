@@ -22,6 +22,7 @@ import com.netease.arctic.spark.sql.catalyst.analysis
 import com.netease.arctic.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
+import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}

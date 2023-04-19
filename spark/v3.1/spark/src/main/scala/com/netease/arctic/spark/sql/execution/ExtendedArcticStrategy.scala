@@ -50,7 +50,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         new CaseInsensitiveStringMap(options.asJava),
         projs,
         refreshCache(table)) :: Nil
-
     case MergeRows(
           isSourceRowPresent,
           isTargetRowPresent,

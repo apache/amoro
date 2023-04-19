@@ -24,14 +24,15 @@ import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
-import java.util
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
+
+import java.util
 
 /**
  * rewrite update table plan as append upsert data.
@@ -39,8 +40,10 @@ import org.apache.spark.sql.types.StructType
 case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
   with ArcticRewriteHelper {
 
-  def buildUpdateProjections(plan: LogicalPlan, targetRowAttrs: Seq[AttributeReference],
-                             isKeyedTable: Boolean): WriteQueryProjections = {
+  def buildUpdateProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      isKeyedTable: Boolean): WriteQueryProjections = {
     val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
       val frontRowProjection =
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
@@ -50,7 +53,11 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     } else {
       val attributes = plan.output.filter(r => r.name.equals("_file") || r.name.equals("_pos"))
       val frontRowProjection =
-        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs ++ attributes, isFront = true, 0))
+        Some(ProjectingInternalRow.newProjectInternalRow(
+          plan,
+          targetRowAttrs ++ attributes,
+          isFront = true,
+          0))
       val backRowProjection =
         ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
       (frontRowProjection, backRowProjection)
@@ -73,16 +80,22 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
-      options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      val projections = buildUpdateProjections(query, arcticRelation.output, ArcticExtensionUtils.isKeyedTable(arcticRelation))
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
+      val projections = buildUpdateProjections(
+        query,
+        arcticRelation.output,
+        ArcticExtensionUtils.isKeyedTable(arcticRelation))
       ArcticRowLevelWrite(arcticRelation, query, options, projections)
 
     case _ => plan
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsRowLevelOperator, scanBuilder: SupportsExtendIdentColumns,
-                       assignments: Seq[Assignment],
-                       condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(
+      r: DataSourceV2Relation,
+      upsert: SupportsRowLevelOperator,
+      scanBuilder: SupportsExtendIdentColumns,
+      assignments: Seq[Assignment],
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
       case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
@@ -108,12 +121,15 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           validatePrimaryKey(primaries, assignments)
           updatedRowsQuery
         } else {
-          val updatedRowsQuery = buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
-          val deleteQuery = Project(Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)())
-            ++ matchedRowsQuery.output.iterator,
+          val updatedRowsQuery =
+            buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
+          val deleteQuery = Project(
+            Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)())
+              ++ matchedRowsQuery.output.iterator,
             matchedRowsQuery)
-          val insertQuery = Project(Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)())
-            ++ updatedRowsQuery.output.iterator,
+          val insertQuery = Project(
+            Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)())
+              ++ updatedRowsQuery.output.iterator,
             updatedRowsQuery)
           Union(deleteQuery, insertQuery)
         }
