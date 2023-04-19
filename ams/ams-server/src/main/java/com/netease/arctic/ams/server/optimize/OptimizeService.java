@@ -284,8 +284,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public void handleOptimizeResult(OptimizeTaskStat optimizeTaskStat) throws NoSuchObjectException {
-    getTableOptimizeItem(new TableIdentifier(optimizeTaskStat.getTableIdentifier()))
-        .updateOptimizeTaskStat(optimizeTaskStat);
+    try {
+      getTableOptimizeItem(new TableIdentifier(optimizeTaskStat.getTableIdentifier()))
+          .updateOptimizeTaskStat(optimizeTaskStat);
+    } catch (Throwable t) {
+      LOG.error("failed to handle optimize result of {}, {}", optimizeTaskStat.getTableIdentifier(),
+          optimizeTaskStat.getTaskId(), t);
+    }
   }
 
   @Override
