@@ -95,6 +95,11 @@ public class HiveMetaSynchronizer {
     for (int i = 0; i < hiveStruct.fields().size(); i++) {
       Types.NestedField hiveField = hiveStruct.fields().get(i);
       Types.NestedField icebergField = icebergStruct.field(hiveField.name());
+      // to check if lowercase matches
+      Types.NestedField field = icebergStruct.field(i + 1);
+      if (field.name().toLowerCase().equals(hiveField.name())) {
+        icebergField = field;
+      }
       if (icebergField == null) {
         updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
         update = true;
