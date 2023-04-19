@@ -106,7 +106,8 @@ async function getContainersSettingInfo() {
   try {
     loading.value = true
     const res = await getContainersSetting()
-    activeKey.value = [];
+    activeKey.value = []
+    containerSetting.length = 0;
     (res || []).forEach((ele, index) => {
       ele.propertiesArray = []
       activeKey.value.push(ele.name)

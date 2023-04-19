@@ -40,7 +40,7 @@ public class StructLikeCollections {
     this.backendBaseDir = backendBaseDir;
   }
 
-  public StructLikeBaseMap createStructLikeMap(Types.StructType type) {
+  public <T> StructLikeBaseMap<T> createStructLikeMap(Types.StructType type) {
     if (!enableSpillableMap) {
       return StructLikeMemoryMap.create(type);
     } else {

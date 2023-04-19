@@ -21,14 +21,14 @@ package com.netease.arctic.spark.hive;
 import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-
-import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 public class TestMigrateHiveTable extends SparkTestBase {
 

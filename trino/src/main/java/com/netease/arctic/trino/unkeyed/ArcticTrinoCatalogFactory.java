@@ -22,6 +22,7 @@ import com.netease.arctic.trino.ArcticCatalogFactory;
 import io.trino.plugin.iceberg.catalog.TrinoCatalog;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
 import io.trino.spi.security.ConnectorIdentity;
+
 import javax.inject.Inject;
 
 /**

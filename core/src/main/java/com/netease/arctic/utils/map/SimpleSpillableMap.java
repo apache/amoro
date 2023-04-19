@@ -20,7 +20,6 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.openjdk.jol.info.GraphLayout;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -32,32 +31,44 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private static final int RECORDS_TO_SKIP_FOR_ESTIMATING = 200;
   private final long maxInMemorySizeInBytes;
   private final String backendBaseDir;
+  // Size Estimator for key type
+  private final SizeEstimator<K> keySizeEstimator;
+  // Size Estimator for key types
+  private final SizeEstimator<T> valueSizeEstimator;
   private Map<K, T> memoryMap;
   private Optional<SimpleSpilledMap<K, T>> diskBasedMap = Optional.empty();
-  private Long currentInMemoryMapSize;
+  private long currentInMemoryMapSize;
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
-  private SerializationUtils.SimpleSerializer<K> keySerializer;
+  private final SerializationUtils.SimpleSerializer<K> keySerializer;
 
-  private SerializationUtils.SimpleSerializer<T> valueSerializer;
+  private final SerializationUtils.SimpleSerializer<T> valueSerializer;
 
-  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
+                               @Nullable String backendBaseDir,
+                               SizeEstimator<K> keySizeEstimator,
+                               SizeEstimator<T> valueSizeEstimator) {
     this(maxInMemorySizeInBytes, backendBaseDir,
         SerializationUtils.JavaSerializer.INSTANT,
-        SerializationUtils.JavaSerializer.INSTANT);
+        SerializationUtils.JavaSerializer.INSTANT,
+        keySizeEstimator, valueSizeEstimator);
   }
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
                                @Nullable String backendBaseDir,
                                SerializationUtils.SimpleSerializer<K> keySerializer,
-                               SerializationUtils.SimpleSerializer<T> valueSerializer) {
+                               SerializationUtils.SimpleSerializer<T> valueSerializer,
+                               SizeEstimator<K> keySizeEstimator,
+                               SizeEstimator<T> valueSizeEstimator) {
     this.memoryMap = Maps.newHashMap();
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.backendBaseDir = backendBaseDir;
     this.currentInMemoryMapSize = 0L;
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
+    this.keySizeEstimator = keySizeEstimator;
+    this.valueSizeEstimator = valueSizeEstimator;
   }
 
   /**
@@ -93,10 +104,10 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
   public void put(K key, T value) {
     if (estimatedPayloadSize == 0) {
-      this.estimatedPayloadSize = estimateSize(key) + estimateSize(value);
+      this.estimatedPayloadSize = keySizeEstimator.sizeEstimate(key) + valueSizeEstimator.sizeEstimate(value);
     } else if (++putCount % RECORDS_TO_SKIP_FOR_ESTIMATING == 0) {
       this.estimatedPayloadSize = (long) (this.estimatedPayloadSize * 0.9 +
-              (estimateSize(key) + estimateSize(value)) * 0.1);
+              (keySizeEstimator.sizeEstimate(key) + valueSizeEstimator.sizeEstimate(value)) * 0.1);
       this.currentInMemoryMapSize = this.memoryMap.size() * this.estimatedPayloadSize;
     }
 
@@ -125,10 +136,6 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     memoryMap = null;
     diskBasedMap.ifPresent(SimpleSpilledMap::close);
     currentInMemoryMapSize = 0L;
-  }
-
-  private long estimateSize(Object obj) {
-    return obj == null ? 0 : GraphLayout.parseInstance(obj).totalSize();
   }
 
   protected class SimpleSpilledMap<K, T>

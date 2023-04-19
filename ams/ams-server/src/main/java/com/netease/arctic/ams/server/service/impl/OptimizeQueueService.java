@@ -161,6 +161,46 @@ public class OptimizeQueueService extends IJDBCService {
   }
 
   /**
+   * create new optimize group
+   * @param name String
+   * @param container String
+   * @param schedulePolicy String
+   * @param properties Map<String, String>
+   * @throws MetaException when name already exists
+   * @throws NoSuchObjectException when container name not exists
+   */
+  public void createQueue(String name, String container, String schedulePolicy, Map<String, String> properties)
+      throws MetaException, NoSuchObjectException {
+    OptimizeQueueMeta queue = new OptimizeQueueMeta();
+    List<OptimizeQueueMeta> metas = getQueues();
+    for (OptimizeQueueMeta meta : metas) {
+      if (meta.getName().equals(name)) {
+        throw new MetaException("optimize group name: " + name + " already exists");
+      }
+    }
+    queue.setName(name);
+    if (getContainer(container) == null) {
+      throw new NoSuchObjectException(
+          "can not find such container config named " + container);
+    }
+    queue.setContainer(container);
+    String policy = StringUtils.trim(schedulePolicy);
+    if (StringUtils.isBlank(policy)) {
+      policy = ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA;
+    } else if (
+        !(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA.equalsIgnoreCase(policy) ||
+            ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED.equalsIgnoreCase(policy))) {
+      throw new IllegalArgumentException(String.format(
+          "Scheduling policy only can be %s and %s",
+          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA,
+          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED));
+    }
+    queue.setSchedulingPolicy(policy);
+    queue.setProperties(properties);
+    createQueue(queue);
+  }
+
+  /**
    * Update optimize queue
    *
    * @param queue new OptimizeQueueMeta
@@ -351,6 +391,13 @@ public class OptimizeQueueService extends IJDBCService {
     }
   }
 
+  public Container getContainer(String container) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
+      return containerMetadataMapper.getContainer(container);
+    }
+  }
+
   public void insertContainer(Container container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
@@ -484,107 +531,148 @@ public class OptimizeQueueService extends IJDBCService {
 
     public OptimizeTask poll(JobId jobId, final String attemptId, long waitTime) {
       long startTime = System.currentTimeMillis();
-      while (true) {
-        long duration = System.currentTimeMillis() - startTime;
-        if (duration > waitTime) {
-          LOG.warn("pool task cost too much time {} ms, return null", duration);
+      OptimizeTaskItem task = pollValidTask();
+      if (task == null) {
+        tryPlanAsync(jobId, attemptId);
+        task = waitForTask(startTime, waitTime);
+        if (task == null) {
           return null;
+        } 
+      } 
+      return onExecuteOptimizeTask(task, jobId, attemptId);
+    }
+
+    private OptimizeTask onExecuteOptimizeTask(OptimizeTaskItem task, JobId jobId, String attemptId) {
+      TableTaskHistory tableTaskHistory;
+      try {
+        // load files from sysdb
+        task.setFiles();
+        // update max execute time
+        task.setMaxExecuteTime();
+        tableTaskHistory = task.onExecuting(jobId, attemptId);
+      } catch (Exception e) {
+        task.clearFiles();
+        LOG.error("{} handle sysdb failed, try put task back into queue", task.getTaskId(), e);
+        if (!tasks.offer(task)) {
+          LOG.error("{} failed to put task back into queue", task.getTaskId());
+          task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
         }
+        throw e;
+      }
+      try {
+        insertTableTaskHistory(tableTaskHistory);
+      } catch (Exception e) {
+        LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
+      }
+      return task.getOptimizeTask();
+    }
+
+    private OptimizeTaskItem pollValidTask() {
+      while (true) {
         OptimizeTaskItem task = tasks.poll();
         if (task == null) {
+          return null;
+        }
+        if (tables.contains(task.getTableIdentifier())) {
+          return task;
+        } else {
+          LOG.warn("get task {} from queue {} but table {} not in this queue, continue",
+              task.getTaskId(), queueName(), task.getTableIdentifier());
+        }
+      }
+    }
+
+    private OptimizeTaskItem waitForTask(long startTime, long waitTime) {
+      if (waitTime <= 0) {
+        return null;
+      }
+      while (true) {
+        lock();
+        try {
+          // if timeout, return null, await support zero or a negative value, and return false
+          if (planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
+              TimeUnit.MILLISECONDS)) {
+            OptimizeTaskItem task = pollValidTask();
+            if (task != null) {
+              return task;
+            }
+          } else {
+            LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
+            return null;
+          }
+        } catch (InterruptedException e) {
+          LOG.warn("await for task was interrupted, return null", e);
+          return null;
+        } finally {
+          unlock();
+        }
+        // check wait timeout
+        long duration = System.currentTimeMillis() - startTime;
+        if (duration > waitTime) {
+          LOG.info("pool task cost too much time {} ms, return null", duration);
+          return null;
+        }
+      }
+    }
+
+    private void tryPlanAsync(JobId jobId, String attemptId) {
+      if (!planThreadStarted.compareAndSet(false, true)) {
+        // a plan tread is working now
+        return;
+      }
+      try {
+        Thread planThread = new Thread(() -> {
+          int retry = 0;
+
+          long threadStartTime = System.currentTimeMillis();
           try {
-            if (planThreadStarted.compareAndSet(false, true)) {
-              Thread planThread = new Thread(() -> {
-                int retry = 0;
-                boolean isHaveTask = false;
+            LOG.info("this plan started {}, {}", attemptId, jobId);
+            List<OptimizeTaskItem> tasks = Collections.emptyList();
+            while (retry <= retryTime) {
+              LOG.debug("start get plan task retry {}", retry);
+              retry++;
+              long planStartTime = System.currentTimeMillis();
+              tasks = plan(planStartTime);
+              if (CollectionUtils.isNotEmpty(tasks)) {
+                break;
+              }
 
-                long threadStartTime = System.currentTimeMillis();
-                try {
-                  LOG.info("this plan started {}, {}", attemptId, jobId);
-                  while (retry <= retryTime) {
-                    LOG.debug("start get plan task retry {}", retry);
-                    retry++;
-                    long planStartTime = System.currentTimeMillis();
-                    List<OptimizeTaskItem> tasks = plan(planStartTime);
-                    if (CollectionUtils.isNotEmpty(tasks)) {
-                      isHaveTask = true;
-                      break;
-                    }
+              try {
+                Thread.sleep(retryInterval);
+              } catch (InterruptedException e) {
+                LOG.error("Internal Thread Interrupted", e);
+                break;
+              }
+            }
 
-                    try {
-                      Thread.sleep(retryInterval);
-                    } catch (InterruptedException e) {
-                      LOG.error("Internal Thread Interrupted", e);
-                    }
-                  }
-
-                  // no task have planned
-                  if (!isHaveTask) {
-                    LOG.debug("The queue {} has retry {} times, no task have planned",
-                        optimizeQueue.getOptimizeQueueMeta().getQueueId(),
-                        retryTime);
-                  }
-                } catch (Throwable t) {
-                  LOG.error("failed to plan", t);
-                  throw t;
-                } finally {
-                  LOG.info("this plan end {}, cost {} ms, retry {}",
-                      attemptId, System.currentTimeMillis() - threadStartTime, retry);
-                  if (planThreadStarted.compareAndSet(true, false)) {
-                    lock();
-                    try {
-                      planThreadCondition.signalAll();
-                    } finally {
-                      unlock();
-                    }
-                  }
-                }
-              });
-              planThread.setName(
-                  "Optimize Plan Thread Queue-" + optimizeQueue.getOptimizeQueueMeta().getQueueId());
-              planThread.start();
-            } else {
+            // no task have planned
+            if (CollectionUtils.isEmpty(tasks)) {
+              LOG.debug("The queue {} has retry {} times, no task have planned",
+                  optimizeQueue.getOptimizeQueueMeta().getQueueId(),
+                  retryTime);
+            }
+          } catch (Throwable t) {
+            LOG.error("failed to plan", t);
+            throw t;
+          } finally {
+            LOG.info("this plan end {}, cost {} ms, retry {}",
+                attemptId, System.currentTimeMillis() - threadStartTime, retry);
+            if (planThreadStarted.compareAndSet(true, false)) {
               lock();
               try {
-                // if timeout, return null
-                if (!planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
-                    TimeUnit.MILLISECONDS)) {
-                  LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
-                  return null;
-                }
+                planThreadCondition.signalAll();
               } finally {
                 unlock();
               }
             }
-          } catch (Exception e) {
-            LOG.error("Failure when starting the plan thread, " + e);
           }
-        } else {
-          if (tables.contains(task.getTableIdentifier())) {
-            try {
-              // load files from sysdb
-              task.setFiles();
-            } catch (Exception e) {
-              task.clearFiles();
-              LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
-              if (!tasks.offer(task)) {
-                task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
-              }
-            }
-            // update max execute time
-            task.setMaxExecuteTime();
-            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
-            try {
-              insertTableTaskHistory(tableTaskHistory);
-            } catch (Exception e) {
-              LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
-            }
-            return task.getOptimizeTask();
-          } else {
-            LOG.warn("get task {} from queue {} but table {} not in this queue",
-                task.getTaskId(), queueName(), task.getTableIdentifier());
-          }
-        }
+        });
+        planThread.setName(
+            "Optimize Plan Thread Queue-" + optimizeQueue.getOptimizeQueueMeta().getQueueId());
+        planThread.start();
+      } catch (Exception e) {
+        LOG.error("Failure when starting the plan thread", e);
+        planThreadStarted.set(false);
       }
     }
 
@@ -637,8 +725,9 @@ public class OptimizeQueueService extends IJDBCService {
       for (TableIdentifier tableIdentifier : tableSort) {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+          ArcticTable arcticTable = tableItem.getArcticTable(true);
 
-          Map<String, String> properties = tableItem.getArcticTable(false).properties();
+          Map<String, String> properties = arcticTable.properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           // queue was updated
@@ -650,8 +739,7 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!CompatiblePropertyUtil.propertyAsBoolean(tableItem.getArcticTable(false).properties(),
-              TableProperties.ENABLE_SELF_OPTIMIZING,
+          if (!CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
               TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
             LOG.debug("{} is not enable optimize continue", tableIdentifier);
             continue;
@@ -671,10 +759,15 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
+          if (tableItem.getTableOptimizeRuntime().getOptimizeStatus() != TableOptimizeRuntime.OptimizeStatus.Pending) {
+            // only table in pending should plan
+            continue;
+          }
+
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
           if (tableItem.startPlanIfNot()) {
             try {
-              if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
+              if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
                 optimizePlanResult = planNativeIcebergTable(tableItem, currentTime);
               } else {
                 optimizePlanResult = planArcticTable(tableItem, currentTime);
@@ -708,7 +801,7 @@ public class OptimizeQueueService extends IJDBCService {
     private OptimizePlanResult planNativeIcebergTable(TableOptimizeItem tableItem, long currentTime) {
       TableIdentifier tableIdentifier = tableItem.getArcticTable().id();
       int queueId = optimizeQueue.getOptimizeQueueMeta().getQueueId();
-      ArcticTable arcticTable = tableItem.getArcticTable(true);
+      ArcticTable arcticTable = tableItem.getArcticTable();
       Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
       if (currentSnapshot == null) {
         return OptimizePlanResult.EMPTY;

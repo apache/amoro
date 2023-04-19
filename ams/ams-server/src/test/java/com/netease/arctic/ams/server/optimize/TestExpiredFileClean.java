@@ -20,6 +20,10 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.OptimizeTaskId;
+import com.netease.arctic.ams.server.model.BasicOptimizeTask;
+import com.netease.arctic.ams.server.model.TableMetadata;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
@@ -48,6 +52,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -122,6 +127,73 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     Assert.assertFalse(testKeyedTable.io().exists((String) s1Files.get(1).path()));
+  }
+
+  @Test
+  public void testNotExpireFlinkLatestCommit() throws IOException {
+    insertChangeDataFiles(1);
+    insertChangeDataFiles(2);
+    Assert.assertEquals(Long.MAX_VALUE,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
+    appendFiles.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
+    appendFiles.commit();
+    long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(checkpointTime,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
+    appendFiles2.set(TableExpireService.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
+    appendFiles2.commit();
+    long checkpointTime2 = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    insertChangeDataFiles(2);
+    Assert.assertEquals(checkpointTime2,
+        TableExpireService.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
+
+    testKeyedTable.updateProperties().set(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableExpireService.expireArcticTable(testKeyedTable);
+
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+  }
+
+  @Test
+  public void testNotExpireOptimizeCommit() {
+    // commit snapshot
+    testTable.newAppend().commit();
+    testTable.newAppend().commit();
+    testTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableExpireService.expireArcticTable(testTable);
+    Assert.assertEquals(1, Iterables.size(testTable.snapshots()));
+
+
+    testTable.newAppend().commit();
+
+    // init optimize tasks
+    long optimizeSnapshotId = testTable.currentSnapshot().snapshotId();
+    OptimizeService optimizeService = (OptimizeService) ServiceContainer.getOptimizeService();
+    TableMetadata metadata = new TableMetadata();
+    metadata.setTableIdentifier(testTable.id());
+    metadata.setProperties(testTable.properties());
+    TableOptimizeItem tableOptimizeItem =
+        new TableOptimizeItem(testTable, metadata, System.currentTimeMillis() + 6 * 60 * 60 * 1000);
+    optimizeService.addTableIntoCache(tableOptimizeItem, Collections.emptyMap(), false);
+    BasicOptimizeTask basicOptimizeTask = new BasicOptimizeTask();
+    basicOptimizeTask.setTaskId(new OptimizeTaskId());
+    tableOptimizeItem.initOptimizeTasks(Collections.singletonList(new OptimizeTaskItem(basicOptimizeTask, null)));
+    tableOptimizeItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizeSnapshotId);
+
+    testTable.newAppend().commit();
+    testTable.newAppend().commit();
+
+    TableExpireService.expireArcticTable(testTable);
+    Assert.assertEquals(3, Iterables.size(testTable.snapshots()));
+
+
+
   }
 
   private List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {

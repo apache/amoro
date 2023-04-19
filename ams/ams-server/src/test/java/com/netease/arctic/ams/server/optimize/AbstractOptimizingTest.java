@@ -71,7 +71,7 @@ import static com.netease.arctic.TableTestBase.writeEqDeleteFile;
 import static com.netease.arctic.TableTestBase.writeNewDataFile;
 import static com.netease.arctic.TableTestBase.writePosDeleteFile;
 
-public class AbstractOptimizingTest {
+public abstract class AbstractOptimizingTest {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingTest.class);
   private static final long WAIT_SUCCESS_TIMEOUT = 30_000;
   private static final long CHECK_TIMEOUT = 1_000;
@@ -164,15 +164,25 @@ public class AbstractOptimizingTest {
   }
 
   protected static void writeChange(KeyedTable table, List<Record> insertRows, List<Record> deleteRows) {
-    List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT);
-    List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE);
+    List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT, null);
+    List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE, null);
     AppendFiles appendFiles = table.changeTable().newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     deleteFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
   }
 
-  protected static void writeBase(ArcticTable table, List<Record> insertRows) {
+  protected static void writeChangeWithTxId(KeyedTable table, List<Record> insertRows, List<Record> deleteRows,
+                                            long txId) {
+    List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT, txId);
+    List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE, txId);
+    AppendFiles appendFiles = table.changeTable().newAppend();
+    insertFiles.forEach(appendFiles::appendFile);
+    deleteFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+  }
+
+  protected static List<DataFile> writeBase(ArcticTable table, List<Record> insertRows) {
     UnkeyedTable baseTable;
     if (table.isUnkeyedTable()) {
       baseTable = table.asUnkeyedTable();
@@ -183,6 +193,7 @@ public class AbstractOptimizingTest {
     AppendFiles appendFiles = baseTable.newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+    return insertFiles;
   }
 
   protected static List<DataFile> write(UnkeyedTable table, List<Record> rows) {
@@ -205,10 +216,11 @@ public class AbstractOptimizingTest {
     return Collections.emptyList();
   }
 
-  protected static List<DataFile> write(List<Record> rows, KeyedTable table, ChangeAction action) {
+  protected static List<DataFile> write(List<Record> rows, KeyedTable table, ChangeAction action, Long txId) {
     if (rows != null && !rows.isEmpty()) {
       try (TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
           .withChangeAction(action)
+          .withTransactionId(txId)
           .buildWriter(WriteOperationKind.APPEND)) {
         rows.forEach(row -> {
           try {

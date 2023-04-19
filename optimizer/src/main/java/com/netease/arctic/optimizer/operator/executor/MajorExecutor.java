@@ -62,7 +62,8 @@ public class MajorExecutor extends AbstractExecutor {
   @Override
   public OptimizeTaskResult execute() throws Exception {
     Iterable<DataFile> targetFiles;
-    LOG.info("Start processing arctic table major optimize task: {}", task);
+    LOG.info("Start processing arctic table major optimize task {} of {}: {}", task.getTaskId(),
+        task.getTableIdentifier(), task);
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     List<PrimaryKeyedFile> dataFiles = task.dataFiles();
@@ -106,15 +107,15 @@ public class MajorExecutor extends AbstractExecutor {
         writer.write(baseRecord);
         insertCount++;
         if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling {}",
-              task.getTaskId(), insertCount, baseRecord);
+          LOG.info("task {} of {} insert records number {} and data sampling {}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount, baseRecord);
         }
       }
     } finally {
       recordIterator.close();
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
 
     return Arrays.asList(writer.complete().dataFiles());
   }
@@ -149,7 +150,7 @@ public class MajorExecutor extends AbstractExecutor {
         .collect(Collectors.toList());
 
     KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(fileScanTasks);
-    LOG.info("start read data : {}", table.id());
+    LOG.info("start read data : task {} of {}", task.getTaskId(), task.getTableIdentifier());
     return arcticDataReader.readData(keyedTableScanTask);
   }
 }

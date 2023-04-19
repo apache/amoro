@@ -85,6 +85,11 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all optimize commit processes.");
+  public static final ConfigOption<Long> OPTIMIZE_REFRESH_TABLES_INTERVAL =
+      ConfigOptions.key("arctic.ams.optimize.refresh-tables.interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Refresh interval of tables in all catalogs.");
   public static final ConfigOption<Integer> EXPIRE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.expire.thread.pool-size")
           .intType()
@@ -97,6 +102,12 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all orphan file clean processes.");
+  public static final ConfigOption<Integer> TRASH_CLEAN_THREAD_POOL_SIZE =
+      ConfigOptions.key("arctic.ams.trash.clean.thread.pool-size")
+          .intType()
+          .defaultValue(0)
+          .withDescription("Number of threads in the thread pool.  " +
+              "These will be used to execute all table trash clean processes.");
   public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.support.hive.sync.thread.pool-size")
           .intType()

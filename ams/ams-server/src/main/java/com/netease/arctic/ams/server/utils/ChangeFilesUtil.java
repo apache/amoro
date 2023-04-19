@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;

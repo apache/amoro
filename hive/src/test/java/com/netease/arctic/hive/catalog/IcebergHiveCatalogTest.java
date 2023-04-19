@@ -25,7 +25,6 @@ import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.IcebergCatalogTest;
 import com.netease.arctic.hive.TestHMS;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.thrift.TException;
 import org.junit.ClassRule;
 
 import java.util.Map;

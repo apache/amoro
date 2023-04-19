@@ -62,7 +62,8 @@ public class IcebergExecutor extends AbstractExecutor {
 
   @Override
   public OptimizeTaskResult execute() throws Exception {
-    LOG.info("Start processing iceberg table optimize task: {}", task);
+    LOG.info("Start processing iceberg table optimize task {} of {}: {}", task.getTaskId(), task.getTableIdentifier(),
+        task);
 
 
     List<? extends ContentFile<?>> targetFiles;
@@ -113,13 +114,13 @@ public class IcebergExecutor extends AbstractExecutor {
 
         insertCount.incrementAndGet();
         if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-              task.getTaskId(), insertCount.get(), filePath, rowPosition);
+          LOG.info("task {} of {} insert records number {} and data sampling path:{}, pos:{}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount.get(), filePath, rowPosition);
         }
       }
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount.get());
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount.get());
 
     return icebergPosDeleteWriter.complete();
   }
@@ -166,8 +167,8 @@ public class IcebergExecutor extends AbstractExecutor {
 
         insertCount++;
         if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-          LOG.info("task {} insert records number {} and data sampling {}",
-              task.getTaskId(), insertCount, record);
+          LOG.info("task {} of {} insert records number {} and data sampling {}",
+              task.getTaskId(), task.getTableIdentifier(), insertCount, record);
         }
       }
     }
@@ -177,7 +178,7 @@ public class IcebergExecutor extends AbstractExecutor {
       result.add(writer.toDataFile());
     }
 
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
     return result;
   }
 

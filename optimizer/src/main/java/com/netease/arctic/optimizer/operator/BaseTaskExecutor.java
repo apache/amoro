@@ -23,17 +23,16 @@ import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.JobType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTask;
+import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
-import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.optimizer.operator.executor.Executor;
 import com.netease.arctic.optimizer.operator.executor.ExecutorFactory;
 import com.netease.arctic.optimizer.operator.executor.NodeTask;
@@ -43,7 +42,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableTypeUtil;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.util.PropertyUtil;
@@ -51,8 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -97,9 +95,6 @@ public class BaseTaskExecutor implements Serializable {
 
   public static com.netease.arctic.table.TableIdentifier toTableIdentifier(
       TableIdentifier tableIdentifier) {
-    if (tableIdentifier == null) {
-      return null;
-    }
     return com.netease.arctic.table.TableIdentifier.of(tableIdentifier.getCatalog(),
         tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
@@ -111,43 +106,31 @@ public class BaseTaskExecutor implements Serializable {
    * @return task execute result
    */
   public OptimizeTaskStat execute(TaskWrapper sourceTask) {
+    TableIdentifier tableIdentifier = sourceTask.getTask().getTableIdentifier();
+    OptimizeTaskId taskId = sourceTask.getTask().getTaskId();
+
     long startTime = System.currentTimeMillis();
-    NodeTask task;
-    String amsUrl = config.getAmsUrl();
-    ArcticTable table = buildTable(
-        new TableIdentificationInfo(
-            amsUrl,
-            toTableIdentifier(sourceTask.getTask().getTableIdentifier())));
-    LOG.info("start execute {}", sourceTask.getTask().getTaskId());
+    LOG.info("start execute {} of {}", taskId, tableIdentifier);
+    Executor optimize = null;
     try {
-      task = constructTask(table, sourceTask.getTask(), sourceTask.getAttemptId());
-    } catch (Throwable t) {
-      LOG.error("failed to build task {}", sourceTask.getTask(), t);
-      throw new IllegalArgumentException(t);
-    }
-    onTaskStart(task.files());
-    try {
-      setPartition(task);
-    } catch (Exception e) {
-      LOG.error("failed to set partition info {}", task.getTaskId(), e);
-      onTaskFailed(e);
-      return constructFailedResult(task, e);
-    }
-    Executor optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
-    try {
+      String amsUrl = config.getAmsUrl();
+      ArcticTable table = buildTable(
+          new TableIdentificationInfo(amsUrl, toTableIdentifier(sourceTask.getTask().getTableIdentifier())));
+      NodeTask task = constructTask(table, sourceTask.getTask(), sourceTask.getAttemptId());
+      onTaskStart(task.files());
+      optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
       OptimizeTaskResult result = optimize.execute();
       onTaskFinish(result.getTargetFiles());
       return result.getOptimizeTaskStat();
-    } catch (TimeoutException timeoutException) {
-      LOG.error("execute task timeout {}", task.getTaskId());
-      onTaskFailed(timeoutException);
-      return constructFailedResult(task, timeoutException);
     } catch (Throwable t) {
-      LOG.error("failed to execute task {}", task.getTaskId(), t);
+      LOG.error("failed to execute task {} of {}", taskId, tableIdentifier, t);
       onTaskFailed(t);
-      return constructFailedResult(task, t);
+      return constructFailedResult(tableIdentifier, taskId, config.getOptimizerId(), sourceTask.getAttemptId(),
+          startTime, t);
     } finally {
-      optimize.close();
+      if (optimize != null) {
+        optimize.close();
+      }
     }
   }
 
@@ -173,37 +156,32 @@ public class BaseTaskExecutor implements Serializable {
     }
   }
 
-  private void setPartition(NodeTask nodeTask) {
-    // partition
-    if (nodeTask.files().size() == 0) {
-      LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
-    } else {
-      nodeTask.setPartition(nodeTask.files().get(0).partition());
-    }
+  private static OptimizeTaskStat constructFailedResult(TableIdentifier tableIdentifier,
+                                                        OptimizeTaskId taskId,
+                                                        String optimizerId,
+                                                        int attemptId,
+                                                        long startTime,
+                                                        Throwable t) {
+    JobId jobId = new JobId();
+    jobId.setId(optimizerId);
+    jobId.setType(JobType.Optimize);
+    long now = System.currentTimeMillis();
+
+    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
+    optimizeTaskStat.setJobId(jobId);
+    optimizeTaskStat.setTableIdentifier(tableIdentifier);
+    optimizeTaskStat.setAttemptId(attemptId + "");
+    optimizeTaskStat.setTaskId(taskId);
+    optimizeTaskStat.setStatus(OptimizeStatus.Failed);
+    optimizeTaskStat.setFiles(Collections.emptyList());
+    optimizeTaskStat.setErrorMessage(new ErrorMessage(System.currentTimeMillis(), buildErrorMessage(t, 3)));
+    optimizeTaskStat.setNewFileSize(0);
+    optimizeTaskStat.setReportTime(now);
+    optimizeTaskStat.setCostTime(now - startTime);
+    return optimizeTaskStat;
   }
 
-  private OptimizeTaskStat constructFailedResult(NodeTask task, Throwable t) {
-    try {
-      OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-      // TODO refactor
-      BeanUtils.copyProperties(optimizeTaskStat, task);
-      JobId jobId = new JobId();
-      jobId.setId(config.getOptimizerId());
-      jobId.setType(JobType.Optimize);
-      optimizeTaskStat.setJobId(jobId);
-      optimizeTaskStat.setStatus(OptimizeStatus.Failed);
-      optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-      optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-      optimizeTaskStat.setTaskId(task.getTaskId());
-
-      optimizeTaskStat.setErrorMessage(new ErrorMessage(System.currentTimeMillis(), buildErrorMessage(t, 3)));
-      return optimizeTaskStat;
-    } catch (Throwable e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  private String buildErrorMessage(Throwable t, int deep) {
+  private static String buildErrorMessage(Throwable t, int deep) {
     StringBuilder message = new StringBuilder();
     Throwable error = t;
     int i = 0;
@@ -229,7 +207,7 @@ public class BaseTaskExecutor implements Serializable {
           task.getDeleteFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
       List<ContentFileWithSequence<?>> posDelete =
           task.getPosDeleteFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
-      nodeTask = new NodeTask(base,insert, eqDelete, posDelete, false);
+      nodeTask = new NodeTask(base, insert, eqDelete, posDelete, false);
     } else {
       List<ContentFileWithSequence<?>> base =
           task.getBaseFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
@@ -239,7 +217,11 @@ public class BaseTaskExecutor implements Serializable {
           task.getDeleteFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
       List<ContentFileWithSequence<?>> posDelete =
           task.getPosDeleteFiles().stream().map(SerializationUtils::toInternalTableFile).collect(Collectors.toList());
-      nodeTask = new NodeTask(base,insert, eqDelete, posDelete, true);
+      nodeTask = new NodeTask(base, insert, eqDelete, posDelete, true);
+    }
+
+    if (nodeTask.files().size() > 0) {
+      nodeTask.setPartition(nodeTask.files().get(0).partition());
     }
 
     if (CollectionUtils.isNotEmpty(task.getSourceNodes())) {

@@ -31,14 +31,12 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,7 +63,7 @@ public abstract class AbstractExecutor implements Executor {
     this.startTime = startTime;
     this.config = config;
     this.structLikeCollections = new StructLikeCollections(Boolean.parseBoolean(config.getEnableSpillMap()),
-          config.getMaxInMemorySizeInBytes(), config.getRocksDBBasePath());
+          config.getMaxInMemorySize() * 1024 * 1024, config.getRocksDBBasePath());
   }
 
   protected Map<DataTreeNode, List<PrimaryKeyedFile>> groupDataFilesByNode(List<PrimaryKeyedFile> dataFiles) {
@@ -88,29 +86,29 @@ public abstract class AbstractExecutor implements Executor {
     return 0;
   }
 
-  protected OptimizeTaskResult buildOptimizeResult(Iterable<? extends ContentFile<?>> targetFiles)
-      throws InvocationTargetException, IllegalAccessException {
+  protected OptimizeTaskResult buildOptimizeResult(Iterable<? extends ContentFile<?>> targetFiles) {
     long totalFileSize = 0;
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();
     for (ContentFile<?> targetFile : targetFiles) {
       totalFileSize += targetFile.fileSizeInBytes();
       baseFileBytesList.add(SerializationUtils.toByteBuffer(targetFile));
     }
-
-    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-    BeanUtils.copyProperties(optimizeTaskStat, task);
     JobId jobId = new JobId();
     jobId.setId(config.getOptimizerId());
     jobId.setType(JobType.Optimize);
+
+    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
+
     optimizeTaskStat.setJobId(jobId);
-    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
+    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
     optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
+    optimizeTaskStat.setTaskId(task.getTaskId());
+    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
+    optimizeTaskStat.setFiles(baseFileBytesList);
+    optimizeTaskStat.setErrorMessage(null);
     optimizeTaskStat.setNewFileSize(totalFileSize);
     optimizeTaskStat.setReportTime(System.currentTimeMillis());
-    optimizeTaskStat.setFiles(baseFileBytesList);
-    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-    optimizeTaskStat.setTaskId(task.getTaskId());
+    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
 
     OptimizeTaskResult result = new OptimizeTaskResult();
     result.setTargetFiles(targetFiles);

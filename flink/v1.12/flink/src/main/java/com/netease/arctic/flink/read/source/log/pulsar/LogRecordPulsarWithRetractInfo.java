@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
-import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplit;
 import com.netease.arctic.log.LogData;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
 import org.apache.pulsar.client.api.MessageId;

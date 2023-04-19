@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.write.hidden.kafka;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
+import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.BaseLogTest;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.Bytes;

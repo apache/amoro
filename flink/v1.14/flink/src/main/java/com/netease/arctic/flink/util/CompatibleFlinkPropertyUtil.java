@@ -29,10 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 
 /**

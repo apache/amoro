@@ -15,7 +15,8 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | self-optimizing.num-retries                         | 5                | self-optimizing 失败时的重试次数                               |
 | self-optimizing.execute.timeout                     | 1800000（30分钟） | self-optimizing 执行超时时间，超时会失败重试                                  |
 | self-optimizing.target-size                         | 134217728（128MB）| self-optimizing 的目标文件大小                                |
-| self-optimizing.max-file-count                      | 100000           | 一次 self-optimizing 最多处理的文件个数                           |               |
+| self-optimizing.max-file-count                      | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
+| self-optimizing.max-file-size-bytes                 | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
 | self-optimizing.fragment-ratio                      | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
 | self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
 | self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
@@ -91,3 +92,12 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | base.hive.auto-sync-schema-change  | true             | 是否从 HMS 自动同步 Hive 的 schema 变更             |
 | base.hive.auto-sync-data-write     | false            | 是否自动同步 Hive 的原生的数据写入，有 Hive 原生数据写入时需要打开             |
+
+### Trash 相关配置
+
+| 配置名称                                     | 默认值    | 描述                                     |
+| ------------------------------------------- | -------- | ----------------------------------       |
+| table-trash.enabled                         | false     | 是否开启回收站功能                       |
+| table-trash.custom-root-location            | null      | 自定义回收站目录                       |
+| table-trash.keep.days                       | 7         | 回收站保留时间                       |
+| table-trash.file-pattern                    | .+\\.parquet\|.\*snap-[0-9]+-[0-9]+-.+\\.avro\|.\*version-hint.text\|.\*V[0-9]+\\.metadata\\.json\|.\*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro    | 允许放入回收站的文件的正则表达式       |

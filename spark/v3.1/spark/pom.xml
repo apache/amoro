@@ -200,6 +200,14 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-api</artifactId>
+            <version>${iceberg.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-ams-api</artifactId>
             <version>${project.version}</version>

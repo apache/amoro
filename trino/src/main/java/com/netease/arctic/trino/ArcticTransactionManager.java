@@ -21,9 +21,9 @@ package com.netease.arctic.trino;
 
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.ConnectorTransactionHandle;
+
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
-
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

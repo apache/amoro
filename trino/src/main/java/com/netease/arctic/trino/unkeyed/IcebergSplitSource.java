@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Streams;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import io.airlift.units.DataSize;

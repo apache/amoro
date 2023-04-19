@@ -20,8 +20,6 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.delegate.TestArcticSessionCatalog;
 import com.netease.arctic.spark.delegate.TestMultiDelegateSessionCatalog;
-import java.util.Map;
-
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Test suite for the arctic-spark library. all tests share same ams and hms.

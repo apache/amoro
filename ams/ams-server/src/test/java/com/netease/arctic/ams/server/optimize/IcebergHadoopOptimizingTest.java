@@ -268,18 +268,62 @@ public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
 
-    assertIds(readRecords(table), 4);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(5, "eee", quickDateWithZone(3))
+    ), partitionData);
+
+    assertIds(readRecords(table), 4, 5);
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 8, 1);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 9, 1);
 
-    assertIds(readRecords(table), 4);
+    assertIds(readRecords(table), 4, 5);
 
     assertOptimizeHangUp(tb, startId + offset);
   }
 
+  public void testPartitionIcebergTablePartialOptimizing() throws IOException {
+    int offset = 1;
+    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
+
+    // Step 1: insert 6 data files for two partitions
+    StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(1))
+    ), partitionData1);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(2, "bbb", quickDateWithZone(1))
+    ), partitionData1);
+    StructLike partitionData2 = partitionData(table.schema(), table.spec(), quickDateWithZone(2));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(3, "ccc", quickDateWithZone(2))
+    ), partitionData2);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(4, "ddd", quickDateWithZone(2))
+    ), partitionData2);
+    StructLike partitionData3 = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(5, "eee", quickDateWithZone(3))
+    ), partitionData3);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(6, "fff", quickDateWithZone(3))
+    ), partitionData3);
+
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
+    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
+
+    // wait Minor Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 2);
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
+
+    assertOptimizeHangUp(tb, startId + offset);
+  }
 
   private Record newRecord(Object... val) {
     return newRecord(table.schema(), val);

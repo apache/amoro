@@ -47,6 +47,7 @@ import java.util.Map;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    TestImpalaParquet.class,
     TestKeyedHiveInsertOverwriteDynamic.class,
     TestKeyedHiveInsertOverwriteStatic.class,
     TestUnkeyedHiveInsertOverwriteDynamic.class,
@@ -60,6 +61,7 @@ import java.util.Map;
     TestKeyedTableDML.class,
     TestKeyedTableDMLInsertOverwriteDynamic.class,
     TestKeyedTableDMLInsertOverwriteStatic.class,
+    TestInsertOverwritePartitionTransform.class,
     TestUnKeyedTableDDL.class,
     TestMigrateNonHiveTable.class,
     TestOptimizeWrite.class,
@@ -75,7 +77,9 @@ import java.util.Map;
     TestHiveTableDropPartitions.class,
     TestHiveTableTruncate.class,
     TestKeyedTableMergeInto.class,
-    TestUnKeyedTableMergeInto.class})
+    TestUnKeyedTableMergeInto.class,
+    TestUpsert.class
+})
 public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass

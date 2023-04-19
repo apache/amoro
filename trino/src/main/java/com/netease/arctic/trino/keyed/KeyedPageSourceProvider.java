@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
-import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;

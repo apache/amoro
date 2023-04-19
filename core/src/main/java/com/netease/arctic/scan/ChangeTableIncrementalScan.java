@@ -34,6 +34,13 @@ public interface ChangeTableIncrementalScan extends TableScan {
    */
   ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence);
 
+  /**
+   * Config this scan to read data up to a particular sequence (inclusive).
+   *
+   * @param sequence - sequence (inclusive)
+   * @return this for method chaining
+   */
+  ChangeTableIncrementalScan toSequence(long sequence);
 
   /**
    * Config this scan to read data from legacy {@code partitionTransactionId} exclusive to

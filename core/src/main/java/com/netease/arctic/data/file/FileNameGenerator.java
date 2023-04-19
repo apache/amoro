@@ -224,6 +224,17 @@ public class FileNameGenerator {
   }
 
   /**
+   * Parse transaction id of change file.
+   *
+   * @param path path
+   * @return transactionId, return 0 if path is not arctic file format.
+   */
+  public static long parseChangeTransactionId(String path, long sequenceNumber) {
+    long transactionId = parseTransactionId(path);
+    return transactionId == 0 ? sequenceNumber : transactionId;
+  }
+
+  /**
    * Check if is arctic file format.
    *
    * @param path - path

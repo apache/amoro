@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.source.{ArcticSource, ArcticSparkTable, SupportsDynamicOverwrite}
-import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.arctic.AnalysisException
@@ -30,6 +29,7 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.DataWritingSparkTask
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.sql.sources.v2.writer.{DataSourceWriter, SupportsWriteInternalRow, WriterCommitMessage}
+import org.apache.spark.{SparkException, TaskContext}
 
 import scala.util.control.NonFatal
 

@@ -24,6 +24,7 @@ import io.airlift.log.Logger;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.tpch.TpchTable;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;

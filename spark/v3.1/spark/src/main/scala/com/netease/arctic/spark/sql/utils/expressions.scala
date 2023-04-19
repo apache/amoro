@@ -18,10 +18,7 @@
 // this file copy form apache spark
 package com.netease.arctic.spark.sql.utils
 
-import org.apache.spark.sql.catalyst
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.connector.expressions.{Literal, NamedReference, Transform}
-import org.apache.spark.sql.types.{DataType, IntegerType, StringType}
+import org.apache.spark.sql.connector.expressions.NamedReference
 
 /**
  * Helper methods for working with the logical expressions API.

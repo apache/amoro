@@ -18,11 +18,8 @@
 
 package com.netease.arctic.hive;
 
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
-import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -54,10 +51,12 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 

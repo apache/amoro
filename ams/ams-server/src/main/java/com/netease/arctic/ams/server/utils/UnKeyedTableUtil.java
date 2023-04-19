@@ -66,13 +66,9 @@ public class UnKeyedTableUtil {
             MetadataTableType.ALL_ENTRIES);
     try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
       for (Record entry : entries) {
-        ManifestEntryFields.Status status =
-            ManifestEntryFields.Status.of((int) entry.get(ManifestEntryFields.STATUS.fieldId()));
-        if (status == ManifestEntryFields.Status.ADDED || status == ManifestEntryFields.Status.EXISTING) {
-          GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
-          String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-          validFilesPath.add(TableFileUtils.getUriPath(filePath));
-        }
+        GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
+        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
+        validFilesPath.add(TableFileUtils.getUriPath(filePath));
       }
     } catch (IOException e) {
       LOG.error("close manifest file error", e);

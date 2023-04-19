@@ -28,8 +28,11 @@ import org.slf4j.LoggerFactory;
 
 public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkConsumer.class);
+  private static final long POLL_INTERVAL = 5000; // 5s
 
   private final BaseTaskConsumer taskConsumer;
+
+  private volatile boolean running = true;
 
   public FlinkConsumer(OptimizerConfig config) {
     this.taskConsumer = new BaseTaskConsumer(config);
@@ -46,33 +49,27 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
 
   @Override
   public void run(SourceContext<TaskWrapper> sourceContext) throws Exception {
-    int retry = 0;
-    while (true) {
+    while (running) {
       try {
-        TaskWrapper task = taskConsumer.pollTask();
+        TaskWrapper task = taskConsumer.pollTask(0);
         if (task != null) {
           sourceContext.collect(task);
         } else {
-          LOG.info("poll no task");
+          LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
+          Thread.sleep(POLL_INTERVAL);
         }
       } catch (Exception e) {
-        // The subscription is abnormal and cannot be restored, and a new consumer can be activated
-        LOG.error("failed to poll task, retry {}", retry, e);
-        retry++;
-      } finally {
-        if (retry >= 3) {
-          //stop = true;
-          retry = 0;
-          LOG.error("flink source has tried too many times, and the subscription message is suspended." +
-              " Please check for errors");
-          Thread.sleep(10000);
+        if (!running) {
+          break;
         }
+        LOG.error("failed to poll task", e);
+        Thread.sleep(POLL_INTERVAL);
       }
     }
   }
 
   @Override
   public void cancel() {
-
+    running = false;
   }
 }

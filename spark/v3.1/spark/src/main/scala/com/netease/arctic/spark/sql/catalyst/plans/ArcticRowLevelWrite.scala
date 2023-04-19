@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.plans
 
 import com.netease.arctic.spark.sql.utils.WriteQueryProjections
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommand}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
 
 case class ArcticRowLevelWrite(table: NamedRelation,
                                query: LogicalPlan,

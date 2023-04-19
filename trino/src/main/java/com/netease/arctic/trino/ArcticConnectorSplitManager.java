@@ -21,7 +21,6 @@ package com.netease.arctic.trino;
 import com.netease.arctic.trino.keyed.KeyedConnectorSplitManager;
 import com.netease.arctic.trino.keyed.KeyedTableHandle;
 import com.netease.arctic.trino.unkeyed.IcebergSplitManager;
-import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -29,6 +28,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
+
 import javax.inject.Inject;
 
 /**

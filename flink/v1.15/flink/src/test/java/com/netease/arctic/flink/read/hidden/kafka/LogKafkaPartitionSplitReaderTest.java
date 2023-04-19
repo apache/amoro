@@ -20,9 +20,9 @@ package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
-import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
@@ -52,7 +52,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;

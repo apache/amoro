@@ -25,7 +25,6 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;

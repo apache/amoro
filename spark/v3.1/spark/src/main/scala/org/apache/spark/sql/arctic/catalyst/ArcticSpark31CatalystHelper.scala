@@ -24,13 +24,13 @@ import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder}
-import org.apache.spark.sql.types.{DataType, LongType}
+import org.apache.spark.sql.types.{DataType, IntegerType, LongType}
 import org.apache.spark.sql.{AnalysisException, catalyst, connector}
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
@@ -65,6 +65,8 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
+      case TruncateTransform(n, ref) =>
+        IcebergTruncateTransform(resolve(ref.fieldNames), width = n)
       case sort: SortOrder =>
         val catalystChild = toCatalyst(sort.expression(), query)
         catalyst.expressions.SortOrder(
@@ -99,6 +101,26 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         case _ =>
           None
       }
+      case _ => None
+    }
+  }
+
+  private object Lit {
+    def unapply[T](literal: Literal[T]): Some[(T, DataType)] = {
+      Some((literal.value(), literal.dataType()))
+    }
+  }
+
+  private object TruncateTransform {
+    def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
+      case ApplyTransform(name, args) if name.equalsIgnoreCase("truncate") =>
+        args match {
+          case Seq(ref: NamedReference, Lit(value: Int, IntegerType)) =>
+            Some(value, FieldReference(ref.fieldNames()))
+          case Seq(Lit(value: Int, IntegerType), ref: NamedReference) =>
+            Some(value, FieldReference(ref.fieldNames()))
+          case _ => None
+        }
       case _ => None
     }
   }

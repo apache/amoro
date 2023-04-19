@@ -55,6 +55,25 @@ public interface TaskHistoryMapper {
   List<TableTaskHistory> selectTaskHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                            @Param("taskPlanGroup") String taskPlanGroup);
 
+  @Select("select task_trace_id, retry, catalog_name, db_name, table_name, task_plan_group, " +
+      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
+      "task_trace_id = #{taskTraceId} order by retry desc")
+  @Results({
+      @Result(column = "task_trace_id", property = "taskTraceId"),
+      @Result(column = "retry", property = "retry"),
+      @Result(column = "catalog_name", property = "tableIdentifier.catalog"),
+      @Result(column = "db_name", property = "tableIdentifier.database"),
+      @Result(column = "table_name", property = "tableIdentifier.tableName"),
+      @Result(column = "task_plan_group", property = "taskPlanGroup"),
+      @Result(column = "start_time", property = "startTime",
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "end_time", property = "endTime",
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "cost_time", property = "costTime"),
+      @Result(column = "queue_id", property = "queueId")
+  })
+  List<TableTaskHistory> selectTaskHistoryByTraceId(@Param("taskTraceId") String taskTraceId);
+
   @Insert("insert into " + TABLE_NAME + "(task_trace_id, retry, catalog_name, db_name, table_name, " +
       "task_plan_group, start_time, end_time, cost_time, queue_id) values ( " +
       "#{taskHistory.taskTraceId}, " +

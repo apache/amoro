@@ -23,6 +23,7 @@ import io.trino.plugin.hive.authentication.GenericExceptionAction;
 import io.trino.plugin.hive.authentication.HdfsAuthentication;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.security.ConnectorIdentity;
+
 import javax.inject.Inject;
 
 /**

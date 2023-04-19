@@ -62,7 +62,8 @@ public class MinorExecutor extends AbstractExecutor {
   @Override
   public OptimizeTaskResult execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
-    LOG.info("Start processing arctic table minor optimize task: {}", task);
+    LOG.info("Start processing arctic table minor optimize task {} of {}: {}", task.getTaskId(),
+        task.getTableIdentifier(), task);
 
     Map<DataTreeNode, List<PrimaryKeyedFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
@@ -97,8 +98,8 @@ public class MinorExecutor extends AbstractExecutor {
             posDeleteWriter.delete(filePath, rowPosition);
             insertCount.incrementAndGet();
             if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-              LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-                  task.getTaskId(), insertCount.get(), filePath, rowPosition);
+              LOG.info("task {} of {} insert records number {} and data sampling path:{}, pos:{}",
+                  task.getTaskId(), task.getTableIdentifier(), insertCount.get(), filePath, rowPosition);
             }
           }
         }
@@ -128,7 +129,7 @@ public class MinorExecutor extends AbstractExecutor {
 
       targetFiles.addAll(posDeleteWriter.complete());
     }
-    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    LOG.info("task {} of {} insert records number {}", task.getTaskId(), task.getTableIdentifier(), insertCount);
 
     return buildOptimizeResult(targetFiles);
   }

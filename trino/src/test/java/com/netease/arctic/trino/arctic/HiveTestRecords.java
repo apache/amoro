@@ -18,17 +18,16 @@
 
 package com.netease.arctic.trino.arctic;
 
-import com.netease.arctic.hive.HiveTableTestBase;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.List;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 
 import static com.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_ARRAY;
 import static com.netease.arctic.trino.arctic.TestHiveTableBaseForTrino.COLUMN_NAME_D;

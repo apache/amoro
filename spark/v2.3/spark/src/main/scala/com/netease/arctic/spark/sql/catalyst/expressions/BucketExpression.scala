@@ -23,7 +23,7 @@ import org.apache.iceberg.transforms.Transforms
 import org.apache.iceberg.types.{Type, Types}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.expressions.{Expression, NullIntolerant, UnaryExpression}
-import org.apache.spark.sql.types.{DataType, Decimal, DecimalType, IntegerType, StringType}
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 import java.nio.ByteBuffer

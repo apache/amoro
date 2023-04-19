@@ -22,7 +22,7 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -53,7 +53,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case m@MergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions, None) =>
-      checkConditionIsPrimaryKey(aliasedTable, cond)
+      checkConditionIsPrimaryKey(aliasedTable, resolveCond("SEARCH", cond, m))
 
       val resolvedMatchedActions = matchedActions.map {
         case DeleteAction(cond) =>
@@ -117,33 +117,23 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
     func.map(wrapper)
   }
 
-  def resolveExpressionBottomUp(
-                                 expr: Expression,
-                                 plan: LogicalPlan,
-                                 throws: Boolean = false): Expression = {
-    if (expr.resolved) return expr
-    try {
-      expr transformUp {
-        case GetColumnByOrdinal(ordinal, _) => plan.output(ordinal)
-        case u@UnresolvedAttribute(nameParts) =>
-          val result =
-            withPosition(u) {
-              plan.resolve(nameParts, resolver)
-                .orElse(resolveLiteralFunction(nameParts, u, plan))
-                .getOrElse(u)
-            }
-          logDebug(s"Resolving $u to $result")
-          result
-        case UnresolvedExtractValue(child, fieldName) if child.resolved =>
-          ExtractValue(child, fieldName, resolver)
-      }
-    } catch {
-      case a: AnalysisException if !throws => expr
-    }
+  def resolveExpressionByArcticPlanChildren(
+                                 e: Expression,
+                                 q: LogicalPlan): Expression = {
+    resolveExpression(
+      e,
+      resolveColumnByName = nameParts => {
+        q.resolveChildren(nameParts, resolver)
+      },
+      getAttrCandidates = () => {
+        assert(q.children.length == 1)
+        q.children.head.output
+      },
+      throws = true)
   }
 
   private def resolveCond(condName: String, cond: Expression, plan: LogicalPlan): Expression = {
-    val resolvedCond = resolveExpressionBottomUp(cond, plan)
+    val resolvedCond = resolveExpressionByArcticPlanChildren(cond, plan)
 
     val unresolvedAttrs = resolvedCond.references.filter(!_.resolved)
     if (unresolvedAttrs.nonEmpty) {

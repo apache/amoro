@@ -24,6 +24,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public abstract class AbstractOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizePlan.class);
@@ -44,18 +46,24 @@ public abstract class AbstractOptimizePlan {
   protected final int queueId;
   protected final long currentTime;
   protected final String planGroup;
+  private final long currentSnapshotId;
 
-  // We store current partitions, for the next plans to decide if any partition reach the max plan interval,
-  // if not, the new added partitions will be ignored by mistake.
-  // After plan files, current partitions of table will be set.
-  protected final Set<String> currentPartitions = new HashSet<>();
+  // all partitions
+  protected final Set<String> allPartitions = new HashSet<>();
+  // partitions to optimizing
+  protected final Set<String> affectedPartitions = new HashSet<>();
+  private boolean skippedPartitions = false;
+  
+  private int collectFileCnt = 0;
+  private long collectFileSize = 0;
 
   public AbstractOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                              int queueId, long currentTime) {
+                              int queueId, long currentTime, long currentSnapshotId) {
     this.arcticTable = arcticTable;
     this.tableOptimizeRuntime = tableOptimizeRuntime;
     this.queueId = queueId;
     this.currentTime = currentTime;
+    this.currentSnapshotId = currentSnapshotId;
     this.planGroup = UUID.randomUUID().toString();
   }
 
@@ -72,41 +80,106 @@ public abstract class AbstractOptimizePlan {
       return buildOptimizePlanResult(Collections.emptyList());
     }
 
-    List<BasicOptimizeTask> tasks = collectTasks(currentPartitions);
+    List<BasicOptimizeTask> tasks = collectTasks(getPartitionsToOptimizeInOrder());
 
     long endTime = System.nanoTime();
-    LOG.debug("{} ==== {} plan tasks cost {} ns, {} ms", tableId(), getOptimizeType(), endTime - startTime,
-        (endTime - startTime) / 1_000_000);
-    LOG.debug("{} {} plan get {} tasks", tableId(), getOptimizeType(), tasks.size());
+    LOG.info("{} ==== {} plan tasks get {} tasks, cost {} ns, {} ms", tableId(), getOptimizeType(), tasks.size(),
+        endTime - startTime, (endTime - startTime) / 1_000_000);
     return buildOptimizePlanResult(tasks);
   }
 
-  private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
-    return new OptimizePlanResult(this.currentPartitions, optimizeTasks, getOptimizeType(), getCurrentSnapshotId(),
-        getCurrentChangeSnapshotId(), this.planGroup);
-  }
-
-  protected List<BasicOptimizeTask> collectTasks(Set<String> partitions) {
+  protected List<BasicOptimizeTask> collectTasks(List<String> partitions) {
     List<BasicOptimizeTask> results = new ArrayList<>();
 
-    List<String> skippedPartitions = new ArrayList<>();
     for (String partition : partitions) {
-
-      // partition don't need to plan
-      if (!partitionNeedPlan(partition)) {
-        skippedPartitions.add(partition);
-        continue;
-      }
-
       List<BasicOptimizeTask> optimizeTasks = collectTask(partition);
-      LOG.debug("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
-          getOptimizeType());
-      results.addAll(optimizeTasks);
+      if (reachOptimizeLimit()) {
+        this.skippedPartitions = true;
+        LOG.info("{} get enough files, count {}/{}, size {}/{}, ignore left partitions", tableId(), this.collectFileCnt,
+            getMaxFileCntLimit(), this.collectFileSize, getMaxFileSizeLimit());
+        break;
+      }
+      if (optimizeTasks.size() > 0) {
+        this.affectedPartitions.add(partition);
+        LOG.info("{} partition {} ==== collect {} {} tasks", tableId(), partition, optimizeTasks.size(),
+            getOptimizeType());
+        results.addAll(optimizeTasks);
+        accumulateFileCount(optimizeTasks);
+      }
     }
-
-    LOG.debug("{} ==== after collect {} task, skip partitions {}/{}", tableId(), getOptimizeType(),
-        skippedPartitions.size(), partitions.size());
+    LOG.info("{} ==== after collect, get {} task of partitions {}/{}", tableId(), getOptimizeType(),
+        affectedPartitions.size(), partitions.size());
     return results;
+  }
+
+  private void accumulateFileCount(List<BasicOptimizeTask> newTasks) {
+    int newFileCnt = 0;
+    long newFileSize = 0;
+    for (BasicOptimizeTask optimizeTask : newTasks) {
+      newFileCnt += getTaskFileCount(optimizeTask);
+      newFileSize += getTaskFileSize(optimizeTask);
+    }
+    this.collectFileCnt += newFileCnt;
+    this.collectFileSize += newFileSize;
+  }
+
+  protected long getTaskFileSize(BasicOptimizeTask task) {
+    return task.getBaseFileSize() + task.getInsertFileSize() + task.getDeleteFileSize() + task.getPosDeleteFileSize();
+  }
+
+  protected int getTaskFileCount(BasicOptimizeTask task) {
+    return task.getBaseFileCnt() + task.getDeleteFileCnt() + task.getInsertFileCnt() + task.getPosDeleteFileCnt();
+  }
+
+  private boolean reachOptimizeLimit() {
+    return this.collectFileCnt >= getMaxFileCntLimit() || this.collectFileSize >= getMaxFileSizeLimit();
+  }
+
+  private OptimizePlanResult buildOptimizePlanResult(List<BasicOptimizeTask> optimizeTasks) {
+    long currentChangeSnapshotId = getCurrentChangeSnapshotId();
+    if (skippedPartitions) {
+      // if not all partitions are optimized, current change snapshot id should set to -1 to trigger next minor optimize
+      currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+    }
+    return new OptimizePlanResult(this.affectedPartitions, optimizeTasks, getOptimizeType(), this.currentSnapshotId,
+        currentChangeSnapshotId, this.planGroup);
+  }
+
+  protected List<String> getPartitionsToOptimizeInOrder() {
+    List<String> partitionNeedOptimizedInOrder = allPartitions.stream()
+        .filter(this::partitionNeedPlan)
+        .map(partition -> new PartitionWeightWrapper(partition, getPartitionWeight(partition)))
+        .sorted()
+        .map(PartitionWeightWrapper::getPartition)
+        .collect(Collectors.toList());
+    if (partitionNeedOptimizedInOrder.size() > 0) {
+      LOG.info("{} filter partitions to optimize, partition count {}", tableId(),
+          partitionNeedOptimizedInOrder.size());
+    } else {
+      LOG.debug("{} filter partitions to optimize, partition count 0", tableId());
+    }
+    return partitionNeedOptimizedInOrder;
+  }
+
+  /**
+   * Get the partition weight.
+   * The optimizing order of partition is decide by partition weight, and the larger weight should be ahead.
+   *
+   * @param partition - partition
+   * @return return partition weight
+   */
+  protected abstract PartitionWeight getPartitionWeight(String partition);
+
+  private int getMaxFileCntLimit() {
+    Map<String, String> properties = arcticTable.properties();
+    return CompatiblePropertyUtil.propertyAsInt(properties,
+        TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+  }
+
+  private long getMaxFileSizeLimit() {
+    Map<String, String> properties = arcticTable.properties();
+    return PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES,
+        TableProperties.SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES_DEFAULT);
   }
 
   protected long getSmallFileSize(Map<String, String> properties) {
@@ -122,11 +195,84 @@ public abstract class AbstractOptimizePlan {
     }
   }
 
-  protected abstract long getCurrentSnapshotId();
+  protected interface PartitionWeight extends Comparable<PartitionWeight> {
+
+  }
+
+  protected static class PartitionWeightWrapper implements Comparable<PartitionWeightWrapper> {
+    private final String partition;
+    private final PartitionWeight weight;
+
+    public PartitionWeightWrapper(String partition, PartitionWeight weight) {
+      this.partition = partition;
+      this.weight = weight;
+    }
+
+    public String getPartition() {
+      return partition;
+    }
+
+    public PartitionWeight getWeight() {
+      return weight;
+    }
+
+    @Override
+    public String toString() {
+      return "[" + partition + ":" + weight + "]";
+    }
+
+    @Override
+    public int compareTo(PartitionWeightWrapper o) {
+      return this.weight.compareTo(o.weight);
+    }
+  }
+
+  protected long getCurrentSnapshotId() {
+    return this.currentSnapshotId;
+  }
 
   protected long getCurrentChangeSnapshotId() {
     return TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   }
+
+  protected int getCollectFileCnt() {
+    return collectFileCnt;
+  }
+
+  protected long getCollectFileSize() {
+    return collectFileSize;
+  }
+
+  /**
+   * Check this partition should optimize because of interval.
+   *
+   * @param partition - partition
+   * @return true if the partition should optimize
+   */
+  protected boolean checkOptimizeInterval(String partition) {
+    long optimizeInterval = getMaxOptimizeInterval();
+
+    if (optimizeInterval < 0) {
+      return false;
+    }
+
+    return this.currentTime - getLatestOptimizeTime(partition) >= optimizeInterval;
+  }
+
+  /**
+   * Get max optimize interval config of specific optimize type.
+   *
+   * @return optimize interval
+   */
+  protected abstract long getMaxOptimizeInterval();
+
+  /**
+   * Get latest optimize time of specific optimize type.
+   *
+   * @param partition - partition
+   * @return time of latest optimize, may be -1
+   */
+  protected abstract long getLatestOptimizeTime(String partition);
 
   /**
    * check whether partition need to plan

@@ -88,8 +88,8 @@ public class BasicOptimizeCommit {
         LOG.info("{} get no tasks to commit", arcticTable.id());
         return true;
       }
-      LOG.info("{} get tasks to commit for partitions {}", arcticTable.id(),
-          optimizeTasksToCommit.keySet());
+      LOG.info("{} get tasks to commit with from snapshot id = {}, for partitions {} ", arcticTable.id(),
+          baseSnapshotId, optimizeTasksToCommit.keySet());
 
       // collect files
       PartitionSpec spec = arcticTable.spec();
@@ -145,37 +145,26 @@ public class BasicOptimizeCommit {
       majorCommit(arcticTable, majorAddFiles, majorDeleteFiles, baseSnapshotId);
 
       return true;
-    } catch (ValidationException e) {
-      String missFileMessage = "Missing required files to delete";
-      String foundNewDeleteMessage = "found new delete for replaced data file";
-      if (e.getMessage().contains(missFileMessage) ||
-          e.getMessage().contains(foundNewDeleteMessage)) {
-        UnkeyedTable baseArcticTable;
-        if (arcticTable.isKeyedTable()) {
-          baseArcticTable = arcticTable.asKeyedTable().baseTable();
-        } else {
-          baseArcticTable = arcticTable.asUnkeyedTable();
-        }
-        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
-        // only delete data files are produced by major optimize, because the major optimize maybe support hive
-        // and produce redundant data files in hive location.(don't produce DeleteFile)
-        // minor produced files will be clean by orphan file clean
-        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
-        for (ContentFile<?> majorAddFile : majorAddFiles) {
-          String filePath = TableFileUtils.getUriPath(majorAddFile.path().toString());
-          if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
-            arcticTable.io().deleteFile(filePath);
-            LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
-          }
-        }
-        return false;
+    } catch (Exception e) {
+      UnkeyedTable baseArcticTable;
+      if (arcticTable.isKeyedTable()) {
+        baseArcticTable = arcticTable.asKeyedTable().baseTable();
       } else {
-        LOG.error("unexpected commit error " + arcticTable.id(), e);
-        throw new Exception("unexpected commit error ", e);
+        baseArcticTable = arcticTable.asUnkeyedTable();
       }
-    } catch (Throwable t) {
-      LOG.error("unexpected commit error " + arcticTable.id(), t);
-      throw new Exception("unexpected commit error ", t);
+      LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
+      // only delete data files are produced by major optimize, because the major optimize maybe support hive
+      // and produce redundant data files in hive location.(don't produce DeleteFile)
+      // minor produced files will be clean by orphan file clean
+      Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
+      for (ContentFile<?> majorAddFile : majorAddFiles) {
+        String filePath = TableFileUtils.getUriPath(majorAddFile.path().toString());
+        if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
+          arcticTable.io().deleteFile(filePath);
+          LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
+        }
+      }
+      return false;
     }
   }
 
@@ -431,9 +420,8 @@ public class BasicOptimizeCommit {
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet());
 
-    // if full optimize or new DataFiles is empty, can delete DeleteFiles
-    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
-        CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
+    // if full optimize, can delete DeleteFiles
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet()));
     }

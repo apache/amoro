@@ -20,10 +20,10 @@ package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.source.ArcticSparkTable
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.optimizer.PropagateEmptyRelation.conf
-import org.apache.spark.sql.{SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.{DDLPreprocessingUtils, PartitioningUtils}

@@ -60,7 +60,7 @@ optimize_group:
       # unit MB
       memory: 1024
       spillable.map.enabled: false
-#      spillable.memory.limit: 524288000      #max delete map size in memory for optimizer, default is 500M
+#      spillable.memory.limit: 512      #max delete map size in memory for optimizer, default is 512M
 #      spillable.map.dir:       #spill map base dir, default is System.System.getProperty("java.io.tmpdir")
 #  - name: flinkOp
 #    container: flinkContainer
@@ -68,5 +68,5 @@ optimize_group:
 #      taskmanager.memory: 1024
 #      jobmanager.memory: 1024
 #      spillable.map.enabled: false
-#      spillable.memory.limit: 524288000      #max delete map size in memory for optimizer, default don't use spill map
+#      spillable.memory.limit: 512      #max delete map size in memory for optimizer, default is 512M
 #      spillable.map.dir:      #spill map base dir, default is System.System.getProperty("java.io.tmpdir")

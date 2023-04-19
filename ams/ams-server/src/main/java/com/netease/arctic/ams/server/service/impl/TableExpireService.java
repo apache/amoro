@@ -19,6 +19,8 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -45,6 +47,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,13 +59,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class TableExpireService implements ITableExpireService {
   private static final Logger LOG = LoggerFactory.getLogger(TableExpireService.class);
   private static final long EXPIRE_INTERVAL = 3600_000; // 1 hour
+  /**
+   * the same with org.apache.iceberg.flink.sink.IcebergFilesCommitter#MAX_COMMITTED_CHECKPOINT_ID
+   */
+  public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID = "flink.max-committed-checkpoint-id";
 
   private ScheduledTasks<TableIdentifier, TableExpireTask> cleanTasks;
 
@@ -75,7 +81,8 @@ public class TableExpireService implements ITableExpireService {
 
     Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
     cleanTasks.checkRunningTask(tableIds,
-        tableId -> EXPIRE_INTERVAL,
+        () -> 0L,
+        () -> EXPIRE_INTERVAL,
         TableExpireTask::new,
         false);
     LOG.info("Schedule Expired Cleaner finished with {} valid ids", tableIds.size());
@@ -90,10 +97,7 @@ public class TableExpireService implements ITableExpireService {
 
     @Override
     public void run() {
-      long startTime = System.currentTimeMillis();
-      final String traceId = UUID.randomUUID().toString();
       try {
-        LOG.info("[{}] {} start expire", traceId, tableIdentifier);
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
@@ -103,69 +107,133 @@ public class TableExpireService implements ITableExpireService {
         if (!needClean) {
           return;
         }
-        long changeDataTTL = Long.parseLong(arcticTable.properties()
-            .getOrDefault(TableProperties.CHANGE_DATA_TTL,
-                TableProperties.CHANGE_DATA_TTL_DEFAULT)) * 60 * 1000;
-        long baseSnapshotsKeepTime = Long.parseLong(arcticTable.properties()
-            .getOrDefault(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
-        long changeSnapshotsKeepTime = Long.parseLong(arcticTable.properties()
-            .getOrDefault(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
-
-        Set<String> hiveLocation = new HashSet<>();
-        if (TableTypeUtil.isHive(arcticTable)) {
-          hiveLocation = HiveLocationUtils.getHiveLocation(arcticTable);
-        }
-
-        if (arcticTable.isKeyedTable()) {
-          KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
-          Set<String> finalHiveLocation = hiveLocation;
-          keyedArcticTable.io().doAs(() -> {
-            UnkeyedTable baseTable = keyedArcticTable.baseTable();
-            if (baseTable == null) {
-              LOG.warn("[{}] Base table is null: {} ", traceId, tableIdentifier);
-              return null;
-            }
-            UnkeyedTable changeTable = keyedArcticTable.changeTable();
-            if (changeTable == null) {
-              LOG.warn("[{}] Change table is null: {}", traceId, tableIdentifier);
-              return null;
-            }
-
-            // get valid files in the change store which shouldn't physically delete when expire the snapshot
-            // in the base store
-            Set<String> baseExclude = UnKeyedTableUtil.getAllContentFilePath(changeTable);
-            baseExclude.addAll(finalHiveLocation);
-            expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
-            long baseCleanedTime = System.currentTimeMillis();
-            LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
-
-            // delete ttl files
-            List<DataFileInfo> changeDataFiles = ServiceContainer.getFileInfoCacheService()
-                .getChangeTableTTLDataFiles(keyedArcticTable.id().buildTableIdentifier(),
-                    System.currentTimeMillis() - changeDataTTL);
-            deleteChangeFile(keyedArcticTable, changeDataFiles);
-
-            // get valid files in the base store which shouldn't physically delete when expire the snapshot
-            // in the change store
-            Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
-            changeExclude.addAll(finalHiveLocation);
-            expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
-            return null;
-          });
-          LOG.info("[{}] {} expire cost total {} ms", traceId, arcticTable.id(),
-              System.currentTimeMillis() - startTime);
-        } else {
-          UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
-          expireSnapshots(unKeyedArcticTable, startTime - baseSnapshotsKeepTime, hiveLocation);
-          long baseCleanedTime = System.currentTimeMillis();
-          LOG.info("[{}] {} unKeyedTable expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
-        }
+        expireArcticTable(arcticTable);
       } catch (Throwable t) {
-        LOG.error("[" + traceId + "] unexpected expire error of table " + tableIdentifier, t);
+        LOG.error("unexpected expire error of table {} ", tableIdentifier, t);
       }
     }
+  }
+
+  public static void expireArcticTable(ArcticTable arcticTable) {
+    TableIdentifier tableIdentifier = arcticTable.id();
+    long startTime = System.currentTimeMillis();
+    LOG.info("{} start expire", tableIdentifier);
+
+    long changeDataTTL = Long.parseLong(arcticTable.properties()
+        .getOrDefault(TableProperties.CHANGE_DATA_TTL,
+            TableProperties.CHANGE_DATA_TTL_DEFAULT)) * 60 * 1000;
+    long baseSnapshotsKeepTime = Long.parseLong(arcticTable.properties()
+        .getOrDefault(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
+            TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
+    long changeSnapshotsKeepTime = Long.parseLong(arcticTable.properties()
+        .getOrDefault(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
+            TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
+
+    Set<String> hiveLocations = new HashSet<>();
+    if (TableTypeUtil.isHive(arcticTable)) {
+      hiveLocations = HiveLocationUtils.getHiveLocation(arcticTable);
+    }
+
+    if (arcticTable.isKeyedTable()) {
+      KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
+      Set<String> finalHiveLocations = hiveLocations;
+      keyedArcticTable.io().doAs(() -> {
+        UnkeyedTable baseTable = keyedArcticTable.baseTable();
+        UnkeyedTable changeTable = keyedArcticTable.changeTable();
+
+        // get valid files in the change store which shouldn't physically delete when expire the snapshot
+        // in the base store
+        Set<String> baseExcludePaths = UnKeyedTableUtil.getAllContentFilePath(changeTable);
+        baseExcludePaths.addAll(finalHiveLocations);
+        long latestBaseFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(baseTable);
+        long optimizingSnapshotTime = fetchOptimizingSnapshotTime(baseTable);
+        long baseOlderThan = startTime - baseSnapshotsKeepTime;
+        LOG.info("{} base table expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
+            arcticTable.id(), latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan);
+        expireSnapshots(baseTable,
+            min(latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan),
+            baseExcludePaths);
+        long baseCleanedTime = System.currentTimeMillis();
+        LOG.info("{} base expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
+
+        // delete ttl files
+        List<DataFileInfo> changeDataFiles = ServiceContainer.getFileInfoCacheService()
+            .getChangeTableTTLDataFiles(keyedArcticTable.id().buildTableIdentifier(),
+                System.currentTimeMillis() - changeDataTTL);
+        deleteChangeFile(keyedArcticTable, changeDataFiles);
+
+        // get valid files in the base store which shouldn't physically delete when expire the snapshot
+        // in the change store
+        Set<String> changeExclude = UnKeyedTableUtil.getAllContentFilePath(baseTable);
+        changeExclude.addAll(finalHiveLocations);
+        long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
+        long changeOlderThan = startTime - changeSnapshotsKeepTime;
+        LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
+            latestChangeFlinkCommitTime, changeOlderThan);
+        expireSnapshots(changeTable,
+            Math.min(latestChangeFlinkCommitTime, changeOlderThan),
+            changeExclude);
+        return null;
+      });
+      LOG.info("{} expire cost total {} ms", arcticTable.id(), System.currentTimeMillis() - startTime);
+    } else {
+      UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
+      long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unKeyedArcticTable);
+      long optimizingSnapshotTime = fetchOptimizingSnapshotTime(unKeyedArcticTable);
+      long olderThan = startTime - baseSnapshotsKeepTime;
+      LOG.info("{} unKeyedTable expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
+          arcticTable.id(), latestFlinkCommitTime, optimizingSnapshotTime, olderThan);
+      expireSnapshots(unKeyedArcticTable,
+          min(latestFlinkCommitTime, optimizingSnapshotTime, olderThan),
+          hiveLocations);
+      long baseCleanedTime = System.currentTimeMillis();
+      LOG.info("{} unKeyedTable expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
+    }
+  }
+
+  /**
+   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary.
+   * The latest snapshot with checkpoint id should not be expired or the flink job can't recover from state.
+   *
+   * @param table -
+   * @return commit time of snapshot with the latest flink checkpointId in summary
+   */
+  public static long fetchLatestFlinkCommittedSnapshotTime(UnkeyedTable table) {
+    long latestCommitTime = Long.MAX_VALUE;
+    for (Snapshot snapshot : table.snapshots()) {
+      if (snapshot.summary().containsKey(FLINK_MAX_COMMITTED_CHECKPOINT_ID)) {
+        latestCommitTime = snapshot.timestampMillis();
+      }
+    }
+    return latestCommitTime;
+  }
+
+  /**
+   * When optimizing tasks are not committed, the snapshot with which it planned should not be expired, since
+   * it will use the snapshot to check conflict when committing.
+   *
+   * @param table - table
+   * @return commit time of snapshot for optimizing
+   */
+  public static long fetchOptimizingSnapshotTime(UnkeyedTable table) {
+    try {
+      TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(table.id());
+      if (!tableOptimizeItem.getOptimizeTasks().isEmpty()) {
+        long currentSnapshotId = tableOptimizeItem.getTableOptimizeRuntime().getCurrentSnapshotId();
+        for (Snapshot snapshot : table.snapshots()) {
+          if (snapshot.snapshotId() == currentSnapshotId) {
+            return snapshot.timestampMillis();
+          }
+        }
+      }
+      return Long.MAX_VALUE;
+    } catch (NoSuchObjectException e) {
+      return Long.MAX_VALUE;
+    }
+  }
+
+  public static long min(long a, long b, long c) {
+    return Math.min(Math.min(a, b), c);
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
@@ -229,7 +297,7 @@ public class TableExpireService implements ITableExpireService {
   public static void expireSnapshots(UnkeyedTable arcticInternalTable,
                                      long olderThan,
                                      Set<String> exclude) {
-    LOG.debug("start expire snapshots, the exclude is {}", exclude);
+    LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();

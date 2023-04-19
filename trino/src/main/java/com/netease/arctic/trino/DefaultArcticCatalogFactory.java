@@ -21,8 +21,8 @@ package com.netease.arctic.trino;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import io.trino.spi.classloader.ThreadContextClassLoader;
-import javax.inject.Inject;
 
+import javax.inject.Inject;
 import java.util.Collections;
 
 /**

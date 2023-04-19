@@ -257,7 +257,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
           arcticTable, schema);
     }
     return new LogDynamicSource(
-        valueProjection,
         properties,
         schema,
         tableOptions,

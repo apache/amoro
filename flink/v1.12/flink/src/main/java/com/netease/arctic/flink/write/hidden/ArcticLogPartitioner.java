@@ -21,7 +21,6 @@ package com.netease.arctic.flink.write.hidden;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.table.data.RowData;
 import org.apache.kafka.common.utils.Utils;
 

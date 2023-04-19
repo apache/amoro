@@ -34,8 +34,8 @@ import java.io.Serializable;
 public class BaseTaskReporter implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseTaskReporter.class);
 
-  private static final int DEFAULT_RETRY = 0;
-  private static final int DEFAULT_RETRY_INTERVAL = 0;
+  private static final int DEFAULT_RETRY = 20;
+  private static final int DEFAULT_RETRY_INTERVAL = 15000;
 
   private final OptimizerConfig config;
 

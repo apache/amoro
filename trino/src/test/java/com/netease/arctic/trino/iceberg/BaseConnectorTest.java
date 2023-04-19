@@ -45,7 +45,12 @@ import io.trino.testing.MaterializedRow;
 import io.trino.testing.ResultWithQueryId;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.sql.TestTable;
-import java.lang.reflect.InvocationTargetException;
+import org.intellij.lang.annotations.Language;
+import org.testng.Assert;
+import org.testng.SkipException;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -63,11 +68,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.intellij.lang.annotations.Language;
-import org.testng.Assert;
-import org.testng.SkipException;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verifyNotNull;
