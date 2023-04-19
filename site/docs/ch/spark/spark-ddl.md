@@ -90,15 +90,17 @@ AS SELECT ...
 `CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区复制到新表中，但不会复制数据。
 
 ``` 
-CREATE TABLE arctic_catalog.db.sample
-LIKE arctic_catalog.db.sample2
+USE arctic_catalog;
+CREATE TABLE db.sample
+LIKE db.sample2
 USING arctic
 TBLPROPERTIES ('owner'='xxxx');
 ```
 
 > 因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema
 > 信息，如果是其他类型的表，则无法复制
->
+
+???+danger 由于 Spark 语法规则的限制，`CreateTableLike` 只支持二元组的方式 db.table 并且只支持同 catalog 下的源表
 
 ## REPLACE TABLE ... AS SELECT
 
