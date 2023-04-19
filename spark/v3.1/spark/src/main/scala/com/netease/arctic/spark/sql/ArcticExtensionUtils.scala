@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.sql
 
 import scala.collection.JavaConverters.seqAsJavaList
+
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsRowLevelOperator}
 import org.apache.iceberg.spark.Spark3Util

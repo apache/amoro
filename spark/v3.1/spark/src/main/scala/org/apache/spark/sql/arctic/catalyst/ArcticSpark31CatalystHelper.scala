@@ -23,9 +23,7 @@ import com.netease.arctic.spark.SparkInternalRowWrapper
 import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.{catalyst, connector, AnalysisException}
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
@@ -34,7 +32,6 @@ import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder}
 import org.apache.spark.sql.types.{DataType, IntegerType, LongType}
-import org.apache.spark.sql.{AnalysisException, catalyst, connector}
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
 
@@ -133,7 +130,6 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
       numBuckets: Int,
       keyData: PrimaryKeyData,
       schema: Schema)
-
     extends Expression with CodegenFallback with NullIntolerant {
 
     @transient
