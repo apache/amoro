@@ -18,17 +18,17 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticTable}
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticTable, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans._
+import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{SparkSession, Strategy}
-
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
@@ -41,7 +41,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       DescribeKeyedTableExec(r.table, r.catalog, r.identifier, isExtended) :: Nil
 
     case MigrateToArcticLogicalPlan(command) =>
-      println("create migrate to arctic command logical")
       MigrateToArcticExec(command) :: Nil
 
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs, Some(write)) =>

@@ -32,7 +32,7 @@ case class ArcticRowLevelWrite(
 
   def isByName: Boolean = false
 
-  override def outputResolved = true
+  override def outputResolved: Boolean = true
 
   override protected def withNewChildInternal(newChild: LogicalPlan): ArcticRowLevelWrite = {
     copy(query = newChild)

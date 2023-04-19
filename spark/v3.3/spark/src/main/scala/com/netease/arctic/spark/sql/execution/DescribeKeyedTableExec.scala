@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters.mapAsScalaMapConverter
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+import scala.collection.mutable.ArrayBuffer
+
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
@@ -26,10 +30,6 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.execution.datasources.v2.LeafV2CommandExec
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
-
-import scala.collection.JavaConverters.mapAsScalaMapConverter
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
-import scala.collection.mutable.ArrayBuffer
 
 case class DescribeKeyedTableExec(
     table: Table,

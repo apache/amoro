@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.optimize
 
 import java.util
+
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
@@ -97,9 +98,9 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   }
 
   def buildJoinCondition(
-                          primaries: util.List[String],
-                          tableScan: LogicalPlan,
-                          insertPlan: LogicalPlan): Expression = {
+      primaries: util.List[String],
+      tableScan: LogicalPlan,
+      insertPlan: LogicalPlan): Expression = {
     var i = 0
     var joinCondition: Expression = null
     val expressions = new util.ArrayList[Expression]

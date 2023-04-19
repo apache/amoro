@@ -101,13 +101,13 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       assignments: Seq[Assignment],
       condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
+      case _ =>
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)

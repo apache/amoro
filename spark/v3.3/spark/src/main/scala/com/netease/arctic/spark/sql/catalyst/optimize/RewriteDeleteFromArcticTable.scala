@@ -80,13 +80,13 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       scanBuilder: SupportsExtendIdentColumns,
       condition: Expression): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
+      case _ =>
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
