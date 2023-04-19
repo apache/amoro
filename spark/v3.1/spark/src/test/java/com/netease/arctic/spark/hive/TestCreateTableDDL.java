@@ -742,7 +742,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         expectedSchema, keyedTableA.schema().asStruct());
     sql("desc table {0}.{1}", database, tableA);
     assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
-    sql("alter table {0}.{1} add columns (newCol1 string, newCol1 string)", database, tableA);
+    sql("alter table {0}.{1} add columns (newCol1 string, newCol2 string)", database, tableA);
     sql("alter table {0}.{1} add columns (newCol3 string, newCol4 string)", database, tableA);
 
     sql("use spark_catalog");
