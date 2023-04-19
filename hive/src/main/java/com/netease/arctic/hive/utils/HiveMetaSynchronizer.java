@@ -96,9 +96,10 @@ public class HiveMetaSynchronizer {
       Types.NestedField hiveField = hiveStruct.fields().get(i);
       Types.NestedField icebergField = icebergStruct.field(hiveField.name());
       // to check if lowercase matches
-      List<Types.NestedField> fields = icebergStruct.
-          fields().stream().
-          filter(f -> f.name().toLowerCase().equals(hiveField.name())).collect(Collectors.toList());
+      List<Types.NestedField> fields = icebergStruct
+          .fields()
+          .stream()
+          .filter(f -> f.name().toLowerCase().equals(hiveField.name())).collect(Collectors.toList());
       if (!fields.isEmpty()) {
         icebergField = fields.get(0);
       }
