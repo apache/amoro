@@ -25,12 +25,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 /**
  * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
  */
-public interface SupportsUpsert extends Table {
-
-  String UPSERT_OP_COLUMN_NAME = "_arctic_upsert_op";
-  String UPSERT_OP_VALUE_INSERT = "I";
-  String UPSERT_OP_VALUE_DELETE = "D";
-
+public interface SupportsRowLevelOperator extends Table {
 
   /**
    * Returns support extend columns scan builder
