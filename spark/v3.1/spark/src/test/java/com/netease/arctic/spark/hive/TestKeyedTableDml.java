@@ -1,6 +1,7 @@
 package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
+import org.apache.spark.SparkException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -192,10 +193,10 @@ public class TestKeyedTableDml extends SparkTestBase {
             " using arctic partitioned by (data) " , database, "testPks");
 
     // insert into values
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert into " + database + "." + "testPks" +
                     " values (1, 1.1, 'abcd' ) , " +
-                    "(1, 1.1, 'bbcd'), " +
+                    "(1, 1.1, 'abcd'), " +
                     "(3, 1.3, 'cbcd') "));
 
     sql(createTableInsert, database, insertTable);
@@ -207,7 +208,7 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("select * from " + database + "." + notUpsertTable);
 
     // insert into select
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1}",
                     database, notUpsertTable));
 
@@ -220,7 +221,8 @@ public class TestKeyedTableDml extends SparkTestBase {
     // insert into select + group by has duplicated data
     sql("insert into " + database + "." + notUpsertTable +
             " values (1, 'aaaa', 'abcd' )");
-    Assert.assertThrows(UnsupportedOperationException.class,
+    sql("select * from " + database + "." + notUpsertTable + " group by id, name, data");
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert into " + database + "." + insertTable +
                             " select * from {0}.{1} group by id, name, data",
                     database, notUpsertTable));
@@ -334,7 +336,7 @@ public class TestKeyedTableDml extends SparkTestBase {
   @Test
   public void testExplain() {
     rows = sql("explain insert into {0}.{1} values (1, ''aaa'', ''aaaa'')", database, notUpsertTable);
-    Assert.assertTrue(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
+    Assert.assertFalse(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
     rows = sql("explain delete from {0}.{1} where id = 3", database, notUpsertTable);
     Assert.assertTrue(rows.get(0)[0].toString().contains("ExtendedArcticStrategy"));
     rows = sql("explain update {0}.{1} set name = ''aaa'' where id = 3", database, notUpsertTable);
