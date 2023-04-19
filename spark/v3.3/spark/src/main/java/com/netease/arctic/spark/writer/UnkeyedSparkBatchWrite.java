@@ -279,15 +279,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
       return new SimpleInternalRowDataWriter(writer);
     }
 
-    public TaskWriter<InternalRow> newDeleteWriter(int partitionId, long taskId, StructType schema) {
-      return TaskWriters.of(table)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(schema)
-          .newUnkeyedUpsertWriter();
-    }
-
-    public TaskWriter<InternalRow> newInsertWriter(int partitionId, long taskId, StructType schema) {
+    public TaskWriter<InternalRow> newWriter(int partitionId, long taskId, StructType schema) {
       return TaskWriters.of(table)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
@@ -306,8 +298,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      return new SimpleRowLevelDataWriter(newInsertWriter(partitionId, taskId, schema),
-          newDeleteWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
+      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, schema),
+          newWriter(partitionId, taskId, schema), dsSchema, table.isKeyedTable());
     }
   }
 }

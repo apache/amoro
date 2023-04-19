@@ -18,14 +18,14 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.ResolvedDBObjectName
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
@@ -76,9 +76,11 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
   def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog =>
-        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase("arctic") && tableSpec.properties.contains("primary.keys")
+        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
+          "arctic") && tableSpec.properties.contains("primary.keys")
       case _: ArcticSparkSessionCatalog[_] =>
-        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase("arctic") && tableSpec.properties.contains("primary.keys")
+        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
+          "arctic") && tableSpec.properties.contains("primary.keys")
       case _ =>
         false
     }

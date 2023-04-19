@@ -19,7 +19,6 @@
 
 package com.netease.arctic.spark.sql.catalyst.plans
 
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
 case class TruncateArcticTable(child: LogicalPlan) extends Command {
