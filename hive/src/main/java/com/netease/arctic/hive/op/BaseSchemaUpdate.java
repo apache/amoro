@@ -86,13 +86,13 @@ public class BaseSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
-    this.updateSchema.updateColumn(name, newType);
+    this.updateSchema.updateColumn(name.toLowerCase(), newType);
     return this;
   }
 
   @Override
   public UpdateSchema updateColumnDoc(String name, String newDoc) {
-    this.updateSchema.updateColumnDoc(name, newDoc);
+    this.updateSchema.updateColumnDoc(name.toLowerCase(), newDoc);
     return this;
   }
 
