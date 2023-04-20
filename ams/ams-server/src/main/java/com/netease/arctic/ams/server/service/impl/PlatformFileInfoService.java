@@ -55,4 +55,12 @@ public class PlatformFileInfoService extends IJDBCService {
     }
   }
 
+  public byte[] getFileContentBytesById(Integer fileId) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      PlatformFileInfoMapper platformFileInfoMapper =
+              getMapper(sqlSession, PlatformFileInfoMapper.class);
+      return Base64.getDecoder().decode(platformFileInfoMapper.getFileById(fileId));
+    }
+  }
+
 }
