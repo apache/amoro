@@ -31,8 +31,6 @@
     <url>https://arctic.netease.com</url>
 
     <modules>
-        <module>v2.3/spark</module>
-        <module>v2.3/spark-runtime</module>
         <module>v3.1/spark</module>
         <module>v3.1/spark-runtime</module>
         <module>v3.3/spark</module>
