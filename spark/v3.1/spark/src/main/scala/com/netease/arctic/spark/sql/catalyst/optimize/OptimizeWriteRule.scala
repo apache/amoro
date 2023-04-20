@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.optimize
 
 import com.netease.arctic.spark.{SparkSQLProperties, SupportSparkAdapter}
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticIcebergRelation, isArcticRelation}
-import com.netease.arctic.spark.sql.catalyst.plans.OverwriteArcticPartitionsDynamic
+import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import com.netease.arctic.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
@@ -61,12 +61,6 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan]
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
-
-    case o @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, writeOptions)
-        if isArcticRelation(r) =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
-      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
-      o.copy(query = newQuery, writeOptions = options)
 
     case a @ AppendData(r: DataSourceV2Relation, query, _, _)
         if isArcticIcebergRelation(r) =>
