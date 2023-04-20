@@ -107,7 +107,8 @@ public class HiveMetaSynchronizer {
         if (!icebergField.type().equals(hiveField.type()) ||
             !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
           if (hiveField.type().isPrimitiveType() && icebergField.type().isPrimitiveType()) {
-            if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
+            if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(),
+                hiveField.type().asPrimitiveType())) {
               String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
               updateSchema.updateColumn(columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
               update = true;
