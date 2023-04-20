@@ -743,7 +743,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("desc table {0}.{1}", database, tableA);
     assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
     sql("alter table {0}.{1} add columns (newCol1 string, newCol2 string)", database, tableA);
+    sql("desc table {0}.{1}", database, tableA);
     sql("alter table {0}.{1} add columns (newCol3 string, newCol4 string)", database, tableA);
+    sql("desc table {0}.{1}", database, tableA);
 
     sql("use spark_catalog");
     Table hiveTableA = hms.getClient().getTable(database, tableA);

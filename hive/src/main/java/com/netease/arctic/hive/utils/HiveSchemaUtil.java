@@ -20,8 +20,12 @@ package com.netease.arctic.hive.utils;
 
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.hive.MetastoreUtil;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
@@ -29,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utils to handle Hive table schema.
@@ -111,5 +116,58 @@ public class HiveSchemaUtil {
     Types.StructType struct = TypeUtil.visit(schema.asStruct(),
         new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE)).asStructType();
     return new Schema(struct.fields());
+  }
+
+  private static String convertToTypeString(Type type) {
+    switch (type.typeId()) {
+      case BOOLEAN:
+        return "boolean";
+      case INTEGER:
+        return "int";
+      case LONG:
+        return "bigint";
+      case FLOAT:
+        return "float";
+      case DOUBLE:
+        return "double";
+      case DATE:
+        return "date";
+      case TIME:
+      case STRING:
+      case UUID:
+        return "string";
+      case TIMESTAMP:
+        Types.TimestampType timestampType = (Types.TimestampType) type;
+        if (MetastoreUtil.hive3PresentOnClasspath() && timestampType.shouldAdjustToUTC()) {
+          return "timestamp with local time zone";
+        }
+        return "timestamp";
+      case FIXED:
+      case BINARY:
+        return "binary";
+      case DECIMAL:
+        final Types.DecimalType decimalType = (Types.DecimalType) type;
+        return String.format("decimal(%s,%s)", decimalType.precision(), decimalType.scale());
+      case STRUCT:
+        final Types.StructType structType = type.asStructType();
+        final String nameToType =
+            structType.fields().stream()
+                .map(f -> String.format("%s:%s", f.name(), convert(f.type())))
+                .collect(Collectors.joining(","));
+        return String.format("struct<%s>", nameToType);
+      case LIST:
+        final Types.ListType listType = type.asListType();
+        return String.format("array<%s>", convert(listType.elementType()));
+      case MAP:
+        final Types.MapType mapType = type.asMapType();
+        return String.format(
+            "map<%s,%s>", convert(mapType.keyType()), convert(mapType.valueType()));
+      default:
+        throw new UnsupportedOperationException(type + " is not supported");
+    }
+  }
+
+  public static TypeInfo convert(Type type) {
+    return TypeInfoUtils.getTypeInfoFromTypeString(convertToTypeString(type));
   }
 }

@@ -54,16 +54,16 @@ public class BaseSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema addColumn(String name, Type type, String doc) {
-    this.updateSchema.addColumn(name, type, doc);
-    moveColBeforePar(name);
+    this.updateSchema.addColumn(name.toLowerCase(), type, doc);
+    moveColBeforePar(name.toLowerCase());
     return this;
   }
 
   @Override
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
-    this.updateSchema.addColumn(parent, name, type, doc);
+    this.updateSchema.addColumn(parent, name.toLowerCase(), type, doc);
     if (parent == null) {
-      moveColBeforePar(name);
+      moveColBeforePar(name.toLowerCase());
     }
     return this;
   }
