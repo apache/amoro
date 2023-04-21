@@ -58,7 +58,7 @@ public class BasicArcticFileScanTask implements ArcticFileScanTask {
     this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() :
         posDeleteFiles.stream().filter(s -> {
           DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(s.path().toString());
-          return node.index() == baseFile.node().index() && node.mask() == baseFile.node().mask();
+          return baseFile.node().isSonOf(node) || baseFile.node().equals(node);
         }).collect(Collectors.toList());
     this.spec = spec;
     this.expression = expression;

@@ -20,45 +20,19 @@ package com.netease.arctic.spark.sql.execution
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable, ArcticTableHelper}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticTable, ArcticTableHelper}
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.{SparkSession, Strategy}
-import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
-import org.apache.spark.sql.arctic.execution.CreateArcticTableAsSelectExec
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.logical.{DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2._
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateArcticTableAsSelect(
-          catalog,
-          ident,
-          parts,
-          query,
-          validateQuery,
-          props,
-          options,
-          ifNotExists)
-        if isArcticCatalog(catalog) =>
-      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
-      CreateArcticTableAsSelectExec(
-        catalog,
-        ident,
-        parts,
-        query,
-        planLater(query),
-        planLater(validateQuery),
-        props,
-        writeOptions,
-        ifNotExists) :: Nil
-
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended)
         if isArcticTable(r.table) =>
       if (partitionSpec.nonEmpty) {
@@ -69,27 +43,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
     case MigrateToArcticLogicalPlan(command) =>
       MigrateToArcticExec(command) :: Nil
 
-    case ReplaceArcticData(d: DataSourceV2Relation, query, options) =>
-      AppendDataExec(
-        d.table.asWritable,
-        new CaseInsensitiveStringMap(options
-          .asJava),
-        planLater(query),
-        refreshCache(d)) :: Nil
-
-    case AppendArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          AppendInsertDataExec(
-            t,
-            new CaseInsensitiveStringMap(options.asJava),
-            planLater(query),
-            planLater(validateQuery),
-            refreshCache(d)) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
-      }
-
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs) =>
       ArcticRowLevelWriteExec(
         table.table.asArcticTable,
@@ -97,46 +50,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         new CaseInsensitiveStringMap(options.asJava),
         projs,
         refreshCache(table)) :: Nil
-
-    case OverwriteArcticPartitionsDynamic(d: DataSourceV2Relation, query, validateQuery, options) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          OverwriteArcticDataExec(
-            t,
-            new CaseInsensitiveStringMap(options.asJava),
-            planLater(query),
-            planLater(validateQuery),
-            refreshCache(d)) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot overwrite to non-Arctic table: $table")
-      }
-
-    case OverwriteArcticDataByExpression(
-          d: DataSourceV2Relation,
-          deleteExpr,
-          query,
-          validateQuery,
-          options) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          val filters = splitConjunctivePredicates(deleteExpr).map {
-            filter =>
-              ExpressionHelper.translateFilter(deleteExpr).getOrElse(
-                throw new UnsupportedOperationException(
-                  "Cannot translate expression to source filter"))
-          }.toArray
-          OverwriteArcticByExpressionExec(
-            t,
-            filters,
-            new CaseInsensitiveStringMap(options.asJava),
-            planLater(query),
-            planLater(validateQuery),
-            refreshCache(d)) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(
-            s"Cannot overwrite by filter to non-Arctic table: $table")
-      }
-
     case MergeRows(
           isSourceRowPresent,
           isTargetRowPresent,
@@ -163,6 +76,9 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         emitNotMatchedTargetRows,
         output,
         planLater(child)) :: Nil
+
+    case QueryWithConstraintCheckPlan(scanPlan, fileFilterPlan) =>
+      QueryWithConstraintCheckExec(planLater(scanPlan), planLater(fileFilterPlan)) :: Nil
 
     case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
       AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil

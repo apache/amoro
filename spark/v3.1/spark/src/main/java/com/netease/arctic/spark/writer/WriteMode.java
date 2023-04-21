@@ -22,8 +22,7 @@ public enum WriteMode {
   OVERWRITE_BY_FILTER("overwrite-by-filter"),
   OVERWRITE_DYNAMIC("overwrite-dynamic"),
   APPEND("append"),
-  UPSERT("upsert"),
-  MERGE("merge");
+  DELTAWRITE("deltaWrite");
 
   public static final String WRITE_MODE_KEY = "write-mode";
 
