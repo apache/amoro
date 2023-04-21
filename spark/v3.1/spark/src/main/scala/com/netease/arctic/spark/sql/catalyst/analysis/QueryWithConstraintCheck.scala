@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticKeyedRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.SparkSession
