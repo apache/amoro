@@ -102,7 +102,7 @@ public class HiveMetaSynchronizer {
         updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
         update = true;
         LOG.info("Table {} sync new hive column {} to arctic", tableIdentifier, hiveField);
-      } else {
+      } else if (fields.size() == 1){
         Types.NestedField icebergField = fields.get(0);
         if (!icebergField.type().equals(hiveField.type()) ||
             !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
@@ -126,6 +126,9 @@ public class HiveMetaSynchronizer {
                 tableIdentifier, hiveField);
           }
         }
+      }
+      else {
+        throw new RuntimeException("Exist columns with the same name: " + fields.get(0));
       }
     }
     return update;
