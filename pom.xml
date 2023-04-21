@@ -16,9 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -28,8 +26,8 @@
     <packaging>pom</packaging>
 
     <name>Arctic Project Parent</name>
-    <url>https://arctic.netease.com</url>
     <description>Arctic is a LakeHouse management service for open architecture</description>
+    <url>https://arctic.netease.com</url>
 
     <licenses>
         <license>
@@ -52,9 +50,9 @@
 
     <scm>
         <connection>scm:git:git@github.com:NetEase/arctic.git</connection>
+        <developerConnection>scm:git:git@github.com:NetEase/arctic.git</developerConnection>
         <tag>HEAD</tag>
         <url>scm:git:git@github.com:NetEase/arctic.git</url>
-        <developerConnection>scm:git:git@github.com:NetEase/arctic.git</developerConnection>
     </scm>
 
     <issueManagement>
@@ -71,7 +69,7 @@
         <root.dir>${project.basedir}</root.dir>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
@@ -86,7 +84,7 @@
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
 
-        <iceberg.version>0.13.2</iceberg.version>
+        <iceberg.version>1.1.0</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
@@ -103,6 +101,10 @@
         <fastjson.version>1.2.75</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
+        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
+        <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
+        <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
     </properties>
 
     <dependencyManagement>
@@ -276,8 +278,8 @@
             <dependency>
                 <groupId>org.apache.orc</groupId>
                 <artifactId>orc-core</artifactId>
-                <classifier>nohive</classifier>
                 <version>${orc-core.version}</version>
+                <classifier>nohive</classifier>
             </dependency>
 
             <dependency>
@@ -368,19 +370,19 @@
                     <executions>
                         <execution>
                             <id>scala-compile-first</id>
-                            <phase>process-resources</phase>
                             <goals>
                                 <goal>add-source</goal>
                                 <goal>compile</goal>
                             </goals>
+                            <phase>process-resources</phase>
                         </execution>
                         <execution>
                             <id>scala-test-compile</id>
-                            <phase>process-test-resources</phase>
                             <goals>
                                 <goal>add-source</goal>
                                 <goal>testCompile</goal>
                             </goals>
+                            <phase>process-test-resources</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -411,7 +413,6 @@
                     <configuration>
                         <configLocation>style/arctic-checkstyle.xml</configLocation>
                         <suppressionsLocation>style/suppressions.xml</suppressionsLocation>
-                        <encoding>UTF-8</encoding>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <violationSeverity>warning</violationSeverity>
@@ -423,10 +424,10 @@
                     <executions>
                         <execution>
                             <id>validate</id>
-                            <phase>validate</phase>
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>validate</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -474,6 +475,32 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.scalastyle</groupId>
+                    <artifactId>scalastyle-maven-plugin</artifactId>
+                    <version>${maven.plugin.scalastyle.version}</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                        <failOnViolation>true</failOnViolation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <failOnWarning>false</failOnWarning>
+                        <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                        <configLocation>style/scalastyle-config.xml</configLocation>
+                        <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
+                        <outputEncoding>UTF-8</outputEncoding>
+                        <skip>${maven.scalastyle.skip}</skip>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>validate</phase>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -502,15 +529,25 @@
         </profile>
         <profile>
             <id>hive-v2.1</id>
-            <properties>
-                <hive.version>2.1.1</hive.version>
-            </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <properties>
+                <hive.version>2.1.1</hive.version>
+            </properties>
         </profile>
         <profile>
             <id>deploy-maven-central</id>
+            <distributionManagement>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+            </distributionManagement>
             <build>
                 <plugins>
                     <plugin>
@@ -559,16 +596,6 @@
                     </plugin>
                 </plugins>
             </build>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
         </profile>
     </profiles>
 </project>

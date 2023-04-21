@@ -73,7 +73,6 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
       ConnectorTransactionHandle transaction,
       ConnectorSession session,
       ConnectorTableHandle handle,
-      SplitSchedulingStrategy splitSchedulingStrategy,
       DynamicFilter dynamicFilter,
       Constraint constraint) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;

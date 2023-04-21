@@ -8,17 +8,15 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "site/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "optimizer/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
   pull_request:
     branches:
@@ -50,7 +48,7 @@ jobs:
           cache: maven
 
       - name: Build all module with Maven
-        run: mvn install -pl '!trino'
+        run: mvn clean install -pl '!trino' -Djacoco.skip=true -B -ntp
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

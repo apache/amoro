@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters.mapAsScalaMapConverter
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+import scala.collection.mutable.ArrayBuffer
+
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
@@ -27,22 +31,27 @@ import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
 
-import scala.collection.JavaConverters.mapAsScalaMapConverter
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
-import scala.collection.mutable.ArrayBuffer
-
-case class DescribeKeyedTableExec(table: Table,
-                                  catalog: TableCatalog,
-                                  ident: Identifier,
-                                  isExtended: Boolean) extends V2CommandExec {
-  val outputAttrs: Seq[AttributeReference] =  Seq(
-    AttributeReference("col_name", StringType, nullable = false,
+case class DescribeKeyedTableExec(
+    table: Table,
+    catalog: TableCatalog,
+    ident: Identifier,
+    isExtended: Boolean) extends V2CommandExec {
+  val outputAttrs: Seq[AttributeReference] = Seq(
+    AttributeReference(
+      "col_name",
+      StringType,
+      nullable = false,
       new MetadataBuilder().putString("comment", "name of the column").build())(),
-    AttributeReference("data_type", StringType, nullable = false,
+    AttributeReference(
+      "data_type",
+      StringType,
+      nullable = false,
       new MetadataBuilder().putString("comment", "data type of the column").build())(),
-    AttributeReference("comment", StringType, nullable = true,
+    AttributeReference(
+      "comment",
+      StringType,
+      nullable = true,
       new MetadataBuilder().putString("comment", "comment of the column").build())())
-
 
   private[sql] def fromAttributes(attributes: Seq[Attribute]): StructType =
     StructType(attributes.map(a => StructField(a.name, a.dataType, a.nullable, a.metadata)))
@@ -51,7 +60,9 @@ case class DescribeKeyedTableExec(table: Table,
     RowEncoder(fromAttributes(outputAttrs)).resolveAndBind().createSerializer()
   }
 
-  private def addPrimaryColumns(rows: ArrayBuffer[InternalRow], keyedTable: ArcticSparkTable): Unit = {
+  private def addPrimaryColumns(
+      rows: ArrayBuffer[InternalRow],
+      keyedTable: ArcticSparkTable): Unit = {
     keyedTable.table() match {
       case table: KeyedTable =>
         rows += emptyRow()
@@ -59,7 +70,7 @@ case class DescribeKeyedTableExec(table: Table,
         if (!table.primaryKeySpec.primaryKeyExisted()) {
           rows += toCatalystRow("Not keyed table", "", "")
         } else {
-          table.primaryKeySpec().primaryKeyStruct().fields().toSeq.foreach( k => {
+          table.primaryKeySpec().primaryKeyStruct().fields().toSeq.foreach(k => {
             rows += toCatalystRow(k.name(), k.`type`().toString, "")
           })
         }
@@ -87,7 +98,8 @@ case class DescribeKeyedTableExec(table: Table,
   }
 
   val TABLE_RESERVED_PROPERTIES =
-    Seq(TableCatalog.PROP_COMMENT,
+    Seq(
+      TableCatalog.PROP_COMMENT,
       TableCatalog.PROP_LOCATION,
       TableCatalog.PROP_PROVIDER,
       TableCatalog.PROP_OWNER)
@@ -106,15 +118,17 @@ case class DescribeKeyedTableExec(table: Table,
       table.properties.asScala.toList
         .filter(kv => !TABLE_RESERVED_PROPERTIES.contains(kv._1))
         .sortBy(_._1).map {
-        case (key, value) => key + "=" + value
-      }.mkString("[", ",", "]")
+          case (key, value) => key + "=" + value
+        }.mkString("[", ",", "]")
     rows += toCatalystRow("Table Properties", properties, "")
   }
 
   private def addSchema(rows: ArrayBuffer[InternalRow], table: Table): Unit = {
     rows ++= table.schema.map { column =>
       toCatalystRow(
-        column.name, column.dataType.simpleString, column.getComment().getOrElse(""))
+        column.name,
+        column.dataType.simpleString,
+        column.getComment().getOrElse(""))
     }
   }
 

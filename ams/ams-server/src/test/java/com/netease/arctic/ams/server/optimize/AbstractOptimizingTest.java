@@ -182,7 +182,7 @@ public abstract class AbstractOptimizingTest {
     appendFiles.commit();
   }
 
-  protected static void writeBase(ArcticTable table, List<Record> insertRows) {
+  protected static List<DataFile> writeBase(ArcticTable table, List<Record> insertRows) {
     UnkeyedTable baseTable;
     if (table.isUnkeyedTable()) {
       baseTable = table.asUnkeyedTable();
@@ -193,6 +193,7 @@ public abstract class AbstractOptimizingTest {
     AppendFiles appendFiles = baseTable.newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+    return insertFiles;
   }
 
   protected static List<DataFile> write(UnkeyedTable table, List<Record> rows) {

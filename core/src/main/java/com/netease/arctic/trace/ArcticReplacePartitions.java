@@ -24,13 +24,12 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements ReplacePartitions {
+public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> implements ReplacePartitions {
 
   private final ReplacePartitions replacePartitions;
 
@@ -39,13 +38,13 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
   }
 
   private ArcticReplacePartitions(ArcticTable arcticTable, ReplacePartitions replacePartitions, TableTracer tracer) {
-    super(arcticTable, tracer);
+    super(arcticTable, replacePartitions, tracer);
     this.replacePartitions = replacePartitions;
   }
 
   private ArcticReplacePartitions(ArcticTable arcticTable, ReplacePartitions replacePartitions, TableTracer tracer,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, replacePartitions, tracer, transaction, autoCommitTransaction);
     this.replacePartitions = replacePartitions;
   }
 
@@ -63,35 +62,30 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
   }
 
   @Override
-  public ReplacePartitions set(String property, String value) {
-    replacePartitions.set(property, value);
-    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
+  public ReplacePartitions validateFromSnapshot(long snapshotId) {
+    replacePartitions.validateFromSnapshot(snapshotId);
     return this;
   }
 
   @Override
-  public ReplacePartitions deleteWith(Consumer<String> deleteFunc) {
-    replacePartitions.deleteWith(deleteFunc);
+  public ReplacePartitions validateNoConflictingDeletes() {
+    replacePartitions.validateNoConflictingDeletes();
     return this;
   }
 
   @Override
-  public ReplacePartitions stageOnly() {
-    replacePartitions.stageOnly();
+  public ReplacePartitions validateNoConflictingData() {
+    replacePartitions.validateNoConflictingData();
     return this;
   }
 
-  @Override
-  public Snapshot apply() {
-    return replacePartitions.apply();
-  }
 
   @Override
-  public void doCommit() {
-    replacePartitions.commit();
+  protected ReplacePartitions self() {
+    return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticReplacePartitions> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> {
 
     private Builder(ArcticTable table) {
       super(table);
@@ -99,7 +93,7 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticReplacePartitions> traceTable(
+    public ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
@@ -116,8 +110,20 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
     }
 
     @Override
-    protected ArcticReplacePartitions updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new ArcticReplacePartitions(table, tableStore.newReplacePartitions(), tableTracer);
+    protected ArcticReplacePartitions updateWithoutWatermark(
+        TableTracer tableTracer,
+        Supplier<ReplacePartitions> delegateSupplier) {
+      return new ArcticReplacePartitions(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<ReplacePartitions> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newReplacePartitions;
+    }
+
+    @Override
+    protected Supplier<ReplacePartitions> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newReplacePartitions;
     }
   }
 }

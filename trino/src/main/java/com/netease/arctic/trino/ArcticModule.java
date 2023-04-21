@@ -28,14 +28,14 @@ import com.netease.arctic.trino.unkeyed.ArcticTrinoCatalogFactory;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import com.netease.arctic.trino.unkeyed.IcebergSplitManager;
 import io.airlift.configuration.ConfigBinder;
+import io.trino.hdfs.HdfsConfig;
+import io.trino.hdfs.HdfsConfiguration;
+import io.trino.hdfs.HdfsEnvironment;
+import io.trino.hdfs.authentication.HdfsAuthentication;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
-import io.trino.plugin.hive.HdfsConfig;
-import io.trino.plugin.hive.HdfsConfiguration;
-import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.hive.NamenodeStats;
-import io.trino.plugin.hive.authentication.HdfsAuthentication;
-import io.trino.plugin.hive.metastore.MetastoreConfig;
+import io.trino.plugin.hive.metastore.HiveMetastoreConfig;
 import io.trino.plugin.hive.orc.OrcReaderConfig;
 import io.trino.plugin.hive.orc.OrcWriterConfig;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
@@ -48,10 +48,11 @@ import io.trino.plugin.iceberg.IcebergPageSinkProvider;
 import io.trino.plugin.iceberg.IcebergSessionProperties;
 import io.trino.plugin.iceberg.IcebergTableProperties;
 import io.trino.plugin.iceberg.RollbackToSnapshotProcedure;
+import io.trino.plugin.iceberg.TableStatisticsWriter;
 import io.trino.plugin.iceberg.catalog.TrinoCatalogFactory;
-import io.trino.plugin.iceberg.procedure.DeleteOrphanFilesTableProcedure;
 import io.trino.plugin.iceberg.procedure.ExpireSnapshotsTableProcedure;
 import io.trino.plugin.iceberg.procedure.OptimizeTableProcedure;
+import io.trino.plugin.iceberg.procedure.RemoveOrphanFilesTableProcedure;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
@@ -89,10 +90,11 @@ public class ArcticModule implements Module {
     binder.bind(TrinoCatalogFactory.class).to(ArcticTrinoCatalogFactory.class).in(Scopes.SINGLETON);
     binder.bind(ArcticTransactionManager.class).in(Scopes.SINGLETON);
     binder.bind(ArcticMetadataFactory.class).in(Scopes.SINGLETON);
+    binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
     binder.bind(ConnectorSplitManager.class).to(ArcticConnectorSplitManager.class).in(Scopes.SINGLETON);
     binder.bind(ConnectorPageSourceProvider.class).to(ArcticPageSourceProvider.class).in(Scopes.SINGLETON);
 
-    configBinder(binder).bindConfig(MetastoreConfig.class);
+    configBinder(binder).bindConfig(HiveMetastoreConfig.class);
     configBinder(binder).bindConfig(IcebergConfig.class);
 
     newSetBinder(binder, SessionPropertiesProvider.class).addBinding()
@@ -130,7 +132,7 @@ public class ArcticModule implements Module {
     Multibinder<TableProcedureMetadata> tableProcedures = newSetBinder(binder, TableProcedureMetadata.class);
     tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
     tableProcedures.addBinding().toProvider(ExpireSnapshotsTableProcedure.class).in(Scopes.SINGLETON);
-    tableProcedures.addBinding().toProvider(DeleteOrphanFilesTableProcedure.class).in(Scopes.SINGLETON);
+    tableProcedures.addBinding().toProvider(RemoveOrphanFilesTableProcedure.class).in(Scopes.SINGLETON);
 
     //hdfs
     ConfigBinder.configBinder(binder).bindConfig(HdfsConfig.class);

@@ -12,6 +12,10 @@
 
 `hdfs://namenode:8020/user/arctic/demo_warehouse`。
 
+> **TIPS**
+>
+>  请填写真实 `warehouse` 地址。
+
 其余部分请按照以下截图设置 catalog 基本配置:
 
 ![Create catalog](../images/quickstart/create-catalog.png)

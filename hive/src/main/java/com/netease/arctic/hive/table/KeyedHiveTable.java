@@ -56,15 +56,23 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
   @Override
   public void refresh() {
     super.refresh();
-    syncHiveSchemaToArctic();
-    syncHiveDataToArctic();
+    if (enableSyncHiveSchemaToArctic()) {
+      syncHiveSchemaToArctic();
+    }
+    if (enableSyncHiveDataToArctic()) {
+      syncHiveDataToArctic(false);
+    }
   }
 
 
@@ -73,22 +81,30 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return ((SupportHive)baseTable()).hiveLocation();
   }
 
-  private void syncHiveSchemaToArctic() {
-    if (PropertyUtil.propertyAsBoolean(
+  @Override
+  public boolean enableSyncHiveSchemaToArctic() {
+    return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
-      HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
-    }
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
-  private void syncHiveDataToArctic() {
-    if (PropertyUtil.propertyAsBoolean(
+  @Override
+  public void syncHiveSchemaToArctic() {
+    HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+  }
+
+  @Override
+  public boolean enableSyncHiveDataToArctic() {
+    return PropertyUtil.propertyAsBoolean(
         properties(),
         HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
-      HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
-    }
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+  }
+
+  @Override
+  public void syncHiveDataToArctic(boolean force) {
+    HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
   }
 
   @Override

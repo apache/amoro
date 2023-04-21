@@ -18,42 +18,46 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import scala.collection.{mutable, Seq}
+
 import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.{ArcticRowLevelWrite, MergeIntoArcticTable, MergeRows}
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{FieldReference, ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, IsNotNull, Literal}
-import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.NamedReference
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.{IntegerType, StructType}
 
-import scala.collection.{Seq, mutable}
-
-
 case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  private final val ROW_FROM_SOURCE = "__row_from_source"
-  private final val ROW_FROM_TARGET = "__row_from_target"
+  final private val ROW_FROM_SOURCE = "__row_from_source"
+  final private val ROW_FROM_TARGET = "__row_from_target"
 
-  private final val ROW_FROM_SOURCE_REF = FieldReference(ROW_FROM_SOURCE)
-  private final val ROW_FROM_TARGET_REF = FieldReference(ROW_FROM_TARGET)
+  final private val ROW_FROM_SOURCE_REF = FieldReference(ROW_FROM_SOURCE)
+  final private val ROW_FROM_TARGET_REF = FieldReference(ROW_FROM_TARGET)
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperators {
-    case MergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions, None) =>
-
+    case MergeIntoArcticTable(
+          aliasedTable,
+          source,
+          cond,
+          matchedActions,
+          notMatchedActions,
+          None) =>
       EliminateSubqueryAliases(aliasedTable) match {
         case r @ DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
           val rewritePlan =
@@ -66,8 +70,10 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
       }
   }
 
-  def buildRelationAndAttrs(relation: DataSourceV2Relation, cond: Expression, operationTable: Table):
-  (Seq[Attribute], LogicalPlan) = {
+  def buildRelationAndAttrs(
+      relation: DataSourceV2Relation,
+      cond: Expression,
+      operationTable: Table): (Seq[Attribute], LogicalPlan) = {
     relation.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
@@ -88,7 +94,8 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
               val references = cond.references.toSeq
               (references, valuesRelation)
             } else {
-              throw new UnsupportedOperationException(s"Can not build relation and keyAttrs for table $arctic")
+              throw new UnsupportedOperationException(
+                s"Can not build relation and keyAttrs for table $arctic")
             }
           }
           (keyAttrs, valuesRelation)
@@ -96,7 +103,9 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     }
   }
 
-  protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
+  protected def toOutputAttrs(
+      schema: StructType,
+      attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
     val nameToAttr = attrs.map(_.name).zip(attrs).toMap
     schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)()).map {
       a =>
@@ -112,23 +121,34 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
   }
 
   def buildWriteQueryProjections(
-    plan: MergeRows,
-    source: LogicalPlan,
-    targetRowAttrs: Seq[AttributeReference],
-    rowIdAttrs: Seq[Attribute],
-    isKeyedTable: Boolean
-  ): WriteQueryProjections = {
+      plan: MergeRows,
+      source: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      rowIdAttrs: Seq[Attribute],
+      isKeyedTable: Boolean): WriteQueryProjections = {
     val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
       val frontRowProjection =
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
       val backRowProjection =
-        ProjectingInternalRow.newProjectInternalRow(source, targetRowAttrs, isFront = false, 1 + rowIdAttrs.size)
+        ProjectingInternalRow.newProjectInternalRow(
+          source,
+          targetRowAttrs,
+          isFront = false,
+          1 + rowIdAttrs.size)
       (frontRowProjection, backRowProjection)
     } else {
       val frontRowProjection =
-        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs ++ rowIdAttrs, isFront = true, 0))
+        Some(ProjectingInternalRow.newProjectInternalRow(
+          plan,
+          targetRowAttrs ++ rowIdAttrs,
+          isFront = true,
+          0))
       val backRowProjection =
-        ProjectingInternalRow.newProjectInternalRow(source, targetRowAttrs, isFront = false, 1 + rowIdAttrs.size)
+        ProjectingInternalRow.newProjectInternalRow(
+          source,
+          targetRowAttrs,
+          isFront = false,
+          1 + rowIdAttrs.size)
       (frontRowProjection, backRowProjection)
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
@@ -141,13 +161,12 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
 
   // build a rewrite plan for sources that support row deltas
   private def buildRowLevelWritePlan(
-    relation: DataSourceV2Relation,
-    operationTable: Table,
-    source: LogicalPlan,
-    cond: Expression,
-    matchedActions: Seq[MergeAction],
-    notMatchedActions: Seq[MergeAction]
-  ): ArcticRowLevelWrite = {
+      relation: DataSourceV2Relation,
+      operationTable: Table,
+      source: LogicalPlan,
+      cond: Expression,
+      matchedActions: Seq[MergeAction],
+      notMatchedActions: Seq[MergeAction]): ArcticRowLevelWrite = {
     // construct a scan relation and include all required metadata columns
     val rowAttrs = relation.output
     val (keyAttrs, readRelation) = buildRelationAndAttrs(relation, cond, operationTable)
@@ -170,27 +189,30 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     val joinPlan = Join(targetTableProj, sourceTableProj, joinType, Some(cond), joinHint)
 
     val matchedConditions = matchedActions.map(actionCondition)
-    val matchedOutputs = matchedActions.map(rowLevelWriteOutput(_, readRelation.output, source.output))
+    val matchedOutputs =
+      matchedActions.map(rowLevelWriteOutput(_, readRelation.output, source.output))
 
     val notMatchedConditions = notMatchedActions.map(actionCondition)
-    val notMatchedOutputs = notMatchedActions.map(rowLevelWriteOutput(_, readRelation.output, source.output))
+    val notMatchedOutputs =
+      notMatchedActions.map(rowLevelWriteOutput(_, readRelation.output, source.output))
 
     val operationTypeAttr = AttributeReference(OPERATION_COLUMN, IntegerType, nullable = false)()
     val rowFromSourceAttr = resolveAttrRef(ROW_FROM_SOURCE_REF, joinPlan)
     val rowFromTargetAttr = resolveAttrRef(ROW_FROM_TARGET_REF, joinPlan)
 
     // merged rows must contain values for the operation type and all read attrs
-    val mergeRowsOutput = buildMergeRowsOutput(matchedOutputs, notMatchedOutputs, operationTypeAttr +: readAttrs)
+    val mergeRowsOutput =
+      buildMergeRowsOutput(matchedOutputs, notMatchedOutputs, operationTypeAttr +: readAttrs)
 
-    val unMatchedRowNeedCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
-      getConfString(
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
-        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty &&
+    val unMatchedRowNeedCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
+      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty &&
       ArcticExtensionUtils.isKeyedTable(relation)
 
     val mergeRows = plans.MergeRows(
       isSourceRowPresent = IsNotNull(rowFromSourceAttr),
-      isTargetRowPresent = if (notMatchedActions.isEmpty) TrueLiteral else IsNotNull(rowFromTargetAttr),
+      isTargetRowPresent =
+        if (notMatchedActions.isEmpty) TrueLiteral else IsNotNull(rowFromTargetAttr),
       matchedConditions = matchedConditions,
       matchedOutputs = matchedOutputs,
       notMatchedConditions = notMatchedConditions,
@@ -205,9 +227,12 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     // build a plan to write the row delta to the table
     val writeRelation = relation.copy(table = operationTable)
     var options: Map[String, String] = Map.empty
-    options += (WriteMode.WRITE_MODE_KEY -> WriteMode.MERGE.toString)
+    options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
     val projections = buildWriteQueryProjections(
-      mergeRows, source, rowAttrs, rowIdAttrs,
+      mergeRows,
+      source,
+      rowAttrs,
+      rowIdAttrs,
       ArcticExtensionUtils.isKeyedTable(relation))
     ArcticRowLevelWrite(writeRelation, mergeRows, options, projections)
   }
@@ -229,10 +254,9 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
   }
 
   private def rowLevelWriteOutput(
-    action: MergeAction,
-    targetOutput: Seq[Expression],
-    sourceOutput: Seq[Attribute]
-  ): Seq[Expression] = {
+      action: MergeAction,
+      targetOutput: Seq[Expression],
+      sourceOutput: Seq[Attribute]): Seq[Expression] = {
 
     action match {
       case _: UpdateAction =>
@@ -250,10 +274,9 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
   }
 
   private def buildMergeRowsOutput(
-    matchedOutputs: Seq[Seq[Expression]],
-    notMatchedOutputs: Seq[Seq[Expression]],
-    attrs: Seq[Attribute]
-  ): Seq[Attribute] = {
+      matchedOutputs: Seq[Seq[Expression]],
+      notMatchedOutputs: Seq[Seq[Expression]],
+      attrs: Seq[Attribute]): Seq[Attribute] = {
 
     // collect all outputs from matched and not matched actions (ignoring DELETEs)
     val outputs = matchedOutputs.filter(_.nonEmpty) ++ notMatchedOutputs.filter(_.nonEmpty)
@@ -273,7 +296,6 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     case Seq(DeleteAction(None)) => false
     case _ => true
   }
-
 
   private def resolveAttrRef(ref: NamedReference, plan: LogicalPlan): AttributeReference = {
     ExpressionHelper.resolveRef[AttributeReference](ref, plan)

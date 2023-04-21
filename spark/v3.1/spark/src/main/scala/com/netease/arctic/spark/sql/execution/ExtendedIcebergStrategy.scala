@@ -18,33 +18,40 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters.seqAsJavaList
+
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
+import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
-import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
-import org.apache.spark.sql.{SparkSession, Strategy}
-
-import scala.collection.JavaConverters.seqAsJavaList
+import org.apache.spark.sql.execution.datasources.v2._
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case DynamicFileFilter(scanPlan, fileFilterPlan, filterable) =>
       DynamicFileFilterExec(planLater(scanPlan), planLater(fileFilterPlan), filterable) :: Nil
 
-    case DynamicFileFilterWithCardinalityCheck(scanPlan, fileFilterPlan, filterable, filesAccumulator) =>
+    case DynamicFileFilterWithCardinalityCheck(
+          scanPlan,
+          fileFilterPlan,
+          filterable,
+          filesAccumulator) =>
       DynamicFileFilterWithCardinalityCheckExec(
         planLater(scanPlan),
         planLater(fileFilterPlan),
         filterable,
         filesAccumulator) :: Nil
 
-    case PhysicalOperation(project, filters, DataSourceV2ScanRelation(_, scan: SupportsFileFilter, output)) =>
+    case PhysicalOperation(
+          project,
+          filters,
+          DataSourceV2ScanRelation(_, scan: SupportsFileFilter, output)) =>
       // projection and filters were already pushed down in the optimizer.
       // this uses PhysicalOperation to get the projection and ensure that if the batch scan does
       // not support columnar, a projection is added to convert the rows to UnsafeRow.
@@ -62,10 +69,10 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   }
 
   private def withProjectAndFilter(
-                                    project: Seq[NamedExpression],
-                                    filters: Seq[Expression],
-                                    scan: LeafExecNode,
-                                    needsUnsafeConversion: Boolean): SparkPlan = {
+      project: Seq[NamedExpression],
+      filters: Seq[Expression],
+      scan: LeafExecNode,
+      needsUnsafeConversion: Boolean): SparkPlan = {
     val filterCondition = filters.reduceLeftOption(And)
     val withFilter = filterCondition.map(FilterExec(_, scan)).getOrElse(scan)
 

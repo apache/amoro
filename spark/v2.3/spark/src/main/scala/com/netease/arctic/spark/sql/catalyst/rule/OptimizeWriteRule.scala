@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.distibutions.{BucketTransform, FieldReference, IdentityTransform}
-import com.netease.arctic.spark.distributions.{ClusteredDistribution, NamedReference, Transform, Expression => V2Expression}
+import com.netease.arctic.spark.distributions.{ClusteredDistribution, Expression => V2Expression, NamedReference, Transform}
 import com.netease.arctic.spark.source.ArcticSparkTable
 import com.netease.arctic.spark.sql.catalyst.expressions.BucketExpression
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
@@ -87,7 +87,6 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
-
   def resolveRef[T <: NamedExpression](ref: NamedReference, plan: LogicalPlan): T = {
     plan.resolve(ref.fieldNames.toSeq, conf.resolver) match {
       case Some(namedExpr) =>
@@ -98,15 +97,14 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
-
   private object ArcticBucketTransform {
     def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
       case bt: BucketTransform => bt.columns match {
-        case Seq(nf: NamedReference) =>
-          Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
-        case _ =>
-          None
-      }
+          case Seq(nf: NamedReference) =>
+            Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
+          case _ =>
+            None
+        }
       case _ => None
     }
   }

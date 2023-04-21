@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,9 +19,10 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.analysis
-import com.netease.arctic.spark.sql.catalyst.analysis.{ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
+import com.netease.arctic.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
+import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
@@ -44,12 +44,13 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule { _ => AlignRowLevelOperations }
 
     // arctic optimizer rules
-    extensions.injectPostHocResolutionRule { spark => RewriteAppendArcticTable(spark) }
-    extensions.injectPostHocResolutionRule { spark => RewriteDeleteFromArcticTable(spark) }
-    extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
-    extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
+    extensions.injectPostHocResolutionRule { spark => QueryWithConstraintCheck(spark) }
+    extensions.injectOptimizerRule { spark => RewriteAppendArcticTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteDeleteFromArcticTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteUpdateArcticTable(spark) }
 
     // iceberg optimizer rules
+    extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
     extensions.injectOptimizerRule { _ => OptimizeConditionsInRowLevelOperations }
     extensions.injectOptimizerRule { _ => PullupCorrelatedPredicatesInRowLevelOperations }
     extensions.injectOptimizerRule { spark => RewriteDelete(spark) }

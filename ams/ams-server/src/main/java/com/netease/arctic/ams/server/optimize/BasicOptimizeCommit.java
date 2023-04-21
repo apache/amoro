@@ -420,9 +420,8 @@ public class BasicOptimizeCommit {
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet());
 
-    // if full optimize or new DataFiles is empty, can delete DeleteFiles
-    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
-        CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
+    // if full optimize, can delete DeleteFiles
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet()));
     }
@@ -442,7 +441,7 @@ public class BasicOptimizeCommit {
 
     Set<String> committedFilePath = new HashSet<>();
     for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
-      for (DataFile dataFile : snapshot.addedFiles()) {
+      for (DataFile dataFile : snapshot.addedDataFiles(table.io())) {
         committedFilePath.add(TableFileUtils.getUriPath(dataFile.path().toString()));
       }
     }

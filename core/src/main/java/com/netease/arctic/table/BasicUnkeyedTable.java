@@ -27,7 +27,6 @@ import com.netease.arctic.trace.ArcticAppendFiles;
 import com.netease.arctic.trace.ArcticOverwriteFiles;
 import com.netease.arctic.trace.ArcticReplacePartitions;
 import com.netease.arctic.trace.ArcticRowDelta;
-import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedRewriteFiles;
@@ -41,6 +40,7 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
+import org.apache.iceberg.IncrementalAppendScan;
 import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
@@ -48,11 +48,12 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
@@ -98,6 +99,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public TableScan newScan() {
     return icebergTable.newScan();
+  }
+
+  @Override
+  public IncrementalAppendScan newIncrementalAppendScan() {
+    return icebergTable.newIncrementalAppendScan();
   }
 
   @Override
@@ -208,24 +214,25 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public AppendFiles newAppend() {
     return ArcticAppendFiles.buildFor(this, false)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
     return ArcticAppendFiles.buildFor(this, true)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    RewriteFiles rewriteFiles = icebergTable.newRewrite();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client, true);
-      return new TracedRewriteFiles(rewriteFiles, tracer);
-    } else {
-      return rewriteFiles;
-    }
+    return TracedRewriteFiles.buildFor(this)
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
@@ -253,23 +260,15 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public DeleteFiles newDelete() {
-    DeleteFiles deleteFiles = icebergTable.newDelete();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client, true);
-      return new TracedDeleteFiles(deleteFiles, tracer);
-    } else {
-      return deleteFiles;
-    }
+    return TracedDeleteFiles.buildFor(this)
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
   public ExpireSnapshots expireSnapshots() {
     return icebergTable.expireSnapshots();
-  }
-
-  @Override
-  public Rollback rollback() {
-    return icebergTable.rollback();
   }
 
   @Override
@@ -300,6 +299,16 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public LocationProvider locationProvider() {
     return icebergTable.locationProvider();
+  }
+
+  @Override
+  public List<StatisticsFile> statisticsFiles() {
+    return icebergTable.statisticsFiles();
+  }
+
+  @Override
+  public Map<String, SnapshotRef> refs() {
+    return icebergTable.refs();
   }
 
   @Override

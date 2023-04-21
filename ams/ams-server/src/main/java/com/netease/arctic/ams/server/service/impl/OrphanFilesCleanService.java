@@ -290,20 +290,20 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       
       validFiles.add(TableFileUtils.getUriPath(manifestListLocation));
 
-      io.doAs(() -> {
-        // valid data files
-        List<ManifestFile> manifestFiles = snapshot.allManifests();
-        for (ManifestFile manifestFile : manifestFiles) {
-          validFiles.add(TableFileUtils.getUriPath(manifestFile.path()));
-        }
-        return null;
-      });
+      // valid data files
+      List<ManifestFile> manifestFiles = snapshot.allManifests(io);
+      for (ManifestFile manifestFile : manifestFiles) {
+        validFiles.add(TableFileUtils.getUriPath(manifestFile.path()));
+      }
+
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
     }
     ReachableFileUtil.metadataFileLocations(internalTable, false)
         .forEach(f -> validFiles.add(TableFileUtils.getUriPath(f)));
     validFiles.add(TableFileUtils.getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
+    ReachableFileUtil.statisticsFilesLocations(internalTable)
+        .forEach(f -> validFiles.add(TableFileUtils.getUriPath(f)));
 
     return validFiles;
   }

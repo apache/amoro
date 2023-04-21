@@ -51,6 +51,7 @@ import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.TypeManager;
+import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.TableProperties;
@@ -121,6 +122,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         TableType.DATA,
         Optional.empty(),
         SchemaParser.toJson(arcticTable.schema()),
+        Optional.of(arcticTable.spec()).map(PartitionSpecParser::toJson),
         2,
         TupleDomain.all(),
         TupleDomain.all(),
@@ -128,7 +130,10 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         Optional.ofNullable(nameMappingJson),
         arcticTable.location(),
         tableProperties,
-        NO_RETRIES);
+        NO_RETRIES,
+        ImmutableList.of(),
+        false,
+        Optional.empty());
 
     return new KeyedTableHandle(icebergTableHandle, ObjectSerializerUtil.write(arcticTable.primaryKeySpec()));
   }
@@ -270,6 +275,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         icebergTableHandle.getTableType(),
         icebergTableHandle.getSnapshotId(),
         icebergTableHandle.getTableSchemaJson(),
+        icebergTableHandle.getPartitionSpecJson(),
         2,
         newUnenforcedConstraint,
         newEnforcedConstraint,
@@ -278,6 +284,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         icebergTableHandle.getTableLocation(),
         icebergTableHandle.getStorageProperties(),
         icebergTableHandle.getRetryMode(),
+        icebergTableHandle.getUpdatedColumns(),
         icebergTableHandle.isRecordScannedFiles(),
         icebergTableHandle.getMaxScannedFileSize()
     );

@@ -18,10 +18,12 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
-import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
-import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
+import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
+import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERATION_COLUMN}
+import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
@@ -30,13 +32,31 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 
-case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
-
-  private val opCol = SupportsUpsert.UPSERT_OP_COLUMN_NAME
-  private val opDel = SupportsUpsert.UPSERT_OP_VALUE_DELETE
+case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
+  with ArcticRewriteHelper {
+  def buildDeleteProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      isKeyedTable: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
+      (frontRowProjection, null)
+    } else {
+      val attributes = plan.output.filter(r => r.name.equals("_file") || r.name.equals("_pos"))
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(
+          plan,
+          targetRowAttrs ++ attributes,
+          isFront = true,
+          0))
+      (frontRowProjection, null)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
+  }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case u@DeleteFromTable(table, condition) if isArcticRelation(table) =>
+    case DeleteFromTable(table, condition) if isArcticRelation(table) =>
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
@@ -46,21 +66,27 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       } else {
         pushFilter(scanBuilder, condition.get, r.output)
       }
-      val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
-      options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(r, query, options)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
+
+      val projections =
+        buildDeleteProjections(query, r.output, ArcticExtensionUtils.isKeyedTable(r))
+      ArcticRowLevelWrite(r, query, options, projections)
   }
 
-  def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {
+  def buildUpsertQuery(
+      r: DataSourceV2Relation,
+      upsert: SupportsRowLevelOperator,
+      scanBuilder: SupportsExtendIdentColumns,
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
-      case table: ArcticSparkTable => {
+      case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
           if (upsert.requireAdditionIdentifierColumns()) {
             scanBuilder.withIdentifierColumns()
           }
         }
-      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
@@ -71,7 +97,8 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
     } else {
       valuesRelation
     }
-    val withOperation = Seq(Alias(Literal(opDel), opCol)()) ++ matchValueQuery.output
+    val withOperation =
+      Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)()) ++ matchValueQuery.output
     val deleteQuery = Project(withOperation, matchValueQuery)
     deleteQuery
   }

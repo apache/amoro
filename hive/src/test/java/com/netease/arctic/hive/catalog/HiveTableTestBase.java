@@ -25,14 +25,38 @@ import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
+import org.junit.Assert;
 import org.junit.ClassRule;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class HiveTableTestBase extends TableTestBase {
+
+  public static final String COLUMN_NAME_ID = "id";
+  public static final String COLUMN_NAME_OP_TIME = "op_time";
+  public static final String COLUMN_NAME_OP_TIME_WITH_ZONE = "op_time_with_zone";
+  public static final String COLUMN_NAME_D = "d$d";
+  public static final String COLUMN_NAME_NAME = "name";
+
+  public static final Schema HIVE_TABLE_SCHEMA = new Schema(
+      Types.NestedField.required(1, COLUMN_NAME_ID, Types.IntegerType.get()),
+      Types.NestedField.required(2, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
+      Types.NestedField.required(3, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+      Types.NestedField.required(4, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+      Types.NestedField.required(5, COLUMN_NAME_NAME, Types.StringType.get())
+  );
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
@@ -45,9 +69,10 @@ public abstract class HiveTableTestBase extends TableTestBase {
 
   public HiveTableTestBase(boolean keyedTable, boolean partitionedTable,
                            Map<String, String> tableProperties) {
-    this(TableTestHelpers.TABLE_SCHEMA,
+    this(HIVE_TABLE_SCHEMA,
         keyedTable ? TableTestHelpers.PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
-        partitionedTable ? TableTestHelpers.IDENTIFY_SPEC : PartitionSpec.unpartitioned(),
+        partitionedTable ? PartitionSpec.builderFor(HIVE_TABLE_SCHEMA)
+            .identity(COLUMN_NAME_NAME).build() : PartitionSpec.unpartitioned(),
         tableProperties);
   }
 
@@ -60,6 +85,29 @@ public abstract class HiveTableTestBase extends TableTestBase {
     Map<String, String> properties = Maps.newHashMap();
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, TEST_HMS.getHiveConf());
+  }
+
+  public void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
+    List<String> fileNameList = new ArrayList<>();
+    if (isPartitionedTable()) {
+      TableIdentifier identifier = table.id();
+      final String database = identifier.getDatabase();
+      final String tableName = identifier.getTableName();
+
+      List<Partition> partitions = TEST_HMS.getHiveClient().listPartitions(
+          database,
+          tableName,
+          (short) -1);
+      for (Partition p : partitions) {
+        fileNameList.addAll(table.io().list(p.getSd().
+            getLocation()).stream().map(f -> f.getPath().getName()).sorted().collect(Collectors.toList()));
+      }
+    } else {
+      Table hiveTable = TEST_HMS.getHiveClient().getTable(table.id().getDatabase(), table.name());
+      fileNameList.addAll(table.io().list(hiveTable.getSd().
+          getLocation()).stream().map(f -> f.getPath().getName()).sorted().collect(Collectors.toList()));
+    }
+    Assert.assertEquals(exceptedFiles, fileNameList);
   }
 
 }

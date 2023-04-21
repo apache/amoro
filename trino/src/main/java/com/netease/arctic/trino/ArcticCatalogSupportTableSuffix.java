@@ -46,11 +46,12 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.Transaction;
@@ -154,6 +155,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return arcticCatalog.getTableBlockerManager(tableIdentifier);
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return arcticCatalog.properties();
   }
 
   public TableMetaStore getTableMetaStore() {
@@ -314,11 +320,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public Rollback rollback() {
-      return table.rollback();
-    }
-
-    @Override
     public ManageSnapshots manageSnapshots() {
       return table.manageSnapshots();
     }
@@ -341,6 +342,16 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public LocationProvider locationProvider() {
       return table.locationProvider();
+    }
+
+    @Override
+    public List<StatisticsFile> statisticsFiles() {
+      return table.statisticsFiles();
+    }
+
+    @Override
+    public Map<String, SnapshotRef> refs() {
+      return table.refs();
     }
 
     @Override

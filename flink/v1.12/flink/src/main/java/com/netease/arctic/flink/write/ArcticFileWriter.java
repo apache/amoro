@@ -26,9 +26,6 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
-import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
@@ -62,14 +59,10 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final TaskWriterFactory<RowData> taskWriterFactory;
   private final int minFileSplitCount;
   private final ArcticTableLoader tableLoader;
-  private final boolean upsert;
   private final boolean submitEmptySnapshot;
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
   private transient int attemptId;
-  private transient String jobId;
-  private transient long checkpointId = 1;
-  private transient ListState<Long> checkpointState;
   /**
    * Load table in runtime, because that table's refresh method will be invoked in serialization.
    * And it will set {@link org.apache.hadoop.security.UserGroupInformation#authenticationMethod} to KERBEROS
@@ -88,7 +81,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
     this.tableLoader = tableLoader;
-    this.upsert = upsert;
     this.submitEmptySnapshot = submitEmptySnapshot;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
@@ -97,7 +89,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   @Override
   public void open() {
     this.attemptId = getRuntimeContext().getAttemptNumber();
-    this.jobId = getContainingTask().getEnvironment().getJobID().toString();
     table = ArcticUtils.loadArcticTable(tableLoader);
 
     long mask = getMask(subTaskId);
@@ -111,27 +102,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     super.initializeState(context);
 
     this.subTaskId = getRuntimeContext().getIndexOfThisSubtask();
-    checkpointState =
-        context.getOperatorStateStore()
-            .getListState(
-                new ListStateDescriptor<>(
-                    subTaskId + "-task-file-writer-state",
-                    LongSerializer.INSTANCE));
-
-    if (context.isRestored()) {
-      // get last success ckp num from state when failover continuously
-      checkpointId = checkpointState.get().iterator().next();
-      // prepare for the writer init in open(). It is used for next ckpId.
-      checkpointId++;
-    }
   }
 
   @Override
   public void snapshotState(StateSnapshotContext context) throws Exception {
     super.snapshotState(context);
-
-    checkpointState.clear();
-    checkpointState.add(context.getCheckpointId());
   }
 
   private void initTaskWriterFactory(long mask) {
@@ -139,11 +114,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
     }
     taskWriterFactory.initialize(subTaskId, attemptId);
-  }
-
-  @VisibleForTesting
-  public long getCheckpointId() {
-    return checkpointId;
   }
 
   private long getMask(int subTaskId) {
@@ -165,9 +135,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
-    // get ckpId for next cp writer
-    this.checkpointId = checkpointId + 1;
-
     table.io().doAs(() -> {
       completeAndEmitFiles();
 

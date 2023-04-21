@@ -16,17 +16,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
+        <artifactId>arctic-flink</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <!--  a shaded module. For supply a clean jar with shaded dependencies -->
     <artifactId>arctic-flink-runtime-1.12</artifactId>
@@ -56,24 +54,24 @@
             <version>2.12.4</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>*</artifactId>
                     <groupId>org.mortbay.jetty</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>*</artifactId>
                     <groupId>com.sun.jersey</groupId>
-                </exclusion>
-                <exclusion>
                     <artifactId>*</artifactId>
-                    <groupId>com.sun.jersey.contribs</groupId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>pentaho-aggdesigner-algorithm</artifactId>
+                    <groupId>com.sun.jersey.contribs</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.pentaho</groupId>
+                    <artifactId>pentaho-aggdesigner-algorithm</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -93,10 +91,10 @@
                 <executions>
                     <execution>
                         <id>unpack</id>
-                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+                        <phase>prepare-package</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -105,9 +103,7 @@
                                     <version>${pulsar.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
-                                    <includes>
-                                        org/apache/pulsar/shade/org/asynchttpclient/config/ahc-default.properties
-                                    </includes>
+                                    <includes>org/apache/pulsar/shade/org/asynchttpclient/config/ahc-default.properties</includes>
                                     <outputDirectory>${project.build.directory}/classes</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
@@ -120,16 +116,14 @@
                 <executions>
                     <execution>
                         <id>shade-ahc-properties</id>
-                        <phase>prepare-package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
+                        <phase>prepare-package</phase>
                         <configuration>
                             <target>
                                 <!-- shade the AsyncHttpClient ahc-default.properties files -->
-                                <replace token="org.apache.pulsar"
-                                         value="com.netease.arctic.shaded.org.apache.pulsar"
-                                         file="${project.build.directory}/classes/org/apache/pulsar/shade/org/asynchttpclient/config/ahc-default.properties"/>
+                                <replace file="${project.build.directory}/classes/org/apache/pulsar/shade/org/asynchttpclient/config/ahc-default.properties" token="org.apache.pulsar" value="com.netease.arctic.shaded.org.apache.pulsar"></replace>
                             </target>
                         </configuration>
                     </execution>
@@ -141,10 +135,10 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <createSourcesJar>true</createSourcesJar>
@@ -347,8 +341,7 @@
                                 <!--                caffeine                -->
                                 <relocation>
                                     <pattern>com.github.benmanes.caffeine</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.github.benmanes.caffeine
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.com.github.benmanes.caffeine</shadedPattern>
                                 </relocation>
                                 <!--               avro                 -->
                                 <relocation>
@@ -382,44 +375,27 @@
                                 <!--              flink-sql-connector-kafka                  -->
                                 <relocation>
                                     <pattern>org.apache.flink.connector.kafka</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.kafka
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.kafka</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.flink.streaming.connectors.kafka</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.connectors.kafka
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.connectors.kafka</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.kafka</pattern>
@@ -432,8 +408,7 @@
                                 <!--              pulsar related                -->
                                 <relocation>
                                     <pattern>org.apache.flink.connector.pulsar</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.pulsar
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.pulsar</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.pulsar</pattern>
@@ -442,8 +417,7 @@
                                 <!--           pulsar client depends on it                 -->
                                 <relocation>
                                     <pattern>org.slf4j.bridge.SLF4JBridgeHandler</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.slf4j.bridge.SLF4JBridgeHandler
-                                    </shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.slf4j.bridge.SLF4JBridgeHandler</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.scurrilous</pattern>
@@ -452,8 +426,7 @@
                                 <!--              pulsar related                 -->
                             </relocations>
                             <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
                             </transformers>
                         </configuration>
                     </execution>
@@ -474,10 +447,10 @@
                         <executions>
                             <execution>
                                 <id>empty-javadoc-jar</id>
-                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <phase>package</phase>
                                 <configuration>
                                     <classifier>javadoc</classifier>
                                     <classesDirectory>${basedir}/javadoc</classesDirectory>

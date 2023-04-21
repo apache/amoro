@@ -18,18 +18,19 @@
 
 package org.apache.spark.sql.arctic.execution
 
+import scala.util.control.NonFatal
+
+import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriter, PhysicalWriteInfoImpl, WriterCommitMessage}
-import org.apache.spark.sql.execution.datasources.v2.{StreamWriterCommitProgress, V2CommandExec}
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.datasources.v2.{StreamWriterCommitProgress, V2CommandExec}
 import org.apache.spark.util.LongAccumulator
-import org.apache.spark.{SparkException, TaskContext}
 
-import scala.util.control.NonFatal
-
-trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2CommandExec with UnaryExecNode with Serializable {
+trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]]
+  extends V2CommandExec with UnaryExecNode with Serializable {
   def writingTask: WritingSparkTask[W]
 
   def query: SparkPlan
@@ -73,8 +74,7 @@ trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2C
           messages(index) = commitMessage
           totalNumRowsAccumulator.add(result.numRows)
           batchWrite.onDataWriterCommit(commitMessage)
-        }
-      )
+        })
 
       logInfo(s"Data source write support $batchWrite is committing.")
       batchWrite.commit(messages)

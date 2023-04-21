@@ -28,8 +28,8 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 
-case class TruncateArcticTableExec(table: Table,
-                                   partitionSpec: Option[TablePartitionSpec]) extends V2CommandExec {
+case class TruncateArcticTableExec(table: Table, partitionSpec: Option[TablePartitionSpec])
+  extends V2CommandExec {
   override protected def run(): Seq[InternalRow] = {
     if (partitionSpec.isDefined) {
       throw new UnsupportedOperationException("Not support truncate partition temporarily")
@@ -38,7 +38,8 @@ case class TruncateArcticTableExec(table: Table,
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
           val txId = arctic.table().asKeyedTable().beginTransaction(null);
-          val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
+          val overwriteBaseFiles: OverwriteBaseFiles =
+            arctic.table().asKeyedTable().newOverwriteBaseFiles()
           overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue())
           overwriteBaseFiles.updateOptimizedSequenceDynamically(txId)
           overwriteBaseFiles.commit()

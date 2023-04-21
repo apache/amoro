@@ -16,17 +16,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
+        <artifactId>arctic-spark</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-spark-3.1</artifactId>
     <packaging>jar</packaging>
@@ -68,6 +66,18 @@
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-vector</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -101,6 +111,18 @@
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-vector</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -129,6 +151,18 @@
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-vector</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -164,13 +198,13 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3</artifactId>
+            <artifactId>iceberg-spark-3.1_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -182,7 +216,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3-extensions</artifactId>
+            <artifactId>iceberg-spark-extensions-3.1_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -226,8 +260,8 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -253,7 +287,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -276,10 +309,10 @@
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <sources>
                                 <source>src/main/gen-antlr</source>
@@ -304,7 +337,12 @@
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.scalastyle</groupId>
+                <artifactId>scalastyle-maven-plugin</artifactId>
+            </plugin>
         </plugins>
+        <sourceDirectory>src/main/java</sourceDirectory>
     </build>
 
 </project>

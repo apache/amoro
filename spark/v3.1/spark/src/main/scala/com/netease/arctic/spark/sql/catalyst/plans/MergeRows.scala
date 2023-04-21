@@ -23,18 +23,18 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 import org.apache.spark.sql.catalyst.util.truncatedString
 
 case class MergeRows(
-                      isSourceRowPresent: Expression,
-                      isTargetRowPresent: Expression,
-                      matchedConditions: Seq[Expression],
-                      matchedOutputs: Seq[Seq[Expression]],
-                      notMatchedConditions: Seq[Expression],
-                      notMatchedOutputs: Seq[Seq[Expression]],
-                      rowIdAttrs: Seq[Attribute],
-                      matchedRowCheck: Boolean,
-                      unMatchedRowCheck: Boolean,
-                      emitNotMatchedTargetRows: Boolean,
-                      output: Seq[Attribute],
-                      child: LogicalPlan) extends UnaryNode {
+    isSourceRowPresent: Expression,
+    isTargetRowPresent: Expression,
+    matchedConditions: Seq[Expression],
+    matchedOutputs: Seq[Seq[Expression]],
+    notMatchedConditions: Seq[Expression],
+    notMatchedOutputs: Seq[Seq[Expression]],
+    rowIdAttrs: Seq[Attribute],
+    matchedRowCheck: Boolean,
+    unMatchedRowCheck: Boolean,
+    emitNotMatchedTargetRows: Boolean,
+    output: Seq[Attribute],
+    child: LogicalPlan) extends UnaryNode {
 
   require(!emitNotMatchedTargetRows)
 
