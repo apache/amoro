@@ -29,7 +29,7 @@ Arctic contains modules as below:
 - `arctic-core` contains core abstractions and common implementions for other modules
 - `arctic-flink` is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)
 - `arctic-spark` is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)
-- `arctic-trino` now provides query integrating with apache trino, built on JDK11
+- `arctic-trino` now provides query integrating with apache trino, built on JDK17
 - `arctic-optimizing` exposes optimizing container/group api and provides default implemetion
 - `arctic-ams` is arctic meta service module
   - `ams-api` contains ams thrift api
@@ -38,7 +38,7 @@ Arctic contains modules as below:
 
 ## Building
 
-Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
+Arctic is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 
 * To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 ```
@@ -47,18 +47,18 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
     <toolchain>
         <type>jdk</type>
         <provides>
-            <version>11</version>
+            <version>17</version>
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk11Home}</jdkHome>
+            <jdkHome>${YourJDK17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
 ```
 * To invoke a build and run tests: `mvn package -P toolchain`
 * To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 11 dependency: `mvn clean package -DskipTests -pl '!trino'`
+* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
 
 ## Engines supported
 
@@ -68,7 +68,7 @@ Arctic support multiple processing engines as below:
 | ----------------- |---------------------------|
 | Flink             | 1.12.x, 1.14.x and 1.15.x |
 | Spark             | 2.3, 3.1                  |
-| Trino             | 380                       |
+| Trino             | 406                       |
 
 ## Quickstart
 
