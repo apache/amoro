@@ -265,7 +265,7 @@ public class TableProperties {
   public static final String SPLIT_SIZE = org.apache.iceberg.TableProperties.SPLIT_SIZE;
   public static final long SPLIT_SIZE_DEFAULT = 134217728; // 128 MB
 
-  public static final String SPLIT_TASK_BY_DELETE_RATIO = "task-split-delete-ratio";
+  public static final String SPLIT_TASK_BY_DELETE_RATIO = "read.split.delete-ratio";
 
   public static final double SPLIT_TASK_BY_DELETE_RATIO_DEFAULT = 0.05;
 
