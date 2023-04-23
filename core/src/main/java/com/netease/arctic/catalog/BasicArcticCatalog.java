@@ -266,21 +266,21 @@ public class BasicArcticCatalog implements ArcticCatalog {
     } catch (TException e) {
       throw new IllegalStateException("error when delete table metadata from metastore");
     }
+    if (!purge) {
+      String baseLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
+      String changeLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    String baseLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
-    String changeLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
-
-    try {
-      if (StringUtils.isNotBlank(baseLocation)) {
-        dropInternalTable(tableMetaStore, baseLocation, purge);
+      try {
+        if (StringUtils.isNotBlank(baseLocation)) {
+          dropInternalTable(tableMetaStore, baseLocation, purge);
+        }
+        if (StringUtils.isNotBlank(changeLocation)) {
+          dropInternalTable(tableMetaStore, changeLocation, purge);
+        }
+      } catch (Exception e) {
+        LOG.warn("drop base/change iceberg table fail ", e);
       }
-      if (StringUtils.isNotBlank(changeLocation)) {
-        dropInternalTable(tableMetaStore, changeLocation, purge);
-      }
-    } catch (Exception e) {
-      LOG.warn("drop base/change iceberg table fail ", e);
     }
-
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
