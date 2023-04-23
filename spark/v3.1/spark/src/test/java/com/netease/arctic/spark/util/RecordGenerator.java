@@ -132,7 +132,6 @@ public class RecordGenerator {
     @Override
     public Object get(Type type) {
       Object value = RandomUtil.generatePrimitive(type.asPrimitiveType(), random);
-
       switch (type.typeId()) {
         case TIME:
           return LocalTime.ofNanoOfDay((long) value * 1000);
@@ -168,7 +167,6 @@ public class RecordGenerator {
       return super.get(type);
     }
   }
-
   static class RandomDateString extends RandomValueGenerator {
 
     public RandomDateString(long seed) {

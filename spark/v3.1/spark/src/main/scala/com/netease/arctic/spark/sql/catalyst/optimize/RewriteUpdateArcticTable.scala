@@ -20,13 +20,15 @@ package com.netease.arctic.spark.sql.catalyst.optimize
 
 import java.util
 
+import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticRelation, ArcticTableHelper}
-import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
-import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
+import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
+import com.netease.arctic.spark.sql.utils.{ArcticRewriteHelper, ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
@@ -37,6 +39,31 @@ import org.apache.spark.sql.types.StructType
  */
 case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan]
   with ArcticRewriteHelper {
+
+  def buildUpdateProjections(
+      plan: LogicalPlan,
+      targetRowAttrs: Seq[AttributeReference],
+      isKeyedTable: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = false, 0)
+      (frontRowProjection, backRowProjection)
+    } else {
+      val attributes = plan.output.filter(r => r.name.equals("_file") || r.name.equals("_pos"))
+      val frontRowProjection =
+        Some(ProjectingInternalRow.newProjectInternalRow(
+          plan,
+          targetRowAttrs ++ attributes,
+          isFront = true,
+          0))
+      val backRowProjection =
+        ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0)
+      (frontRowProjection, backRowProjection)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
+  }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
     case u: UpdateTable if isArcticRelation(u.table) =>
@@ -53,15 +80,19 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
-      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(arcticRelation, query, options)
+      options += (WriteMode.WRITE_MODE_KEY -> WriteMode.DELTAWRITE.toString)
+      val projections = buildUpdateProjections(
+        query,
+        arcticRelation.output,
+        ArcticExtensionUtils.isKeyedTable(arcticRelation))
+      ArcticRowLevelWrite(arcticRelation, query, options, projections)
 
     case _ => plan
   }
 
   def buildUpsertQuery(
       r: DataSourceV2Relation,
-      upsert: SupportsUpsert,
+      upsert: SupportsRowLevelOperator,
       scanBuilder: SupportsExtendIdentColumns,
       assignments: Seq[Assignment],
       condition: Option[Expression]): LogicalPlan = {
@@ -93,15 +124,11 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           val updatedRowsQuery =
             buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val deleteQuery = Project(
-            Seq(Alias(
-              Literal(SupportsUpsert.UPSERT_OP_VALUE_DELETE),
-              SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
+            Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)())
               ++ matchedRowsQuery.output.iterator,
             matchedRowsQuery)
           val insertQuery = Project(
-            Seq(Alias(
-              Literal(SupportsUpsert.UPSERT_OP_VALUE_INSERT),
-              SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
+            Seq(Alias(Literal(INSERT_OPERATION), OPERATION_COLUMN)())
               ++ updatedRowsQuery.output.iterator,
             updatedRowsQuery)
           Union(deleteQuery, insertQuery)
@@ -153,7 +180,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         Alias(a, "_arctic_after_" + a.name)()
       }
     })
-    Project(outputWithValues, scanPlan)
+    Project(Seq(Alias(Literal(UPDATE_OPERATION), OPERATION_COLUMN)()) ++ outputWithValues, scanPlan)
   }
 
   private def buildUnKeyedTableUpdateInsertProjection(
@@ -176,31 +203,4 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
     })
     Project(outputWithValues, scanPlan)
   }
-
-  def buildJoinCondition(
-      primaries: util.List[String],
-      r: DataSourceV2Relation,
-      insertPlan: LogicalPlan): Expression = {
-    var i = 0
-    var joinCondition: Expression = null
-    val expressions = new util.ArrayList[Expression]
-    while (i < primaries.size) {
-      val primary = primaries.get(i)
-      val primaryAttr = r.output.find(_.name == primary).get
-      val joinAttribute =
-        insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
-      val experssion = EqualTo(primaryAttr, joinAttribute)
-      expressions.add(experssion)
-      i += 1
-    }
-    expressions.forEach(e => {
-      if (joinCondition == null) {
-        joinCondition = e
-      } else {
-        joinCondition = And(joinCondition, e)
-      }
-    });
-    joinCondition
-  }
-
 }

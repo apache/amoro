@@ -92,33 +92,42 @@ public class HiveMetaSynchronizer {
   private static boolean updateStructSchema(TableIdentifier tableIdentifier, UpdateSchema updateSchema,
       String parentName, Types.StructType icebergStruct, Types.StructType hiveStruct) {
     boolean update = false;
-    for (int i = 0; i < hiveStruct.fields().size(); i++) {
-      Types.NestedField hiveField = hiveStruct.fields().get(i);
-      Types.NestedField icebergField = icebergStruct.field(hiveField.name());
-      if (icebergField == null) {
+    for (Types.NestedField hiveField : hiveStruct.fields()) {
+      // to check if lowercase matches
+      List<Types.NestedField> fields = icebergStruct
+          .fields()
+          .stream()
+          .filter(f -> f.name().toLowerCase().equals(hiveField.name())).collect(Collectors.toList());
+      if (fields.isEmpty()) {
         updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
         update = true;
         LOG.info("Table {} sync new hive column {} to arctic", tableIdentifier, hiveField);
-      } else if (!icebergField.type().equals(hiveField.type()) ||
-          !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
-        if (hiveField.type().isPrimitiveType() && icebergField.type().isPrimitiveType()) {
-          if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
+      } else if (fields.size() == 1) {
+        Types.NestedField icebergField = fields.get(0);
+        if (!icebergField.type().equals(hiveField.type()) ||
+            !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
+          if (hiveField.type().isPrimitiveType() && icebergField.type().isPrimitiveType()) {
+            if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(),
+                hiveField.type().asPrimitiveType())) {
+              String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
+              updateSchema.updateColumn(columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
+              update = true;
+              LOG.info("Table {} sync hive column {} to arctic", tableIdentifier, hiveField);
+            } else {
+              LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
+                  tableIdentifier, hiveField);
+            }
+          } else if (hiveField.type().isStructType() && icebergField.type().isStructType()) {
             String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
-            updateSchema.updateColumn(columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
-            update = true;
-            LOG.info("Table {} sync hive column {} to arctic", tableIdentifier, hiveField);
+            update = update || updateStructSchema(tableIdentifier, updateSchema,
+                columnName, icebergField.type().asStructType(), hiveField.type().asStructType());
           } else {
             LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
                 tableIdentifier, hiveField);
           }
-        } else if (hiveField.type().isStructType() && icebergField.type().isStructType()) {
-          String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
-          update = update || updateStructSchema(tableIdentifier, updateSchema,
-              columnName, icebergField.type().asStructType(), hiveField.type().asStructType());
-        } else {
-          LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
-              tableIdentifier, hiveField);
         }
+      } else {
+        throw new RuntimeException("Exist columns with the same name: " + fields.get(0));
       }
     }
     return update;
