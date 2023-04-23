@@ -18,21 +18,21 @@
 
 package com.netease.arctic.spark.test.sql;
 
+import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
-import com.netease.arctic.spark.test.SessionCatalog;
-import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.helper.TestSource;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-@SessionCatalog(usingArcticSessionCatalog = true)
+
 public class TestCreateTableAsSelect extends SparkTableTestBase {
 
   // 1. ts handle
@@ -41,19 +41,19 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   // 4. duplicate check
 
   public static Stream<Arguments> testTimestampZoneHandle() {
-    Schema schema = TestTableHelper.IcebergSchema.NO_PK_NO_PT_WITHOUT_ZONE;
-    TestSource source = new TestSource(TestTableHelper.DataGen.builder.build()
-        .records(10), schema);
+    Schema schema = TestTables.MixedIceberg.PK_PT.schema;
+    TestSource source = new TestSource(
+        TestTables.MixedIceberg.PK_PT.generator.records(10), schema);
 
     return Stream.of(
-        Arguments.of(SESSION_CATALOG, "PRIMARY KEY(id, pt)", source, true,
-            Types.TimestampType.withoutZone()),
-        Arguments.of(SESSION_CATALOG, "", source, false,
-            Types.TimestampType.withoutZone()),
         Arguments.of(INTERNAL_CATALOG, "PRIMARY KEY(id, pt)", source, true,
             Types.TimestampType.withoutZone()),
         Arguments.of(INTERNAL_CATALOG, "", source, false,
-            Types.TimestampType.withZone())
+            Types.TimestampType.withZone()),
+        Arguments.of(HIVE_CATALOG, "PRIMARY KEY(id, pt)", source, true,
+            Types.TimestampType.withoutZone()),
+        Arguments.of(HIVE_CATALOG, "", source, false,
+            Types.TimestampType.withoutZone())
     );
   }
 
@@ -67,6 +67,8 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     test().inSparkCatalog(catalog)
         .registerSourceView(source)
         .execute(context -> {
+          sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
+              + "`=" + timestampWithoutZone);
           String sqlText = "CREATE TABLE " + context.databaseAndTable + " " + primaryKeyDDL
               + " USING arctic AS SELECT * FROM " + context.sourceDatabaseAndTable;
           sql(sqlText);
@@ -75,4 +77,6 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
           Asserts.assertType(expectType, f.type());
         });
   }
+
+
 }

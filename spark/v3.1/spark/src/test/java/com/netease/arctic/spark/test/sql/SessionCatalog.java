@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.sql;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

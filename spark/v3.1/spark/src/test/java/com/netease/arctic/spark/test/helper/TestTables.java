@@ -33,20 +33,37 @@ public class TestTables {
       id, data, d, ts_long, ts, pt
   };
 
-  static class MixedHive {
-    static final TestTable PK_PT = TestTable.format(TableFormat.MIXED_HIVE, fields)
+  public static class MixedHive {
+    public static final TestTable PK_PT = TestTable.format(TableFormat.MIXED_HIVE, fields)
         .pk(id.name())
         .pt(pt.name())
         .build();
-    static final TestTable PK_NoPT = TestTable.format(TableFormat.MIXED_HIVE, fields)
+    public static final TestTable PK_NoPT = TestTable.format(TableFormat.MIXED_HIVE, fields)
         .pk(id.name())
         .build();
 
-    static final TestTable NoPK_PT = TestTable.format(TableFormat.MIXED_HIVE, fields)
+    public static final TestTable NoPK_PT = TestTable.format(TableFormat.MIXED_HIVE, fields)
         .pt(pt.name())
         .build();
 
-    static final TestTable NoPK_NoPT = TestTable.format(TableFormat.MIXED_HIVE, fields)
+    public static final TestTable NoPK_NoPT = TestTable.format(TableFormat.MIXED_HIVE, fields)
+        .build();
+  }
+
+  public static class MixedIceberg {
+    public static final TestTable PK_PT = TestTable.format(TableFormat.MIXED_ICEBERG, fields)
+        .pk(id.name())
+        .pt(pt.name())
+        .build();
+    public static final TestTable PK_NoPT = TestTable.format(TableFormat.MIXED_ICEBERG, fields)
+        .pk(id.name())
+        .build();
+
+    public static final TestTable NoPK_PT = TestTable.format(TableFormat.MIXED_ICEBERG, fields)
+        .pt(pt.name())
+        .build();
+
+    public static final TestTable NoPK_NoPT = TestTable.format(TableFormat.MIXED_ICEBERG, fields)
         .build();
   }
 }

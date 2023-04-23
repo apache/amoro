@@ -20,8 +20,6 @@ package com.netease.arctic.spark.test.sql;
 
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
-import com.netease.arctic.spark.test.SessionCatalog;
-import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;

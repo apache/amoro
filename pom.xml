@@ -308,6 +308,12 @@
                 <version>${junit5.platform.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite-engine</artifactId>
+                <version>${junit5.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
 
             <dependency>
                 <groupId>cglib</groupId>

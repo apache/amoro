@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.sql;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.utils.CollectionHelper;

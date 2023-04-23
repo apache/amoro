@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.sql;
 
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.SingletonResourceUtil;
@@ -54,17 +54,17 @@ public class SparkTestEnvironmentExtension
     BeforeEachCallback, AfterEachCallback {
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestEnvironmentExtension.class);
 
-  final TemporaryFolder warehouse = new TemporaryFolder();
+  public final TemporaryFolder warehouse = new TemporaryFolder();
 
   /**
    * Mocked AMS instance for tests
    */
-  final TestAms AMS = new TestAms();
+  public final TestAms AMS = new TestAms();
 
   /**
    * embedded HMS instance for tests
    */
-  final TestHMS HMS = new TestHMS();
+  public final TestHMS HMS = new TestHMS();
 
   private boolean catalogSet = false;
 

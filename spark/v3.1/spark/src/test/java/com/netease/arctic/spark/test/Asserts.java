@@ -20,6 +20,7 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.CollectionHelper;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -31,6 +32,9 @@ import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Asserts {
 
@@ -91,6 +95,18 @@ public class Asserts {
           Assert.assertEquals(x.getLeft().getName(), x.getRight().name());
           String expectTypeInfoString = HiveSchemaUtil.convert(x.getRight().type()).toString();
           Assert.assertEquals(x.getLeft().getType(), expectTypeInfoString);
+        });
+  }
+
+  public static void assertHivePartition(PartitionSpec expectSpec, List<FieldSchema> hivePartitions) {
+    assertEquals(expectSpec.fields().size(), hivePartitions.size());
+    Schema expectSpecSchema = expectSpec.schema();
+
+    CollectionHelper.zip(expectSpec.fields(), hivePartitions)
+        .forEach(x -> {
+          assertTrue(x.getLeft().transform().isIdentity());
+          String expectFieldName = expectSpecSchema.findColumnName(x.getLeft().sourceId());
+          assertEquals(expectFieldName, x.getRight().getName());
         });
   }
 }

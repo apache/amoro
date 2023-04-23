@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
 
 public class TestTable {
 
-  final Schema schema;
-  final PrimaryKeySpec keySpec;
-  final PartitionSpec ptSpec;
-  final List<FieldSchema> hiveSchema;
-  final List<FieldSchema> hivePartitions;
+  public final Schema schema;
+  public final PrimaryKeySpec keySpec;
+  public final PartitionSpec ptSpec;
+  public final List<FieldSchema> hiveSchema;
+  public final List<FieldSchema> hivePartitions;
 
-  final TableFormat format;
-  final RecordGenerator generator;
+  public final TableFormat format;
+  public final RecordGenerator generator;
 
   public TestTable(
       TableFormat format,
@@ -71,6 +71,7 @@ public class TestTable {
     private Schema schema;
     private PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
     private PartitionSpec ptSpec = PartitionSpec.unpartitioned();
+    private RecordGenerator.Builder datagenBuilder;
 
     public Builder(TableFormat format, Types.NestedField... fields) {
       this.format = format;
@@ -82,6 +83,7 @@ public class TestTable {
           f.doc())
       ).collect(Collectors.toList());
       this.schema = new Schema(cols);
+      this.datagenBuilder = RecordGenerator.buildFor(schema);
     }
 
     public Builder pk(String... columns) {
@@ -101,6 +103,7 @@ public class TestTable {
       this.keySpec = builder.build();
       return this;
     }
+
 
     public Builder timestampWithoutZoneInCreateTable() {
       List<Types.NestedField> fields = this.schema.columns().stream().map(
