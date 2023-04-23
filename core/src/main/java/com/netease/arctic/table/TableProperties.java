@@ -267,7 +267,7 @@ public class TableProperties {
 
   public static final String SPLIT_TASK_BY_DELETE_RATIO = "task-split-delete-ratio";
 
-  public static final double SPLIT_TASK_BY_DELETE_RATIO_DEFAULT = 0.01;
+  public static final double SPLIT_TASK_BY_DELETE_RATIO_DEFAULT = 0.05;
 
   public static final String SPLIT_LOOKBACK = org.apache.iceberg.TableProperties.SPLIT_LOOKBACK;
   public static final int SPLIT_LOOKBACK_DEFAULT = 10;

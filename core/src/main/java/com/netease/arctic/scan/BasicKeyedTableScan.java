@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -168,16 +167,11 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
         if (enableSplitTaskByDelete) {
           long deleteWeight = task.arcticEquityDeletes().stream().mapToLong(s -> s.file().fileSizeInBytes())
-              // .map(s -> s + openFileCost)
+              .map(s -> s + openFileCost)
               .sum();
-          if (deleteWeight == 0) {
-            splitTasks.addAll(task.dataTasks().stream()
-                .map(s -> new NodeFileScanTask(Arrays.asList(s))).collect(Collectors.toList()));
-            continue;
-          }
 
           long dataWeight = task.dataTasks().stream().mapToLong(s -> s.file().fileSizeInBytes())
-              // .map(s -> s + openFileCost)
+              .map(s -> s + openFileCost)
               .sum();
           double deleteRatio = deleteWeight * 1.0 / dataWeight;
 
