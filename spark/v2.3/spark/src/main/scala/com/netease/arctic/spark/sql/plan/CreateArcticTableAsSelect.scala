@@ -23,7 +23,10 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-case class CreateArcticTableAsSelect(arctic: ArcticSource, tableDesc: CatalogTable, query: LogicalPlan)
+case class CreateArcticTableAsSelect(
+    arctic: ArcticSource,
+    tableDesc: CatalogTable,
+    query: LogicalPlan)
   extends LogicalPlan {
   override def output: Seq[Attribute] = Seq.empty
 

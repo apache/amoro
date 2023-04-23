@@ -27,6 +27,8 @@ import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.event.client.EventModule;
 import io.airlift.json.JsonModule;
+import io.trino.filesystem.TrinoFileSystemFactory;
+import io.trino.filesystem.hdfs.HdfsFileSystemFactory;
 import io.trino.plugin.base.CatalogName;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSinkProvider;
 import io.trino.plugin.base.classloader.ClassLoaderSafeConnectorPageSourceProvider;
@@ -36,8 +38,6 @@ import io.trino.plugin.base.jmx.ConnectorObjectNameGeneratorModule;
 import io.trino.plugin.base.jmx.MBeanServerModule;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.NodeVersion;
-import io.trino.plugin.iceberg.FileIoProvider;
-import io.trino.plugin.iceberg.HdfsFileIoProvider;
 import io.trino.plugin.iceberg.IcebergSchemaProperties;
 import io.trino.plugin.iceberg.IcebergSecurityModule;
 import io.trino.plugin.iceberg.IcebergTableProperties;
@@ -82,18 +82,18 @@ public class TestArcticConnectorFactory implements ConnectorFactory {
             Bootstrap app = new Bootstrap(
                     new EventModule(),
                     new MBeanModule(),
-                    new ConnectorObjectNameGeneratorModule(catalogName, "io.trino.plugin.iceberg", "trino.plugin.iceberg"),
+                    new ConnectorObjectNameGeneratorModule("io.trino.plugin.iceberg", "trino.plugin.iceberg"),
                     new JsonModule(),
                     new TestUnionModule(),
                     new IcebergSecurityModule(),
                     new MBeanServerModule(),
-                    binder -> binder.bind(FileIoProvider.class).to(HdfsFileIoProvider.class).in(SINGLETON),
                     binder -> {
                         binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
                         binder.bind(NodeManager.class).toInstance(context.getNodeManager());
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                         binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
                         binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
+                        binder.bind(TrinoFileSystemFactory.class).to(HdfsFileSystemFactory.class).in(SINGLETON);
                     });
 
             Injector injector = app

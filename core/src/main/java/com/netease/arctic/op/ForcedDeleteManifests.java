@@ -22,6 +22,7 @@ import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.PublicSnapshotProducer;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
@@ -44,8 +45,11 @@ public class ForcedDeleteManifests extends PublicSnapshotProducer<ForcedDeleteMa
 
   private Set<ManifestFile> deleteManifests = new HashSet<>();
 
+  private final TableOperations ops;
+
   protected ForcedDeleteManifests(TableOperations ops) {
     super(ops);
+    this.ops = ops;
   }
 
   public static ForcedDeleteManifests of(Table table) {
@@ -74,8 +78,8 @@ public class ForcedDeleteManifests extends PublicSnapshotProducer<ForcedDeleteMa
   }
 
   @Override
-  protected List<ManifestFile> apply(TableMetadata metadataToUpdate) {
-    return metadataToUpdate.currentSnapshot().allManifests()
+  protected List<ManifestFile> apply(TableMetadata metadataToUpdate, Snapshot snapshot) {
+    return metadataToUpdate.currentSnapshot().allManifests(ops.io())
         .stream().filter(s -> !deleteManifests.contains(s))
         .collect(Collectors.toList());
   }

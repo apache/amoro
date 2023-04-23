@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.ImmutableMap;
+import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -40,6 +41,8 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -75,6 +78,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
+    AMS = MockArcticMetastoreServer.getInstance();
     tmp.create();
     tempFolder.create();
     startMetastore();
@@ -151,7 +155,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
     queryAssert.skippingTypesCheck().matches(stringJoiner.toString());
   }
 
-  @AfterClass
+  @AfterClass(alwaysRun = true)
   public void clear(){
     clearTable();
     stopMetastore();

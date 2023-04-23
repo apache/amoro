@@ -64,6 +64,8 @@ public class TerminalManager {
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
 
+  private Configuration sessionConfiguration;
+
 
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
@@ -74,6 +76,7 @@ public class TerminalManager {
     this.resultLimits = conf.getInteger(ArcticMetaStoreConf.TERMINAL_RESULT_LIMIT);
     this.stopOnError = conf.getBoolean(ArcticMetaStoreConf.TERMINAL_STOP_ON_ERROR);
     this.sessionTimeout = conf.getInteger(ArcticMetaStoreConf.TERMINAL_SESSION_TIMEOUT);
+    this.sessionConfiguration = getSessionConfiguration(conf);
     this.sessionFactory = loadTerminalSessionFactory(conf);
     Thread cleanThread = new Thread(new SessionCleanTask());
     cleanThread.setName("terminal-session-gc");
@@ -99,11 +102,9 @@ public class TerminalManager {
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
     String catalogType = CatalogUtil.isIcebergCatalog(catalog) ? "iceberg" : "arctic";
-    Configuration configuration = new Configuration();
-    configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
+    Configuration configuration = new Configuration(this.sessionConfiguration);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), catalogType);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress());
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
@@ -282,6 +283,12 @@ public class TerminalManager {
       throw new RuntimeException("failed to init session factory", e);
     }
 
+    factory.initialize(this.sessionConfiguration);
+    return factory;
+  }
+
+  private Configuration getSessionConfiguration(Configuration conf) {
+    String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
     String factoryPropertiesPrefix = ArcticMetaStoreConf.TERMINAL_PREFIX + backend + ".";
     Configuration configuration = new Configuration();
 
@@ -294,8 +301,8 @@ public class TerminalManager {
       configuration.setString(key, value);
     }
     configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
-    factory.initialize(configuration);
-    return factory;
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress());
+    return configuration;
   }
 
   private class SessionCleanTask implements Runnable {

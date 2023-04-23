@@ -58,6 +58,7 @@ import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import scala.Option;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -198,7 +199,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       ArcticTable table = builder.create();
       return ArcticSparkTable.ofArcticTable(table, catalog);
     } catch (AlreadyExistsException e) {
-      throw new TableAlreadyExistsException(ident);
+      throw new TableAlreadyExistsException("Table " + ident + " already exists", Option.apply(e));
     }
   }
 

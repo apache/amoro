@@ -77,9 +77,9 @@ public class LogDataJsonSerialization<T> implements Serializable {
     if (node == null) {
       node = mapper.createObjectNode();
       converterContext =
-        new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
-          mapper, node
-        );
+          new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
+              mapper, node
+          );
     }
 
     try {

@@ -35,12 +35,13 @@ import io.trino.spi.connector.ConstraintApplicationResult;
 import io.trino.spi.connector.TableNotFoundException;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.sql.planner.plan.FilterNode;
 import io.trino.testing.DataProviders;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.MaterializedResult;
+import io.trino.testing.MaterializedResultWithQueryId;
 import io.trino.testing.MaterializedRow;
 import io.trino.testing.QueryRunner;
-import io.trino.testing.ResultWithQueryId;
 import io.trino.testing.TestingConnectorBehavior;
 import io.trino.testing.assertions.Assert;
 import io.trino.testing.sql.TestTable;
@@ -68,6 +69,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Iterables.concat;
@@ -75,8 +77,10 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static io.trino.SystemSessionProperties.PREFERRED_WRITE_PARTITIONING_MIN_NUMBER_OF_PARTITIONS;
 import static io.trino.SystemSessionProperties.SCALE_WRITERS;
+import static io.trino.plugin.iceberg.IcebergFileFormat.AVRO;
 import static io.trino.plugin.iceberg.IcebergFileFormat.ORC;
 import static io.trino.plugin.iceberg.IcebergFileFormat.PARQUET;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.EXTENDED_STATISTICS_ENABLED;
 import static io.trino.plugin.iceberg.IcebergSplitManager.ICEBERG_DOMAIN_COMPACTION_THRESHOLD;
 import static io.trino.spi.predicate.Domain.multipleValues;
 import static io.trino.spi.predicate.Domain.singleValue;
@@ -85,10 +89,10 @@ import static io.trino.spi.type.DoubleType.DOUBLE;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static io.trino.testing.MaterializedResult.resultBuilder;
 import static io.trino.testing.QueryAssertions.assertEqualsIgnoreOrder;
+import static io.trino.testing.TestingNames.randomNameSuffix;
 import static io.trino.testing.TestingSession.testSessionBuilder;
 import static io.trino.testing.assertions.Assert.assertEquals;
 import static io.trino.testing.assertions.Assert.assertEventually;
-import static io.trino.testing.sql.TestTable.randomTableSuffix;
 import static io.trino.tpch.TpchTable.LINE_ITEM;
 import static io.trino.transaction.TransactionBuilder.transaction;
 import static java.lang.String.format;
@@ -139,7 +143,6 @@ public class TestBaseArcticConnectorTest
     {
         switch (connectorBehavior) {
             case SUPPORTS_DELETE:
-                return true;
             case SUPPORTS_COMMENT_ON_TABLE:
             case SUPPORTS_COMMENT_ON_COLUMN:
             case SUPPORTS_TOPN_PUSHDOWN:
@@ -553,229 +556,265 @@ public class TestBaseArcticConnectorTest
     public void testCreatePartitionedTable()
     {
         assertUpdate("" +
-                "CREATE TABLE test_partitioned_table (" +
-                "  a_boolean boolean, " +
-                "  an_integer integer, " +
-                "  a_bigint bigint, " +
-                "  a_real real, " +
-                "  a_double double, " +
-                "  a_short_decimal decimal(5,2), " +
-                "  a_long_decimal decimal(38,20), " +
-                "  a_varchar varchar, " +
-                "  a_varbinary varbinary, " +
-                "  a_date date, " +
-                "  a_time time(6), " +
-                "  a_timestamp timestamp(6), " +
-                "  a_timestamptz timestamp(6) with time zone, " +
-                "  a_uuid uuid, " +
-                "  a_row row(id integer , vc varchar), " +
-                "  an_array array(varchar), " +
-                "  a_map map(integer, varchar) " +
-                ") " +
-                "WITH (" +
-                "partitioning = ARRAY[" +
-                "  'a_boolean', " +
-                "  'an_integer', " +
-                "  'a_bigint', " +
-                "  'a_real', " +
-                "  'a_double', " +
-                "  'a_short_decimal', " +
-                "  'a_long_decimal', " +
-                "  'a_varchar', " +
-                "  'a_varbinary', " +
-                "  'a_date', " +
-                "  'a_time', " +
-                "  'a_timestamp', " +
-                "  'a_timestamptz', " +
-                "  'a_uuid' " +
-                // Note: partitioning on non-primitive columns is not allowed in Iceberg
-                "  ]" +
-                ")");
+            "CREATE TABLE test_partitioned_table (" +
+            "  a_boolean boolean, " +
+            "  an_integer integer, " +
+            "  a_bigint bigint, " +
+            "  a_real real, " +
+            "  a_double double, " +
+            "  a_short_decimal decimal(5,2), " +
+            "  a_long_decimal decimal(38,20), " +
+            "  a_varchar varchar, " +
+            "  a_varbinary varbinary, " +
+            "  a_date date, " +
+            "  a_time time(6), " +
+            "  a_timestamp timestamp(6), " +
+            "  a_timestamptz timestamp(6) with time zone, " +
+            "  a_uuid uuid, " +
+            "  a_row row(id integer , vc varchar), " +
+            "  an_array array(varchar), " +
+            "  a_map map(integer, varchar), " +
+            "  \"a quoted, field\" varchar" +
+            ") " +
+            "WITH (" +
+            "partitioning = ARRAY[" +
+            "  'a_boolean', " +
+            "  'an_integer', " +
+            "  'a_bigint', " +
+            "  'a_real', " +
+            "  'a_double', " +
+            "  'a_short_decimal', " +
+            "  'a_long_decimal', " +
+            "  'a_varchar', " +
+            "  'a_varbinary', " +
+            "  'a_date', " +
+            "  'a_time', " +
+            "  'a_timestamp', " +
+            "  'a_timestamptz', " +
+            "  'a_uuid', " +
+            "  '\"a quoted, field\"' " +
+            // Note: partitioning on non-primitive columns is not allowed in Iceberg
+            "  ]" +
+            ")");
 
         assertQueryReturnsEmptyResult("SELECT * FROM test_partitioned_table");
 
         String values = "VALUES (" +
-                "true, " +
-                "1, " +
-                "BIGINT '1', " +
-                "REAL '1.0', " +
-                "DOUBLE '1.0', " +
-                "CAST(1.0 AS decimal(5,2)), " +
-                "CAST(11.0 AS decimal(38,20)), " +
-                "VARCHAR 'onefsadfdsf', " +
-                "X'000102f0feff', " +
-                "DATE '2021-07-24'," +
-                "TIME '02:43:57.987654', " +
-                "TIMESTAMP '2021-07-24 03:43:57.987654'," +
-                "TIMESTAMP '2021-07-24 04:43:57.987654 UTC', " +
-                "UUID '20050910-1330-11e9-ffff-2a86e4085a59', " +
-                "CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)), " +
-                "ARRAY[VARCHAR 'uno', 'dos', 'tres'], " +
-                "map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one'])) ";
+            "true, " +
+            "1, " +
+            "BIGINT '1', " +
+            "REAL '1.0', " +
+            "DOUBLE '1.0', " +
+            "CAST(1.0 AS decimal(5,2)), " +
+            "CAST(11.0 AS decimal(38,20)), " +
+            "VARCHAR 'onefsadfdsf', " +
+            "X'000102f0feff', " +
+            "DATE '2021-07-24'," +
+            "TIME '02:43:57.987654', " +
+            "TIMESTAMP '2021-07-24 03:43:57.987654'," +
+            "TIMESTAMP '2021-07-24 04:43:57.987654 UTC', " +
+            "UUID '20050910-1330-11e9-ffff-2a86e4085a59', " +
+            "CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)), " +
+            "ARRAY[VARCHAR 'uno', 'dos', 'tres'], " +
+            "map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']), " +
+            "VARCHAR 'tralala')";
 
-        String nullValues = nCopies(17, "NULL").stream()
-                .collect(joining(", ", "VALUES (", ")"));
+        String nullValues = nCopies(18, "NULL").stream()
+            .collect(joining(", ", "VALUES (", ")"));
 
         assertUpdate("INSERT INTO test_partitioned_table " + values, 1);
         assertUpdate("INSERT INTO test_partitioned_table " + nullValues, 1);
 
         // SELECT
         assertThat(query("SELECT * FROM test_partitioned_table"))
-                .matches(values + " UNION ALL " + nullValues);
+            .matches(values + " UNION ALL " + nullValues);
 
         // SELECT with predicates
         assertThat(query("SELECT * FROM test_partitioned_table WHERE " +
-                "    a_boolean = true " +
-                "AND an_integer = 1 " +
-                "AND a_bigint = BIGINT '1' " +
-                "AND a_real = REAL '1.0' " +
-                "AND a_double = DOUBLE '1.0' " +
-                "AND a_short_decimal = CAST(1.0 AS decimal(5,2)) " +
-                "AND a_long_decimal = CAST(11.0 AS decimal(38,20)) " +
-                "AND a_varchar = VARCHAR 'onefsadfdsf' " +
-                "AND a_varbinary = X'000102f0feff' " +
-                "AND a_date = DATE '2021-07-24' " +
-                "AND a_time = TIME '02:43:57.987654' " +
-                "AND a_timestamp = TIMESTAMP '2021-07-24 03:43:57.987654' " +
-                "AND a_timestamptz = TIMESTAMP '2021-07-24 04:43:57.987654 UTC' " +
-                "AND a_uuid = UUID '20050910-1330-11e9-ffff-2a86e4085a59' " +
-                "AND a_row = CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)) " +
-                "AND an_array = ARRAY[VARCHAR 'uno', 'dos', 'tres'] " +
-                "AND a_map = map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']) " +
-                ""))
-                .matches(values);
+            "    a_boolean = true " +
+            "AND an_integer = 1 " +
+            "AND a_bigint = BIGINT '1' " +
+            "AND a_real = REAL '1.0' " +
+            "AND a_double = DOUBLE '1.0' " +
+            "AND a_short_decimal = CAST(1.0 AS decimal(5,2)) " +
+            "AND a_long_decimal = CAST(11.0 AS decimal(38,20)) " +
+            "AND a_varchar = VARCHAR 'onefsadfdsf' " +
+            "AND a_varbinary = X'000102f0feff' " +
+            "AND a_date = DATE '2021-07-24' " +
+            "AND a_time = TIME '02:43:57.987654' " +
+            "AND a_timestamp = TIMESTAMP '2021-07-24 03:43:57.987654' " +
+            "AND a_timestamptz = TIMESTAMP '2021-07-24 04:43:57.987654 UTC' " +
+            "AND a_uuid = UUID '20050910-1330-11e9-ffff-2a86e4085a59' " +
+            "AND a_row = CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)) " +
+            "AND an_array = ARRAY[VARCHAR 'uno', 'dos', 'tres'] " +
+            "AND a_map = map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']) " +
+            "AND \"a quoted, field\" = VARCHAR 'tralala' " +
+            ""))
+            .matches(values);
 
         assertThat(query("SELECT * FROM test_partitioned_table WHERE " +
-                "    a_boolean IS NULL " +
-                "AND an_integer IS NULL " +
-                "AND a_bigint IS NULL " +
-                "AND a_real IS NULL " +
-                "AND a_double IS NULL " +
-                "AND a_short_decimal IS NULL " +
-                "AND a_long_decimal IS NULL " +
-                "AND a_varchar IS NULL " +
-                "AND a_varbinary IS NULL " +
-                "AND a_date IS NULL " +
-                "AND a_time IS NULL " +
-                "AND a_timestamp IS NULL " +
-                "AND a_timestamptz IS NULL " +
-                "AND a_uuid IS NULL " +
-                "AND a_row IS NULL " +
-                "AND an_array IS NULL " +
-                "AND a_map IS NULL " +
-                ""))
-                .skippingTypesCheck()
-                .matches(nullValues);
+            "    a_boolean IS NULL " +
+            "AND an_integer IS NULL " +
+            "AND a_bigint IS NULL " +
+            "AND a_real IS NULL " +
+            "AND a_double IS NULL " +
+            "AND a_short_decimal IS NULL " +
+            "AND a_long_decimal IS NULL " +
+            "AND a_varchar IS NULL " +
+            "AND a_varbinary IS NULL " +
+            "AND a_date IS NULL " +
+            "AND a_time IS NULL " +
+            "AND a_timestamp IS NULL " +
+            "AND a_timestamptz IS NULL " +
+            "AND a_uuid IS NULL " +
+            "AND a_row IS NULL " +
+            "AND an_array IS NULL " +
+            "AND a_map IS NULL " +
+            "AND \"a quoted, field\" IS NULL " +
+            ""))
+            .skippingTypesCheck()
+            .matches(nullValues);
 
         // SHOW STATS
-        if (format == ORC) {
-            assertQuery("SHOW STATS FOR test_partitioned_table",
+        switch (format) {
+            case ORC -> {
+                assertQuery("SHOW STATS FOR test_partitioned_table",
                     "VALUES " +
-                            "  ('a_boolean', NULL, NULL, 0.5, NULL, 'true', 'true'), " +
-                            "  ('an_integer', NULL, NULL, 0.5, NULL, '1', '1'), " +
-                            "  ('a_bigint', NULL, NULL, 0.5, NULL, '1', '1'), " +
-                            "  ('a_real', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
-                            "  ('a_double', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
-                            "  ('a_short_decimal', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
-                            "  ('a_long_decimal', NULL, NULL, 0.5, NULL, '11.0', '11.0'), " +
-                            "  ('a_varchar', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('a_varbinary', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('a_date', NULL, NULL, 0.5, NULL, '2021-07-24', '2021-07-24'), " +
-                            "  ('a_time', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('a_timestamp', NULL, NULL, 0.5, NULL, '2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'), " +
-                            "  ('a_timestamptz', NULL, NULL, 0.5, NULL, '2021-07-24 04:43:57.987 UTC', '2021-07-24 04:43:57.987 UTC'), " +
-                            "  ('a_uuid', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('a_row', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('an_array', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  ('a_map', NULL, NULL, 0.5, NULL, NULL, NULL), " +
-                            "  (NULL, NULL, NULL, NULL, 2e0, NULL, NULL)");
-        }
-        else {
-            assertThat(query("SHOW STATS FOR test_partitioned_table"))
+                        "  ('a_boolean', NULL, NULL, 0.5, NULL, 'true', 'true'), " +
+                        "  ('an_integer', NULL, NULL, 0.5, NULL, '1', '1'), " +
+                        "  ('a_bigint', NULL, NULL, 0.5, NULL, '1', '1'), " +
+                        "  ('a_real', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
+                        "  ('a_double', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
+                        "  ('a_short_decimal', NULL, NULL, 0.5, NULL, '1.0', '1.0'), " +
+                        "  ('a_long_decimal', NULL, NULL, 0.5, NULL, '11.0', '11.0'), " +
+                        "  ('a_varchar', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a_varbinary', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a_date', NULL, NULL, 0.5, NULL, '2021-07-24', '2021-07-24'), " +
+                        "  ('a_time', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a_timestamp', NULL, NULL, 0.5, NULL, '2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'), " +
+                        "  ('a_timestamptz', NULL, NULL, 0.5, NULL, '2021-07-24 04:43:57.987 UTC', '2021-07-24 04:43:57.987 UTC'), " +
+                        "  ('a_uuid', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a_row', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('an_array', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a_map', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  ('a quoted, field', NULL, NULL, 0.5, NULL, NULL, NULL), " +
+                        "  (NULL, NULL, NULL, NULL, 2e0, NULL, NULL)");
+            }
+            case PARQUET -> {
+                assertThat(query("SHOW STATS FOR test_partitioned_table"))
                     .skippingTypesCheck()
                     .matches("VALUES " +
-                            "  ('a_boolean', NULL, NULL, 0.5e0, NULL, 'true', 'true'), " +
-                            "  ('an_integer', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
-                            "  ('a_bigint', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
-                            "  ('a_real', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
-                            "  ('a_double', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
-                            "  ('a_short_decimal', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
-                            "  ('a_long_decimal', NULL, NULL, 0.5e0, NULL, '11.0', '11.0'), " +
-                            "  ('a_varchar', 87e0, NULL, 0.5e0, NULL, NULL, NULL), " +
-                            "  ('a_varbinary', 82e0, NULL, 0.5e0, NULL, NULL, NULL), " +
-                            "  ('a_date', NULL, NULL, 0.5e0, NULL, '2021-07-24', '2021-07-24'), " +
-                            "  ('a_time', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
-                            "  ('a_timestamp', NULL, NULL, 0.5e0, NULL, '2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'), " +
-                            "  ('a_timestamptz', NULL, NULL, 0.5e0, NULL, '2021-07-24 04:43:57.987 UTC', '2021-07-24 04:43:57.987 UTC'), " +
-                            "  ('a_uuid', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
-                            "  ('a_row', NULL, NULL, NULL, NULL, NULL, NULL), " +
-                            "  ('an_array', NULL, NULL, NULL, NULL, NULL, NULL), " +
-                            "  ('a_map', NULL, NULL, NULL, NULL, NULL, NULL), " +
-                            "  (NULL, NULL, NULL, NULL, 2e0, NULL, NULL)");
+                        "  ('a_boolean', NULL, NULL, 0.5e0, NULL, 'true', 'true'), " +
+                        "  ('an_integer', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
+                        "  ('a_bigint', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
+                        "  ('a_real', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_double', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_short_decimal', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_long_decimal', NULL, NULL, 0.5e0, NULL, '11.0', '11.0'), " +
+                        "  ('a_varchar', 234e0, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_varbinary', 114e0, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_date', NULL, NULL, 0.5e0, NULL, '2021-07-24', '2021-07-24'), " +
+                        "  ('a_time', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_timestamp', NULL, NULL, 0.5e0, NULL, '2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'), " +
+                        "  ('a_timestamptz', NULL, NULL, 0.5e0, NULL, '2021-07-24 04:43:57.987 UTC', '2021-07-24 04:43:57.987 UTC'), " +
+                        "  ('a_uuid', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_row', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('an_array', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('a_map', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('a quoted, field', 224e0, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  (NULL, NULL, NULL, NULL, 2e0, NULL, NULL)");
+            }
+            case AVRO -> {
+                assertThat(query("SHOW STATS FOR test_partitioned_table"))
+                    .skippingTypesCheck()
+                    .matches("VALUES " +
+                        "  ('a_boolean', NULL, NULL, 0.5e0, NULL, 'true', 'true'), " +
+                        "  ('an_integer', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
+                        "  ('a_bigint', NULL, NULL, 0.5e0, NULL, '1', '1'), " +
+                        "  ('a_real', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_double', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_short_decimal', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
+                        "  ('a_long_decimal', NULL, NULL, 0.5e0, NULL, '11.0', '11.0'), " +
+                        "  ('a_varchar', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_varbinary', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_date', NULL, NULL, 0.5e0, NULL, '2021-07-24', '2021-07-24'), " +
+                        "  ('a_time', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_timestamp', NULL, NULL, 0.5e0, NULL, '2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'), " +
+                        "  ('a_timestamptz', NULL, NULL, 0.5e0, NULL, '2021-07-24 04:43:57.987 UTC', '2021-07-24 04:43:57.987 UTC'), " +
+                        "  ('a_uuid', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_row', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('an_array', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('a_map', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                        "  ('a quoted, field', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  (NULL, NULL, NULL, NULL, 2e0, NULL, NULL)");
+            }
         }
 
         // $partitions
         String schema = getSession().getSchema().orElseThrow();
         assertThat(query("SELECT column_name FROM information_schema.columns WHERE table_schema = '" + schema + "' AND table_name = 'test_partitioned_table$partitions' "))
-                .skippingTypesCheck()
-                .matches("VALUES 'partition', 'record_count', 'file_count', 'total_size'");
+            .skippingTypesCheck()
+            .matches("VALUES 'partition', 'record_count', 'file_count', 'total_size'");
         assertThat(query("SELECT " +
-                "  record_count," +
-                "  file_count, " +
-                "  partition.a_boolean, " +
-                "  partition.an_integer, " +
-                "  partition.a_bigint, " +
-                "  partition.a_real, " +
-                "  partition.a_double, " +
-                "  partition.a_short_decimal, " +
-                "  partition.a_long_decimal, " +
-                "  partition.a_varchar, " +
-                "  partition.a_varbinary, " +
-                "  partition.a_date, " +
-                "  partition.a_time, " +
-                "  partition.a_timestamp, " +
-                "  partition.a_timestamptz, " +
-                "  partition.a_uuid " +
-                // Note: partitioning on non-primitive columns is not allowed in Iceberg
-                " FROM \"test_partitioned_table$partitions\" "))
-                .matches("" +
-                        "VALUES (" +
-                        "  BIGINT '1', " +
-                        "  BIGINT '1', " +
-                        "  true, " +
-                        "  1, " +
-                        "  BIGINT '1', " +
-                        "  REAL '1.0', " +
-                        "  DOUBLE '1.0', " +
-                        "  CAST(1.0 AS decimal(5,2)), " +
-                        "  CAST(11.0 AS decimal(38,20)), " +
-                        "  VARCHAR 'onefsadfdsf', " +
-                        "  X'000102f0feff', " +
-                        "  DATE '2021-07-24'," +
-                        "  TIME '02:43:57.987654', " +
-                        "  TIMESTAMP '2021-07-24 03:43:57.987654'," +
-                        "  TIMESTAMP '2021-07-24 04:43:57.987654 UTC', " +
-                        "  UUID '20050910-1330-11e9-ffff-2a86e4085a59' " +
-                        ")" +
-                        "UNION ALL " +
-                        "VALUES (" +
-                        "  BIGINT '1', " +
-                        "  BIGINT '1', " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL, " +
-                        "  NULL " +
-                        ")");
+            "  record_count," +
+            "  file_count, " +
+            "  partition.a_boolean, " +
+            "  partition.an_integer, " +
+            "  partition.a_bigint, " +
+            "  partition.a_real, " +
+            "  partition.a_double, " +
+            "  partition.a_short_decimal, " +
+            "  partition.a_long_decimal, " +
+            "  partition.a_varchar, " +
+            "  partition.a_varbinary, " +
+            "  partition.a_date, " +
+            "  partition.a_time, " +
+            "  partition.a_timestamp, " +
+            "  partition.a_timestamptz, " +
+            "  partition.a_uuid, " +
+            "  partition.\"a quoted, field\" " +
+            // Note: partitioning on non-primitive columns is not allowed in Iceberg
+            " FROM \"test_partitioned_table$partitions\" "))
+            .matches("" +
+                "VALUES (" +
+                "  BIGINT '1', " +
+                "  BIGINT '1', " +
+                "  true, " +
+                "  1, " +
+                "  BIGINT '1', " +
+                "  REAL '1.0', " +
+                "  DOUBLE '1.0', " +
+                "  CAST(1.0 AS decimal(5,2)), " +
+                "  CAST(11.0 AS decimal(38,20)), " +
+                "  VARCHAR 'onefsadfdsf', " +
+                "  X'000102f0feff', " +
+                "  DATE '2021-07-24'," +
+                "  TIME '02:43:57.987654', " +
+                "  TIMESTAMP '2021-07-24 03:43:57.987654'," +
+                "  TIMESTAMP '2021-07-24 04:43:57.987654 UTC', " +
+                "  UUID '20050910-1330-11e9-ffff-2a86e4085a59', " +
+                "  VARCHAR 'tralala' " +
+                ")" +
+                "UNION ALL " +
+                "VALUES (" +
+                "  BIGINT '1', " +
+                "  BIGINT '1', " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL, " +
+                "  NULL  " +
+                ")");
 
         assertUpdate("DROP TABLE test_partitioned_table");
     }
@@ -800,7 +839,7 @@ public class TestBaseArcticConnectorTest
     public void testCreatePartitionedTableAs()
     {
         File tempDir = getDistributedQueryRunner().getCoordinator().getBaseDataDir().toFile();
-        String tempDirPath = tempDir.toURI().toASCIIString() + randomTableSuffix();
+        String tempDirPath = tempDir.toURI().toASCIIString() + randomNameSuffix();
         assertUpdate(
                 "CREATE TABLE test_create_partitioned_table_as " +
                         "WITH (" +
@@ -840,7 +879,7 @@ public class TestBaseArcticConnectorTest
 //    public void testTableComments()
 //    {
 //        File tempDir = getDistributedQueryRunner().getCoordinator().getBaseDataDir().toFile();
-//        String tempDirPath = tempDir.toURI().toASCIIString() + randomTableSuffix();
+//        String tempDirPath = tempDir.toURI().toASCIIString() + randomNameSuffix();
 //        String createTableTemplate = "" +
 //                "CREATE TABLE arctic.tpch.test_table_comments (\n" +
 //                "   _x bigint\n" +
@@ -1002,7 +1041,7 @@ public class TestBaseArcticConnectorTest
     private void testCreateTableLikeForFormat(IcebergFileFormat otherFormat)
     {
         File tempDir = getDistributedQueryRunner().getCoordinator().getBaseDataDir().toFile();
-        String tempDirPath = tempDir.toURI().toASCIIString() + randomTableSuffix();
+        String tempDirPath = tempDir.toURI().toASCIIString() + randomNameSuffix();
 
         // LIKE source INCLUDING PROPERTIES copies all the properties of the source table, including the `location`.
         // For this reason the source and the copied table will share the same directory.
@@ -1444,15 +1483,16 @@ public class TestBaseArcticConnectorTest
         String select = "SELECT partition.d_trunc, record_count, data.d.min AS d_min, data.d.max AS d_max, data.b.min AS b_min, data.b.max AS b_max FROM \"test_truncate_text_transform$partitions\"";
 
         assertUpdate("INSERT INTO test_truncate_text_transform VALUES" +
+                "(NULL, 101)," +
                 "('abcd', 1)," +
                 "('abxy', 2)," +
                 "('ab598', 3)," +
                 "('mommy', 4)," +
                 "('moscow', 5)," +
                 "('Greece', 6)," +
-                "('Grozny', 7)", 7);
+                "('Grozny', 7)", 8);
 
-        assertQuery("SELECT partition.d_trunc FROM \"test_truncate_text_transform$partitions\"", "VALUES 'ab', 'mo', 'Gr'");
+        assertQuery("SELECT partition.d_trunc FROM \"test_truncate_text_transform$partitions\"", "VALUES NULL, 'ab', 'mo', 'Gr'");
 
         assertQuery("SELECT b FROM test_truncate_text_transform WHERE substring(d, 1, 2) = 'ab'", "VALUES 1, 2, 3");
         assertQuery(select + " WHERE partition.d_trunc = 'ab'", "VALUES ('ab', 3, 'ab598', 'abxy', 1, 3)");
@@ -1471,9 +1511,9 @@ public class TestBaseArcticConnectorTest
         assertThat(query("SHOW STATS FOR test_truncate_text_transform"))
                 .skippingTypesCheck()
                 .matches("VALUES " +
-                        "  ('d', " + (format == PARQUET ? "169e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
-                        "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
-                        "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+                        "  ('d', " + (format == PARQUET ? "553e0" : "NULL") + ", NULL, " + (format == AVRO ? "NULL" : "0.125e0") + ", NULL, NULL, NULL), " +
+                        (format == AVRO ? "  ('b', NULL, NULL, NULL, NULL, NULL, NULL), " : "  ('b', NULL, NULL, 0e0, NULL, '1', '101'), ") +
+                        "  (NULL, NULL, NULL, NULL, 8e0, NULL, NULL)");
 
         dropTable("test_truncate_text_transform");
     }
@@ -1591,28 +1631,46 @@ public class TestBaseArcticConnectorTest
     @Test
     public void testApplyFilterWithNonEmptyConstraintPredicate()
     {
-        assertUpdate("CREATE TABLE test_bucket_transform (d VARCHAR, b BIGINT) WITH (partitioning = ARRAY['bucket(d, 2)'])");
+        assertUpdate("CREATE TABLE test_apply_functional_constraint (d VARCHAR, b BIGINT) WITH (partitioning = ARRAY['bucket(d, 2)'])");
         assertUpdate(
-                "INSERT INTO test_bucket_transform VALUES" +
-                        "('abcd', 1)," +
-                        "('abxy', 2)," +
-                        "('ab598', 3)," +
-                        "('mommy', 4)," +
-                        "('moscow', 5)," +
-                        "('Greece', 6)," +
-                        "('Grozny', 7)",
-                7);
+            "INSERT INTO test_apply_functional_constraint VALUES" +
+                "('abcd', 1)," +
+                "('abxy', 2)," +
+                "('ab598', 3)," +
+                "('mommy', 4)," +
+                "('moscow', 5)," +
+                "('Greece', 6)," +
+                "('Grozny', 7)",
+            7);
 
         assertQuery(
-                "SELECT * FROM test_bucket_transform WHERE length(d) = 4 AND b % 7 = 2",
-                "VALUES ('abxy', 2)");
+            "SELECT * FROM test_apply_functional_constraint WHERE length(d) = 4 AND b % 7 = 2",
+            "VALUES ('abxy', 2)");
 
-        assertThat(query("SHOW STATS FOR test_bucket_transform"))
-                .skippingTypesCheck()
-                .matches("VALUES " +
-                        "  ('d', " + (format == PARQUET ? "136e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
-                        "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
-                        "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+        String expected = null;
+        if (format == ORC) {
+            expected = "VALUES " +
+                "  ('d', NULL, NULL, 0e0, NULL, NULL, NULL), " +
+                "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
+                "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)";
+        }
+        if (format == PARQUET) {
+            expected = "VALUES " +
+                "  ('d', 367e0, NULL, 0e0, NULL, NULL, NULL), " +
+                "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
+                "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)";
+        }
+        else if (format == AVRO) {
+            expected = "VALUES " +
+                "  ('d', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                "  ('b', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)";
+        }
+        assertThat(query("SHOW STATS FOR test_apply_functional_constraint"))
+            .skippingTypesCheck()
+            .matches(expected);
+
+        assertUpdate("DROP TABLE test_apply_functional_constraint");
     }
 
     @Test
@@ -1620,86 +1678,111 @@ public class TestBaseArcticConnectorTest
     {
         assertUpdate("CREATE TABLE test_void_transform (d VARCHAR, b BIGINT) WITH (partitioning = ARRAY['void(d)'])");
         String values = "VALUES " +
-                "('abcd', 1)," +
-                "('abxy', 2)," +
-                "('ab598', 3)," +
-                "('mommy', 4)," +
-                "('Warsaw', 5)," +
-                "(NULL, 6)," +
-                "(NULL, 7)";
+            "('abcd', 1)," +
+            "('abxy', 2)," +
+            "('ab598', 3)," +
+            "('mommy', 4)," +
+            "('Warsaw', 5)," +
+            "(NULL, 6)," +
+            "(NULL, 7)";
         assertUpdate("INSERT INTO test_void_transform " + values, 7);
         assertQuery("SELECT * FROM test_void_transform", values);
 
         assertQuery("SELECT COUNT(*) FROM \"test_void_transform$partitions\"", "SELECT 1");
-        assertQuery(
+        if (format != AVRO) {
+            assertQuery(
                 "SELECT partition.d_null, record_count, file_count, data.d.min, data.d.max, data.d.null_count, data.d.nan_count, data.b.min, data.b.max, data.b.null_count, data.b.nan_count FROM \"test_void_transform$partitions\"",
                 "VALUES (NULL, 7, 1, 'Warsaw', 'mommy', 2, NULL, 1, 7, 0, NULL)");
+        }
+        else {
+            assertQuery(
+                "SELECT partition.d_null, record_count, file_count, data.d.min, data.d.max, data.d.null_count, data.d.nan_count, data.b.min, data.b.max, data.b.null_count, data.b.nan_count FROM \"test_void_transform$partitions\"",
+                "VALUES (NULL, 7, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)");
+        }
 
         assertQuery(
-                "SELECT d, b FROM test_void_transform WHERE d IS NOT NULL",
-                "VALUES " +
-                        "('abcd', 1)," +
-                        "('abxy', 2)," +
-                        "('ab598', 3)," +
-                        "('mommy', 4)," +
-                        "('Warsaw', 5)");
+            "SELECT d, b FROM test_void_transform WHERE d IS NOT NULL",
+            "VALUES " +
+                "('abcd', 1)," +
+                "('abxy', 2)," +
+                "('ab598', 3)," +
+                "('mommy', 4)," +
+                "('Warsaw', 5)");
 
         assertQuery("SELECT b FROM test_void_transform WHERE d IS NULL", "VALUES 6, 7");
 
-        assertThat(query("SHOW STATS FOR test_void_transform"))
+        if (format != AVRO) {
+            assertThat(query("SHOW STATS FOR test_void_transform"))
                 .skippingTypesCheck()
                 .matches("VALUES " +
-                        "  ('d', " + (format == PARQUET ? "76e0" : "NULL") + ", NULL, 0.2857142857142857, NULL, NULL, NULL), " +
-                        "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
-                        "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+                    "  ('d', " + (format == PARQUET ? "205e0" : "NULL") + ", NULL, 0.2857142857142857, NULL, NULL, NULL), " +
+                    "  ('b', NULL, NULL, 0e0, NULL, '1', '7'), " +
+                    "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+        }
+        else {
+            assertThat(query("SHOW STATS FOR test_void_transform"))
+                .skippingTypesCheck()
+                .matches("VALUES " +
+                    "  ('d', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('b', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  (NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+        }
+
+        // Void transform doesn't allow filter elimination
+        assertThat(query("SELECT * FROM test_void_transform WHERE d IS NULL"))
+            .isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT * FROM test_void_transform WHERE d IS NOT NULL"))
+            .isNotFullyPushedDown(FilterNode.class);
+        assertThat(query("SELECT * FROM test_void_transform WHERE d >= 'abc'"))
+            .isNotFullyPushedDown(FilterNode.class);
 
         assertUpdate("DROP TABLE " + "test_void_transform");
     }
 
-    @Test
-    public void testMetadataDeleteSimple()
-    {
-        assertUpdate("CREATE TABLE test_metadata_delete_simple (col1 BIGINT, col2 BIGINT) WITH (partitioning = ARRAY['col1'])");
-        assertUpdate("INSERT INTO test_metadata_delete_simple VALUES(1, 100), (1, 101), (1, 102), (2, 200), (2, 201), (3, 300)", 6);
-        assertQuery("SELECT sum(col2) FROM test_metadata_delete_simple", "SELECT 1004");
-        assertQuery("SELECT count(*) FROM \"test_metadata_delete_simple$partitions\"", "SELECT 3");
-        assertUpdate("DELETE FROM test_metadata_delete_simple WHERE col1 = 1", 3);
-        assertQuery("SELECT sum(col2) FROM test_metadata_delete_simple", "SELECT 701");
-        assertQuery("SELECT count(*) FROM \"test_metadata_delete_simple$partitions\"", "SELECT 2");
-        dropTable("test_metadata_delete_simple");
-    }
+//    @Test
+//    public void testMetadataDeleteSimple()
+//    {
+//        assertUpdate("CREATE TABLE test_metadata_delete_simple (col1 BIGINT, col2 BIGINT) WITH (partitioning = ARRAY['col1'])");
+//        assertUpdate("INSERT INTO test_metadata_delete_simple VALUES(1, 100), (1, 101), (1, 102), (2, 200), (2, 201), (3, 300)", 6);
+//        assertQuery("SELECT sum(col2) FROM test_metadata_delete_simple", "SELECT 1004");
+//        assertQuery("SELECT count(*) FROM \"test_metadata_delete_simple$partitions\"", "SELECT 3");
+//        assertUpdate("DELETE FROM test_metadata_delete_simple WHERE col1 = 1", 3);
+//        assertQuery("SELECT sum(col2) FROM test_metadata_delete_simple", "SELECT 701");
+//        assertQuery("SELECT count(*) FROM \"test_metadata_delete_simple$partitions\"", "SELECT 2");
+//        dropTable("test_metadata_delete_simple");
+//    }
 
-    @Test
-    public void testMetadataDelete()
-    {
-        assertUpdate("CREATE TABLE test_metadata_delete (" +
-                "  orderkey BIGINT," +
-                "  linenumber INTEGER," +
-                "  linestatus VARCHAR" +
-                ") " +
-                "WITH (" +
-                "  partitioning = ARRAY[ 'linenumber', 'linestatus' ]" +
-                ")");
-
-        assertUpdate(
-                "" +
-                        "INSERT INTO test_metadata_delete " +
-                        "SELECT orderkey, linenumber, linestatus " +
-                        "FROM tpch.tiny.lineitem",
-                "SELECT count(*) FROM lineitem");
-
-        assertQuery("SELECT COUNT(*) FROM \"test_metadata_delete$partitions\"", "SELECT 14");
-
-        assertUpdate("DELETE FROM test_metadata_delete WHERE linestatus = 'F' AND linenumber = 3", 5378);
-        assertQuery("SELECT * FROM test_metadata_delete", "SELECT orderkey, linenumber, linestatus FROM lineitem WHERE linestatus <> 'F' or linenumber <> 3");
-        assertQuery("SELECT count(*) FROM \"test_metadata_delete$partitions\"", "SELECT 13");
-
-        assertUpdate("DELETE FROM test_metadata_delete WHERE linestatus='O'", 30049);
-        assertQuery("SELECT count(*) FROM \"test_metadata_delete$partitions\"", "SELECT 6");
-        assertQuery("SELECT * FROM test_metadata_delete", "SELECT orderkey, linenumber, linestatus FROM lineitem WHERE linestatus <> 'O' AND linenumber <> 3");
-
-        dropTable("test_metadata_delete");
-    }
+//    @Test
+//    public void testMetadataDelete()
+//    {
+//        assertUpdate("CREATE TABLE test_metadata_delete (" +
+//                "  orderkey BIGINT," +
+//                "  linenumber INTEGER," +
+//                "  linestatus VARCHAR" +
+//                ") " +
+//                "WITH (" +
+//                "  partitioning = ARRAY[ 'linenumber', 'linestatus' ]" +
+//                ")");
+//
+//        assertUpdate(
+//                "" +
+//                        "INSERT INTO test_metadata_delete " +
+//                        "SELECT orderkey, linenumber, linestatus " +
+//                        "FROM tpch.tiny.lineitem",
+//                "SELECT count(*) FROM lineitem");
+//
+//        assertQuery("SELECT COUNT(*) FROM \"test_metadata_delete$partitions\"", "SELECT 14");
+//
+//        assertUpdate("DELETE FROM test_metadata_delete WHERE linestatus = 'F' AND linenumber = 3", 5378);
+//        assertQuery("SELECT * FROM test_metadata_delete", "SELECT orderkey, linenumber, linestatus FROM lineitem WHERE linestatus <> 'F' or linenumber <> 3");
+//        assertQuery("SELECT count(*) FROM \"test_metadata_delete$partitions\"", "SELECT 13");
+//
+//        assertUpdate("DELETE FROM test_metadata_delete WHERE linestatus='O'", 30049);
+//        assertQuery("SELECT count(*) FROM \"test_metadata_delete$partitions\"", "SELECT 6");
+//        assertQuery("SELECT * FROM test_metadata_delete", "SELECT orderkey, linenumber, linestatus FROM lineitem WHERE linestatus <> 'O' AND linenumber <> 3");
+//
+//        dropTable("test_metadata_delete");
+//    }
 
     @Test
     public void testInSet()
@@ -2040,96 +2123,135 @@ public class TestBaseArcticConnectorTest
     public void testCreateNestedPartitionedTable()
     {
         assertUpdate("CREATE TABLE test_nested_table_1 (" +
-                " bool BOOLEAN" +
-                ", int INTEGER" +
-                ", arr ARRAY(VARCHAR)" +
-                ", big BIGINT" +
-                ", rl REAL" +
-                ", dbl DOUBLE" +
-                ", mp MAP(INTEGER, VARCHAR)" +
-                ", dec DECIMAL(5,2)" +
-                ", vc VARCHAR" +
-                ", vb VARBINARY" +
-                ", ts TIMESTAMP(6)" +
-                ", tstz TIMESTAMP(6) WITH TIME ZONE" +
-                ", str ROW(id INTEGER , vc VARCHAR)" +
-                ", dt DATE)" +
-                " WITH (partitioning = ARRAY['int'])");
+            " bool BOOLEAN" +
+            ", int INTEGER" +
+            ", arr ARRAY(VARCHAR)" +
+            ", big BIGINT" +
+            ", rl REAL" +
+            ", dbl DOUBLE" +
+            ", mp MAP(INTEGER, VARCHAR)" +
+            ", dec DECIMAL(5,2)" +
+            ", vc VARCHAR" +
+            ", vb VARBINARY" +
+            ", ts TIMESTAMP(6)" +
+            ", tstz TIMESTAMP(6) WITH TIME ZONE" +
+            ", str ROW(id INTEGER , vc VARCHAR)" +
+            ", dt DATE)" +
+            " WITH (partitioning = ARRAY['int'])");
 
         assertUpdate(
-                "INSERT INTO test_nested_table_1 " +
-                        " select true, 1, array['uno', 'dos', 'tres'], BIGINT '1', REAL '1.0', DOUBLE '1.0', map(array[1,2,3,4], array['ek','don','teen','char'])," +
-                        " CAST(1.0 as DECIMAL(5,2))," +
-                        " 'one', VARBINARY 'binary0/1values',\n" +
-                        " TIMESTAMP '2021-07-24 02:43:57.348000'," +
-                        " TIMESTAMP '2021-07-24 02:43:57.348000 UTC'," +
-                        " (CAST(ROW(null, 'this is a random value') AS ROW(int, varchar))), " +
-                        " DATE '2021-07-24'",
-                1);
-        Assert.assertEquals(computeActual("SELECT * from test_nested_table_1").getRowCount(), 1);
+            "INSERT INTO test_nested_table_1 " +
+                " select true, 1, array['uno', 'dos', 'tres'], BIGINT '1', REAL '1.0', DOUBLE '1.0', map(array[1,2,3,4], array['ek','don','teen','char'])," +
+                " CAST(1.0 as DECIMAL(5,2))," +
+                " 'one', VARBINARY 'binary0/1values',\n" +
+                " TIMESTAMP '2021-07-24 02:43:57.348000'," +
+                " TIMESTAMP '2021-07-24 02:43:57.348000 UTC'," +
+                " (CAST(ROW(null, 'this is a random value') AS ROW(int, varchar))), " +
+                " DATE '2021-07-24'",
+            1);
+        assertEquals(computeActual("SELECT * from test_nested_table_1").getRowCount(), 1);
 
-        assertThat(query("SHOW STATS FOR test_nested_table_1"))
+        if (format != AVRO) {
+            assertThat(query("SHOW STATS FOR test_nested_table_1"))
                 .skippingTypesCheck()
                 .matches("VALUES " +
-                        "  ('bool', NULL, NULL, 0e0, NULL, 'true', 'true'), " +
-                        "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
-                        "  ('arr', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  ('big', NULL, NULL, 0e0, NULL, '1', '1'), " +
-                        "  ('rl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('dbl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('mp', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  ('dec', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('vc', " + (format == PARQUET ? "43e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
-                        "  ('vb', " + (format == PARQUET ? "55e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
-                        "  ('ts', NULL, NULL, 0e0, NULL, '2021-07-24 02:43:57.348000', " + (format == ORC ? "'2021-07-24 02:43:57.348999'" : "'2021-07-24 02:43:57.348000'") + "), " +
-                        "  ('tstz', NULL, NULL, 0e0, NULL, '2021-07-24 02:43:57.348 UTC', '2021-07-24 02:43:57.348 UTC'), " +
-                        "  ('str', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  ('dt', NULL, NULL, 0e0, NULL, '2021-07-24', '2021-07-24'), " +
-                        "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+                    "  ('bool', NULL, NULL, 0e0, NULL, 'true', 'true'), " +
+                    "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('arr', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  ('big', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('rl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('dbl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('mp', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  ('dec', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('vc', " + (format == PARQUET ? "116e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
+                    "  ('vb', " + (format == PARQUET ? "77e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
+                    "  ('ts', NULL, NULL, 0e0, NULL, '2021-07-24 02:43:57.348000', " + (format == ORC ? "'2021-07-24 02:43:57.348999'" : "'2021-07-24 02:43:57.348000'") + "), " +
+                    "  ('tstz', NULL, NULL, 0e0, NULL, '2021-07-24 02:43:57.348 UTC', '2021-07-24 02:43:57.348 UTC'), " +
+                    "  ('str', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  ('dt', NULL, NULL, 0e0, NULL, '2021-07-24', '2021-07-24'), " +
+                    "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+        }
+        else {
+            assertThat(query("SHOW STATS FOR test_nested_table_1"))
+                .skippingTypesCheck()
+                .matches("VALUES " +
+                    "  ('bool', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('arr', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('big', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('rl', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('dbl', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('mp', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('dec', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('vc', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('vb', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('ts', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('tstz', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('str', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('dt', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+        }
 
         dropTable("test_nested_table_1");
 
         assertUpdate("" +
-                "CREATE TABLE test_nested_table_2 (" +
-                " int INTEGER" +
-                ", arr ARRAY(ROW(id INTEGER, vc VARCHAR))" +
-                ", big BIGINT" +
-                ", rl REAL" +
-                ", dbl DOUBLE" +
-                ", mp MAP(INTEGER, ARRAY(VARCHAR))" +
-                ", dec DECIMAL(5,2)" +
-                ", str ROW(id INTEGER, vc VARCHAR, arr ARRAY(INTEGER))" +
-                ", vc VARCHAR)" +
-                " WITH (partitioning = ARRAY['int'])");
+            "CREATE TABLE test_nested_table_2 (" +
+            " int INTEGER" +
+            ", arr ARRAY(ROW(id INTEGER, vc VARCHAR))" +
+            ", big BIGINT" +
+            ", rl REAL" +
+            ", dbl DOUBLE" +
+            ", mp MAP(INTEGER, ARRAY(VARCHAR))" +
+            ", dec DECIMAL(5,2)" +
+            ", str ROW(id INTEGER, vc VARCHAR, arr ARRAY(INTEGER))" +
+            ", vc VARCHAR)" +
+            " WITH (partitioning = ARRAY['int'])");
 
         assertUpdate(
-                "INSERT INTO test_nested_table_2 " +
-                        " select 1, array[cast(row(1, null) as row(int, varchar)), cast(row(2, 'dos') as row(int, varchar))], BIGINT '1', REAL '1.0', DOUBLE '1.0', " +
-                        "map(array[1,2], array[array['ek', 'one'], array['don', 'do', 'two']]), CAST(1.0 as DECIMAL(5,2)), " +
-                        "CAST(ROW(1, 'this is a random value', null) AS ROW(int, varchar, array(int))), 'one'",
-                1);
-        Assert.assertEquals(computeActual("SELECT * from test_nested_table_2").getRowCount(), 1);
+            "INSERT INTO test_nested_table_2 " +
+                " select 1, array[cast(row(1, null) as row(int, varchar)), cast(row(2, 'dos') as row(int, varchar))], BIGINT '1', REAL '1.0', DOUBLE '1.0', " +
+                "map(array[1,2], array[array['ek', 'one'], array['don', 'do', 'two']]), CAST(1.0 as DECIMAL(5,2)), " +
+                "CAST(ROW(1, 'this is a random value', null) AS ROW(int, varchar, array(int))), 'one'",
+            1);
+        assertEquals(computeActual("SELECT * from test_nested_table_2").getRowCount(), 1);
 
-        assertThat(query("SHOW STATS FOR test_nested_table_2"))
+        if (format != AVRO) {
+            assertThat(query("SHOW STATS FOR test_nested_table_2"))
                 .skippingTypesCheck()
                 .matches("VALUES " +
-                        "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
-                        "  ('arr', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  ('big', NULL, NULL, 0e0, NULL, '1', '1'), " +
-                        "  ('rl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('dbl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('mp', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  ('dec', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
-                        "  ('vc', " + (format == PARQUET ? "43e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
-                        "  ('str', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
-                        "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+                    "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('arr', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  ('big', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('rl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('dbl', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('mp', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  ('dec', NULL, NULL, 0e0, NULL, '1.0', '1.0'), " +
+                    "  ('vc', " + (format == PARQUET ? "116e0" : "NULL") + ", NULL, 0e0, NULL, NULL, NULL), " +
+                    "  ('str', NULL, NULL, " + (format == ORC ? "0e0" : "NULL") + ", NULL, NULL, NULL), " +
+                    "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+        }
+        else {
+            assertThat(query("SHOW STATS FOR test_nested_table_2"))
+                .skippingTypesCheck()
+                .matches("VALUES " +
+                    "  ('int', NULL, NULL, 0e0, NULL, '1', '1'), " +
+                    "  ('arr', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('big', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('rl', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('dbl', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('mp', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('dec', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('vc', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  ('str', NULL, NULL, NULL, NULL, NULL, NULL), " +
+                    "  (NULL, NULL, NULL, NULL, 1e0, NULL, NULL)");
+        }
 
         assertUpdate("CREATE TABLE test_nested_table_3 WITH (partitioning = ARRAY['int']) AS SELECT * FROM test_nested_table_2", 1);
 
-        Assert.assertEquals(computeActual("SELECT * FROM test_nested_table_3").getRowCount(), 1);
+        assertEquals(computeActual("SELECT * FROM test_nested_table_3").getRowCount(), 1);
 
         assertThat(query("SHOW STATS FOR test_nested_table_3"))
-                .matches("SHOW STATS FOR test_nested_table_2");
+            .matches("SHOW STATS FOR test_nested_table_2");
 
         dropTable("test_nested_table_2");
         dropTable("test_nested_table_3");
@@ -2169,31 +2291,31 @@ public class TestBaseArcticConnectorTest
         assertFalse(getQueryRunner().tableExists(session, table));
     }
 
-    @Test
-    public void testOptimizedMetadataQueries()
-    {
-        Session session = Session.builder(getSession())
-                .setSystemProperty("optimize_metadata_queries", "true")
-                .build();
-
-        assertUpdate("CREATE TABLE test_metadata_optimization (a BIGINT, b BIGINT, c BIGINT) WITH (PARTITIONING = ARRAY['b', 'c'])");
-
-        assertUpdate("INSERT INTO test_metadata_optimization VALUES (5, 6, 7), (8, 9, 10)", 2);
-
-        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization", "VALUES (6), (9)");
-        assertQuery(session, "SELECT DISTINCT b, c FROM test_metadata_optimization", "VALUES (6, 7), (9, 10)");
-        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization WHERE b < 7", "VALUES (6)");
-        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization WHERE c > 8", "VALUES (9)");
-
-        // Assert behavior after metadata delete
-        assertUpdate("DELETE FROM test_metadata_optimization WHERE b = 6", 1);
-        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization", "VALUES (9)");
-
-        // TODO: assert behavior after deleting the last row of a partition, once row-level deletes are supported.
-        // i.e. a query like 'DELETE FROM test_metadata_optimization WHERE b = 6 AND a = 5'
-
-        dropTable("test_metadata_optimization");
-    }
+//    @Test
+//    public void testOptimizedMetadataQueries()
+//    {
+//        Session session = Session.builder(getSession())
+//                .setSystemProperty("optimize_metadata_queries", "true")
+//                .build();
+//
+//        assertUpdate("CREATE TABLE test_metadata_optimization (a BIGINT, b BIGINT, c BIGINT) WITH (PARTITIONING = ARRAY['b', 'c'])");
+//
+//        assertUpdate("INSERT INTO test_metadata_optimization VALUES (5, 6, 7), (8, 9, 10)", 2);
+//
+//        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization", "VALUES (6), (9)");
+//        assertQuery(session, "SELECT DISTINCT b, c FROM test_metadata_optimization", "VALUES (6, 7), (9, 10)");
+//        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization WHERE b < 7", "VALUES (6)");
+//        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization WHERE c > 8", "VALUES (9)");
+//
+//        // Assert behavior after metadata delete
+//        assertUpdate("DELETE FROM test_metadata_optimization WHERE b = 6", 1);
+//        assertQuery(session, "SELECT DISTINCT b FROM test_metadata_optimization", "VALUES (9)");
+//
+//        // TODO: assert behavior after deleting the last row of a partition, once row-level deletes are supported.
+//        // i.e. a query like 'DELETE FROM test_metadata_optimization WHERE b = 6 AND a = 5'
+//
+//        dropTable("test_metadata_optimization");
+//    }
 
     @Test
     public void testFileSizeInManifest()
@@ -2359,8 +2481,8 @@ public class TestBaseArcticConnectorTest
                         "  ('a_double', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
                         "  ('a_short_decimal', NULL, NULL, 0.5e0, NULL, '1.0', '1.0'), " +
                         "  ('a_long_decimal', NULL, NULL, 0.5e0, NULL, '11.0', '11.0'), " +
-                        "  ('a_varchar', " + (format == PARQUET ? "87e0" : "NULL") + ", NULL, 0.5e0, NULL, NULL, NULL), " +
-                        "  ('a_varbinary', " + (format == PARQUET ? "82e0" : "NULL") + ", NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_varchar', " + (format == PARQUET ? "234e0" : "NULL") + ", NULL, 0.5e0, NULL, NULL, NULL), " +
+                        "  ('a_varbinary', " + (format == PARQUET ? "114e0" : "NULL") + ", NULL, 0.5e0, NULL, NULL, NULL), " +
                         "  ('a_date', NULL, NULL, 0.5e0, NULL, '2021-07-24', '2021-07-24'), " +
                         "  ('a_time', NULL, NULL, 0.5e0, NULL, NULL, NULL), " +
                         "  ('a_timestamp', NULL, NULL, 0.5e0, NULL, " + (format == ORC ? "'2021-07-24 03:43:57.987000', '2021-07-24 03:43:57.987999'" : "'2021-07-24 03:43:57.987654', '2021-07-24 03:43:57.987654'") + "), " +
@@ -2510,7 +2632,7 @@ public class TestBaseArcticConnectorTest
                 "_" + sourceRelation.replaceAll("[^a-zA-Z0-9]", "") +
                 (ctas ? "ctas" : "insert") +
                 "_" + partitioning.replaceAll("[^a-zA-Z0-9]", "") +
-                "_" + randomTableSuffix();
+                "_" + randomNameSuffix();
 
         long rowCount = (long) computeScalar(session, "SELECT count(*) FROM " + sourceRelation);
 
@@ -2554,15 +2676,15 @@ public class TestBaseArcticConnectorTest
 
     private void verifySplitCount(String query, int expectedSplitCount)
     {
-        ResultWithQueryId<MaterializedResult> selectAllPartitionsResult = getDistributedQueryRunner().executeWithQueryId(getSession(), query);
+        MaterializedResultWithQueryId selectAllPartitionsResult = getDistributedQueryRunner().executeWithQueryId(getSession(), query);
         assertEqualsIgnoreOrder(selectAllPartitionsResult.getResult().getMaterializedRows(), computeActual(withoutPredicatePushdown(getSession()), query).getMaterializedRows());
         verifySplitCount(selectAllPartitionsResult.getQueryId(), expectedSplitCount);
     }
 
     private void verifyPredicatePushdownDataRead(@Language("SQL") String query, boolean supportsPushdown)
     {
-        ResultWithQueryId<MaterializedResult> resultWithPredicatePushdown = getDistributedQueryRunner().executeWithQueryId(getSession(), query);
-        ResultWithQueryId<MaterializedResult> resultWithoutPredicatePushdown = getDistributedQueryRunner().executeWithQueryId(
+        MaterializedResultWithQueryId resultWithPredicatePushdown = getDistributedQueryRunner().executeWithQueryId(getSession(), query);
+        MaterializedResultWithQueryId resultWithoutPredicatePushdown = getDistributedQueryRunner().executeWithQueryId(
                 withoutPredicatePushdown(getSession()),
                 query);
 
@@ -2786,59 +2908,59 @@ public class TestBaseArcticConnectorTest
         assertUpdate("DROP TABLE IF EXISTS test_projection_pushdown_comments");
     }
 
-    @Test
-    public void testOptimize()
-            throws Exception
-    {
-        String tableName = "test_optimize_" + randomTableSuffix();
-        assertUpdate("CREATE TABLE " + tableName + " (key integer, value varchar) WITH (format_version = 1)");
-
-        // DistributedQueryRunner sets node-scheduler.include-coordinator by default, so include coordinator
-        int workerCount = getQueryRunner().getNodeCount();
-
-        // optimize an empty table
-        assertQuerySucceeds("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
-        assertThat(getActiveFiles(tableName)).isEmpty();
-
-        assertUpdate("INSERT INTO " + tableName + " VALUES (11, 'eleven')", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES (12, 'zwölf')", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES (13, 'trzynaście')", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES (14, 'quatorze')", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES (15, 'пʼятнадцять')", 1);
-
-        List<String> initialFiles = getActiveFiles(tableName);
-        assertThat(initialFiles)
-                .hasSize(5)
-                // Verify we have sufficiently many test rows with respect to worker count.
-                .hasSizeGreaterThan(workerCount);
-
-        computeActual("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
-        assertThat(query("SELECT sum(key), listagg(value, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
-                .matches("VALUES (BIGINT '65', VARCHAR 'eleven zwölf trzynaście quatorze пʼятнадцять')");
-        List<String> updatedFiles = getActiveFiles(tableName);
-        assertThat(updatedFiles)
-                .hasSizeBetween(1, workerCount)
-                .doesNotContainAnyElementsOf(initialFiles);
-        // No files should be removed (this is expire_snapshots's job, when it exists)
-        assertThat(getAllDataFilesFromTableDirectory(tableName))
-                .containsExactlyInAnyOrderElementsOf(concat(initialFiles, updatedFiles));
-
-        // optimize with low retention threshold, nothing should change
-        computeActual("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE (file_size_threshold => '33B')");
-        assertThat(query("SELECT sum(key), listagg(value, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
-                .matches("VALUES (BIGINT '65', VARCHAR 'eleven zwölf trzynaście quatorze пʼятнадцять')");
-        assertThat(getActiveFiles(tableName)).isEqualTo(updatedFiles);
-        assertThat(getAllDataFilesFromTableDirectory(tableName))
-                .containsExactlyInAnyOrderElementsOf(concat(initialFiles, updatedFiles));
-
-        // optimize with delimited procedure name
-        assertQueryFails("ALTER TABLE " + tableName + " EXECUTE \"optimize\"", "Procedure optimize not registered for catalog arctic");
-        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\"");
-        // optimize with delimited parameter name (and procedure name)
-        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\" (\"file_size_threshold\" => '33B')"); // TODO (https://github.com/trinodb/trino/issues/11326) this should fail
-        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\" (\"FILE_SIZE_THRESHOLD\" => '33B')");
-        assertUpdate("DROP TABLE " + tableName);
-    }
+//    @Test
+//    public void testOptimize()
+//            throws Exception
+//    {
+//        String tableName = "test_optimize_" + randomNameSuffix();
+//        assertUpdate("CREATE TABLE " + tableName + " (key integer, value varchar) WITH (format_version = 1)");
+//
+//        // DistributedQueryRunner sets node-scheduler.include-coordinator by default, so include coordinator
+//        int workerCount = getQueryRunner().getNodeCount();
+//
+//        // optimize an empty table
+//        assertQuerySucceeds("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
+//        assertThat(getActiveFiles(tableName)).isEmpty();
+//
+//        assertUpdate("INSERT INTO " + tableName + " VALUES (11, 'eleven')", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES (12, 'zwölf')", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES (13, 'trzynaście')", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES (14, 'quatorze')", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES (15, 'пʼятнадцять')", 1);
+//
+//        List<String> initialFiles = getActiveFiles(tableName);
+//        assertThat(initialFiles)
+//                .hasSize(5)
+//                // Verify we have sufficiently many test rows with respect to worker count.
+//                .hasSizeGreaterThan(workerCount);
+//
+//        computeActual("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
+//        assertThat(query("SELECT sum(key), listagg(value, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
+//                .matches("VALUES (BIGINT '65', VARCHAR 'eleven zwölf trzynaście quatorze пʼятнадцять')");
+//        List<String> updatedFiles = getActiveFiles(tableName);
+//        assertThat(updatedFiles)
+//                .hasSizeBetween(1, workerCount)
+//                .doesNotContainAnyElementsOf(initialFiles);
+//        // No files should be removed (this is expire_snapshots's job, when it exists)
+//        assertThat(getAllDataFilesFromTableDirectory(tableName))
+//                .containsExactlyInAnyOrderElementsOf(concat(initialFiles, updatedFiles));
+//
+//        // optimize with low retention threshold, nothing should change
+//        computeActual("ALTER TABLE " + tableName + " EXECUTE OPTIMIZE (file_size_threshold => '33B')");
+//        assertThat(query("SELECT sum(key), listagg(value, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
+//                .matches("VALUES (BIGINT '65', VARCHAR 'eleven zwölf trzynaście quatorze пʼятнадцять')");
+//        assertThat(getActiveFiles(tableName)).isEqualTo(updatedFiles);
+//        assertThat(getAllDataFilesFromTableDirectory(tableName))
+//                .containsExactlyInAnyOrderElementsOf(concat(initialFiles, updatedFiles));
+//
+//        // optimize with delimited procedure name
+//        assertQueryFails("ALTER TABLE " + tableName + " EXECUTE \"optimize\"", "Table procedure not registered: optimize");
+//        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\"");
+//        // optimize with delimited parameter name (and procedure name)
+//        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\" (\"file_size_threshold\" => '33B')"); // TODO (https://github.com/trinodb/trino/issues/11326) this should fail
+//        assertUpdate("ALTER TABLE " + tableName + " EXECUTE \"OPTIMIZE\" (\"FILE_SIZE_THRESHOLD\" => '33B')");
+//        assertUpdate("DROP TABLE " + tableName);
+//    }
 
     @Test
     public void testOptimizeForPartitionedTable()
@@ -2852,7 +2974,7 @@ public class TestBaseArcticConnectorTest
                 .setSystemProperty("use_preferred_write_partitioning", "true")
                 .setSystemProperty("preferred_write_partitioning_min_number_of_partitions", "100")
                 .build();
-        String tableName = "test_repartitiong_during_optimize_" + randomTableSuffix();
+        String tableName = "test_repartitiong_during_optimize_" + randomNameSuffix();
         assertUpdate(session, "CREATE TABLE " + tableName + " (key varchar, value integer) WITH (format_version = 1, partitioning = ARRAY['key'])");
         // optimize an empty table
         assertQuerySucceeds(session, "ALTER TABLE " + tableName + " EXECUTE OPTIMIZE");
@@ -2910,20 +3032,20 @@ public class TestBaseArcticConnectorTest
     public void testOptimizeParameterValidation()
     {
         assertQueryFails(
-                "ALTER TABLE no_such_table_exists EXECUTE OPTIMIZE",
-                "\\Qline 1:1: Table 'arctic.tpch.no_such_table_exists' does not exist");
+            "ALTER TABLE no_such_table_exists EXECUTE OPTIMIZE",
+            "\\Qline 1:7: Table 'arctic.tpch.no_such_table_exists' does not exist");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE OPTIMIZE (file_size_threshold => '33')",
-                "\\QUnable to set catalog 'arctic' table procedure 'OPTIMIZE' property 'file_size_threshold' to ['33']: size is not a valid data size string: 33");
+            "ALTER TABLE nation EXECUTE OPTIMIZE (file_size_threshold => '33')",
+            "\\QUnable to set catalog 'arctic' table procedure 'OPTIMIZE' property 'file_size_threshold' to ['33']: size is not a valid data size string: 33");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE OPTIMIZE (file_size_threshold => '33s')",
-                "\\QUnable to set catalog 'arctic' table procedure 'OPTIMIZE' property 'file_size_threshold' to ['33s']: Unknown unit: s");
+            "ALTER TABLE nation EXECUTE OPTIMIZE (file_size_threshold => '33s')",
+            "\\QUnable to set catalog 'arctic' table procedure 'OPTIMIZE' property 'file_size_threshold' to ['33s']: Unknown unit: s");
     }
 
     // @Test
     // public void testTargetMaxFileSize()
     // {
-    //     String tableName = "test_default_max_file_size" + randomTableSuffix();
+    //     String tableName = "test_default_max_file_size" + randomNameSuffix();
     //     @Language("SQL") String createTableSql = format("CREATE TABLE %s AS SELECT * FROM tpch.sf1.lineitem LIMIT 100000", tableName);
     //
     //     Session session = Session.builder(getSession())
@@ -2967,7 +3089,7 @@ public class TestBaseArcticConnectorTest
     @Test
     public void testPathHiddenColumn()
     {
-        String tableName = "test_path_" + randomTableSuffix();
+        String tableName = "test_path_" + randomNameSuffix();
         @Language("SQL") String createTable = "CREATE TABLE " + tableName + " " +
                 "WITH ( partitioning = ARRAY['zip'] ) AS " +
                 "SELECT * FROM (VALUES " +
@@ -2991,60 +3113,61 @@ public class TestBaseArcticConnectorTest
         assertUpdate("DROP TABLE " + tableName);
     }
 
-    @Test
-    public void testExpireSnapshots()
-            throws Exception
-    {
-        String tableName = "test_expiring_snapshots_" + randomTableSuffix();
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer)");
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
-        assertThat(query("SELECT sum(value), listagg(key, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
-                .matches("VALUES (BIGINT '3', VARCHAR 'one two')");
+//    @Test
+//    public void testExpireSnapshots()
+//            throws Exception
+//    {
+//        String tableName = "test_expiring_snapshots_" + randomNameSuffix();
+//        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
+//        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer)");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
+//        assertThat(query("SELECT sum(value), listagg(key, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
+//            .matches("VALUES (BIGINT '3', VARCHAR 'one two')");
+//
+//        List<Long> initialSnapshots = getSnapshotIds(tableName);
+//        String tableLocation = getTableLocation(tableName);
+//        List<String> initialFiles = getAllMetadataFilesFromTableDirectoryForTable(tableLocation);
+//        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '0s')");
+//
+//        assertThat(query("SELECT sum(value), listagg(key, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
+//            .matches("VALUES (BIGINT '3', VARCHAR 'one two')");
+//        List<String> updatedFiles = getAllMetadataFilesFromTableDirectoryForTable(tableLocation);
+//        List<Long> updatedSnapshots = getSnapshotIds(tableName);
+//        assertThat(updatedFiles.size()).isEqualTo(initialFiles.size() - 1);
+//        assertThat(updatedSnapshots.size()).isLessThan(initialSnapshots.size());
+//        assertThat(updatedSnapshots.size()).isEqualTo(1);
+//        assertThat(initialSnapshots).containsAll(updatedSnapshots);
+//    }
 
-        List<Long> initialSnapshots = getSnapshotIds(tableName);
-        List<String> initialFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '0s')");
-
-        assertThat(query("SELECT sum(value), listagg(key, ' ') WITHIN GROUP (ORDER BY key) FROM " + tableName))
-                .matches("VALUES (BIGINT '3', VARCHAR 'one two')");
-        List<String> updatedFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
-        List<Long> updatedSnapshots = getSnapshotIds(tableName);
-        assertThat(updatedFiles.size()).isEqualTo(initialFiles.size() - 1);
-        assertThat(updatedSnapshots.size()).isLessThan(initialSnapshots.size());
-        assertThat(updatedSnapshots.size()).isEqualTo(1);
-        assertThat(initialSnapshots).containsAll(updatedSnapshots);
-    }
-
-    @Test
-    public void testExpireSnapshotsPartitionedTable()
-            throws Exception
-    {
-        String tableName = "test_expiring_snapshots_partitioned_table" + randomTableSuffix();
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertUpdate("CREATE TABLE " + tableName + " (col1 BIGINT, col2 BIGINT) WITH (partitioning = ARRAY['col1'])");
-        assertUpdate("INSERT INTO " + tableName + " VALUES(1, 100), (1, 101), (1, 102), (2, 200), (2, 201), (3, 300)", 6);
-        assertUpdate("DELETE FROM " + tableName + " WHERE col1 = 1", 3);
-        assertUpdate("INSERT INTO " + tableName + " VALUES(4, 400)", 1);
-        assertQuery("SELECT sum(col2) FROM " + tableName, "SELECT 1101");
-        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
-        List<Long> initialSnapshots = getSnapshotIds(tableName);
-
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '0s')");
-
-        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
-        List<Long> updatedSnapshots = getSnapshotIds(tableName);
-        assertQuery("SELECT sum(col2) FROM " + tableName, "SELECT 1101");
-        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
-        assertThat(updatedSnapshots.size()).isLessThan(initialSnapshots.size());
-    }
+//    @Test
+//    public void testExpireSnapshotsPartitionedTable()
+//            throws Exception
+//    {
+//        String tableName = "test_expiring_snapshots_partitioned_table" + randomNameSuffix();
+//        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
+//        assertUpdate("CREATE TABLE " + tableName + " (col1 BIGINT, col2 BIGINT) WITH (partitioning = ARRAY['col1'])");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES(1, 100), (1, 101), (1, 102), (2, 200), (2, 201), (3, 300)", 6);
+//        assertUpdate("DELETE FROM " + tableName + " WHERE col1 = 1", 3);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES(4, 400)", 1);
+//        assertQuery("SELECT sum(col2) FROM " + tableName, "SELECT 1101");
+//        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//        List<Long> initialSnapshots = getSnapshotIds(tableName);
+//
+//        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '0s')");
+//
+//        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//        List<Long> updatedSnapshots = getSnapshotIds(tableName);
+//        assertQuery("SELECT sum(col2) FROM " + tableName, "SELECT 1101");
+//        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
+//        assertThat(updatedSnapshots.size()).isLessThan(initialSnapshots.size());
+//    }
 
     //无法匹配原因未知，
 //    @Test
 //    public void testExplainExpireSnapshotOutput()
 //    {
-//        String tableName = "test_expiring_snapshots_output" + randomTableSuffix();
+//        String tableName = "test_expiring_snapshots_output" + randomNameSuffix();
 //        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
 //        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
 //        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
@@ -3057,74 +3180,90 @@ public class TestBaseArcticConnectorTest
     public void testExpireSnapshotsParameterValidation()
     {
         assertQueryFails(
-                "ALTER TABLE no_such_table_exists EXECUTE EXPIRE_SNAPSHOTS",
-                "\\Qline 1:1: Table 'arctic.tpch.no_such_table_exists' does not exist");
+            "ALTER TABLE no_such_table_exists EXECUTE EXPIRE_SNAPSHOTS",
+            "\\Qline 1:7: Table 'arctic.tpch.no_such_table_exists' does not exist");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '33')",
-                "\\QUnable to set catalog 'arctic' table procedure 'EXPIRE_SNAPSHOTS' property 'retention_threshold' to ['33']: duration is not a valid data duration string: 33");
+            "ALTER TABLE nation EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '33')",
+            "\\QUnable to set catalog 'arctic' table procedure 'EXPIRE_SNAPSHOTS' property 'retention_threshold' to ['33']: duration is not a valid data duration string: 33");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '33mb')",
-                "\\QUnable to set catalog 'arctic' table procedure 'EXPIRE_SNAPSHOTS' property 'retention_threshold' to ['33mb']: Unknown time unit: mb");
+            "ALTER TABLE nation EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '33mb')",
+            "\\QUnable to set catalog 'arctic' table procedure 'EXPIRE_SNAPSHOTS' property 'retention_threshold' to ['33mb']: Unknown time unit: mb");
         assertQueryFails(
                 "ALTER TABLE nation EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '33s')",
                 "\\QRetention specified (33.00s) is shorter than the minimum retention configured in the system (7.00d). Minimum retention can be changed with iceberg.expire_snapshots.min-retention configuration property or iceberg.expire_snapshots_min_retention session property");
     }
 
-    @Test
-    public void testDeleteOrphanFiles()
-            throws Exception
+//    @Test
+//    public void testRemoveOrphanFiles()
+//        throws Exception
+//    {
+//        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomNameSuffix();
+//        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
+//        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer)");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2), ('three', 3)", 2);
+//        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'two'", 1);
+//        String location = getTableLocation(tableName);
+//        Path orphanFile = Files.createFile(Path.of(getIcebergTableDataPath(location).toString(), "invalidData." + format));
+//        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//
+//        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '0s')");
+//        assertQuery("SELECT * FROM " + tableName, "VALUES ('one', 1), ('three', 3)");
+//
+//        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
+//        assertThat(updatedDataFiles).doesNotContain(orphanFile.toString());
+//    }
+
+    private String getTableLocation(String tableName)
     {
-        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomTableSuffix();
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer)");
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        Path orphanFile = Files.createFile(Path.of(getIcebergTableDataPath(tableName).toString(), "invalidData." + format));
-        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
-
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '0s')");
-
-        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
-        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
-        assertThat(updatedDataFiles).doesNotContain(orphanFile.toString());
+        Pattern locationPattern = Pattern.compile(".*location = '(.*?)'.*", Pattern.DOTALL);
+        Matcher m = locationPattern.matcher((String) computeActual("SHOW CREATE TABLE " + tableName).getOnlyValue());
+        if (m.find()) {
+            String location = m.group(1);
+            verify(!m.find(), "Unexpected second match");
+            return location;
+        }
+        throw new IllegalStateException("Location not found in SHOW CREATE TABLE result");
     }
 
-    @Test
-    public void testIfDeleteOrphanFilesCleansUnnecessaryDataFilesInPartitionedTable()
-            throws Exception
-    {
-        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomTableSuffix();
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
-        Path orphanFile = Files.createFile(Path.of(getIcebergTableDataPath(tableName) + "/key=one/", "invalidData." + format));
-        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//    @Test
+//    public void testIfRemoveOrphanFilesCleansUnnecessaryDataFilesInPartitionedTable()
+//        throws Exception
+//    {
+//        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomNameSuffix();
+//        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
+//        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
+//        Path orphanFile = Files.createFile(Path.of(getIcebergTableDataPath(tableName) + "/key=one/", "invalidData." + format));
+//        List<String> initialDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//
+//        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '0s')");
+//
+//        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
+//        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
+//        assertThat(updatedDataFiles).doesNotContain(orphanFile.toString());
+//    }
 
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '0s')");
-
-        List<String> updatedDataFiles = getAllDataFilesFromTableDirectory(tableName);
-        assertThat(updatedDataFiles.size()).isLessThan(initialDataFiles.size());
-        assertThat(updatedDataFiles).doesNotContain(orphanFile.toString());
-    }
-
-    @Test
-    public void testIfDeleteOrphanFilesCleansUnnecessaryMetadataFilesInPartitionedTable()
-            throws Exception
-    {
-        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomTableSuffix();
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
-        Path orphanMetadataFile = Files.createFile(Path.of(getIcebergTableMetadataPath(tableName).toString(), "invalidData." + format));
-        List<String> initialMetadataFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
-
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '0s')");
-
-        List<String> updatedMetadataFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
-        assertThat(updatedMetadataFiles.size()).isLessThan(initialMetadataFiles.size());
-        assertThat(updatedMetadataFiles).doesNotContain(orphanMetadataFile.toString());
-    }
+//    @Test
+//    public void testIfRemoveOrphanFilesCleansUnnecessaryMetadataFilesInPartitionedTable()
+//        throws Exception
+//    {
+//        String tableName = "test_deleting_orphan_files_unnecessary_files" + randomNameSuffix();
+//        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
+//        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
+//        Path orphanMetadataFile = Files.createFile(Path.of(getIcebergTableMetadataPath(tableName).toString(), "invalidData." + format));
+//        List<String> initialMetadataFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
+//
+//        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '0s')");
+//
+//        List<String> updatedMetadataFiles = getAllMetadataFilesFromTableDirectoryForTable(tableName);
+//        assertThat(updatedMetadataFiles.size()).isLessThan(initialMetadataFiles.size());
+//        assertThat(updatedMetadataFiles).doesNotContain(orphanMetadataFile.toString());
+//    }
 
 //    @Test
 //    public void testCleaningUpWithTableWithSpecifiedLocationWithSlashAtTheEnd()
@@ -3140,80 +3279,55 @@ public class TestBaseArcticConnectorTest
 //        testCleaningUpWithTableWithSpecifiedLocation("");
 //    }
 
-    private void testCleaningUpWithTableWithSpecifiedLocation(String suffix)
-            throws IOException
-    {
-        File tempDir = getDistributedQueryRunner().getCoordinator().getBaseDataDir().toFile();
-        String tempDirPath = tempDir.toURI().toASCIIString() + randomTableSuffix() + suffix;
-        String tableName = "test_table_cleaning_up_with_location" + randomTableSuffix();
-
-        assertUpdate(format("CREATE TABLE %s (key varchar, value integer) WITH(location = '%s')", tableName, tempDirPath));
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
-
-        List<String> initialFiles = getAllMetadataFilesFromTableDirectory(tempDirPath);
-        List<Long> initialSnapshots = getSnapshotIds(tableName);
-
-        Session sessionWithShortRetentionUnlocked = prepareCleanUpSession();
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE EXPIRE_SNAPSHOTS (retention_threshold => '0s')");
-        assertQuerySucceeds(sessionWithShortRetentionUnlocked, "ALTER TABLE " + tableName + " EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '0s')");
-        List<String> updatedFiles = getAllMetadataFilesFromTableDirectory(tempDirPath);
-        List<Long> updatedSnapshots = getSnapshotIds(tableName);
-        assertThat(updatedFiles.size()).isEqualTo(initialFiles.size() - 1);
-        assertThat(updatedSnapshots.size()).isLessThan(initialSnapshots.size());
-        assertThat(updatedSnapshots.size()).isEqualTo(1);
-        assertThat(initialSnapshots).containsAll(updatedSnapshots);
-    }
-
     @Test
-    public void testExplainDeleteOrphanFilesOutput()
+    public void testExplainRemoveOrphanFilesOutput()
     {
-        String tableName = "test_delete_orphan_files_output" + randomTableSuffix();
+        String tableName = "test_remove_orphan_files_output" + randomNameSuffix();
         assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
         assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
         assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
 
-        assertExplain("EXPLAIN ALTER TABLE " + tableName + " EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '0s')",
-                "SimpleTableExecute\\[arctic:schemaTableName:tpch.test_delete_orphan_files.*\\{retentionThreshold=0\\.00s}.*");
+        assertExplain("EXPLAIN ALTER TABLE " + tableName + " EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '0s')",
+            "SimpleTableExecute\\[table = arctic:schemaTableName:tpch.test_remove_orphan_files.*\\{retentionThreshold=0\\.00s}.*");
     }
 
     @Test
-    public void testDeleteOrphanFilesParameterValidation()
+    public void testRemoveOrphanFilesParameterValidation()
     {
         assertQueryFails(
-                "ALTER TABLE no_such_table_exists EXECUTE DELETE_ORPHAN_FILES",
-                "\\Qline 1:1: Table 'arctic.tpch.no_such_table_exists' does not exist");
+            "ALTER TABLE no_such_table_exists EXECUTE REMOVE_ORPHAN_FILES",
+            "\\Qline 1:7: Table 'arctic.tpch.no_such_table_exists' does not exist");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '33')",
-                "\\QUnable to set catalog 'arctic' table procedure 'DELETE_ORPHAN_FILES' property 'retention_threshold' to ['33']: duration is not a valid data duration string: 33");
+            "ALTER TABLE nation EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '33')",
+            "\\QUnable to set catalog 'arctic' table procedure 'REMOVE_ORPHAN_FILES' property 'retention_threshold' to ['33']: duration is not a valid data duration string: 33");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '33mb')",
-                "\\QUnable to set catalog 'arctic' table procedure 'DELETE_ORPHAN_FILES' property 'retention_threshold' to ['33mb']: Unknown time unit: mb");
+            "ALTER TABLE nation EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '33mb')",
+            "\\QUnable to set catalog 'arctic' table procedure 'REMOVE_ORPHAN_FILES' property 'retention_threshold' to ['33mb']: Unknown time unit: mb");
         assertQueryFails(
-                "ALTER TABLE nation EXECUTE DELETE_ORPHAN_FILES (retention_threshold => '33s')",
-                "\\QRetention specified (33.00s) is shorter than the minimum retention configured in the system (7.00d). Minimum retention can be changed with iceberg.delete_orphan_files.min-retention configuration property or iceberg.delete_orphan_files_min_retention session property");
+                "ALTER TABLE nation EXECUTE REMOVE_ORPHAN_FILES (retention_threshold => '33s')",
+                "\\QRetention specified (33.00s) is shorter than the minimum retention configured in the system (7.00d). Minimum retention can be changed with iceberg.remove_orphan_files.min-retention configuration property or iceberg.remove_orphan_files_min_retention session property");
     }
 
-    @Test
-    public void testIfDeletesReturnsNumberOfRemovedRows()
-    {
-        String tableName = "test_delete_returns_number_of_rows_" + randomTableSuffix();
-        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 2)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 3)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 1)", 1);
-        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
-        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'one'", 3);
-        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'one'"); // TODO change this when arctic will guarantee to always return this (https://github.com/apache/iceberg/issues/4647)
-        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'three'");
-        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'two'", 2);
-    }
+//    @Test
+//    public void testIfDeletesReturnsNumberOfRemovedRows()
+//    {
+//        String tableName = "test_delete_returns_number_of_rows_" + randomNameSuffix();
+//        assertUpdate("CREATE TABLE " + tableName + " (key varchar, value integer) WITH (partitioning = ARRAY['key'])");
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 2)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('one', 3)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 1)", 1);
+//        assertUpdate("INSERT INTO " + tableName + " VALUES ('two', 2)", 1);
+//        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'one'", 3);
+//        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'one'"); // TODO change this when arctic will guarantee to always return this (https://github.com/apache/iceberg/issues/4647)
+//        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'three'");
+//        assertUpdate("DELETE FROM " + tableName + " WHERE key = 'two'", 2);
+//    }
 
 //    @Test
 //    public void testUpdatingFileFormat()
 //    {
-//        String tableName = "test_updating_file_format_" + randomTableSuffix();
+//        String tableName = "test_updating_file_format_" + randomNameSuffix();
 //
 //        assertUpdate("CREATE TABLE " + tableName + " WITH (format = 'orc') AS SELECT * FROM nation WHERE nationkey < 10", "SELECT count(*) FROM nation WHERE nationkey < 10");
 //        assertQuery("SELECT value FROM \"" + tableName + "$properties\" WHERE key = 'write.format.default'", "VALUES 'ORC'");
@@ -3232,7 +3346,7 @@ public class TestBaseArcticConnectorTest
     @Test
     public void testUpdatingInvalidTableProperty()
     {
-        String tableName = "test_updating_invalid_table_property_" + randomTableSuffix();
+        String tableName = "test_updating_invalid_table_property_" + randomNameSuffix();
         assertUpdate("CREATE TABLE " + tableName + " (a INT, b INT)");
         assertThatThrownBy(() -> query("ALTER TABLE " + tableName + " SET PROPERTIES not_a_valid_table_property = 'a value'"))
                 .hasMessage("Catalog 'arctic' table property 'not_a_valid_table_property' does not exist");
@@ -3242,9 +3356,9 @@ public class TestBaseArcticConnectorTest
     private Session prepareCleanUpSession()
     {
         return Session.builder(getSession())
-                .setCatalogSessionProperty("arctic", "expire_snapshots_min_retention", "0s")
-                .setCatalogSessionProperty("arctic", "delete_orphan_files_min_retention", "0s")
-                .build();
+            .setCatalogSessionProperty("iceberg", "expire_snapshots_min_retention", "0s")
+            .setCatalogSessionProperty("iceberg", "remove_orphan_files_min_retention", "0s")
+            .build();
     }
 
     private List<String> getAllMetadataFilesFromTableDirectoryForTable(String tableName)

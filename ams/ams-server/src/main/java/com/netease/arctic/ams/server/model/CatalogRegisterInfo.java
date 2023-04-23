@@ -29,7 +29,7 @@ public class CatalogRegisterInfo {
   Map<String, String> authConfig;
   Map<String, String> properties;
 
-  public CatalogRegisterInfo(){
+  public CatalogRegisterInfo() {
 
   }
 

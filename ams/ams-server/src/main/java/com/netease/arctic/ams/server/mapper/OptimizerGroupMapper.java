@@ -39,24 +39,23 @@ public interface OptimizerGroupMapper {
   List<OptimizerGroup> selectOptimzerGroups();
 
   @Select("select group_id as id, name, properties, container from " + TABLE_NAME +
-          " where name = #{groupName}")
+      " where name = #{groupName}")
   @Results({
-          @Result(property = "id", column = "id"),
-          @Result(property = "name", column = "name"),
-          @Result(property = "container", column = "container"),
-          @Result(property = "properties", column = "properties",
-                  typeHandler = Map2StringConverter.class)
+      @Result(property = "id", column = "id"),
+      @Result(property = "name", column = "name"),
+      @Result(property = "container", column = "container"),
+      @Result(property = "properties", column = "properties",
+          typeHandler = Map2StringConverter.class)
   })
   OptimizerGroupInfo selectOptimizerGroupInfo(String groupName);
 
   @Select("select group_id as id, name, properties, container from " + TABLE_NAME)
   @Results({
-          @Result(property = "id", column = "id"),
-          @Result(property = "name", column = "name"),
-          @Result(property = "container", column = "container"),
-          @Result(property = "properties", column = "properties",
-                  typeHandler = Map2StringConverter.class)
+      @Result(property = "id", column = "id"),
+      @Result(property = "name", column = "name"),
+      @Result(property = "container", column = "container"),
+      @Result(property = "properties", column = "properties",
+          typeHandler = Map2StringConverter.class)
   })
   List<OptimizerGroupInfo> selectAllOptimizerGroupInfo();
-
 }

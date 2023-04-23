@@ -16,12 +16,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <packaging>pom</packaging>
 
     <parent>
         <groupId>com.netease.arctic</groupId>
@@ -31,12 +28,9 @@
     </parent>
 
     <artifactId>arctic-flink</artifactId>
+    <packaging>pom</packaging>
     <name>Arctic Project Flink Parent</name>
     <url>https://arctic.netease.com</url>
-
-    <properties>
-        <kafka.version>2.4.1</kafka.version>
-    </properties>
 
     <modules>
         <module>v1.12/flink</module>
@@ -49,5 +43,9 @@
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>
     </modules>
+
+    <properties>
+        <kafka.version>2.4.1</kafka.version>
+    </properties>
 
 </project>

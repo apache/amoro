@@ -24,12 +24,11 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.trino.delete.TrinoRow;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
-import io.trino.plugin.hive.HdfsEnvironment;
-import io.trino.plugin.iceberg.FileIoProvider;
+import io.trino.filesystem.TrinoFileSystemFactory;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.IcebergUtil;
-import io.trino.plugin.iceberg.delete.TrinoRow;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
@@ -52,16 +51,16 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
 
   private final IcebergPageSourceProvider icebergPageSourceProvider;
   private final TypeManager typeManager;
-  private final FileIoProvider fileIoProvider;
+  private final TrinoFileSystemFactory fileSystemFactory;
 
   @Inject
   public KeyedPageSourceProvider(
       IcebergPageSourceProvider icebergPageSourceProvider,
       TypeManager typeManager,
-      FileIoProvider fileIoProvider) {
+      TrinoFileSystemFactory fileSystemFactory) {
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.typeManager = typeManager;
-    this.fileIoProvider = fileIoProvider;
+    this.fileSystemFactory = fileSystemFactory;
   }
 
   @Override
@@ -85,7 +84,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         tableSchema,
         ImmutableList.of(),
         keyedTableHandle.getPrimaryKeySpec(),
-        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), null)
+        fileSystemFactory.create(session).toFileIo()
     ).requiredSchema(), typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();
     requiredColumnsBuilder.addAll(icebergColumnHandles);
@@ -98,7 +97,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         tableSchema,
         requiredColumns,
         keyedTableHandle.getPrimaryKeySpec(),
-        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), session.getQueryId())
+        fileSystemFactory.create(session).toFileIo()
     );
 
     return new KeyedConnectorPageSource(
@@ -111,7 +110,6 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         keyedTableHandle,
         dynamicFilter,
         typeManager,
-        fileIoProvider,
         arcticDeleteFilter
     );
   }

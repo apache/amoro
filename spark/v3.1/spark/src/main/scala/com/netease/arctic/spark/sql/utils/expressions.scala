@@ -52,6 +52,3 @@ object FieldReference {
     LogicalExpressions.parseReference(column)
   }
 }
-
-
-

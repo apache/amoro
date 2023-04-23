@@ -147,6 +147,7 @@ public class HiveTableTestBase extends TableTestBase {
 
       CatalogMeta catalogMeta = new CatalogMeta(HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
           storageConfig, authConfig, catalogProperties);
+      AMS.handler().dropCatalog(HIVE_CATALOG_NAME);
       AMS.createCatalogIfAbsent(catalogMeta);
     }
   }

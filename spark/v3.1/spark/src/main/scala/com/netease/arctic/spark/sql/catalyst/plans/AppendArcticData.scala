@@ -23,11 +23,10 @@ import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
 case class AppendArcticData(
-  table: NamedRelation,
-  query: LogicalPlan,
-  validateQuery: LogicalPlan,
-  writeOptions: Map[String, String]
-) extends Command {
+    table: NamedRelation,
+    query: LogicalPlan,
+    validateQuery: LogicalPlan,
+    writeOptions: Map[String, String]) extends Command {
   override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
 
 }

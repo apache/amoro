@@ -42,8 +42,8 @@ object AssignmentHelper extends SQLConfHelper {
         .forall { case (attrRef, keyRef) => conf.resolver(attrRef, keyRef) }
 
       refsEqual &&
-        DataType.equalsIgnoreCompatibleNullability(value.dataType, attr.dataType) &&
-        (attr.nullable || !value.nullable)
+      DataType.equalsIgnoreCompatibleNullability(value.dataType, attr.dataType) &&
+      (attr.nullable || !value.nullable)
     }
   }
 

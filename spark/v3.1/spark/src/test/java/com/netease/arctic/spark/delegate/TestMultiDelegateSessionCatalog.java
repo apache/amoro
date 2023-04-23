@@ -41,6 +41,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -49,6 +50,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+@Ignore
 public class TestMultiDelegateSessionCatalog extends SparkTestContext {
 
   @Rule

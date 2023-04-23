@@ -19,20 +19,45 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.controller.response.Response;
 import io.javalin.testtools.JavalinTest;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ArcticMetaStore.class})
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class SettingControllerTest {
   private final Logger LOG = LoggerFactory.getLogger(SettingController.class);
 
   @Test
   public void testGetVersion() {
+    mockStatic(ArcticMetaStore.class);
+    when(ArcticMetaStore.getSystemSettingFromYaml()).thenAnswer((Answer<LinkedHashMap<String,Object>>) x ->
+        new LinkedHashMap<String, Object>(){{
+          put("arctic.ams.database.type", "derby");
+          put("b", true);
+          Map<String, String> mapType = new HashMap<>();
+          mapType.put("c1", "v1");
+          put("c", mapType);
+        }});
     JavalinTest.test((app, client) -> {
-      app.get("/", ctx -> SettingController.getSystemSetting(ctx));
-      final okhttp3.Response resp = client.get("/", x -> {
+      app.get("/settings/system", ctx -> SettingController.getSystemSetting(ctx));
+      final okhttp3.Response resp = client.get("/settings/system", x -> {
       });
       assert resp.code() == 200;
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);

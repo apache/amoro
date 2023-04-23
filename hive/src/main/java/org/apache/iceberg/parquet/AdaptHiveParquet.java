@@ -33,7 +33,6 @@ import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetWriter;
 import org.apache.iceberg.deletes.EqualityDeleteWriter;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptionKeyMetadata;
-import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.hadoop.HadoopInputFile;
 import org.apache.iceberg.hadoop.HadoopOutputFile;
@@ -69,6 +68,7 @@ import org.apache.parquet.schema.MessageType;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -125,7 +125,7 @@ public class AdaptHiveParquet {
     public WriteBuilder forTable(Table table) {
       schema(table.schema());
       setAll(table.properties());
-      metricsConfig(MetricsConfig.fromProperties(table.properties()));
+      metricsConfig(MetricsConfig.forTable(table));
       return this;
     }
 
@@ -305,13 +305,13 @@ public class AdaptHiveParquet {
 
       static Context dataContext(Map<String, String> config) {
         int rowGroupSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_ROW_GROUP_SIZE_BYTES, PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT));
+            PARQUET_ROW_GROUP_SIZE_BYTES, Integer.toString(PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT)));
 
         int pageSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_PAGE_SIZE_BYTES, PARQUET_PAGE_SIZE_BYTES_DEFAULT));
+            PARQUET_PAGE_SIZE_BYTES, Integer.toString(PARQUET_PAGE_SIZE_BYTES_DEFAULT)));
 
         int dictionaryPageSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_DICT_SIZE_BYTES, PARQUET_DICT_SIZE_BYTES_DEFAULT));
+            PARQUET_DICT_SIZE_BYTES, Integer.toString(PARQUET_DICT_SIZE_BYTES_DEFAULT)));
 
         String codecAsString = config.getOrDefault(PARQUET_COMPRESSION, PARQUET_COMPRESSION_DEFAULT);
         CompressionCodecName codec = toCodec(codecAsString);
@@ -393,7 +393,7 @@ public class AdaptHiveParquet {
       schema(table.schema());
       withSpec(table.spec());
       setAll(table.properties());
-      metricsConfig(MetricsConfig.fromProperties(table.properties()));
+      metricsConfig(MetricsConfig.forTable(table));
       return this;
     }
 
@@ -491,7 +491,7 @@ public class AdaptHiveParquet {
       rowSchema(table.schema());
       withSpec(table.spec());
       setAll(table.properties());
-      metricsConfig(MetricsConfig.fromProperties(table.properties()));
+      metricsConfig(MetricsConfig.forTable(table));
       return this;
     }
 
@@ -845,7 +845,7 @@ public class AdaptHiveParquet {
         try (ParquetFileReader schemaReader = ParquetFileReader.open(ParquetIO.file(file))) {
           type = schemaReader.getFileMetaData().getSchema();
         } catch (IOException e) {
-          throw new RuntimeIOException(e);
+          throw new UncheckedIOException(e);
         }
         Schema fileSchema = ParquetSchemaUtil.convert(type);
         builder.useStatsFilter()

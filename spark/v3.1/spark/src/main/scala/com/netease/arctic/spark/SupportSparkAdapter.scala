@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark
 
-
 /**
  * Use this trait to get SparkAdapter when scala object need to
  * adapt between different spark version

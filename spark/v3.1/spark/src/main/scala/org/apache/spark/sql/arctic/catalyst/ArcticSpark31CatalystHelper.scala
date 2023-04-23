@@ -23,18 +23,17 @@ import com.netease.arctic.spark.SparkInternalRowWrapper
 import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.{catalyst, connector, AnalysisException}
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder}
 import org.apache.spark.sql.types.{DataType, IntegerType, LongType}
-import org.apache.spark.sql.{AnalysisException, catalyst, connector}
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
-
 
   def toCatalyst(expr: connector.expressions.Expression, query: LogicalPlan): Expression = {
     def resolve(parts: Seq[String]): NamedExpression = {
@@ -79,14 +78,16 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     }
   }
 
-  private def toCatalystSortDirection(direction: SortDirection): catalyst.expressions.SortDirection = {
+  private def toCatalystSortDirection(direction: SortDirection)
+      : catalyst.expressions.SortDirection = {
     direction match {
       case SortDirection.ASCENDING => catalyst.expressions.Ascending
       case SortDirection.DESCENDING => catalyst.expressions.Descending
     }
   }
 
-  private def toCatalystNullOrdering(nullOrdering: NullOrdering): catalyst.expressions.NullOrdering = {
+  private def toCatalystNullOrdering(nullOrdering: NullOrdering)
+      : catalyst.expressions.NullOrdering = {
     nullOrdering match {
       case NullOrdering.NULLS_FIRST => catalyst.expressions.NullsFirst
       case NullOrdering.NULLS_LAST => catalyst.expressions.NullsLast
@@ -96,11 +97,11 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
   private object ArcticBucketTransform {
     def unapply(transform: Transform): Option[(Int, FieldReference)] = transform match {
       case bt: BucketTransform => bt.columns match {
-        case Seq(nf: NamedReference) =>
-          Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
-        case _ =>
-          None
-      }
+          case Seq(nf: NamedReference) =>
+            Some(bt.numBuckets.value(), FieldReference(nf.fieldNames()))
+          case _ =>
+            None
+        }
       case _ => None
     }
   }
@@ -125,11 +126,15 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     }
   }
 
-  case class ArcticFileIndexBucketTransform(numBuckets: Int, keyData: PrimaryKeyData, schema: Schema)
+  case class ArcticFileIndexBucketTransform(
+      numBuckets: Int,
+      keyData: PrimaryKeyData,
+      schema: Schema)
     extends Expression with CodegenFallback with NullIntolerant {
 
     @transient
-    lazy val internalRowToStruct: SparkInternalRowWrapper = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema))
+    lazy val internalRowToStruct: SparkInternalRowWrapper =
+      new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema))
 
     override def dataType: DataType = LongType
 

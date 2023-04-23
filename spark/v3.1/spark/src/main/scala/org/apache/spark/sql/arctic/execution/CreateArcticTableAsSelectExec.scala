@@ -18,6 +18,8 @@
 
 package org.apache.spark.sql.arctic.execution
 
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+
 import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
@@ -29,19 +31,16 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.ArcticTableWriteExec
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
-
 case class CreateArcticTableAsSelectExec(
-  catalog: TableCatalog,
-  ident: Identifier,
-  partitioning: Seq[Transform],
-  plan: LogicalPlan,
-  queryInsert: SparkPlan,
-  validateQuery: SparkPlan,
-  properties: Map[String, String],
-  writeOptions: CaseInsensitiveStringMap,
-  ifNotExists: Boolean
-) extends ArcticTableWriteExec {
+    catalog: TableCatalog,
+    ident: Identifier,
+    partitioning: Seq[Transform],
+    plan: LogicalPlan,
+    queryInsert: SparkPlan,
+    validateQuery: SparkPlan,
+    properties: Map[String, String],
+    writeOptions: CaseInsensitiveStringMap,
+    ifNotExists: Boolean) extends ArcticTableWriteExec {
 
   var arcticTable: ArcticSparkTable = _
 
@@ -56,8 +55,10 @@ case class CreateArcticTableAsSelectExec(
 
     val schema = CharVarcharUtils.getRawSchema(queryInsert.schema).asNullable
     val table = catalog.createTable(
-      ident, schema,
-      partitioning.toArray, properties.asJava)
+      ident,
+      schema,
+      partitioning.toArray,
+      properties.asJava)
     table match {
       case table: ArcticSparkTable =>
         arcticTable = table

@@ -18,8 +18,10 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import scala.collection.JavaConverters.seqAsJavaList
+
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -28,9 +30,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Subque
 import org.apache.spark.sql.connector.catalog.{Identifier, Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
-
-import scala.collection.JavaConverters.seqAsJavaList
-
 
 object ArcticExtensionUtils {
 
@@ -57,9 +56,10 @@ object ArcticExtensionUtils {
   }
 
   implicit class ArcticStructTypeHelper(struct: StructType) {
-    def findNestedField(fieldNames: Seq[String],
-                        includeCollections: Boolean = false,
-                        resolver: Resolver = _ == _): Option[(Seq[String], StructField)] = {
+    def findNestedField(
+        fieldNames: Seq[String],
+        includeCollections: Boolean = false,
+        resolver: Resolver = _ == _): Option[(Seq[String], StructField)] = {
       def prettyFieldName(nameParts: Seq[String]): String = {
         nameParts.map(quoteIfNeeded).mkString(".")
       }
@@ -72,11 +72,10 @@ object ArcticExtensionUtils {
         }
       }
 
-
       def findField(
-                     struct: StructType,
-                     searchPath: Seq[String],
-                     normalizedPath: Seq[String]): Option[(Seq[String], StructField)] = {
+          struct: StructType,
+          searchPath: Seq[String],
+          normalizedPath: Seq[String]): Option[(Seq[String], StructField)] = {
         searchPath.headOption.flatMap { searchName =>
           val found = struct.fields.filter(f => resolver(searchName, f.name))
           if (found.length > 1) {
@@ -101,9 +100,12 @@ object ArcticExtensionUtils {
 
               case (Seq("key"), MapType(keyType, _, _), true) =>
                 // return the key type as a struct field to include nullability
-                Some((normalizedPath :+ field.name) -> StructField("key", keyType, nullable = false))
+                Some((normalizedPath :+ field.name) -> StructField(
+                  "key",
+                  keyType,
+                  nullable = false))
 
-              case (Seq("key", names@_*), MapType(struct: StructType, _, _), true) =>
+              case (Seq("key", names @ _*), MapType(struct: StructType, _, _), true) =>
                 findField(struct, names, normalizedPath ++ Seq(field.name, "key"))
 
               case (Seq("value"), MapType(_, valueType, isNullable), true) =>
@@ -111,7 +113,7 @@ object ArcticExtensionUtils {
                 Some((normalizedPath :+ field.name) ->
                   StructField("value", valueType, nullable = isNullable))
 
-              case (Seq("value", names@_*), MapType(_, struct: StructType, _), true) =>
+              case (Seq("value", names @ _*), MapType(_, struct: StructType, _), true) =>
                 findField(struct, names, normalizedPath ++ Seq(field.name, "value"))
 
               case (Seq("element"), ArrayType(elementType, isNullable), true) =>
@@ -119,7 +121,7 @@ object ArcticExtensionUtils {
                 Some((normalizedPath :+ field.name) ->
                   StructField("element", elementType, nullable = isNullable))
 
-              case (Seq("element", names@_*), ArrayType(struct: StructType, _), true) =>
+              case (Seq("element", names @ _*), ArrayType(struct: StructType, _), true) =>
                 findField(struct, names, normalizedPath ++ Seq(field.name, "element"))
 
               case _ =>
@@ -141,7 +143,9 @@ object ArcticExtensionUtils {
 
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
-      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
+          isArcticTable(p)
+        }
       case _ => false
     }
   }
@@ -155,8 +159,8 @@ object ArcticExtensionUtils {
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticIcebergTable(p)
       case s: SubqueryAlias => s.child.children.exists {
-        case p: DataSourceV2Relation => isArcticIcebergTable(p)
-      }
+          case p: DataSourceV2Relation => isArcticIcebergTable(p)
+        }
     }
   }
 
@@ -191,14 +195,18 @@ object ArcticExtensionUtils {
     }
   }
 
-  def buildCatalogAndIdentifier(sparkSession: SparkSession, originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
+  def buildCatalogAndIdentifier(
+      sparkSession: SparkSession,
+      originIdentifier: TableIdentifier): (TableCatalog, Identifier) = {
     var identifier: Seq[String] = Seq.empty[String]
     identifier :+= originIdentifier.database.get
     identifier :+= originIdentifier.table
-    val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
+    val catalogAndIdentifier =
+      Spark3Util.catalogAndIdentifier(sparkSession, seqAsJavaList(identifier))
     catalogAndIdentifier.catalog() match {
       case a: TableCatalog => (a, catalogAndIdentifier.identifier())
-      case _ => throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
+      case _ =>
+        throw new UnsupportedOperationException("Only support TableCatalog or its implementation")
     }
   }
 }

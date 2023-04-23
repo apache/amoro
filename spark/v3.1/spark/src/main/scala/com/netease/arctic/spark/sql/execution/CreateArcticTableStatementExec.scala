@@ -18,6 +18,8 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import scala.collection.JavaConverters
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -27,19 +29,22 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.StructType
 
-import scala.collection.JavaConverters
-
-case class CreateArcticTableStatementExec(catalog: TableCatalog,
-                                          ident: Identifier,
-                                          structType: StructType,
-                                          partitioning: Seq[Transform],
-                                          map: Map[String, String],
-                                          ignoreIfExists: Boolean) extends V2CommandExec {
+case class CreateArcticTableStatementExec(
+    catalog: TableCatalog,
+    ident: Identifier,
+    structType: StructType,
+    partitioning: Seq[Transform],
+    map: Map[String, String],
+    ignoreIfExists: Boolean) extends V2CommandExec {
 
   override protected def run(): Seq[InternalRow] = {
     if (!catalog.tableExists(ident)) {
       try {
-        catalog.createTable(ident, structType, partitioning.toArray, JavaConverters.mapAsJavaMap(map));
+        catalog.createTable(
+          ident,
+          structType,
+          partitioning.toArray,
+          JavaConverters.mapAsJavaMap(map));
       } catch {
         case _: TableAlreadyExistsException if ignoreIfExists =>
           logWarning(s"Table ${ident.name()} was created concurrently. Ignoring.")
