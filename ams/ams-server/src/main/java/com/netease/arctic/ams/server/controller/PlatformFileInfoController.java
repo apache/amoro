@@ -70,7 +70,7 @@ public class PlatformFileInfoController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Invalid file id", null));
       return;
     }
-    String content = platformFileInfoService.getFileContentById(Integer.valueOf(fileId));
+    byte[] content = platformFileInfoService.getFileContentBytesById(Integer.valueOf(fileId));
     ctx.result(content);
   }
 }
