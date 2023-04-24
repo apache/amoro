@@ -44,7 +44,7 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
-      );
+  );
 
   public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
     super(basicUnkeyedTable, refreshEagerly);

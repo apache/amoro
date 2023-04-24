@@ -82,7 +82,7 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
       ImmutableList.of("path", "transient_lastDdlTime", "serialization.format");
 
   private static final StructType OUTPUT_TYPE = new StructType(
-      new StructField[] {
+      new StructField[]{
           new StructField("partition", DataTypes.StringType, false, Metadata.empty()),
           new StructField("file_counts", DataTypes.IntegerType, false, Metadata.empty())
       }
@@ -156,7 +156,7 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     //spark.sessionState().catalog().dropTable(ident, false, false);
 
     if (PartitionSpec.unpartitioned().equals(spec)) {
-      return new Row[] {RowFactory.create("ALL", dataFiles.size())};
+      return new Row[]{RowFactory.create("ALL", dataFiles.size())};
     }
 
     Map<String, List<DataFile>> partitions = Maps.newHashMap();

@@ -159,7 +159,7 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
   }
 
   private static <T> List<T> visitFields(StructType struct, GroupType group,
-      AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
+                                         AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
     StructField[] sFields = struct.fields();
     Preconditions.checkArgument(sFields.length == group.getFieldCount(),
         "Structs do not match: %s and %s", struct, group);

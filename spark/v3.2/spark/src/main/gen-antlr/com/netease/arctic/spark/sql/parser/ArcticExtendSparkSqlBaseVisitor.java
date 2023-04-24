@@ -1,5 +1,6 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.8
+// Generated from /Users/jinsilei/arctic/arctic/spark/v3.2/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.10.1
 package com.netease.arctic.spark.sql.parser;
+
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -123,20 +124,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitUse(ArcticExtendSparkSqlParser.UseContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitUseNamespace(ArcticExtendSparkSqlParser.UseNamespaceContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitSetCatalog(ArcticExtendSparkSqlParser.SetCatalogContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -437,13 +424,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitShowCatalogs(ArcticExtendSparkSqlParser.ShowCatalogsContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitDescribeFunction(ArcticExtendSparkSqlParser.DescribeFunctionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -598,20 +578,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitCreateIndex(ArcticExtendSparkSqlParser.CreateIndexContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitDropIndex(ArcticExtendSparkSqlParser.DropIndexContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitConfigKey(ArcticExtendSparkSqlParser.ConfigKeyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -738,13 +704,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNamespaces(ArcticExtendSparkSqlParser.NamespacesContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitDescribeFuncName(ArcticExtendSparkSqlParser.DescribeFuncNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -787,28 +746,28 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyList(ArcticExtendSparkSqlParser.PropertyListContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTablePropertyList(ArcticExtendSparkSqlParser.TablePropertyListContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitProperty(ArcticExtendSparkSqlParser.PropertyContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTableProperty(ArcticExtendSparkSqlParser.TablePropertyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyKey(ArcticExtendSparkSqlParser.PropertyKeyContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTablePropertyKey(ArcticExtendSparkSqlParser.TablePropertyKeyContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPropertyValue(ArcticExtendSparkSqlParser.PropertyValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTablePropertyValue(ArcticExtendSparkSqlParser.TablePropertyValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1095,13 +1054,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTemporalClause(ArcticExtendSparkSqlParser.TemporalClauseContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitAggregationClause(ArcticExtendSparkSqlParser.AggregationClauseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -1361,20 +1313,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitMultipartIdentifierPropertyList(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyListContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitMultipartIdentifierProperty(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitTableIdentifier(ArcticExtendSparkSqlParser.TableIdentifierContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -1522,13 +1460,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDatetimeUnit(ArcticExtendSparkSqlParser.DatetimeUnitContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitStruct(ArcticExtendSparkSqlParser.StructContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -1537,48 +1468,6 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitDereference(ArcticExtendSparkSqlParser.DereferenceContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitTimestampadd(ArcticExtendSparkSqlParser.TimestampaddContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitCast(ArcticExtendSparkSqlParser.CastContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1641,14 +1530,21 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTimestampdiff(ArcticExtendSparkSqlParser.TimestampdiffContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubqueryExpression(ArcticExtendSparkSqlParser.SubqueryExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSubqueryExpression(ArcticExtendSparkSqlParser.SubqueryExpressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitCast(ArcticExtendSparkSqlParser.CastContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1662,6 +1558,20 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitExtract(ArcticExtendSparkSqlParser.ExtractContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -1669,7 +1579,7 @@ public class ArcticExtendSparkSqlBaseVisitor<T> extends AbstractParseTreeVisitor
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPercentile(ArcticExtendSparkSqlParser.PercentileContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTrim(ArcticExtendSparkSqlParser.TrimContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -200,7 +200,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
       UnresolvedMergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions)
 
     case DeleteFromTable(UnresolvedIcebergTable(aliasedTable), condition) =>
-      DeleteFromIcebergTable(aliasedTable, Some(condition))
+      DeleteFromIcebergTable(aliasedTable, condition)
 
     case UpdateTable(UnresolvedIcebergTable(aliasedTable), assignments, condition) =>
       UpdateIcebergTable(aliasedTable, assignments, condition)
@@ -281,8 +281,6 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
       case _ => false
     }
   }
-
-  override def parseQuery(sqlText: String): LogicalPlan = parsePlan(sqlText)
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */

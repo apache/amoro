@@ -94,7 +94,7 @@ public class TaskWriters {
     this.dsSchema = dsSchema;
     return this;
   }
-  
+
   public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
     this.hiveSubdirectory = hiveSubdirectory;
     return this;

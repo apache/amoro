@@ -33,7 +33,6 @@ import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.relocated.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.transforms.SortOrderVisitor;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.NamedReference;
@@ -57,7 +56,7 @@ public class DistributionAndOrderingUtil {
   private static final Expression PARTITION_ORDER = expressionHelper.sort(PARTITION, true);
   private static final Expression FILE_PATH_ORDER = expressionHelper.sort(FILE_PATH, true);
   private static final Expression ROW_POSITION_ORDER = expressionHelper.sort(ROW_POSITION, true);
-  private static final Expression[] METADATA_ORDERS = new Expression[] {
+  private static final Expression[] METADATA_ORDERS = new Expression[]{
       PARTITION_ORDER, FILE_PATH_ORDER, ROW_POSITION_ORDER
   };
 
@@ -66,7 +65,7 @@ public class DistributionAndOrderingUtil {
    * The result of this method will convert to a list of {@link org.apache.spark.sql.catalyst.expressions.Expression}
    * which will be used by a {@link org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression} operator.
    *
-   * @param table the arctic table to write
+   * @param table     the arctic table to write
    * @param writeBase write to base store
    * @return array of expressions indicate how to shuffle incoming data.
    */
@@ -111,9 +110,9 @@ public class DistributionAndOrderingUtil {
    * be used for a local sort by add an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for
    * in-coming data.
    *
-   * @param table the arctic table to write to
+   * @param table             the arctic table to write to
    * @param rowLevelOperation is this writing is an row-level-operation or a batch overwrite.
-   * @param writeBase is this writing happened in base store.
+   * @param writeBase         is this writing happened in base store.
    * @return array of expression to indicate how incoming data will be sorted.
    */
   public static Expression[] buildTableRequiredSortOrder(
@@ -134,7 +133,7 @@ public class DistributionAndOrderingUtil {
 
     SortOrder.Builder builder = SortOrder.builderFor(schema);
     if (partitionSpec.isPartitioned()) {
-      for (PartitionField field: partitionSpec.fields()) {
+      for (PartitionField field : partitionSpec.fields()) {
         String sourceName = schema.findColumnName(field.sourceId());
         builder.asc(org.apache.iceberg.expressions.Expressions.transform(sourceName, field.transform()));
       }

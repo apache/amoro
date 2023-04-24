@@ -27,6 +27,7 @@ public class SparkAdapterLoader {
 
   /**
    * This method will implement as SPI if multi spark modules added.
+   *
    * @return A SparkAdapter objects
    */
   public static SparkAdapter getOrLoad() {

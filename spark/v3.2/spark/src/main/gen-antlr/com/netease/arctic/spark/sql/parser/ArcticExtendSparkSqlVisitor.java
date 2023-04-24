@@ -1,5 +1,6 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.8
+// Generated from /Users/jinsilei/arctic/arctic/spark/v3.2/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.10.1
 package com.netease.arctic.spark.sql.parser;
+
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -112,20 +113,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitUse(ArcticExtendSparkSqlParser.UseContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code useNamespace}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitUseNamespace(ArcticExtendSparkSqlParser.UseNamespaceContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code setCatalog}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSetCatalog(ArcticExtendSparkSqlParser.SetCatalogContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code createNamespace}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
@@ -421,13 +408,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitShowCurrentNamespace(ArcticExtendSparkSqlParser.ShowCurrentNamespaceContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code showCatalogs}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitShowCatalogs(ArcticExtendSparkSqlParser.ShowCatalogsContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code describeFunction}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
 	 * @param ctx the parse tree
@@ -582,20 +562,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitResetConfiguration(ArcticExtendSparkSqlParser.ResetConfigurationContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code createIndex}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCreateIndex(ArcticExtendSparkSqlParser.CreateIndexContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code dropIndex}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitDropIndex(ArcticExtendSparkSqlParser.DropIndexContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#configKey}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -708,12 +674,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitNamespace(ArcticExtendSparkSqlParser.NamespaceContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#namespaces}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitNamespaces(ArcticExtendSparkSqlParser.NamespacesContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#describeFuncName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -750,29 +710,29 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#propertyList}.
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPropertyList(ArcticExtendSparkSqlParser.PropertyListContext ctx);
+	T visitTablePropertyList(ArcticExtendSparkSqlParser.TablePropertyListContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#property}.
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tableProperty}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitProperty(ArcticExtendSparkSqlParser.PropertyContext ctx);
+	T visitTableProperty(ArcticExtendSparkSqlParser.TablePropertyContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#propertyKey}.
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyKey}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPropertyKey(ArcticExtendSparkSqlParser.PropertyKeyContext ctx);
+	T visitTablePropertyKey(ArcticExtendSparkSqlParser.TablePropertyKeyContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#propertyValue}.
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyValue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPropertyValue(ArcticExtendSparkSqlParser.PropertyValueContext ctx);
+	T visitTablePropertyValue(ArcticExtendSparkSqlParser.TablePropertyValueContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#constantList}.
 	 * @param ctx the parse tree
@@ -1030,12 +990,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFromClause(ArcticExtendSparkSqlParser.FromClauseContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#temporalClause}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTemporalClause(ArcticExtendSparkSqlParser.TemporalClauseContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#aggregationClause}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -1269,18 +1223,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMultipartIdentifier(ArcticExtendSparkSqlParser.MultipartIdentifierContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#multipartIdentifierPropertyList}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMultipartIdentifierPropertyList(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyListContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#multipartIdentifierProperty}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMultipartIdentifierProperty(ArcticExtendSparkSqlParser.MultipartIdentifierPropertyContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tableIdentifier}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -1419,12 +1361,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArithmeticUnary(ArcticExtendSparkSqlParser.ArithmeticUnaryContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#datetimeUnit}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitDatetimeUnit(ArcticExtendSparkSqlParser.DatetimeUnitContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code struct}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -1438,48 +1374,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitDereference(ArcticExtendSparkSqlParser.DereferenceContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code timestampadd}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTimestampadd(ArcticExtendSparkSqlParser.TimestampaddContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code substring}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code cast}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCast(ArcticExtendSparkSqlParser.CastContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code lambda}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code parenthesizedExpression}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code trim}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTrim(ArcticExtendSparkSqlParser.TrimContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code simpleCase}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
@@ -1537,19 +1431,26 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSubscript(ArcticExtendSparkSqlParser.SubscriptContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code timestampdiff}
-	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTimestampdiff(ArcticExtendSparkSqlParser.TimestampdiffContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code subqueryExpression}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitSubqueryExpression(ArcticExtendSparkSqlParser.SubqueryExpressionContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code substring}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubstring(ArcticExtendSparkSqlParser.SubstringContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code cast}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCast(ArcticExtendSparkSqlParser.CastContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code constantDefault}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
@@ -1558,6 +1459,20 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitConstantDefault(ArcticExtendSparkSqlParser.ConstantDefaultContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code lambda}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambda(ArcticExtendSparkSqlParser.LambdaContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code parenthesizedExpression}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParenthesizedExpression(ArcticExtendSparkSqlParser.ParenthesizedExpressionContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code extract}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -1565,12 +1480,12 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExtract(ArcticExtendSparkSqlParser.ExtractContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code percentile}
+	 * Visit a parse tree produced by the {@code trim}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPercentile(ArcticExtendSparkSqlParser.PercentileContext ctx);
+	T visitTrim(ArcticExtendSparkSqlParser.TrimContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code functionCall}
 	 * labeled alternative in {@link ArcticExtendSparkSqlParser#primaryExpression}.

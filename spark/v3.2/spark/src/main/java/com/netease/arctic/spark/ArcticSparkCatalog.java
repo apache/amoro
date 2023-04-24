@@ -45,7 +45,6 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
-import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
@@ -153,7 +152,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BasicUnkeyedTable)table.asKeyedTable().changeTable(),
+          return new ArcticSparkChangeTable((BasicUnkeyedTable) table.asKeyedTable().changeTable(),
               false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
@@ -408,7 +407,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         .collect(Collectors.toList());
 
     return tableIdentifiers.stream()
-        .map(i -> Identifier.of(new String[] {i.getDatabase()}, i.getTableName()))
+        .map(i -> Identifier.of(new String[]{i.getDatabase()}, i.getTableName()))
         .toArray(Identifier[]::new);
   }
 
@@ -430,7 +429,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   @Override
   public String[][] listNamespaces() {
     return catalog.listDatabases().stream()
-        .map(d -> new String[] {d})
+        .map(d -> new String[]{d})
         .toArray(String[][]::new);
   }
 
@@ -464,8 +463,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
+  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;

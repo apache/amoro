@@ -30,6 +30,7 @@ public interface SupportsRowLevelOperator extends Table {
 
   /**
    * Returns support extend columns scan builder
+   *
    * @param options
    * @return
    */

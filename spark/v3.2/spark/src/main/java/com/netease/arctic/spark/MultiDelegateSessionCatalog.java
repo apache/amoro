@@ -23,11 +23,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
-import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
-import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.CatalogExtension;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
@@ -39,7 +37,6 @@ import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
-import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
@@ -164,9 +161,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return this.delegateCatalog.dropNamespace(namespace, cascade);
+  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
+    return this.delegateCatalog.dropNamespace(namespace);
   }
 
   @Override
@@ -303,16 +299,6 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
         .orElseGet(() -> getClass().getClassLoader());
   }
 
-  @Override
-  public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
-    return new Identifier[0];
-  }
-
-  @Override
-  public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
-    return null;
-  }
-
   private static class CatalogHolder<T extends TableCatalog & SupportsNamespaces>
       implements CatalogExtension, ProcedureCatalog, StagingTableCatalog {
 
@@ -365,9 +351,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     }
 
     @Override
-    public boolean dropNamespace(String[] namespace, boolean cascade)
-        throws NoSuchNamespaceException, NonEmptyNamespaceException {
-      return holder.dropNamespace(namespace, cascade);
+    public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
+      return holder.dropNamespace(namespace);
     }
 
     @Override
@@ -491,16 +476,6 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       } else {
         throw new UnsupportedOperationException("loadProcedure is not supported");
       }
-    }
-
-    @Override
-    public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
-      return new Identifier[0];
-    }
-
-    @Override
-    public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
-      return null;
     }
   }
 }

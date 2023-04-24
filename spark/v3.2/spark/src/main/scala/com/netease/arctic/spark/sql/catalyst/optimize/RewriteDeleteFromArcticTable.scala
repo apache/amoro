@@ -62,8 +62,8 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
-      pushFilter(scanBuilder, condition, r.output)
-      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
+      pushFilter(scanBuilder, condition.get, r.output)
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition.get)
       var options: Map[String, String] = Map.empty
       options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, options)

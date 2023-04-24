@@ -17,7 +17,7 @@
  */
 
 grammar ArcticSqlCommand;
-import SqlBaseParser;
+import SqlBase;
 
 arcticCommand
     : arcticStatement

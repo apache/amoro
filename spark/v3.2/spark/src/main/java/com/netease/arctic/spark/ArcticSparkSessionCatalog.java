@@ -20,10 +20,8 @@ package com.netease.arctic.spark;
 
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
-import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
-import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.CatalogExtension;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
@@ -33,7 +31,6 @@ import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
-import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
@@ -105,10 +102,10 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return getSessionCatalog().dropNamespace(namespace, cascade);
+  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
+    return getSessionCatalog().dropNamespace(namespace);
   }
+
 
   @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
@@ -222,15 +219,5 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   private boolean isArcticTable(Table table) {
     return table.properties().containsKey("arctic.enabled") &&
         table.properties().get("arctic.enabled").equals("true");
-  }
-
-  @Override
-  public Identifier[] listFunctions(String[] namespace) throws NoSuchNamespaceException {
-    return new Identifier[0];
-  }
-
-  @Override
-  public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
-    return null;
   }
 }

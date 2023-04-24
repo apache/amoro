@@ -268,7 +268,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriters builder =  TaskWriters.of(table)
+      TaskWriters builder = TaskWriters.of(table)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withOrderedWriter(orderedWriter)

@@ -211,7 +211,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   public boolean appendAsUpsert() {
     return arcticTable.isKeyedTable() &&
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(
-                TableProperties.UPSERT_ENABLED, "false"));
+            TableProperties.UPSERT_ENABLED, "false"));
   }
 
   @Override

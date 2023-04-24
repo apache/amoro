@@ -79,13 +79,13 @@ public class AdaptHiveSparkParquetWriters {
 
     @Override
     public ParquetValueWriter<?> message(StructType struct, MessageType message,
-        List<ParquetValueWriter<?>> fieldWriters) {
+                                         List<ParquetValueWriter<?>> fieldWriters) {
       return struct(struct, message.asGroupType(), fieldWriters);
     }
 
     @Override
     public ParquetValueWriter<?> struct(StructType structType, GroupType struct,
-        List<ParquetValueWriter<?>> fieldWriters) {
+                                        List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
       StructField[] sparkFields = structType.fields();
       List<ParquetValueWriter<?>> writers = Lists.newArrayListWithExpectedSize(fieldWriters.size());
@@ -250,17 +250,17 @@ public class AdaptHiveSparkParquetWriters {
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsInteger(ColumnDescriptor desc,
-      int precision, int scale) {
+                                                                               int precision, int scale) {
     return new IntegerDecimalWriter(desc, precision, scale);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsLong(ColumnDescriptor desc,
-      int precision, int scale) {
+                                                                            int precision, int scale) {
     return new LongDecimalWriter(desc, precision, scale);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsFixed(ColumnDescriptor desc,
-      int precision, int scale) {
+                                                                             int precision, int scale) {
     return new FixedDecimalWriter(desc, precision, scale);
   }
 
@@ -355,7 +355,7 @@ public class AdaptHiveSparkParquetWriters {
     private final DataType elementType;
 
     private ArrayDataWriter(int definitionLevel, int repetitionLevel,
-        ParquetValueWriter<E> writer, DataType elementType) {
+                            ParquetValueWriter<E> writer, DataType elementType) {
       super(definitionLevel, repetitionLevel, writer);
       this.elementType = elementType;
     }
@@ -407,8 +407,8 @@ public class AdaptHiveSparkParquetWriters {
     private final DataType valueType;
 
     private MapDataWriter(int definitionLevel, int repetitionLevel,
-        ParquetValueWriter<K> keyWriter, ParquetValueWriter<V> valueWriter,
-        DataType keyType, DataType valueType) {
+                          ParquetValueWriter<K> keyWriter, ParquetValueWriter<V> valueWriter,
+                          DataType keyType, DataType valueType) {
       super(definitionLevel, repetitionLevel, keyWriter, valueWriter);
       this.keyType = keyType;
       this.valueType = valueType;
