@@ -232,6 +232,7 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
 
 
+
 Copyright: 2011-2019 The Apache Software Foundation
 Home page: http://iceberg.apache.org/
 License: http://www.apache.org/licenses/LICENSE-2.0
