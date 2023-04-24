@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * It's better to refactor UnKeyedTableUtil to IcebergTableUtil.
+ * TODO: It's better to refactor UnKeyedTableUtil to IcebergTableUtil.
  */
 public class UnKeyedTableUtil {
   private static final Logger LOG = LoggerFactory.getLogger(UnKeyedTableUtil.class);
