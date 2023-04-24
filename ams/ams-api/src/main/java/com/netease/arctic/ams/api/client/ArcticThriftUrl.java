@@ -20,7 +20,12 @@ package com.netease.arctic.ams.api.client;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
-
+import org.apache.zookeeper.KeeperException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
@@ -28,12 +33,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArcticThriftUrl {
+  private static final Logger logger = LoggerFactory.getLogger(ArcticThriftUrl.class);
   public static final String PARAM_SOCKET_TIMEOUT = "socketTimeout";
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
   public static final String ZOOKEEPER_FLAG = "zookeeper";
   public static final String THRIFT_FLAG = "thrift";
   public static final String THRIFT_URL_FORMAT = "thrift://%s:%d/%s%s";
   private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
+  public static final int maxRetries = 3;
   private final String schema;
   private final String host;
   private final int port;
@@ -55,50 +62,19 @@ public class ArcticThriftUrl {
       throw new IllegalArgumentException("thrift url is null");
     }
     if (url.startsWith(ZOOKEEPER_FLAG)) {
-      String thriftUrl = url;
-      String query = "";
-      if (url.contains("?")) {
-        query = url.substring(url.indexOf("?"));
-        thriftUrl = url.substring(0, url.indexOf("?"));
-      }
-      Matcher m = PATTERN.matcher(thriftUrl);
-      if (m.matches()) {
-        String zkServerAddress;
-        String cluster;
-        String catalog = "";
-        if (m.group(1).contains("/")) {
-          zkServerAddress = m.group(1).substring(0, m.group(1).indexOf("/"));
-          cluster = m.group(1).substring(m.group(1).indexOf("/") + 1);
-          catalog = m.group(2);
-        } else {
-          zkServerAddress = m.group(1);
-          cluster = m.group(2);
-        }
-        ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
-        AmsServerInfo serverInfo = null;
-        try {
-          serverInfo = JSONObject.parseObject(
-              zkService.getData(AmsHAProperties.getMasterPath(cluster)),
-              AmsServerInfo.class);
-        } catch (Exception e) {
-          throw new RuntimeException("get master server info from zookeeper error", e);
-        }
-        url =
-            String.format(THRIFT_URL_FORMAT, serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
-      } else {
-        throw new RuntimeException(String.format("invalid ams url %s", url));
-      }
+      return parserZookeeperUrl(url);
+    } else {
+      return parserThriftUrl(url);
     }
-    String schema;
-    String host;
-    int port;
+  }
+
+  private static ArcticThriftUrl parserThriftUrl(String url) {
     int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
-    String catalogName;
     try {
       URI uri = new URI(url.toLowerCase(Locale.ROOT));
-      schema = uri.getScheme();
-      host = uri.getHost();
-      port = uri.getPort();
+      String schema = uri.getScheme();
+      String host = uri.getHost();
+      int port = uri.getPort();
       String path = uri.getPath();
       if (path != null && path.startsWith("/")) {
         path = path.substring(1);
@@ -113,11 +89,80 @@ public class ArcticThriftUrl {
           }
         }
       }
-      catalogName = path;
+      String catalogName = path;
       return new ArcticThriftUrl(schema, host, port, catalogName, socketTimeout, url);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException("parse metastore url failed", e);
     }
+  }
+
+  private static ArcticThriftUrl parserZookeeperUrl(String url) {
+    String thriftUrl = url;
+    String query = "";
+    if (url.contains("?")) {
+      query = url.substring(url.indexOf("?"));
+      thriftUrl = url.substring(0, url.indexOf("?"));
+    }
+    Matcher m = PATTERN.matcher(thriftUrl);
+    if (m.matches()) {
+      String zkServerAddress;
+      String cluster;
+      String catalog = "";
+      if (m.group(1).contains("/")) {
+        zkServerAddress = m.group(1).substring(0, m.group(1).indexOf("/"));
+        cluster = m.group(1).substring(m.group(1).indexOf("/") + 1);
+        catalog = m.group(2);
+      } else {
+        zkServerAddress = m.group(1);
+        cluster = m.group(2);
+      }
+      int retryCount = 0;
+      while (retryCount < maxRetries) {
+        try {
+          AmsServerInfo serverInfo = JSONObject.parseObject(
+              ZookeeperService.getInstance(zkServerAddress)
+                  .getData(AmsHAProperties.getMasterPath(cluster)),
+              AmsServerInfo.class);
+          url = String.format(THRIFT_URL_FORMAT, serverInfo.getHost(),
+              serverInfo.getThriftBindPort(), catalog, query);
+          int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
+          for (String paramExpression : query.replace("?", "").split("&")) {
+            String[] paramSplit = paramExpression.split("=");
+            if (paramSplit.length == 2) {
+              if (paramSplit[0].equalsIgnoreCase(PARAM_SOCKET_TIMEOUT)) {
+                socketTimeout = Integer.parseInt(paramSplit[1]);
+              }
+            }
+          }
+          return new ArcticThriftUrl("thrift",
+              serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog.toLowerCase(), socketTimeout, url);
+        } catch (KeeperException.AuthFailedException authFailedException) {
+          // If kerberos authentication is not enabled on the zk,
+          // an error occurs when the thread carrying kerberos authentication information accesses the zk.
+          // Therefore, clear the authentication information and try again
+          retryCount++;
+          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount),
+              authFailedException);
+          try {
+            Subject subject = Subject.getSubject(java.security.AccessController.getContext());
+
+            if (subject != null) {
+              LoginContext loginContext = new LoginContext("", subject);
+              loginContext.logout();
+            }
+          } catch (LoginException e) {
+            logger.error("Failed to logout", e);
+          }
+        } catch (Exception e) {
+          retryCount++;
+          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+          throw new RuntimeException(String.format("invalid ams url %s", url));
+        }
+      }
+    } else {
+      throw new RuntimeException(String.format("invalid ams url %s", url));
+    }
+    return null;
   }
 
   private ArcticThriftUrl(
