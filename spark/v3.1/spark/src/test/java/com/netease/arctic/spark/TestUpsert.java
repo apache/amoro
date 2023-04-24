@@ -19,7 +19,7 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.spark.util.RecordGenerator;
+import com.netease.arctic.spark.test.helper.RecordGenerator;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;

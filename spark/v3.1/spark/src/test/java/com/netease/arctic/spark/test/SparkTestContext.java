@@ -10,7 +10,6 @@ import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
-import com.netease.arctic.spark.test.sql.SparkTestBase;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -107,7 +106,7 @@ public class SparkTestContext {
   private String hiveVersion() {
     String hiveVersion = null;
     try {
-      hiveVersion = SparkTestBase.class.getClassLoader()
+      hiveVersion = SparkTestContext.class.getClassLoader()
           .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
           .getPackage()
           .getImplementationVersion();

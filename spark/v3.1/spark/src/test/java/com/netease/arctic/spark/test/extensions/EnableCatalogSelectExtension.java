@@ -1,7 +1,7 @@
-package com.netease.arctic.spark.test.junit5.extensions;
+package com.netease.arctic.spark.test.extensions;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.spark.test.junit5.SparkTestBase;
+import com.netease.arctic.spark.test.SparkTestBase;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterResolver;

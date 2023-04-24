@@ -1,17 +1,14 @@
-package com.netease.arctic.spark.test.junit5;
+package com.netease.arctic.spark.test;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.spark.test.SparkTestContext;
-import com.netease.arctic.spark.test.junit5.extensions.EachParameterResolver;
+import com.netease.arctic.spark.test.extensions.EachParameterResolver;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.test.junit5.extensions;
+package com.netease.arctic.spark.test.extensions;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -10,5 +10,13 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(EnableCatalogSelectExtension.class)
-public @interface TestWithSource {
+public @interface EnableCatalogSelect {
+
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface SelectCatalog {
+    String use() default "";
+    boolean byTableFormat() default false;
+  }
+
 }

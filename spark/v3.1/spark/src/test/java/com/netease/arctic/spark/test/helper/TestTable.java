@@ -21,7 +21,6 @@ package com.netease.arctic.spark.test.helper;
 import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import com.netease.arctic.spark.util.RecordGenerator;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;

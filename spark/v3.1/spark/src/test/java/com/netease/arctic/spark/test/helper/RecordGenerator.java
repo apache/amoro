@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.util;
+package com.netease.arctic.spark.test.helper;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.table.PrimaryKeySpec;

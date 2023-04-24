@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.spark.util.RecordGenerator;
+import com.netease.arctic.spark.test.helper.RecordGenerator;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;

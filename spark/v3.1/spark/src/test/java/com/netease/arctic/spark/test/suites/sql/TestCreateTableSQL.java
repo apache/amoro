@@ -1,10 +1,10 @@
-package com.netease.arctic.spark.test.junit5.suites;
+package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
-import com.netease.arctic.spark.test.junit5.SparkTableTestBase;
-import com.netease.arctic.spark.test.junit5.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;

@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.test.junit5.extensions;
+package com.netease.arctic.spark.test.extensions;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

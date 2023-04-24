@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.test.helper;
 
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.spark.util.RecordGenerator;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.TableType;

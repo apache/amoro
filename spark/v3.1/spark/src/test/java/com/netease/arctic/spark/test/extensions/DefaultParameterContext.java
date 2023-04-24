@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.test.junit5.extensions;
+package com.netease.arctic.spark.test.extensions;
 
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.platform.commons.util.AnnotationUtils;
