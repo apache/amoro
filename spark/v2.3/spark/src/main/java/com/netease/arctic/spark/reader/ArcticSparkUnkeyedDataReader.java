@@ -20,19 +20,22 @@ package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.hive.io.reader.AbstractAdaptHiveIcebergDataReader;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.spark.parquet.SparkParquetRowReaders;
-import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.spark.SparkInternalRowWrapper;
+import com.netease.arctic.spark.util.ArcticSparkUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
-import org.apache.iceberg.spark.SparkStructLike;
+import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.parquet.schema.MessageType;
-import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.types.StructType;
 
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataReader<Row> {
+public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataReader<InternalRow> {
+
   public ArcticSparkUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
@@ -40,20 +43,22 @@ public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataRe
       String nameMapping,
       boolean caseSensitive) {
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        ArcticSparkUtil::convertConstant, false);
+        ArcticSparkUtils::convertConstant, true);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectedSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> SparkParquetRowReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+    return fileSchema -> SparkParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override
-  protected Function<Schema, Function<Row, StructLike>> toStructLikeFunction() {
+  protected Function<Schema, Function<InternalRow, StructLike>> toStructLikeFunction() {
     return schema -> {
-      return row -> new SparkStructLike(schema.asStruct()).wrap(row);
+      final StructType structType = SparkSchemaUtil.convert(schema);
+      SparkInternalRowWrapper wrapper = new SparkInternalRowWrapper(structType);
+      return row -> wrapper.wrap(row);
     };
   }
 }
