@@ -342,24 +342,30 @@
                                         </include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.Call*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.DropPartitionField</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.DynamicFileFilter*
                                         </include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeInto</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeInto$</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeIntoParams*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeIntoContext</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.MergeRows</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.NamedArgument*</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.PositionalArgument*
                                         </include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.ReplaceData*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.NoStatsUnaryNode</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.ReplaceIcebergData*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.RowLevelCommand</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.WriteDelta</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField*
                                         </include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields*
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering*
+                                            org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable
                                         </include>
                                         <include>
-                                            org.apache.spark.sql.catalyst.plans.logical.SortOrderParserUtil*
+                                            org.apache.spark.sql.catalyst.plans.logical.V2WriteCommandLike
                                         </include>
                                     </includes>
                                 </relocation>
