@@ -64,11 +64,6 @@ public class ExpressionHelper {
       public String describe() {
         return String.format("%s %s %s", expr.describe(), direction, nullOrdering);
       }
-
-      @Override
-      public Expression[] children() {
-        return new Expression[0];
-      }
     };
   }
 

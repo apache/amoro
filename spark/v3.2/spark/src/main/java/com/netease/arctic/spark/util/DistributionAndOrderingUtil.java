@@ -61,7 +61,8 @@ public class DistributionAndOrderingUtil {
   };
 
   /**
-   * Build a list of {@link org.apache.spark.sql.connector.expressions.Expression} indicate how to shuffle incoming data before writing.
+   * Build a list of {@link org.apache.spark.sql.connector.expressions.Expression}
+   * indicate how to shuffle incoming data before writing.
    * The result of this method will convert to a list of {@link org.apache.spark.sql.catalyst.expressions.Expression}
    * which will be used by a {@link org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression} operator.
    *
@@ -105,9 +106,11 @@ public class DistributionAndOrderingUtil {
   }
 
   /**
-   * Build a list of {@link org.apache.spark.sql.connector.expressions.Expression} to indicate how the incoming data will be sorted before write.
-   * The result of this method will covert to {@link org.apache.spark.sql.catalyst.expressions.Expression} list and
-   * be used for a local sort by add an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for
+   * Build a list of {@link org.apache.spark.sql.connector.expressions.Expression}
+   * to indicate how the incoming data will be sorted before write.
+   * The result of this method will covert to {@link org.apache.spark.sql.catalyst.expressions.Expression}
+   * list and be used for a local sort by add an {@link org.apache.spark.sql.catalyst.plans.logical.Sort}
+   * operator for
    * in-coming data.
    *
    * @param table             the arctic table to write to

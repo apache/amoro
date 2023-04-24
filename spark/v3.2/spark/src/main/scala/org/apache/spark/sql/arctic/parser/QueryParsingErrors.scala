@@ -23,14 +23,13 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits._
-import org.apache.spark.sql.errors.QueryErrorsBase
 import org.apache.spark.sql.types.StringType
 
 /**
  * Object for grouping all error messages of the query parsing.
  * Currently it includes all ParseException.
  */
-private[sql] object QueryParsingErrors extends QueryErrorsBase {
+private[sql] object QueryParsingErrors {
 
   def invalidInsertIntoError(ctx: InsertIntoContext): Throwable = {
     new ParseException("Invalid InsertIntoContext", ctx)
@@ -45,22 +44,27 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def emptySourceForMergeError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("Empty source for merge: you should specify a source" +
-      " table/subquery in merge.", ctx.source)
+    new ParseException(
+      "Empty source for merge: you should specify a source" +
+        " table/subquery in merge.",
+      ctx.source)
   }
 
   def unrecognizedMatchedActionError(ctx: MatchedClauseContext): Throwable = {
-    new ParseException(s"Unrecognized matched action: ${ctx.matchedAction().getText}",
+    new ParseException(
+      s"Unrecognized matched action: ${ctx.matchedAction().getText}",
       ctx.matchedAction())
   }
 
   def insertedValueNumberNotMatchFieldNumberError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException("The number of inserted values cannot match the fields.",
+    new ParseException(
+      "The number of inserted values cannot match the fields.",
       ctx.notMatchedAction())
   }
 
   def unrecognizedNotMatchedActionError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException(s"Unrecognized not matched action: ${ctx.notMatchedAction().getText}",
+    new ParseException(
+      s"Unrecognized not matched action: ${ctx.notMatchedAction().getText}",
       ctx.notMatchedAction())
   }
 
@@ -69,13 +73,17 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def nonLastMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("When there are more than one MATCHED clauses in a MERGE " +
-      "statement, only the last MATCHED clause can omit the condition.", ctx)
+    new ParseException(
+      "When there are more than one MATCHED clauses in a MERGE " +
+        "statement, only the last MATCHED clause can omit the condition.",
+      ctx)
   }
 
   def nonLastNotMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("When there are more than one NOT MATCHED clauses in a MERGE " +
-      "statement, only the last NOT MATCHED clause can omit the condition.", ctx)
+    new ParseException(
+      "When there are more than one NOT MATCHED clauses in a MERGE " +
+        "statement, only the last NOT MATCHED clause can omit the condition.",
+      ctx)
   }
 
   def emptyPartitionKeyError(key: String, ctx: PartitionSpecContext): Throwable = {
@@ -84,7 +92,8 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
 
   def combinationQueryResultClausesUnsupportedError(ctx: QueryOrganizationContext): Throwable = {
     new ParseException(
-      "Combination of ORDER BY/SORT BY/DISTRIBUTE BY/CLUSTER BY is not supported", ctx)
+      "Combination of ORDER BY/SORT BY/DISTRIBUTE BY/CLUSTER BY is not supported",
+      ctx)
   }
 
   def distributeByUnsupportedError(ctx: QueryOrganizationContext): Throwable = {
@@ -92,19 +101,11 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def transformNotSupportQuantifierError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      errorClass = "UNSUPPORTED_FEATURE",
-      messageParameters = Array(s"${toSQLStmt("TRANSFORM")} does not support" +
-        s" ${toSQLStmt("DISTINCT")}/${toSQLStmt("ALL")} in inputs"),
-      ctx)
+    new ParseException("TRANSFORM does not support DISTINCT/ALL in inputs", ctx)
   }
 
   def transformWithSerdeUnsupportedError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      errorClass = "UNSUPPORTED_FEATURE",
-      messageParameters = Array(
-        s"${toSQLStmt("TRANSFORM")} with serde is only supported in hive mode"),
-      ctx)
+    new ParseException("TRANSFORM with serde is only supported in hive mode", ctx)
   }
 
   def lateralWithPivotInFromClauseNotAllowedError(ctx: FromClauseContext): Throwable = {
@@ -112,50 +113,39 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def lateralJoinWithNaturalJoinUnsupportedError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      errorClass = "UNSUPPORTED_FEATURE",
-      messageParameters = Array(s"${toSQLStmt("LATERAL")} join with ${toSQLStmt("NATURAL")} join."),
-      ctx)
+    new ParseException("LATERAL join with NATURAL join is not supported", ctx)
   }
 
   def lateralJoinWithUsingJoinUnsupportedError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      errorClass = "UNSUPPORTED_FEATURE",
-      messageParameters = Array(s"${toSQLStmt("LATERAL")} join with ${toSQLStmt("USING")} join."),
-      ctx)
+    new ParseException("LATERAL join with USING join is not supported", ctx)
   }
 
   def unsupportedLateralJoinTypeError(ctx: ParserRuleContext, joinType: String): Throwable = {
-    new ParseException(
-      errorClass = "UNSUPPORTED_FEATURE",
-      messageParameters = Array(s"${toSQLStmt("LATERAL")} join type ${toSQLStmt(joinType)}."),
-      ctx)
+    new ParseException(s"Unsupported LATERAL join type $joinType", ctx)
   }
 
   def invalidLateralJoinRelationError(ctx: RelationPrimaryContext): Throwable = {
-    new ParseException(
-      errorClass = "INVALID_SQL_SYNTAX",
-      messageParameters = Array(s"${toSQLStmt("LATERAL")} can only be used with subquery."),
-      ctx)
+    new ParseException(s"LATERAL can only be used with subquery", ctx)
   }
 
   def repetitiveWindowDefinitionError(name: String, ctx: WindowClauseContext): Throwable = {
-    new ParseException("INVALID_SQL_SYNTAX",
-      Array(s"The definition of window ${toSQLId(name)} is repetitive."), ctx)
+    new ParseException(s"The definition of window '$name' is repetitive", ctx)
   }
 
   def invalidWindowReferenceError(name: String, ctx: WindowClauseContext): Throwable = {
-    new ParseException("INVALID_SQL_SYNTAX",
-      Array(s"Window reference ${toSQLId(name)} is not a window specification."), ctx)
+    new ParseException(s"Window reference '$name' is not a window specification", ctx)
   }
 
   def cannotResolveWindowReferenceError(name: String, ctx: WindowClauseContext): Throwable = {
-    new ParseException("INVALID_SQL_SYNTAX",
-      Array(s"Cannot resolve window reference ${toSQLId(name)}."), ctx)
+    new ParseException(s"Cannot resolve window reference '$name'", ctx)
+  }
+
+  def joinCriteriaUnimplementedError(join: JoinCriteriaContext, ctx: RelationContext): Throwable = {
+    new ParseException(s"Unimplemented joinCriteria: $join", ctx)
   }
 
   def naturalCrossJoinUnsupportedError(ctx: RelationContext): Throwable = {
-    new ParseException("UNSUPPORTED_FEATURE", Array(toSQLStmt("NATURAL CROSS JOIN") + "."), ctx)
+    new ParseException("NATURAL CROSS JOIN is not supported", ctx)
   }
 
   def emptyInputForTableSampleError(ctx: ParserRuleContext): Throwable = {
@@ -167,8 +157,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def invalidByteLengthLiteralError(bytesStr: String, ctx: SampleByBytesContext): Throwable = {
-    new ParseException(s"$bytesStr is not a valid byte length literal, " +
-        "expected syntax: DIGIT+ ('B' | 'K' | 'M' | 'G')", ctx)
+    new ParseException(
+      s"$bytesStr is not a valid byte length literal, " +
+        "expected syntax: DIGIT+ ('B' | 'K' | 'M' | 'G')",
+      ctx)
   }
 
   def invalidEscapeStringError(ctx: PredicateContext): Throwable = {
@@ -176,8 +168,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def trimOptionUnsupportedError(trimOption: Int, ctx: TrimContext): Throwable = {
-    new ParseException("Function trim doesn't support with " +
-      s"type $trimOption. Please use BOTH, LEADING or TRAILING as trim type", ctx)
+    new ParseException(
+      "Function trim doesn't support with " +
+        s"type $trimOption. Please use BOTH, LEADING or TRAILING as trim type",
+      ctx)
   }
 
   def functionNameUnsupportedError(functionName: String, ctx: ParserRuleContext): Throwable = {
@@ -185,7 +179,9 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def cannotParseValueTypeError(
-      valueType: String, value: String, ctx: TypeConstructorContext): Throwable = {
+      valueType: String,
+      value: String,
+      ctx: TypeConstructorContext): Throwable = {
     new ParseException(s"Cannot parse the $valueType value: $value", ctx)
   }
 
@@ -194,20 +190,29 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def literalValueTypeUnsupportedError(
-      valueType: String, ctx: TypeConstructorContext): Throwable = {
+      valueType: String,
+      ctx: TypeConstructorContext): Throwable = {
     new ParseException(s"Literals of type '$valueType' are currently not supported.", ctx)
   }
 
   def parsingValueTypeError(
-      e: IllegalArgumentException, valueType: String, ctx: TypeConstructorContext): Throwable = {
+      e: IllegalArgumentException,
+      valueType: String,
+      ctx: TypeConstructorContext): Throwable = {
     val message = Option(e.getMessage).getOrElse(s"Exception parsing $valueType")
     new ParseException(message, ctx)
   }
 
-  def invalidNumericLiteralRangeError(rawStrippedQualifier: String, minValue: BigDecimal,
-      maxValue: BigDecimal, typeName: String, ctx: NumberContext): Throwable = {
-    new ParseException(s"Numeric literal $rawStrippedQualifier does not " +
-      s"fit in range [$minValue, $maxValue] for type $typeName", ctx)
+  def invalidNumericLiteralRangeError(
+      rawStrippedQualifier: String,
+      minValue: BigDecimal,
+      maxValue: BigDecimal,
+      typeName: String,
+      ctx: NumberContext): Throwable = {
+    new ParseException(
+      s"Numeric literal $rawStrippedQualifier does not " +
+        s"fit in range [$minValue, $maxValue] for type $typeName",
+      ctx)
   }
 
   def moreThanOneFromToUnitInIntervalLiteralError(ctx: ParserRuleContext): Throwable = {
@@ -219,8 +224,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def invalidIntervalFormError(value: String, ctx: MultiUnitsIntervalContext): Throwable = {
-    new ParseException("Can only use numbers in the interval value part for" +
-      s" multiple unit value pairs interval form, but got invalid value: $value", ctx)
+    new ParseException(
+      "Can only use numbers in the interval value part for" +
+        s" multiple unit value pairs interval form, but got invalid value: $value",
+      ctx)
   }
 
   def invalidFromToUnitValueError(ctx: IntervalValueContext): Throwable = {
@@ -228,7 +235,9 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def fromToIntervalUnsupportedError(
-      from: String, to: String, ctx: ParserRuleContext): Throwable = {
+      from: String,
+      to: String,
+      ctx: ParserRuleContext): Throwable = {
     new ParseException(s"Intervals FROM $from TO $to are not supported.", ctx)
   }
 
@@ -240,56 +249,71 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
     new ParseException(s"DataType $dataType is not supported.", ctx)
   }
 
-  def charTypeMissingLengthError(dataType: String, ctx: PrimitiveDataTypeContext): Throwable = {
-    new ParseException("PARSE_CHAR_MISSING_LENGTH", Array(dataType, dataType), ctx)
-  }
-
   def partitionTransformNotExpectedError(
-      name: String, describe: String, ctx: ApplyTransformContext): Throwable = {
+      name: String,
+      describe: String,
+      ctx: ApplyTransformContext): Throwable = {
     new ParseException(s"Expected a column reference for transform $name: $describe", ctx)
   }
 
   def tooManyArgumentsForTransformError(name: String, ctx: ApplyTransformContext): Throwable = {
-    new ParseException(
-      errorClass = "INVALID_SQL_SYNTAX",
-      messageParameters = Array(s"Too many arguments for transform ${toSQLId(name)}"),
-      ctx)
+    new ParseException(s"Too many arguments for transform $name", ctx)
+  }
+
+  def notEnoughArgumentsForTransformError(name: String, ctx: ApplyTransformContext): Throwable = {
+    new ParseException(s"Not enough arguments for transform $name", ctx)
   }
 
   def invalidBucketsNumberError(describe: String, ctx: ApplyTransformContext): Throwable = {
     new ParseException(s"Invalid number of buckets: $describe", ctx)
   }
 
-  def cannotCleanReservedNamespacePropertyError(
-      property: String, ctx: ParserRuleContext, msg: String): ParseException = {
-    new ParseException("UNSUPPORTED_FEATURE",
-      Array(s"$property is a reserved namespace property, $msg."), ctx)
+  def invalidTransformArgumentError(ctx: TransformArgumentContext): Throwable = {
+    new ParseException("Invalid transform argument", ctx)
   }
 
-  def propertiesAndDbPropertiesBothSpecifiedError(ctx: CreateNamespaceContext): ParseException = {
-    new ParseException("UNSUPPORTED_FEATURE",
-      Array("set PROPERTIES and DBPROPERTIES at the same time."), ctx)
+  def cannotCleanReservedNamespacePropertyError(
+      property: String,
+      ctx: ParserRuleContext,
+      msg: String): Throwable = {
+    new ParseException(s"$property is a reserved namespace property, $msg.", ctx)
+  }
+
+  def propertiesAndDbPropertiesBothSpecifiedError(ctx: CreateNamespaceContext): Throwable = {
+    new ParseException("Either PROPERTIES or DBPROPERTIES is allowed.", ctx)
+  }
+
+  def fromOrInNotAllowedInShowDatabasesError(ctx: ShowNamespacesContext): Throwable = {
+    new ParseException(s"FROM/IN operator is not allowed in SHOW DATABASES", ctx)
   }
 
   def cannotCleanReservedTablePropertyError(
-      property: String, ctx: ParserRuleContext, msg: String): ParseException = {
-    new ParseException("UNSUPPORTED_FEATURE",
-      Array(s"$property is a reserved table property, $msg."), ctx)
+      property: String,
+      ctx: ParserRuleContext,
+      msg: String): Throwable = {
+    new ParseException(s"$property is a reserved table property, $msg.", ctx)
   }
 
   def duplicatedTablePathsFoundError(
-      pathOne: String, pathTwo: String, ctx: ParserRuleContext): Throwable = {
-    new ParseException(s"Duplicated table paths found: '$pathOne' and '$pathTwo'. LOCATION" +
-      s" and the case insensitive key 'path' in OPTIONS are all used to indicate the custom" +
-      s" table path, you can only specify one of them.", ctx)
+      pathOne: String,
+      pathTwo: String,
+      ctx: ParserRuleContext): Throwable = {
+    new ParseException(
+      s"Duplicated table paths found: '$pathOne' and '$pathTwo'. LOCATION" +
+        s" and the case insensitive key 'path' in OPTIONS are all used to indicate the custom" +
+        s" table path, you can only specify one of them.",
+      ctx)
   }
 
   def storedAsAndStoredByBothSpecifiedError(ctx: CreateFileFormatContext): Throwable = {
     new ParseException("Expected either STORED AS or STORED BY, not both", ctx)
   }
 
-  def operationInHiveStyleCommandUnsupportedError(operation: String,
-      command: String, ctx: StatementContext, msgOpt: Option[String] = None): Throwable = {
+  def operationInHiveStyleCommandUnsupportedError(
+      operation: String,
+      command: String,
+      ctx: StatementContext,
+      msgOpt: Option[String] = None): Throwable = {
     val basicError = s"$operation is not supported in Hive-style $command"
     val msg = if (msgOpt.isDefined) {
       s"$basicError, ${msgOpt.get}."
@@ -308,7 +332,8 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def incompletePartitionSpecificationError(
-      key: String, ctx: DescribeRelationContext): Throwable = {
+      key: String,
+      ctx: DescribeRelationContext): Throwable = {
     new ParseException(s"PARTITION specification is incomplete: `$key`", ctx)
   }
 
@@ -317,26 +342,16 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def addCatalogInCacheTableAsSelectNotAllowedError(
-      quoted: String, ctx: CacheTableContext): Throwable = {
-    new ParseException(s"It is not allowed to add catalog/namespace prefix $quoted to " +
-      "the table name in CACHE TABLE AS SELECT", ctx)
+      quoted: String,
+      ctx: CacheTableContext): Throwable = {
+    new ParseException(
+      s"It is not allowed to add catalog/namespace prefix $quoted to " +
+        "the table name in CACHE TABLE AS SELECT",
+      ctx)
   }
 
   def showFunctionsUnsupportedError(identifier: String, ctx: IdentifierContext): Throwable = {
-    new ParseException(
-      errorClass = "INVALID_SQL_SYNTAX",
-      messageParameters = Array(
-        s"${toSQLStmt("SHOW")} $identifier ${toSQLStmt("FUNCTIONS")} not supported"),
-      ctx)
-  }
-
-  def showFunctionsInvalidPatternError(pattern: String, ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      errorClass = "INVALID_SQL_SYNTAX",
-      messageParameters = Array(
-        s"Invalid pattern in ${toSQLStmt("SHOW FUNCTIONS")}: ${toSQLId(pattern)}. " +
-        s"It must be a ${toSQLType(StringType)} literal."),
-      ctx)
+    new ParseException(s"SHOW $identifier FUNCTIONS not supported", ctx)
   }
 
   def duplicateCteDefinitionNamesError(duplicateNames: String, ctx: CtesContext): Throwable = {
@@ -348,8 +363,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   }
 
   def unquotedIdentifierError(ident: String, ctx: ErrorIdentContext): Throwable = {
-    new ParseException(s"Possibly unquoted identifier $ident detected. " +
-      s"Please consider quoting it with back-quotes as `$ident`", ctx)
+    new ParseException(
+      s"Possibly unquoted identifier $ident detected. " +
+        s"Please consider quoting it with back-quotes as `$ident`",
+      ctx)
   }
 
   def duplicateClausesError(clauseName: String, ctx: ParserRuleContext): Throwable = {
@@ -358,7 +375,7 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
 
   def duplicateKeysError(key: String, ctx: ParserRuleContext): Throwable = {
     // Found duplicate keys '$key'
-    new ParseException(errorClass = "DUPLICATE_KEY", messageParameters = Array(toSQLId(key)), ctx)
+    new ParseException(errorClass = "DUPLICATE_KEY", messageParameters = Array(key), ctx)
   }
 
   def unexpectedFomatForSetConfigurationError(ctx: ParserRuleContext): Throwable = {
@@ -367,21 +384,28 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
          |Expected format is 'SET', 'SET key', or 'SET key=value'. If you want to include
          |special characters in key, or include semicolon in value, please use quotes,
          |e.g., SET `ke y`=`v;alue`.
-       """.stripMargin.replaceAll("\n", " "), ctx)
+       """.stripMargin.replaceAll("\n", " "),
+      ctx)
   }
 
   def invalidPropertyKeyForSetQuotedConfigurationError(
-      keyCandidate: String, valueStr: String, ctx: ParserRuleContext): ParseException = {
-    new ParseException(errorClass = "INVALID_PROPERTY_KEY",
-      messageParameters = Array(toSQLConf(keyCandidate),
-        toSQLConf(keyCandidate), toSQLConf(valueStr)), ctx)
+      keyCandidate: String,
+      valueStr: String,
+      ctx: ParserRuleContext): Throwable = {
+    new ParseException(
+      s"'$keyCandidate' is an invalid property key, please " +
+        s"use quotes, e.g. SET `$keyCandidate`=`$valueStr`",
+      ctx)
   }
 
   def invalidPropertyValueForSetQuotedConfigurationError(
-      valueCandidate: String, keyStr: String, ctx: ParserRuleContext): ParseException = {
-    new ParseException(errorClass = "INVALID_PROPERTY_VALUE",
-      messageParameters = Array(toSQLConf(valueCandidate),
-        toSQLConf(keyStr), toSQLConf(valueCandidate)), ctx)
+      valueCandidate: String,
+      keyStr: String,
+      ctx: ParserRuleContext): Throwable = {
+    new ParseException(
+      s"'$valueCandidate' is an invalid property value, please " +
+        s"use quotes, e.g. SET `$keyStr`=`$valueCandidate`",
+      ctx)
   }
 
   def unexpectedFormatForResetConfigurationError(ctx: ResetConfigurationContext): Throwable = {
@@ -389,12 +413,15 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
       s"""
          |Expected format is 'RESET' or 'RESET key'. If you want to include special characters
          |in key, please use quotes, e.g., RESET `ke y`.
-       """.stripMargin.replaceAll("\n", " "), ctx)
+       """.stripMargin.replaceAll("\n", " "),
+      ctx)
   }
 
   def intervalValueOutOfRangeError(ctx: IntervalContext): Throwable = {
-    new ParseException("The interval value must be in the range of [-18, +18] hours" +
-      " with second precision", ctx)
+    new ParseException(
+      "The interval value must be in the range of [-18, +18] hours" +
+        " with second precision",
+      ctx)
   }
 
   def invalidTimeZoneDisplacementValueError(ctx: SetTimeZoneContext): Throwable = {
@@ -411,12 +438,14 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
 
   def useDefinedRecordReaderOrWriterClassesError(ctx: ParserRuleContext): Throwable = {
     new ParseException(
-      "Unsupported operation: Used defined record reader/writer classes.", ctx)
+      "Unsupported operation: Used defined record reader/writer classes.",
+      ctx)
   }
 
   def directoryPathAndOptionsPathBothSpecifiedError(ctx: InsertOverwriteDirContext): Throwable = {
     new ParseException(
-      "Directory path and 'path' in OPTIONS should be specified one, but not both", ctx)
+      "Directory path and 'path' in OPTIONS should be specified one, but not both",
+      ctx)
   }
 
   def unsupportedLocalFileSchemeError(ctx: InsertOverwriteDirContext): Throwable = {
@@ -427,58 +456,7 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
     new ParseException(s"Empty set in $element grouping sets is not supported.", ctx)
   }
 
-  def createViewWithBothIfNotExistsAndReplaceError(ctx: CreateViewContext): Throwable = {
-    new ParseException("CREATE VIEW with both IF NOT EXISTS and REPLACE is not allowed.", ctx)
-  }
-
-  def defineTempViewWithIfNotExistsError(ctx: CreateViewContext): Throwable = {
-    new ParseException("It is not allowed to define a TEMPORARY view with IF NOT EXISTS.", ctx)
-  }
-
-  def notAllowedToAddDBPrefixForTempViewError(
-      database: String,
-      ctx: CreateViewContext): Throwable = {
-    new ParseException(
-      s"It is not allowed to add database prefix `$database` for the TEMPORARY view name.", ctx)
-  }
-
-  def createFuncWithBothIfNotExistsAndReplaceError(ctx: CreateFunctionContext): Throwable = {
-    new ParseException("CREATE FUNCTION with both IF NOT EXISTS and REPLACE is not allowed.", ctx)
-  }
-
-  def defineTempFuncWithIfNotExistsError(ctx: CreateFunctionContext): Throwable = {
-    new ParseException("It is not allowed to define a TEMPORARY function with IF NOT EXISTS.", ctx)
-  }
-
-  def unsupportedFunctionNameError(quoted: String, ctx: CreateFunctionContext): Throwable = {
-    new ParseException(s"Unsupported function name '$quoted'", ctx)
-  }
-
-  def specifyingDBInCreateTempFuncError(
-      databaseName: String,
-      ctx: CreateFunctionContext): Throwable = {
-    new ParseException(
-      s"Specifying a database in CREATE TEMPORARY FUNCTION is not allowed: '$databaseName'", ctx)
-  }
-
-  def invalidTableValuedFunctionNameError(
-      name: Seq[String],
-      ctx: TableValuedFunctionContext): Throwable = {
-    new ParseException(
-      "INVALID_SQL_SYNTAX",
-      Array("table valued function cannot specify database name ", toSQLId(name)), ctx)
-  }
-
   def unclosedBracketedCommentError(command: String, position: Origin): Throwable = {
     new ParseException(Some(command), "Unclosed bracketed comment", position, position)
-  }
-
-  def invalidTimeTravelSpec(reason: String, ctx: ParserRuleContext): Throwable = {
-    new ParseException(s"Invalid time travel spec: $reason.", ctx)
-  }
-
-  def invalidNameForDropTempFunc(name: Seq[String], ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      s"DROP TEMPORARY FUNCTION requires a single part name but got: ${name.quoted}", ctx)
   }
 }

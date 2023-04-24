@@ -23,7 +23,7 @@ import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, Rewrit
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelCommandAssignments, AlignedRowLevelIcebergCommandCheck, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromTable, RewriteMergeIntoTable, RewriteUpdateTable}
+import org.apache.spark.sql.catalyst.analysis.{AlignedRowLevelIcebergCommandCheck, AlignRowLevelCommandAssignments, CheckMergeIntoTableConditions, MergeIntoIcebergTableResolutionCheck, ProcedureArgumentCoercion, ResolveMergeIntoTableReferences, ResolveProcedures, RewriteDeleteFromTable, RewriteMergeIntoTable, RewriteUpdateTable}
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.execution.datasources.v2.{ExtendedDataSourceV2Strategy, ExtendedV2Writes, OptimizeMetadataOnlyDeleteFromTable, ReplaceRewrittenRowLevelCommand, RowLevelCommandScanRelationPushDown}
 import org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning

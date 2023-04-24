@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.{CatalogPlugin, TableCatalog}
@@ -58,8 +58,8 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
       a.copy(query = checkDataQuery)
 
-    case c@CreateTableAsSelect(catalog, _, _, query, props, _, _)
-      if checkDuplicatesEnabled() && isCreateKeyedTable(catalog, props) =>
+    case c @ CreateTableAsSelect(catalog, _, _, query, props, _, _)
+        if checkDuplicatesEnabled() && isCreateKeyedTable(catalog, props) =>
       val primaries = props("primary.keys").split(",")
       val validateQuery = buildValidatePrimaryKeyDuplicationByPrimaries(primaries, query)
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
