@@ -23,7 +23,7 @@ package com.netease.arctic.spark;
  * This util class will move to spark3-common module if multi spark modules added.
  */
 public class SparkAdapterLoader {
-  private static final SparkAdapter adapter = new Spark33Adapter();
+  private static final SparkAdapter adapter = new Spark32Adapter();
 
   /**
    * This method will implement as SPI if multi spark modules added.

@@ -62,8 +62,13 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
-      pushFilter(scanBuilder, condition.get, r.output)
-      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition.get)
+      if (condition.isEmpty) {
+        val cond = Literal.TrueLiteral
+        pushFilter(scanBuilder, cond, r.output)
+      } else {
+        pushFilter(scanBuilder, condition.get, r.output)
+      }
+      val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, options)
@@ -78,7 +83,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       r: DataSourceV2Relation,
       upsert: SupportsRowLevelOperator,
       scanBuilder: SupportsExtendIdentColumns,
-      condition: Expression): LogicalPlan = {
+      condition: Option[Expression]): LogicalPlan = {
     r.table match {
       case table: ArcticSparkTable =>
         if (table.table().isUnkeyedTable) {
@@ -92,7 +97,11 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
     val valuesRelation = DataSourceV2ScanRelation(r, scan, outputAttr)
 
-    val matchValueQuery = Filter(condition, valuesRelation)
+    val matchValueQuery = if (condition.isDefined) {
+      Filter(condition.get, valuesRelation)
+    } else {
+      valuesRelation
+    }
     val withOperation =
       Seq(Alias(Literal(DELETE_OPERATION), OPERATION_COLUMN)()) ++ matchValueQuery.output
     val deleteQuery = Project(withOperation, matchValueQuery)

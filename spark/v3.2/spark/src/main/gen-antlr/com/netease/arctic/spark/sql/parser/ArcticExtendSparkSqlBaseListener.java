@@ -1,4 +1,4 @@
-// Generated from /Users/jinsilei/arctic/arctic/spark/v3.2/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.10.1
+// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.8
 package com.netease.arctic.spark.sql.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;

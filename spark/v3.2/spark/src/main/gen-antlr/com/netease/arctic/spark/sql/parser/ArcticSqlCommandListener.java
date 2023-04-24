@@ -136,30 +136,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitUse(ArcticSqlCommandParser.UseContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code useNamespace}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterUseNamespace(ArcticSqlCommandParser.UseNamespaceContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code useNamespace}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitUseNamespace(ArcticSqlCommandParser.UseNamespaceContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code setCatalog}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterSetCatalog(ArcticSqlCommandParser.SetCatalogContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code setCatalog}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitSetCatalog(ArcticSqlCommandParser.SetCatalogContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code createNamespace}
 	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
 	 * @param ctx the parse tree
@@ -664,18 +640,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitShowCurrentNamespace(ArcticSqlCommandParser.ShowCurrentNamespaceContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code showCatalogs}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterShowCatalogs(ArcticSqlCommandParser.ShowCatalogsContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code showCatalogs}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitShowCatalogs(ArcticSqlCommandParser.ShowCatalogsContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code describeFunction}
 	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
 	 * @param ctx the parse tree
@@ -940,30 +904,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitResetConfiguration(ArcticSqlCommandParser.ResetConfigurationContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code createIndex}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterCreateIndex(ArcticSqlCommandParser.CreateIndexContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code createIndex}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitCreateIndex(ArcticSqlCommandParser.CreateIndexContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code dropIndex}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterDropIndex(ArcticSqlCommandParser.DropIndexContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code dropIndex}
-	 * labeled alternative in {@link ArcticSqlCommandParser#statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitDropIndex(ArcticSqlCommandParser.DropIndexContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#configKey}.
 	 * @param ctx the parse tree
 	 */
@@ -1152,16 +1092,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitNamespace(ArcticSqlCommandParser.NamespaceContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#namespaces}.
-	 * @param ctx the parse tree
-	 */
-	void enterNamespaces(ArcticSqlCommandParser.NamespacesContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#namespaces}.
-	 * @param ctx the parse tree
-	 */
-	void exitNamespaces(ArcticSqlCommandParser.NamespacesContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#describeFuncName}.
 	 * @param ctx the parse tree
 	 */
@@ -1222,45 +1152,45 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitCreateTableClauses(ArcticSqlCommandParser.CreateTableClausesContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#propertyList}.
+	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyList}.
 	 * @param ctx the parse tree
 	 */
-	void enterPropertyList(ArcticSqlCommandParser.PropertyListContext ctx);
+	void enterTablePropertyList(ArcticSqlCommandParser.TablePropertyListContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#propertyList}.
+	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyList}.
 	 * @param ctx the parse tree
 	 */
-	void exitPropertyList(ArcticSqlCommandParser.PropertyListContext ctx);
+	void exitTablePropertyList(ArcticSqlCommandParser.TablePropertyListContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#property}.
+	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#tableProperty}.
 	 * @param ctx the parse tree
 	 */
-	void enterProperty(ArcticSqlCommandParser.PropertyContext ctx);
+	void enterTableProperty(ArcticSqlCommandParser.TablePropertyContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#property}.
+	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#tableProperty}.
 	 * @param ctx the parse tree
 	 */
-	void exitProperty(ArcticSqlCommandParser.PropertyContext ctx);
+	void exitTableProperty(ArcticSqlCommandParser.TablePropertyContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#propertyKey}.
+	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyKey}.
 	 * @param ctx the parse tree
 	 */
-	void enterPropertyKey(ArcticSqlCommandParser.PropertyKeyContext ctx);
+	void enterTablePropertyKey(ArcticSqlCommandParser.TablePropertyKeyContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#propertyKey}.
+	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyKey}.
 	 * @param ctx the parse tree
 	 */
-	void exitPropertyKey(ArcticSqlCommandParser.PropertyKeyContext ctx);
+	void exitTablePropertyKey(ArcticSqlCommandParser.TablePropertyKeyContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#propertyValue}.
+	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyValue}.
 	 * @param ctx the parse tree
 	 */
-	void enterPropertyValue(ArcticSqlCommandParser.PropertyValueContext ctx);
+	void enterTablePropertyValue(ArcticSqlCommandParser.TablePropertyValueContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#propertyValue}.
+	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#tablePropertyValue}.
 	 * @param ctx the parse tree
 	 */
-	void exitPropertyValue(ArcticSqlCommandParser.PropertyValueContext ctx);
+	void exitTablePropertyValue(ArcticSqlCommandParser.TablePropertyValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#constantList}.
 	 * @param ctx the parse tree
@@ -1694,16 +1624,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitFromClause(ArcticSqlCommandParser.FromClauseContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#temporalClause}.
-	 * @param ctx the parse tree
-	 */
-	void enterTemporalClause(ArcticSqlCommandParser.TemporalClauseContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#temporalClause}.
-	 * @param ctx the parse tree
-	 */
-	void exitTemporalClause(ArcticSqlCommandParser.TemporalClauseContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#aggregationClause}.
 	 * @param ctx the parse tree
 	 */
@@ -2096,26 +2016,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitMultipartIdentifier(ArcticSqlCommandParser.MultipartIdentifierContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierPropertyList}.
-	 * @param ctx the parse tree
-	 */
-	void enterMultipartIdentifierPropertyList(ArcticSqlCommandParser.MultipartIdentifierPropertyListContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierPropertyList}.
-	 * @param ctx the parse tree
-	 */
-	void exitMultipartIdentifierPropertyList(ArcticSqlCommandParser.MultipartIdentifierPropertyListContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierProperty}.
-	 * @param ctx the parse tree
-	 */
-	void enterMultipartIdentifierProperty(ArcticSqlCommandParser.MultipartIdentifierPropertyContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#multipartIdentifierProperty}.
-	 * @param ctx the parse tree
-	 */
-	void exitMultipartIdentifierProperty(ArcticSqlCommandParser.MultipartIdentifierPropertyContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#tableIdentifier}.
 	 * @param ctx the parse tree
 	 */
@@ -2350,16 +2250,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitArithmeticUnary(ArcticSqlCommandParser.ArithmeticUnaryContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlCommandParser#datetimeUnit}.
-	 * @param ctx the parse tree
-	 */
-	void enterDatetimeUnit(ArcticSqlCommandParser.DatetimeUnitContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlCommandParser#datetimeUnit}.
-	 * @param ctx the parse tree
-	 */
-	void exitDatetimeUnit(ArcticSqlCommandParser.DatetimeUnitContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code struct}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -2383,78 +2273,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitDereference(ArcticSqlCommandParser.DereferenceContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code timestampadd}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterTimestampadd(ArcticSqlCommandParser.TimestampaddContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code timestampadd}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitTimestampadd(ArcticSqlCommandParser.TimestampaddContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code substring}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterSubstring(ArcticSqlCommandParser.SubstringContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code substring}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitSubstring(ArcticSqlCommandParser.SubstringContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code cast}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterCast(ArcticSqlCommandParser.CastContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code cast}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitCast(ArcticSqlCommandParser.CastContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code lambda}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterLambda(ArcticSqlCommandParser.LambdaContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code lambda}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitLambda(ArcticSqlCommandParser.LambdaContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code parenthesizedExpression}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code parenthesizedExpression}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code trim}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterTrim(ArcticSqlCommandParser.TrimContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code trim}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitTrim(ArcticSqlCommandParser.TrimContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code simpleCase}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
@@ -2552,18 +2370,6 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitSubscript(ArcticSqlCommandParser.SubscriptContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code timestampdiff}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void enterTimestampdiff(ArcticSqlCommandParser.TimestampdiffContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code timestampdiff}
-	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
-	 * @param ctx the parse tree
-	 */
-	void exitTimestampdiff(ArcticSqlCommandParser.TimestampdiffContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code subqueryExpression}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -2575,6 +2381,30 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSubqueryExpression(ArcticSqlCommandParser.SubqueryExpressionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code substring}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubstring(ArcticSqlCommandParser.SubstringContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code substring}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubstring(ArcticSqlCommandParser.SubstringContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code cast}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterCast(ArcticSqlCommandParser.CastContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code cast}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitCast(ArcticSqlCommandParser.CastContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code constantDefault}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
@@ -2588,6 +2418,30 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitConstantDefault(ArcticSqlCommandParser.ConstantDefaultContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code lambda}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambda(ArcticSqlCommandParser.LambdaContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code lambda}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambda(ArcticSqlCommandParser.LambdaContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code parenthesizedExpression}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code parenthesizedExpression}
+	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitParenthesizedExpression(ArcticSqlCommandParser.ParenthesizedExpressionContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code extract}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
@@ -2600,17 +2454,17 @@ public interface ArcticSqlCommandListener extends ParseTreeListener {
 	 */
 	void exitExtract(ArcticSqlCommandParser.ExtractContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code percentile}
+	 * Enter a parse tree produced by the {@code trim}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 */
-	void enterPercentile(ArcticSqlCommandParser.PercentileContext ctx);
+	void enterTrim(ArcticSqlCommandParser.TrimContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code percentile}
+	 * Exit a parse tree produced by the {@code trim}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.
 	 * @param ctx the parse tree
 	 */
-	void exitPercentile(ArcticSqlCommandParser.PercentileContext ctx);
+	void exitTrim(ArcticSqlCommandParser.TrimContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code functionCall}
 	 * labeled alternative in {@link ArcticSqlCommandParser#primaryExpression}.

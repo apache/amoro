@@ -20,7 +20,7 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.util.ExpressionHelper;
 
-public class Spark33Adapter implements SparkAdapter {
+public class Spark32Adapter implements SparkAdapter {
   ExpressionHelper expressionHelper = new ExpressionHelper();
 
   @Override
