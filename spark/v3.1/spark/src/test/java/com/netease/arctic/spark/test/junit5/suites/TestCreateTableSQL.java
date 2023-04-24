@@ -4,7 +4,7 @@ import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.junit5.SparkTableTestBase;
-import com.netease.arctic.spark.test.junit5.extensions.SelectCatalog;
+import com.netease.arctic.spark.test.junit5.extensions.EnableCatalogSelect;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -24,8 +24,8 @@ import java.util.stream.Stream;
 
 import static com.netease.arctic.utils.CollectionHelper.asMap;
 
-@SelectCatalog
-@SelectCatalog.Selector(byName = "")
+@EnableCatalogSelect
+@EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestCreateTableSQL extends SparkTableTestBase {
 
 
@@ -38,7 +38,6 @@ public class TestCreateTableSQL extends SparkTableTestBase {
     );
   }
 
-
   @DisplayName("Test `use-timestamp-without-zone-in-new-tables`")
   @ParameterizedTest
   @MethodSource
@@ -47,7 +46,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
 
     sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
         + "`=" + usingTimestampWithoutZone);
-    String sqlText = "CREATE TABLE " + databaseAndTable() + "(\n" +
+    String sqlText = "CREATE TABLE " + target() + "(\n" +
         "id INT, \n" +
         "ts TIMESTAMP \n) using  " + provider(format);
     sql(sqlText);
@@ -76,7 +75,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPrimaryKeyNotNullConstraint(
       TableFormat format, String idFieldTypeDDL, String primaryKeyDDL, boolean expectRequired
   ) {
-    String sqlText = "CREATE TABLE " + databaseAndTable() + "(\n" +
+    String sqlText = "CREATE TABLE " + target() + "(\n" +
         "id " + idFieldTypeDDL + ",\n" +
         "DATA string " + primaryKeyDDL + "\n" +
         ") using " + provider(format);
@@ -103,7 +102,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPrimaryKeySpecExist(
       TableFormat format, String primaryKeyDDL, boolean expectKeyedTable
   ) {
-    String sqlText = "CREATE TABLE " + databaseAndTable() + " ( \n" +
+    String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string " + primaryKeyDDL + " ) using " + provider(format);
     sql(sqlText);
     ArcticTable actualTable = loadTable();
@@ -158,7 +157,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   public void testPartitionSpec(
       TableFormat format, String partitionDDL, PartitionSpec expectSpec
   ) {
-    String sqlText = "CREATE TABLE " + databaseAndTable() + " ( \n" +
+    String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, " +
         "data string, " +
         "ts timestamp, " +
@@ -231,7 +230,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   ) {
     sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
         + "`= false ");
-    String sqlText = "CREATE TABLE " + databaseAndTable() + "(" +
+    String sqlText = "CREATE TABLE " + target() + "(" +
         structDDL + ") using  " + provider(format) + " " + propertiesDDL;
     sql(sqlText);
 

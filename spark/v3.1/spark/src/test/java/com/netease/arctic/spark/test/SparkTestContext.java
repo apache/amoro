@@ -13,6 +13,7 @@ import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.spark.test.sql.SparkTestBase;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
@@ -61,6 +62,18 @@ public class SparkTestContext {
     } catch (TException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public void dropHiveTable(String database, String table) {
+    try {
+      HMS.getHiveClient().dropTable(database, table, true, true);
+    }catch (Exception e){
+      throw new RuntimeException(e);
+    }
+  }
+
+  public HiveMetaStoreClient getHiveClient() {
+    return HMS.getHiveClient();
   }
 
   private void setupCatalogs() throws IOException {

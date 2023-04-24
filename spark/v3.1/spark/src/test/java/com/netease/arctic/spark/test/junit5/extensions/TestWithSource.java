@@ -9,16 +9,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(SelectCatalogExtension.class)
-public @interface SelectCatalog {
-
-  /**
-   * select selector to choose a spark catalog for test env.
-   */
-  @Target({ElementType.TYPE, ElementType.METHOD})
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface Selector {
-    String byName();
-
-  }
+@ExtendWith(EnableCatalogSelectExtension.class)
+public @interface TestWithSource {
 }

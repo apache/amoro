@@ -26,8 +26,16 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -139,7 +147,6 @@ public class TestTable {
       List<FieldSchema> hivePartition = Lists.newArrayList();
       if (TableFormat.MIXED_HIVE.equals(format)) {
         this.timestampWithoutZoneInCreateTable();
-        this.schema = HiveSchemaUtil.hiveTableSchema(schema, this.ptSpec);
         hiveSchemas = HiveSchemaUtil.hiveTableFields(this.schema, this.ptSpec);
         hivePartition = HiveSchemaUtil.hivePartitionFields(this.schema, this.ptSpec);
       }
@@ -151,5 +158,21 @@ public class TestTable {
           hiveSchemas, hivePartition, generator
       );
     }
+  }
+
+
+
+  public static Row recordToRow(Record record) {
+    Object[] values = new Object[record.size()];
+    for (int i = 0; i < values.length; i++) {
+      Object v = record.get(i);
+      if (v instanceof LocalDateTime) {
+        v = new Timestamp(((LocalDateTime) v).atOffset(ZoneOffset.UTC).toInstant().toEpochMilli());
+      } else if (v instanceof OffsetDateTime) {
+        v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
+      }
+      values[i] = v;
+    }
+    return RowFactory.create(values);
   }
 }

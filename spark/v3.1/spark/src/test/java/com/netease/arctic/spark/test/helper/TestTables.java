@@ -19,7 +19,15 @@
 package com.netease.arctic.spark.test.helper;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public class TestTables {
   static final Types.NestedField id = Types.NestedField.optional(1, "id", Types.IntegerType.get());
@@ -66,4 +74,5 @@ public class TestTables {
     public static final TestTable NoPK_NoPT = TestTable.format(TableFormat.MIXED_ICEBERG, fields)
         .build();
   }
+
 }

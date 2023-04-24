@@ -2,6 +2,7 @@ package com.netease.arctic.spark.test.junit5.extensions;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.spark.test.junit5.SparkTestBase;
+import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.engine.execution.BeforeEachMethodAdapter;
@@ -10,11 +11,17 @@ import org.junit.platform.commons.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
-public class SelectCatalogExtension implements BeforeEachMethodAdapter {
+public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SelectCatalogExtension.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EnableCatalogSelectExtension.class);
+
+
+  public EnableCatalogSelectExtension() {
+    LOG.info("extension created");
+  }
 
   @Override
   public void invokeBeforeEachMethod(ExtensionContext context, ExtensionRegistry registry) throws Throwable {
@@ -24,14 +31,39 @@ public class SelectCatalogExtension implements BeforeEachMethodAdapter {
         () -> "This is not a SparkTest");
 
 
-    String sparkCatalog = selectCatalogByFormat(context, registry);
+    String sparkCatalog = selectSparkCatalog(context, registry);
     if (sparkCatalog != null) {
       SparkTestBase instance = (SparkTestBase) context.getRequiredTestInstance();
       System.out.println("setup catalog :" + sparkCatalog);
       LOG.info("Set catalog from test: " + context.getDisplayName() + ", SparkCatalog=" + sparkCatalog);
       instance.setCurrentCatalog(sparkCatalog);
     }
+  }
 
+  private String selectSparkCatalog(ExtensionContext context, ExtensionRegistry registry) {
+    EnableCatalogSelect.SelectCatalog selector = findAnnotation(context);
+    if (selector == null) {
+      return "spark_catalog";
+    }
+    if (StringUtils.isNotEmpty(selector.use())){
+      return selector.use();
+    } else if (selector.byTableFormat()){
+      return selectCatalogByFormat(context, registry);
+    } else {
+      throw new IllegalArgumentException("can't determine the spark catalog");
+    }
+  }
+
+  private EnableCatalogSelect.SelectCatalog findAnnotation(ExtensionContext context) {
+    Method method = context.getRequiredTestMethod();
+    EnableCatalogSelect.SelectCatalog selector = method.getAnnotation(EnableCatalogSelect.SelectCatalog.class);
+    if (selector != null) {
+      return selector;
+    }
+
+    Class<?> testClass = context.getRequiredTestClass();
+    selector = testClass.getAnnotation(EnableCatalogSelect.SelectCatalog.class);
+    return selector;
   }
 
 

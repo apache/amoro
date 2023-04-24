@@ -3,6 +3,7 @@ package com.netease.arctic.spark.test.junit5;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.test.SparkTestContext;
+import com.netease.arctic.spark.test.junit5.extensions.EachParameterResolver;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -10,8 +11,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
@@ -20,6 +24,8 @@ public class SparkTestBase {
   public static final String INTERNAL_CATALOG = "arctic_catalog";
   public static final String HIVE_CATALOG = "hive_catalog";
 
+  @RegisterExtension
+  private final EachParameterResolver eachParameterResolver = new EachParameterResolver();
 
   @BeforeAll
   public static void setupContext() throws Exception {
@@ -56,6 +62,11 @@ public class SparkTestBase {
     }
     return _catalog;
   }
+
+  protected boolean isHiveCatalog() {
+    return SESSION_CATALOG.equalsIgnoreCase(currentCatalog) || HIVE_CATALOG.equals(currentCatalog);
+  }
+
 
   public Dataset<Row> sql(String sqlText) {
     if (this.spark == null){
