@@ -341,7 +341,7 @@
                                         <include>org.apache.spark.sql.catalyst.plans.logical.AddPartitionField*
                                         </include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.Call*</include>
-                                        <include>org.apache.spark.sql.catalyst.plans.logical.Drop*</include>
+                                        <include>org.apache.spark.sql.catalyst.plans.logical.DropPartitionField</include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.DynamicFileFilter*
                                         </include>
                                         <include>org.apache.spark.sql.catalyst.plans.logical.MergeInto</include>
