@@ -46,9 +46,8 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "ts", Types.TimestampType.withZone())
     );
-    TableIdentifier sourceIdentifier = source().toArcticIdentifier();
-    catalog().newTableBuilder(sourceIdentifier, schema)
-        .create();
+    createArcticSource(schema, x -> {});
+
     sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
         + newTableTimestampWithoutZone);
     sql("CREATE TABLE " + target() + " LIKE " +

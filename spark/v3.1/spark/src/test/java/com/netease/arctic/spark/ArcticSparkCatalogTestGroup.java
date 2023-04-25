@@ -33,6 +33,7 @@ import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.hive.TestUnkeyedTableDml;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
+import com.netease.arctic.spark.test.suites.TestImpalaParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

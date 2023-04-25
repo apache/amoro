@@ -120,7 +120,7 @@ public class SparkTableTestBase extends SparkTestBase {
     source.setParameters(props);
     try {
       context.getHiveClient().createTable(source);
-      this.source = new Identifier(null, database, table, Identifier.SOURCE_TYPE_HIVE);
+      this.source = new Identifier(null, database, sourceTable, Identifier.SOURCE_TYPE_HIVE);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

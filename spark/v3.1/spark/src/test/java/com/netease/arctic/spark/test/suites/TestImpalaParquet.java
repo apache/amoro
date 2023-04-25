@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.test.suites;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
