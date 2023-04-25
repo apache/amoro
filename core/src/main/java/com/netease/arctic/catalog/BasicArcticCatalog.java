@@ -266,28 +266,32 @@ public class BasicArcticCatalog implements ArcticCatalog {
     } catch (TException e) {
       throw new IllegalStateException("error when delete table metadata from metastore");
     }
-    if (!purge) {
-      String baseLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
-      String changeLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
 
-      try {
-        if (StringUtils.isNotBlank(baseLocation)) {
-          dropInternalTable(tableMetaStore, baseLocation, purge);
-        }
-        if (StringUtils.isNotBlank(changeLocation)) {
-          dropInternalTable(tableMetaStore, changeLocation, purge);
-        }
-      } catch (Exception e) {
-        LOG.warn("drop base/change iceberg table fail ", e);
-      }
-    }
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
-      String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
-      if (fileIO.exists(tableLocation) && purge) {
-        LOG.info("try to delete table directory location is " + tableLocation);
-        fileIO.deleteDirectoryRecursively(tableLocation);
+
+      if (!purge) {
+        String baseLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
+        String changeLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
+
+        try {
+          if (StringUtils.isNotBlank(baseLocation)) {
+            dropInternalTable(tableMetaStore, baseLocation, purge);
+          }
+          if (StringUtils.isNotBlank(changeLocation)) {
+            dropInternalTable(tableMetaStore, changeLocation, purge);
+          }
+        } catch (Exception e) {
+          LOG.warn("drop base/change iceberg table fail ", e);
+        }
+      } else {
+        String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
+        if (fileIO.exists(tableLocation)) {
+          LOG.info("try to delete table directory location is " + tableLocation);
+          fileIO.deleteDirectoryRecursively(tableLocation);
+        }
       }
+
       // delete custom trash location
       Map<String, String> mergedProperties =
           CatalogUtil.mergeCatalogPropertiesToTable(meta.properties, catalogMeta.getCatalogProperties());
