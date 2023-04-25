@@ -44,6 +44,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -191,19 +192,19 @@ public class TableEntriesScan {
           ManifestEntryFields.Status status =
               ManifestEntryFields.Status.of(
                   entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
-          long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
-          Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
           StructLike fileRecord =
               entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
           FileContent fileContent =
               getFileContent(fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
           if (shouldKeep(status, fileContent)) {
+            Long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
+            Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
               if (needMetrics() && !includeColumnStats) {
                 contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
               }
-              return new IcebergFileEntry(snapshotId, sequence, contentFile);
+              return new IcebergFileEntry(snapshotId, sequence, status, contentFile);
             }
           }
           return null;
