@@ -185,12 +185,13 @@ public class TableEntriesScanTest extends TableDataTestBase {
       }
       for (DataFile removedFile : snapshot.removedDataFiles(table.io())) {
         Entry entry = result.get(removedFile.path().toString());
-        // sequence for delete
+        // sequence for removed file is the sequence it added
         result.put(removedFile.path().toString(),
             new Entry(snapshotId, entry.getSequenceNumber(), removedFile.content(), false));
       }
       for (DeleteFile removedFile : snapshot.removedDeleteFiles(table.io())) {
         Entry entry = result.get(removedFile.path().toString());
+        // sequence for removed file is the sequence it added
         result.put(removedFile.path().toString(),
             new Entry(snapshotId, entry.getSequenceNumber(), removedFile.content(), false));
       }
