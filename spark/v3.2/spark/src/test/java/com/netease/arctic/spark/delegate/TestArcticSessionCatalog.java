@@ -207,4 +207,16 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table);
   }
 
+  @Test
+  public void testLoadFunction(){
+    String funcClass = "org.apache.hadoop.hive.ql.udf.generic.GenericUDFLength";
+
+    // create permanent function
+    sql("CREATE FUNCTION permanent_len as '"+funcClass+"'");
+    assertEquals("load permanent function in Hive",
+        sql("select length('abc')"),
+        sql("select permanent_len('abc')"));
+
+  }
+
 }
