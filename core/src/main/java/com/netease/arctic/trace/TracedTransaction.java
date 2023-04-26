@@ -82,7 +82,7 @@ public class TracedTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    UpdateSchema updateSchema = transaction.updateSchema();
+    UpdateSchema updateSchema = arcticTable.updateSchema();
     tracer.setAction(TraceOperations.UPDATE_SCHEMA);
     return new TracedSchemaUpdate(updateSchema, new TransactionTracker());
   }
