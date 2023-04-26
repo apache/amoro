@@ -141,7 +141,8 @@ public class ArcticThriftUrl {
           // an error occurs when the thread carrying kerberos authentication information accesses the zk.
           // Therefore, clear the authentication information and try again
           retryCount++;
-          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount));
+          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount),
+              authFailedException);
           try {
             Subject subject = Subject.getSubject(java.security.AccessController.getContext());
 
@@ -154,7 +155,7 @@ public class ArcticThriftUrl {
           }
         } catch (Exception e) {
           retryCount++;
-          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount));
+          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
           throw new RuntimeException(String.format("invalid ams url %s", url));
         }
       }
