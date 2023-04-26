@@ -1,7 +1,6 @@
 package com.netease.arctic.trino.keyed;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.table.ArcticTable;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
@@ -85,7 +85,7 @@ public class KeyedTableStatisticsMaker {
     KeyedTableStatistics.Builder icebergStatisticsBuilder = new KeyedTableStatistics.Builder(columns, typeManager);
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = tableScan.planTasks()) {
       combinedScanTasks.forEach(combinedScanTask -> combinedScanTask.tasks().forEach(
-          keyedTableScanTask -> Streams.concat(
+          keyedTableScanTask -> Stream.concat(
                   keyedTableScanTask.dataTasks().stream(), keyedTableScanTask.arcticEquityDeletes().stream())
               .forEach(arcticFileScanTask -> icebergStatisticsBuilder.acceptDataFile(
                       arcticFileScanTask.file(), arcticFileScanTask.spec(), arcticFileScanTask.fileType()
