@@ -270,6 +270,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
 
+      // If purge is true, all manifest/data files must be located under the table directory.
       if (!purge) {
         String baseLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
         String changeLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
