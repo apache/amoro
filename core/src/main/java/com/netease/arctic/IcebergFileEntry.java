@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /**
  * Entry of Iceberg ContentFile, include status, ContentFile, snapshotId and sequenceNumber.
@@ -58,11 +59,11 @@ public class IcebergFileEntry {
 
   @Override
   public String toString() {
-    return "IcebergFileEntry{" +
-        "snapshotId=" + snapshotId +
-        ", sequenceNumber=" + sequenceNumber +
-        ", status=" + status +
-        ", file=" + (file == null ? "null" : String.valueOf(file.path())) +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("snapshotId", snapshotId)
+        .add("sequenceNumber", sequenceNumber)
+        .add("status", status)
+        .add("file", file == null ? "null" : file.path())
+        .toString();
   }
 }
