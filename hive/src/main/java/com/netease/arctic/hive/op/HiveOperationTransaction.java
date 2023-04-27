@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -81,7 +82,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(unkeyedHiveTable, client, wrapped.updateSchema(), wrapped);
+    return new HiveSchemaUpdate(unkeyedHiveTable, client, wrapped.updateSchema(), false);
   }
 
   @Override
@@ -152,6 +153,7 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     wrapped.commitTransaction();
+    HiveSchemaUtil.syncSchemaToHive(unkeyedHiveTable, client);
     transactionalClient.commit();
   }
 
