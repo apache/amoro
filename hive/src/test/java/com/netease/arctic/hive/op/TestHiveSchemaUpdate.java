@@ -112,17 +112,17 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
     String testAddCol2 = "testAdd2";
     String testDoc = "test Doc";
     UnkeyedTable table = testHiveTable;
-    int originalNumberOfFields = table.schema().columns().size();
     Transaction transaction = table.newTransaction();
     transaction.updateSchema().
         addColumn(testAddCol1, Types.FloatType.get(), "init doc").
         addColumn(testAddCol2, Types.DoubleType.get(), testDoc).commit();
+    int exceptedNumberOfFields = table.schema().columns().size() + 2;
     testHiveTable.refresh();
     Assert.assertFalse("table schema should not added",
-        table.schema().columns().size() == originalNumberOfFields + 2);
+        table.schema().columns().size() == exceptedNumberOfFields);
     transaction.commitTransaction();
     Assert.assertTrue("table schema should added",
-        table.schema().columns().size() == originalNumberOfFields + 2);
+        table.schema().columns().size() == exceptedNumberOfFields);
     List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
     Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
   }
