@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -28,7 +27,6 @@ import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.thrift.TException;
 
 import java.util.Locale;
 
