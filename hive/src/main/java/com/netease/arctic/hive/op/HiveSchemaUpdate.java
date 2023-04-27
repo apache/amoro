@@ -23,7 +23,14 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.util.PropertyUtil;
+import org.apache.thrift.TException;
+
+import java.util.Locale;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
@@ -31,16 +38,22 @@ import org.apache.iceberg.UpdateSchema;
 public class HiveSchemaUpdate extends BaseSchemaUpdate {
   private final ArcticTable arcticTable;
   private final HMSClientPool hiveClient;
+  private final HMSClientPool transactionClient;
   private final UpdateSchema updateSchema;
-  private Boolean needSyncToHive = true;
+  private final boolean insideTransaction;
+  private final Transaction transaction;
 
-  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient,
-                          UpdateSchema updateSchema, Boolean needSyncToHive) {
+  public HiveSchemaUpdate(Transaction transaction, boolean insideTransaction,
+                          ArcticTable arcticTable, HMSClientPool hiveClient,
+                          HMSClientPool transactionClient,
+                          UpdateSchema updateSchema) {
     super(arcticTable, updateSchema);
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;
-    this.needSyncToHive = needSyncToHive;
+    this.transactionClient = transactionClient;
+    this.insideTransaction = insideTransaction;
+    this.transaction = transaction;
   }
 
   @Override
@@ -49,8 +62,20 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
     if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id()) == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
-    if (needSyncToHive) {
-      HiveSchemaUtil.syncSchemaToHive(arcticTable, hiveClient);
+    syncSchemaToHive();
+    if (!insideTransaction) {
+      transaction.commitTransaction();
     }
+  }
+
+  private void syncSchemaToHive() {
+    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
+    if (tbl == null) {
+      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
+    }
+    tbl.setSd(HiveTableUtil.storageDescriptor(arcticTable.schema(), arcticTable.spec(), tbl.getSd().getLocation(),
+        FileFormat.valueOf(PropertyUtil.propertyAsString(arcticTable.properties(), TableProperties.DEFAULT_FILE_FORMAT,
+            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+    HiveTableUtil.persistTable(transactionClient, tbl);
   }
 }

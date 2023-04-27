@@ -82,7 +82,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(unkeyedHiveTable, client, wrapped.updateSchema(), false);
+    return new HiveSchemaUpdate(wrapped, true, unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
   }
 
   @Override
@@ -153,7 +153,6 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     wrapped.commitTransaction();
-    HiveSchemaUtil.syncSchemaToHive(unkeyedHiveTable, client);
     transactionalClient.commit();
   }
 

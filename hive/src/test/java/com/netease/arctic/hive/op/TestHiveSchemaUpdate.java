@@ -23,6 +23,7 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -101,6 +102,18 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
+    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+  }
+
+  @Test
+  public void testUnKeyedTransactionAdd() throws TException {
+    String testAddCol1 = "testAdd1";
+    String testAddCol2 = "testAdd2";
+    String testDoc = "test Doc";
+    Transaction transaction = testHiveTable.newTransaction();
+    transaction.updateSchema().addColumn(testAddCol1, Types.FloatType.get(), "init doc").
+        addColumn(testAddCol2, Types.DoubleType.get(), testDoc).commit();
+    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
     Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
   }
 
