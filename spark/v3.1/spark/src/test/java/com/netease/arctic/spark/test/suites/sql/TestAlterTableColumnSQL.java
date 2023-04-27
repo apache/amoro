@@ -71,6 +71,9 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @ParameterizedTest
   @MethodSource()
   public void testDropColumn(TableFormat format) {
+    // TODO: Test coverage is not enough.
+    // 1. format, keyed/unkeyed, partitioned/un-partitioned , exception tests.
+
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts string, PRIMARY KEY(id)) using " +
         provider(format)  + " PARTITIONED BY (ts)";
@@ -86,6 +89,10 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
     Assertions.assertEquals(expectedSchema, loadTable().schema().asStruct(), "Schema should match expected");
   }
 
+  /**
+   * TODO: are arguments could be simplify?
+   * TODO:  Test coverage is not enough.
+   */
   public static Stream<Arguments> testAlterColumn() {
     return Stream.of(
         Arguments.of(" id COMMENT 'Record id'",
@@ -120,6 +127,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @MethodSource()
   @EnableCatalogSelect.SelectCatalog(use = INTERNAL_CATALOG)
   public void testAlterColumn(String alterText, Types.StructType expectedSchema) {
+    // TODO: Why doesn't run test on mixed-hive ?
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts timestamp, count int, PRIMARY KEY(id)) using " +
         provider(TableFormat.MIXED_ICEBERG)  + " PARTITIONED BY (ts)";
@@ -146,6 +154,8 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, " UNSET TBLPROPERTIES ('test.props')", null)
     );
   }
+
+
   @DisplayName("Test `alter table properties`")
   @ParameterizedTest
   @MethodSource()
@@ -158,4 +168,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
         target().database + "." + target().table + alterText);
     Assertions.assertEquals(expectedProperties, loadTable().properties().get("test.props"));
   }
+
+  // TODO: lack unset properties tests.
+  // TODO: or move the alter table ... properties to the other test class?
 }

@@ -17,6 +17,9 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestTruncateSQL extends SparkTableTestBase {
 
+  //TODO:
+  // 1. Add partitioned case.
+  // 2. check only metadata delete.
   public static Stream<Arguments> testTruncateTable() {
     return Stream.of(
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)"),

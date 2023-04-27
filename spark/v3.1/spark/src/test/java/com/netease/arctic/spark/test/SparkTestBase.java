@@ -69,7 +69,7 @@ public class SparkTestBase {
     if (this.spark == null){
       this.spark = context.getSparkSession(true);
     }
-
+    long begin = System.currentTimeMillis();
     LOG.info("Execute SQL: " + sqlText);
     Dataset<Row> ds = spark.sql(sqlText);
     if (ds.columns().length == 0) {
@@ -79,6 +79,7 @@ public class SparkTestBase {
     } else {
       ds.show();
     }
+    LOG.info("SQL Execution cost: " + (System.currentTimeMillis() - begin) + " ms");
     return ds;
   }
 }

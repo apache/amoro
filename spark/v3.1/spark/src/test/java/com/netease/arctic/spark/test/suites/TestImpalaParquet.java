@@ -19,24 +19,18 @@
 package com.netease.arctic.spark.test.suites;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
@@ -56,7 +50,7 @@ public class TestImpalaParquet {
     CloseableIterator<Object> iterator = builder.build().iterator();
     while (iterator.hasNext()) {
       InternalRow next = (InternalRow)iterator.next();
-      Assert.assertTrue(next.getString(0).equals("hello parquet"));
+      Assertions.assertEquals("hello parquet", next.getString(0));
     }
   }
 
@@ -73,6 +67,6 @@ public class TestImpalaParquet {
         .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
-    Assert.assertTrue(Iterators.size(iterator) == 0);
+    Assertions.assertEquals(0, Iterators.size(iterator));
   }
 }

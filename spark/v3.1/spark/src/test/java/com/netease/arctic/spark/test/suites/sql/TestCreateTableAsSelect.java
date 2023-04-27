@@ -15,9 +15,8 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -84,15 +83,15 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 
 
     return Stream.of(
-//        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "PARTITIONED BY(pt)",
-//            keyIdPtSpec, ptBuilder().identity("pt").build()),
-//        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "",
-//            keyIdPtSpec, PartitionSpec.unpartitioned()),
-//        Arguments.of(TableFormat.MIXED_HIVE, "", "PARTITIONED BY(pt)",
-//            PrimaryKeySpec.noPrimaryKey(),
-//            ptBuilder().identity("pt").build()),
-//        Arguments.of(TableFormat.MIXED_HIVE, "", "",
-//            PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned()),
+        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "PARTITIONED BY(pt)",
+            keyIdPtSpec, ptBuilder().identity("pt").build()),
+        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "",
+            keyIdPtSpec, PartitionSpec.unpartitioned()),
+        Arguments.of(TableFormat.MIXED_HIVE, "", "PARTITIONED BY(pt)",
+            PrimaryKeySpec.noPrimaryKey(),
+            ptBuilder().identity("pt").build()),
+        Arguments.of(TableFormat.MIXED_HIVE, "", "",
+            PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned()),
 
         Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "",
             keyIdPtSpec, PartitionSpec.unpartitioned()),
@@ -128,7 +127,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     spark.conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true" );
+    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true");
 
     String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
         + " USING " + provider(format) + " " + partitionDDL
@@ -157,19 +156,52 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 //      Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
     }
 
-    Dataset<Row> ds = sql("select * from " + source());
-    List<Row> rows = ds.collectAsList();
-
-    Dataset<Row> tDs = sql("select * from " + target());
-    List<Row> tRows = tDs.collectAsList();
-
-
 
     List<Record> records = TestTableHelper.tableRecords(table);
     DataComparator.build(simpleSourceData, records)
-        .ignoreOrder(Comparator.comparing(r -> (Integer)r.get(0)))
-        .assertRecordsEqual();;
+        .ignoreOrder(Comparator.comparing(r -> (Integer) r.get(0)))
+        .assertRecordsEqual();
   }
 
+
+
+
+  public static Stream<Arguments> testSourceDuplicateCheck() {
+    List<Record> duplicateSource = Lists.newArrayList(simpleSourceData);
+    duplicateSource.add(simpleSourceData.get(0));
+
+    return Stream.of(
+        Arguments.of(TableFormat.MIXED_ICEBERG, simpleSourceData, "PRIMARY KEY(id, pt)", false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, simpleSourceData, "", false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "", false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "PRIMARY KEY(id, pt)", true),
+
+        Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "PRIMARY KEY(id, pt)", false),
+        Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "", false),
+        Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "", false),
+        Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "PRIMARY KEY(id, pt)", true)
+    );
+  }
+
+  @ParameterizedTest(name = "{index} {0} {2} {3}")
+  @MethodSource
+  public void testSourceDuplicateCheck(
+      TableFormat format, List<Record> sourceData, String primaryKeyDDL, boolean duplicateCheckFailed
+  ) {
+    spark.conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
+    createViewSource(simpleSourceSchema, sourceData);
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
+        + " USING " + provider(format) + " "
+        + " AS SELECT * FROM " + source();
+
+    boolean exceptionCatched = false;
+    try {
+      sql(sqlText);
+    } catch (Exception e) {
+        exceptionCatched = true;
+    }
+
+    Assertions.assertEquals(duplicateCheckFailed, exceptionCatched);
+  }
 
 }

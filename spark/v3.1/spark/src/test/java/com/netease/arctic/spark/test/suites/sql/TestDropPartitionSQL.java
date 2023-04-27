@@ -26,6 +26,11 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
     );
   }
 
+  /**
+   * TODO:
+   * 1. check the hive meta store for mixed-hive
+   * 2. make sure the drop partition only du the metadata-delete.
+   */
   @DisplayName("Test `test drop partiton`")
   @ParameterizedTest
   @MethodSource
