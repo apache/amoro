@@ -24,6 +24,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
@@ -36,17 +37,30 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   private final ArcticTable arcticTable;
   private final HMSClientPool hiveClient;
   private final UpdateSchema updateSchema;
+  private final Transaction transaction;
 
   public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient, UpdateSchema updateSchema) {
     super(arcticTable, updateSchema);
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;
+    this.transaction = null;
+  }
+
+  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient, UpdateSchema updateSchema, Transaction transaction) {
+    super(arcticTable, updateSchema);
+    this.arcticTable = arcticTable;
+    this.hiveClient = hiveClient;
+    this.updateSchema = updateSchema;
+    this.transaction = transaction;
   }
 
   @Override
   public void commit() {
     this.updateSchema.commit();
+    if (this.transaction != null) {
+      transaction.commitTransaction();
+    }
     if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id()) == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
