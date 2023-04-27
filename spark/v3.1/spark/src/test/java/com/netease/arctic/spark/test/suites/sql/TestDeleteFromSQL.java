@@ -39,7 +39,6 @@ public class TestDeleteFromSQL extends SparkTableTestBase {
     sql("insert into " +
         target().database + "." + target().table +
         " values (1, 'a'), (2, 'b'), (3, 'c')");
-    sql("describe " + target().database + "." + target().table);
     sql("delete from " + target().database + "." + target().table + filter);
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);

@@ -13,7 +13,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-// TODO: @jinsilei
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestDropPartitionSQL extends SparkTableTestBase {
@@ -38,7 +37,6 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
     sql("insert into " +
         target().database + "." + target().table +
         " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
-    sql("describe " + target().database + "." + target().table);
     sql("alter table " + target().database + "." + target().table + " drop if exists partition (day='c')");
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);

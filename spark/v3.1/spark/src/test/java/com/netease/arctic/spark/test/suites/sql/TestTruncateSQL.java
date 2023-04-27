@@ -37,7 +37,6 @@ public class TestTruncateSQL extends SparkTableTestBase {
     sql("insert into " +
         target().database + "." + target().table +
         " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
-    sql("describe " + target().database + "." + target().table);
     sql("truncate table " + target().database + "." + target().table);
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);
