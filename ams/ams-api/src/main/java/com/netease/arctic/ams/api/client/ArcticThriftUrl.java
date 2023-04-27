@@ -143,16 +143,7 @@ public class ArcticThriftUrl {
           retryCount++;
           logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount),
               authFailedException);
-          try {
-            Subject subject = Subject.getSubject(java.security.AccessController.getContext());
-
-            if (subject != null) {
-              LoginContext loginContext = new LoginContext("", subject);
-              loginContext.logout();
-            }
-          } catch (LoginException e) {
-            logger.error("Failed to logout", e);
-          }
+          System.setProperty("zookeeper.sasl.client", "false");
         } catch (Exception e) {
           retryCount++;
           logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
