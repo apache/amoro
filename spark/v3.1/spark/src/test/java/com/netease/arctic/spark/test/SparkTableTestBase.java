@@ -2,7 +2,7 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.spark.test.helper.TestTable;
+import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -14,6 +14,7 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -135,9 +136,9 @@ public class SparkTableTestBase extends SparkTestBase {
     return source;
   }
 
-  public void createViewSource(Schema schema, List<GenericRecord> data) {
+  public void createViewSource(Schema schema, List<Record> data) {
     Dataset<Row> ds = spark.createDataFrame(
-        data.stream().map(TestTable::recordToRow).collect(Collectors.toList()),
+        data.stream().map(TestTableHelper::recordToRow).collect(Collectors.toList()),
         SparkSchemaUtil.convert(schema));
 
     ds.createOrReplaceTempView(sourceTable);

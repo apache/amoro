@@ -240,7 +240,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
     Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
     if (TableFormat.MIXED_HIVE == format) {
       Table hiveTable = loadHiveTable();
-      Asserts.assertHiveSchema(hiveTable, expectSchema);
+      Asserts.assertHiveColumns(expectSchema, PartitionSpec.unpartitioned(), hiveTable.getSd().getCols());
     }
   }
 

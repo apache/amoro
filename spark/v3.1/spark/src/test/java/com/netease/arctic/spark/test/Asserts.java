@@ -18,10 +18,10 @@
 
 package com.netease.arctic.spark.test;
 
+import com.netease.arctic.spark.test.helper.TableFiles;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.hive.HiveSchemaUtil;
@@ -52,7 +52,8 @@ public class Asserts {
       CollectionHelper.zip(expectFields, actualFields)
           .forEach(x -> {
             Assert.assertEquals(x.getLeft().name(), x.getRight().name());
-            Assert.assertEquals(x.getLeft().isOptional(), x.getRight().isOptional());
+            Assert.assertEquals("The fields' nullable constraint are different",
+                x.getLeft().isOptional(), x.getRight().isOptional());
             Assert.assertEquals(x.getLeft().doc(), x.getRight().doc());
             assertType(x.getLeft().type(), x.getRight().type());
           });
@@ -89,8 +90,12 @@ public class Asserts {
     }
   }
 
-  public static void assertHiveSchema(Table hiveTable, Schema expectSchema) {
-    CollectionHelper.zip(hiveTable.getSd().getCols(), expectSchema.columns())
+
+  public static void assertHiveColumns(Schema expectSchema, PartitionSpec spec, List<FieldSchema> hiveColumns) {
+    Schema schema = com.netease.arctic.hive.utils.HiveSchemaUtil.hiveTableSchema(expectSchema, spec);
+    Assert.assertEquals(schema.columns().size(), hiveColumns.size());
+
+    CollectionHelper.zip(hiveColumns, schema.columns())
         .forEach(x -> {
           Assert.assertEquals(x.getLeft().getName(), x.getRight().name());
           String expectTypeInfoString = HiveSchemaUtil.convert(x.getRight().type()).toString();
@@ -109,4 +114,28 @@ public class Asserts {
           assertEquals(expectFieldName, x.getRight().getName());
         });
   }
+
+  public static void assertAllFilesInBaseStore(TableFiles files) {
+    assertEquals(0, files.changeInsertFiles.size());
+    assertEquals(0, files.changeEqDeleteFiles.size());
+    assertTrue(files.baseDataFiles.size() > 0);
+  }
+
+  public static void assertAllFilesInHiveLocation(TableFiles files, String hiveLocation) {
+    files.baseDataFiles.forEach(f -> {
+      String path = f.path().toString();
+      Assertions.assertTrue(path.contains(hiveLocation), f.path().toString() + " not in hive location.");
+    });
+    files.baseDeleteFiles.forEach(f -> {
+      Assertions.assertFalse(f.path().toString().contains(hiveLocation));
+    });
+    files.changeInsertFiles.forEach(f -> {
+      Assertions.assertFalse(f.path().toString().contains(hiveLocation));
+    });
+    files.changeEqDeleteFiles.forEach(f -> {
+      Assertions.assertFalse(f.path().toString().contains(hiveLocation));
+    });
+
+  }
+
 }

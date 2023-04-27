@@ -25,6 +25,7 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
@@ -92,8 +93,8 @@ public class TestUpsert extends SparkTestBase {
               .withSequencePrimaryKey(primaryKeySpec)
               .withRandomDate("pt")
               .build();
-          List<GenericRecord> target = generator.records(100);
-          List<GenericRecord> source = upsertSource(
+          List<Record> target = generator.records(100);
+          List<Record> source = upsertSource(
               target, generator, primaryKeySpec, partitionSpec, upsertRecordSize, newRecordSize);
 
           return new Object[] {target, source, primaryKeySpec, duplicateCheck};
@@ -101,20 +102,20 @@ public class TestUpsert extends SparkTestBase {
         .collect(Collectors.toList());
   }
 
-  private static List<GenericRecord> upsertSource(
-      List<GenericRecord> initializeData, RecordGenerator sourceGenerator,
+  private static List<Record> upsertSource(
+      List<Record> initializeData, RecordGenerator sourceGenerator,
       PrimaryKeySpec keySpec, PartitionSpec partitionSpec,
       int upsertCount, int insertCount) {
     RecordGenerator generator = RecordGenerator.buildFor(schema)
         .withSeed(System.currentTimeMillis())
         .build();
 
-    List<GenericRecord> source = Lists.newArrayList();
-    List<GenericRecord> insertSource = sourceGenerator.records(insertCount);
+    List<Record> source = Lists.newArrayList();
+    List<Record> insertSource = sourceGenerator.records(insertCount);
     source.addAll(insertSource);
 
-    List<GenericRecord> upsertSource = sourceGenerator.records(upsertCount);
-    Iterator<GenericRecord> it = initializeData.iterator();
+    List<Record> upsertSource = sourceGenerator.records(upsertCount);
+    Iterator<Record> it = initializeData.iterator();
 
     Set<String> sourceCols = Sets.newHashSet();
     sourceCols.addAll(keySpec.fieldNames());
@@ -123,8 +124,8 @@ public class TestUpsert extends SparkTestBase {
         .map(Types.NestedField::name)
         .forEach(sourceCols::add);
 
-    for (GenericRecord r : upsertSource) {
-      GenericRecord t = it.next();
+    for (Record r : upsertSource) {
+      Record t = it.next();
       sourceCols.forEach(col -> r.setField(col, t.getField(col)));
     }
     source.addAll(upsertSource);

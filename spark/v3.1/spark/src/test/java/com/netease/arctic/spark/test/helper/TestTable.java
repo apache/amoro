@@ -161,17 +161,5 @@ public class TestTable {
 
 
 
-  public static Row recordToRow(Record record) {
-    Object[] values = new Object[record.size()];
-    for (int i = 0; i < values.length; i++) {
-      Object v = record.get(i);
-      if (v instanceof LocalDateTime) {
-        v = new Timestamp(((LocalDateTime) v).atOffset(ZoneOffset.UTC).toInstant().toEpochMilli());
-      } else if (v instanceof OffsetDateTime) {
-        v = new Timestamp(((OffsetDateTime) v).toInstant().toEpochMilli());
-      }
-      values[i] = v;
-    }
-    return RowFactory.create(values);
-  }
+
 }
