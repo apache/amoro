@@ -18,16 +18,22 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -111,5 +117,17 @@ public class HiveSchemaUtil {
     Types.StructType struct = TypeUtil.visit(schema.asStruct(),
         new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE)).asStructType();
     return new Schema(struct.fields());
+  }
+
+  public static void syncSchemaToHive(ArcticTable arcticTable, HMSClientPool hiveClient,
+                               HMSClientPool transactionClient) {
+    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
+    if (tbl == null) {
+      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
+    }
+    tbl.setSd(HiveTableUtil.storageDescriptor(arcticTable.schema(), arcticTable.spec(), tbl.getSd().getLocation(),
+        FileFormat.valueOf(PropertyUtil.propertyAsString(arcticTable.properties(), TableProperties.DEFAULT_FILE_FORMAT,
+            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+    HiveTableUtil.persistTable(transactionClient, tbl);
   }
 }

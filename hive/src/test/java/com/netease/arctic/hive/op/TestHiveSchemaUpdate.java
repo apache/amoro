@@ -20,6 +20,7 @@ package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -110,9 +111,18 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
     String testAddCol1 = "testAdd1";
     String testAddCol2 = "testAdd2";
     String testDoc = "test Doc";
-    Transaction transaction = testHiveTable.newTransaction();
-    transaction.updateSchema().addColumn(testAddCol1, Types.FloatType.get(), "init doc").
+    UnkeyedTable table = testHiveTable;
+    int originalNumberOfFields = table.schema().columns().size();
+    Transaction transaction = table.newTransaction();
+    transaction.updateSchema().
+        addColumn(testAddCol1, Types.FloatType.get(), "init doc").
         addColumn(testAddCol2, Types.DoubleType.get(), testDoc).commit();
+    testHiveTable.refresh();
+    Assert.assertFalse("table schema should not added",
+        table.schema().columns().size() == originalNumberOfFields + 2);
+    transaction.commitTransaction();
+    Assert.assertTrue("table schema should added",
+        table.schema().columns().size() == originalNumberOfFields + 2);
     List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
     Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
   }
