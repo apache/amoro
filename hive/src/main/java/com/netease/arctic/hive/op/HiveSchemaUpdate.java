@@ -34,7 +34,8 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   private final UpdateSchema updateSchema;
   private Boolean needSyncToHive = true;
 
-  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient, UpdateSchema updateSchema, Boolean needSyncToHive) {
+  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient,
+                          UpdateSchema updateSchema, Boolean needSyncToHive) {
     super(arcticTable, updateSchema);
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
