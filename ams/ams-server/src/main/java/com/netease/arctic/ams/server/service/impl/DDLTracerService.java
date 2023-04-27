@@ -240,20 +240,34 @@ public class DDLTracerService extends IJDBCService {
         ((HasTableOperations) table).operations().current().previousFiles();
     Set<Long> time = new HashSet<>();
     snapshotLog.forEach(e -> time.add(e.timestampMillis()));
+    String lastMetadataLogEntryFile = null;
+    org.apache.iceberg.TableMetadata lastTableMetadata = null;
     for (int i = 1; i < metadataLogEntries.size(); i++) {
-      org.apache.iceberg.TableMetadata.MetadataLogEntry e = metadataLogEntries.get(i);
-      if (!time.contains(e.timestampMillis())) {
+      org.apache.iceberg.TableMetadata.MetadataLogEntry currentEntry = metadataLogEntries.get(i);
+      if (!time.contains(currentEntry.timestampMillis())) {
+        org.apache.iceberg.TableMetadata.MetadataLogEntry previousEntry = metadataLogEntries.get(i - 1);
+        org.apache.iceberg.TableMetadata oldTableMetadata;
+        if (lastMetadataLogEntryFile == null || !lastMetadataLogEntryFile.equals(previousEntry.file())) {
+          oldTableMetadata = TableMetadataParser.read(table.io(), previousEntry.file());
+        } else {
+          oldTableMetadata = lastTableMetadata;
+        }
         org.apache.iceberg.TableMetadata
-            oldTableMetadata = TableMetadataParser.read(table.io(), metadataLogEntries.get(i - 1).file());
-        org.apache.iceberg.TableMetadata
-            newTableMetadata = TableMetadataParser.read(table.io(), metadataLogEntries.get(i).file());
+            newTableMetadata = TableMetadataParser.read(table.io(), currentEntry.file());
         genNativeIcebergDDL(arcticTable, oldTableMetadata, newTableMetadata, result);
+        lastMetadataLogEntryFile = currentEntry.file();
+        lastTableMetadata = newTableMetadata;
       }
     }
     if (metadataLogEntries.size() > 0) {
-      org.apache.iceberg.TableMetadata oldTableMetadata = TableMetadataParser.read(
-          table.io(),
-          metadataLogEntries.get(metadataLogEntries.size() - 1).file());
+      org.apache.iceberg.TableMetadata.MetadataLogEntry previousEntry = metadataLogEntries
+          .get(metadataLogEntries.size() - 1);
+      org.apache.iceberg.TableMetadata oldTableMetadata;
+      if (lastMetadataLogEntryFile == null || !lastMetadataLogEntryFile.equals(previousEntry.file())) {
+        oldTableMetadata = TableMetadataParser.read(table.io(), previousEntry.file());
+      } else {
+        oldTableMetadata = lastTableMetadata;
+      }
       org.apache.iceberg.TableMetadata newTableMetadata = ((HasTableOperations) table).operations().current();
       genNativeIcebergDDL(arcticTable, oldTableMetadata, newTableMetadata, result);
     }
