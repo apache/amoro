@@ -78,7 +78,7 @@ public class TestTable {
     private Schema schema;
     private PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
     private PartitionSpec ptSpec = PartitionSpec.unpartitioned();
-    private RecordGenerator.Builder datagenBuilder;
+    private final RecordGenerator.Builder datagenBuilder;
 
     public Builder(TableFormat format, Types.NestedField... fields) {
       this.format = format;

@@ -11,6 +11,7 @@ import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.CollectionHelper;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -22,15 +23,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 
-// 1. ts handle
-// 2. primary key spec/table schema
-// 3. data expect
-// 4. duplicate check
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestCreateTableAsSelect extends SparkTableTestBase {
@@ -164,8 +163,6 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   }
 
 
-
-
   public static Stream<Arguments> testSourceDuplicateCheck() {
     List<Record> duplicateSource = Lists.newArrayList(simpleSourceData);
     duplicateSource.add(simpleSourceData.get(0));
@@ -198,10 +195,46 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     try {
       sql(sqlText);
     } catch (Exception e) {
-        exceptionCatched = true;
+      exceptionCatched = true;
     }
 
     Assertions.assertEquals(duplicateCheckFailed, exceptionCatched);
   }
+
+
+  public static Stream<Arguments> testAdditionProperties() {
+    String propertiesDDL = "TBLPROPERTIES('k1'='v1', 'k2'='v2')";
+    Map<String, String> expectProperties = CollectionHelper.asMap( "k1", "v1", "k2", "v2");
+    Map<String, String> emptyProperties = Collections.emptyMap();
+    return Stream.of(
+        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "", emptyProperties),
+        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", propertiesDDL, expectProperties),
+
+        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "", emptyProperties),
+        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
+        Arguments.of(TableFormat.MIXED_HIVE, "", propertiesDDL, expectProperties)
+        );
+  }
+
+
+  @ParameterizedTest
+  @MethodSource
+  public void testAdditionProperties(
+      TableFormat format, String primaryKeyDDL, String propertiesDDL, Map<String, String> expectProperties
+  ) {
+    createViewSource(simpleSourceSchema, simpleSourceData);
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
+        + " USING " + provider(format) + " PARTITIONED BY (pt) "
+        + propertiesDDL
+        + " AS SELECT * FROM " + source();
+    sql(sqlText);
+    ArcticTable table = loadTable();
+    Map<String, String> tableProperties = table.properties();
+    Asserts.assertHashMapContainExpect(expectProperties, tableProperties);
+  }
+
+
+  // TODO: test optimize write for ctas.
 
 }

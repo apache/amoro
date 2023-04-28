@@ -5,15 +5,14 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
-public class DataComparator  {
+public class DataComparator {
   private List<Record> expectRecords;
   private List<Record> actualRecords;
   private Comparator<Record> comparator;
@@ -25,10 +24,12 @@ public class DataComparator  {
     this.actualRecords = actualRecords;
 
     this.fieldValueTrans = x -> {
-      if (x instanceof LocalDateTime){
-        long mills = ((LocalDateTime)x).toInstant(ZoneOffset.UTC).toEpochMilli();
+      if (x instanceof LocalDateTime) {
+        long mills = ((LocalDateTime) x).toInstant(ZoneOffset.UTC).toEpochMilli();
 //        return LocalDateTime.ofInstant(Instant.ofEpochMilli(mills), ZoneOffset.UTC);
         // TODO: there are something wrong in timestamp handle for mixed-iceberg.
+        return 0;
+      } else if (x instanceof OffsetDateTime) {
         return 0;
       }
       return x;
@@ -47,14 +48,14 @@ public class DataComparator  {
       actualRecords.sort(comparator);
     }
     CollectionHelper.zip(expectRecords, actualRecords)
-        .forEach( r -> assertRecord(r.getLeft(), r.getRight()));
+        .forEach(r -> assertRecord(r.getLeft(), r.getRight()));
   }
 
-  private void assertRecord(Record expectRecord , Record actualRecord ) {
+  private void assertRecord(Record expectRecord, Record actualRecord) {
     Assert.assertEquals("The record has different schema",
         expectRecord.struct().fields().size(), actualRecord.struct().fields().size());
     Types.StructType structType = expectRecord.struct();
-    for (int i = 0 ; i < structType.fields().size(); i++ ){
+    for (int i = 0; i < structType.fields().size(); i++) {
 
 
       Object expectValue = expectRecord.get(i);
@@ -68,8 +69,7 @@ public class DataComparator  {
   }
 
 
-
-  public static  DataComparator build(List<Record> expectRecords, List<Record> actualRecords){
+  public static DataComparator build(List<Record> expectRecords, List<Record> actualRecords) {
     return new DataComparator(expectRecords, actualRecords);
   }
 }

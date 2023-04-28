@@ -145,6 +145,14 @@ public class SparkTableTestBase extends SparkTestBase {
     this.source = new Identifier(null, null, sourceTable, Identifier.SOURCE_TYPE_VIEW);
   }
 
+  public void createTarget(Schema schema, Consumer<TableBuilder> consumer) {
+    Identifier identifier = target();
+    TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
+    consumer.accept(builder);
+    builder.create();
+  }
+
+
   protected boolean tableExists() {
     return catalog().tableExists(target().toArcticIdentifier());
   }

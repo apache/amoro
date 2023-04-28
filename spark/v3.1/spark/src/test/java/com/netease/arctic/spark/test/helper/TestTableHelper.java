@@ -1,10 +1,11 @@
 package com.netease.arctic.spark.test.helper;
 
+import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
+import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -12,20 +13,25 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.data.IcebergGenerics;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -37,6 +43,8 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,6 +66,27 @@ public class TestTableHelper {
       values[i] = v;
     }
     return RowFactory.create(values);
+  }
+
+  public static Record rowToRecord(Row row, Types.StructType type) {
+    Record record = GenericRecord.create(type);
+    for (int i = 0; i < type.fields().size(); i++) {
+      Object v = row.get(i);
+      Types.NestedField field = type.fields().get(i);
+      if (field.type().equals(Types.TimestampType.withZone())) {
+        Preconditions.checkArgument(v instanceof Timestamp);
+        Object offsetDateTime = ((Timestamp) v).toInstant().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        record.set(i, offsetDateTime);
+        continue;
+      } else if (field.type().equals(Types.TimestampType.withoutZone())) {
+        Preconditions.checkArgument(v instanceof Timestamp);
+        Object localDatetime = ((Timestamp) v).toLocalDateTime();
+        record.set(i, localDatetime);
+        continue;
+      }
+      record.set(i, v);
+    }
+    return record;
   }
 
   public static Schema toSchemaWithPrimaryKey(Schema schema, PrimaryKeySpec keySpec) {
@@ -211,4 +240,70 @@ public class TestTableHelper {
     }
     return result;
   }
+
+
+  public static void writeToBase(ArcticTable table, List<Record> data) {
+
+
+    TaskWriter<Record> baseWriter = null;
+    UnkeyedTable baseTable = null;
+    if (table.isKeyedTable()) {
+      baseWriter = GenericTaskWriters.builderFor(table.asKeyedTable())
+          .withTransactionId(table.asKeyedTable().beginTransaction(System.currentTimeMillis() + ""))
+          .buildBaseWriter();
+      baseTable = table.asKeyedTable().baseTable();
+    } else {
+      throw new IllegalStateException("not support for unkeyed table");
+    }
+    writeToBase(baseTable, baseWriter, data);
+  }
+
+  public static List<DataFile> writeToBase(UnkeyedTable table, TaskWriter<Record> writer, List<Record> data) {
+    List<DataFile> baseDataFiles = new ArrayList<>();
+    try {
+      data.forEach(row -> {
+        try {
+          writer.write(row);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
+      WriteResult result = writer.complete();
+      AppendFiles appendFiles = table.newAppend();
+      Arrays.stream(result.dataFiles())
+          .forEach(appendFiles::appendFile);
+      appendFiles.commit();
+      return baseDataFiles;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      try {
+        writer.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  public static void writeToChange(KeyedTable table, List<Record> rows, ChangeAction action) {
+    try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
+        .withChangeAction(action)
+        .buildChangeWriter()) {
+      rows.forEach(row -> {
+        try {
+          writer.write(row);
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      });
+      AppendFiles appendFiles = table.changeTable().newAppend();
+      Arrays.stream(writer.complete().dataFiles())
+          .forEach(appendFiles::appendFile);
+      appendFiles.commit();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+
 }

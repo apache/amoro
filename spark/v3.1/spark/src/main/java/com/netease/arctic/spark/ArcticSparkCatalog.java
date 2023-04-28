@@ -58,7 +58,6 @@ import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
-import scala.Option;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,18 +88,15 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
    * @return an Arctic identifier
    */
   protected TableIdentifier buildIdentifier(Identifier identifier) {
-    if (identifier.namespace() == null || identifier.namespace().length == 0) {
-      throw new IllegalArgumentException(
-          "database is not specific, table identifier: " + identifier.name()
-      );
-    }
-
-    if (identifier.namespace().length > 1) {
-      throw new IllegalArgumentException(
-          "arctic does not support multi-level namespace: " +
-              Joiner.on(".").join(identifier.namespace()));
-    }
-
+    Preconditions.checkArgument(
+        identifier.namespace() != null && identifier.namespace().length > 0,
+        "database is not specific, table identifier: " + identifier.name()
+    );
+    Preconditions.checkArgument(
+        identifier.namespace() != null && identifier.namespace().length == 1,
+        "arctic does not support multi-level namespace: " +
+            Joiner.on(".").join(identifier.namespace())
+    );
     return TableIdentifier.of(
         catalog.name(),
         identifier.namespace()[0].split("\\.")[0],
@@ -108,17 +104,15 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   protected TableIdentifier buildInnerTableIdentifier(Identifier identifier) {
-    if (identifier.namespace() == null || identifier.namespace().length == 0) {
-      throw new IllegalArgumentException(
-          "database is not specific, table identifier: " + identifier.name()
-      );
-    }
-
-    if (identifier.namespace().length < 2) {
-      throw new IllegalArgumentException(
-          "arctic does not support multi-level namespace: " +
-              Joiner.on(".").join(identifier.namespace()));
-    }
+    Preconditions.checkArgument(
+        identifier.namespace() != null && identifier.namespace().length > 0,
+        "database is not specific, table identifier: " + identifier.name()
+    );
+    Preconditions.checkArgument(
+        identifier.namespace().length == 2,
+        "arctic does not support multi-level namespace: " +
+            Joiner.on(".").join(identifier.namespace())
+    );
 
     return TableIdentifier.of(
         catalog.name(),
@@ -152,7 +146,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BasicUnkeyedTable)table.asKeyedTable().changeTable(),
+          return new ArcticSparkChangeTable((BasicUnkeyedTable) table.asKeyedTable().changeTable(),
               false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
@@ -199,7 +193,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       ArcticTable table = builder.create();
       return ArcticSparkTable.ofArcticTable(table, catalog);
     } catch (AlreadyExistsException e) {
-      throw new TableAlreadyExistsException("Table " + ident + " already exists", Option.apply(e));
+      throw new TableAlreadyExistsException(ident);
     }
   }
 
@@ -407,7 +401,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         .collect(Collectors.toList());
 
     return tableIdentifiers.stream()
-        .map(i -> Identifier.of(new String[] {i.getDatabase()}, i.getTableName()))
+        .map(i -> Identifier.of(new String[]{i.getDatabase()}, i.getTableName()))
         .toArray(Identifier[]::new);
   }
 
@@ -429,7 +423,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   @Override
   public String[][] listNamespaces() {
     return catalog.listDatabases().stream()
-        .map(d -> new String[] {d})
+        .map(d -> new String[]{d})
         .toArray(String[][]::new);
   }
 

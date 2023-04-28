@@ -45,11 +45,11 @@ public class CollectionHelperTest {
   private <A, B> void zipAssert(List<Pair<A, B>> zipResult, List<A> inputA, List<B> inputB) {
     Assert.assertEquals(zipResult.size(), Math.min(inputA.size(), inputB.size()));
     for (int i = 0; i < zipResult.size(); i++) {
-      Pair<A, B> vZip = zipResult.get(i);
-      A vA = inputA.get(i);
-      B vB = inputB.get(i);
-      Assert.assertEquals(vA, vZip.getLeft());
-      Assert.assertEquals(vB, vZip.getRight());
+      Pair<A, B> varZip = zipResult.get(i);
+      A varA = inputA.get(i);
+      B varB = inputB.get(i);
+      Assert.assertEquals(varA, varZip.getLeft());
+      Assert.assertEquals(varB, varZip.getRight());
     }
   }
 }

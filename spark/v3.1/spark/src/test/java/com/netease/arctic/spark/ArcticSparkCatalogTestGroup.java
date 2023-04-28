@@ -70,7 +70,6 @@ import java.util.Map;
     TestUnkeyedTableDml.class,
     TestKeyedTableDataFrameAPI.class,
     TestUnKeyedTableDataFrameAPI.class,
-    TestCreateKeyedTableAsSelect.class,
     com.netease.arctic.spark.hive.TestKeyedTableDml.class,
     TestDropPartitions.class,
     TestTruncate.class,

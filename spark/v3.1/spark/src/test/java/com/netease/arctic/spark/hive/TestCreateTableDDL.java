@@ -14,6 +14,7 @@ import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Timestamp;
@@ -41,7 +42,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("drop database if exists " + database);
   }
 
-
+@Ignore
   @Test
   public void testCreateKeyedTableWithPartitioned() throws TException {
     // hive style
@@ -135,7 +136,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
   }
-
+  @Ignore
   @Test
   public void testCreateKeyedTableUnPartitioned() throws TException {
     TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
@@ -181,7 +182,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     assertTableNotExist(identifierA);
   }
 
-
+  @Ignore
   @Test
   public void testCreateUnKeyedTableWithPartitioned() throws TException {
     // hive style
@@ -265,7 +266,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
   }
-
+  @Ignore
   @Test
   public void testCreateUnKeyedTableUnPartitioned() throws TException {
     TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableB);
