@@ -46,7 +46,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.SerializableMap;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -307,12 +306,12 @@ public class TableEntriesScan {
   private Metrics buildMetrics(StructLike dataFile) {
     return new Metrics(
         dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class)),
+        SerializableMap.copyOf(dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class)));
   }
 
   private int entryFieldIndex(String fieldName) {
