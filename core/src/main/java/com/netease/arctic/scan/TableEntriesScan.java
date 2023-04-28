@@ -205,7 +205,7 @@ public class TableEntriesScan {
               if (needMetrics() && !includeColumnStats) {
                 contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
               }
-              return new IcebergFileEntry(snapshotId, sequence, contentFile);
+              return new IcebergFileEntry(snapshotId, sequence, status, contentFile);
             }
           }
           return null;
