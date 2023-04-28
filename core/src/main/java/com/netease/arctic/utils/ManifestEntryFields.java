@@ -27,7 +27,6 @@ public class ManifestEntryFields {
   public static final Types.NestedField STATUS = required(0, "status", Types.IntegerType.get());
   public static final Types.NestedField SNAPSHOT_ID = optional(1, "snapshot_id", Types.LongType.get());
   public static final Types.NestedField SEQUENCE_NUMBER = optional(3, "sequence_number", Types.LongType.get());
-  public static final int DATA_FILE_ID = 3;
   public static final String DATA_FILE_FIELD_NAME = "data_file";
 
   public enum Status {
