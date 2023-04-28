@@ -23,6 +23,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
@@ -51,16 +52,16 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
 
   @Override
   public void commit() {
-    Schema newSchema = this.updateSchema.apply();
-    this.updateSchema.commit();
-    syncSchemaToHive(newSchema);
-  }
-
-  private void syncSchemaToHive(Schema newSchema) {
-    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
+    Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
     if (tbl == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
+    Schema newSchema = this.updateSchema.apply();
+    this.updateSchema.commit();
+    syncSchemaToHive(newSchema, tbl);
+  }
+
+  private void syncSchemaToHive(Schema newSchema, Table tbl) {
     tbl.setSd(HiveTableUtil.storageDescriptor(newSchema, arcticTable.spec(), tbl.getSd().getLocation(),
         FileFormat.valueOf(PropertyUtil.propertyAsString(arcticTable.properties(), TableProperties.DEFAULT_FILE_FORMAT,
             TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
