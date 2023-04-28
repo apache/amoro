@@ -118,12 +118,12 @@ public class BaseSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema moveBefore(String name, String beforeName) {
-    return this;
+    throw new UnsupportedOperationException("hive table not support moveBefore");
   }
 
   @Override
   public UpdateSchema moveAfter(String name, String afterName) {
-    return this;
+    throw new UnsupportedOperationException("hive table not support moveAfter");
   }
 
   @Override

@@ -63,6 +63,7 @@ public class HiveOperationTransaction implements Transaction {
   private final TransactionalHMSClient transactionalClient;
 
   private final TransactionalTable transactionalTable;
+  private Boolean syncSchemaToHive = false;
 
   public HiveOperationTransaction(
       UnkeyedHiveTable unkeyedHiveTable,
@@ -82,6 +83,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
+    syncSchemaToHive = true;
     return new HiveSchemaUpdate(unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
   }
 
@@ -153,7 +155,9 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     wrapped.commitTransaction();
-    HiveSchemaUtil.syncSchemaToHive(unkeyedHiveTable, client, transactionalClient);
+    if (syncSchemaToHive) {
+      HiveSchemaUtil.syncSchemaToHive(unkeyedHiveTable, client, transactionalClient);
+    }
     transactionalClient.commit();
   }
 
