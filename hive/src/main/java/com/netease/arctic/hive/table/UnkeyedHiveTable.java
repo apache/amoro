@@ -142,7 +142,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this, false,
+    return new HiveSchemaUpdate(this,
         hiveClient, hiveClient, super.updateSchema());
   }
 

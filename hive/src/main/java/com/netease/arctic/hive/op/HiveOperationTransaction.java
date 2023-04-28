@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -63,7 +62,6 @@ public class HiveOperationTransaction implements Transaction {
   private final TransactionalHMSClient transactionalClient;
 
   private final TransactionalTable transactionalTable;
-  private Boolean syncSchemaToHive = false;
 
   public HiveOperationTransaction(
       UnkeyedHiveTable unkeyedHiveTable,
@@ -83,8 +81,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    syncSchemaToHive = true;
-    return new HiveSchemaUpdate(unkeyedHiveTable, true, client, transactionalClient, wrapped.updateSchema());
+    return new HiveSchemaUpdate(unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
   }
 
   @Override
@@ -155,9 +152,6 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     wrapped.commitTransaction();
-    if (syncSchemaToHive) {
-      HiveSchemaUtil.syncSchemaToHive(unkeyedHiveTable, client, transactionalClient);
-    }
     transactionalClient.commit();
   }
 
