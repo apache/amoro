@@ -53,9 +53,6 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   public void commit() {
     Schema newSchema = this.updateSchema.apply();
     this.updateSchema.commit();
-    if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id()) == null) {
-      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
-    }
     syncSchemaToHive(newSchema);
   }
 
