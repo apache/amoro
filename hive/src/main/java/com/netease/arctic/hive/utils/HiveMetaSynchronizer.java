@@ -127,7 +127,7 @@ public class HiveMetaSynchronizer {
           }
         }
       } else {
-        throw new RuntimeException("Exist columns with the same name: " + fields.get(0));
+        LOG.error("Exist columns with the same name: " + fields.get(0));
       }
     }
     return update;
