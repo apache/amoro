@@ -479,8 +479,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
       if (!baseNullsFraction.isUnknown() && !changeNullsFraction.isUnknown()) {
         columnBuilder.setNullsFraction(Estimate.of(
             ((baseNullsFraction.getValue() * baseRowCount) +
-                (statisticsOfChangeColumn.getNullsFraction().getValue() * changeRowCount))
-                / (baseRowCount + changeRowCount)));
+                (statisticsOfChangeColumn.getNullsFraction().getValue() * changeRowCount)) /
+                (baseRowCount + changeRowCount)));
       } else {
         columnBuilder.setNullsFraction(baseNullsFraction.isUnknown() ? changeNullsFraction : baseNullsFraction);
       }
