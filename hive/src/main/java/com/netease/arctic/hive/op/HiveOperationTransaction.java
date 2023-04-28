@@ -84,7 +84,7 @@ public class HiveOperationTransaction implements Transaction {
   @Override
   public UpdateSchema updateSchema() {
     syncSchemaToHive = true;
-    return new HiveSchemaUpdate(unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
+    return new HiveSchemaUpdate(unkeyedHiveTable, true, client, transactionalClient, wrapped.updateSchema());
   }
 
   @Override

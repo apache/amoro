@@ -33,12 +33,14 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   private final HMSClientPool hiveClient;
   private final HMSClientPool transactionClient;
   private final UpdateSchema updateSchema;
+  private final boolean insideTransaction;
 
-  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient,
+  public HiveSchemaUpdate(ArcticTable arcticTable, boolean insideTransaction, HMSClientPool hiveClient,
                           HMSClientPool transactionClient,
                           UpdateSchema updateSchema) {
     super(arcticTable, updateSchema);
     this.arcticTable = arcticTable;
+    this.insideTransaction = insideTransaction;
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;
     this.transactionClient = transactionClient;
@@ -50,6 +52,8 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
     if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id()) == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
-    HiveSchemaUtil.syncSchemaToHive(arcticTable, hiveClient, transactionClient);
+    if (!insideTransaction) {
+      HiveSchemaUtil.syncSchemaToHive(arcticTable, hiveClient, transactionClient);
+    }
   }
 }
