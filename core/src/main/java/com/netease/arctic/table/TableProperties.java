@@ -181,7 +181,7 @@ public class TableProperties {
   public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
-  public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
+  public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
   public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
   public static final boolean ENABLE_TABLE_TRASH_DEFAULT = false;

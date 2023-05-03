@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.utils.TableFileUtils;

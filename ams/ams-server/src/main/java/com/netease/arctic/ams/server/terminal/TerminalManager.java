@@ -20,18 +20,17 @@ package com.netease.arctic.ams.server.terminal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
-import com.netease.arctic.ams.server.config.ConfigOptions;
-import com.netease.arctic.ams.server.config.Configuration;
-import com.netease.arctic.ams.server.model.LatestSessionInfo;
-import com.netease.arctic.ams.server.model.LogInfo;
-import com.netease.arctic.ams.server.model.SqlResult;
-import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.ArcticManagementConf;
+import com.netease.arctic.ams.server.dashboard.model.LatestSessionInfo;
+import com.netease.arctic.ams.server.dashboard.model.LogInfo;
+import com.netease.arctic.ams.server.dashboard.model.SqlResult;
+import com.netease.arctic.ams.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.ams.server.table.TableService;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory.SessionConfigOptions;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
-import com.netease.arctic.ams.server.utils.AmsUtils;
-import com.netease.arctic.ams.server.utils.CatalogUtil;
+import com.netease.arctic.ams.server.utils.ConfigOptions;
+import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -47,13 +46,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
-
 public class TerminalManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
 
+  private Configurations serviceConfig;
   private final AtomicLong threadPoolCount = new AtomicLong();
+  private final TableService tableService;
   TerminalSessionFactory sessionFactory;
   int resultLimits = 1000;
   boolean stopOnError = false;
@@ -64,19 +63,17 @@ public class TerminalManager {
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
 
-  private Configuration sessionConfiguration;
-
-
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
       new LinkedBlockingQueue<>(),
       r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
 
-  public TerminalManager(Configuration conf) {
-    this.resultLimits = conf.getInteger(ArcticMetaStoreConf.TERMINAL_RESULT_LIMIT);
-    this.stopOnError = conf.getBoolean(ArcticMetaStoreConf.TERMINAL_STOP_ON_ERROR);
-    this.sessionTimeout = conf.getInteger(ArcticMetaStoreConf.TERMINAL_SESSION_TIMEOUT);
-    this.sessionConfiguration = getSessionConfiguration(conf);
+  public TerminalManager(Configurations conf, TableService tableService) {
+    this.serviceConfig = conf;
+    this.tableService = tableService;
+    this.resultLimits = conf.getInteger(ArcticManagementConf.TERMINAL_RESULT_LIMIT);
+    this.stopOnError = conf.getBoolean(ArcticManagementConf.TERMINAL_STOP_ON_ERROR);
+    this.sessionTimeout = conf.getInteger(ArcticManagementConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
     Thread cleanThread = new Thread(new SessionCleanTask());
     cleanThread.setName("terminal-session-gc");
@@ -92,25 +89,21 @@ public class TerminalManager {
    * @return - sessionId, session refer to a sql execution context
    */
   public String executeScript(String terminalId, String catalog, String script) {
-    Optional<CatalogMeta> optCatalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
-    if (!optCatalogMeta.isPresent()) {
-      throw new IllegalArgumentException("catalog " + catalog + " is not validate");
-    }
-    CatalogMeta catalogMeta = optCatalogMeta.get();
-    boolean isNativeIceberg = catalogMeta.getCatalogProperties().containsKey(TABLE_FORMATS) &&
-        catalogMeta.catalogProperties.get(TABLE_FORMATS).equalsIgnoreCase("iceberg");
+    CatalogMeta catalogMeta = tableService.getCatalogMeta(catalog);
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
-    String catalogType = CatalogUtil.isIcebergCatalog(catalog) ? "iceberg" : "arctic";
-    Configuration configuration = new Configuration(this.sessionConfiguration);
+    String catalogType = "iceberg";
+    Configurations configuration = new Configurations();
+    configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), catalogType);
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress(serviceConfig));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
     }
-    configuration.set(SessionConfigOptions.IS_NATIVE_ICEBERG, isNativeIceberg);
-    configuration.set(SessionConfigOptions.catalogProperty(catalog, "type"),
+    configuration.set(
+        SessionConfigOptions.catalogProperty(catalog, "type"),
         catalogMeta.getCatalogType());
 
     TerminalSessionContext context;
@@ -251,8 +244,8 @@ public class TerminalManager {
     return builder.build();
   }
 
-  private TerminalSessionFactory loadTerminalSessionFactory(Configuration conf) {
-    String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
+  private TerminalSessionFactory loadTerminalSessionFactory(Configurations conf) {
+    String backend = conf.get(ArcticManagementConf.TERMINAL_BACKEND);
     if (backend == null) {
       throw new IllegalArgumentException("lack terminal implement config.");
     }
@@ -265,7 +258,7 @@ public class TerminalManager {
         backendImplement = KyuubiTerminalSessionFactory.class.getName();
         break;
       case "custom":
-        Optional<String> customFactoryClz = conf.getOptional(ArcticMetaStoreConf.TERMINAL_SESSION_FACTORY);
+        Optional<String> customFactoryClz = conf.getOptional(ArcticManagementConf.TERMINAL_SESSION_FACTORY);
         if (!customFactoryClz.isPresent()) {
           throw new IllegalArgumentException("terminal backend type is custom, but terminal session factory is not " +
               "configured");
@@ -283,17 +276,11 @@ public class TerminalManager {
       throw new RuntimeException("failed to init session factory", e);
     }
 
-    factory.initialize(this.sessionConfiguration);
-    return factory;
-  }
-
-  private Configuration getSessionConfiguration(Configuration conf) {
-    String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
-    String factoryPropertiesPrefix = ArcticMetaStoreConf.TERMINAL_PREFIX + backend + ".";
-    Configuration configuration = new Configuration();
+    String factoryPropertiesPrefix = ArcticManagementConf.TERMINAL_PREFIX + backend + ".";
+    Configurations configuration = new Configurations();
 
     for (String key : conf.keySet()) {
-      if (!key.startsWith(ArcticMetaStoreConf.TERMINAL_PREFIX)) {
+      if (!key.startsWith(ArcticManagementConf.TERMINAL_PREFIX)) {
         continue;
       }
       String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
@@ -301,8 +288,8 @@ public class TerminalManager {
       configuration.setString(key, value);
     }
     configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress());
-    return configuration;
+    factory.initialize(configuration);
+    return factory;
   }
 
   private class SessionCleanTask implements Runnable {

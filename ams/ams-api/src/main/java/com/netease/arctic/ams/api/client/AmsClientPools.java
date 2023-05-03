@@ -15,7 +15,6 @@ public class AmsClientPools {
 
   private static final int CLIENT_POOL_MIN = 0;
   private static final int CLIENT_POOL_MAX = 5;
-  private static final int CLIENT_POOL_TIMEOUT = 5000;
 
   private static final LoadingCache<String, ThriftClientPool<ArcticTableMetastore.Client>> CLIENT_POOLS
       = Caffeine.newBuilder()
@@ -34,7 +33,6 @@ public class AmsClientPools {
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
-    poolConfig.setTimeout(CLIENT_POOL_TIMEOUT);
     return new ThriftClientPool<>(
         url,
         s -> {

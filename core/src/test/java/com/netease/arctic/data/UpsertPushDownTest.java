@@ -1,7 +1,7 @@
 package com.netease.arctic.data;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.TableProperties;
@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 public class UpsertPushDownTest extends TableTestBase {
 
   public UpsertPushDownTest(PartitionSpec partitionSpec) {
-    super(TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
+    super(
+        TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
         partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true"));
   }
 

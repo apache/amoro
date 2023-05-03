@@ -18,11 +18,9 @@
 
 package com.netease.arctic.ams.server.terminal;
 
-import com.netease.arctic.ams.server.config.Configuration;
-import com.netease.arctic.ams.server.utils.CatalogUtil;
+import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
-import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkCatalog;
 import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
@@ -32,7 +30,7 @@ import java.util.Map;
 
 public class SparkContextUtil {
 
-  public static Map<String, String> getSparkConf(Configuration sessionConfig) {
+  public static Map<String, String> getSparkConf(Configurations sessionConfig) {
     Map<String, String> sparkConf = Maps.newLinkedHashMap();
     sparkConf.put("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
         "," + IcebergSparkSessionExtensions.class.getName());
@@ -52,16 +50,8 @@ public class SparkContextUtil {
           sparkConf.put("spark.sql.catalog." + catalog + "." + key, property);
         }
       } else {
-        String sparkCatalogPrefix = "spark.sql.catalog." + catalog;
-        String catalogClassName = ArcticSparkCatalog.class.getName();
-        if (sessionConfig.getBoolean(
-            TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE) &&
-            CatalogUtil.isHiveCatalog(catalog)) {
-          sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
-          catalogClassName = ArcticSparkSessionCatalog.class.getName();
-        }
-        sparkConf.put(sparkCatalogPrefix, catalogClassName);
-        sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + catalog);
+        sparkConf.put("spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
+        sparkConf.put("spark.sql.catalog." + catalog + ".url", catalogUrlBase + catalog);
       }
     }
     return sparkConf;

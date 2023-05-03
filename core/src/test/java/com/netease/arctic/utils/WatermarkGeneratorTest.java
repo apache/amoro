@@ -19,7 +19,7 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.WatermarkGenerator;

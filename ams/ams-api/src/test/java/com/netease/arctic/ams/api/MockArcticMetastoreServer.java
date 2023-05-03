@@ -37,7 +37,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,7 +59,7 @@ public class MockArcticMetastoreServer implements Runnable {
   private final Object lock = new Object();
   private final AmsHandler amsHandler = new AmsHandler();
 
-  private final OptimizeManagerHandler optimizeManagerHandler = new OptimizeManagerHandler();
+  private final OptimizerManagerHandler optimizerManagerHandler = new OptimizerManagerHandler();
 
   private TServer server;
 
@@ -148,6 +151,10 @@ public class MockArcticMetastoreServer implements Runnable {
     return amsHandler;
   }
 
+  public OptimizerManagerHandler optimizerHandler() {
+    return optimizerManagerHandler;
+  }
+
   public int port() {
     return port;
   }
@@ -161,8 +168,8 @@ public class MockArcticMetastoreServer implements Runnable {
           new ArcticTableMetastore.Processor<>(amsHandler);
       processor.registerProcessor("TableMetastore", amsProcessor);
 
-      OptimizeManager.Processor<OptimizeManagerHandler> optimizerManProcessor =
-          new OptimizeManager.Processor<>(optimizeManagerHandler);
+      OptimizingService.Processor<OptimizerManagerHandler> optimizerManProcessor =
+          new OptimizingService.Processor<>(optimizerManagerHandler);
       processor.registerProcessor("OptimizeManager", optimizerManProcessor);
 
       TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
@@ -188,13 +195,15 @@ public class MockArcticMetastoreServer implements Runnable {
     }
   }
 
-  public static class AmsHandler implements ArcticTableMetastore.Iface {
-    private static final long DEFAULT_BLOCKER_TIMEOUT = 60_000;
+  public class AmsHandler implements ArcticTableMetastore.Iface {
     private final ConcurrentLinkedQueue<CatalogMeta> catalogs = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TableMeta> tables = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
 
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
+    private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
+    private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
+
     private final Map<TableIdentifier, Map<String, Blocker>> tableBlockers = new HashMap<>();
     private final AtomicLong blockerId = new AtomicLong(1L);
 
@@ -203,6 +212,8 @@ public class MockArcticMetastoreServer implements Runnable {
       tables.clear();
       databases.clear();
       tableCommitMetas.clear();
+      tableTxId.clear();
+      tableCurrentTxId.clear();
     }
 
     public void createCatalog(CatalogMeta catalogMeta) {
@@ -215,6 +226,10 @@ public class MockArcticMetastoreServer implements Runnable {
 
     public Map<TableIdentifier, List<TableCommitMeta>> getTableCommitMetas() {
       return tableCommitMetas;
+    }
+
+    public Long getTableCurrentTxId(TableIdentifier tableIdentifier) {
+      return tableCurrentTxId.get(tableIdentifier);
     }
 
     @Override
@@ -241,10 +256,10 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void createDatabase(String catalogName, String database) throws TException {
       databases.computeIfAbsent(catalogName, c -> new ArrayList<>());
-      if (databases.get(catalogName).contains(database)) {
-        throw new AlreadyExistsException("database exist");
-      }
       databases.computeIfPresent(catalogName, (c, dbList) -> {
+        if (dbList.contains(database)) {
+          throw new IllegalStateException("database exist");
+        }
         List<String> newList = new ArrayList<>(dbList);
         newList.add(database);
         return newList;
@@ -312,18 +327,36 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-      throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
+      synchronized (lock) {
+        long currentTxId = tableCurrentTxId.containsKey(tableIdentifier) ? tableCurrentTxId.get(tableIdentifier) : 0;
+        if (transactionSignature == null || transactionSignature.isEmpty()) {
+          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
+          return currentTxId + 1;
+        }
+        Map<String, Long> signMap = tableTxId.get(tableIdentifier);
+        if (signMap != null && signMap.containsKey(transactionSignature)) {
+          return signMap.get(transactionSignature);
+        } else {
+          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
+          if (signMap == null) {
+            signMap = new HashMap<>();
+          }
+          signMap.put(transactionSignature, currentTxId + 1);
+          tableTxId.put(tableIdentifier, signMap);
+          return currentTxId + 1;
+        }
+      }
     }
 
     @Override
     public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                         Map<String, String> properties)
+        Map<String, String> properties)
         throws OperationConflictException, TException {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
-      properties.put("expiration.time", (now + DEFAULT_BLOCKER_TIMEOUT) + "");
-      properties.put("blocker.timeout", DEFAULT_BLOCKER_TIMEOUT + "");
+      properties.put("expiration.time", (now + 60000) + "");
+      properties.put("blocker.timeout", 60000 + "");
       Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
       blockers.put(blocker.getBlockerId(), blocker);
       return blocker;
@@ -339,17 +372,7 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
-      if (blockers == null) {
-        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
-      }
-      Blocker blocker = blockers.get(blockerId);
-      if (blocker == null) {
-        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
-      }
-      long expirationTime = System.currentTimeMillis() + DEFAULT_BLOCKER_TIMEOUT;
-      blocker.getProperties().put("expiration.time", expirationTime + "");
-      return expirationTime;
+      return 0;
     }
 
     @Override
@@ -368,11 +391,14 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().put(key, value);
+      meta.getCatalogProperties().replace(key, value);
     }
   }
 
-  public class OptimizeManagerHandler implements OptimizeManager.Iface {
+  public class OptimizerManagerHandler implements OptimizingService.Iface {
+
+    private final Map<String, OptimizerRegisterInfo> registeredOptimizers = new ConcurrentHashMap<>();
+    private final Queue<OptimizingTask> tasks = new ArrayBlockingQueue<>(100);
 
     public void cleanUp() {
     }
@@ -383,34 +409,49 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
-        throws NoSuchObjectException, TException {
+    public void touch(String authToken) throws ArcticException, TException {
+      checkToken(authToken);
+    }
+
+    @Override
+    public OptimizingTask pollTask(String authToken, int threadId) throws ArcticException, TException {
+      checkToken(authToken);
       return null;
     }
 
     @Override
-    public void reportOptimizeResult(OptimizeTaskStat optimizeTaskStat) throws TException {
-
+    public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) throws ArcticException, TException {
+      checkToken(authToken);
     }
 
     @Override
-    public void reportOptimizerState(OptimizerStateReport reportData) throws TException {
-
+    public void completeTask(String authToken, OptimizingTaskResult taskResult) throws ArcticException, TException {
+      checkToken(authToken);
     }
 
     @Override
-    public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws TException {
-      return new OptimizerDescriptor();
+    public String authenticate(OptimizerRegisterInfo registerInfo) throws ArcticException, TException {
+      String token = UUID.randomUUID().toString();
+      registeredOptimizers.put(token, registerInfo);
+      return token;
     }
 
-    @Override
-    public void stopOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-
+    public Map<String, OptimizerRegisterInfo> getRegisteredOptimizers() {
+      return registeredOptimizers;
     }
 
-    @Override
-    public void startOptimize(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+    public boolean offerTask(OptimizingTask task) {
+      return tasks.offer(task);
+    }
 
+    public Queue<OptimizingTask> getTasks() {
+      return tasks;
+    }
+
+    private void checkToken(String token) throws ArcticException {
+      if (!registeredOptimizers.containsKey(token)) {
+        throw new ArcticException(ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE, "unknown token", "unknown token");
+      }
     }
   }
 }

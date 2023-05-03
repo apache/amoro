@@ -22,7 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;

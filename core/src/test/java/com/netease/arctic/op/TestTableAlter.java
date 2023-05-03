@@ -18,8 +18,8 @@
 
 package com.netease.arctic.op;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;

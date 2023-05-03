@@ -33,6 +33,12 @@ exception OperationErrorException {
   1: string message
 }
 
+exception ArcticException {
+  1: i32 errorCode
+  2: string errorName
+  3: string message
+}
+
 struct TableIdentifier {
     1:string catalog;
     2:string database;

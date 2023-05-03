@@ -21,5 +21,5 @@ package com.netease.arctic.ams.server.exception;
 /**
  * forbiddenException
  */
-public class ForbiddenException extends RuntimeException{
+public class ForbiddenException extends ArcticRuntimeException {
 }

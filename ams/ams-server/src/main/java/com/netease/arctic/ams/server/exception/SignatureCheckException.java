@@ -21,5 +21,5 @@ package com.netease.arctic.ams.server.exception;
 /**
  * SignatureCheckException
  */
-public class SignatureCheckException extends RuntimeException{
+public class SignatureCheckException extends ArcticRuntimeException {
 }

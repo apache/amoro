@@ -33,8 +33,8 @@
     </Appenders>
 
     <Loggers>
-        <Root level="error">
-            <AppenderRef ref="consoleAppender" level="error"/>
+        <Root level="info">
+            <AppenderRef ref="consoleAppender" level="info"/>
         </Root>
         <logger name="com.netease.arctic" level="info">
             <AppenderRef ref="consoleAppender" level="info"/>

@@ -21,4 +21,5 @@ package com.netease.arctic.ams.api;
 public class Constants {
   public static final String INNER_TABLE_BASE = "base";
   public static final String INNER_TABLE_CHANGE = "change";
+  public static final String EXTERNAL_RESOURCE_CONTAINER = "external";
 }

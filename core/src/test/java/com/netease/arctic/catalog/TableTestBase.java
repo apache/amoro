@@ -20,7 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;

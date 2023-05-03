@@ -18,25 +18,27 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.ams.server.config.Configuration;
-import com.netease.arctic.ams.server.config.StructuredOptionsSplitter;
-
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
- * Utility class for {@link Configuration} related helper functions.
+ * Utility class for {@link Configurations} related helper functions.
  */
 public class ConfigurationUtils {
 
@@ -47,15 +49,15 @@ public class ConfigurationUtils {
   }
 
   /**
-   * Creates a new {@link Configuration} from the given {@link Properties}.
+   * Creates a new {@link Configurations} from the given {@link Properties}.
    *
-   * @param properties to convert into a {@link Configuration}
-   * @return {@link Configuration} which has been populated by the values of the given {@link
+   * @param properties to convert into a {@link Configurations}
+   * @return {@link Configurations} which has been populated by the values of the given {@link
    * Properties}
    */
   @Nonnull
-  public static Configuration createConfiguration(Properties properties) {
-    final Configuration configuration = new Configuration();
+  public static Configurations createConfiguration(Properties properties) {
+    final Configurations configuration = new Configurations();
 
     final Set<String> propertyNames = properties.stringPropertyNames();
 
@@ -281,5 +283,228 @@ public class ConfigurationUtils {
     }
 
     return Double.parseDouble(o.toString());
+  }
+
+  /**
+   * Collection of utilities about time intervals.
+   */
+  public static class TimeUtils {
+
+    private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
+        Collections.unmodifiableMap(initMap());
+
+    /**
+     * Parse the given string to a java {@link Duration}. The string is in format "{length
+     * value}{time unit label}", e.g. "123ms", "321 s". If no time unit label is specified, it will
+     * be considered as milliseconds.
+     *
+     * <p>Supported time unit labels are:
+     *
+     * <ul>
+     *   <li>DAYS： "d", "day"
+     *   <li>HOURS： "h", "hour"
+     *   <li>MINUTES： "min", "minute"
+     *   <li>SECONDS： "s", "sec", "second"
+     *   <li>MILLISECONDS： "ms", "milli", "millisecond"
+     *   <li>MICROSECONDS： "µs", "micro", "microsecond"
+     *   <li>NANOSECONDS： "ns", "nano", "nanosecond"
+     * </ul>
+     *
+     * @param text string to parse.
+     */
+    public static Duration parseDuration(String text) {
+      checkNotNull(text);
+
+      final String trimmed = text.trim();
+      checkArgument(!trimmed.isEmpty(), "argument is an empty- or whitespace-only string");
+
+      final int len = trimmed.length();
+      int pos = 0;
+
+      char current;
+      while (pos < len && (current = trimmed.charAt(pos)) >= '0' && current <= '9') {
+        pos++;
+      }
+
+      final String number = trimmed.substring(0, pos);
+      final String unitLabel = trimmed.substring(pos).trim().toLowerCase(Locale.US);
+
+      if (number.isEmpty()) {
+        throw new NumberFormatException("text does not start with a number");
+      }
+
+      final long value;
+      try {
+        value = Long.parseLong(number); // this throws a NumberFormatException on overflow
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(
+            "The value '" + number +
+                "' cannot be re represented as 64bit number (numeric overflow).");
+      }
+
+      if (unitLabel.isEmpty()) {
+        return Duration.of(value, ChronoUnit.MILLIS);
+      }
+
+      ChronoUnit unit = LABEL_TO_UNIT_MAP.get(unitLabel);
+      if (unit != null) {
+        return Duration.of(value, unit);
+      } else {
+        throw new IllegalArgumentException(
+            "Time interval unit label '" + unitLabel +
+                "' does not match any of the recognized units: " +
+                TimeUnit.getAllUnits());
+      }
+    }
+
+    private static Map<String, ChronoUnit> initMap() {
+      Map<String, ChronoUnit> labelToUnit = new HashMap<>();
+      for (TimeUnit timeUnit : TimeUnit.values()) {
+        for (String label : timeUnit.getLabels()) {
+          labelToUnit.put(label, timeUnit.getUnit());
+        }
+      }
+      return labelToUnit;
+    }
+
+    /**
+     * @param duration to convert to string
+     * @return duration string in millis
+     */
+    public static String getStringInMillis(final Duration duration) {
+      return duration.toMillis() + TimeUnit.MILLISECONDS.labels.get(0);
+    }
+
+    /**
+     * Pretty prints the duration as a lowest granularity unit that does not lose precision.
+     *
+     * <p>Examples:
+     *
+     * <pre>{@code
+     * Duration.ofMilliseconds(60000) will be printed as 1 min
+     * Duration.ofHours(1).plusSeconds(1) will be printed as 3601 s
+     * }</pre>
+     *
+     * <b>NOTE:</b> It supports only durations that fit into long.
+     */
+    public static String formatWithHighestUnit(Duration duration) {
+      long nanos = duration.toNanos();
+
+      List<TimeUnit> orderedUnits =
+          Arrays.asList(
+              TimeUnit.NANOSECONDS,
+              TimeUnit.MICROSECONDS,
+              TimeUnit.MILLISECONDS,
+              TimeUnit.SECONDS,
+              TimeUnit.MINUTES,
+              TimeUnit.HOURS,
+              TimeUnit.DAYS);
+
+      TimeUnit highestIntegerUnit =
+          IntStream.range(0, orderedUnits.size())
+              .sequential()
+              .filter(
+                  idx ->
+                      nanos % orderedUnits.get(idx).unit.getDuration().toNanos() != 0)
+              .boxed()
+              .findFirst()
+              .map(
+                  idx -> {
+                    if (idx == 0) {
+                      return orderedUnits.get(0);
+                    } else {
+                      return orderedUnits.get(idx - 1);
+                    }
+                  })
+              .orElse(TimeUnit.MILLISECONDS);
+
+      return String.format(
+          "%d %s",
+          nanos / highestIntegerUnit.unit.getDuration().toNanos(),
+          highestIntegerUnit.getLabels().get(0));
+    }
+
+    private static ChronoUnit toChronoUnit(java.util.concurrent.TimeUnit timeUnit) {
+      switch (timeUnit) {
+        case NANOSECONDS:
+          return ChronoUnit.NANOS;
+        case MICROSECONDS:
+          return ChronoUnit.MICROS;
+        case MILLISECONDS:
+          return ChronoUnit.MILLIS;
+        case SECONDS:
+          return ChronoUnit.SECONDS;
+        case MINUTES:
+          return ChronoUnit.MINUTES;
+        case HOURS:
+          return ChronoUnit.HOURS;
+        case DAYS:
+          return ChronoUnit.DAYS;
+        default:
+          throw new IllegalArgumentException(
+              String.format("Unsupported time unit %s.", timeUnit));
+      }
+    }
+
+    /**
+     * Enum which defines time unit, mostly used to parse value from configuration file.
+     */
+    private enum TimeUnit {
+      DAYS(ChronoUnit.DAYS, singular("d"), plural("day")),
+      HOURS(ChronoUnit.HOURS, singular("h"), plural("hour")),
+      MINUTES(ChronoUnit.MINUTES, singular("min"), plural("minute")),
+      SECONDS(ChronoUnit.SECONDS, singular("s"), plural("sec"), plural("second")),
+      MILLISECONDS(ChronoUnit.MILLIS, singular("ms"), plural("milli"), plural("millisecond")),
+      MICROSECONDS(ChronoUnit.MICROS, singular("µs"), plural("micro"), plural("microsecond")),
+      NANOSECONDS(ChronoUnit.NANOS, singular("ns"), plural("nano"), plural("nanosecond"));
+
+      private static final String PLURAL_SUFFIX = "s";
+
+      private final List<String> labels;
+
+      private final ChronoUnit unit;
+
+      TimeUnit(ChronoUnit unit, String[]... labels) {
+        this.unit = unit;
+        this.labels =
+            Arrays.stream(labels)
+                .flatMap(Arrays::stream)
+                .collect(Collectors.toList());
+      }
+
+      /**
+       * @param label the original label
+       * @return the singular format of the original label
+       */
+      private static String[] singular(String label) {
+        return new String[]{label};
+      }
+
+      /**
+       * @param label the original label
+       * @return both the singular format and plural format of the original label
+       */
+      private static String[] plural(String label) {
+        return new String[]{label, label + PLURAL_SUFFIX};
+      }
+
+      public static String getAllUnits() {
+        return Arrays.stream(TimeUnit.values())
+            .map(TimeUnit::createTimeUnitString)
+            .collect(Collectors.joining(", "));
+      }
+
+      private static String createTimeUnitString(TimeUnit timeUnit) {
+        return timeUnit.name() + ": (" + String.join(" | ", timeUnit.getLabels()) + ")";
+      }
+
+      public List<String> getLabels() {
+        return labels;
+      }
+
+      public ChronoUnit getUnit() {
+        return unit;
+      }
+    }
   }
 }
