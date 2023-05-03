@@ -18,7 +18,9 @@
 
 package com.netease.arctic.data;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import org.apache.iceberg.DataFile;
@@ -32,14 +34,15 @@ import java.util.List;
 public class KeyedDataFileTest extends TableTestBase {
 
   public KeyedDataFileTest() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
   public void testDefaultKeyedFile() {
     Long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
     List<DataFile> writeFiles = DataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
-        ChangeAction.INSERT, writeRecords());
+        ChangeAction.INSERT, writeRecords(), false);
 
     Assert.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0), 0L);

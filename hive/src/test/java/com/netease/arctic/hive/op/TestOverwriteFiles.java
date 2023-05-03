@@ -1,5 +1,8 @@
 package com.netease.arctic.hive.op;
 
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
@@ -12,7 +15,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Transaction;
@@ -24,16 +26,17 @@ import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+public class TestOverwriteFiles extends TableTestBase {
 
-public class TestOverwriteFiles extends HiveTableTestBase {
+  public TestOverwriteFiles(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
 
   @Test
   public void testOverwriteUnkeyedPartitionTable() throws TException {

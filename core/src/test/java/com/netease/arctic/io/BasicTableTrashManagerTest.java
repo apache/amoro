@@ -18,12 +18,14 @@
 
 package com.netease.arctic.io;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
-import com.netease.arctic.utils.TableTypeUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
@@ -47,7 +49,8 @@ public class BasicTableTrashManagerTest extends TableTestBase {
 
   public BasicTableTrashManagerTest(boolean keyedTable,
                                     boolean partitionedTable) {
-    super(TableFormat.MIXED_ICEBERG, keyedTable, partitionedTable);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(keyedTable, partitionedTable));
   }
 
   @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
@@ -262,7 +265,7 @@ public class BasicTableTrashManagerTest extends TableTestBase {
   }
 
   private String getTableRootLocation(ArcticTable table) {
-    if (!TableTypeUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
+    if (!ArcticTableUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
       return TableFileUtils.getFileDir(table.location());
     } else {
       return table.location();

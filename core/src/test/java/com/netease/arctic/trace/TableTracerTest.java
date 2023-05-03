@@ -19,13 +19,15 @@
 package com.netease.arctic.trace;
 
 import com.google.common.collect.Lists;
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -64,7 +66,8 @@ public class TableTracerTest extends TableTestBase {
       boolean keyedTable,
       boolean onBaseTable,
       boolean partitionedTable) {
-    super(TableFormat.MIXED_ICEBERG, keyedTable, partitionedTable);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(keyedTable, partitionedTable));
     this.onBaseTable = onBaseTable;
   }
 
@@ -96,9 +99,9 @@ public class TableTracerTest extends TableTestBase {
 
   private org.apache.iceberg.DataFile getDataFile(int number) {
     if (isPartitionedTable()) {
-      return TableTestHelpers.getFile(number, "op_time_day=2022-08-30");
+      return DataFileTestHelpers.getFile(number, "op_time_day=2022-08-30");
     } else {
-      return TableTestHelpers.getFile(number);
+      return DataFileTestHelpers.getFile(number);
     }
   }
 
@@ -480,13 +483,13 @@ public class TableTracerTest extends TableTestBase {
     Assume.assumeTrue(isPartitionedTable());
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend()
-        .appendFile(TableTestHelpers.getFile(1, "op_time_day=2022-01-01"))
-        .appendFile(TableTestHelpers.getFile(2, "op_time_day=2022-01-01"))
-        .appendFile(TableTestHelpers.getFile(3, "op_time_day=2022-01-02"))
+        .appendFile(DataFileTestHelpers.getFile(1, "op_time_day=2022-01-01"))
+        .appendFile(DataFileTestHelpers.getFile(2, "op_time_day=2022-01-01"))
+        .appendFile(DataFileTestHelpers.getFile(3, "op_time_day=2022-01-02"))
         .commit();
 
     operationTable.newReplacePartitions()
-        .addFile(TableTestHelpers.getFile(4, "op_time_day=2022-01-02"))
+        .addFile(DataFileTestHelpers.getFile(4, "op_time_day=2022-01-02"))
         .commit();
 
     List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
@@ -494,8 +497,8 @@ public class TableTracerTest extends TableTestBase {
     Assert.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(commitMeta, DataOperations.OVERWRITE,
-        new org.apache.iceberg.DataFile[] {TableTestHelpers.getFile(4, "op_time_day=2022-01-02")},
-        new org.apache.iceberg.DataFile[] {TableTestHelpers.getFile(3, "op_time_day=2022-01-02")});
+        new org.apache.iceberg.DataFile[] {DataFileTestHelpers.getFile(4, "op_time_day=2022-01-02")},
+        new org.apache.iceberg.DataFile[] {DataFileTestHelpers.getFile(3, "op_time_day=2022-01-02")});
   }
 
   @Test

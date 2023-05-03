@@ -69,12 +69,7 @@ public class ArcticSparkChangeTable extends SparkTable {
   }
 
   public Schema buildSchema(BasicUnkeyedTable table) {
-    Schema schema = table.schema();
-    List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
-    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(MetadataColumns.FILE_OFFSET_FILED);
-    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
-    return new Schema(columns);
+    return MetadataColumns.appendChangeStoreMetadataColumns(table.schema());
   }
 
   @Override

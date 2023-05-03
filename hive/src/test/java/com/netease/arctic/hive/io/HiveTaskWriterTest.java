@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,33 +18,39 @@
 
 package com.netease.arctic.hive.io;
 
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.io.BuildTableTrashManagerTest;
+import com.netease.arctic.io.TaskWriterTest;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class BuildHiveTableTrashManagerTest extends BuildTableTrashManagerTest {
+public class HiveTaskWriterTest extends TaskWriterTest {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public BuildHiveTableTrashManagerTest(boolean keyedTable,
-                                        boolean partitionedTable) {
-    super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(keyedTable, partitionedTable));
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
+    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(true, true)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(true, false)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(false, true)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(false, false)}
+    };
   }
 
-  @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-        {true, true},
-        {true, false},
-        {false, true},
-        {false, false}};
+  public HiveTaskWriterTest(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
   }
 }

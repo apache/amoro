@@ -16,32 +16,20 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.catalog;
+package com.netease.arctic.catalog;
 
-import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.catalog.MixedCatalogTest;
-import com.netease.arctic.hive.TestHMS;
-import org.apache.iceberg.PartitionSpec;
-import org.junit.ClassRule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.apache.iceberg.catalog.Catalog;
 
-@RunWith(JUnit4.class)
-public class MixedHiveCatalogTest extends MixedCatalogTest {
+public interface CatalogTestHelper {
 
-  private static final PartitionSpec IDENTIFY_SPEC = PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
-      .identity("op_time").build();
+  String TEST_CATALOG_NAME = TableTestHelper.TEST_CATALOG_NAME;
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  TableFormat tableFormat();
 
-  public MixedHiveCatalogTest() {
-    super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()));
-  }
+  CatalogMeta buildCatalogMeta(String baseDir);
 
-  @Override
-  protected PartitionSpec getCreateTableSpec() {
-    return IDENTIFY_SPEC;
-  }
+  Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
 }

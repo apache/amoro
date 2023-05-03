@@ -18,8 +18,10 @@
 
 package com.netease.arctic.op;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
@@ -36,7 +38,8 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 public class TestTableAlter extends TableTestBase {
 
   public TestTableAlter() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test

@@ -18,7 +18,11 @@
 
 package com.netease.arctic.io;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
@@ -31,17 +35,22 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WA
 @RunWith(Parameterized.class)
 public class BuildTableTrashManagerTest extends TableTestBase {
 
-  public BuildTableTrashManagerTest(TableFormat testFormat, boolean keyedTable, boolean partitionedTable) {
-    super(testFormat, keyedTable, partitionedTable);
+  public BuildTableTrashManagerTest(CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
   }
 
-  @Parameterized.Parameters(name = "testFormat = {0}, keyedTable = {1}, partitionedTable = {2}")
+  @Parameterized.Parameters(name = "{0}, {2}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {TableFormat.MIXED_ICEBERG, true, true},
-        {TableFormat.MIXED_ICEBERG, true, false},
-        {TableFormat.MIXED_ICEBERG, false, true},
-        {TableFormat.MIXED_ICEBERG, false, false}};
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, false)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(false, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(false, false)}};
   }
 
   @Test

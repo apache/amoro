@@ -25,8 +25,6 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtils;
-import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
@@ -37,10 +35,8 @@ import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class TestRewritePartitions extends HiveTableTestBase {
 

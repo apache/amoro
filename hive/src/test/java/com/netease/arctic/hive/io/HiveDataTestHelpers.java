@@ -23,17 +23,22 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
+import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Files;
@@ -62,7 +67,138 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestIOUtils {
+public class HiveDataTestHelpers {
+
+  public static List<DataFile> writeChangeStore(
+      KeyedTable keyedTable, long txId, ChangeAction action,
+      List<Record> records, boolean orderedWrite) {
+    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
+        .withChangeAction(action)
+        .withTransactionId(txId);
+    if (orderedWrite) {
+      builder.withOrdered();
+    }
+    try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
+      return DataTestHelpers.writeRecords(writer, records);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public static List<DataFile> writeBaseStore(ArcticTable table, long txId, List<Record> records,
+      boolean orderedWrite, boolean writeHiveLocation) {
+    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(table);
+    if (table.isKeyedTable()) {
+      builder.withTransactionId(txId);
+    }
+    if (orderedWrite) {
+      builder.withOrdered();
+    }
+    LocationKind writeLocationKind = writeHiveLocation ? HiveLocationKind.INSTANT : BaseLocationKind.INSTANT;
+    try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
+      return DataTestHelpers.writeRecords(writer, records);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression,
+      Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
+    AdaptHiveGenericArcticDataReader reader;
+    if (projectSchema == null) {
+      projectSchema = keyedTable.schema();
+    }
+    if (useDiskMap) {
+      reader = new AdaptHiveGenericArcticDataReader(
+          keyedTable.io(),
+          keyedTable.schema(),
+          projectSchema,
+          keyedTable.primaryKeySpec(),
+          null,
+          true,
+          IdentityPartitionConverters::convertConstant,
+          null, false, new StructLikeCollections(true, 0L)
+      );
+    } else {
+      reader = new AdaptHiveGenericArcticDataReader(
+          keyedTable.io(),
+          keyedTable.schema(),
+          projectSchema,
+          keyedTable.primaryKeySpec(),
+          null,
+          true,
+          IdentityPartitionConverters::convertConstant
+      );
+    }
+
+    return DataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
+  }
+
+  public static List<Record> readChangeStore(KeyedTable keyedTable, Expression expression, Schema projectSchema,
+      boolean useDiskMap) {
+    if (projectSchema == null) {
+      projectSchema = keyedTable.schema();
+    }
+    Schema expectTableSchema = MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
+    Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
+
+    GenericAdaptHiveIcebergDataReader reader;
+    if (useDiskMap) {
+      reader = new GenericAdaptHiveIcebergDataReader(
+          keyedTable.asKeyedTable().io(),
+          expectTableSchema,
+          expectProjectSchema,
+          null,
+          false,
+          IdentityPartitionConverters::convertConstant,
+          false,
+          new StructLikeCollections(true, 0L));
+    } else {
+      reader = new GenericAdaptHiveIcebergDataReader(
+          keyedTable.asKeyedTable().io(),
+          expectTableSchema,
+          expectProjectSchema,
+          null,
+          false,
+          IdentityPartitionConverters::convertConstant,
+          false
+      );
+    }
+
+    return DataTestHelpers.readChangeStore(keyedTable, reader, expression);
+  }
+
+  public static List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema,
+      boolean useDiskMap) {
+    if (projectSchema == null) {
+      projectSchema = table.schema();
+    }
+
+    GenericAdaptHiveIcebergDataReader reader;
+    if (useDiskMap) {
+      reader = new GenericAdaptHiveIcebergDataReader(
+          table.io(),
+          table.schema(),
+          projectSchema,
+          null,
+          false,
+          IdentityPartitionConverters::convertConstant,
+          false,
+          new StructLikeCollections(true, 0L));
+    } else {
+      reader = new GenericAdaptHiveIcebergDataReader(
+          table.io(),
+          table.schema(),
+          projectSchema,
+          null,
+          false,
+          IdentityPartitionConverters::convertConstant,
+          false
+      );
+    }
+
+    return DataTestHelpers.readBaseStore(table, reader, expression);
+  }
 
   public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
     testWrite(table, locationKind, records, pathFeature, null, null);

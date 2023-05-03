@@ -60,6 +60,10 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
+/**
+ * @deprecated since 0.4.1, will be removed in 0.5.0; use {@link com.netease.arctic.hive.catalog.HiveTableTestBase} instead.
+ */
+@Deprecated
 public class HiveTableTestBase extends TableTestBase {
   public static final Logger LOG = LoggerFactory.getLogger(HiveTableTestBase.class);
 

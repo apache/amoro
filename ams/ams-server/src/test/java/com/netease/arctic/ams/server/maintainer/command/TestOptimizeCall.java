@@ -18,8 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
-import org.apache.thrift.TException;
+import com.netease.arctic.TableTestHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,13 +29,13 @@ public class TestOptimizeCall extends CallCommandTestBase {
     Assert.assertEquals("optimize has started",
         callFactory.generateOptimizeCall(
             OptimizeCall.Action.START,
-            TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context())
+            TableTestHelper.TEST_TABLE_ID.toString()).call(new Context())
         );
 
     Assert.assertEquals("optimize has stopped",
         callFactory.generateOptimizeCall(
             OptimizeCall.Action.STOP,
-            TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context())
+            TableTestHelper.TEST_TABLE_ID.toString()).call(new Context())
     );
 
   }

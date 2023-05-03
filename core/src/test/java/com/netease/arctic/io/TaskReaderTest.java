@@ -18,256 +18,181 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Sets;
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.DeleteSchemaUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.types.Types;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+@RunWith(Parameterized.class)
 public class TaskReaderTest extends TableDataTestBase {
 
-  public TaskReaderTest() {
-    super();
+  private final boolean useDiskMap;
+
+  @Parameterized.Parameters(name = "useDiskMap = {2}")
+  public static Object[] parameters() {
+    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(true, true), false},
+                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(true, true), true}};
+  }
+
+  public TaskReaderTest(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+      boolean useDiskMap) {
+    super(catalogTestHelper, tableTestHelper);
+    this.useDiskMap = useDiskMap;
   }
 
   @Test
-  public void testRead() {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = getArcticTable().asKeyedTable().newScan().planTasks();
-    Schema schema = getArcticTable().asKeyedTable().schema();
-    GenericArcticDataReader genericArcticDataReader = new GenericArcticDataReader(
-        getArcticTable().asKeyedTable().io(),
-        schema,
-        schema,
-        getArcticTable().asKeyedTable().primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-      for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        builder.addAll(genericArcticDataReader.readData(keyedTableScanTask));
-      }
-    }
-    List<Record> records = builder.build();
-    Set<Object> resultIds = records.stream().map(s -> s.get(0)).collect(Collectors.toSet());
-
-    Set<Integer> rightIds = Sets.newHashSet(1, 2, 3, 6);
-    Assert.assertEquals(rightIds, resultIds);
+  public void testMergeOnRead() {
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        Expressions.alwaysTrue(), null, useDiskMap, false));
+    //expect: (id=1),(id=2),(id=3),(id=6)
+    Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(allRecords.get(0));
+    expectRecords.add(allRecords.get(1));
+    expectRecords.add(allRecords.get(2));
+    expectRecords.add(allRecords.get(5));
+    Assert.assertEquals(expectRecords, records);
   }
 
   @Test
-  public void testReadWithSpillMap() throws Exception {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = getArcticTable().asKeyedTable().newScan().planTasks();
-    Schema schema = getArcticTable().asKeyedTable().schema();
-    GenericArcticDataReader genericArcticDataReader = new GenericArcticDataReader(
-        getArcticTable().asKeyedTable().io(),
-        schema,
-        schema,
-        getArcticTable().asKeyedTable().primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant,
-        null, false, new StructLikeCollections(true, 0L)
-    );
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-      for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        try (CloseableIterator<Record> record = genericArcticDataReader.readData(keyedTableScanTask)) {
-          if (record.hasNext()) {
-            Record record1 = record.next();
-            builder.add(record1);
-          }
-        }
-      }
-    }
-    List<Record> records = builder.build();
-    Set<Object> resultIds = records.stream().map(s -> s.get(0)).collect(Collectors.toSet());
+  public void testMergeOnReadFilterLongType() {
+    // where id = 1
+    Expression filter = Expressions.equal("id", 1);
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        filter, null, useDiskMap, false));
 
-    Set<Integer> rightIds = Sets.newHashSet(1, 2, 3, 6);
-    Assert.assertEquals(rightIds, resultIds);
+    List<KeyedTableScanTask> readTasks = planReadTask(filter);
+    Assert.assertEquals(2, readTasks.size());
+
+    //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
+    Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(allRecords.get(0));
+    expectRecords.add(allRecords.get(5));
+    Assert.assertEquals(expectRecords, records);
+
+    // where id = 1 or id = 3
+    filter = Expressions.or(Expressions.equal("id", 1), Expressions.equal("id", 3));
+    readTasks = planReadTask(filter);
+    Assert.assertEquals(3, readTasks.size());
+    records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        filter, null, useDiskMap, false));
+    //expect: (id=1),(id=3),(id=6), change store can only be filtered by partition expression now.
+    expectRecords.clear();
+    expectRecords.add(allRecords.get(0));
+    expectRecords.add(allRecords.get(2));
+    expectRecords.add(allRecords.get(5));
+    Assert.assertEquals(expectRecords, records);
+  }
+
+  @Test
+  public void testMergeOnReadFilterTimestampType() {
+    // where op_time = '2022-01-01T12:00:00'
+    Expression filter = Expressions.equal("op_time", "2022-01-01T12:00:00");
+    List<KeyedTableScanTask> readTasks = planReadTask(filter);
+    Assert.assertEquals(2, readTasks.size());
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        filter, null, useDiskMap, false));
+    //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
+    Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(allRecords.get(0));
+    expectRecords.add(allRecords.get(5));
+    Assert.assertEquals(expectRecords, records);
+  }
+
+  @Test
+  public void testMergeOnReadFilterPartitionValue() {
+    // where op_time > '2022-01-10T12:00:00'
+    Expression filter = Expressions.greaterThan("op_time", "2022-01-10T12:00:00");
+    List<KeyedTableScanTask> readTasks = planReadTask(filter);
+    Assert.assertEquals(0, readTasks.size());
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        filter, null, useDiskMap, false));
+    //expect: empty, change store can only be filtered by partition expression now.
+    Set<Record> expectRecords = Sets.newHashSet();
+    Assert.assertEquals(expectRecords, records);
   }
 
   @Test
   public void testReadChange() {
-    Table changeTable = getArcticTable().asKeyedTable().changeTable();
-    CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().planFiles();
-    CloseableIterable<ArcticFileScanTask> arcticFileScanTasks = CloseableIterable.transform(
-        fileScanTasks, BasicArcticFileScanTask::new
-    );
-    Schema schema = changeTable.schema();
-    List<Types.NestedField> columns = new ArrayList<>(schema.columns());
-    columns.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(com.netease.arctic.table.MetadataColumns.FILE_OFFSET_FILED);
-    columns.add(com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_FIELD);
-    Schema externalSchema = new Schema(columns);
-
-    GenericIcebergDataReader genericIcebergDataReader = new GenericIcebergDataReader(
-        getArcticTable().asKeyedTable().io(),
-        externalSchema,
-        externalSchema,
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
-
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (ArcticFileScanTask arcticFileScanTask : arcticFileScanTasks) {
-      builder.addAll(genericIcebergDataReader.readData(arcticFileScanTask));
-    }
-    List<Record> records = builder.build();
-    for (Record record : records) {
-      Assert.assertEquals(7, record.size());
-    }
-  }
-
-  @Test
-  public void testReadChangeWithSpillMap() throws Exception {
-    Table changeTable = getArcticTable().asKeyedTable().changeTable();
-    CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().planFiles();
-    CloseableIterable<ArcticFileScanTask> arcticFileScanTasks = CloseableIterable.transform(
-        fileScanTasks, BasicArcticFileScanTask::new
-    );
-    Schema schema = changeTable.schema();
-    List<Types.NestedField> columns = new ArrayList<>(schema.columns());
-    columns.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(com.netease.arctic.table.MetadataColumns.FILE_OFFSET_FILED);
-    columns.add(com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_FIELD);
-    Schema externalSchema = new Schema(columns);
-
-    GenericIcebergDataReader genericIcebergDataReader = new GenericIcebergDataReader(
-        getArcticTable().asKeyedTable().io(),
-        externalSchema,
-        externalSchema,
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false,
-        new StructLikeCollections(true, 0L)
-    );
-
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (ArcticFileScanTask arcticFileScanTask : arcticFileScanTasks) {
-      try (CloseableIterator<Record> record = genericIcebergDataReader.readData(arcticFileScanTask).iterator()) {
-        if (record.hasNext()) {
-          Record record1 = record.next();
-          builder.add(record1);
-        }
-      }
-    }
-    List<Record> records = builder.build();
-    for (Record record : records) {
-      Assert.assertEquals(7, record.size());
-    }
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readChangeStore(getArcticTable().asKeyedTable(),
+        Expressions.alwaysTrue(), null, useDiskMap));
+    //expect: +(id=5),+(id=6),-(id=5)
+    Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
+    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
+    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
+    Assert.assertEquals(expectRecords, records);
   }
 
   @Test
   public void testReadPosDelete() {
+    Assume.assumeFalse(useDiskMap);
     BaseIcebergPosDeleteReader baseIcebergPosDeleteReader =
         new BaseIcebergPosDeleteReader(
             getArcticTable().asKeyedTable().io(),
             Collections.singletonList(deleteFileOfPositionDelete));
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     baseIcebergPosDeleteReader.readDeletes().forEach(record -> builder.add(record.copy()));
-
-    List<Record> resultRecords = builder.build();
-
+    List<Record> readRecords = builder.build();
+    List<Record> expectRecords = Lists.newArrayListWithCapacity(1);
     GenericRecord r = GenericRecord.create(DeleteSchemaUtil.pathPosSchema());
     r.set(0, dataFileForPositionDelete.path().toString());
     r.set(1, 0L);
-    List<Record> sourceRecords = Collections.singletonList(r);
-    Assert.assertEquals(resultRecords.size(), sourceRecords.size());
-    Set<String> resultPaths =
-        resultRecords.stream().map(baseIcebergPosDeleteReader::readPath).collect(Collectors.toSet());
-    Set<String> resourcePaths = sourceRecords.stream()
-        .map(record -> (String) record.getField(MetadataColumns.DELETE_FILE_PATH.name())).collect(Collectors.toSet());
-    Assert.assertEquals(resultPaths, resourcePaths);
-    Set<Long> resultPos = resultRecords.stream().map(baseIcebergPosDeleteReader::readPos).collect(Collectors.toSet());
-    Set<Long> resourcePos = sourceRecords.stream()
-        .map(record -> (long) record.getField(MetadataColumns.DELETE_FILE_POS.name())).collect(Collectors.toSet());
-    Assert.assertEquals(resultPos, resourcePos);
+    expectRecords.add(r);
+
+    Assert.assertEquals(expectRecords, readRecords);
   }
 
   @Test
-  public void testReadNegate() {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = getArcticTable().asKeyedTable().newScan().planTasks();
-    Schema schema = getArcticTable().asKeyedTable().schema();
-    GenericArcticDataReader genericArcticDataReader = new GenericArcticDataReader(
-        getArcticTable().asKeyedTable().io(),
-        schema,
-        schema,
-        getArcticTable().asKeyedTable().primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-      for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        builder.addAll(genericArcticDataReader.readDeletedData(keyedTableScanTask));
-      }
-    }
-    List<Record> records = builder.build();
-    Set<Integer> resultIds = records.stream().map(s -> (Integer) s.get(0)).collect(Collectors.toSet());
-
-    Set<Integer> rightIds = Sets.newHashSet(5);
-    Assert.assertEquals(rightIds, resultIds);
+  public void testReadDeletedData() {
+    //TODO Reader return deleted record produced by equality delete file only now, should change the unit test after
+    // refactoring the reader to return all deleted records.
+    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
+        Expressions.alwaysTrue(), null, useDiskMap, true));
+    //expect: (id=5)
+    Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(allRecords.get(4));
+    Assert.assertEquals(expectRecords, records);
   }
 
-  @Test
-  public void testReadNegateWithSpillMap() throws Exception {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = getArcticTable().asKeyedTable().newScan().planTasks();
-    Schema schema = getArcticTable().asKeyedTable().schema();
-    GenericArcticDataReader genericArcticDataReader = new GenericArcticDataReader(
-        getArcticTable().asKeyedTable().io(),
-        schema,
-        schema,
-        getArcticTable().asKeyedTable().primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant,
-        null, false, new StructLikeCollections(true, 0L)
-    );
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-      for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
-        try (CloseableIterator<Record> record = genericArcticDataReader.readDeletedData(keyedTableScanTask)) {
-          if (record.hasNext()) {
-            Record record1 = record.next();
-            builder.add(record1);
-          }
-        }
-      }
-    }
-    List<Record> records = builder.build();
-    Set<Integer> resultIds = records.stream().map(s -> (Integer) s.get(0)).collect(Collectors.toSet());
+  protected boolean isUseDiskMap() {
+    return useDiskMap;
+  }
 
-    Set<Integer> rightIds = Sets.newHashSet(5);
-    Assert.assertEquals(rightIds, resultIds);
+  protected List<KeyedTableScanTask> planReadTask(Expression filter) {
+    List<KeyedTableScanTask> scanTasks = Lists.newArrayList();
+    try(CloseableIterable<CombinedScanTask> combinedScanTasks =
+        getArcticTable().asKeyedTable().newScan().filter(filter).planTasks()) {
+      combinedScanTasks.forEach(combinedScanTask -> scanTasks.addAll(combinedScanTask.tasks()));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return scanTasks;
   }
 }

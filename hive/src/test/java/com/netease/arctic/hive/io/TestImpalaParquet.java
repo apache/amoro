@@ -32,40 +32,54 @@ import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.URL;
 import java.util.HashMap;
 
+/**
+ * Impala may write string type column with binary value in parquet file,
+ * which is okay for Hive readers, Arctic need to support it too for mixed-hive format tables.
+ */
 public class TestImpalaParquet {
 
+  private static final String PARQUET_FILE_NAME = "string_is_bytes.parquet";
+
   @Test
-  public void genericRead() {
+  public void testReadParquetFileProducedByImpala() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+        Files.localInput(loadParquetFilePath()))
         .project(schema)
         .withNameMapping(mapping)
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
-    CloseableIterator<Object> iterator = builder.build().iterator();
-    while (iterator.hasNext()) {
-      Record next = (Record)iterator.next();
-      Assert.assertTrue(next.get(0).equals("hello parquet"));
+    for (Object o : builder.build()) {
+      Record next = (Record) o;
+      Assert.assertEquals("hello parquet", next.get(0));
     }
   }
 
   @Test
-  public void genericFilter() {
+  public void testReadParquetFileProducedByImpalaWithFilter() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+        Files.localInput(loadParquetFilePath()))
         .project(schema)
         .withNameMapping(mapping)
         .filter(Expressions.in("str", "aa"))
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
-    Assert.assertTrue(Iterators.size(iterator) == 0);
+    Assert.assertEquals(0, Iterators.size(iterator));
+  }
+
+  private String loadParquetFilePath() {
+    URL fileUrl = this.getClass().getClassLoader().getResource(PARQUET_FILE_NAME);
+    if (fileUrl != null) {
+      return fileUrl.getFile();
+    } else {
+      throw new IllegalStateException("Cannot load parquet file produced by impala");
+    }
   }
 }

@@ -21,8 +21,9 @@ package com.netease.arctic.io;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
@@ -67,7 +68,8 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
 
   public GenericCombinedIcebergDataReaderTest(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
+    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
     this.fileFormat = fileFormat;
   }
 
@@ -106,7 +108,7 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
             DataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
             DataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
-    Schema idSchema = TypeUtil.select(TableTestHelpers.TABLE_SCHEMA, Sets.newHashSet(1));
+    Schema idSchema = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
     GenericRecord idRecord = GenericRecord.create(idSchema);
     DeleteFile eqDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,

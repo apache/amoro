@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,7 +27,7 @@ public class TableTrashManagersTest {
 
   @Test
   public void getTrashLocation() {
-    TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
+    TableIdentifier id = TableTestHelper.TEST_TABLE_ID;
     Assert.assertEquals("/table/location/.trash",
         TableTrashManagers.getTrashLocation(id, "/table/location", null));
     Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s/.trash", id.getCatalog(), id.getDatabase(), id.getTableName()),
@@ -38,7 +38,7 @@ public class TableTrashManagersTest {
 
   @Test
   public void getTrashParentLocation() {
-    TableIdentifier id = TableTestHelpers.TEST_TABLE_ID;
+    TableIdentifier id = TableTestHelper.TEST_TABLE_ID;
     Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s", id.getCatalog(), id.getDatabase(), id.getTableName()),
         TableTrashManagers.getTrashParentLocation(id, "/tmp/xxx"));
     Assert.assertEquals(String.format("/tmp/xxx/%s/%s/%s", id.getCatalog(), id.getDatabase(), id.getTableName()),

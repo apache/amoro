@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ public class TestTableCall extends CallCommandTestBase {
   @Test
   public void testRefresh() throws Exception {
     Assert.assertEquals("OK",
-        callFactory.generateTableCall(TableTestHelpers.TEST_TABLE_ID.toString(), TableCall.TableOperation.REFRESH)
+        callFactory.generateTableCall(TableTestHelper.TEST_TABLE_ID.toString(), TableCall.TableOperation.REFRESH)
             .call(new Context()));
   }
 }

@@ -18,7 +18,9 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -48,7 +50,8 @@ public class TableWatermarkTest extends TableTestBase {
   private UnkeyedTable operationTable;
 
   public TableWatermarkTest(boolean keyedTable, boolean onBaseTable) {
-    super(TableFormat.MIXED_ICEBERG, keyedTable, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(keyedTable, true));
     this.onBaseTable = onBaseTable;
   }
 

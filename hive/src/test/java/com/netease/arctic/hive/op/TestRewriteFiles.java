@@ -12,7 +12,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.RewriteFiles;
@@ -25,7 +24,6 @@ import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;

@@ -18,8 +18,10 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.WatermarkGenerator;
@@ -41,7 +43,8 @@ import java.util.Map;
 public class WatermarkGeneratorTest extends TableTestBase {
 
   public WatermarkGeneratorTest() {
-    super(TableFormat.MIXED_ICEBERG, false, false);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false));
   }
 
   @Test
@@ -49,7 +52,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     long start = System.currentTimeMillis();
     WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
     Assert.assertEquals(-1, watermarkGenerator.watermark());
-    watermarkGenerator.addFile(TableTestHelpers.getFile(1));
+    watermarkGenerator.addFile(DataFileTestHelpers.getFile(1));
     Assert.assertTrue(watermarkGenerator.watermark() >= start);
   }
 
@@ -68,7 +71,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+    DataFile file1 = DataFileTestHelpers.getFile("/watermark", 1,
         PartitionSpec.unpartitioned(), null, metrics, false);
 
     watermarkGenerator.addFile(file1);
@@ -79,7 +82,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+    DataFile file2 = DataFileTestHelpers.getFile("/watermark", 2,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals(start - 10000, watermarkGenerator.watermark());
@@ -101,7 +104,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+    DataFile file1 = DataFileTestHelpers.getFile("/watermark", 1,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals((start / 1000 * 1000) - 15000, watermarkGenerator.watermark());
@@ -111,7 +114,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+    DataFile file2 = DataFileTestHelpers.getFile("/watermark", 2,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals((start / 1000 * 1000) - 5000, watermarkGenerator.watermark());
@@ -133,7 +136,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+    DataFile file1 = DataFileTestHelpers.getFile("/watermark", 1,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(df.parse("2022-11-11 00:00:59").getTime(), watermarkGenerator.watermark());
@@ -143,7 +146,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+    DataFile file2 = DataFileTestHelpers.getFile("/watermark", 2,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals(df.parse("2022-11-11 00:01:59").getTime(), watermarkGenerator.watermark());
@@ -163,7 +166,7 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+    DataFile file1 = DataFileTestHelpers.getFile("/watermark", 1,
         PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(-1, watermarkGenerator.watermark());

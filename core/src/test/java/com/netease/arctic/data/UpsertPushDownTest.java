@@ -1,7 +1,8 @@
 package com.netease.arctic.data;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.TableProperties;
@@ -26,14 +27,15 @@ import java.util.stream.Collectors;
 public class UpsertPushDownTest extends TableTestBase {
 
   public UpsertPushDownTest(PartitionSpec partitionSpec) {
-    super(TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
-        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true"));
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(BasicTableTestHelper.TABLE_SCHEMA, BasicTableTestHelper.PRIMARY_KEY_SPEC,
+        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true")));
   }
 
   @Parameterized.Parameters(name = "spec = {0}")
   public static Object[] parameters() {
-    return new Object[] {PartitionSpec.unpartitioned(), TableTestHelpers.SPEC,
-                         PartitionSpec.builderFor(TableTestHelpers.TABLE_SCHEMA)
+    return new Object[] {PartitionSpec.unpartitioned(), BasicTableTestHelper.SPEC,
+                         PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
                              .day("op_time").identity("ts").build()};
   }
 

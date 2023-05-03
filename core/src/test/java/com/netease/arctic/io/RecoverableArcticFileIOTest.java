@@ -18,7 +18,9 @@
 
 package com.netease.arctic.io;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -40,7 +42,8 @@ public class RecoverableArcticFileIOTest extends TableTestBase {
   private String file3;
 
   public RecoverableArcticFileIOTest() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before

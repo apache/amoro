@@ -18,7 +18,9 @@
 
 package com.netease.arctic.io;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.utils.TableFileUtils;
@@ -51,7 +53,8 @@ public class IcebergFanoutPosDeleteWriterTest extends TableTestBase {
   private final FileFormat fileFormat;
 
   public IcebergFanoutPosDeleteWriterTest(boolean partitionedTable, FileFormat fileFormat) {
-    super(TableFormat.ICEBERG, false, partitionedTable);
+    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, partitionedTable));
     this.fileFormat = fileFormat;
   }
 

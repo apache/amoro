@@ -46,7 +46,7 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
         DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
+    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
@@ -89,7 +89,7 @@ public class OverwriteBaseFileTest extends TableDataTestBase {
         DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords);
+    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.updateOptimizedSequenceDynamically(txId);

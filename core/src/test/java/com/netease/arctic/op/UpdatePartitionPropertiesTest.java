@@ -18,7 +18,9 @@
 
 package com.netease.arctic.op;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TestHelpers;
@@ -32,7 +34,8 @@ import java.util.Map;
 public class UpdatePartitionPropertiesTest extends TableTestBase {
 
   public UpdatePartitionPropertiesTest() {
-    super(TableFormat.MIXED_ICEBERG, false, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, true));
   }
 
   @Test
