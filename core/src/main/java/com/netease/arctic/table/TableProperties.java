@@ -99,7 +99,7 @@ public class TableProperties {
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL = "self-optimizing.minor.trigger.interval";
-  public static final long SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
+  public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
@@ -112,7 +112,7 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
 
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
-  public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
 
 
   /**
@@ -167,13 +167,13 @@ public class TableProperties {
   public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
-  public static final String CHANGE_DATA_TTL_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
 
   public static final String CHANGE_SNAPSHOT_KEEP_MINUTES = "snapshot.change.keep.minutes";
-  public static final String CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 10080; // 7 Days
 
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
-  public static final String BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "720"; // 12 Hours
+  public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;

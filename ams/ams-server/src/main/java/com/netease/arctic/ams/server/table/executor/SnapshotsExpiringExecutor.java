@@ -280,7 +280,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       return;
     }
 
-    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
+    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
     if (MapUtils.isEmpty(partitionMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;

@@ -15,9 +15,7 @@ import com.netease.arctic.ams.server.table.ServerTableIdentifier;
 import com.netease.arctic.ams.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.Snapshot;
@@ -83,11 +81,8 @@ public class ServerTableDescriptor extends PersistentBase {
   public List<AMSDataFileInfo> getTransactionDetail(ServerTableIdentifier tableIdentifier, long transactionId) {
     List<AMSDataFileInfo> result = new ArrayList<>();
     ArcticTable arcticTable = tableService.loadTable(tableIdentifier);
-    List<DeleteFile> addFiles = new ArrayList<>();
-    List<DeleteFile> deleteFiles = new ArrayList<>();
     Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
-    SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
-    snapshot.addedFiles().forEach(f -> {
+    snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           arcticTable.spec(), f.partition(),
@@ -96,7 +91,7 @@ public class ServerTableDescriptor extends PersistentBase {
           snapshot.timestampMillis(),
           "add"));
     });
-    snapshot.deletedFiles().forEach(f -> {
+    snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           arcticTable.spec(), f.partition(),
@@ -105,7 +100,7 @@ public class ServerTableDescriptor extends PersistentBase {
           snapshot.timestampMillis(),
           "remove"));
     });
-    addFiles.forEach(f -> {
+    snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           arcticTable.spec(), f.partition(),
@@ -114,7 +109,7 @@ public class ServerTableDescriptor extends PersistentBase {
           snapshot.timestampMillis(),
           "add"));
     });
-    deleteFiles.forEach(f -> {
+    snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           arcticTable.spec(), f.partition(),

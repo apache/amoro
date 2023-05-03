@@ -43,7 +43,7 @@ public class IcebergCatalogTest extends CatalogTestBase {
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
-    Assert.assertTrue(table instanceof BasicIcebergCatalog.BasicIcebergTable);
+    Assert.assertTrue(table instanceof IcebergCatalogWrapper.BasicIcebergTable);
     Assert.assertTrue(table.isUnkeyedTable());
     Assert.assertEquals(TableTestHelpers.TABLE_SCHEMA.asStruct(), table.schema().asStruct());
   }

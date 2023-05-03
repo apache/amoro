@@ -21,17 +21,24 @@ package com.netease.arctic.ams.server;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OperationConflictException;
+import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.server.exception.ArcticRuntimeException;
 import com.netease.arctic.ams.server.table.TableMetadata;
 import com.netease.arctic.ams.server.table.TableService;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -125,5 +132,32 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   @Override
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
     return 0;
+  }
+
+  @Override
+  public Blocker block(
+      TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
+      throws OperationConflictException, TException {
+    return null;
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+
+  }
+
+  @Override
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException, TException {
+    return 0;
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+    return null;
+  }
+
+  @Override
+  public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+
   }
 }
