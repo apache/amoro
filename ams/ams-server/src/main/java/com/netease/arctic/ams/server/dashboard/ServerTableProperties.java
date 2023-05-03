@@ -30,7 +30,6 @@ public class ServerTableProperties {
 
   static {
     HIDDEN_EXPOSED.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    HIDDEN_EXPOSED.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
     HIDDEN_EXPOSED.add(TableProperties.LOCATION);
     HIDDEN_EXPOSED.add(TableProperties.TABLE_CREATE_TIME);
     HIDDEN_EXPOSED.add(TableProperties.TABLE_PARTITION_PROPERTIES);

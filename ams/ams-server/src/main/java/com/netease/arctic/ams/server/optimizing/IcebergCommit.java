@@ -68,12 +68,10 @@ public class IcebergCommit {
           addedDeleteFiles.addAll(Arrays.asList(task.getOutput().getDeleteFiles()));
         }
         if (task.getInput().rewrittenDataFiles() != null) {
-          Arrays.asList(task.getInput().rewrittenDataFiles())
-              .forEach(file -> removedDataFiles.add(file.asDataFile()));
+          removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
         }
         if (task.getInput().deleteFiles() != null) {
-          Arrays.asList(task.getInput().deleteFiles())
-              .forEach(file -> removedDeleteFiles.add(file.asDeleteFile()));
+          removedDeleteFiles.addAll(Arrays.asList(task.getInput().deleteFiles()));
         }
       }
 

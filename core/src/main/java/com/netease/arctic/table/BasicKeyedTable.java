@@ -19,6 +19,7 @@
 package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
@@ -81,6 +82,11 @@ public class BasicKeyedTable implements KeyedTable {
   @Override
   public TableIdentifier id() {
     return TableIdentifier.of(tableMeta.getTableIdentifier());
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_ICEBERG;
   }
 
   @Override

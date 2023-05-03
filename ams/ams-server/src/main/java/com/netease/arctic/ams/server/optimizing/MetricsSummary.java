@@ -1,6 +1,7 @@
 package com.netease.arctic.ams.server.optimizing;
 
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -28,14 +29,13 @@ public class MetricsSummary {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
     reRowDeletedDataFileCnt = input.rePosDeletedDataFiles().length;
     ;
-    for (IcebergContentFile rewriteFile : input.rewrittenDataFiles()) {
-      rewriteDataSize += rewriteFile.asDataFile().fileSizeInBytes();
+    for (DataFileWithSequence rewriteFile : input.rewrittenDataFiles()) {
+      rewriteDataSize += rewriteFile.fileSizeInBytes();
     }
-    for (IcebergContentFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
-      rewritePosDataSize += rewritePosDataFile.asDataFile().fileSizeInBytes();
+    for (DataFileWithSequence rewritePosDataFile : input.rePosDeletedDataFiles()) {
+      rewritePosDataSize += rewritePosDataFile.fileSizeInBytes();
     }
-    for (IcebergContentFile deleteFile : input.deleteFiles()) {
-      DeleteFile delete = deleteFile.asDeleteFile();
+    for (DeleteFileWithSequence delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteFileCnt++;

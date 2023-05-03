@@ -24,11 +24,11 @@ import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.ams.server.optimizing.OptimizingType;
 import com.netease.arctic.ams.server.table.TableRuntime;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.optimizing.IcebergFormatRewriteFilesExecutorFactory;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -46,10 +46,10 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   private final SequenceNumberFetcher sequenceNumberFetcher;
 
   private TaskSplitter taskSpilitter;
-  private Map<IcebergContentFile, List<IcebergContentFile>> fragementFiles = Maps.newHashMap();
-  private Map<IcebergContentFile, List<IcebergContentFile>> segmentFiles = Maps.newHashMap();
-  private Set<IcebergContentFile> equalityRelatedFiles = Sets.newHashSet();
-  private Map<DeleteFile, Set<IcebergContentFile>> equalityDeleteFileMap = Maps.newHashMap();
+  private Map<DataFileWithSequence, List<DeleteFileWithSequence>> fragementFiles = Maps.newHashMap();
+  private Map<DataFileWithSequence, List<DeleteFileWithSequence>> segmentFiles = Maps.newHashMap();
+  private Set<DataFileWithSequence> equalityRelatedFiles = Sets.newHashSet();
+  private Map<DeleteFile, Set<DataFileWithSequence>> equalityDeleteFileMap = Maps.newHashMap();
   private long fragementFileSize = 0;
   private long segmentFileSize = 0;
   private long positionalDeleteBytes = 0L;
@@ -68,17 +68,17 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   public void addFile(DataFile dataFile, List<DeleteFile> deletes) {
-    IcebergContentFile contentFile = createIcebergFile(dataFile);
+    DataFileWithSequence contentFile = createDataFile(dataFile);
     if (dataFile.fileSizeInBytes() <= fragementSize) {
       fragementFiles.put(
           contentFile,
-          deletes.stream().map(delete -> createIcebergFile(delete)).collect(Collectors.toList()));
+          deletes.stream().map(delete -> createDeleteFile(delete)).collect(Collectors.toList()));
       fragementFileSize += dataFile.fileSizeInBytes();
       smallFileCount += 1;
     } else {
       segmentFiles.put(
           contentFile,
-          deletes.stream().map(delete -> createIcebergFile(delete)).collect(Collectors.toList()));
+          deletes.stream().map(delete -> createDeleteFile(delete)).collect(Collectors.toList()));
       segmentFileSize += dataFile.fileSizeInBytes();
     }
     for (DeleteFile deleteFile : deletes) {
@@ -93,8 +93,12 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  private IcebergContentFile createIcebergFile(ContentFile dataFile) {
-    return new IcebergContentFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
+  private DataFileWithSequence createDataFile(DataFile dataFile) {
+    return new DataFileWithSequence(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
+  }
+
+  private DeleteFileWithSequence createDeleteFile(DeleteFile deleteFile) {
+    return new DeleteFileWithSequence(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
   }
 
   @Override
@@ -131,16 +135,16 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   private class TaskSplitter {
 
-    Set<IcebergContentFile> rewriteDataFiles = Sets.newHashSet();
-    Set<IcebergContentFile> deleteFiles = Sets.newHashSet();
-    Set<IcebergContentFile> rewritePosDataFiles = Sets.newHashSet();
+    Set<DataFileWithSequence> rewriteDataFiles = Sets.newHashSet();
+    Set<DeleteFileWithSequence> deleteFiles = Sets.newHashSet();
+    Set<DataFileWithSequence> rewritePosDataFiles = Sets.newHashSet();
 
     long cost = -1;
 
     public TaskSplitter() {
       segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-        long deleteCount = deleteFileSet.stream().mapToLong(file -> file.getContentFile().recordCount()).sum();
-        if (deleteCount >= icebergFile.getContentFile().recordCount() * config.getMajorDuplicateRatio()) {
+        long deleteCount = deleteFileSet.stream().mapToLong(file -> file.recordCount()).sum();
+        if (deleteCount >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
           rewriteDataFiles.add(icebergFile);
           deleteFiles.addAll(deleteFileSet);
         } else if (equalityRelatedFiles.contains(icebergFile)) {
@@ -148,7 +152,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
           deleteFiles.addAll(deleteFileSet);
         } else {
           long posDeleteCount = deleteFileSet.stream()
-              .filter(file -> file.getContentFile().content() == FileContent.POSITION_DELETES)
+              .filter(file -> file.content() == FileContent.POSITION_DELETES)
               .count();
           if (posDeleteCount > 1) {
             rewritePosDataFiles.add(icebergFile);
@@ -170,18 +174,18 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
     public long getCost() {
       if (cost < 0) {
-        cost = rewriteDataFiles.stream().mapToLong(file -> file.getContentFile().fileSizeInBytes()).sum() * 4 +
-            rewritePosDataFiles.stream().mapToLong(file -> file.getContentFile().fileSizeInBytes()).sum() / 10 +
-            deleteFiles.stream().mapToLong(file -> file.getContentFile().fileSizeInBytes()).sum();
+        cost = rewriteDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() * 4 +
+            rewritePosDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() / 10 +
+            deleteFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum();
       }
       return cost;
     }
 
     public List<TaskDescriptor> splitTasks(int targetTaskCount) {
       RewriteFilesInput input = new RewriteFilesInput(
-          rewriteDataFiles.toArray(new IcebergContentFile[rewriteDataFiles.size()]),
-          rewritePosDataFiles.toArray(new IcebergContentFile[rewritePosDataFiles.size()]),
-          deleteFiles.toArray(new IcebergContentFile[deleteFiles.size()]),
+          rewriteDataFiles.toArray(new DataFileWithSequence[rewriteDataFiles.size()]),
+          rewritePosDataFiles.toArray(new DataFileWithSequence[rewritePosDataFiles.size()]),
+          deleteFiles.toArray(new DeleteFileWithSequence[deleteFiles.size()]),
           tableObject.asUnkeyedTable());
       List<TaskDescriptor> tasks = Lists.newArrayList();
       Map<String, String> taskProperties = Maps.newHashMap();

@@ -42,6 +42,11 @@ public class MetadataColumns {
   public static final NestedField CHANGE_ACTION_FIELD = NestedField
       .optional(CHANGE_ACTION_ID, CHANGE_ACTION_NAME, Types.StringType.get());
 
+  public static final String TREE_NODE_NAME = "_tree_node";
+  public static final int TREE_NODE_ID = Integer.MAX_VALUE - 1004;
+  public static final NestedField TREE_NODE_FIELD = NestedField
+      .optional(TREE_NODE_ID, TREE_NODE_NAME, Types.LongType.get());
+
   private MetadataColumns() {
   }
 

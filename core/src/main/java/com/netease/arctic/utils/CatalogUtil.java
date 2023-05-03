@@ -20,12 +20,14 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
@@ -211,5 +213,15 @@ public class CatalogUtil {
     mergedProperties.putAll(tableProperties);
 
     return mergedProperties;
+  }
+
+  public static TableIdentifier tableId(TableMeta tableMeta) {
+    return TableIdentifier.of(tableMeta.getTableIdentifier().getCatalog(),
+        tableMeta.getTableIdentifier().getDatabase(), tableMeta.getTableIdentifier().getTableName());
+  }
+
+  public static com.netease.arctic.ams.api.TableIdentifier amsTaleId(TableIdentifier tableIdentifier) {
+    return new com.netease.arctic.ams.api.TableIdentifier(tableIdentifier.getCatalog(),
+        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 }
