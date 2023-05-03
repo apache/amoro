@@ -18,7 +18,7 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TestHelpers;

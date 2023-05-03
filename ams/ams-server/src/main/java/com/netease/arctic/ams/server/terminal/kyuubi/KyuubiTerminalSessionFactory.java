@@ -19,12 +19,13 @@
 package com.netease.arctic.ams.server.terminal.kyuubi;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.server.config.ConfigOption;
-import com.netease.arctic.ams.server.config.ConfigOptions;
-import com.netease.arctic.ams.server.config.Configuration;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.terminal.SparkContextUtil;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
+import com.netease.arctic.ams.server.utils.ConfigOption;
+import com.netease.arctic.ams.server.utils.ConfigOptions;
+import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
@@ -82,7 +83,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   final KyuubiHiveDriver driver = new KyuubiHiveDriver();
 
   @Override
-  public void initialize(Configuration properties) {
+  public void initialize(Configurations properties) {
     this.jdbcUrl = properties.getOptional(KYUUBI_URL).orElseThrow(
         () -> new IllegalStateException(
             "lack require properties: jdbc.url. when kyuubi as terminal backend, this is require"));
@@ -99,7 +100,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   }
 
   @Override
-  public TerminalSession create(TableMetaStore metaStore, Configuration configuration) {
+  public TerminalSession create(TableMetaStore metaStore, Configurations configuration) {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
 
@@ -110,7 +111,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     logMessage(logs, "try to create a kyuubi connection via url: " + kyuubiJdbcUrl);
     logMessage(logs, "");
 
-    Map<String, String> sessionConf = configuration.toMap();
+    Map<String, String> sessionConf = Maps.newLinkedHashMap();
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 

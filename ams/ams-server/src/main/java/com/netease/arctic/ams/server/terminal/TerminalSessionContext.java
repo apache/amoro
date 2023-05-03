@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.terminal;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.server.config.Configuration;
+import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class TerminalSessionContext {
   private final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Created);
   private volatile ExecutionTask task = null;
   private final TerminalSessionFactory factory;
-  private final Configuration sessionConfiguration;
+  private final Configurations sessionConfiguration;
   private volatile TerminalSession session;
 
   private volatile long lastExecutionTime = System.currentTimeMillis();
@@ -58,7 +58,7 @@ public class TerminalSessionContext {
       TableMetaStore metaStore,
       ThreadPoolExecutor executor,
       TerminalSessionFactory factory,
-      Configuration sessionConfiguration) {
+      Configurations sessionConfiguration) {
     this.sessionId = sessionId;
     this.metaStore = metaStore;
     this.threadPool = executor;

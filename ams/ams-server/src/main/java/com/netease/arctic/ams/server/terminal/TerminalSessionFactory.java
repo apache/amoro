@@ -19,9 +19,9 @@
 package com.netease.arctic.ams.server.terminal;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.server.config.ConfigOption;
-import com.netease.arctic.ams.server.config.ConfigOptions;
-import com.netease.arctic.ams.server.config.Configuration;
+import com.netease.arctic.ams.server.utils.ConfigOption;
+import com.netease.arctic.ams.server.utils.ConfigOptions;
+import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 
 import java.util.List;
@@ -37,7 +37,7 @@ public interface TerminalSessionFactory {
    *
    * @param properties - terminal properties and factory properties.
    */
-  void initialize(Configuration properties);
+  void initialize(Configurations properties);
 
   /**
    * create a new session
@@ -46,7 +46,7 @@ public interface TerminalSessionFactory {
    * @param configuration - configuration of session, all properties are defined in {@link SessionConfigOptions}
    * @return - new terminal context
    */
-  TerminalSession create(TableMetaStore metaStore, Configuration configuration);
+  TerminalSession create(TableMetaStore metaStore, Configurations configuration);
 
   class SessionConfigOptions {
     public static ConfigOption<Integer> FETCH_SIZE = ConfigOptions
@@ -65,16 +65,6 @@ public interface TerminalSessionFactory {
         .stringType()
         .noDefaultValue();
 
-    public static ConfigOption<Boolean> IS_NATIVE_ICEBERG = ConfigOptions
-        .key("is-native-iceberg")
-        .booleanType()
-        .noDefaultValue();
-
-    public static ConfigOption<Boolean> USING_SESSION_CATALOG_FOR_HIVE = ConfigOptions
-        .key("using-session-catalog-for-hive")
-        .booleanType()
-        .defaultValue(false);
-
     public static ConfigOption<String> catalogConnector(String catalog) {
       return ConfigOptions.key("session.catalog." + catalog + ".connector")
           .stringType()
@@ -87,7 +77,7 @@ public interface TerminalSessionFactory {
           .noDefaultValue();
     }
 
-    public static Map<String, String> getCatalogProperties(Configuration configuration, String catalog) {
+    public static Map<String, String> getCatalogProperties(Configurations configuration, String catalog) {
       final String prefix = "catalog." + catalog + ".";
       Map<String, String> properties = Maps.newHashMap();
       for (String key : configuration.keySet()) {

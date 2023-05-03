@@ -35,6 +35,7 @@
         <module>ams-api</module>
         <module>ams-server</module>
         <module>ams-dashboard</module>
+        <module>optimizer</module>
     </modules>
 
     <properties>

@@ -20,8 +20,8 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.RecoverableArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;

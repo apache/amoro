@@ -2,7 +2,6 @@
 CREATE TABLE optimize_group (
     group_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     name varchar(50) unique NOT NULL,
-    scheduling_policy varchar(20),
     properties clob(64m),
     container varchar(64) DEFAULT NULL,
     PRIMARY KEY (group_id)
@@ -66,8 +65,8 @@ CREATE TABLE optimize_task (
     table_name varchar(128) NOT NULL,
     partition varchar(128) DEFAULT NULL,
     task_commit_group varchar(40) DEFAULT NULL,
-    to_sequence bigint NOT NULL WITH DEFAULT -1,
-    from_sequence bigint NOT NULL WITH DEFAULT -1,
+    max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
+    min_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
     queue_id bigint NOT NULL,
@@ -205,7 +204,7 @@ CREATE TABLE optimize_history (
     total_records bigint DEFAULT NULL,
     partition_cnt int NOT NULL,
     partitions clob(64m),
-    partition_optimized_sequence clob(64m),
+    max_change_transaction_id clob(64m),
     optimize_type varchar(10) NOT NULL,
     PRIMARY KEY (history_id)
 );
@@ -266,18 +265,6 @@ CREATE TABLE platform_file_info (
   file_path varchar(100) DEFAULT NULL,
   add_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
-);
-
-CREATE TABLE table_blocker (
-  blocker_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-  catalog_name varchar(64) NOT NULL,
-  db_name varchar(128) NOT NULL,
-  table_name varchar(128) NOT NULL,
-  operations varchar(128) NOT NULL,
-  create_time timestamp DEFAULT NULL,
-  expiration_time timestamp DEFAULT NULL,
-  properties clob(64m),
-  PRIMARY KEY (blocker_id)
 );
 
 INSERT INTO catalog_metadata(catalog_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog','ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');
