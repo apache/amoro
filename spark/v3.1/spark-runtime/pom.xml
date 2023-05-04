@@ -62,6 +62,12 @@
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
                                     <incluede>com.netease.arctic:arctic-hive</incluede>
+                                    <include>com.alibaba:fastjson</include>
+                                    <incluede>org.apache.curator:curator-framework</incluede>
+                                    <incluede>org.apache.curator:curator-client</incluede>
+                                    <incluede>org.apache.curator:curator-recipes</incluede>
+                                    <include>org.apache.zookeeper:zookeeper</include>
+                                    <include>org.apache.zookeeper:zookeeper-jute</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
                                     <include>org.apache.iceberg:iceberg-spark3</include>
@@ -126,6 +132,15 @@
                                     </includes>
                                 </relocation>
 
+                                <relocation>
+                                    <pattern>org.apache.zookeeper</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper</shadedPattern>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>org.apache.curator</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator</shadedPattern>
+                                </relocation>
 
                                 <!-- relocation required dependencies -->
                                 <relocation>
