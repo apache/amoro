@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
-import org.apache.iceberg.flink.AdaptHiveFlinkParquetReaders;
+import org.apache.iceberg.flink.data.AdaptHiveFlinkParquetReaders;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.table.ArcticTable;

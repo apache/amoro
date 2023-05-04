@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.data.DataTreeNode;
-import org.apache.iceberg.flink.AdaptHiveFlinkParquetReaders;
+import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
 import com.netease.arctic.hive.io.reader.AbstractAdaptHiveIcebergDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
