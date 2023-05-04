@@ -20,9 +20,11 @@ package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -101,6 +103,27 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
+    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+  }
+
+  @Test
+  public void testUnKeyedTransactionAdd() throws TException {
+    String testAddCol1 = "testAdd1";
+    String testAddCol2 = "testAdd2";
+    String testDoc = "test Doc";
+    UnkeyedTable table = testHiveTable;
+    Transaction transaction = table.newTransaction();
+    transaction.updateSchema().
+        addColumn(testAddCol1, Types.FloatType.get(), "init doc").
+        addColumn(testAddCol2, Types.DoubleType.get(), testDoc).commit();
+    int exceptedNumberOfFields = table.schema().columns().size() + 2;
+    testHiveTable.refresh();
+    Assert.assertFalse("table schema should not added",
+        table.schema().columns().size() == exceptedNumberOfFields);
+    transaction.commitTransaction();
+    Assert.assertTrue("table schema should added",
+        table.schema().columns().size() == exceptedNumberOfFields);
+    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
     Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
   }
 
