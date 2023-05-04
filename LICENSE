@@ -229,7 +229,7 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.parquet.ParquetReader copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetReader
 * org.apache.iceberg.parquet.ReadConf copied and modified to org.apache.iceberg.parquet.AdaptHiveReadConf
 * org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor copied and modified to org.apache.iceberg.spark.data.AdaptHiveParquetWithSparkSchemaVisitor
-* org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
+* org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to data.flink.iceberg.apache.AdaptHiveParquetWithFlinkSchemaVisitor
 
 
 

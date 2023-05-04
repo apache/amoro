@@ -42,6 +42,7 @@
         <module>v1.15/flink</module>
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>
+        <module>v1.12/opensource-bridge</module>
     </modules>
 
     <properties>

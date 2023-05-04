@@ -65,7 +65,7 @@ public final class LogPulsarSourceReaderFactory {
       Schema schema,
       boolean logRetractionEnable,
       String logConsumerChangelogMode) {
-    // ------ copy from org.apache.flink.connector.pulsar.source.reader.PulsarSourceReaderFactory start -------
+    // ------ copy from reader.source.pulsar.connector.flink.apache.PulsarSourceReaderFactory start -------
     PulsarClient pulsarClient = PulsarClientFactory.createClient(sourceConfiguration);
     PulsarAdmin pulsarAdmin = PulsarClientFactory.createAdmin(sourceConfiguration);
 
@@ -76,7 +76,7 @@ public final class LogPulsarSourceReaderFactory {
 
     // Create different pulsar source reader by subscription type.
     SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
-    // ------ copy from org.apache.flink.connector.pulsar.source.reader.PulsarSourceReaderFactory end -------
+    // ------ copy from reader.source.pulsar.connector.flink.apache.PulsarSourceReaderFactory end -------
     if (subscriptionType == SubscriptionType.Exclusive) {
       LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
 
