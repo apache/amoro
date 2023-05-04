@@ -6,6 +6,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.helper.DataComparator;
+import com.netease.arctic.spark.test.helper.RecordGenerator;
 import com.netease.arctic.spark.test.helper.TestTable;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.spark.test.helper.TestTables;
@@ -51,14 +52,15 @@ public class TestSelectSQL extends SparkTableTestBase {
         builder.withPrimaryKeySpec(table.keySpec));
 
     KeyedTable tbl = loadTable().asKeyedTable();
+    RecordGenerator dataGen = table.newDateGen();
 
-    List<Record> base = table.generator.records(10);
+    List<Record> base = dataGen.records(10);
     TestTableHelper.writeToBase(tbl, base);
     LinkedList<Record> expects = Lists.newLinkedList(base);
 
 
     // insert some record in change
-    List<Record> changeInsert = table.generator.records(5);
+    List<Record> changeInsert = dataGen.records(5);
 
 
     // insert some delete in change(delete base records)
@@ -73,7 +75,7 @@ public class TestSelectSQL extends SparkTableTestBase {
         .forEach(i -> changeDelete.add(expects.pollLast()));
 
     // insert some delete in change(delete non exists records)
-    changeDelete.addAll(table.generator.records(3));
+    changeDelete.addAll(dataGen.records(3));
 
     TestTableHelper.writeToChange(tbl.asKeyedTable(), changeInsert, ChangeAction.INSERT);
     TestTableHelper.writeToChange(tbl.asKeyedTable(), changeDelete, ChangeAction.DELETE);
@@ -94,6 +96,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     ds = sql("SELECT * FROM " + target() + ".change" + " ORDER BY ID");
     List<Row> changeActual = ds.collectAsList();
     Assertions.assertEquals(expectChange.size(), changeActual.size());
+
   }
 
 }

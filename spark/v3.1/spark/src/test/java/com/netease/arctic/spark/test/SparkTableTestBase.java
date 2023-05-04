@@ -4,6 +4,7 @@ import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.CollectionHelper;
@@ -12,6 +13,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
@@ -31,6 +33,12 @@ import java.util.stream.Collectors;
 
 
 public class SparkTableTestBase extends SparkTestBase {
+  protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
+  protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
+  protected static final PartitionSpec unpartitioned = PartitionSpec.unpartitioned();
+  protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
+
+
 
   private String database = "spark_test_database";
   private String table = "test_table";
@@ -145,11 +153,11 @@ public class SparkTableTestBase extends SparkTestBase {
     this.source = new Identifier(null, null, sourceTable, Identifier.SOURCE_TYPE_VIEW);
   }
 
-  public void createTarget(Schema schema, Consumer<TableBuilder> consumer) {
+  public ArcticTable createTarget(Schema schema, Consumer<TableBuilder> consumer) {
     Identifier identifier = target();
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
     consumer.accept(builder);
-    builder.create();
+    return builder.create();
   }
 
 

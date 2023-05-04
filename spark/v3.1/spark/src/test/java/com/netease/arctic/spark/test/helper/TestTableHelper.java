@@ -1,14 +1,17 @@
 package com.netease.arctic.spark.test.helper;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -31,7 +34,6 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -46,7 +48,9 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TestTableHelper {
@@ -173,18 +177,26 @@ public class TestTableHelper {
   }
 
   public static List<Record> tableRecords(ArcticTable table, Expression expression) {
+    List<Record> records;
     if (table.isKeyedTable()) {
       if (table instanceof SupportHive) {
-        return readKeyedTable(table.asKeyedTable(), expression);
+        records = readKeyedTable(table.asKeyedTable(), expression);
       } else {
-        return DataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
+        records = DataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
       }
+      return records.stream()
+          .map(r -> {
+            if (r.struct().fields().size() == table.schema().columns().size()) {
+              return r;
+            }
+            GenericRecord record = GenericRecord.create(table.schema());
+            for (int i = 0; i < table.schema().columns().size(); i++) {
+              record.set(i, r.get(i));
+            }
+            return record;
+          })
+          .collect(Collectors.toList());
     }
-//    CloseableIterable<Record> it = IcebergGenerics.read(table.asUnkeyedTable())
-//        .where(expression)
-//        .build();
-//    List<Record> records = Lists.newArrayList();
-//    it.forEach(records::add);
     return unkeyedTableRecords(table.asUnkeyedTable(), expression);
   }
 
@@ -243,8 +255,6 @@ public class TestTableHelper {
 
 
   public static void writeToBase(ArcticTable table, List<Record> data) {
-
-
     TaskWriter<Record> baseWriter = null;
     UnkeyedTable baseTable = null;
     if (table.isKeyedTable()) {
@@ -253,7 +263,9 @@ public class TestTableHelper {
           .buildBaseWriter();
       baseTable = table.asKeyedTable().baseTable();
     } else {
-      throw new IllegalStateException("not support for unkeyed table");
+      baseWriter = GenericTaskWriters.builderFor(table.asUnkeyedTable())
+          .buildBaseWriter();
+      baseTable = table.asUnkeyedTable();
     }
     writeToBase(baseTable, baseWriter, data);
   }
@@ -305,5 +317,84 @@ public class TestTableHelper {
     }
   }
 
+  public static List<Record> changeRecordsWithAction(KeyedTable keyedTable) {
+    List<Types.NestedField> columns = Lists.newArrayList(keyedTable.schema().columns());
+    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
+    Schema expectSchema = new Schema(columns);
+
+    GenericIcebergDataReader reader = new GenericIcebergDataReader(
+        keyedTable.io(),
+        keyedTable.schema(),
+        expectSchema,
+        null,
+        true,
+        IdentityPartitionConverters::convertConstant,
+        false
+    );
+    List<Record> result = Lists.newArrayList();
+    try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks =
+             keyedTable.changeTable().newChangeScan().planTasks()) {
+      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
+          while (records.hasNext()) {
+            result.add(records.next());
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return result;
+  }
+
+
+  public static List<Record> upsertResult(
+      List<Record> target, List<Record> source, Function<Record, Object> keyExtractor) {
+    Map<Object, Record> expects = Maps.newHashMap();
+    target.forEach(r -> {
+      Object key = keyExtractor.apply(r);
+      expects.put(key, r);
+    });
+
+    source.forEach(r -> {
+      Object key = keyExtractor.apply(r);
+      expects.put(key, r);
+    });
+    return Lists.newArrayList(expects.values());
+  }
+
+  public static List<Record> upsertDeletes(
+      List<Record> target, List<Record> source, Function<Record, Object> keyExtractor
+  ) {
+    Map<Object, Record> expects = Maps.newHashMap();
+    Map<Object, Record> deletes = Maps.newHashMap();
+    target.forEach(r -> {
+      Object key = keyExtractor.apply(r);
+      expects.put(key, r);
+    });
+
+    source.forEach(r -> {
+      Object key = keyExtractor.apply(r);
+      if (expects.containsKey(key)) {
+        deletes.put(key, expects.get(key));
+      }
+    });
+    return Lists.newArrayList(deletes.values());
+  }
+
+
+  public static Record extendMetadataValue(Record record, Types.NestedField metaColumn, Object value) {
+    List<Types.NestedField> columns = Lists.newArrayList(record.struct().fields());
+    columns.add(metaColumn);
+    Schema expectSchema = new Schema(columns);
+    Record r = GenericRecord.create(expectSchema);
+    for (int i = 0; i < columns.size() - 1; i++) {
+      r.set(i, record.get(i));
+    }
+    r.set(columns.size() -1 , value);
+    return r;
+  }
 
 }

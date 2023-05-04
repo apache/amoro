@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -80,6 +81,14 @@ public class RecordGenerator {
     return new Builder(schema);
   }
 
+  public static GenericRecord newRecord(Schema schema, Object... cols) {
+    GenericRecord record = GenericRecord.create(schema);
+    for (int i = 0; i < cols.length; i++) {
+      record.set(i, cols[i]);
+    }
+    return record;
+  }
+
   public static class Builder {
     final Schema schema;
     final Map<String, ValueGenerator> valueGeneratorMap = Maps.newHashMap();
@@ -99,6 +108,17 @@ public class RecordGenerator {
             valueGeneratorMap.put(f.name(), new SequenceValueGenerator());
         }
       }
+      return this;
+    }
+
+
+    public Builder withRoundRobinValues(String column, Object... values) {
+      this.valueGeneratorMap.put(column, new RoundRobinEnumValueGenerator(values));
+      return this;
+    }
+
+    public Builder withRandomValues(String column, Object... values) {
+      this.valueGeneratorMap.put(column, new RandomEnumValueGenerator(this.seed, values));
       return this;
     }
 
@@ -177,6 +197,41 @@ public class RecordGenerator {
     @Override
     public Object get(Type type) {
       return super.get(Types.DateType.get()).toString();
+    }
+  }
+
+
+  static abstract class EnumValueGenerator implements ValueGenerator {
+    Object[] enums;
+    public EnumValueGenerator(Object[] enums){
+      this.enums = enums;
+    }
+  }
+
+  static class RoundRobinEnumValueGenerator extends EnumValueGenerator {
+    AtomicInteger index = new AtomicInteger(0);
+    public RoundRobinEnumValueGenerator(Object[] enums) {
+      super(enums);
+    }
+
+    @Override
+    public Object get(Type type) {
+      int i = index.getAndIncrement() % enums.length;
+      return enums[i];
+    }
+  }
+
+  static class RandomEnumValueGenerator extends EnumValueGenerator {
+    private final Random random;
+    public RandomEnumValueGenerator(long seed, Object[] enums) {
+      super(enums);
+      this.random = new Random(seed);
+    }
+
+    @Override
+    public Object get(Type type) {
+      int index = random.nextInt() % enums.length;
+      return enums[index];
     }
   }
 }
