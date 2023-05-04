@@ -67,7 +67,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   abstract protected FileWriter<Record, DataWriteResult> dataWriter();
 
   @Override
-  public TableOptimizing.OptimizingOutput execute() {
+  public RewriteFilesOutput execute() {
     LOG.info("Start processing iceberg table optimize task: {}", input);
     List<DataFile> dataFiles = new ArrayList<>();
     List<DeleteFile> deleteFiles = new ArrayList<>();
