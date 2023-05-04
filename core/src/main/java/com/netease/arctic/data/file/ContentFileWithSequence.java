@@ -19,6 +19,8 @@
 package com.netease.arctic.data.file;
 
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 /**
  * Interface can get iceberg sequenceNumber
@@ -27,4 +29,21 @@ public interface ContentFileWithSequence<F> extends ContentFile<F> {
 
   long getSequenceNumber();
 
+  default boolean isDataFile() {
+    return content() == FileContent.DATA;
+  }
+
+  default boolean isDeleteFile() {
+    return !isDataFile();
+  }
+
+  default DataFileWithSequence asDataFile() {
+    Preconditions.checkArgument(isDataFile(), "Not a data file");
+    return (DataFileWithSequence) this;
+  }
+
+  default DeleteFileWithSequence asDeleteFile() {
+    Preconditions.checkArgument(isDeleteFile(), "Not a delete file");
+    return (DeleteFileWithSequence) this;
+  }
 }

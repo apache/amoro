@@ -1,5 +1,6 @@
 package com.netease.arctic.optimizing;
 
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
@@ -11,7 +12,7 @@ import java.util.List;
 public class RewriteFilesInput extends BaseOptimizingInput {
   private final DataFileWithSequence[] rewrittenDataFiles;
   private final DataFileWithSequence[] rePosDeletedDataFiles;
-  private final DeleteFileWithSequence[] deleteFiles;
+  private final ContentFileWithSequence<?>[] deleteFiles;
   private ArcticTable table;
 
   public RewriteFilesInput(
@@ -33,7 +34,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return rePosDeletedDataFiles;
   }
 
-  public DeleteFileWithSequence[] deleteFiles() {
+  public ContentFileWithSequence<?>[] deleteFiles() {
     return deleteFiles;
   }
 

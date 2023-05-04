@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.io;
+package com.netease.arctic.optimizing;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -26,22 +26,38 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.map.StructLikeCollections;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.TestHelpers;
+import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.FileHelpers;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.data.avro.DataReader;
+import org.apache.iceberg.data.orc.GenericOrcReader;
+import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
@@ -51,14 +67,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 @RunWith(Parameterized.class)
-public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
+public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
+
 
   private final FileFormat fileFormat;
 
@@ -66,7 +77,12 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
-  public GenericCombinedIcebergDataReaderTest(
+  private Schema posSchema = new Schema(
+      MetadataColumns.FILE_PATH,
+      MetadataColumns.ROW_POSITION
+      );
+
+  public IcebergFormatRewriteFilesExecutorTest(
       boolean partitionedTable, FileFormat fileFormat) {
     super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
     this.fileFormat = fileFormat;
@@ -122,7 +138,7 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
         new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
         new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
         new DeleteFileWithSequence[] {new DeleteFileWithSequence(eqDeleteFile, 2L),
-            new DeleteFileWithSequence(posDeleteFile, 3L)},
+                                      new DeleteFileWithSequence(posDeleteFile, 3L)},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
@@ -132,25 +148,26 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
         getArcticTable());
   }
 
+
   @Test
   public void readAllData() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
-        getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, scanTask);
-    try (CloseableIterable<Record> records = dataReader.readData()) {
+    IcebergFormatRewriteFilesExecutor executor = new IcebergFormatRewriteFilesExecutor(
+        scanTask,
+        getArcticTable(),
+        StructLikeCollections.DEFAULT
+    );
+
+    RewriteFilesOutput output = executor.execute();
+
+    try (CloseableIterable<Record> records = openFile(output.getDataFiles()[0].path().toString(),
+        output.getDataFiles()[0].format(), getArcticTable().schema(), new HashMap<>())) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
       Assert.assertEquals(record.get(0), 3);
     }
-  }
 
-  @Test
-  public void readAllDataNegate() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, scanTask);
-    try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
+    try (CloseableIterable<Record> records = openFile(output.getDeleteFiles()[0].path().toString(),
+        output.getDataFiles()[0].format(), posSchema, new HashMap<>())) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
       Assert.assertEquals(first.get(1), 0L);
@@ -161,21 +178,52 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
 
   @Test
   public void readOnlyData() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
-    try (CloseableIterable<Record> records = dataReader.readData()) {
+    IcebergFormatRewriteFilesExecutor executor = new IcebergFormatRewriteFilesExecutor(
+        dataScanTask,
+        getArcticTable(),
+        StructLikeCollections.DEFAULT
+    );
+
+    RewriteFilesOutput output = executor.execute();
+
+    try (CloseableIterable<Record> records = openFile(output.getDataFiles()[0].path().toString(),
+        output.getDataFiles()[0].format(), getArcticTable().schema(), new HashMap<>())) {
       Assert.assertEquals(3, Iterables.size(records));
     }
+
+    Assert.assertTrue(output.getDeleteFiles() == null || output.getDeleteFiles().length == 0);
   }
 
-  @Test
-  public void readOnlyDataNegate() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
-    try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
-      Assert.assertEquals(0, Iterables.size(records));
+  private CloseableIterable<Record> openFile(String path, FileFormat fileFormat, Schema fileProjection,
+      Map<Integer, ?> idToConstant) {
+    InputFile input = getArcticTable().io().newInputFile(path);
+
+    switch (fileFormat) {
+      case AVRO:
+        Avro.ReadBuilder avro = Avro.read(input)
+            .project(fileProjection)
+            .createReaderFunc(
+                avroSchema -> DataReader.create(fileProjection, avroSchema, idToConstant));
+        return avro.build();
+
+      case PARQUET:
+        Parquet.ReadBuilder parquet = Parquet.read(input)
+            .project(fileProjection)
+            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(fileProjection, fileSchema,
+                idToConstant));
+        return parquet.build();
+
+      case ORC:
+        Schema projectionWithoutConstantAndMetadataFields = TypeUtil.selectNot(fileProjection,
+            org.apache.iceberg.relocated.com.google.common.collect.Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
+        org.apache.iceberg.orc.ORC.ReadBuilder orc = org.apache.iceberg.orc.ORC.read(input)
+            .project(projectionWithoutConstantAndMetadataFields)
+            .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
+        return orc.build();
+
+      default:
+        throw new UnsupportedOperationException(String.format("Cannot read %s file: %s",
+            fileFormat.name(), path));
     }
   }
 }

@@ -50,19 +50,17 @@ public class IcebergFormatRewriteFilesExecutor extends AbstractRewriteFilesExecu
         set.add(icebergContentFile.path().toString());
       }
     }
-    //TODO fix compile errors
-    return null;
-    // return new GenericCombinedIcebergDataReader(
-    //     io,
-    //     table.schema(),
-    //     table.spec(),
-    //     table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-    //     false,
-    //     IdentityPartitionConverters::convertConstant,
-    //     false,
-    //     structLikeCollections,
-    //     input
-    // );
+    return new GenericCombinedIcebergDataReader(
+        io,
+        table.schema(),
+        table.spec(),
+        table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+        false,
+        IdentityPartitionConverters::convertConstant,
+        false,
+        structLikeCollections,
+        input
+    );
   }
 
   @Override

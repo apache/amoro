@@ -27,7 +27,6 @@ import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.catalog.Namespace;
 import org.apache.thrift.TException;
 
 import java.util.List;
