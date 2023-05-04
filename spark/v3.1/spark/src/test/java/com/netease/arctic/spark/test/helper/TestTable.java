@@ -51,20 +51,24 @@ public class TestTable {
   public final List<FieldSchema> hivePartitions;
 
   public final TableFormat format;
-  public final RecordGenerator generator;
+  private final RecordGenerator.Builder dataGenBuilder;
 
   public TestTable(
       TableFormat format,
       Schema schema, PrimaryKeySpec keySpec, PartitionSpec ptSpec,
       List<FieldSchema> hiveSchema, List<FieldSchema> hivePartitions,
-      RecordGenerator generator) {
+      RecordGenerator.Builder dataGenBuilder) {
     this.format = format;
     this.schema = schema;
     this.keySpec = keySpec;
     this.ptSpec = ptSpec;
     this.hiveSchema = hiveSchema;
     this.hivePartitions = hivePartitions;
-    this.generator = generator;
+    this.dataGenBuilder = dataGenBuilder;
+  }
+
+  public RecordGenerator newDateGen() {
+    return dataGenBuilder.build();
   }
 
   public static Builder format(TableFormat format, Types.NestedField... fields) {
@@ -150,11 +154,11 @@ public class TestTable {
         hivePartition = HiveSchemaUtil.hivePartitionFields(this.schema, this.ptSpec);
       }
 
-      RecordGenerator generator = RecordGenerator.buildFor(this.schema)
-          .withSequencePrimaryKey(keySpec).build();
+      RecordGenerator.Builder builder =  RecordGenerator.buildFor(this.schema)
+          .withSequencePrimaryKey(keySpec);
       return new TestTable(
           format, this.schema, this.keySpec, this.ptSpec,
-          hiveSchemas, hivePartition, generator
+          hiveSchemas, hivePartition, builder
       );
     }
   }

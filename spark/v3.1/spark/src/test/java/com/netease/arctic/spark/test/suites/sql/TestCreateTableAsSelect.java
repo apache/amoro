@@ -36,7 +36,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 
 
   public static final Schema simpleSourceSchema = TestTables.MixedIceberg.NoPK_PT.schema;
-  public static final List<Record> simpleSourceData = TestTables.MixedIceberg.PK_PT.generator.records(1);
+  public static final List<Record> simpleSourceData = TestTables.MixedIceberg.PK_PT.newDateGen().records(10);
 
 
   public static Stream<Arguments> testTimestampZoneHandle() {
