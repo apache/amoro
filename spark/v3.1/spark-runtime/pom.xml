@@ -141,11 +141,6 @@
                                 </relocation>
 
                                 <relocation>
-                                    <pattern>com.alibaba.fastjson</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.com.alibaba.fastjson</shadedPattern>
-                                </relocation>
-
-                                <relocation>
                                     <pattern>org.apache.curator</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.curator</shadedPattern>
                                 </relocation>
