@@ -53,9 +53,9 @@ import java.util.Map;
  * An util generates Apache Iceberg writer and committer operator w
  */
 public class IcebergClassUtil {
-  private static final String ICEBERG_SCAN_CONTEXT_CLASS = "source.flink.iceberg.apache.ScanContext";
+  private static final String ICEBERG_SCAN_CONTEXT_CLASS = "org.apache.iceberg.flink.source.ScanContext";
   private static final String ICEBERG_PARTITION_SELECTOR_CLASS = "org.apache.iceberg.flink.sink.PartitionKeySelector";
-  private static final String ICEBERG_FILE_COMMITTER_CLASS = "sink.flink.iceberg.apache.IcebergFilesCommitter";
+  private static final String ICEBERG_FILE_COMMITTER_CLASS = "org.apache.iceberg.flink.sink.IcebergFilesCommitter";
   private static final String ICEBERG_FILE_WRITER_CLASS = "org.apache.iceberg.flink.sink.IcebergStreamWriter";
 
   public static KeySelector<RowData, Object> newPartitionKeySelector(
