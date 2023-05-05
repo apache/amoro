@@ -104,17 +104,19 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
     ArcticTable table = createTarget(schema, builder ->
         builder.withPartitionSpec(ptSpec)
             .withPrimaryKeySpec(keySpec));
+
+    TestTableHelper.writeToBase(table, base);
+    List<Record> target = Lists.newArrayList(base);
     if (keySpec.primaryKeyExisted()) {
       TestTableHelper.writeToChange(
           table.asKeyedTable(), change, ChangeAction.INSERT);
+      target.addAll(change);
     }
 
     createViewSource(schema, source);
 
     sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
 
-    List<Record> target = Lists.newArrayList(base);
-    target.addAll(change);
 
     table.refresh();
     List<Record> expects = ExpectResultHelper.dynamicOverwriteResult(target, source, r -> r.getField("pt"));
@@ -176,7 +178,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
 
   @DisplayName("TestSQL: INSERT OVERWRITE static mode")
-  @ParameterizedTest()
+  @ParameterizedTest(name = "{index} {0} {1} {2} {3}")
   @MethodSource
   public void testStatic(
       TableFormat format, PrimaryKeySpec keySpec, String ptFilter, String sourceProject,

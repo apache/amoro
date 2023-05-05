@@ -6,6 +6,7 @@ import com.netease.arctic.spark.test.extensions.EachParameterResolver;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.execution.QueryExecution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,6 +38,7 @@ public class SparkTestBase {
   protected SparkSession spark;
   private ArcticCatalog _catalog;
   protected String currentCatalog = SESSION_CATALOG;
+  protected QueryExecution qe;
 
 
   @AfterEach
@@ -79,6 +81,7 @@ public class SparkTestBase {
     } else {
       ds.show();
     }
+    qe = ds.queryExecution();
     LOG.info("SQL Execution cost: " + (System.currentTimeMillis() - begin) + " ms");
     return ds;
   }
