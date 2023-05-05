@@ -19,8 +19,8 @@
 package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.catalog.TestBasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TestBasicArcticCatalog;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
