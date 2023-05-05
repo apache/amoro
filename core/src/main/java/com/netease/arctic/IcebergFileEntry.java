@@ -18,20 +18,26 @@
 
 package com.netease.arctic;
 
+import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /**
- * Entry of Iceberg ContentFile, include ContentFile, snapshotId and sequenceNumber.
- * The sequenceNumber is inherited from metadata, not the actual value in manifest file.
+ * Entry of Iceberg ContentFile, include status, ContentFile, snapshotId and sequenceNumber.
+ * If the actual sequenceNumber in manifest file is null, it will be inherited from metadata,
+ * and it may be null for DELETED entries with iceberg version < 1.0.0.
  */
 public class IcebergFileEntry {
-  private Long snapshotId;
-  private long sequenceNumber;
-  private ContentFile<?> file;
+  private final Long snapshotId;
+  private final Long sequenceNumber;
+  private final ManifestEntryFields.Status status;
+  private final ContentFile<?> file;
 
-  public IcebergFileEntry(Long snapshotId, long sequenceNumber, ContentFile<?> file) {
+  public IcebergFileEntry(Long snapshotId, Long sequenceNumber,
+                          ManifestEntryFields.Status status, ContentFile<?> file) {
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
+    this.status = status;
     this.file = file;
   }
 
@@ -39,24 +45,25 @@ public class IcebergFileEntry {
     return snapshotId;
   }
 
-  public void setSnapshotId(Long snapshotId) {
-    this.snapshotId = snapshotId;
-  }
-
-  public long getSequenceNumber() {
+  public Long getSequenceNumber() {
     return sequenceNumber;
-  }
-
-  public void setSequenceNumber(long sequenceNumber) {
-    this.sequenceNumber = sequenceNumber;
   }
 
   public ContentFile<?> getFile() {
     return file;
   }
 
-  public void setFile(ContentFile<?> file) {
-    this.file = file;
+  public ManifestEntryFields.Status getStatus() {
+    return status;
   }
-  
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("snapshotId", snapshotId)
+        .add("sequenceNumber", sequenceNumber)
+        .add("status", status)
+        .add("file", file == null ? "null" : file.path())
+        .toString();
+  }
 }

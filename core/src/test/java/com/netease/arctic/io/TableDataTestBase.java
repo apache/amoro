@@ -53,12 +53,11 @@ public abstract class TableDataTestBase extends TableTestBase {
   }
 
   public TableDataTestBase() {
-    this(
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    this(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
 
-  private List<Record> baseRecords(List<Record> records) {
+  protected List<Record> baseRecords(List<Record> records) {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(records.get(0));
     builder.add(records.get(1));
@@ -68,14 +67,14 @@ public abstract class TableDataTestBase extends TableTestBase {
     return builder.build();
   }
 
-  private List<Record> changeInsertRecords(List<Record> records) {
+  protected List<Record> changeInsertRecords(List<Record> records) {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(records.get(4));
     builder.add(records.get(5));
     return builder.build();
   }
 
-  private List<Record> changeDeleteRecords(List<Record> records) {
+  protected List<Record> changeDeleteRecords(List<Record> records) {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(records.get(4));
     return builder.build();

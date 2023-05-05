@@ -28,6 +28,7 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -91,18 +92,35 @@ public class TestHiveSchemaUpdate extends TableTestBase {
     checkTableSchema(expectSchema);
   }
 
+  @Test
+  public void testAddColumnInTx() throws TException {
+    String addColumnName = "test_add";
+    String addColumnDoc = "test Doc";
+    Transaction transaction = getBaseStore().newTransaction();
+    transaction.updateSchema().addColumn(addColumnName, Types.IntegerType.get(), addColumnDoc).commit();
+    transaction.commitTransaction();
+    Schema expectSchema = new Schema(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(2, "name", Types.StringType.get()),
+        Types.NestedField.required(3, "ts", Types.LongType.get()),
+        Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone()),
+        Types.NestedField.required(5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+        Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+        Types.NestedField.optional(8, addColumnName, Types.IntegerType.get(), addColumnDoc),
+        Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get())
+    );
+    checkTableSchema(expectSchema);
+  }
+
   private void checkTableSchema(Schema expectSchema) throws TException {
     Assert.assertEquals(expectSchema.asStruct(), getArcticTable().schema().asStruct());
     if (isKeyedTable()) {
       Assert.assertEquals(expectSchema.asStruct(), getArcticTable().asKeyedTable().changeTable().schema().asStruct());
       Assert.assertEquals(expectSchema.asStruct(), getArcticTable().asKeyedTable().baseTable().schema().asStruct());
     }
-
-    Table hiveTable = TEST_HMS.getHiveClient().getTable(
-        getArcticTable().id().getDatabase(),
+    Table hiveTable = TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
         getArcticTable().id().getTableName());
-    Assert.assertEquals(
-        HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
+    Assert.assertEquals(HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
         hiveTable.getSd().getCols());
   }
 }
