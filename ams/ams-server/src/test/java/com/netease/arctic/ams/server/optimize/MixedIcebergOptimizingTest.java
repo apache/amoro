@@ -32,7 +32,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
-import java.util.Random;
 
 public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
   private final ArcticTable arcticTable;

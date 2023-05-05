@@ -18,7 +18,9 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
@@ -69,7 +71,8 @@ public class UnKeyedTableUtilTest extends TableTestBase {
   public TemporaryFolder tempFolder = new TemporaryFolder();
 
   public UnKeyedTableUtilTest() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test

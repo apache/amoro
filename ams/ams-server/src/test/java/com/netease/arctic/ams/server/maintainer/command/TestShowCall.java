@@ -31,6 +31,7 @@ import org.junit.Test;
 import java.util.Map;
 
 import static com.netease.arctic.TableTestHelper.TEST_TABLE_NAME;
+import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 public class TestShowCall extends CallCommandTestBase {
 
