@@ -89,7 +89,9 @@ public class SparkTableTestBase extends SparkTestBase {
   public void before() {
     try {
       LOG.debug("prepare database for table test: " + database);
-      catalog().createDatabase(database);
+      if (!catalog().listDatabases().contains(database)){
+        catalog().createDatabase(database);
+      }
     } catch (AlreadyExistsException e) {
       // pass
     }
