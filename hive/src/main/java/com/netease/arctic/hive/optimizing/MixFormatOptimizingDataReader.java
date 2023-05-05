@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.optimizing;
 
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -85,10 +85,10 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
         false, structLikeCollections);
   }
 
-  private NodeFileScanTask nodeFileScanTask(ContentFileWithSequence[] icebergContentFiles) {
+  private NodeFileScanTask nodeFileScanTask(IcebergContentFile[] icebergContentFiles) {
     List<DeleteFile> posDeleteList = input.deleteFiles() == null ? Collections.EMPTY_LIST :
         Arrays.stream(input.deleteFiles()).filter(s -> s.isDeleteFile())
-            .map(ContentFileWithSequence::asDeleteFile).collect(Collectors.toList());
+            .map(IcebergContentFile::asDeleteFile).collect(Collectors.toList());
 
     List<PrimaryKeyedFile> dataFiles = Arrays.stream(icebergContentFiles)
         .map(s -> (PrimaryKeyedFile)s.asDataFile()).collect(

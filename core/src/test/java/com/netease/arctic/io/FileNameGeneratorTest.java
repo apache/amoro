@@ -21,7 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import org.apache.iceberg.FileFormat;
 import org.junit.Assert;
@@ -31,11 +31,11 @@ public class FileNameGeneratorTest {
 
   @Test
   public void newBaseFileName() {
-    FileNameGenerator fileNameGenerator = new FileNameGenerator(FileFormat.PARQUET, 0, 1L, 2L);
+    FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, 2L);
     TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.BASE_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     System.out.println(fileName);
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase(fileName);
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
     Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 2L);
@@ -43,7 +43,7 @@ public class FileNameGeneratorTest {
 
   @Test
   public void hiveFileName() {
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase("a");
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase("a");
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
     Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 0L);
@@ -51,10 +51,10 @@ public class FileNameGeneratorTest {
 
   @Test
   public void flinkChangeFile2Base() {
-    FileNameGenerator fileNameGenerator = new FileNameGenerator(FileFormat.PARQUET, 0, 1L, null);
+    FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, null);
     TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase(fileName);
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
     Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 0L);
@@ -62,10 +62,10 @@ public class FileNameGeneratorTest {
 
   @Test
   public void flinkChangeFile() {
-    FileNameGenerator fileNameGenerator = new FileNameGenerator(FileFormat.PARQUET, 0, 1L, null);
+    FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, null);
     TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseChange(fileName, 5L);
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 5L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 5L);
@@ -73,10 +73,10 @@ public class FileNameGeneratorTest {
 
   @Test
   public void sparkChangeFile() {
-    FileNameGenerator fileNameGenerator = new FileNameGenerator(FileFormat.PARQUET, 0, 1L, 5L);
+    FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, 5L);
     TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseChange(fileName, 6L);
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 6L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 5L);
@@ -84,7 +84,7 @@ public class FileNameGeneratorTest {
 
   @Test
   public void adaptOldFileName() {
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseChange(
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet", 6L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);

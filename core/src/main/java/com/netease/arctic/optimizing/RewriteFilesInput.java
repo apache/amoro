@@ -1,8 +1,8 @@
 package com.netease.arctic.optimizing;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.DataFileWithSequence;
-import com.netease.arctic.data.file.DeleteFileWithSequence;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.ArrayList;
@@ -10,15 +10,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RewriteFilesInput extends BaseOptimizingInput {
-  private final DataFileWithSequence[] rewrittenDataFiles;
-  private final DataFileWithSequence[] rePosDeletedDataFiles;
-  private final ContentFileWithSequence<?>[] deleteFiles;
+  private final IcebergDataFile[] rewrittenDataFiles;
+  private final IcebergDataFile[] rePosDeletedDataFiles;
+  private final IcebergContentFile<?>[] deleteFiles;
   private ArcticTable table;
 
   public RewriteFilesInput(
-      DataFileWithSequence[] rewrittenDataFiles,
-      DataFileWithSequence[] rePosDeletedDataFiles,
-      DeleteFileWithSequence[] deleteFiles,
+      IcebergDataFile[] rewrittenDataFiles,
+      IcebergDataFile[] rePosDeletedDataFiles,
+      IcebergDeleteFile[] deleteFiles,
       ArcticTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;
@@ -26,27 +26,27 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     this.table = table;
   }
 
-  public DataFileWithSequence[] rewrittenDataFiles() {
+  public IcebergDataFile[] rewrittenDataFiles() {
     return rewrittenDataFiles;
   }
 
-  public DataFileWithSequence[] rePosDeletedDataFiles() {
+  public IcebergDataFile[] rePosDeletedDataFiles() {
     return rePosDeletedDataFiles;
   }
 
-  public ContentFileWithSequence<?>[] deleteFiles() {
+  public IcebergContentFile<?>[] deleteFiles() {
     return deleteFiles;
   }
 
-  public DataFileWithSequence[] dataFiles() {
-    List<DataFileWithSequence> list = new ArrayList<>();
+  public IcebergDataFile[] dataFiles() {
+    List<IcebergDataFile> list = new ArrayList<>();
     if (rewrittenDataFiles != null) {
       Arrays.stream(rewrittenDataFiles).forEach(list::add);
     }
     if (rePosDeletedDataFiles != null) {
       Arrays.stream(rePosDeletedDataFiles).forEach(list::add);
     }
-    return list.toArray(new DataFileWithSequence[0]);
+    return list.toArray(new IcebergDataFile[0]);
   }
 
   public ArcticTable getTable() {

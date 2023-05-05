@@ -24,11 +24,9 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.file.DataFileWithSequence;
-import com.netease.arctic.data.file.DeleteFileWithSequence;
+import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,12 +34,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.ArrayUtils;
+
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableProperties;
@@ -49,7 +46,6 @@ import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.FileHelpers;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
 import org.apache.iceberg.data.orc.GenericOrcReader;
@@ -135,16 +131,16 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new RewriteFilesInput(
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DeleteFileWithSequence[] {new DeleteFileWithSequence(eqDeleteFile, 2L),
-                                      new DeleteFileWithSequence(posDeleteFile, 3L)},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
+                                      new IcebergDeleteFile(posDeleteFile, 3L)},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DeleteFileWithSequence[] {},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDeleteFile[] {},
         getArcticTable());
   }
 

@@ -18,10 +18,8 @@
 
 package com.netease.arctic.iceberg;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.DataFileWithSequence;
-import com.netease.arctic.data.file.DeleteFileWithSequence;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
@@ -77,8 +75,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
       .accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
-  private final List<DeleteFileWithSequence> posDeletes;
-  private final List<DeleteFileWithSequence> eqDeletes;
+  private final List<IcebergDeleteFile> posDeletes;
+  private final List<IcebergDeleteFile> eqDeletes;
 
   private Map<String, Set<Long>> positionMap;
 
@@ -93,14 +91,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   protected CombinedDeleteFilter(
-      ContentFileWithSequence<?>[] deleteFiles,
+      IcebergContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
       StructLikeCollections structLikeCollections) {
-    ImmutableList.Builder<DeleteFileWithSequence> posDeleteBuilder = ImmutableList.builder();
-    ImmutableList.Builder<DeleteFileWithSequence> eqDeleteBuilder = ImmutableList.builder();
+    ImmutableList.Builder<IcebergDeleteFile> posDeleteBuilder = ImmutableList.builder();
+    ImmutableList.Builder<IcebergDeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (deleteFiles != null) {
-      for (ContentFileWithSequence<?> delete : deleteFiles) {
+      for (IcebergContentFile<?> delete : deleteFiles) {
         switch (delete.content()) {
           case POSITION_DELETES:
             posDeleteBuilder.add(delete.asDeleteFile());

@@ -32,9 +32,9 @@
     <url>https://arctic.netease.com</url>
 
     <modules>
-        <module>ams-api</module>
-        <module>ams-server</module>
-        <module>ams-dashboard</module>
+        <module>api</module>
+        <module>server</module>
+        <module>dashboard</module>
         <module>optimizer</module>
     </modules>
 

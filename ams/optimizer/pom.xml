@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-optimizerInstance</artifactId>
+    <artifactId>arctic-ams-optimizer</artifactId>
     <name>Arctic Project Optimizer</name>
     <url>https://arctic.netease.com</url>
 

@@ -18,8 +18,8 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapper;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
