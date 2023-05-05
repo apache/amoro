@@ -172,12 +172,6 @@ public abstract class AbstractArcticDataReader<T> {
     return fileIO.doAs(builder::build);
   }
 
-  protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
-
-  protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
-
   private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
 
     protected Function<T, StructLike> asStructLike;
@@ -226,4 +220,10 @@ public abstract class AbstractArcticDataReader<T> {
       return fileIO;
     }
   }
+
+  protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+      Schema projectSchema,
+      Map<Integer, ?> idToConstant);
+
+  protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 }
