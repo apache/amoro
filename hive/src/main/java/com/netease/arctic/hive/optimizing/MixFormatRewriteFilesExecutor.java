@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.optimizing;
 
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
@@ -59,7 +59,7 @@ public class MixFormatRewriteFilesExecutor extends AbstractRewriteFilesExecutor 
     return wrapTaskWriter2FileWriter(writer);
   }
 
-  public long getTransactionId(ContentFileWithSequence<?>[] icebergContentFiles) {
+  public long getTransactionId(IcebergContentFile<?>[] icebergContentFiles) {
     return Arrays.stream(icebergContentFiles)
         .mapToLong(s -> ((PrimaryKeyedFile) s.asDataFile()).transactionId()).max().getAsLong();
   }

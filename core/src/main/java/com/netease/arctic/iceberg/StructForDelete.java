@@ -1,6 +1,5 @@
 package com.netease.arctic.iceberg;
 
-import com.netease.arctic.iceberg.optimize.StructProjection;
 import java.util.Set;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.MetadataColumns;

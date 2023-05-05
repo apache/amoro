@@ -19,7 +19,7 @@
 package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.optimize.DeleteFilter;
+import com.netease.arctic.iceberg.DeleteFilter;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;

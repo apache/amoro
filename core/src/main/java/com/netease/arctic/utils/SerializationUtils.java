@@ -22,9 +22,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.iceberg.StructLikeWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.StructLike;
@@ -88,16 +88,16 @@ public class SerializationUtils {
     }
   }
 
-  public static ContentFileWithSequence<?> toInternalTableFile(ByteBuffer buffer) {
-    return (ContentFileWithSequence<?>) toObject(buffer);
+  public static IcebergContentFile<?> toInternalTableFile(ByteBuffer buffer) {
+    return (IcebergContentFile<?>) toObject(buffer);
   }
 
   public static ContentFile<?> toContentFile(ByteBuffer buffer) {
     return (ContentFile<?>) toObject(buffer);
   }
 
-  public static ContentFileWithSequence<?> toIcebergContentFile(ByteBuffer buffer) {
-    return (ContentFileWithSequence<?>) toObject(buffer);
+  public static IcebergContentFile<?> toIcebergContentFile(ByteBuffer buffer) {
+    return (IcebergContentFile<?>) toObject(buffer);
   }
 
   public static byte[] serialize(final Object obj) throws IOException {

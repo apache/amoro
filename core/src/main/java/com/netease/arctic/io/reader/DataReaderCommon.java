@@ -2,7 +2,7 @@ package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
 import org.apache.iceberg.DataFile;
@@ -59,7 +59,7 @@ public class DataReaderCommon {
   }
 
   protected static Map<Integer, ?> getIdToConstant(
-      DataFileWithSequence dataFile, Schema projectedSchema, PartitionSpec spec,
+      IcebergDataFile dataFile, Schema projectedSchema, PartitionSpec spec,
       BiFunction<Type, Object, Object> convertConstant) {
     Map<Integer, Object> idToConstant = new HashMap<>();
 
