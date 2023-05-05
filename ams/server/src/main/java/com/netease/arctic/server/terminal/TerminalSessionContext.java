@@ -107,7 +107,9 @@ public class TerminalSessionContext {
   }
 
   public void release() {
-    this.session.release();
+    if (this.session != null){
+      this.session.release();
+    }
   }
 
   public ExecutionStatus getStatus() {
