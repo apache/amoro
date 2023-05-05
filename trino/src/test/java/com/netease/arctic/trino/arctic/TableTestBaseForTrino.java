@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;

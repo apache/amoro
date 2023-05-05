@@ -18,8 +18,8 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.iceberg.CombinedDeleteFilter;
 import com.netease.arctic.iceberg.StructForDelete;
 import com.netease.arctic.io.ArcticFileIO;
@@ -65,7 +65,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
 
-  protected final ContentFileWithSequence[] deleteFiles;
+  protected final IcebergContentFile[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -142,7 +142,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   }
 
   private CloseableIterable<Record> openFile(
-      DataFileWithSequence icebergContentFile,
+      IcebergDataFile icebergContentFile,
       PartitionSpec spec, Schema require) {
     Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(icebergContentFile, require, spec,
         convertConstant);
@@ -257,7 +257,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        ContentFileWithSequence[] deleteFiles,
+        IcebergContentFile[] deleteFiles,
         Set<String> positionPathSets,
         Schema tableSchema,
         StructLikeCollections structLikeCollections) {

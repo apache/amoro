@@ -21,7 +21,7 @@ package com.netease.arctic.spark;
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.KeyedTable;
@@ -148,7 +148,7 @@ public class TestKeyedTableDML extends SparkTestBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              FileNameGenerator.parseFileNodeFromFileName(dataFile.path().toString()))));
+              FileNameRules.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

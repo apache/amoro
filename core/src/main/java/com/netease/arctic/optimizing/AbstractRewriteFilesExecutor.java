@@ -1,7 +1,7 @@
 package com.netease.arctic.optimizing;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.DataFileWithSequence;
+import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.SetTreeNode;
 import com.netease.arctic.table.ArcticTable;
@@ -169,7 +169,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   }
 
   protected StructLike partition() {
-    DataFileWithSequence[] dataFiles = input.dataFiles();
+    IcebergDataFile[] dataFiles = input.dataFiles();
     return dataFiles[0].partition();
   }
 
