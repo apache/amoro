@@ -19,8 +19,10 @@
 package com.netease.arctic.ams.server.terminal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticManagementConf;
+import com.netease.arctic.ams.server.catalog.CatalogType;
 import com.netease.arctic.ams.server.dashboard.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.dashboard.model.LogInfo;
 import com.netease.arctic.ams.server.dashboard.model.SqlResult;
@@ -32,6 +34,7 @@ import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.ams.server.utils.ConfigOptions;
 import com.netease.arctic.ams.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -92,11 +95,11 @@ public class TerminalManager {
     CatalogMeta catalogMeta = tableService.getCatalogMeta(catalog);
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
-    String catalogType = "iceberg";
+    String connectorType = catalogConnectorType(catalogMeta);
     Configurations configuration = new Configurations();
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
-    configuration.set(SessionConfigOptions.catalogConnector(catalog), catalogType);
+    configuration.set(SessionConfigOptions.catalogConnector(catalog), connectorType);
     configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress(serviceConfig));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
@@ -120,6 +123,26 @@ public class TerminalManager {
     }
     context.submit(catalog, script, resultLimits, stopOnError);
     return sessionId;
+  }
+
+  private String catalogConnectorType(CatalogMeta catalogMeta) {
+    String catalogType = catalogMeta.getCatalogType();
+    String tableFormats = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
+      return "arctic";
+    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
+        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
+
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
+          || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+        return "arctic";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
+        return "iceberg";
+      }
+    } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
+      return "iceberg";
+    }
+    throw new IllegalStateException("unknown catalog type: " + catalogType);
   }
 
   /**
