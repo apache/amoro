@@ -20,6 +20,7 @@ package com.netease.arctic.trino;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -187,6 +188,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public TableIdentifier id() {
       return table.id();
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_ICEBERG;
     }
 
     @Override

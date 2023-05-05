@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.optimizing;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.server.ArcticServiceConstants;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class IcebergCommit {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergCommit.class);
@@ -71,7 +73,8 @@ public class IcebergCommit {
           removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
         }
         if (task.getInput().deleteFiles() != null) {
-          removedDeleteFiles.addAll(Arrays.asList(task.getInput().deleteFiles()));
+          removedDeleteFiles.addAll(Arrays.stream(
+              task.getInput().deleteFiles()).map(ContentFileWithSequence::asDeleteFile).collect(Collectors.toList()));
         }
       }
 

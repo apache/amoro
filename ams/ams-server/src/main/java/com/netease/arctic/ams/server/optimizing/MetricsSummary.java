@@ -1,5 +1,6 @@
 package com.netease.arctic.ams.server.optimizing;
 
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -35,7 +36,7 @@ public class MetricsSummary {
     for (DataFileWithSequence rewritePosDataFile : input.rePosDeletedDataFiles()) {
       rewritePosDataSize += rewritePosDataFile.fileSizeInBytes();
     }
-    for (DeleteFileWithSequence delete : input.deleteFiles()) {
+    for (ContentFileWithSequence delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteFileCnt++;
