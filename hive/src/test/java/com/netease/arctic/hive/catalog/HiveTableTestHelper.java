@@ -80,7 +80,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
     return DataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
-        opTime + "Z",  new BigDecimal("0"), opTime.substring(0, 10));
+        opTime + "Z", new BigDecimal("0"), opTime.substring(0, 10));
   }
 
   @Override

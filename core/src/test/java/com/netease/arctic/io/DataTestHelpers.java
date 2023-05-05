@@ -332,8 +332,8 @@ public class DataTestHelpers {
 
   private static Record projectMetadataRecord(Record record, Schema projectSchema) {
     // record may contain some metadata columns
-    if (record.struct().field(MetadataColumns.TRANSACTION_ID_FILED_NAME) != null
-        || record.struct().field(MetadataColumns.FILE_OFFSET_FILED_NAME) != null) {
+    if (record.struct().field(MetadataColumns.TRANSACTION_ID_FILED_NAME) != null ||
+        record.struct().field(MetadataColumns.FILE_OFFSET_FILED_NAME) != null) {
       GenericRecord projectRecord = GenericRecord.create(projectSchema);
       projectSchema.columns().forEach(nestedField ->
           projectRecord.setField(nestedField.name(), record.getField(nestedField.name())));

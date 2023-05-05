@@ -23,6 +23,8 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.io.BuildTableTrashManagerTest;
+import com.netease.arctic.io.TableTrashManagers;
+import com.netease.arctic.table.TableIdentifier;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -33,9 +35,11 @@ public class BuildHiveTableTrashManagerTest extends BuildTableTrashManagerTest {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public BuildHiveTableTrashManagerTest(boolean keyedTable,
-                                        boolean partitionedTable) {
-    super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+  public BuildHiveTableTrashManagerTest(
+      boolean keyedTable,
+      boolean partitionedTable) {
+    super(
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(keyedTable, partitionedTable));
   }
 
@@ -46,5 +50,10 @@ public class BuildHiveTableTrashManagerTest extends BuildTableTrashManagerTest {
         {true, false},
         {false, true},
         {false, false}};
+  }
+
+  protected String getTableTrashLocation(TableIdentifier id) {
+    return String.format("file:%s/%s.db/%s/%s", TEST_HMS.getWareHouseLocation(), id.getDatabase(), id.getTableName(),
+        TableTrashManagers.DEFAULT_TRASH_DIR);
   }
 }

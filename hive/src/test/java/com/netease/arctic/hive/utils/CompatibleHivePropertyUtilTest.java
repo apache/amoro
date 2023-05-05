@@ -30,15 +30,18 @@ public class CompatibleHivePropertyUtilTest {
   @Test
   public void testGetNewProperty() {
     Map<String, String> properties = Maps.newHashMap();
-    Assert.assertEquals(false,
+    Assert.assertEquals(
+        false,
         CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
 
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
-    Assert.assertEquals(true,
+    Assert.assertEquals(
+        true,
         CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
 
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "false");
-    Assert.assertEquals(true,
+    Assert.assertEquals(
+        true,
         CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
   }
 
@@ -46,7 +49,8 @@ public class CompatibleHivePropertyUtilTest {
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
-    Assert.assertEquals(true,
+    Assert.assertEquals(
+        true,
         CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
   }
 }

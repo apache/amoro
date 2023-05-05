@@ -61,7 +61,7 @@ public class BuildTableTrashManagerTest extends TableTestBase {
     Assert.assertEquals(getTableTrashLocation(id), trashManager.getTrashLocation());
   }
 
-  private String getTableTrashLocation(TableIdentifier id) {
+  protected String getTableTrashLocation(TableIdentifier id) {
     String catalogDir = getCatalogMeta().getCatalogProperties().get(KEY_WAREHOUSE);
     return String.format("%s/%s/%s/%s", catalogDir, id.getDatabase(), id.getTableName(),
         TableTrashManagers.DEFAULT_TRASH_DIR);

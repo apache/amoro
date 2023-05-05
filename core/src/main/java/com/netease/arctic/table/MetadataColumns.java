@@ -24,7 +24,6 @@ import org.apache.iceberg.types.Types.NestedField;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Addition metadata columns for {@link ArcticTable}

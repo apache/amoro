@@ -85,14 +85,24 @@ public class HiveDataTestHelpers {
     }
   }
 
-  public static List<DataFile> writeBaseStore(ArcticTable table, long txId, List<Record> records,
+  public static List<DataFile> writeBaseStore(
+      ArcticTable table, long txId, List<Record> records,
       boolean orderedWrite, boolean writeHiveLocation) {
+    return writeBaseStore(table, txId, records, orderedWrite, writeHiveLocation, null);
+  }
+
+  public static List<DataFile> writeBaseStore(
+      ArcticTable table, long txId, List<Record> records,
+      boolean orderedWrite, boolean writeHiveLocation, String hiveLocation) {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(table);
     if (table.isKeyedTable()) {
       builder.withTransactionId(txId);
     }
     if (orderedWrite) {
       builder.withOrdered();
+    }
+    if (hiveLocation != null) {
+      builder.withCustomHiveSubdirectory(hiveLocation);
     }
     LocationKind writeLocationKind = writeHiveLocation ? HiveLocationKind.INSTANT : BaseLocationKind.INSTANT;
     try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
@@ -102,7 +112,8 @@ public class HiveDataTestHelpers {
     }
   }
 
-  public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression,
+  public static List<Record> readKeyedTable(
+      KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
     AdaptHiveGenericArcticDataReader reader;
     if (projectSchema == null) {
@@ -134,7 +145,8 @@ public class HiveDataTestHelpers {
     return DataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
   }
 
-  public static List<Record> readChangeStore(KeyedTable keyedTable, Expression expression, Schema projectSchema,
+  public static List<Record> readChangeStore(
+      KeyedTable keyedTable, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
@@ -168,7 +180,8 @@ public class HiveDataTestHelpers {
     return DataTestHelpers.readChangeStore(keyedTable, reader, expression);
   }
 
-  public static List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema,
+  public static List<Record> readBaseStore(
+      ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = table.schema();
@@ -200,7 +213,8 @@ public class HiveDataTestHelpers {
     return DataTestHelpers.readBaseStore(table, reader, expression);
   }
 
-  public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
+  public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature)
+      throws IOException {
     testWrite(table, locationKind, records, pathFeature, null, null);
   }
 
@@ -280,7 +294,7 @@ public class HiveDataTestHelpers {
 
   private static CloseableIterable<Record> readParquet(Schema schema, String path, Expression expression) {
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-            Files.localInput(path))
+        Files.localInput(path))
         .project(schema)
         .filter(expression == null ? Expressions.alwaysTrue() : expression)
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
@@ -290,8 +304,9 @@ public class HiveDataTestHelpers {
     return iterable;
   }
 
-  private static CloseableIterator<Record> readParquet(Schema schema, DataFile[] dataFiles, Expression expression,
-      ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec){
+  private static CloseableIterator<Record> readParquet(
+      Schema schema, DataFile[] dataFiles, Expression expression,
+      ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec) {
     List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BasicArcticFileScanTask(
         DefaultKeyedFile.parseBase(s),
         null,

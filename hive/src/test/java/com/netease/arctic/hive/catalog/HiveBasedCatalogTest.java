@@ -29,16 +29,16 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class HiveBasedCatalogTest extends BaseCatalogTest {
 
-  @Parameterized.Parameters(name = "testFormat = {0}")
-  public static Object[] parameters() {
-    return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                         new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
-  }
-
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
   public HiveBasedCatalogTest(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper);
+  }
+
+  @Parameterized.Parameters(name = "testFormat = {0}")
+  public static Object[] parameters() {
+    return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                         new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
   }
 }

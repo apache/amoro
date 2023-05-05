@@ -53,7 +53,8 @@ public abstract class TableDataTestBase extends TableTestBase {
   }
 
   public TableDataTestBase() {
-    this(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    this(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
 
@@ -92,14 +93,14 @@ public abstract class TableDataTestBase extends TableTestBase {
 
     //write base with transaction id:1, (id=1),(id=2),(id=3),(id=4)
     List<DataFile> baseFiles = tableTestHelper().writeBaseStore(getArcticTable().asKeyedTable(), 1L,
-      baseRecords(allRecords), false);
+        baseRecords(allRecords), false);
     dataFileForPositionDelete = baseFiles.stream()
         .filter(s -> s.path().toString().contains("op_time_day=2022-01-04")).findAny()
         .orElseThrow(() -> new IllegalStateException("Cannot find data file to delete"));
     AppendFiles baseAppend = getArcticTable().asKeyedTable().baseTable().newAppend();
     baseFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    
+
     // write position with transaction id:4, (id=4)
     DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase(dataFileForPositionDelete.path().toString());
     SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
@@ -111,14 +112,12 @@ public abstract class TableDataTestBase extends TableTestBase {
     this.deleteFileOfPositionDelete = posDeleteFiles;
     getArcticTable().asKeyedTable().baseTable().newRowDelta().addDeletes(posDeleteFiles).commit();
 
-
     //write change insert with transaction id:2, (id=5),(id=6)
     List<DataFile> insertFiles = tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), 2L,
-      ChangeAction.INSERT, changeInsertRecords(allRecords), false);
+        ChangeAction.INSERT, changeInsertRecords(allRecords), false);
     AppendFiles changeAppendInsert = getArcticTable().asKeyedTable().changeTable().newAppend();
     insertFiles.forEach(changeAppendInsert::appendFile);
     changeAppendInsert.commit();
-
 
     //write change delete with transaction id:3, (id=5)
     List<DataFile> deleteFiles = tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), 3L,
@@ -126,6 +125,5 @@ public abstract class TableDataTestBase extends TableTestBase {
     AppendFiles changeAppendDelete = getArcticTable().asKeyedTable().changeTable().newAppend();
     deleteFiles.forEach(changeAppendDelete::appendFile);
     changeAppendDelete.commit();
-
   }
 }

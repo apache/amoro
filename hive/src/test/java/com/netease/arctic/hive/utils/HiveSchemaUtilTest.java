@@ -25,7 +25,6 @@ import org.junit.Test;
 
 public class HiveSchemaUtilTest {
 
-
   @Test
   public void testChangeFieldNameToLowercase() {
 
@@ -53,5 +52,4 @@ public class HiveSchemaUtilTest {
 
     Assert.assertEquals(changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
   }
-
 }

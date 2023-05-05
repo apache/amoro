@@ -18,8 +18,6 @@
 
 package com.netease.arctic.hive.op;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -44,6 +42,8 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -54,6 +54,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,6 +63,10 @@ public class SyncHiveMetaTest extends TableTestBase {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
+
+  public SyncHiveMetaTest(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -76,10 +81,6 @@ public class SyncHiveMetaTest extends TableTestBase {
     };
   }
 
-  public SyncHiveMetaTest(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
-  }
-
   @Test
   public void testSyncHiveSchemaChange() throws TException {
     Table hiveTable = TEST_HMS.getHiveClient().getTable(
@@ -87,7 +88,8 @@ public class SyncHiveMetaTest extends TableTestBase {
     hiveTable.getSd().getCols().add(new FieldSchema("add_column", "bigint", "add column"));
     TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(),
         getArcticTable().id().getTableName(), hiveTable);
-    hiveTable = TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
+    hiveTable = TEST_HMS.getHiveClient().getTable(
+        getArcticTable().id().getDatabase(),
         getArcticTable().id().getTableName());
     getArcticTable().refresh();
     Assert.assertEquals(hiveTable.getSd().getCols(), HiveSchemaUtil.hiveTableFields(
@@ -95,7 +97,7 @@ public class SyncHiveMetaTest extends TableTestBase {
   }
 
   @Test
-  public void testSyncHiveDataChange() throws TException, IOException {
+  public void testSyncHiveDataChange() throws TException, IOException, InterruptedException {
     getArcticTable().updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
     List<Record> insertRecords = org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
@@ -113,11 +115,13 @@ public class SyncHiveMetaTest extends TableTestBase {
     if (isPartitionedTable()) {
       Partition partition = TEST_HMS.getHiveClient().getPartition(getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName(), Lists.newArrayList("2022-01-01"));
+      TimeUnit.SECONDS.sleep(1);
       partition.getParameters().clear();
       TEST_HMS.getHiveClient().alter_partition(getArcticTable().id().getDatabase(),
-          getArcticTable().id().getTableName(), partition);
+          getArcticTable().id().getTableName(), partition, null);
     } else {
-      Table hiveTable = TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
+      Table hiveTable = TEST_HMS.getHiveClient().getTable(
+          getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName());
       hiveTable.putToParameters("transient_lastDdlTime", "0");
       TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(),
@@ -134,7 +138,7 @@ public class SyncHiveMetaTest extends TableTestBase {
   public void testSyncHivePartitionChange() throws TException {
     Assume.assumeTrue(isPartitionedTable());
     getArcticTable().updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
-    List<Record> insertRecords = org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList();
+    List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
@@ -143,7 +147,8 @@ public class SyncHiveMetaTest extends TableTestBase {
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
-    Table hiveTable = TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
+    Table hiveTable = TEST_HMS.getHiveClient().getTable(
+        getArcticTable().id().getDatabase(),
         getArcticTable().id().getTableName());
 
     //test add new hive partition

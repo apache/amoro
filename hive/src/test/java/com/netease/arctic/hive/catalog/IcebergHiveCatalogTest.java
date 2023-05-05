@@ -32,12 +32,12 @@ public class IcebergHiveCatalogTest extends IcebergCatalogTest {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
+  public IcebergHiveCatalogTest(CatalogTestHelper catalogTestHelper) {
+    super(catalogTestHelper);
+  }
+
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
     return new Object[] {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
-  }
-
-  public IcebergHiveCatalogTest(CatalogTestHelper catalogTestHelper) {
-    super(catalogTestHelper);
   }
 }

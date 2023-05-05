@@ -30,15 +30,15 @@ public class MockDataFileBuilder {
     String hiveLocation = ((SupportHive) table).hiveLocation();
 
     String finalPath = hiveLocation + path;
-    DataFiles.Builder builder =  DataFiles.builder(table.spec())
+    DataFiles.Builder builder = DataFiles.builder(table.spec())
         .withPath(finalPath)
         .withFileSizeInBytes(0)
         .withRecordCount(2);
 
-    if (!StringUtils.isEmpty(valuePath)){
+    if (!StringUtils.isEmpty(valuePath)) {
       builder = builder.withPartitionPath(valuePath);
     }
-    if (!table.io().exists(finalPath)){
+    if (!table.io().exists(finalPath)) {
       // create a temp file for test
       try {
         table.io().newOutputFile(finalPath).createOrOverwrite().close();
@@ -49,7 +49,7 @@ public class MockDataFileBuilder {
     return builder.build();
   }
 
-  public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
+  public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles) {
     return partValueFiles.stream().map(
         kv -> this.build(kv.getKey(), kv.getValue())
     ).collect(Collectors.toList());

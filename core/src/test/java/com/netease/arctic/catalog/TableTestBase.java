@@ -22,6 +22,8 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.junit.After;
 import org.junit.Before;
@@ -86,6 +88,10 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   protected ArcticTable getArcticTable() {
     return arcticTable;
+  }
+
+  protected UnkeyedTable getBaseStore() {
+    return ArcticTableUtil.baseStore(arcticTable);
   }
 
   protected boolean isKeyedTable() {

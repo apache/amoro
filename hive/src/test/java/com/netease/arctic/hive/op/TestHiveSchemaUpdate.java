@@ -22,18 +22,12 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import com.netease.arctic.utils.SchemaUtil;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -41,8 +35,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.List;
 
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_D;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_DAY;
@@ -54,16 +46,16 @@ public class TestHiveSchemaUpdate extends TableTestBase {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
+  public TestHiveSchemaUpdate(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(true, true)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(false, true)}};
-  }
-
-  public TestHiveSchemaUpdate(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
   }
 
   @Test
@@ -106,9 +98,11 @@ public class TestHiveSchemaUpdate extends TableTestBase {
       Assert.assertEquals(expectSchema.asStruct(), getArcticTable().asKeyedTable().baseTable().schema().asStruct());
     }
 
-    Table hiveTable =  TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
+    Table hiveTable = TEST_HMS.getHiveClient().getTable(
+        getArcticTable().id().getDatabase(),
         getArcticTable().id().getTableName());
-    Assert.assertEquals(HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
+    Assert.assertEquals(
+        HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
         hiveTable.getSd().getCols());
   }
 }

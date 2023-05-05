@@ -47,6 +47,12 @@ public class HiveTaskReaderTest extends TaskReaderTest {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
+  public HiveTaskReaderTest(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+      boolean useDiskMap) {
+    super(catalogTestHelper, tableTestHelper, useDiskMap);
+  }
+
   @Parameterized.Parameters(name = "useDiskMap = {2}")
   public static Object[] parameters() {
     return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -60,12 +66,6 @@ public class HiveTaskReaderTest extends TaskReaderTest {
                                     .addColumn("id").addColumn("op_time").build(), HiveTableTestHelper.HIVE_SPEC,
                                 Maps.newHashMap()),
                             false}};
-  }
-
-  public HiveTaskReaderTest(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
-      boolean useDiskMap) {
-    super(catalogTestHelper, tableTestHelper, useDiskMap);
   }
 
   @Test

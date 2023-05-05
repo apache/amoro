@@ -21,4 +21,14 @@ public class ArcticTableUtil {
       return arcticTable.asUnkeyedTable();
     }
   }
+
+  public static String tableRootLocation(ArcticTable arcticTable) {
+    String tableRootLocation;
+    if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {
+      tableRootLocation = TableFileUtils.getFileDir(arcticTable.location());
+    } else {
+      tableRootLocation = arcticTable.location();
+    }
+    return tableRootLocation;
+  }
 }

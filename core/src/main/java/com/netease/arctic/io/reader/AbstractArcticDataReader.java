@@ -19,9 +19,7 @@
 package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -37,12 +35,10 @@ import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return records

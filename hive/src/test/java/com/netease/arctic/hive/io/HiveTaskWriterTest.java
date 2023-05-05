@@ -35,6 +35,12 @@ public class HiveTaskWriterTest extends TaskWriterTest {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
+  public HiveTaskWriterTest(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -46,11 +52,5 @@ public class HiveTaskWriterTest extends TaskWriterTest {
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(false, false)}
     };
-  }
-
-  public HiveTaskWriterTest(
-      CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
   }
 }

@@ -45,7 +45,8 @@ public class TestStructLikeWrapperSizeEstimator {
     map.put(record2, changedLsn);
     long newSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
     long record2Size = newSize - oldSize;
-    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(BasicTableTestHelper.TABLE_SCHEMA.asStruct());
+    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(
+        BasicTableTestHelper.TABLE_SCHEMA.asStruct());
     StructLikeWrapper wrapper = wrapperFactory.create().set(record2);
 
     // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record

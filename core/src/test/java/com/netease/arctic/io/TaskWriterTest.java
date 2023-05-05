@@ -181,10 +181,10 @@ public class TaskWriterTest extends TableTestBase {
         Expressions.alwaysTrue(), null, false);
     List<Record> expectRecord = Lists.newArrayList();
     for (int i = 0; i < insertRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(insertRecords.get(i), 1L, i + 1, ChangeAction.INSERT ));
+      expectRecord.add(DataTestHelpers.appendMetaColumnValues(insertRecords.get(i), 1L, i + 1, ChangeAction.INSERT));
     }
     for (int i = 0; i < deleteRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(deleteRecords.get(i), 2L, i + 1, ChangeAction.DELETE ));
+      expectRecord.add(DataTestHelpers.appendMetaColumnValues(deleteRecords.get(i), 2L, i + 1, ChangeAction.DELETE));
     }
     Assert.assertEquals(Sets.newHashSet(expectRecord), Sets.newHashSet(readChangeRecords));
   }
@@ -211,6 +211,7 @@ public class TaskWriterTest extends TableTestBase {
 
     Assume.assumeTrue(isKeyedTable());
     Assert.assertThrows(IllegalStateException.class, () ->
-        tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, true));
+        tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT,
+            insertRecords, true));
   }
 }

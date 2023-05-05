@@ -187,7 +187,7 @@ public class TaskReaderTest extends TableDataTestBase {
 
   protected List<KeyedTableScanTask> planReadTask(Expression filter) {
     List<KeyedTableScanTask> scanTasks = Lists.newArrayList();
-    try(CloseableIterable<CombinedScanTask> combinedScanTasks =
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks =
         getArcticTable().asKeyedTable().newScan().filter(filter).planTasks()) {
       combinedScanTasks.forEach(combinedScanTask -> scanTasks.addAll(combinedScanTask.tasks()));
     } catch (IOException e) {

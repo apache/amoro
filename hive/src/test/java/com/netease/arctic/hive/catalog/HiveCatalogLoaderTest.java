@@ -34,13 +34,11 @@ import org.junit.Test;
 import java.util.Map;
 
 public class HiveCatalogLoaderTest {
+  private static final String TEST_CATALOG_NAME = "test";
   @ClassRule
   public static TestAms TEST_AMS = new TestAms();
-
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
-
-  private static final String TEST_CATALOG_NAME = "test";
 
   @Test
   public void testLoadMixedHiveCatalog() {
