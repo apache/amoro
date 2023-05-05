@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.table;
 
 import com.netease.arctic.spark.reader.SparkScanBuilder;
-import com.netease.arctic.spark.util.ArcticSparkUtils;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.UnkeyedTable;
@@ -37,7 +36,6 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ArcticSparkChangeTable extends SparkTable {
 
@@ -47,7 +45,7 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
-      );
+  );
 
   public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
     super(basicUnkeyedTable, refreshEagerly);

@@ -6,6 +6,7 @@ import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.helper.DataComparator;
+import com.netease.arctic.spark.test.helper.ExpectResultHelper;
 import com.netease.arctic.spark.test.helper.RecordGenerator;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
@@ -161,7 +162,7 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
     List<Record> expects;
     if (keySpec.primaryKeyExisted()) {
-      expects = TestTableHelper.upsertResult(base, source, r -> r.get(0, Integer.class));
+      expects = ExpectResultHelper.upsertResult(base, source, r -> r.get(0, Integer.class));
     } else {
       expects = Lists.newArrayList(base);
       expects.addAll(source);
@@ -174,7 +175,7 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
         .assertRecordsEqual();
 
     if (table.isKeyedTable()) {
-      List<Record> deletes = TestTableHelper.upsertDeletes(base, source, r -> r.get(0, Integer.class));
+      List<Record> deletes = ExpectResultHelper.upsertDeletes(base, source, r -> r.get(0, Integer.class));
 
       List<Record> expectChanges = deletes.stream()
           .map(

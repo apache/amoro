@@ -18,10 +18,8 @@
 
 package com.netease.arctic.io.writer;
 
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -68,9 +66,9 @@ public class GenericTaskWriters {
     private boolean orderedWriter = false;
 
 
-    Builder(ArcticTable table){
+    Builder(ArcticTable table) {
       this.table = table;
-      if (table.isKeyedTable()){
+      if (table.isKeyedTable()) {
         this.base = table.asKeyedTable().baseTable();
         this.change = table.asKeyedTable().changeTable();
         this.primaryKeySpec = table.asKeyedTable().primaryKeySpec();

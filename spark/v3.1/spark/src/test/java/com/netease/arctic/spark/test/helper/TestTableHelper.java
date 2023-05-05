@@ -1,6 +1,5 @@
 package com.netease.arctic.spark.test.helper;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
@@ -48,9 +47,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TestTableHelper {
@@ -254,7 +251,7 @@ public class TestTableHelper {
   }
 
 
-  public static void writeToBase(ArcticTable table, List<Record> data) {
+  public static List<DataFile> writeToBase(ArcticTable table, List<Record> data) {
     TaskWriter<Record> baseWriter = null;
     UnkeyedTable baseTable = null;
     if (table.isKeyedTable()) {
@@ -267,11 +264,10 @@ public class TestTableHelper {
           .buildBaseWriter();
       baseTable = table.asUnkeyedTable();
     }
-    writeToBase(baseTable, baseWriter, data);
+    return writeToBase(baseTable, baseWriter, data);
   }
 
   public static List<DataFile> writeToBase(UnkeyedTable table, TaskWriter<Record> writer, List<Record> data) {
-    List<DataFile> baseDataFiles = new ArrayList<>();
     try {
       data.forEach(row -> {
         try {
@@ -285,7 +281,7 @@ public class TestTableHelper {
       Arrays.stream(result.dataFiles())
           .forEach(appendFiles::appendFile);
       appendFiles.commit();
-      return baseDataFiles;
+      return Lists.newArrayList(result.dataFiles());
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
@@ -297,7 +293,7 @@ public class TestTableHelper {
     }
   }
 
-  public static void writeToChange(KeyedTable table, List<Record> rows, ChangeAction action) {
+  public static List<DataFile> writeToChange(KeyedTable table, List<Record> rows, ChangeAction action) {
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withChangeAction(action)
         .buildChangeWriter()) {
@@ -309,9 +305,11 @@ public class TestTableHelper {
         }
       });
       AppendFiles appendFiles = table.changeTable().newAppend();
-      Arrays.stream(writer.complete().dataFiles())
+      WriteResult result = writer.complete();
+      Arrays.stream(result.dataFiles())
           .forEach(appendFiles::appendFile);
       appendFiles.commit();
+      return Lists.newArrayList(result.dataFiles());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -350,41 +348,6 @@ public class TestTableHelper {
   }
 
 
-  public static List<Record> upsertResult(
-      List<Record> target, List<Record> source, Function<Record, Object> keyExtractor) {
-    Map<Object, Record> expects = Maps.newHashMap();
-    target.forEach(r -> {
-      Object key = keyExtractor.apply(r);
-      expects.put(key, r);
-    });
-
-    source.forEach(r -> {
-      Object key = keyExtractor.apply(r);
-      expects.put(key, r);
-    });
-    return Lists.newArrayList(expects.values());
-  }
-
-  public static List<Record> upsertDeletes(
-      List<Record> target, List<Record> source, Function<Record, Object> keyExtractor
-  ) {
-    Map<Object, Record> expects = Maps.newHashMap();
-    Map<Object, Record> deletes = Maps.newHashMap();
-    target.forEach(r -> {
-      Object key = keyExtractor.apply(r);
-      expects.put(key, r);
-    });
-
-    source.forEach(r -> {
-      Object key = keyExtractor.apply(r);
-      if (expects.containsKey(key)) {
-        deletes.put(key, expects.get(key));
-      }
-    });
-    return Lists.newArrayList(deletes.values());
-  }
-
-
   public static Record extendMetadataValue(Record record, Types.NestedField metaColumn, Object value) {
     List<Types.NestedField> columns = Lists.newArrayList(record.struct().fields());
     columns.add(metaColumn);
@@ -393,8 +356,9 @@ public class TestTableHelper {
     for (int i = 0; i < columns.size() - 1; i++) {
       r.set(i, record.get(i));
     }
-    r.set(columns.size() -1 , value);
+    r.set(columns.size() - 1, value);
     return r;
   }
+
 
 }

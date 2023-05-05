@@ -41,6 +41,19 @@ public class DataComparator {
     return this;
   }
 
+  public DataComparator ignoreOrder(String... sortFields) {
+//    this.comparator = Comparator.comparing(r -> (Integer)r.getField(primaryKeyField));
+    for (String f : sortFields) {
+      Comparator<Record> cmp = Comparator.comparing(r -> (Comparable)r.getField(f));
+      if (comparator == null){
+        this.comparator = cmp;
+      }else {
+        this.comparator = comparator.thenComparing(cmp);
+      }
+    }
+    return this;
+  }
+
   public void assertRecordsEqual() {
     Assert.assertEquals("records size is not expected.", expectRecords.size(), actualRecords.size());
     if (comparator != null) {
