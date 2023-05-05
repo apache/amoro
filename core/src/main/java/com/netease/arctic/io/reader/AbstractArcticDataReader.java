@@ -124,11 +124,8 @@ public abstract class AbstractArcticDataReader<T> {
   //TODO Return deleted record produced by equality delete file only now, should refactor the reader to return all
   // deleted records.
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    boolean hasDeleteFile =  keyedTableScanTask.arcticEquityDeletes().size() > 0;
-    if (!hasDeleteFile) {
-      hasDeleteFile = keyedTableScanTask.dataTasks().stream()
-          .anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
-    }
+    boolean hasDeleteFile = keyedTableScanTask.arcticEquityDeletes().size() > 0 ||
+        keyedTableScanTask.dataTasks().stream().anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
     if (hasDeleteFile) {
       ArcticDeleteFilter<T> arcticDeleteFilter =
           createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
