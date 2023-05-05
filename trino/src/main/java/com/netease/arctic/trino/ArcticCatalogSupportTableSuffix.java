@@ -192,7 +192,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
     @Override
     public TableFormat format() {
-      return TableFormat.MIXED_ICEBERG;
+      throw new UnsupportedOperationException();
     }
 
     @Override
