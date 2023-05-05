@@ -14,6 +14,9 @@ public class ArcticTableUtil {
     return arcticTable instanceof BasicIcebergCatalog.BasicIcebergTable;
   }
 
+  /**
+   * Return the base store of the arctic table.
+   */
   public static UnkeyedTable baseStore(ArcticTable arcticTable) {
     if (arcticTable.isKeyedTable()) {
       return arcticTable.asKeyedTable().baseTable();
@@ -22,6 +25,9 @@ public class ArcticTableUtil {
     }
   }
 
+  /**
+   * Return the table root location of the arctic table.
+   */
   public static String tableRootLocation(ArcticTable arcticTable) {
     String tableRootLocation;
     if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {

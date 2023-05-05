@@ -86,6 +86,4 @@ public interface ArcticFileIO extends FileIO, Configurable {
    * @return true if the location is an empty directory
    */
   boolean isEmptyDirectory(String location);
-
-
 }

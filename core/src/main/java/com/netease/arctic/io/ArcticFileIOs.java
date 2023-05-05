@@ -48,6 +48,4 @@ public class ArcticFileIOs {
   public static ArcticFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
     return new ArcticHadoopFileIO(tableMetaStore);
   }
-
-
 }
