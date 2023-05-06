@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read;
 
 
-import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunctionTest;
+import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FlinkSplitPlannerTest extends RowDataReaderFunctionTest {
+public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
 
   @Test
   public void testPlanSplitFromKeyedTable() {

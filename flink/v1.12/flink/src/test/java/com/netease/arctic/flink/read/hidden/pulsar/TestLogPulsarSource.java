@@ -30,7 +30,7 @@ import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.write.FlinkSink;
-import com.netease.arctic.flink.write.hidden.BaseLogTest;
+import com.netease.arctic.flink.write.hidden.TestBaseLog;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -68,18 +68,18 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
-import static com.netease.arctic.flink.read.ArcticSourceTest.tableRecords;
+import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
 import static com.netease.arctic.flink.util.FailoverTestUtil.triggerFailover;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.FLINK_USER_SCHEMA;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.DATA_INDEX;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.FLINK_USER_SCHEMA;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
 
-public class LogPulsarSourceTest extends TableTestBase {
+public class TestLogPulsarSource extends TableTestBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarSourceTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestLogPulsarSource.class);
 
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
@@ -118,7 +118,7 @@ public class LogPulsarSourceTest extends TableTestBase {
     result = testCatalog
         .newTableBuilder(RESULT_TABLE_ID, userSchema)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + RESULT_TABLE)
-        .withPrimaryKeySpec(BaseLogTest.PRIMARY_KEY_SPEC)
+        .withPrimaryKeySpec(TestBaseLog.PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
     catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(AMS.getUrl());
   }

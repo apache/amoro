@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.hybrid.assigner;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
-import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunctionTest;
+import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import org.apache.flink.api.connector.source.ReaderInfo;
@@ -46,8 +46,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
-  private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssignerTest.class);
+public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
+  private static final Logger LOG = LoggerFactory.getLogger(TestShuffleSplitAssigner.class);
 
   @Test
   public void testSingleParallelism() {

@@ -21,8 +21,8 @@ package com.netease.arctic.flink.write.hidden.kafka;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
-import com.netease.arctic.flink.write.hidden.BaseLogTest;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
+import com.netease.arctic.flink.write.hidden.TestBaseLog;
 import com.netease.arctic.log.Bytes;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
@@ -55,8 +55,8 @@ import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-public class HiddenKafkaProducerTest extends BaseLogTest {
-  private static final Logger LOG = LoggerFactory.getLogger(HiddenKafkaProducerTest.class);
+public class TestHiddenKafkaProducer extends TestBaseLog {
+  private static final Logger LOG = LoggerFactory.getLogger(TestHiddenKafkaProducer.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass

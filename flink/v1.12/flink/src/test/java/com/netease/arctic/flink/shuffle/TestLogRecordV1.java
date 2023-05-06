@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.shuffle;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.log.FormatTestBase;
 import com.netease.arctic.log.Bytes;
+import com.netease.arctic.log.FormatTestBase;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * This is a {@link LogRecordV1} log data test, include all data types.
  */
-public class LogRecordV1Test extends FormatTestBase {
+public class TestLogRecordV1 extends FormatTestBase {
 
   public final Schema userSchema = new Schema(
       new ArrayList<Types.NestedField>() {

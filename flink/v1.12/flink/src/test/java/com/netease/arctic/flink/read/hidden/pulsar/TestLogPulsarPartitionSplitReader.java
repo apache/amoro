@@ -51,8 +51,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.DATA_INDEX;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
 import static java.util.Collections.singletonList;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
@@ -62,9 +62,9 @@ import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfig
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-public class LogPulsarPartitionSplitReaderTest {
+public class TestLogPulsarPartitionSplitReader {
 
-  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarPartitionSplitReaderTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestLogPulsarPartitionSplitReader.class);
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   public static final String TOPIC = "splitReaderTest";

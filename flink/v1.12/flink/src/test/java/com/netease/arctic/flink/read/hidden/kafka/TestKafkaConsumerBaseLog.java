@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
-import com.netease.arctic.flink.write.hidden.BaseLogTest;
+import com.netease.arctic.flink.write.hidden.TestBaseLog;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -45,13 +45,13 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.topic;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.topic;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Ignore
-public class KafkaConsumerTest extends BaseLogTest {
-  private static final Logger LOG = LoggerFactory.getLogger(KafkaConsumerTest.class);
+public class TestKafkaConsumerBaseLog extends TestBaseLog {
+  private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumerBaseLog.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass

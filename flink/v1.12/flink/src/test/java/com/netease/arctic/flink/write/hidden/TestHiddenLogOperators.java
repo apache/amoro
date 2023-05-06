@@ -18,12 +18,12 @@
 
 package com.netease.arctic.flink.write.hidden;
 
-import com.netease.arctic.flink.read.hidden.pulsar.LogPulsarSourceTest;
+import com.netease.arctic.flink.read.hidden.pulsar.TestLogPulsarSource;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
-import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
+import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
@@ -83,9 +83,9 @@ import java.util.Properties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.readRecordsBytesInLog;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.readRecordsBytesInLog;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
@@ -95,8 +95,8 @@ import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULS
  * Hidden log operator tests.
  */
 @RunWith(Parameterized.class)
-public class HiddenLogOperatorsTest {
-  private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
+public class TestHiddenLogOperators {
+  private static final Logger LOG = LoggerFactory.getLogger(TestHiddenLogOperators.class);
   public static String topic;
   public static final int DATA_INDEX = 1;
   public final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
@@ -115,7 +115,7 @@ public class HiddenLogOperatorsTest {
         LOG_STORE_STORAGE_TYPE_PULSAR);
   }
 
-  public HiddenLogOperatorsTest(String logType) {
+  public TestHiddenLogOperators(String logType) {
     this.logType = logType;
     if (LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType)) {
       pulsarHelper = new LogPulsarHelper(environment);
@@ -222,11 +222,11 @@ public class HiddenLogOperatorsTest {
     OperatorSubtaskState state1;
     OperatorSubtaskState state2;
     byte[] jobId = IdGenerator.generateUpstreamId();
-    try (OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
+    try (TestOneInputStreamOperatorIntern<RowData, RowData> harness0 =
              createProducer(3, 0, jobId, topic);
-         OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
+         TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
              createProducer(3, 1, jobId, topic);
-         OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
+         TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
              createProducer(3, 2, jobId, topic)
     ) {
       harness0.setup();
@@ -291,11 +291,11 @@ public class HiddenLogOperatorsTest {
     }
 
     // failover restore from chp-1
-    try (OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
+    try (TestOneInputStreamOperatorIntern<RowData, RowData> harness0 =
              this.createProducer(3, 0, jobId, 1L, topic);
-         OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
+         TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
              createProducer(3, 1, jobId, 1L, topic);
-         OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
+         TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
              createProducer(3, 2, jobId, 1L, topic)
     ) {
       harness0.setup();
@@ -331,7 +331,7 @@ public class HiddenLogOperatorsTest {
       output.addAll(collect(harness2));
       Assertions.assertEquals(8, output.size());
 
-      List<byte[]> consumerRecords = BaseLogTest.readRecordsBytesInLog(topic, logType, pulsarHelper);
+      List<byte[]> consumerRecords = TestBaseLog.readRecordsBytesInLog(topic, logType, pulsarHelper);
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
@@ -479,7 +479,7 @@ public class HiddenLogOperatorsTest {
   }
 
   private LogPulsarSource createPulsarSource(boolean retract, String topic) {
-    return LogPulsarSourceTest.createSource(null, retract, pulsarHelper, topic);
+    return TestLogPulsarSource.createSource(null, retract, pulsarHelper, topic);
   }
 
   public OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
@@ -508,7 +508,7 @@ public class HiddenLogOperatorsTest {
         type);
   }
 
-  public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -525,7 +525,7 @@ public class HiddenLogOperatorsTest {
         logType);
   }
 
-  public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -541,7 +541,7 @@ public class HiddenLogOperatorsTest {
         logType);
   }
 
-  private static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  private static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
       int maxParallelism,
       int parallelism,
       int subTaskId,
@@ -578,8 +578,8 @@ public class HiddenLogOperatorsTest {
             ShuffleHelper.EMPTY
         );
 
-    OneInputStreamOperatorInternTest<RowData, RowData> harness =
-        new OneInputStreamOperatorInternTest<>(
+    TestOneInputStreamOperatorIntern<RowData, RowData> harness =
+        new TestOneInputStreamOperatorIntern<>(
             writer,
             maxParallelism,
             parallelism,

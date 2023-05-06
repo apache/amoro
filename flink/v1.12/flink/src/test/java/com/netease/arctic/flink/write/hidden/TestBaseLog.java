@@ -47,7 +47,7 @@ import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecords
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 
-public class BaseLogTest {
+public class TestBaseLog {
   public final static Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
     add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
     add(Types.NestedField.required(1, "f_int", Types.IntegerType.get()));

@@ -59,14 +59,14 @@ import java.util.Set;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.createRowData;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.createRowData;
 import static org.junit.Assert.assertEquals;
 
-public class LogKafkaPartitionSplitReaderTest {
+public class TestLogKafkaPartitionSplitReader {
 
-  private static final Logger LOG = LoggerFactory.getLogger(LogKafkaPartitionSplitReaderTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestLogKafkaPartitionSplitReader.class);
 
   public static final int TOPIC1_STOP_OFFSET = 16;
   public static final int TOPIC2_STOP_OFFSET = 21;

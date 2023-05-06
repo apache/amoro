@@ -20,7 +20,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
-import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssignerTest;
+import com.netease.arctic.flink.read.hybrid.assigner.TestShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.Split;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ArcticSourceEnumStateSerializerTest extends ShuffleSplitAssignerTest {
-  private final static Logger LOG = LoggerFactory.getLogger(ArcticSourceEnumStateSerializerTest.class);
+public class TestArcticSourceEnumStateSerializer extends TestShuffleSplitAssigner {
+  private final static Logger LOG = LoggerFactory.getLogger(TestArcticSourceEnumStateSerializer.class);
 
   @Test
   public void testArcticEnumState() throws IOException {

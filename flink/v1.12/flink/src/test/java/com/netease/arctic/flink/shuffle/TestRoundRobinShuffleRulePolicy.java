@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
-public class RoundRobinShuffleRulePolicyTest extends FlinkTestBase {
+public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
 
   @Test
   public void testPrimaryKeyPartitionedTable() throws Exception {

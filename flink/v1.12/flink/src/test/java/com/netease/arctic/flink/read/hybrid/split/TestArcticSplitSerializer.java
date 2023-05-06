@@ -18,7 +18,7 @@
 package com.netease.arctic.flink.read.hybrid.split;
 
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
-import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunctionTest;
+import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ArcticSplitSerializerTest extends RowDataReaderFunctionTest {
+public class TestArcticSplitSerializer extends TestRowDataReaderFunction {
 
   @Test
   public void testSerAndDes() {
