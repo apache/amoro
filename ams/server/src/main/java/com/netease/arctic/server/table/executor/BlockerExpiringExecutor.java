@@ -27,18 +27,20 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
 
   private final Persistency persistency = new Persistency();
 
+  private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
+
   public BlockerExpiringExecutor(TableRuntimeManager tableRuntimes) {
     super(tableRuntimes, 1);
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return 0;
+    return INTERVAL;
   }
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return false;
+    return true;
   }
 
   @Override

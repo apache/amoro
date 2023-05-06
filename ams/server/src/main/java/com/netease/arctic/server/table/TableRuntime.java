@@ -428,7 +428,7 @@ public class TableRuntime extends PersistentBase {
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
     } catch (Exception e) {
       LOG.error("failed to get blockers for {}", tableIdentifier, e);
-      throw new IllegalStateException("failed to get blockers for " + tableIdentifier, e);
+      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -462,7 +462,7 @@ public class TableRuntime extends PersistentBase {
       throw e;
     } catch (Exception e) {
       LOG.error("failed to block {} for {}", operations, tableIdentifier, e);
-      throw new IllegalStateException("failed to block for " + tableIdentifier, e);
+      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -489,11 +489,11 @@ public class TableRuntime extends PersistentBase {
       doAs(TableBlockerMapper.class,
           mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
       return expirationTime;
-    } catch (NoSuchObjectException e1) {
-      throw e1;
+    } catch (NoSuchObjectException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("failed to renew blocker {} for {}", blockerId, tableIdentifier, e);
-      throw new IllegalStateException("failed to renew blockers for " + tableIdentifier, e);
+      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -510,7 +510,7 @@ public class TableRuntime extends PersistentBase {
       doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
     } catch (Exception e) {
       LOG.error("failed to release blocker {} for {}", blockerId, tableIdentifier, e);
-      throw new IllegalStateException("failed to release blocker " + blockerId + " for " + tableIdentifier, e);
+      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -530,7 +530,7 @@ public class TableRuntime extends PersistentBase {
       return conflict(operation, tableBlockers);
     } catch (Exception e) {
       LOG.error("failed to check is blocked for {} {}", tableIdentifier, operation, e);
-      throw new IllegalStateException("failed to check blocked for " + tableIdentifier + " " + operation, e);
+      throw e;
     } finally {
       blockerLock.unlock();
     }
