@@ -112,7 +112,7 @@ public interface TableMetaMapper {
       " #{tableMeta.krbKeyteb, jdbcType=VARCHAR}," +
       " #{tableMeta.krbConf, jdbcType=VARCHAR}," +
       " #{tableMeta.krbPrincipal, jdbcType=VARCHAR}," +
-      " #{tableMeta.properties, typeHandler=com.netease.arctic.ams.server.persistence.converter.Map2StringConverter}" +
+      " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
       " )")
   void insertTableMeta(@Param("tableMeta") TableMetadata tableMeta);
 
@@ -120,7 +120,7 @@ public interface TableMetaMapper {
   void deleteTableMetaById(@Param("tableId") long tableId);
 
   @Update("update table_metadata set " +
-      "properties = #{properties, typeHandler=com.netease.arctic.ams.server.persistence.converter" +
+      "properties = #{properties, typeHandler=com.netease.arctic.server.persistence.converter" +
       ".Map2StringConverter} where table_id = #{tableId}")
   void updateTableProperties(
       @Param("tableId") long tableId,
@@ -247,13 +247,13 @@ public interface TableMetaMapper {
   @Update("update table_runtime set current_snapshot_id = #{runtime.currentSnapshotId}, current_change_snapshotId = " +
       "#{runtime.currentChangeSnapshotId}, last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId}, " +
       "last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, " +
-      "typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, last_minor_optimizing_time " +
-      "= #{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.ams.server.persistence.converter" +
+      "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, last_minor_optimizing_time " +
+      "= #{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.server.persistence.converter" +
       ".Long2TsConvertor}, last_full_optimizing_time = #{runtime.lastFullOptimizingTime, typeHandler=com.netease" +
-      ".arctic.ams.server.persistence.converter.Long2TsConvertor}, optimizing_status = #{runtime.optimizingStatus}, " +
-      "optimizing_status_start_time = #{runtime.currentStatusStartTime, typeHandler=com.netease.arctic.ams.server" +
+      ".arctic.server.persistence.converter.Long2TsConvertor}, optimizing_status = #{runtime.optimizingStatus}, " +
+      "optimizing_status_start_time = #{runtime.currentStatusStartTime, typeHandler=com.netease.arctic.server" +
       ".persistence.converter.Long2TsConvertor}, optimizing_process_id = #{runtime.processId}, optimizer_group = " +
-      "#{runtime.optimizerGroup}, table_config = #{runtime.tableConfiguration, typeHandler=com.netease.arctic.ams" +
+      "#{runtime.optimizerGroup}, table_config = #{runtime.tableConfiguration, typeHandler=com.netease.arctic" +
       ".server.persistence.converter.JsonSummaryConverter} where table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
 
@@ -267,12 +267,12 @@ public interface TableMetaMapper {
       "(#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}, #{runtime.tableIdentifier.database}," +
       "#{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}, #{runtime.currentChangeSnapshotId}," +
       "#{runtime.lastOptimizedSnapshotId}," +
-      "#{runtime.lastMajorOptimizingTime, typeHandler=com.netease.arctic.ams.server.persistence.converter" +
-      ".Long2TsConvertor},#{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.ams.server.persistence" +
-      ".converter.Long2TsConvertor},#{runtime.lastFullOptimizingTime, typeHandler=com.netease.arctic.ams.server" +
+      "#{runtime.lastMajorOptimizingTime, typeHandler=com.netease.arctic.server.persistence.converter" +
+      ".Long2TsConvertor},#{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.server.persistence" +
+      ".converter.Long2TsConvertor},#{runtime.lastFullOptimizingTime, typeHandler=com.netease.arctic.server" +
       ".persistence.converter.Long2TsConvertor},#{runtime.optimizingStatus}, #{runtime.currentStatusStartTime, " +
-      "typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, #{runtime.processId}," +
-      "#{runtime.optimizerGroup}, #{runtime.tableConfiguration, typeHandler=com.netease.arctic.ams.server.persistence" +
+      "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, #{runtime.processId}," +
+      "#{runtime.optimizerGroup}, #{runtime.tableConfiguration, typeHandler=com.netease.arctic.server.persistence" +
       ".converter.JsonSummaryConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 

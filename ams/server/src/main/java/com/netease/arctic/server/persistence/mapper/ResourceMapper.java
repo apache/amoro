@@ -47,12 +47,12 @@ public interface ResourceMapper {
   List<Resource> selectResourcesByGroup(@Param("resourceGroup") String groupName);
 
   @Update("update resource_group set container_name = #{resourceGroup.container}, properties = #{resourceGroup" +
-      ".properties, typeHandler=com.netease.arctic.ams.server.persistence.converter.JsonSummaryConverter} where " +
+      ".properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} where " +
       "group_name = #{resourceGroup.name}")
   void updateResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
   @Insert("insert into resource_group (group_name, container_name, properties) values (#{resourceGroup.name}, " +
-      "#{resourceGroup.container}, #{resourceGroup.properties, typeHandler=com.netease.arctic.ams.server" +
+      "#{resourceGroup.container}, #{resourceGroup.properties, typeHandler=com.netease.arctic.server" +
       ".persistence.converter.JsonSummaryConverter})")
   void insertResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
@@ -61,7 +61,7 @@ public interface ResourceMapper {
 
   @Insert("insert into resource (resource_id, group_name, container_name, thread_count, total_memory, " +
       "properties) values (#{resource.resourceId}, #{resource.groupName}, #{resource.containerName}, " +
-      "#{resource.threadCount}, #{resource.memoryMb}, #{resource.properties, typeHandler=com.netease.arctic.ams" +
+      "#{resource.threadCount}, #{resource.memoryMb}, #{resource.properties, typeHandler=com.netease.arctic" +
       ".server.persistence.converter.JsonSummaryConverter})")
   void insertResource(@Param("resource") Resource resource);
 

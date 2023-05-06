@@ -33,9 +33,9 @@
 
     <modules>
         <module>api</module>
+        <module>optimizer</module>
         <module>server</module>
         <module>dashboard</module>
-        <module>optimizer</module>
     </modules>
 
     <properties>

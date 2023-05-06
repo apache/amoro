@@ -58,9 +58,9 @@ public interface CatalogMetaMapper {
   @Insert("insert into " + TABLE_NAME +
       " (catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties) values " +
       "(#{catalogMeta.catalogName}, #{catalogMeta.catalogType}, #{catalogMeta.storageConfigs, typeHandler=com" +
-      ".netease.arctic.ams.server.persistence.converter.Map2StringConverter}, #{catalogMeta.authConfigs, " +
-      "typeHandler=com.netease.arctic.ams.server.persistence.converter.Map2StringConverter}, #{catalogMeta" +
-      ".catalogProperties, typeHandler=com.netease.arctic.ams.server.persistence.converter.Map2StringConverter})")
+      ".netease.arctic.server.persistence.converter.Map2StringConverter}, #{catalogMeta.authConfigs, " +
+      "typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}, #{catalogMeta" +
+      ".catalogProperties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
   void insertCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 
   @Delete("delete from " + TABLE_NAME + " where catalog_name=#{catalogName}")
@@ -68,11 +68,11 @@ public interface CatalogMetaMapper {
 
   @Update("update " + TABLE_NAME + " set catalog_metastore=#{catalogMeta.catalogType}," +
       "storage_configs=#{catalogMeta.storageConfigs, typeHandler=" +
-      "com.netease.arctic.ams.server.persistence.converter.Map2StringConverter}," +
+      "com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
       "auth_configs=#{catalogMeta.authConfigs, typeHandler=" +
-      "com.netease.arctic.ams.server.persistence.converter.Map2StringConverter}," +
+      "com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
       "catalog_properties=#{catalogMeta.catalogProperties, typeHandler=" +
-      "com.netease.arctic.ams.server.persistence.converter.Map2StringConverter}" +
+      "com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
       "  where catalog_name=#{catalogMeta.catalogName}")
   Integer updateCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 
