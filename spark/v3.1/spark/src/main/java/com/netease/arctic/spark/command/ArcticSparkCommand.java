@@ -18,7 +18,10 @@
 
 package com.netease.arctic.spark.command;
 
+import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.types.StructType;
 
 public interface ArcticSparkCommand {
@@ -27,7 +30,7 @@ public interface ArcticSparkCommand {
 
   StructType outputType();
 
-  Row[] execute();
+  Row[] execute() throws AnalysisException;
 
   default String execInfo() {
     return "";

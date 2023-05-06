@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,7 +77,6 @@ import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
-  // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
 
   private ArcticCatalog catalog;
@@ -143,17 +143,11 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
-    if (type != null) {
-      switch (type) {
-        case CHANGE:
-          return new ArcticSparkChangeTable((BasicUnkeyedTable) table.asKeyedTable().changeTable(),
-              false);
-        default:
-          throw new IllegalArgumentException("Unknown inner table type: " + type);
-      }
-    } else {
-      throw new IllegalArgumentException("Table does not exist: " + table);
+    if (Objects.requireNonNull(type) == ArcticTableStoreType.CHANGE) {
+      return new ArcticSparkChangeTable((BasicUnkeyedTable) table.asKeyedTable().changeTable(),
+          false);
     }
+    throw new IllegalArgumentException("Unknown supported inner table store type: " + type);
   }
 
   private boolean isInnerTableIdentifier(Identifier identifier) {
@@ -409,9 +403,9 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     String catalogUrl = options.get("url");
-    if (StringUtils.isBlank(catalogUrl)) {
-      throw new IllegalArgumentException("lack required properties: url");
-    }
+
+    Preconditions.checkArgument(StringUtils.isNotBlank(catalogUrl),
+        "lack required properties: url");
     catalog = CatalogLoader.load(catalogUrl, options);
   }
 

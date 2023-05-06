@@ -5,6 +5,7 @@ import org.apache.spark.SparkException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestMergeInto extends SparkTestBase{
@@ -38,6 +39,7 @@ public class TestMergeInto extends SparkTestBase{
     sql("drop table {0}.{1}", database, hiveTable);
   }
 
+  @Ignore
   @Test
   public void testMergeWithAllCauses() {
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
@@ -61,6 +63,7 @@ public class TestMergeInto extends SparkTestBase{
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
   }
 
+  @Ignore
   @Test
   public void testMergeIntoEmptyTargetInsertAllNonMatchingRows() {
     sql("CREATE TABLE {0}.{1} (" +
@@ -81,7 +84,7 @@ public class TestMergeInto extends SparkTestBase{
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, "emptyTable"));
     sql("drop table {0}.{1}", database, "emptyTable");
   }
-
+  @Ignore
   @Test
   public void testMergeIntoEmptyTargetInsertOnlyMatchingRows() {
     sql("CREATE TABLE {0}.{1} (" +

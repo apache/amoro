@@ -45,7 +45,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -182,20 +181,22 @@ public class TestTableHelper {
       } else {
         records = DataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
       }
-      return records.stream()
-          .map(r -> {
-            if (r.struct().fields().size() == table.schema().columns().size()) {
-              return r;
-            }
-            GenericRecord record = GenericRecord.create(table.schema());
-            for (int i = 0; i < table.schema().columns().size(); i++) {
-              record.set(i, r.get(i));
-            }
-            return record;
-          })
-          .collect(Collectors.toList());
+    } else {
+      records = unkeyedTableRecords(table.asUnkeyedTable(), expression);
     }
-    return unkeyedTableRecords(table.asUnkeyedTable(), expression);
+
+    return records.stream()
+        .map(r -> {
+          if (r.struct().fields().size() == table.schema().columns().size()) {
+            return r;
+          }
+          GenericRecord record = GenericRecord.create(table.schema());
+          for (int i = 0; i < table.schema().columns().size(); i++) {
+            record.set(i, r.get(i));
+          }
+          return record;
+        })
+        .collect(Collectors.toList());
   }
 
   public static List<Record> unkeyedTableRecords(UnkeyedTable table, Expression expression) {
