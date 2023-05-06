@@ -19,13 +19,10 @@
 package com.netease.arctic.optimizer.local;
 
 import com.netease.arctic.optimizer.Optimizer;
-import com.netease.arctic.optimizer.StatefulOptimizer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
-
-import static org.junit.Assert.*;
 
 public class LocalOptimizerFactoryTest {
 

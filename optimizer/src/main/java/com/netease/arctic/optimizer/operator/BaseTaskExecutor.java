@@ -40,8 +40,8 @@ import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.SerializationUtils;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.util.PropertyUtil;
@@ -198,7 +198,7 @@ public class BaseTaskExecutor implements Serializable {
 
   private NodeTask constructTask(ArcticTable table, OptimizeTask task, int attemptId) {
     NodeTask nodeTask;
-    if (TableTypeUtil.isIcebergTableFormat(table)) {
+    if (ArcticTableUtil.isIcebergTableFormat(table)) {
       List<ContentFileWithSequence<?>> base =
           task.getBaseFiles().stream().map(SerializationUtils::toIcebergContentFile).collect(Collectors.toList());
       List<ContentFileWithSequence<?>> insert =
