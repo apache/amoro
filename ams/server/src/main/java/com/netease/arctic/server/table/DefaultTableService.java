@@ -2,7 +2,11 @@ package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -16,6 +20,7 @@ import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.StringUtils;
@@ -35,6 +40,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
+  private final long blockerTimeout;
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
@@ -44,6 +50,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
         configuration.getLong(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL);
+    this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
   }
 
   @Override
@@ -205,6 +212,42 @@ public class DefaultTableService extends PersistentBase implements TableService 
         tableIdentifier.getTableName());
   }
 
+  @Override
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                       Map<String, String> properties) throws OperationConflictException {
+    checkStarted();
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .block(operations, properties, blockerTimeout)
+        .buildBlocker();
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    checkStarted();
+    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    if (tableRuntime != null) {
+      tableRuntime.release(blockerId);
+    }
+  }
+
+  @Override
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+    checkStarted();
+    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    if (tableRuntime == null) {
+      throw new NoSuchObjectException(tableIdentifier.toString());
+    } else {
+      return tableRuntime.renew(blockerId, blockerTimeout);
+    }
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    checkStarted();
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
+  }
+
   private ServerCatalog getServerCatalog(String catalogName) {
     ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
         .orElse(externalCatalogMap.get(catalogName));
@@ -249,6 +292,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
             0,
             externalCatalogRefreshingInterval);
     started = true;
+  }
+
+  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+    TableRuntime tableRuntime = get(tableIdentifier);
+    if (tableRuntime == null) {
+      throw new ObjectNotExistsException(tableIdentifier);
+    }
+    return tableRuntime;
   }
 
   @Override

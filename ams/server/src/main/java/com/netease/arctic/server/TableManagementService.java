@@ -138,26 +138,26 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   public Blocker block(
       TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
       throws OperationConflictException, TException {
-    return null;
+    return tableService.block(tableIdentifier, operations, properties);
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-
+    tableService.releaseBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException, TException {
-    return 0;
+    return tableService.renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    return null;
+    return tableService.getBlockers(tableIdentifier);
   }
 
   @Override
   public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-
+    // TODO
   }
 }
