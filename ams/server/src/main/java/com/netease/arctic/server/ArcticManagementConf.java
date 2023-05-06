@@ -23,6 +23,7 @@ import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
 
 public class ArcticManagementConf {
+
   public static final ConfigOption<String> SERVER_BIND_HOST =
       ConfigOptions.key("server-bind-host")
           .stringType()

@@ -19,8 +19,10 @@
 package com.netease.arctic.server.dashboard.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
+import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 
@@ -31,6 +33,14 @@ import java.io.Serializable;
 
  */
 public class LoginController {
+
+  private final String adminUser;
+  private final String adminPassword;
+
+  public LoginController(Configurations serviceConfig) {
+    adminUser = serviceConfig.get(ArcticManagementConf.ADMIN_USERNAME);
+    adminPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
+  }
 
   /**
    * get current user.
@@ -46,12 +56,14 @@ public class LoginController {
   public void login(Context ctx) {
     // ok
     JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (postBody.get("user").equals("admin") && (postBody.get("password").equals("admin"))) {
-      ctx.sessionAttribute("user", new SessionInfo("admin", System.currentTimeMillis() + ""));
+    if (adminUser.equals(postBody.get("user")) &&
+        (adminPassword.equals(postBody.get("password")))) {
+      ctx.sessionAttribute(
+          "user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "bad user " + postBody.get("user") + "or password!",
-              null));
+          null));
     }
   }
 
