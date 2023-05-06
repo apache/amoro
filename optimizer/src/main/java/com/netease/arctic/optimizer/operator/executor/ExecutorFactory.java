@@ -20,7 +20,7 @@ package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TableTypeUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class ExecutorFactory {
 
   public static Executor constructOptimize(NodeTask nodeTask, ArcticTable table,
                                            long startTime, OptimizerConfig config) {
-    if (TableTypeUtil.isIcebergTableFormat(table)) {
+    if (ArcticTableUtil.isIcebergTableFormat(table)) {
       return new IcebergExecutor(nodeTask, table, startTime, config);
     } else {
       switch (nodeTask.getOptimizeType()) {

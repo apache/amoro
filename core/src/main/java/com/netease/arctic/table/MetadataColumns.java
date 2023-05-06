@@ -18,8 +18,12 @@
 
 package com.netease.arctic.table;
 
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.types.Types.NestedField;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Addition metadata columns for {@link ArcticTable}
@@ -45,4 +49,11 @@ public class MetadataColumns {
   private MetadataColumns() {
   }
 
+  public static Schema appendChangeStoreMetadataColumns(Schema sourceSchema) {
+    List<NestedField> columns = new ArrayList<>(sourceSchema.columns());
+    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
+    columns.add(MetadataColumns.FILE_OFFSET_FILED);
+    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
+    return new Schema(columns);
+  }
 }

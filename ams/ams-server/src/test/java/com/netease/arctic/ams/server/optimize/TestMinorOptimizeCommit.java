@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.DataFileInfoUtils;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BasicOptimizeTask;

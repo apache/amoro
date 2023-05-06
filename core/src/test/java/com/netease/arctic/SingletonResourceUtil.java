@@ -21,11 +21,11 @@ package com.netease.arctic;
 public class SingletonResourceUtil {
 
   private static final String USE_SINGLETON_TEST_RESOURCE_PROPERTY = "singleton-test-resource";
-  private static boolean USE_SINGLETON_TEST_RESOURCE = true;
+  private static final boolean USE_SINGLETON_TEST_RESOURCE;
 
   static {
     USE_SINGLETON_TEST_RESOURCE =
-        Boolean.valueOf(System.getProperty(USE_SINGLETON_TEST_RESOURCE_PROPERTY, "true"));
+        Boolean.parseBoolean(System.getProperty(USE_SINGLETON_TEST_RESOURCE_PROPERTY, "true"));
   }
 
   public static boolean isUseSingletonResource() {
