@@ -19,8 +19,8 @@
 package com.netease.arctic.table.blocker;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -49,12 +49,11 @@ public class BasicTableBlockerManager implements TableBlockerManager {
   }
 
   @Override
-  public Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException {
+  public Blocker block(List<BlockableOperation> operations, Map<String, String> properties) throws ArcticException {
     try {
       Preconditions.checkNotNull(properties, "properties should not be null");
       return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties), true);
-    } catch (OperationConflictException e) {
+    } catch (ArcticException e) {
       throw e;
     } catch (TException e) {
       throw new IllegalStateException("failed to block table " + tableIdentifier + " with " + operations, e);

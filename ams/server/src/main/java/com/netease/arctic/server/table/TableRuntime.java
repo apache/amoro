@@ -20,8 +20,8 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.exception.OperationConflictException;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -35,9 +35,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.blocker.RenewableBlocker;
-import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -443,11 +441,9 @@ public class TableRuntime extends PersistentBase {
    * @param properties     -
    * @param blockerTimeout -
    * @return TableBlocker if success
-   * @throws OperationConflictException when operations have been blocked
    */
   public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
-                            long blockerTimeout)
-      throws OperationConflictException {
+                            long blockerTimeout) throws OperationConflictException {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
     Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
@@ -462,8 +458,8 @@ public class TableRuntime extends PersistentBase {
       TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
       doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
       return tableBlocker;
-    } catch (OperationConflictException operationConflictException) {
-      throw operationConflictException;
+    } catch (OperationConflictException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("failed to block {} for {}", operations, tableIdentifier, e);
       throw new IllegalStateException("failed to block for " + tableIdentifier, e);

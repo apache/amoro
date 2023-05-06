@@ -18,8 +18,8 @@
 
 package com.netease.arctic.table.blocker;
 
+import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.Collections;
@@ -44,11 +44,11 @@ public interface TableBlockerManager {
    * @param operations should not be empty.
    * @param properties should not be null.
    * @return return the blocker if success
-   * @throws OperationConflictException when operations to block are conflict
+   * @throws ArcticException if conflict to block operations
    */
-  Blocker block(List<BlockableOperation> operations, Map<String, String> properties) throws OperationConflictException;
+  Blocker block(List<BlockableOperation> operations, Map<String, String> properties) throws ArcticException;
 
-  default Blocker block(List<BlockableOperation> operations) throws OperationConflictException {
+  default Blocker block(List<BlockableOperation> operations) throws ArcticException {
     return block(operations, Collections.emptyMap());
   }
 

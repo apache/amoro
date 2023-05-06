@@ -25,10 +25,6 @@ exception NotSupportedException {
   1: string message
 }
 
-exception OperationConflictException {
-  1: string message
-}
-
 exception OperationErrorException {
   1: string message
 }

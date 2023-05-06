@@ -23,4 +23,6 @@ public final class ErrorCodes {
   public static final int PLUGIN_AUTH_ERROR_CODE = 2005;
 
   public static final int PLUGIN_RETRY_AUTH_ERROR_CODE = 2006;
+  
+  public static final int OPERATION_CONFLICT_ERROR_CODE = 3001;
 }

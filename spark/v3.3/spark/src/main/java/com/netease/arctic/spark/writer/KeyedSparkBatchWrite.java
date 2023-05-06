@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -146,7 +146,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       operations.add(BlockableOperation.OPTIMIZE);
       try {
         this.block = tableBlockerManager.block(operations);
-      } catch (OperationConflictException e) {
+      } catch (ArcticException e) {
         throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
       }
     }

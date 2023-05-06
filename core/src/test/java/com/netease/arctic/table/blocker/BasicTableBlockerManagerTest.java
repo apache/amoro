@@ -1,8 +1,8 @@
 package com.netease.arctic.table.blocker;
 
 import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import org.junit.Assert;
@@ -25,7 +25,7 @@ public class BasicTableBlockerManagerTest extends TableTestBase {
   }
 
   @Test
-  public void testBlockAndRelease() throws OperationConflictException {
+  public void testBlockAndRelease() throws ArcticException {
     TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(TableTestHelpers.TEST_TABLE_ID);
     Assert.assertTrue(tableBlockerManager instanceof BasicTableBlockerManager);
     BasicTableBlockerManager blockerManager = (BasicTableBlockerManager) tableBlockerManager;

@@ -351,7 +351,7 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
         Map<String, String> properties)
-        throws OperationConflictException, TException {
+        throws ArcticException, TException {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");

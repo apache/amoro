@@ -1,6 +1,7 @@
 package com.netease.arctic.server.exception;
 
 import com.netease.arctic.ams.api.ArcticException;
+import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 
@@ -13,17 +14,19 @@ public class ArcticRuntimeException extends RuntimeException {
   private static final Map<Class<? extends ArcticRuntimeException>, Integer> CODE_MAP = new HashMap<>();
 
   static {
-    CODE_MAP.put(PersistenceException.class, 1000);
-    CODE_MAP.put(ObjectNotExistsException.class, 1001);
-    CODE_MAP.put(AlreadyExistsException.class, 1002);
-    CODE_MAP.put(IllegalMetadataException.class, 1003);
+    CODE_MAP.put(PersistenceException.class, ErrorCodes.PERSISTENCE_ERROR_CODE);
+    CODE_MAP.put(ObjectNotExistsException.class, ErrorCodes.OBJECT_NOT_EXISTS_ERROR_CODE);
+    CODE_MAP.put(AlreadyExistsException.class, ErrorCodes.ALREADY_EXISTS_ERROR_CODE);
+    CODE_MAP.put(IllegalMetadataException.class, ErrorCodes.ILLEGAL_METADATA_ERROR_CODE);
 
-    CODE_MAP.put(TaskNotFoundException.class, 2001);
-    CODE_MAP.put(DuplicateRuntimeException.class, 2002);
-    CODE_MAP.put(OptimizingClosedException.class, 2003);
-    CODE_MAP.put(IllegalTaskStateException.class, 2004);
-    CODE_MAP.put(PluginAuthException.class, 2005);
-    CODE_MAP.put(PluginRetryAuthException.class, 2006);
+    CODE_MAP.put(TaskNotFoundException.class, ErrorCodes.TASK_NOT_FOUND_ERROR_CODE);
+    CODE_MAP.put(DuplicateRuntimeException.class, ErrorCodes.DUPLICATED_TASK_ERROR_CODE);
+    CODE_MAP.put(OptimizingClosedException.class, ErrorCodes.OPTIMIZING_CLOSED_ERROR_CODE);
+    CODE_MAP.put(IllegalTaskStateException.class, ErrorCodes.ILLEGAL_TASK_STATE_ERROR_CODE);
+    CODE_MAP.put(PluginAuthException.class, ErrorCodes.PLUGIN_AUTH_ERROR_CODE);
+    CODE_MAP.put(PluginRetryAuthException.class, ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE);
+    
+    CODE_MAP.put(OperationConflictException.class, ErrorCodes.OPERATION_CONFLICT_ERROR_CODE);
   }
 
   private static final int UNDEFINED = -1;

@@ -138,7 +138,7 @@ service ArcticTableMetastore {
     i64 allocateTransactionId(1:arctic_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
 
     Blocker block(1:arctic_commons.TableIdentifier tableIdentifier, 2:list<BlockableOperation> operations, 3:map<string, string> properties)
-            throws (1: arctic_commons.OperationConflictException e1)
+        throws(1: arctic_commons.ArcticException e)
 
     void releaseBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
 

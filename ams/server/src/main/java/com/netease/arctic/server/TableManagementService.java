@@ -25,7 +25,6 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -137,13 +136,13 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   @Override
   public Blocker block(
       TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException, TException {
-    return tableService.block(tableIdentifier, operations, properties);
+      throws ArcticException, TException {
+    return getAs(() -> tableService.block(tableIdentifier, operations, properties));
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-    tableService.releaseBlocker(tableIdentifier, blockerId);
+    doAs(() -> tableService.releaseBlocker(tableIdentifier, blockerId));
   }
 
   @Override
@@ -153,7 +152,7 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    return tableService.getBlockers(tableIdentifier);
+    return getAs(() -> tableService.getBlockers(tableIdentifier));
   }
 
   @Override

@@ -2,11 +2,11 @@ package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -214,44 +214,38 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @Override
   public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                       Map<String, String> properties) throws OperationConflictException {
+                       Map<String, String> properties) {
     checkStarted();
-    try {
-      return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
-          .block(operations, properties, blockerTimeout)
-          .buildBlocker();
-    } catch (NoSuchObjectException e) {
-      throw new RuntimeException(e);
-    }
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .block(operations, properties, blockerTimeout)
+        .buildBlocker();
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
     checkStarted();
-    try {
-      getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
-          .release(blockerId);
-    } catch (NoSuchObjectException e) {
-      throw new RuntimeException(e);
+    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    if (tableRuntime != null) {
+      tableRuntime.release(blockerId);
     }
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
     checkStarted();
-    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
-        .renew(blockerId, blockerTimeout);
+    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    if (tableRuntime == null) {
+      throw new NoSuchObjectException(tableIdentifier.toString());
+    } else {
+      return tableRuntime.renew(blockerId, blockerTimeout);
+    }
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
     checkStarted();
-    try {
-      return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
-          .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
-    } catch (NoSuchObjectException e) {
-      throw new RuntimeException(e);
-    }
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
   }
 
   private ServerCatalog getServerCatalog(String catalogName) {
@@ -300,10 +294,10 @@ public class DefaultTableService extends PersistentBase implements TableService 
     started = true;
   }
 
-  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) throws NoSuchObjectException {
+  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     TableRuntime tableRuntime = get(tableIdentifier);
     if (tableRuntime == null) {
-      throw new NoSuchObjectException("table " + tableIdentifier + " not exist");
+      throw new ObjectNotExistsException(tableIdentifier);
     }
     return tableRuntime;
   }
