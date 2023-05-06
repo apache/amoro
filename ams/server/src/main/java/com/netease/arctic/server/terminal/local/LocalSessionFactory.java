@@ -63,12 +63,13 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
-    Map<String, String> finallyConf = Maps.newLinkedHashMap();
     sparkConf.put(com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE, "true");
-    org.apache.hadoop.conf.Configuration metaConf = metaStore.getConfiguration();
-    for (Map.Entry<String, String> next : metaConf) {
-      session.conf().set("spark.sql.catalog." + catalogs.get(0) + ".hadoop." + next.getKey(), next.getValue());
-    }
+
+    Map<String, String> finallyConf = Maps.newLinkedHashMap();
+    catalogs.stream()
+        .filter(c -> isIcebergCatalog(c, configuration))
+        .forEach(c -> setHadoopConfigToSparkSession(c, session, metaStore));
+
     for (String key : sparkConf.keySet()) {
       if (STATIC_SPARK_CONF.contains(key)) {
         continue;
@@ -78,6 +79,18 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     }
 
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
+  }
+
+  private boolean isIcebergCatalog(String catalog, Configurations configurations) {
+    String connector = configurations.get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog));
+    return "iceberg".equalsIgnoreCase(connector);
+  }
+
+  private void setHadoopConfigToSparkSession(String catalog, SparkSession session, TableMetaStore metaStore) {
+    org.apache.hadoop.conf.Configuration metaConf = metaStore.getConfiguration();
+    for (Map.Entry<String, String> next : metaConf) {
+      session.conf().set("spark.sql.catalog." + catalog + ".hadoop." + next.getKey(), next.getValue());
+    }
   }
 
   private void updateSessionConf(SparkSession session, List<String> logs, String key, String value) {
