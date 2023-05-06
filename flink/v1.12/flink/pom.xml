@@ -69,12 +69,12 @@
         <!--arctic-->
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-pulsar-bridge</artifactId>
+            <artifactId>arctic-flink-1.12-pulsar-bridge</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-iceberg-bridge</artifactId>
+            <artifactId>arctic-flink-1.12-iceberg-bridge</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
