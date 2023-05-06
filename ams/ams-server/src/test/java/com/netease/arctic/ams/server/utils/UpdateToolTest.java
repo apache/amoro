@@ -18,7 +18,9 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
@@ -46,7 +48,7 @@ public class UpdateToolTest extends TableTestBase {
   }
 
   public UpdateToolTest(TableFormat testFormat) {
-    super(testFormat, true, true);
+    super(new BasicCatalogTestHelper(testFormat), new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -54,7 +56,7 @@ public class UpdateToolTest extends TableTestBase {
     KeyedTable table = getArcticTable().asKeyedTable();
     long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
     List<DataFile> writeFiles = DataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
-        ChangeAction.INSERT, writeRecords());
+        ChangeAction.INSERT, writeRecords(), false);
 
     Snapshot snapshot = table.changeTable().currentSnapshot();
     long lastSeqNumber = snapshot.sequenceNumber();
@@ -79,7 +81,7 @@ public class UpdateToolTest extends TableTestBase {
     KeyedTable table = getArcticTable().asKeyedTable();
     long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
     List<DataFile> writeFiles = DataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
-        ChangeAction.INSERT, writeRecords());
+        ChangeAction.INSERT, writeRecords(), false);
 
     Snapshot snapshot = table.changeTable().currentSnapshot();
     long lastSeqNumber = snapshot.sequenceNumber();

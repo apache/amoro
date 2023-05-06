@@ -21,8 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TableFileUtils;
-import com.netease.arctic.utils.TableTypeUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
@@ -39,12 +38,7 @@ public class TableTrashManagers {
    * @return TableTrashManager
    */
   public static TableTrashManager build(ArcticTable table) {
-    String tableRootLocation;
-    if (!TableTypeUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
-      tableRootLocation = TableFileUtils.getFileDir(table.location());
-    } else {
-      tableRootLocation = table.location();
-    }
+    String tableRootLocation = ArcticTableUtil.tableRootLocation(table);
     return build(table.id(), tableRootLocation, table.properties(), table.io());
   }
 

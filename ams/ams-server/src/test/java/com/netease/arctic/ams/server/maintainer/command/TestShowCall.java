@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
@@ -30,7 +30,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static com.netease.arctic.TableTestHelpers.TEST_TABLE_NAME;
+import static com.netease.arctic.TableTestHelper.TEST_TABLE_NAME;
+import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 public class TestShowCall extends CallCommandTestBase {
 
@@ -58,12 +59,12 @@ public class TestShowCall extends CallCommandTestBase {
 
     context.setCatalog(TEST_CATALOG_NAME);
     Assert.assertEquals(
-        TableTestHelpers.TEST_DB_NAME,
+        TableTestHelper.TEST_DB_NAME,
         callFactory.generateShowCall(ShowCall.Namespaces.DATABASES).call(context));
 
     TEST_AMS.getAmsHandler().createDatabase(TEST_CATALOG_NAME, "repair_db");
     Assert.assertEquals(
-        TableTestHelpers.TEST_DB_NAME + "\nrepair_db",
+        TableTestHelper.TEST_DB_NAME + "\nrepair_db",
         callFactory.generateShowCall(ShowCall.Namespaces.DATABASES).call(context));
   }
 
@@ -79,7 +80,7 @@ public class TestShowCall extends CallCommandTestBase {
         RuntimeException.class,
         () -> callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
 
-    context.setDb(TableTestHelpers.TEST_DB_NAME);
+    context.setDb(TableTestHelper.TEST_DB_NAME);
     Assert.assertEquals(
         TEST_TABLE_NAME,
         callFactory.generateShowCall(ShowCall.Namespaces.TABLES).call(context));
