@@ -10,7 +10,7 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>pulsar</artifactId>
+    <artifactId>arctic-flink-pulsar-bridge</artifactId>
     <name>Arctic Project Flink 1.12 opensource pulsar</name>
     <url>https://arctic.netease.com</url>
 
