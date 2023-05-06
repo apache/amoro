@@ -24,19 +24,10 @@ LIB_PATH=$ARCTIC_HOME/lib
 LOG_DIR=$ARCTIC_HOME/logs
 export CLASSPATH=$ARCTIC_HOME/conf/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
 
-while getopts "m:a" arg
-do
-  case $arg in
-       m)
-          memory=$OPTARG
-          ;;
-  esac
-done
-
 if [[ -d $JAVA_HOME ]]; then
     JAVA_RUN=$JAVA_HOME/bin/java
 else
     JAVA_RUN=java
 fi
 
-$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx${memory}m com.netease.arctic.optimizer.local.LocalOptimizer $@ >/dev/null
+$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-$(date +%s) -Xmx$2m com.netease.arctic.optimizer.local.LocalOptimizer "$@" &

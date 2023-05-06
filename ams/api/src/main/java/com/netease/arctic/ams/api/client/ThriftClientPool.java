@@ -150,15 +150,6 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       }
 
       @Override
-      public boolean validateObject(PooledObject<ThriftClient<T>> p) {
-        ThriftClient<T> client = p.getObject();
-        if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
-          return false;
-        }
-        return super.validateObject(p);
-      }
-
-      @Override
       public void destroyObject(PooledObject<ThriftClient<T>> p) throws Exception {
         p.getObject().closeClient();
         super.destroyObject(p);
@@ -236,7 +227,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
           if (attempt > 1) {
             // if attempt > 1, it means the server is maybe restarting, so we should wait a while
-            LOG.warn("server is restarting, wait a while");
+            LOG.warn("maybe server is restarting, wait a while");
             Thread.sleep(retryInterval);
           }
           pool.clear();
