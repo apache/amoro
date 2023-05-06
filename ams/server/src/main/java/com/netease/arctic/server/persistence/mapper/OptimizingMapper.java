@@ -29,8 +29,8 @@ public interface OptimizingMapper {
   @Insert("insert into table_optimizing_process(table_id,catalog_name,db_name,table_name,process_id," +
       "target_snapshot_id,status,optimizing_type,plan_time,summary) values (#{table.id},#{table.catalog},#{table" +
       ".database},#{table.tableName},#{processId},#{targetSnapshotId},#{status}, #{optimizingType}," +
-      "#{planTime, typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}," +
-      "#{summary, typeHandler=com.netease.arctic.ams.server.persistence.converter.JsonSummaryConverter})")
+      "#{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      "#{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertOptimizingProcess(
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
@@ -100,8 +100,8 @@ public interface OptimizingMapper {
           ".tableId}, #{taskRuntime.partition}, #{taskRuntime.startTime}, #{taskRuntime" +
           ".endTime}, #{taskRuntime.status}, #{taskRuntime.failReason}, #{taskRuntime.optimizingThread" +
           ".token}, #{taskRuntime.optimizingThread.threadId}, #{taskRuntime.outputBytes, typeHandler=com.netease" +
-          ".arctic.ams.server.persistence.converter.JsonSummaryConverter}, #{taskRuntime.summary, typeHandler=com" +
-          ".netease.arctic.ams.server.persistence.converter.JsonSummaryConverter})",
+          ".arctic.server.persistence.converter.JsonSummaryConverter}, #{taskRuntime.summary, typeHandler=com" +
+          ".netease.arctic.server.persistence.converter.JsonSummaryConverter})",
       "</foreach>",
       "</script>"
   })
@@ -128,12 +128,12 @@ public interface OptimizingMapper {
   List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Update("UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, " +
-      "start_time = #{taskRuntime.startTime, typeHandler=com.netease.arctic.ams.server.persistence.converter" +
-      ".Long2TsConvertor}, end_time = #{taskRuntime.endTime, typeHandler=com.netease.arctic.ams.server.persistence" +
+      "start_time = #{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter" +
+      ".Long2TsConvertor}, end_time = #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence" +
       ".converter.Long2TsConvertor}, " +
       "cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}, " +
       "fail_reason = #{taskRuntime.failReason}, rewrite_output = #{taskRuntime.outputBytes, typeHandler=com.netease" +
-      ".arctic.ams.server.persistence.converter.JsonSummaryConverter} " +
+      ".arctic.server.persistence.converter.JsonSummaryConverter} " +
       "WHERE process_id = #{taskRuntime.taskId.processId} AND task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
@@ -176,8 +176,8 @@ public interface OptimizingMapper {
 
   @Insert("replace INTO optimizing_task_quota (process_id, task_id, retry_num, table_id, start_time, end_time, " +
       "fail_reason) VALUES (#{taskQuota.processId}, #{taskQuota.taskId}, #{taskQuota.retryNum}, #{taskQuota.tableId}," +
-      "#{taskQuota.startTime, typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, " +
-      "#{taskQuota.endTime, typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, " +
+      "#{taskQuota.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
+      "#{taskQuota.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
       "#{taskQuota.failReason})")
   void insertTaskQuota(@Param("taskQuota") TaskRuntime.TaskQuota taskQuota);
 

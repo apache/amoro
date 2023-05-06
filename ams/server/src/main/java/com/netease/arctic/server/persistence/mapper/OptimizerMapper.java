@@ -33,10 +33,10 @@ public interface OptimizerMapper {
 
   @Insert("INSERT INTO optimizer (token, resource_id, group_name, start_time, touch_time, thread_count, total_memory," +
       " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId},  #{optimizer.groupName}," +
-      "#{optimizer.startTime, typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, " +
-      "#{optimizer.touchTime, typeHandler=com.netease.arctic.ams.server.persistence.converter.Long2TsConvertor}, " +
+      "#{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
+      "#{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
       "#{optimizer.threadCount}, #{optimizer.memoryMb}, " +
-      "#{optimizer.properties, typeHandler=com.netease.arctic.ams.server.persistence.converter.JsonSummaryConverter})")
+      "#{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertOptimizer(@Param("optimizer") OptimizerInstance optimizer);
 
   @Update("update optimizer set touch_time=CURRENT_TIMESTAMP where token = #{token}")
