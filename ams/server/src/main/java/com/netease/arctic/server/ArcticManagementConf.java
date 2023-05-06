@@ -217,6 +217,12 @@ public class ArcticManagementConf {
           .defaultValue(30)
           .withDescription("session timeout in minute");
 
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("arctic.ams.blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
+
   public static final String SYSTEM_CONFIG = "ams";
 
   public static final String CATALOG_CORE_SITE = "core-site";
