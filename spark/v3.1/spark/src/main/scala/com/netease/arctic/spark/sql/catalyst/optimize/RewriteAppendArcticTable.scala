@@ -118,14 +118,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  private def buildKeyedTableInsertProjection(relation: LogicalPlan): LogicalPlan = {
-    val output = relation.output
-    val outputWithValues = output.map(a => {
-      Alias(a, "_arctic_after_" + a.name)()
-    })
-    Project(outputWithValues, relation)
-  }
-
   private def buildKeyedTableBeforeProject(relation: DataSourceV2Relation): LogicalPlan = {
     val output = relation.output
     val outputWithValues = output.map(a => {
