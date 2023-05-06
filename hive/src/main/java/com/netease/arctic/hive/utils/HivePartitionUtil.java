@@ -56,7 +56,7 @@ public class HivePartitionUtil {
     for (int i = 0; i < fields.size(); i++) {
       Type type = fields.get(i).type();
       Object value = partitionData.get(i, type.typeId().javaClass());
-      values.add(value.toString());
+      values.add(String.valueOf(value));
     }
     return values;
   }
