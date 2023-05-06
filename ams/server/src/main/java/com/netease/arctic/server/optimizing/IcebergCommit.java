@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -53,7 +54,7 @@ public class IcebergCommit {
     this.tasks = tasks;
   }
 
-  public void commit() {
+  public void commit() throws OptimizingCommitException {
     try {
       LOG.info("{} get tasks to commit {}", table.id(), tasks);
 
@@ -92,10 +93,10 @@ public class IcebergCommit {
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage) ||
           e.getMessage().contains(foundNewPosDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
+        throw new OptimizingCommitException(String.format("Optimize commit table %s failed, " +
+            "give up commit and ignore. original message: %s", table.id(), e.getMessage()), false);
       } else {
-        LOG.error("unexpected commit error " + table.id(), e);
-        throw new RuntimeException("unexpected commit error ", e);
+        throw new OptimizingCommitException("unexpected commit error ", e);
       }
     } catch (Throwable t) {
       LOG.error("unexpected commit error " + table.id(), t);
@@ -132,7 +133,13 @@ public class IcebergCommit {
           removedDeleteFiles, Collections.emptySet(), addedDeleteFiles);
 
       deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      deleteFileRewrite.commit();
+      try {
+        deleteFileRewrite.commit();
+      } catch (ValidationException e) {
+        // Iceberg will drop DeleteFiles that are older than the min Data sequence number. So some DeleteFiles
+        // maybe already dropped in the last commit, the exception can be ignored.
+        LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+      }
     }
   }
 }
