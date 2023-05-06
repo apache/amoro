@@ -259,42 +259,6 @@ class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
   // scalastyle:on
 }
 
-/**
- * The post-processor validates & cleans-up the parse tree during the parse process.
- */
-case object ArcticSqlExtensionsPostProcessor extends ArcticExtendSparkSqlBaseListener {
-
-  /** Remove the back ticks from an Identifier. */
-  def exitQuotedIdentifier(ctx: QuotedIdentifierContext): Unit = {
-    replaceTokenByIdentifier(ctx, 1) { token =>
-      // Remove the double back ticks in the string.
-      token.setText(token.getText.replace("``", "`"))
-      token
-    }
-  }
-
-  /** Treat non-reserved keywords as Identifiers. */
-  def exitNonReserved(ctx: NonReservedContext): Unit = {
-    replaceTokenByIdentifier(ctx, 0)(identity)
-  }
-
-  private def replaceTokenByIdentifier(
-      ctx: ParserRuleContext,
-      stripMargins: Int)(
-      f: CommonToken => CommonToken = identity): Unit = {
-    val parent = ctx.getParent
-    parent.removeLastChild()
-    val token = ctx.getChild(0).getPayload.asInstanceOf[Token]
-    val newToken = new CommonToken(
-      new org.antlr.v4.runtime.misc.Pair(token.getTokenSource, token.getInputStream),
-      ArcticExtendSparkSqlParser.IDENTIFIER,
-      token.getChannel,
-      token.getStartIndex + stripMargins,
-      token.getStopIndex - stripMargins)
-    parent.addChild(new TerminalNodeImpl(f(newToken)))
-  }
-}
-
 /* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
 case object ArcticParseErrorListener extends BaseErrorListener {
   override def syntaxError(

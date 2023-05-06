@@ -8,6 +8,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.CollectionHelper;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
@@ -15,14 +16,15 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.HashMap;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class SparkTableTestBase extends SparkTestBase {
@@ -210,6 +213,38 @@ public class SparkTableTestBase extends SparkTestBase {
       }
       return database + "." + table;
     }
+  }
+
+  public void assertTableDesc(List<Row> rows, List<String> primaryKeys, List<String> partitionKey) {
+    boolean partitionBlock = false;
+    boolean primaryKeysBlock = false;
+    List<String> descPartitionKey = Lists.newArrayList();
+    List<String> descPrimaryKeys = Lists.newArrayList();
+    List<Object[]> rs = rows.stream()
+        .map(row -> IntStream.range(0, row.size())
+            .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
+            .toArray(Object[]::new)
+        ).collect(Collectors.toList());
+    for (Object[] row : rs) {
+      if (StringUtils.equalsIgnoreCase("# Partitioning", row[0].toString())) {
+        partitionBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "Part ") && partitionBlock) {
+        descPartitionKey.add(row[1].toString());
+      }
+      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
+        primaryKeysBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
+        primaryKeysBlock = false;
+      } else if (primaryKeysBlock) {
+        descPrimaryKeys.add(row[0].toString());
+      }
+    }
+    Assertions.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+        descPartitionKey.stream().sorted().distinct().toArray());
+
+    Assertions.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
+    Assertions.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
 

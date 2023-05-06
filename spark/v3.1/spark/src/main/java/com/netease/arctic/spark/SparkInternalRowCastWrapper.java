@@ -48,23 +48,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   @Override
-  public Seq<Object> toSeq(Seq<DataType> fieldTypes) {
-    return super.toSeq(fieldTypes);
-  }
-
-  @Override
   public int numFields() {
     return schema.size() / 2;
-  }
-
-  @Override
-  public void setNullAt(int i) {
-    super.setNullAt(i);
-  }
-
-  @Override
-  public void update(int i, Object value) {
-    super.update(i, value);
   }
 
   @Override
@@ -79,76 +64,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     return row.get(pos, dt);
   }
 
-  @Override
-  public boolean getBoolean(int ordinal) {
-    return super.getBoolean(ordinal);
-  }
-
-  @Override
-  public byte getByte(int ordinal) {
-    return super.getByte(ordinal);
-  }
-
-  @Override
-  public short getShort(int ordinal) {
-    return super.getShort(ordinal);
-  }
-
-  @Override
-  public int getInt(int ordinal) {
-    return super.getInt(ordinal);
-  }
-
-  @Override
-  public long getLong(int ordinal) {
-    return super.getLong(ordinal);
-  }
-
-  @Override
-  public float getFloat(int ordinal) {
-    return super.getFloat(ordinal);
-  }
-
-  @Override
-  public double getDouble(int ordinal) {
-    return super.getDouble(ordinal);
-  }
-
-  @Override
-  public Decimal getDecimal(int ordinal, int precision, int scale) {
-    return super.getDecimal(ordinal, precision, scale);
-  }
-
-  @Override
-  public UTF8String getUTF8String(int ordinal) {
-    return super.getUTF8String(ordinal);
-  }
-
-  @Override
-  public byte[] getBinary(int ordinal) {
-    return super.getBinary(ordinal);
-  }
-
-  @Override
-  public ArrayData getArray(int ordinal) {
-    return super.getArray(ordinal);
-  }
-
-  @Override
-  public CalendarInterval getInterval(int ordinal) {
-    return super.getInterval(ordinal);
-  }
-
-  @Override
-  public MapData getMap(int ordinal) {
-    return super.getMap(ordinal);
-  }
-
-  @Override
-  public InternalRow getStruct(int ordinal, int numFields) {
-    return super.getStruct(ordinal, numFields);
-  }
-
   public InternalRow getRow() {
     return this.row;
   }
@@ -156,31 +71,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
 
   public ChangeAction getChangeAction() {
     return changeAction;
-  }
-
-  @Override
-  public String toString() {
-    return super.toString();
-  }
-
-  @Override
-  public GenericInternalRow copy() {
-    return super.copy();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return super.equals(o);
-  }
-
-  @Override
-  public int hashCode() {
-    return super.hashCode();
-  }
-
-  @Override
-  public Object[] values() {
-    return super.values();
   }
 
   public InternalRow setFileOffset(Long fileOffset) {
