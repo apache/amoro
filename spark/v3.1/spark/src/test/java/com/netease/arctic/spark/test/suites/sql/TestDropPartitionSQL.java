@@ -37,7 +37,7 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
   public void testDropPartition(TableFormat format, String primaryKeyDDL) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (day)";
+          provider(format)  + " PARTITIONED BY (day)";
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +

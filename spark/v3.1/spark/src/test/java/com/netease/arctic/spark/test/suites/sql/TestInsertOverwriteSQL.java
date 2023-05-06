@@ -3,6 +3,7 @@ package com.netease.arctic.spark.test.suites.sql;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
@@ -13,23 +14,28 @@ import com.netease.arctic.spark.test.helper.TableFiles;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.StructLikeSet;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 
@@ -44,6 +50,9 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
+  static final String OVERWRITE_MODE_KEY = "spark.sql.sources.partitionOverwriteMode";
+  static final String DYNAMIC = "DYNAMIC";
+  static final String STATIC = "STATIC";
 
   static final Schema schema = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
@@ -93,27 +102,59 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
     );
   }
 
+
+  private ArcticTable table;
+  private List<Record> target;
+  private List<DataFile> initFiles;
+
+
+  private void initTargetTable(PrimaryKeySpec keySpec, PartitionSpec ptSpec) {
+    table = createTarget(schema, builder ->
+        builder.withPartitionSpec(ptSpec)
+            .withPrimaryKeySpec(keySpec));
+    initFiles = TestTableHelper.writeToBase(table, base);
+    target = Lists.newArrayList(base);
+
+    if (keySpec.primaryKeyExisted()) {
+      List<DataFile> changeFiles = TestTableHelper.writeToChange(
+          table.asKeyedTable(), change, ChangeAction.INSERT);
+      initFiles.addAll(changeFiles);
+      target.addAll(change);
+    }
+
+    createViewSource(schema, source);
+  }
+
+  private void assertFileLayout(TableFormat format) {
+    TableFiles files = TestTableHelper.files(table);
+    Set<String> initFileSet = initFiles.stream().map(f -> f.path().toString()).collect(Collectors.toSet());
+    files = files.removeFiles(initFileSet);
+
+    Asserts.assertAllFilesInBaseStore(files);
+    if (MIXED_HIVE == format) {
+      String hiveLocation = ((SupportHive) table).hiveLocation();
+      Asserts.assertAllFilesInHiveLocation(files, hiveLocation);
+    }
+  }
+
+  @BeforeEach
+  void cleanVars() {
+    this.table = null;
+    this.target = Lists.newArrayList();
+    ;
+    this.initFiles = Lists.newArrayList();
+    ;
+  }
+
   @DisplayName("TestSQL: INSERT OVERWRITE dynamic mode")
   @ParameterizedTest()
   @MethodSource
   public void testDynamic(
       TableFormat format, PrimaryKeySpec keySpec
   ) {
-    spark.conf().set("spark.sql.sources.partitionOverwriteMode", "DYNAMIC");
+    spark.conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
 
-    ArcticTable table = createTarget(schema, builder ->
-        builder.withPartitionSpec(ptSpec)
-            .withPrimaryKeySpec(keySpec));
-
-    TestTableHelper.writeToBase(table, base);
-    List<Record> target = Lists.newArrayList(base);
-    if (keySpec.primaryKeyExisted()) {
-      TestTableHelper.writeToChange(
-          table.asKeyedTable(), change, ChangeAction.INSERT);
-      target.addAll(change);
-    }
-
-    createViewSource(schema, source);
+    initTargetTable(keySpec, ptSpec);
 
     sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
 
@@ -125,23 +166,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
         .ignoreOrder("id")
         .assertRecordsEqual();
 
-    TableFiles files = TestTableHelper.files(table);
 
-    PartitionKey partitionKey = new PartitionKey(ptSpec, schema);
-    StructLikeSet partitions = StructLikeSet.createMemorySet(ptSpec.partitionType());
-    source.stream().map(r -> {
-      partitionKey.partition(r);
-      return partitionKey.copy();
-    }).forEach(partitions::add);
-
-    files = files.filterByPartitions(partitions);
-
-    Asserts.assertAllFilesInBaseStore(files);
-    if (MIXED_HIVE == format) {
-      String hiveLocation = ((SupportHive) table).hiveLocation();
-      Asserts.assertAllFilesInHiveLocation(files, hiveLocation);
-    }
-
+    assertFileLayout(format);
   }
 
   private static Record setPtValue(Record r, String value) {
@@ -178,27 +204,14 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
 
   @DisplayName("TestSQL: INSERT OVERWRITE static mode")
-  @ParameterizedTest(name = "{index} {0} {1} {2} {3}")
+  @ParameterizedTest(name = "{index} {0} {1} {2} SELECT {3}")
   @MethodSource
   public void testStatic(
       TableFormat format, PrimaryKeySpec keySpec, String ptFilter, String sourceProject,
       Function<Record, Boolean> deleteFilter, Function<Record, Record> sourceTrans
   ) {
-    spark.conf().set("spark.sql.sources.partitionOverwriteMode", "STATIC");
-    ArcticTable table = createTarget(schema, builder ->
-        builder.withPartitionSpec(ptSpec)
-            .withPrimaryKeySpec(keySpec));
-    List<DataFile> initFiles = TestTableHelper.writeToBase(table, base);
-    List<Record> target = Lists.newArrayList(base);
-
-    if (keySpec.primaryKeyExisted()) {
-      List<DataFile> changeFiles = TestTableHelper.writeToChange(
-          table.asKeyedTable(), change, ChangeAction.INSERT);
-      initFiles.addAll(changeFiles);
-      target.addAll(change);
-    }
-
-    createViewSource(schema, source);
+    spark.conf().set(OVERWRITE_MODE_KEY, STATIC);
+    initTargetTable(keySpec, ptSpec);
 
     sql("INSERT OVERWRITE " + target() + " " + ptFilter +
         " SELECT " + sourceProject + " FROM " + source());
@@ -213,20 +226,180 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
 
     List<Record> actual = TestTableHelper.tableRecords(table);
-    sql("SELECT * FROM " + target());
     DataComparator.build(expects, actual)
         .ignoreOrder("pt", "id")
         .assertRecordsEqual();
 
-    TableFiles files = TestTableHelper.files(table);
-    Set<String> initFileSet = initFiles.stream().map(f -> f.path().toString()).collect(Collectors.toSet());
-    files = files.removeFiles(initFileSet);
 
-    Asserts.assertAllFilesInBaseStore(files);
-    if (MIXED_HIVE == format) {
-      String hiveLocation = ((SupportHive) table).hiveLocation();
-      Asserts.assertAllFilesInHiveLocation(files, hiveLocation);
+    assertFileLayout(format);
+  }
+
+
+  public static Stream<Arguments> testUnPartitioned() {
+
+
+    return Stream.of(
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, DYNAMIC),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, STATIC),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, DYNAMIC),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, STATIC),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, DYNAMIC),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, DYNAMIC)
+    );
+  }
+
+
+  @DisplayName("TestSQL: INSERT OVERWRITE un-partitioned")
+  @ParameterizedTest(name = "{index} {0} {1} partitionOverwriteMode={2}")
+  @MethodSource
+  public void testUnPartitioned(
+      TableFormat format, PrimaryKeySpec keySpec, String mode
+  ) {
+    spark.conf().set(OVERWRITE_MODE_KEY, mode);
+    initTargetTable(keySpec, PartitionSpec.unpartitioned());
+
+    sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
+
+    table.refresh();
+    List<Record> expects = Lists.newArrayList(source);
+    List<Record> actual = TestTableHelper.tableRecords(table);
+    DataComparator.build(expects, actual)
+        .ignoreOrder("pt", "id")
+        .assertRecordsEqual();
+
+    assertFileLayout(format);
+  }
+
+
+  private static final Schema hiddenPartitionSchema = new Schema(
+      Types.NestedField.required(1, "id", Types.IntegerType.get()),
+      Types.NestedField.required(2, "ts", Types.TimestampType.withZone())
+  );
+  private static final OffsetDateTime EPOCH = LocalDateTime.of(
+          2000, 1, 1, 0, 0, 0)
+      .atOffset(ZoneOffset.UTC);
+  private static final List<Record> hiddenPartitionSource = IntStream.range(0, 10)
+      .boxed()
+      .map(i -> RecordGenerator.newRecord(hiddenPartitionSchema, i, EPOCH.plusDays(i)))
+      .collect(Collectors.toList());
+
+  private static PartitionSpec.Builder ptBuilder() {
+    return PartitionSpec.builderFor(hiddenPartitionSchema);
+  }
+
+  public static Stream<Arguments> testHiddenPartitions() {
+    return Stream.of(
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().year("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().month("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().day("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().hour("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().truncate("id", 10).build()),
+
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().year("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().month("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().day("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().hour("ts").build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().truncate("id", 10).build())
+    );
+  }
+
+
+  @DisplayName("TestSQL: INSERT OVERWRITE hidden partition optimize write")
+  @ParameterizedTest()
+  @MethodSource
+  public void testHiddenPartitions(
+      TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec
+  ) {
+    spark.conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
+    spark.conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, "true");
+
+
+    this.table = createTarget(hiddenPartitionSchema, builder ->
+        builder.withPrimaryKeySpec(keySpec)
+            .withPartitionSpec(ptSpec));
+    createViewSource(hiddenPartitionSchema, hiddenPartitionSource);
+    this.initFiles = Lists.newArrayList();
+
+    sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
+
+    table.refresh();
+    assertFileLayout(format);
+  }
+
+
+
+  public static Stream<Arguments> testOptimizeWrite() {
+    return Stream.of(
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, unpartitioned, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, unpartitioned, STATIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 1, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 4, false),
+
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, unpartitioned, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, unpartitioned, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 1, true),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, false),
+
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, unpartitioned, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, unpartitioned, STATIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 1, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, 4, false),
+
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, unpartitioned, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, unpartitioned, DYNAMIC, 4, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 1, true),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, 4, false)
+    );
+  }
+
+
+  @DisplayName("TestSQL: INSERT OVERWRITE optimize write works")
+  @ParameterizedTest()
+  @MethodSource
+  public void testOptimizeWrite(
+      TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec,
+      String mode, int bucket, boolean optimizeWriteEnable
+  ) {
+    spark.conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, optimizeWriteEnable);
+    spark.conf().set(OVERWRITE_MODE_KEY, mode);
+
+    this.table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec)
+        .withProperty(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, String.valueOf(bucket))
+        .withPartitionSpec(ptSpec));
+
+    String[] ptValues = {"AAA", "BBB", "CCC", "DDD"};
+    List<Record> source = IntStream.range(1, 100)
+        .boxed()
+        .map(i -> RecordGenerator.newRecord(schema, i, "index" + i, ptValues[i % ptValues.length]))
+        .collect(Collectors.toList());
+    createViewSource(schema, source);
+
+    sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
+
+    boolean shouldOptimized = optimizeWriteEnable && (keySpec.primaryKeyExisted() || ptSpec.isPartitioned());
+
+    if (shouldOptimized){
+      table.refresh();
+      TableFiles files = TestTableHelper.files(table);
+      int expectFiles = ExpectResultHelper.expectOptimizeWriteFileCount(source, table, bucket);
+
+      Assertions.assertEquals(expectFiles, files.baseDataFiles.size());
     }
   }
+
+
+
 
 }
