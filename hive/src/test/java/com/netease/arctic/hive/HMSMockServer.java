@@ -207,6 +207,10 @@ public class HMSMockServer {
     return clientPool;
   }
 
+  public String getWareHouseLocation() {
+    return hiveLocalDir.getAbsolutePath();
+  }
+
   public String getDatabasePath(String dbName) {
     File dbDir = new File(hiveLocalDir, dbName);
     return dbDir.getAbsolutePath().replace("\\", "/");
@@ -322,8 +326,7 @@ public class HMSMockServer {
         command = new StringBuilder();
       }
       String trimmedLine = line.trim();
-      if (trimmedLine.length() < 1
-          || trimmedLine.startsWith("--")) {
+      if (trimmedLine.length() < 1 || trimmedLine.startsWith("--")) {
         // Do nothing, ignore blank lines and comments
       } else if (trimmedLine.endsWith(";")) {
         command.append(line.substring(0, line.lastIndexOf(";")));
