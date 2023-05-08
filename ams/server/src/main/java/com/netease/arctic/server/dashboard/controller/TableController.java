@@ -51,6 +51,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Collections;
+import java.util.Comparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -90,7 +92,8 @@ public class TableController extends RestBaseController {
     String database = ctx.pathParam("db");
     String tableMame = ctx.pathParam("table");
 
-    Preconditions.checkArgument(catalog != null && database != null && tableMame != null,
+    Preconditions.checkArgument(
+        catalog != null && database != null && tableMame != null,
         "catalog.dabatase.tableName can not be null in any element");
     // get table from catalog
     if (!tableService.catalogExist(catalog)) {
@@ -266,10 +269,11 @@ public class TableController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "no such table", ""));
     }
     List<BaseMajorCompactRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
-    List<BaseMajorCompactRecord> result = all.stream()
-        .skip(offset)
-        .limit(limit)
-        .collect(Collectors.toList());
+    List<BaseMajorCompactRecord> result =
+        all.stream().sorted(Comparator.comparingLong(BaseMajorCompactRecord::getCommitTime).reversed())
+            .skip(offset)
+            .limit(limit)
+            .collect(Collectors.toList());
     ctx.json(OkResponse.of(PageResult.of(result, all.size())));
   }
 
@@ -502,8 +506,9 @@ public class TableController extends RestBaseController {
     return serverTableMeta;
   }
 
-  private void fillTableProperties(ServerTableMeta serverTableMeta,
-                                          Map<String, String> tableProperties) {
+  private void fillTableProperties(
+      ServerTableMeta serverTableMeta,
+      Map<String, String> tableProperties) {
     Map<String, String> properties = com.google.common.collect.Maps.newHashMap(tableProperties);
     serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
     serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));

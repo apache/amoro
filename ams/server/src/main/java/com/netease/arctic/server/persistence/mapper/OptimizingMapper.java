@@ -40,8 +40,9 @@ public interface OptimizingMapper {
       @Param("planTime") long planTime,
       @Param("summary") MetricsSummary summary);
 
-  @Update("UPDATE optimizing_table_process SET status = #{status}, endTime = #{endTime} " +
-      "WHERE tableId = #{tableId} AND processId = #{processId}")
+  @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}, end_time = #{endTime, typeHandler=com" +
+      ".netease.arctic.server.persistence.converter.Long2TsConvertor} " +
+      "WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
@@ -70,7 +71,8 @@ public interface OptimizingMapper {
 
   @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status, " +
       "optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process " +
-      "WHERE catalog_name = #{catalogName} and db_name = #{dbName} and table_name = #{tableName}")
+      "WHERE catalog_name = #{catalogName} and db_name = #{dbName} and table_name = #{tableName} and status = " +
+      "'SUCCESS'")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -85,7 +87,8 @@ public interface OptimizingMapper {
       @Result(property = "failReason", column = "fail_reason"),
       @Result(property = "summary", column = "summary")
   })
-  List<TableOptimizingProcess> selectOptimizingProcessesByTable(@Param("catalogName") String catalogName, @Param(
+  List<TableOptimizingProcess> selectOptimizingProcessesByTable(
+      @Param("catalogName") String catalogName, @Param(
       "dbName") String dbName, @Param("tableName") String tableName);
 
   /**

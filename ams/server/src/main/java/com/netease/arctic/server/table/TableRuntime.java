@@ -200,7 +200,7 @@ public class TableRuntime extends PersistentBase {
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
     if (!tableConfiguration.equals(newTableConfig)) {
-      if (!Objects.equals(this.optimizerGroup, getOptimizerGroup())) {
+      if (!Objects.equals(this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
         if (optimizingProcess != null) {
           optimizingProcess.close();
         }
@@ -279,8 +279,8 @@ public class TableRuntime extends PersistentBase {
         }
       }
       optimizingProcess = null;
-      evaluatePendingInput(loadTable());
       persistUpdatingRuntime();
+      refresh();
       if (headHandler != null) {
         headHandler.fireStatusChanged(this, originalStatus);
       }

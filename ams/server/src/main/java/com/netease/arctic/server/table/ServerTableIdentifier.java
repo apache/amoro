@@ -77,7 +77,7 @@ public class ServerTableIdentifier {
       return false;
     }
     ServerTableIdentifier that = (ServerTableIdentifier) o;
-    return id == that.id && Objects.equals(catalog, that.catalog) &&
+    return Objects.equals(id, that.id) && Objects.equals(catalog, that.catalog) &&
         Objects.equals(database, that.database) && Objects.equals(tableName, that.tableName);
   }
 
