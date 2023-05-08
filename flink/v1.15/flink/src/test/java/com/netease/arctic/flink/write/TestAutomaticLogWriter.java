@@ -26,7 +26,7 @@ import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
-import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
+import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
@@ -81,8 +81,8 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
 @RunWith(Parameterized.class)
-public class AutomaticLogWriterTest extends FlinkTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(AutomaticLogWriterTest.class);
+public class TestAutomaticLogWriter extends FlinkTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
   public ArcticTableLoader tableLoader;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
@@ -90,7 +90,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
   private final boolean isGapNone;
   private final boolean logstoreEnabled;
 
-  public AutomaticLogWriterTest(boolean isGapNone, boolean logstoreEnabled) {
+  public TestAutomaticLogWriter(boolean isGapNone, boolean logstoreEnabled) {
     this.isGapNone = isGapNone;
     this.logstoreEnabled = logstoreEnabled;
   }
@@ -203,7 +203,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
     testKeyedTable.refresh();
     Assert.assertFalse(Boolean.parseBoolean(
         testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
-    try (OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
+    try (TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
              createSingleProducer(1, jobId, topic, gap)) {
       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
       expects.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17 10:10:11", dtf)});
@@ -275,7 +275,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
                     RowData::toString)).collect(Collectors.toList()));
   }
 
-  public OneInputStreamOperatorInternTest<RowData, WriteResult> createSingleProducer(
+  public TestOneInputStreamOperatorIntern<RowData, WriteResult> createSingleProducer(
       int maxParallelism,
       byte[] jobId,
       String topic,
@@ -286,7 +286,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
         writeLogstoreWatermarkGap);
   }
 
-  private OneInputStreamOperatorInternTest<RowData, WriteResult> createProducer(
+  private TestOneInputStreamOperatorIntern<RowData, WriteResult> createProducer(
       int maxParallelism,
       int parallelism,
       int subTaskId,
@@ -320,8 +320,8 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
 
     ArcticWriter<WriteResult> arcticWriter = new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
 
-    OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
-        new OneInputStreamOperatorInternTest<>(
+    TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
+        new TestOneInputStreamOperatorIntern<>(
             arcticWriter,
             maxParallelism,
             parallelism,

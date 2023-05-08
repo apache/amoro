@@ -39,8 +39,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(ContinuousSplitPlannerImplTest.class);
+public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestContinuousSplitPlannerImpl.class);
   protected static final RowType ROW_TYPE = FlinkSchemaUtil.convert(TABLE_SCHEMA);
 
   protected static final LocalDateTime ldt =

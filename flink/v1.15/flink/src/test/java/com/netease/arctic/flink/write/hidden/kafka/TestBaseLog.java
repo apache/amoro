@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import static com.netease.arctic.flink.shuffle.LogRecordV1.arrayFactory;
 import static com.netease.arctic.flink.shuffle.LogRecordV1.mapFactory;
 
-public class BaseLogTest {
+public class TestBaseLog {
   public final static Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
     add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
     add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));

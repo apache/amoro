@@ -54,8 +54,8 @@ import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-public class HiddenKafkaProducerTest extends BaseLogTest {
-  private static final Logger LOG = LoggerFactory.getLogger(HiddenKafkaProducerTest.class);
+public class TestHiddenKafkaProducer extends TestBaseLog {
+  private static final Logger LOG = LoggerFactory.getLogger(TestHiddenKafkaProducer.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass

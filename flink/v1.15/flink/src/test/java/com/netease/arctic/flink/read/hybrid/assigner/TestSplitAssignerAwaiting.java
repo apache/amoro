@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SplitAssignerAwaitingTest extends ShuffleSplitAssignerTest {
+public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
 
   @Test
   public void testEmpty() {

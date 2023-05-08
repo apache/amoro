@@ -22,7 +22,7 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
-import com.netease.arctic.flink.read.hybrid.enumerator.ContinuousSplitPlannerImplTest;
+import com.netease.arctic.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
@@ -56,8 +56,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
-  private static final Logger LOG = LoggerFactory.getLogger(RowDataReaderFunctionTest.class);
+public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
+  private static final Logger LOG = LoggerFactory.getLogger(TestRowDataReaderFunction.class);
   private static final AtomicInteger splitCount = new AtomicInteger();
 
   @Test

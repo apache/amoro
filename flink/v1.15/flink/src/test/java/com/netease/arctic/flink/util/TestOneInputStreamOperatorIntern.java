@@ -31,8 +31,8 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class OneInputStreamOperatorInternTest<IN, OUT> extends OneInputStreamOperatorTestHarness<IN, OUT> {
-  public OneInputStreamOperatorInternTest(
+public class TestOneInputStreamOperatorIntern<IN, OUT> extends OneInputStreamOperatorTestHarness<IN, OUT> {
+  public TestOneInputStreamOperatorIntern(
       OneInputStreamOperator<IN, OUT> operator,
       int maxParallelism,
       int parallelism,

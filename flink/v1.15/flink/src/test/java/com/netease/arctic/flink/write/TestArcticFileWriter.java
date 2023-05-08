@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
+import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
@@ -45,7 +45,7 @@ import java.util.List;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 
 @RunWith(Parameterized.class)
-public class ArcticFileWriterTest extends FlinkTestBase {
+public class TestArcticFileWriter extends FlinkTestBase {
 
   public static final long TARGET_FILE_SIZE = 128 * 1024 * 1024;
   public ArcticTableLoader tableLoader;
@@ -59,7 +59,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     };
   }
 
-  public ArcticFileWriterTest(boolean submitEmptySnapshots) {
+  public TestArcticFileWriter(boolean submitEmptySnapshots) {
     this.submitEmptySnapshots = submitEmptySnapshots;
   }
 
@@ -90,8 +90,8 @@ public class ArcticFileWriterTest extends FlinkTestBase {
         false,
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
         tableLoader);
-    OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
-        new OneInputStreamOperatorInternTest<>(
+    TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
+        new TestOneInputStreamOperatorIntern<>(
             streamWriter, 1, 1, 0, restoredCheckpointId,
             new TestGlobalAggregateManager());
 

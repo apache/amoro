@@ -54,10 +54,10 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.netease.arctic.flink.write.ArcticFileWriterTest.TARGET_FILE_SIZE;
-import static com.netease.arctic.flink.write.ArcticFileWriterTest.createUnkeyedTaskWriter;
+import static com.netease.arctic.flink.write.TestArcticFileWriter.TARGET_FILE_SIZE;
+import static com.netease.arctic.flink.write.TestArcticFileWriter.createUnkeyedTaskWriter;
 
-public class FlinkSourceTest extends FlinkTestBase {
+public class TestFlinkSource extends FlinkTestBase {
 
   protected static final FileFormat fileFormat = FileFormat.valueOf("parquet".toUpperCase(Locale.ENGLISH));
 
