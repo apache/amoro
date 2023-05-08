@@ -21,20 +21,14 @@ package com.netease.arctic.optimizing;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -63,6 +57,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RunWith(Parameterized.class)
 public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
 
@@ -80,7 +81,8 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
 
   public IcebergFormatRewriteFilesExecutorTest(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
+    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
     this.fileFormat = fileFormat;
   }
 
@@ -119,7 +121,7 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
             DataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
             DataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
-    Schema idSchema = TypeUtil.select(TableTestHelpers.TABLE_SCHEMA, Sets.newHashSet(1));
+    Schema idSchema = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
     GenericRecord idRecord = GenericRecord.create(idSchema);
     DeleteFile eqDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
@@ -211,7 +213,8 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
 
       case ORC:
         Schema projectionWithoutConstantAndMetadataFields = TypeUtil.selectNot(fileProjection,
-            org.apache.iceberg.relocated.com.google.common.collect.Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
+            org.apache.iceberg.relocated.com.google.common.collect.Sets.union(idToConstant.keySet(),
+                MetadataColumns.metadataFieldIds()));
         org.apache.iceberg.orc.ORC.ReadBuilder orc = org.apache.iceberg.orc.ORC.read(input)
             .project(projectionWithoutConstantAndMetadataFields)
             .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
