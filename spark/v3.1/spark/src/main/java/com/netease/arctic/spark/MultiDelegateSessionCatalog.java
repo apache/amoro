@@ -393,7 +393,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     public boolean dropTable(Identifier ident) {
       boolean holderDrop = holder.dropTable(ident);
       boolean delegateDrop = false;
-      if (delegate != null){
+      if (delegate != null) {
         delegateDrop = delegate.dropTable(ident);;
       }
       return holderDrop || delegateDrop;

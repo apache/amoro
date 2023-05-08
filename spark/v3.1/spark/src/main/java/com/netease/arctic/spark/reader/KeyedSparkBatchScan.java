@@ -51,7 +51,6 @@ import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {

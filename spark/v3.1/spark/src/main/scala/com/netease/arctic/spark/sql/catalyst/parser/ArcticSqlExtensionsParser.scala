@@ -18,10 +18,6 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-import java.util.Locale
-
-import scala.collection.JavaConverters.seqAsJavaListConverter
-import scala.util.Try
 
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.parser._
@@ -30,23 +26,26 @@ import com.netease.arctic.spark.util.ArcticSparkUtils
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
-import org.antlr.v4.runtime.tree.TerminalNodeImpl
-import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
 import org.apache.spark.sql.catalyst.trees.Origin
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.{AnalysisException, SparkSession}
+
+import java.util.Locale
+import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.util.Try
+
 
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {
 
-  private lazy val createTableAstBuilder = new ArcticExtendSparkSqlAstBuilder(delegate)
+  private lazy val extendSparkSqlAstBuilder = new ArcticExtendSparkSqlAstBuilder(delegate)
   private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
   /**
@@ -55,11 +54,6 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   override def parseDataType(sqlText: String): DataType = {
     delegate.parseDataType(sqlText)
   }
-
-  /**
-   * Parse a string to a raw DataType without CHAR/VARCHAR replacement.
-   */
-  def parseRawDataType(sqlText: String): DataType = throw new UnsupportedOperationException()
 
   /**
    * Parse a string to an Expression.
@@ -136,7 +130,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def toLogicalResult(parser: Parser): LogicalPlan = parser match {
     case p: ArcticExtendSparkSqlParser =>
-      createTableAstBuilder.visitArcticCommand(p.arcticCommand())
+      extendSparkSqlAstBuilder.visitArcticCommand(p.arcticCommand())
     case p: ArcticSqlCommandParser =>
       arcticCommandAstVisitor.visitArcticCommand(p.arcticCommand())
   }
@@ -149,12 +143,10 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     if (lexerOpt.isDefined) {
       val lexer = lexerOpt.get
       lexer.removeErrorListeners()
-      lexer.addErrorListener(ArcticParseErrorListener)
 
       val tokenStream = new CommonTokenStream(lexer)
       val parser = buildAntlrParser(tokenStream, lexer)
       parser.removeErrorListeners()
-      parser.addErrorListener(ArcticParseErrorListener)
 
       try {
         try {
@@ -218,9 +210,6 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
           Try(tableCatalog.loadTable(catalogAndIdentifier.identifier))
             .map(isArcticKeyedTable)
             .getOrElse(false)
-
-        case _ =>
-          false
       }
     }
 
@@ -234,9 +223,9 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
 class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
-  override def consume(): Unit = wrapped.consume
+  override def consume(): Unit = wrapped.consume()
 
-  override def getSourceName(): String = wrapped.getSourceName
+  override def getSourceName: String = wrapped.getSourceName
 
   override def index(): Int = wrapped.index
 
@@ -259,24 +248,3 @@ class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
   // scalastyle:on
 }
 
-/* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
-case object ArcticParseErrorListener extends BaseErrorListener {
-  override def syntaxError(
-      recognizer: Recognizer[_, _],
-      offendingSymbol: scala.Any,
-      line: Int,
-      charPositionInLine: Int,
-      msg: String,
-      e: RecognitionException): Unit = {
-    val (start, stop) = offendingSymbol match {
-      case token: CommonToken =>
-        val start = Origin(Some(line), Some(token.getCharPositionInLine))
-        val length = token.getStopIndex - token.getStartIndex + 1
-        val stop = Origin(Some(line), Some(token.getCharPositionInLine + length))
-        (start, stop)
-      case _ =>
-        val start = Origin(Some(line), Some(charPositionInLine))
-        (start, start)
-    }
-  }
-}

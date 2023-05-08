@@ -31,14 +31,12 @@ import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.TableMigrationUtil;
-import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.hadoop.Util;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.spark.SparkExceptionUtil;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.SparkTableUtil;
 import org.apache.spark.sql.AnalysisException;
@@ -58,7 +56,6 @@ import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.V1Table;
 import org.apache.spark.sql.connector.expressions.Transform;
-import org.apache.spark.sql.execution.datasources.v2.V2SessionCatalog;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
@@ -125,33 +122,25 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
 
   @Override
   public Row[] execute() throws AnalysisException {
-    //backupSourceTable();
-    boolean threw = true;
     List<DataFile> dataFiles;
     TableIdentifier ident;
     PartitionSpec spec;
     Schema schema;
-    try {
-      LOG.info("start to migrate {} to {}, using temp backup table {}",
-          sourceIdentifier, targetIdentifier, backupV1TableIdentifier);
-      V1Table sourceTable = loadV1Table(sourceCatalog, backupV1TableIdentifier);
-      ident = new TableIdentifier(
-          backupV1TableIdentifier.name(),
-          Some.apply(backupV1TableIdentifier.namespace()[0]));
-      dataFiles = loadDataFiles(ident);
-      UnkeyedTable table = createUnkeyedTable(sourceTable);
+    LOG.info("start to migrate {} to {}, using temp backup table {}",
+        sourceIdentifier, targetIdentifier, backupV1TableIdentifier);
+    V1Table sourceTable = loadV1Table(sourceCatalog, backupV1TableIdentifier);
+    ident = new TableIdentifier(
+        backupV1TableIdentifier.name(),
+        Some.apply(backupV1TableIdentifier.namespace()[0]));
+    dataFiles = loadDataFiles(ident);
+    UnkeyedTable table = createUnkeyedTable(sourceTable);
 
-      spec = table.spec();
+    spec = table.spec();
 
-      AppendFiles appendFiles = table.newAppend();
-      dataFiles.forEach(appendFiles::appendFile);
-      appendFiles.commit();
+    AppendFiles appendFiles = table.newAppend();
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
 
-      threw = false;
-    } finally {
-      if (threw) {
-      }
-    }
     LOG.info("migrate table {} finished, remove metadata of backup {} table",
         targetIdentifier, backupV1TableIdentifier);
 
@@ -185,7 +174,8 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     }
   }
 
-  private UnkeyedTable createUnkeyedTable(V1Table sourceTable) throws TableAlreadyExistsException, NoSuchNamespaceException {
+  private UnkeyedTable createUnkeyedTable(V1Table sourceTable)
+      throws TableAlreadyExistsException, NoSuchNamespaceException {
     Map<String, String> properties = Maps.newHashMap();
     properties.putAll(sourceTable.properties());
     EXCLUDED_PROPERTIES.forEach(properties::remove);

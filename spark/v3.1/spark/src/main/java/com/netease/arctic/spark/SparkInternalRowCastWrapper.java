@@ -4,15 +4,9 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.sql.utils.ProjectingInternalRow;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.catalyst.util.ArrayData;
-import org.apache.spark.sql.catalyst.util.MapData;
 import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.unsafe.types.CalendarInterval;
-import org.apache.spark.unsafe.types.UTF8String;
-import scala.collection.Seq;
 
 import java.util.ArrayList;
 import java.util.Arrays;
