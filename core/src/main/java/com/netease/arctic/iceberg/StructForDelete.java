@@ -1,11 +1,12 @@
 package com.netease.arctic.iceberg;
 
-import java.util.Set;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.TypeUtil;
+
+import java.util.Set;
 
 public class StructForDelete<T extends StructLike> {
 

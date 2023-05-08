@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.optimizing;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
@@ -11,8 +11,6 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import java.io.IOException;
-import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
@@ -22,6 +20,9 @@ import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileWriter;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 public class MixFormatRewriteFilesExecutor extends AbstractRewriteFilesExecutor {
 
