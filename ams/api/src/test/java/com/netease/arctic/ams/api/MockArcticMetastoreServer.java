@@ -56,7 +56,6 @@ public class MockArcticMetastoreServer implements Runnable {
   private int port;
   private int retry = 10;
   private boolean started = false;
-  private final Object lock = new Object();
   private final AmsHandler amsHandler = new AmsHandler();
 
   private final OptimizerManagerHandler optimizerManagerHandler = new OptimizerManagerHandler();
@@ -195,14 +194,12 @@ public class MockArcticMetastoreServer implements Runnable {
     }
   }
 
-  public class AmsHandler implements ArcticTableMetastore.Iface {
+  public static class AmsHandler implements ArcticTableMetastore.Iface {
     private final ConcurrentLinkedQueue<CatalogMeta> catalogs = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TableMeta> tables = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
 
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
-    private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
-    private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
 
     private final Map<TableIdentifier, Map<String, Blocker>> tableBlockers = new HashMap<>();
     private final AtomicLong blockerId = new AtomicLong(1L);
@@ -212,8 +209,6 @@ public class MockArcticMetastoreServer implements Runnable {
       tables.clear();
       databases.clear();
       tableCommitMetas.clear();
-      tableTxId.clear();
-      tableCurrentTxId.clear();
     }
 
     public void createCatalog(CatalogMeta catalogMeta) {
@@ -226,10 +221,6 @@ public class MockArcticMetastoreServer implements Runnable {
 
     public Map<TableIdentifier, List<TableCommitMeta>> getTableCommitMetas() {
       return tableCommitMetas;
-    }
-
-    public Long getTableCurrentTxId(TableIdentifier tableIdentifier) {
-      return tableCurrentTxId.get(tableIdentifier);
     }
 
     @Override
@@ -327,25 +318,7 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-      synchronized (lock) {
-        long currentTxId = tableCurrentTxId.containsKey(tableIdentifier) ? tableCurrentTxId.get(tableIdentifier) : 0;
-        if (transactionSignature == null || transactionSignature.isEmpty()) {
-          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
-          return currentTxId + 1;
-        }
-        Map<String, Long> signMap = tableTxId.get(tableIdentifier);
-        if (signMap != null && signMap.containsKey(transactionSignature)) {
-          return signMap.get(transactionSignature);
-        } else {
-          tableCurrentTxId.put(tableIdentifier, currentTxId + 1);
-          if (signMap == null) {
-            signMap = new HashMap<>();
-          }
-          signMap.put(transactionSignature, currentTxId + 1);
-          tableTxId.put(tableIdentifier, signMap);
-          return currentTxId + 1;
-        }
-      }
+      throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
     }
 
     @Override
