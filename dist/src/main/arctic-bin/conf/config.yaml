@@ -71,7 +71,7 @@ containers:
 #      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
 #      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
 
-optimizer_group:
+optimizer_groups:
   - name: default
     container: localContainer
     properties:
