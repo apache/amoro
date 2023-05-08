@@ -442,7 +442,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             () -> tableRuntime.completeProcess(true)
         );
       } else {
-        tableRuntime.completeProcess(true);
+        doAsTransaction(
+            () -> doAs(OptimizingMapper.class, mapper ->
+                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime)),
+            () -> tableRuntime.completeProcess(true)
+        );
       }
     }
 

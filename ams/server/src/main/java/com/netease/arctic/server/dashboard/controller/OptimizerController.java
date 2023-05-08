@@ -131,7 +131,7 @@ public class OptimizerController extends RestBaseController {
         jsonObject.put("coreNumber", e.getThreadCount());
         jsonObject.put("memory", e.getMemoryMb());
         jsonObject.put("jobStatus", "RUNNING");
-        jsonObject.put("container", optimizerManager.getResourceGroup(e.getGroupName()).getContainer());
+        jsonObject.put("container", e.getContainerName());
         return jsonObject;
       }).collect(Collectors.toList());
 
