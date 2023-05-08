@@ -49,7 +49,6 @@ public class MetricsSummary {
       reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
       rewriteDataSize += metrics.getRewriteDataSize();
       rewritePosDataSize += metrics.getRewritePosDataSize();
-      ;
       posDeleteFileCnt += metrics.getPosDeleteFileCnt();
       positionalDeleteSize += metrics.getPositionalDeleteSize();
       eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
