@@ -41,6 +41,8 @@ public class TestArcticCommandSQL extends SparkTableTestBase {
         " ( 1, 'aaa', '0001' ),  " +
         " ( 2, 'bbb', '0002' ) ");
 
+    sql("CREATE DATABASE IF NOT EXISTS " + targetCatalog + "." + target().database);
     sql("migrate " + source() + " to arctic " + targetCatalog + "." + target());
+    sql("DROP TABLE IF EXISTS " + targetCatalog + "." + target());
   }
 }
