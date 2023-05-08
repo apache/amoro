@@ -209,16 +209,6 @@ CREATE TABLE optimize_history (
     PRIMARY KEY (history_id)
 );
 
-
-CREATE TABLE table_transaction_meta (
-    table_identifier varchar(384) NOT NULL,
-    transaction_id bigint NOT NULL,
-    signature varchar(256) NOT NULL,
-    commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (table_identifier, transaction_id),
-    UNIQUE (table_identifier, signature)
-);
-
 CREATE TABLE optimize_task_history (
     task_trace_id     varchar(50) NOT NULL,
     retry             int NOT NULL,
