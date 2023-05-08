@@ -40,7 +40,7 @@ public class SparkTestBase {
     context.close();
   }
 
-  protected SparkSession spark;
+  private SparkSession spark;
   private ArcticCatalog _catalog;
   protected String currentCatalog = SESSION_CATALOG;
   protected QueryExecution qe;
@@ -54,11 +54,7 @@ public class SparkTestBase {
   }
 
 
-  @BeforeEach
-  public void setupTestSession() {
-    Map<String, String> conf = sparkSessionConfig();
-    this.spark = context.getSparkSession(conf);
-  }
+
 
 
   @AfterEach
@@ -75,18 +71,26 @@ public class SparkTestBase {
 
   protected ArcticCatalog catalog() {
     if (_catalog == null) {
-      String catalogUrl = spark.sessionState().conf().getConfString(
+      String catalogUrl = spark().sessionState().conf().getConfString(
           "spark.sql.catalog." + currentCatalog + ".url");
       _catalog = CatalogLoader.load(catalogUrl);
     }
     return _catalog;
   }
 
+  protected SparkSession spark() {
+    if (this.spark == null){
+      Map<String, String> conf = sparkSessionConfig();
+      this.spark = context.getSparkSession(conf);
+    }
+    return spark;
+  }
+
 
   public Dataset<Row> sql(String sqlText) {
     long begin = System.currentTimeMillis();
     LOG.info("Execute SQL: " + sqlText);
-    Dataset<Row> ds = spark.sql(sqlText);
+    Dataset<Row> ds = spark().sql(sqlText);
     if (ds.columns().length == 0) {
       LOG.info("+----------------+");
       LOG.info("|  Empty Result  |");

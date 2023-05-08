@@ -152,7 +152,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   public void testDynamic(
       TableFormat format, PrimaryKeySpec keySpec
   ) {
-    spark.conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
+    spark().conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
 
     initTargetTable(keySpec, ptSpec);
 
@@ -210,7 +210,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
       TableFormat format, PrimaryKeySpec keySpec, String ptFilter, String sourceProject,
       Function<Record, Boolean> deleteFilter, Function<Record, Record> sourceTrans
   ) {
-    spark.conf().set(OVERWRITE_MODE_KEY, STATIC);
+    spark().conf().set(OVERWRITE_MODE_KEY, STATIC);
     initTargetTable(keySpec, ptSpec);
 
     sql("INSERT OVERWRITE " + target() + " " + ptFilter +
@@ -257,7 +257,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   public void testUnPartitioned(
       TableFormat format, PrimaryKeySpec keySpec, String mode
   ) {
-    spark.conf().set(OVERWRITE_MODE_KEY, mode);
+    spark().conf().set(OVERWRITE_MODE_KEY, mode);
     initTargetTable(keySpec, PartitionSpec.unpartitioned());
 
     sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
@@ -314,8 +314,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   public void testHiddenPartitions(
       TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec
   ) {
-    spark.conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
-    spark.conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, "true");
+    spark().conf().set(OVERWRITE_MODE_KEY, DYNAMIC);
+    spark().conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, "true");
 
 
     this.table = createTarget(hiddenPartitionSchema, builder ->
@@ -371,8 +371,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
       TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec,
       String mode, int bucket, boolean optimizeWriteEnable
   ) {
-    spark.conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, optimizeWriteEnable);
-    spark.conf().set(OVERWRITE_MODE_KEY, mode);
+    spark().conf().set(SparkSQLProperties.OPTIMIZE_WRITE_ENABLED, optimizeWriteEnable);
+    spark().conf().set(OVERWRITE_MODE_KEY, mode);
 
     this.table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec)
         .withProperty(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, String.valueOf(bucket))
@@ -422,8 +422,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
       TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec, String mode,
       boolean duplicateSource, boolean expectChecked
   ) {
-    spark.conf().set(OVERWRITE_MODE_KEY, mode);
-    spark.conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, true);
+    spark().conf().set(OVERWRITE_MODE_KEY, mode);
+    spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, true);
 
     table = createTarget(schema, builder -> builder.withPartitionSpec(ptSpec)
         .withPrimaryKeySpec(keySpec));

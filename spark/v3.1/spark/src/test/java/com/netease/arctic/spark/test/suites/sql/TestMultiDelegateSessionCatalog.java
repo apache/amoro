@@ -96,7 +96,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
   @BeforeEach
   public void before() {
     sql("create database if not exists test");
-    Dataset<Row> df = spark.createDataFrame(tempRows, SparkSchemaUtil.convert(schema));
+    Dataset<Row> df = spark().createDataFrame(tempRows, SparkSchemaUtil.convert(schema));
     df.createOrReplaceTempView("tmp");
     try {
       catalog().dropTable(arcticTableIdentifier, true);
@@ -111,7 +111,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
     sql("drop table if exists " + ident(arcticTable));
     sql("drop table if exists " + ident(hiveTable));
     sql("drop database if exists " + database + " cascade");
-    spark.sessionState().catalog().dropTempView(tempView);
+    spark().sessionState().catalog().dropTempView(tempView);
   }
 
   @Test
@@ -178,7 +178,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
     Dataset<Row> ds = sql("select id, name, pt from " + ident(icebergTable));
     Assertions.assertEquals(6L, ds.count());
 
-    Dataset<Row> history = spark.read()
+    Dataset<Row> history = spark().read()
         .format("iceberg")
         .load(database + "." + icebergTable + ".history");
     Row first = history.filter("parent_id is null ")

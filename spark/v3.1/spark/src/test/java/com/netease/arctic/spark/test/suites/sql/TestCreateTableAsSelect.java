@@ -123,7 +123,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       TableFormat format, String primaryKeyDDL, String partitionDDL,
       PrimaryKeySpec keySpec, PartitionSpec ptSpec
   ) {
-    spark.conf().set("spark.sql.session.timeZone", "UTC");
+    spark().conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
     sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true");
@@ -185,7 +185,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   public void testSourceDuplicateCheck(
       TableFormat format, List<Record> sourceData, String primaryKeyDDL, boolean duplicateCheckFailed
   ) {
-    spark.conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
+    spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
     createViewSource(simpleSourceSchema, sourceData);
     String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
         + " USING " + provider(format) + " "

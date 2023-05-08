@@ -216,7 +216,7 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
   public void testDuplicateSourceCheck(
       TableFormat format, PrimaryKeySpec keySpec, boolean duplicateSource, boolean expectException
   ) {
-    spark.conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
+    spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
     createTarget(schema, tableBuilder ->
         tableBuilder.withPrimaryKeySpec(keySpec));
 

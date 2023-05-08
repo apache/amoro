@@ -72,7 +72,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     StructType structType = SparkSchemaUtil.convert(schema);
 
     // create test
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(1, "aaa", "aaa"),
             RowFactory.create(2, "bbb", "bbb"),
@@ -82,12 +82,12 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     df.writeTo(tablePath)
         .partitionedBy(new Column("day"))
         .create();
-    df = spark.read()
+    df = spark().read()
         .table(tablePath);
     Assert.assertEquals(3, df.count());
 
     // append test
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", "aaa"),
             RowFactory.create(5, "bbb", "bbb"),
@@ -96,12 +96,12 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     );
     df.writeTo(tablePath)
         .append();
-    df = spark.read()
+    df = spark().read()
         .table(tablePath);
     Assertions.assertEquals(6, df.count());
 
     // replace test
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(7, "aaa", "aaa"),
             RowFactory.create(8, "bbb", "bbb"),
@@ -111,13 +111,13 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     df.writeTo(tablePath)
         .partitionedBy(new Column("day"))
         .replace();
-    df = spark.read()
+    df = spark().read()
         .table(tablePath);
     Assertions.assertEquals(3, df.count());
     df.show();
 
     // overwritePartition test
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(10, "ccc", "ccc"),
             RowFactory.create(11, "ddd", "ddd"),
@@ -126,7 +126,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     );
     df.writeTo(tablePath)
         .overwritePartitions();
-    df = spark.read()
+    df = spark().read()
         .table(tablePath);
     Assertions.assertEquals(5, df.count());
   }
@@ -146,7 +146,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     StructType structType = SparkSchemaUtil.convert(schema);
 
     // test create
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(1, "aaa", "aaa"),
             RowFactory.create(2, "bbb", "bbb"),
@@ -156,11 +156,11 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     df.write().format("arctic")
         .partitionBy("day")
         .save(tablePath);
-    df = spark.read().format("arctic").load(tablePath);
+    df = spark().read().format("arctic").load(tablePath);
     Assertions.assertEquals(3, df.count());
 
     // test overwrite dynamic
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", "ccc"),
             RowFactory.create(5, "bbb", "ccc"),
@@ -172,7 +172,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
         .save(tablePath);
-    df = spark.read().format("arctic").load(tablePath);
+    df = spark().read().format("arctic").load(tablePath);
     Assertions.assertEquals(5, df.count());
   }
 

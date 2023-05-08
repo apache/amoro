@@ -150,7 +150,7 @@ public class SparkTableTestBase extends SparkTestBase {
   }
 
   public void createViewSource(Schema schema, List<Record> data) {
-    Dataset<Row> ds = spark.createDataFrame(
+    Dataset<Row> ds = spark().createDataFrame(
         data.stream().map(TestTableHelper::recordToRow).collect(Collectors.toList()),
         SparkSchemaUtil.convert(schema));
 
@@ -180,7 +180,7 @@ public class SparkTableTestBase extends SparkTestBase {
     } else if (Identifier.SOURCE_TYPE_HIVE.equalsIgnoreCase(source.sourceType)) {
       context.dropHiveTable(source.database, source.table);
     } else if (Identifier.SOURCE_TYPE_VIEW.equalsIgnoreCase(source.sourceType)) {
-      spark.sessionState().catalog().dropTempView(source.table);
+      spark().sessionState().catalog().dropTempView(source.table);
     }
 
   }

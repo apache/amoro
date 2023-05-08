@@ -77,7 +77,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
 
     // test overwrite partitions
     StructType structType = SparkSchemaUtil.convert(schema);
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(1, "aaa", "aaa"),
             RowFactory.create(2, "bbb", "bbb"),
@@ -86,10 +86,10 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
     );
     df.writeTo(tablePath).overwritePartitions();
 
-    df = spark.read().table(tablePath);
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(3, df.count());
 
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", "ccc"),
             RowFactory.create(5, "bbb", "ddd"),
@@ -97,7 +97,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
         ), structType
     );
     df.writeTo(tablePath).overwritePartitions();
-    df = spark.read().table(tablePath);
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(5, df.count());
   }
 
@@ -115,7 +115,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
     String tablePath = target().catalog + "." + target().database + "." + target().table;
     StructType structType = SparkSchemaUtil.convert(schema);
     // test create
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(1, "aaa", "aaa"),
             RowFactory.create(2, "bbb", "bbb"),
@@ -128,11 +128,11 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
         .save(tablePath);
     List<Row> rows = sql("desc " + target().database + "." + target().table).collectAsList();
     assertTableDesc(rows, Lists.newArrayList("id"), Lists.newArrayList("day"));
-    df = spark.read().table(tablePath);
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(3, df.count());
 
     // test overwrite dynamic
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", "aaa"),
             RowFactory.create(5, "aaa", "bbb"),
@@ -144,10 +144,10 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
         .save(tablePath);
-    df = spark.read().format("arctic").load(tablePath);
+    df = spark().read().format("arctic").load(tablePath);
     Assert.assertEquals(3, df.count());
 
-    df = spark.createDataFrame(
+    df = spark().createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", "ccc"),
             RowFactory.create(5, "bbb", "ddd"),
@@ -155,7 +155,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
         ), structType
     );
     df.writeTo(tablePath).overwritePartitions();
-    df = spark.read().table(tablePath);
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(5, df.count());
   }
 
