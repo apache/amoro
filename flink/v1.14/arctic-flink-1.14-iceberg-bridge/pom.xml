@@ -22,6 +22,23 @@
     </properties>
 
     <dependencies>
+        <!--arctic-->
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-flink-1.14</artifactId>
@@ -40,12 +57,6 @@
                     <artifactId>parquet-avro</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-format-1.14</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
