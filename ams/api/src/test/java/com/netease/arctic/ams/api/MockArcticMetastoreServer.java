@@ -196,6 +196,7 @@ public class MockArcticMetastoreServer implements Runnable {
   }
 
   public class AmsHandler implements ArcticTableMetastore.Iface {
+    private static final long DEFAULT_BLOCKER_TIMEOUT = 60_000;
     private final ConcurrentLinkedQueue<CatalogMeta> catalogs = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TableMeta> tables = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
@@ -355,8 +356,8 @@ public class MockArcticMetastoreServer implements Runnable {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
-      properties.put("expiration.time", (now + 60000) + "");
-      properties.put("blocker.timeout", 60000 + "");
+      properties.put("expiration.time", (now + DEFAULT_BLOCKER_TIMEOUT) + "");
+      properties.put("blocker.timeout", DEFAULT_BLOCKER_TIMEOUT + "");
       Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
       blockers.put(blocker.getBlockerId(), blocker);
       return blocker;
@@ -372,7 +373,17 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-      return 0;
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers == null) {
+        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+      }
+      Blocker blocker = blockers.get(blockerId);
+      if (blocker == null) {
+        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+      }
+      long expirationTime = System.currentTimeMillis() + DEFAULT_BLOCKER_TIMEOUT;
+      blocker.getProperties().put("expiration.time", expirationTime + "");
+      return expirationTime;
     }
 
     @Override
