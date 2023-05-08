@@ -23,15 +23,17 @@ public class TestArcticCommandSQL extends SparkTableTestBase {
     };
 
     return Stream.of(
-        Arguments.arguments(fields, new String[0]),
-        Arguments.arguments(fields, new String[]{"pt"})
+        Arguments.arguments(fields, new String[0], SESSION_CATALOG),
+        Arguments.arguments(fields, new String[]{"pt"}, SESSION_CATALOG),
+        Arguments.arguments(fields, new String[0], INTERNAL_CATALOG),
+        Arguments.arguments(fields, new String[]{"pt"}, INTERNAL_CATALOG)
     );
   }
 
   @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
   @ParameterizedTest
   @MethodSource
-  public void testMigrate(Types.NestedField[] fields, String[] pt) {
+  public void testMigrate(Types.NestedField[] fields, String[] pt, String targetCatalog) {
 
     TestTable source = TestTable.format(MIXED_HIVE, fields).pt(pt).build();
     createHiveSource(source.hiveSchema, source.hivePartitions);
@@ -39,6 +41,6 @@ public class TestArcticCommandSQL extends SparkTableTestBase {
         " ( 1, 'aaa', '0001' ),  " +
         " ( 2, 'bbb', '0002' ) ");
 
-    sql("migrate " + source() + " to arctic " + target());
+    sql("migrate " + source() + " to arctic " + targetCatalog + "." + target());
   }
 }

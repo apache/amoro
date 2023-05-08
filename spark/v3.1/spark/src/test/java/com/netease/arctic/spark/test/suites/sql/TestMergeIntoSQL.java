@@ -152,6 +152,28 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .assertRecordsEqual();
   }
 
+
+  @DisplayName("SQL: MERGE INTO for only delete actions")
+  @ParameterizedTest
+  @MethodSource("args")
+  public void testOnlyDeletes(TableFormat format, PrimaryKeySpec keySpec) {
+    setupTest(keySpec);
+    createViewSource(schema, source);
+    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
+        "WHEN MATCHED THEN DELETE " );
+
+    List<Record> expects = ExpectResultHelper.expectMergeResult(
+            target, source, r -> r.getField("id")
+        ).whenMatched((t, s) -> true, (t, s) -> null)
+        .results();
+
+    ArcticTable table = loadTable();
+    List<Record> actual = TestTableHelper.tableRecords(table);
+    DataComparator.build(expects, actual)
+        .ignoreOrder("id")
+        .assertRecordsEqual();
+  }
+
   // TODO: test failed.
   @DisplayName("SQL: MERGE INTO for explicit column ")
 //  @ParameterizedTest

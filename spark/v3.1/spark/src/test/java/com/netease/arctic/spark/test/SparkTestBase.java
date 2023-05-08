@@ -2,7 +2,9 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.test.extensions.EachParameterResolver;
+import com.netease.arctic.utils.CollectionHelper;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -10,9 +12,12 @@ import org.apache.spark.sql.execution.QueryExecution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 
 public class SparkTestBase {
@@ -22,8 +27,8 @@ public class SparkTestBase {
   public static final String INTERNAL_CATALOG = "arctic_catalog";
   public static final String HIVE_CATALOG = "hive_catalog";
 
-  @RegisterExtension
-  private final EachParameterResolver eachParameterResolver = new EachParameterResolver();
+//  @RegisterExtension
+//  private final EachParameterResolver eachParameterResolver = new EachParameterResolver();
 
   @BeforeAll
   public static void setupContext() throws Exception {
@@ -39,6 +44,21 @@ public class SparkTestBase {
   private ArcticCatalog _catalog;
   protected String currentCatalog = SESSION_CATALOG;
   protected QueryExecution qe;
+
+
+  protected Map<String, String> sparkSessionConfig() {
+    return CollectionHelper.asMap(
+        "spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName(),
+        "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME)
+    );
+  }
+
+
+  @BeforeEach
+  public void setupTestSession() {
+    Map<String, String> conf = sparkSessionConfig();
+    this.spark = context.getSparkSession(conf);
+  }
 
 
   @AfterEach
@@ -62,15 +82,8 @@ public class SparkTestBase {
     return _catalog;
   }
 
-  protected boolean isHiveCatalog() {
-    return SESSION_CATALOG.equalsIgnoreCase(currentCatalog) || HIVE_CATALOG.equals(currentCatalog);
-  }
-
 
   public Dataset<Row> sql(String sqlText) {
-    if (this.spark == null){
-      this.spark = context.getSparkSession(true);
-    }
     long begin = System.currentTimeMillis();
     LOG.info("Execute SQL: " + sqlText);
     Dataset<Row> ds = spark.sql(sqlText);

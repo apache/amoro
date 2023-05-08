@@ -331,7 +331,6 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   }
 
 
-
   public static Stream<Arguments> testOptimizeWrite() {
     return Stream.of(
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, 4, true),
@@ -390,7 +389,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
     boolean shouldOptimized = optimizeWriteEnable && (keySpec.primaryKeyExisted() || ptSpec.isPartitioned());
 
-    if (shouldOptimized){
+    if (shouldOptimized) {
       table.refresh();
       TableFiles files = TestTableHelper.files(table);
       int expectFiles = ExpectResultHelper.expectOptimizeWriteFileCount(source, table, bucket);
@@ -400,6 +399,48 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   }
 
 
+  public static Arguments[] testSourceDuplicateCheck() {
+    return new Arguments[]{
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, true, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, STATIC, true, false),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, DYNAMIC, true, false),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, false, false),
+
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, STATIC, true, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, STATIC, true, false),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, DYNAMIC, true, false),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, false, false),
+    };
+  }
+
+  @DisplayName("TestSQL: INSERT OVERWRITE duplicate check source")
+  @ParameterizedTest()
+  @MethodSource
+  public void testSourceDuplicateCheck(
+      TableFormat format, PrimaryKeySpec keySpec, PartitionSpec ptSpec, String mode,
+      boolean duplicateSource, boolean expectChecked
+  ) {
+    spark.conf().set(OVERWRITE_MODE_KEY, mode);
+    spark.conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, true);
+
+    table = createTarget(schema, builder -> builder.withPartitionSpec(ptSpec)
+        .withPrimaryKeySpec(keySpec));
+    List<Record> sourceData = Lists.newArrayList(this.base);
+    if (duplicateSource) {
+      sourceData.addAll(this.source);
+    }
+    createViewSource(schema, sourceData);
+
+    boolean failed = false;
+    try {
+      sql("INSERT OVERWRITE " + target() + " SELECT * FROM " + source());
+    } catch (Exception e) {
+      failed = true;
+    }
+    Assertions.assertEquals(expectChecked, failed);
+  }
 
 
 }

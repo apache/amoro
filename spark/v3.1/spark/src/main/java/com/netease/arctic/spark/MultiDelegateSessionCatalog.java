@@ -391,7 +391,12 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
     @Override
     public boolean dropTable(Identifier ident) {
-      return holder.dropTable(ident);
+      boolean holderDrop = holder.dropTable(ident);
+      boolean delegateDrop = false;
+      if (delegate != null){
+        delegateDrop = delegate.dropTable(ident);;
+      }
+      return holderDrop || delegateDrop;
     }
 
     @Override

@@ -8,7 +8,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
-import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -28,6 +27,8 @@ import java.util.Map;
 public class SparkTestContext {
 
   final TemporaryFolder warehouse = new TemporaryFolder();
+  public static final String INTERNAL_CATALOG_NAME = "arctic_catalog";
+  public static final String EXTERNAL_HIVE_CATALOG_NAME = "hive_catalog";
 
   final TestAms AMS = new TestAms();
 
@@ -66,7 +67,7 @@ public class SparkTestContext {
   public void dropHiveTable(String database, String table) {
     try {
       HMS.getHiveClient().dropTable(database, table, true, true);
-    }catch (Exception e){
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -95,25 +96,28 @@ public class SparkTestContext {
 
   public String amsCatalogName(String catalogType) {
     if ("Hive".equalsIgnoreCase(catalogType)) {
-      return "hive_catalog";
+      return EXTERNAL_HIVE_CATALOG_NAME;
     } else if ("Arctic".equalsIgnoreCase(catalogType)) {
-      return "arctic_catalog";
+      return INTERNAL_CATALOG_NAME;
     } else {
       throw new IllegalArgumentException("unknown type of catalog type:" + catalogType);
     }
   }
 
+
+  public String catalogUrl(String arcticCatalogName) {
+    return this.AMS.getServerUrl() + "/" + arcticCatalogName;
+  }
+
   private String hiveVersion() {
-    String hiveVersion = null;
     try {
-      hiveVersion = SparkTestContext.class.getClassLoader()
+      return SparkTestContext.class.getClassLoader()
           .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
           .getPackage()
           .getImplementationVersion();
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
-    return hiveVersion;
   }
 
   private String hiveMetastoreUri() {
@@ -124,7 +128,7 @@ public class SparkTestContext {
     return this.warehouse.getRoot().getAbsolutePath();
   }
 
-  public SparkSession getSparkSession(boolean arcticSessionCatalog) {
+  public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
     configs.put("spark.sql.catalog." + amsCatalogName("arctic"), ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url"
@@ -132,12 +136,6 @@ public class SparkTestContext {
     configs.put("spark.sql.catalog." + amsCatalogName("hive"), ArcticSparkCatalog.class.getName());
     configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url"
         , this.AMS.getServerUrl() + "/" + amsCatalogName("hive"));
-    if (arcticSessionCatalog) {
-      configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
-      configs.put(
-          "spark.sql.catalog.spark_catalog.url",
-          this.AMS.getServerUrl() + "/" + amsCatalogName("hive"));
-    }
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");
@@ -153,6 +151,10 @@ public class SparkTestContext {
     configs.put("spark.sql.warehouse.dir", this.warehouseDir());
     configs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     configs.put("spark.testing.memory", "943718400");
+
+    if (externalConfigs != null) {
+      configs.putAll(externalConfigs);
+    }
 
     initializeSparkSession(configs);
     return this._spark.cloneSession();
@@ -183,10 +185,7 @@ public class SparkTestContext {
   }
 
   private void initializeSparkSession(Map<String, String> sparkConf) {
-    boolean create = false;
-    if (_spark == null) {
-      create = true;
-    }
+    boolean create = _spark == null;
     if (!isSameSparkConf(sparkConf)) {
       create = true;
     }
