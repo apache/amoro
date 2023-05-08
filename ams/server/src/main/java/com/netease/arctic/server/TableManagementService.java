@@ -130,8 +130,8 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-    return 0;
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+    throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
   }
 
   @Override
