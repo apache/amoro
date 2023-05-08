@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.topic.range;
 
-import org.apache.flink.connector.pulsar.sink.writer.message.PulsarMessageBuilder;
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.pulsar.sink.writer.message.PulsarMessageBuilder;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicMetadata;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
 import org.apache.pulsar.client.api.Message;
@@ -31,7 +31,10 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.TopicRangeUtils.NONE_KEY;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.TopicRangeUtils.keyBytesHash;
 import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.TopicRangeUtils.keyHash;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.TopicRangeUtils.validateTopicRanges;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -92,7 +95,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
          * Message#getKey()}, use this method for supporting consuming such messages.
          */
         public FixedKeysRangeGeneratorBuilder supportNullKey() {
-            keyHashes.add(TopicRangeUtils.keyHash(TopicRangeUtils.NONE_KEY));
+            keyHashes.add(keyHash(NONE_KEY));
             return this;
         }
 
@@ -101,7 +104,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
          * TypedMessageBuilder#key(String)}, use this method for supporting consuming such messages.
          */
         public FixedKeysRangeGeneratorBuilder key(String key) {
-            keyHashes.add(TopicRangeUtils.keyHash(key));
+            keyHashes.add(keyHash(key));
             return this;
         }
 
@@ -109,7 +112,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
         public FixedKeysRangeGeneratorBuilder keys(Collection<String> someKeys) {
             checkNotNull(someKeys);
             for (String someKey : someKeys) {
-                keyHashes.add(TopicRangeUtils.keyHash(someKey));
+                keyHashes.add(keyHash(someKey));
             }
             return this;
         }
@@ -119,7 +122,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
          * this method for supporting consuming such messages.
          */
         public FixedKeysRangeGeneratorBuilder keyBytes(byte[] keyBytes) {
-            keyHashes.add(TopicRangeUtils.keyBytesHash(keyBytes));
+            keyHashes.add(keyBytesHash(keyBytes));
             return this;
         }
 
@@ -130,7 +133,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
          * messages.
          */
         public FixedKeysRangeGeneratorBuilder orderingKey(byte[] keyBytes) {
-            keyHashes.add(TopicRangeUtils.keyHash(keyBytes));
+            keyHashes.add(keyHash(keyBytes));
             return this;
         }
 
@@ -174,7 +177,7 @@ public class FixedKeysRangeGenerator implements RangeGenerator {
                 ranges.add(range);
             }
 
-            TopicRangeUtils.validateTopicRanges(ranges, sharedMode);
+            validateTopicRanges(ranges, sharedMode);
             return new FixedKeysRangeGenerator(ranges, sharedMode);
         }
     }

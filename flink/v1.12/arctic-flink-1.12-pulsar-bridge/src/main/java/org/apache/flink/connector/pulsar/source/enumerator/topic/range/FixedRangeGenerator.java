@@ -18,11 +18,13 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.topic.range;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicMetadata;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
-import org.apache.flink.annotation.PublicEvolving;
 
 import java.util.List;
+
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.TopicRangeUtils.validateTopicRanges;
 
 /** Always return the same range set for all topics. */
 @PublicEvolving
@@ -37,7 +39,7 @@ public class FixedRangeGenerator implements RangeGenerator {
     }
 
     public FixedRangeGenerator(List<TopicRange> ranges, KeySharedMode sharedMode) {
-        TopicRangeUtils.validateTopicRanges(ranges, sharedMode);
+        validateTopicRanges(ranges, sharedMode);
 
         this.ranges = ranges;
         this.sharedMode = sharedMode;

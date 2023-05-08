@@ -19,7 +19,6 @@
 package org.apache.flink.connector.pulsar.common.schema;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.util.Preconditions;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.schema.SchemaInfoImpl;
 import org.apache.pulsar.common.schema.KeyValue;
@@ -36,6 +35,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.createSchema;
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.encodeClassInfo;
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.haveProtobuf;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkState;
 import static org.apache.flink.util.ReflectionUtil.getTemplateType1;
@@ -74,8 +77,8 @@ public final class PulsarSchema<T> implements Serializable {
         // Primitive type information could be reflected from the schema class.
         Class<?> typeClass = getTemplateType1(schema.getClass());
 
-        this.schemaInfo = PulsarSchemaUtils.encodeClassInfo(info, typeClass);
-        this.schema = PulsarSchemaUtils.createSchema(schemaInfo);
+        this.schemaInfo = encodeClassInfo(info, typeClass);
+        this.schema = createSchema(schemaInfo);
     }
 
     /**
@@ -91,13 +94,13 @@ public final class PulsarSchema<T> implements Serializable {
                 "Key Value Schema should provide the type classes of key and value");
         validateSchemaInfo(info);
 
-        this.schemaInfo = PulsarSchemaUtils.encodeClassInfo(info, typeClass);
-        this.schema = PulsarSchemaUtils.createSchema(schemaInfo);
+        this.schemaInfo = encodeClassInfo(info, typeClass);
+        this.schema = createSchema(schemaInfo);
     }
 
     /** Create serializable pulsar schema for key value type. */
     public <K, V> PulsarSchema(
-      Schema<KeyValue<K, V>> kvSchema, Class<K> keyClass, Class<V> valueClass) {
+            Schema<KeyValue<K, V>> kvSchema, Class<K> keyClass, Class<V> valueClass) {
         SchemaInfo info = kvSchema.getSchemaInfo();
         checkArgument(
                 info.getType() == SchemaType.KEY_VALUE,
@@ -105,18 +108,18 @@ public final class PulsarSchema<T> implements Serializable {
 
         KeyValue<SchemaInfo, SchemaInfo> infoKeyValue = decodeKeyValueSchemaInfo(info);
 
-        SchemaInfo infoKey = PulsarSchemaUtils.encodeClassInfo(infoKeyValue.getKey(), keyClass);
+        SchemaInfo infoKey = encodeClassInfo(infoKeyValue.getKey(), keyClass);
         validateSchemaInfo(infoKey);
 
-        SchemaInfo infoValue = PulsarSchemaUtils.encodeClassInfo(infoKeyValue.getValue(), valueClass);
+        SchemaInfo infoValue = encodeClassInfo(infoKeyValue.getValue(), valueClass);
         validateSchemaInfo(infoValue);
 
         KeyValueEncodingType encodingType = decodeKeyValueEncodingType(info);
         SchemaInfo encodedInfo =
                 encodeKeyValueSchemaInfo(info.getName(), infoKey, infoValue, encodingType);
 
-        this.schemaInfo = PulsarSchemaUtils.encodeClassInfo(encodedInfo, KeyValue.class);
-        this.schema = PulsarSchemaUtils.createSchema(this.schemaInfo);
+        this.schemaInfo = encodeClassInfo(encodedInfo, KeyValue.class);
+        this.schema = createSchema(this.schemaInfo);
     }
 
     public Schema<T> getPulsarSchema() {
@@ -128,7 +131,7 @@ public final class PulsarSchema<T> implements Serializable {
     }
 
     public Class<T> getRecordClass() {
-        return PulsarSchemaUtils.decodeClassInfo(schemaInfo);
+        return decodeClassInfo(schemaInfo);
     }
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
@@ -174,7 +177,7 @@ public final class PulsarSchema<T> implements Serializable {
         }
 
         this.schemaInfo = new SchemaInfoImpl(name, schemaBytes, type, properties);
-        this.schema = PulsarSchemaUtils.createSchema(schemaInfo);
+        this.schema = createSchema(schemaInfo);
     }
 
     @Override
@@ -212,8 +215,8 @@ public final class PulsarSchema<T> implements Serializable {
     private void validateSchemaInfo(SchemaInfo info) {
         SchemaType type = info.getType();
         if (type == SchemaType.PROTOBUF || type == SchemaType.PROTOBUF_NATIVE) {
-            Preconditions.checkState(
-                    PulsarSchemaUtils.haveProtobuf(), "protobuf-java should be provided if you use related schema.");
+            checkState(
+                    haveProtobuf(), "protobuf-java should be provided if you use related schema.");
         }
     }
 }

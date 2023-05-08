@@ -180,7 +180,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
   }
 
   /**
-   * copy from source.pulsar.connector.flink.apache.PulsarSourceBuilder#build
+   * copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder#build
    */
   private void buildOfficial() {
     // Ensure the topic subscriber for pulsar.

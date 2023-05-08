@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.pulsar.common.schema.factories;
 
-import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaFactory;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaFactory;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.schema.StringSchema;
 import org.apache.pulsar.common.schema.SchemaInfo;

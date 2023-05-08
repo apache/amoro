@@ -18,20 +18,17 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarClientFactory;
-import org.apache.flink.connector.pulsar.source.enumerator.assigner.SplitAssigner;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.source.enumerator.assigner.SplitAssignerFactory;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.assigner.SplitAssigner;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.pulsar.client.admin.PulsarAdmin;
@@ -44,7 +41,10 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.singletonList;
+import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactory.createAdmin;
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyAdmin;
+import static org.apache.flink.connector.pulsar.source.enumerator.PulsarSourceEnumState.initialState;
+import static org.apache.flink.connector.pulsar.source.enumerator.assigner.SplitAssignerFactory.createAssigner;
 
 /** The enumerator class for the pulsar source. */
 @Internal
@@ -75,7 +75,7 @@ public class PulsarSourceEnumerator
                 rangeGenerator,
                 sourceConfiguration,
                 context,
-                PulsarSourceEnumState.initialState());
+                initialState());
     }
 
     public PulsarSourceEnumerator(
@@ -86,13 +86,13 @@ public class PulsarSourceEnumerator
             SourceConfiguration sourceConfiguration,
             SplitEnumeratorContext<PulsarPartitionSplit> context,
             PulsarSourceEnumState enumState) {
-        this.pulsarAdmin = PulsarClientFactory.createAdmin(sourceConfiguration);
+        this.pulsarAdmin = createAdmin(sourceConfiguration);
         this.subscriber = subscriber;
         this.startCursor = startCursor;
         this.rangeGenerator = rangeGenerator;
         this.sourceConfiguration = sourceConfiguration;
         this.context = context;
-        this.splitAssigner = SplitAssignerFactory.createAssigner(stopCursor, sourceConfiguration, context, enumState);
+        this.splitAssigner = createAssigner(stopCursor, sourceConfiguration, context, enumState);
     }
 
     @Override
@@ -210,7 +210,7 @@ public class PulsarSourceEnumerator
             CursorPosition position =
                     startCursor.position(partition.getTopic(), partition.getPartitionId());
 
-            PulsarExceptionUtils.sneakyAdmin(
+            sneakyAdmin(
                     () -> position.createInitialPosition(pulsarAdmin, topicName, subscriptionName));
         }
     }

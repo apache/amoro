@@ -18,14 +18,20 @@
 
 package org.apache.flink.connector.pulsar.sink.config;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarConfiguration;
-import org.apache.flink.connector.pulsar.sink.PulsarSinkOptions;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.Sink.InitContext;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.pulsar.common.config.PulsarConfiguration;
 import org.apache.pulsar.client.api.Schema;
 
 import java.util.Objects;
+
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_MAX_MESSAGES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_MAX_RECOMMIT_TIMES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_TOPIC_METADATA_REFRESH_INTERVAL;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_WRITE_SCHEMA_EVOLUTION;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_WRITE_TRANSACTION_TIMEOUT;
 
 /** The configured class for pulsar sink. */
 @PublicEvolving
@@ -42,12 +48,12 @@ public class SinkConfiguration extends PulsarConfiguration {
     public SinkConfiguration(Configuration configuration) {
         super(configuration);
 
-        this.transactionTimeoutMillis = getLong(PulsarSinkOptions.PULSAR_WRITE_TRANSACTION_TIMEOUT);
-        this.topicMetadataRefreshInterval = getLong(PulsarSinkOptions.PULSAR_TOPIC_METADATA_REFRESH_INTERVAL);
-        this.partitionSwitchSize = getInteger(PulsarSinkOptions.PULSAR_BATCHING_MAX_MESSAGES);
-        this.enableSchemaEvolution = get(PulsarSinkOptions.PULSAR_WRITE_SCHEMA_EVOLUTION);
-        this.maxPendingMessages = get(PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM);
-        this.maxRecommitTimes = get(PulsarSinkOptions.PULSAR_MAX_RECOMMIT_TIMES);
+        this.transactionTimeoutMillis = getLong(PULSAR_WRITE_TRANSACTION_TIMEOUT);
+        this.topicMetadataRefreshInterval = getLong(PULSAR_TOPIC_METADATA_REFRESH_INTERVAL);
+        this.partitionSwitchSize = getInteger(PULSAR_BATCHING_MAX_MESSAGES);
+        this.enableSchemaEvolution = get(PULSAR_WRITE_SCHEMA_EVOLUTION);
+        this.maxPendingMessages = get(PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM);
+        this.maxRecommitTimes = get(PULSAR_MAX_RECOMMIT_TIMES);
     }
 
     /**

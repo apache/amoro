@@ -18,13 +18,11 @@
 
 package org.apache.flink.connector.pulsar.sink.writer.toipc;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarClientFactory;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils;
-import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils;
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -41,7 +39,11 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
+import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactory.createAdmin;
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyAdmin;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.isPartition;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicName;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicNameWithPartition;
 import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PARTITIONED;
 
 /**
@@ -93,12 +95,12 @@ public class TopicMetadataListener implements Serializable, Closeable {
         }
 
         // Initialize listener properties.
-        this.pulsarAdmin = PulsarClientFactory.createAdmin(sinkConfiguration);
+        this.pulsarAdmin = createAdmin(sinkConfiguration);
         this.topicMetadataRefreshInterval = sinkConfiguration.getTopicMetadataRefreshInterval();
         this.timeService = timeService;
 
         // Initialize the topic metadata. Quit if fail to connect to Pulsar.
-        PulsarExceptionUtils.sneakyAdmin(this::updateTopicMetadata);
+        sneakyAdmin(this::updateTopicMetadata);
 
         // Register time service.
         triggerNextTopicMetadataUpdate(true);
@@ -117,10 +119,10 @@ public class TopicMetadataListener implements Serializable, Closeable {
                 int partitionNums = entry.getValue();
                 // Get all topics from partitioned and non-partitioned topic names
                 if (partitionNums == NON_PARTITIONED) {
-                    results.add(TopicNameUtils.topicName(entry.getKey()));
+                    results.add(topicName(entry.getKey()));
                 } else {
                     for (int i = 0; i < partitionNums; i++) {
-                        results.add(TopicNameUtils.topicNameWithPartition(entry.getKey(), i));
+                        results.add(topicNameWithPartition(entry.getKey(), i));
                     }
                 }
             }

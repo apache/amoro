@@ -18,10 +18,10 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.assigner;
 
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.source.SplitsAssignment;
 import org.apache.flink.connector.pulsar.source.enumerator.PulsarSourceEnumState;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 
 import java.util.List;

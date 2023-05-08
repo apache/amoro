@@ -63,7 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copy from iceberg {@link IcebergFilesCommitter}.
+ * Copy from iceberg {@link org.apache.iceberg.flink.sink.IcebergFilesCommitter}.
  * adapt IcebergFilesCommitterMetrics for flink 1.12 module.
  */
 public class IcebergFilesCommitter extends AbstractStreamOperator<Void>

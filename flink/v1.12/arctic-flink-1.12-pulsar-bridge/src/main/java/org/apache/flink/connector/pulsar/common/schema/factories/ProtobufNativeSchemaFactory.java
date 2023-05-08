@@ -18,12 +18,13 @@
 
 package org.apache.flink.connector.pulsar.common.schema.factories;
 
-import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils;
 import com.google.protobuf.GeneratedMessageV3;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.schema.ProtobufNativeSchema;
 import org.apache.pulsar.common.schema.SchemaInfo;
 import org.apache.pulsar.common.schema.SchemaType;
+
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
 /** The schema factory for pulsar's {@link ProtobufNativeSchema}. */
 public class ProtobufNativeSchemaFactory<T extends GeneratedMessageV3>
@@ -36,7 +37,7 @@ public class ProtobufNativeSchemaFactory<T extends GeneratedMessageV3>
 
     @Override
     public Schema<T> createSchema(SchemaInfo info) {
-        Class<T> typeClass = PulsarSchemaUtils.decodeClassInfo(info);
+        Class<T> typeClass = decodeClassInfo(info);
         return ProtobufNativeSchema.of(typeClass, info.getProperties());
     }
 }

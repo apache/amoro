@@ -18,24 +18,23 @@
 
 package org.apache.flink.connector.pulsar.source;
 
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator;
-import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
-import org.apache.flink.connector.pulsar.common.config.PulsarConfigBuilder;
-import org.apache.flink.connector.pulsar.common.config.PulsarOptions;
-import org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils;
-import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.SplitRangeGenerator;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.pulsar.common.config.PulsarConfigBuilder;
+import org.apache.flink.connector.pulsar.common.config.PulsarOptions;
+import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.SplitRangeGenerator;
+import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
 import org.apache.pulsar.client.api.RegexSubscriptionMode;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
@@ -48,12 +47,16 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.FALSE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_CONSUMER_NAME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
+import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
 import static org.apache.flink.util.InstantiationUtil.isSerializable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -138,7 +141,7 @@ public class PulsarSourceBuilder<OUT> {
      * @return this PulsarSourceBuilder.
      */
     public PulsarSourceBuilder<OUT> setAdminUrl(String adminUrl) {
-        return setConfig(PulsarOptions.PULSAR_ADMIN_URL, adminUrl);
+        return setConfig(PULSAR_ADMIN_URL, adminUrl);
     }
 
     /**
@@ -148,7 +151,7 @@ public class PulsarSourceBuilder<OUT> {
      * @return this PulsarSourceBuilder.
      */
     public PulsarSourceBuilder<OUT> setServiceUrl(String serviceUrl) {
-        return setConfig(PulsarOptions.PULSAR_SERVICE_URL, serviceUrl);
+        return setConfig(PULSAR_SERVICE_URL, serviceUrl);
     }
 
     /**
@@ -452,7 +455,7 @@ public class PulsarSourceBuilder<OUT> {
             LOG.info(
                     "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled "
                             + "and your pulsar cluster is support the transaction.");
-            configBuilder.override(PulsarOptions.PULSAR_ENABLE_TRANSACTION, true);
+            configBuilder.override(PULSAR_ENABLE_TRANSACTION, true);
 
             if (!configBuilder.contains(PULSAR_READ_TRANSACTION_TIMEOUT)) {
                 LOG.warn(
@@ -484,7 +487,7 @@ public class PulsarSourceBuilder<OUT> {
 
         // Check builder configuration.
         SourceConfiguration sourceConfiguration =
-                configBuilder.build(PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
+                configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
 
         return new PulsarSource<>(
                 sourceConfiguration,

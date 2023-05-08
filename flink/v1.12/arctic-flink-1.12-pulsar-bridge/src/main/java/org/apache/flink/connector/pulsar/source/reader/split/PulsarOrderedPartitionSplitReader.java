@@ -18,13 +18,12 @@
 
 package org.apache.flink.connector.pulsar.source.reader.split;
 
-import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
-import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
+import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
+import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -119,6 +118,6 @@ public class PulsarOrderedPartitionSplitReader<OUT> extends PulsarPartitionSplit
             this.pulsarConsumer = createPulsarConsumer(partition);
         }
 
-        PulsarExceptionUtils.sneakyClient(() -> pulsarConsumer.acknowledgeCumulative(offsetsToCommit));
+        sneakyClient(() -> pulsarConsumer.acknowledgeCumulative(offsetsToCommit));
     }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator;
 
-import org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplitSerializer;
@@ -32,6 +31,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Set;
+
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeMap;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeSet;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.serializeSet;
 
 /** The {@link SimpleVersionedSerializer Serializer} for the enumerator state of Pulsar source. */
 public class PulsarSourceEnumStateSerializer
@@ -59,7 +62,7 @@ public class PulsarSourceEnumStateSerializer
     public byte[] serialize(PulsarSourceEnumState obj) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream out = new DataOutputStream(baos)) {
-            PulsarSerdeUtils.serializeSet(
+            serializeSet(
                     out, obj.getAppendedPartitions(), SPLIT_SERIALIZER::serializeTopicPartition);
             out.flush();
             return baos.toByteArray();
@@ -73,16 +76,16 @@ public class PulsarSourceEnumStateSerializer
                 DataInputStream in = new DataInputStream(bais)) {
             Set<TopicPartition> partitions = null;
             if (version == 2) {
-                partitions = PulsarSerdeUtils.deserializeSet(in, deserializePartition(1));
+                partitions = deserializeSet(in, deserializePartition(1));
             } else {
-                partitions = PulsarSerdeUtils.deserializeSet(in, deserializePartition(0));
+                partitions = deserializeSet(in, deserializePartition(0));
             }
 
             // Only deserialize these fields for backward compatibility.
             if (version == 0) {
-                PulsarSerdeUtils.deserializeSet(in, deserializeSplit(0));
-                PulsarSerdeUtils.deserializeMap(in, DataInput::readInt, i -> PulsarSerdeUtils.deserializeSet(i, deserializeSplit(0)));
-                PulsarSerdeUtils.deserializeMap(in, DataInput::readInt, i -> PulsarSerdeUtils.deserializeSet(i, DataInput::readUTF));
+                deserializeSet(in, deserializeSplit(0));
+                deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, deserializeSplit(0)));
+                deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, DataInput::readUTF));
                 in.readBoolean();
             }
 

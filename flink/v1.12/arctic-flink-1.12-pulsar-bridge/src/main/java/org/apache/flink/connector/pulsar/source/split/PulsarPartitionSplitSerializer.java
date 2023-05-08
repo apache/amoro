@@ -19,10 +19,9 @@
 package org.apache.flink.connector.pulsar.source.split;
 
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
-import org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.transaction.TxnID;
@@ -35,6 +34,12 @@ import java.io.IOException;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeBytes;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeList;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeObject;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.serializeBytes;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.serializeList;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.serializeObject;
 
 /** The {@link SimpleVersionedSerializer serializer} for {@link PulsarPartitionSplit}. */
 public class PulsarPartitionSplitSerializer
@@ -83,7 +88,7 @@ public class PulsarPartitionSplitSerializer
         serializeTopicPartition(out, split.getPartition());
 
         // stopCursor
-        PulsarSerdeUtils.serializeObject(out, split.getStopCursor());
+        serializeObject(out, split.getStopCursor());
 
         // latestConsumedId
         MessageId latestConsumedId = split.getLatestConsumedId();
@@ -91,7 +96,7 @@ public class PulsarPartitionSplitSerializer
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            PulsarSerdeUtils.serializeBytes(out, latestConsumedId.toByteArray());
+            serializeBytes(out, latestConsumedId.toByteArray());
         }
 
         // uncommittedTransactionId
@@ -111,12 +116,12 @@ public class PulsarPartitionSplitSerializer
         TopicPartition partition = deserializeTopicPartition(version, in);
 
         // stopCursor
-        StopCursor stopCursor = PulsarSerdeUtils.deserializeObject(in);
+        StopCursor stopCursor = deserializeObject(in);
 
         // latestConsumedId
         MessageId latestConsumedId = null;
         if (in.readBoolean()) {
-            byte[] messageIdBytes = PulsarSerdeUtils.deserializeBytes(in);
+            byte[] messageIdBytes = deserializeBytes(in);
             latestConsumedId = MessageId.fromByteArray(messageIdBytes);
         }
 
@@ -138,7 +143,7 @@ public class PulsarPartitionSplitSerializer
         // VERSION 1 serialization
         out.writeUTF(partition.getTopic());
         out.writeInt(partition.getPartitionId());
-        PulsarSerdeUtils.serializeList(
+        serializeList(
                 out,
                 partition.getRanges(),
                 (o, r) -> {
@@ -164,7 +169,7 @@ public class PulsarPartitionSplitSerializer
         } else {
             // VERSION 1 deserialization
             ranges =
-                    PulsarSerdeUtils.deserializeList(
+                    deserializeList(
                             in,
                             i -> {
                                 int start = i.readInt();

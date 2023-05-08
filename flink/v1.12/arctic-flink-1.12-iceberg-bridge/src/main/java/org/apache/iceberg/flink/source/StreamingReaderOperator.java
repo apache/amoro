@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Queue;
 /**
- * Copy from iceberg {@link StreamingReaderOperator}.
+ * Copy from iceberg {@link org.apache.iceberg.flink.source.StreamingReaderOperator}.
  * change MailboxExecutor import for adapt Flink 1.12 version.
  */
 

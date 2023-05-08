@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.pulsar.common.config;
 
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
 import org.apache.flink.annotation.Internal;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminBuilder;
@@ -148,7 +147,7 @@ public final class PulsarClientFactory {
         }
         configuration.useOption(PULSAR_ENABLE_TRANSACTION, builder::enableTransaction);
 
-        return PulsarExceptionUtils.sneakyClient(builder::build);
+        return sneakyClient(builder::build);
     }
 
     /**
@@ -182,7 +181,7 @@ public final class PulsarClientFactory {
         configuration.useOption(
                 PULSAR_AUTO_CERT_REFRESH_TIME, v -> builder.autoCertRefreshTime(v, MILLISECONDS));
 
-        return PulsarExceptionUtils.sneakyClient(builder::build);
+        return sneakyClient(builder::build);
     }
 
     /**
@@ -198,7 +197,7 @@ public final class PulsarClientFactory {
 
             if (configuration.contains(PULSAR_AUTH_PARAMS)) {
                 String authParamsString = configuration.get(PULSAR_AUTH_PARAMS);
-                return PulsarExceptionUtils.sneakyClient(
+                return sneakyClient(
                         () -> AuthenticationFactory.create(authPluginClassName, authParamsString));
             } else {
                 Map<String, String> paramsMap = configuration.getProperties(PULSAR_AUTH_PARAM_MAP);
@@ -209,7 +208,7 @@ public final class PulsarClientFactory {
                                     PULSAR_AUTH_PARAMS.key(), PULSAR_AUTH_PARAM_MAP.key()));
                 }
 
-                return PulsarExceptionUtils.sneakyClient(
+                return sneakyClient(
                         () -> AuthenticationFactory.create(authPluginClassName, paramsMap));
             }
         }

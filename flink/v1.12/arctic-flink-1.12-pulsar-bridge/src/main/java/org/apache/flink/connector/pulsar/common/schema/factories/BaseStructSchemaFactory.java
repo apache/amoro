@@ -18,13 +18,14 @@
 
 package org.apache.flink.connector.pulsar.common.schema.factories;
 
-import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.pulsar.common.schema.PulsarSchema;
 import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaFactory;
 import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaTypeInformation;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.common.schema.SchemaInfo;
+
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
 /** Implement the common createTypeInfo method for all struct schema factory. */
 public abstract class BaseStructSchemaFactory<T> implements PulsarSchemaFactory<T> {
@@ -32,7 +33,7 @@ public abstract class BaseStructSchemaFactory<T> implements PulsarSchemaFactory<
     @Override
     public TypeInformation<T> createTypeInfo(SchemaInfo info) {
         Schema<T> pulsarSchema = createSchema(info);
-        Class<T> typeClass = PulsarSchemaUtils.decodeClassInfo(info);
+        Class<T> typeClass = decodeClassInfo(info);
         PulsarSchema<T> schema = new PulsarSchema<>(pulsarSchema, typeClass);
 
         return new PulsarSchemaTypeInformation<>(schema);

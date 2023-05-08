@@ -22,10 +22,10 @@ import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SourceReaderBase;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
+import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.reader.emitter.PulsarRecordEmitter;
 import org.apache.flink.connector.pulsar.source.reader.fetcher.PulsarFetcherManagerBase;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
-import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplitState;
 import org.apache.pulsar.client.admin.PulsarAdmin;
@@ -38,7 +38,7 @@ import org.apache.pulsar.client.api.PulsarClient;
  */
 abstract class PulsarSourceReaderBase<OUT>
         extends SourceReaderBase<
-  PulsarMessage<OUT>, OUT, PulsarPartitionSplit, PulsarPartitionSplitState> {
+                PulsarMessage<OUT>, OUT, PulsarPartitionSplit, PulsarPartitionSplitState> {
 
     protected final SourceConfiguration sourceConfiguration;
     protected final PulsarClient pulsarClient;

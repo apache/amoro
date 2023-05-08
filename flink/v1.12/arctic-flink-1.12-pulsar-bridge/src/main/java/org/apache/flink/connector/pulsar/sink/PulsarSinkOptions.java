@@ -34,6 +34,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.flink.configuration.description.LinkElement.link;
 import static org.apache.flink.configuration.description.TextElement.code;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_MEMORY_LIMIT_BYTES;
 import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PRODUCER_CONFIG_PREFIX;
 import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.SINK_CONFIG_PREFIX;
 import static org.apache.pulsar.client.impl.conf.ProducerConfigurationData.DEFAULT_BATCHING_MAX_MESSAGES;
@@ -169,7 +170,7 @@ public final class PulsarSinkOptions {
                                             code("BlockIfQueueFull"))
                                     .text(
                                             "Since Pulsar 2.10.0, you shouldn't set this option, use %s instead.",
-                                            code(PulsarOptions.PULSAR_MEMORY_LIMIT_BYTES.key()))
+                                            code(PULSAR_MEMORY_LIMIT_BYTES.key()))
                                     .build());
 
     /** @deprecated Use {@link PulsarOptions#PULSAR_MEMORY_LIMIT_BYTES} since Pulsar 2.10.0 */
@@ -188,7 +189,7 @@ public final class PulsarSinkOptions {
                                             code("setMaxPendingMessages"))
                                     .text(
                                             "Since Pulsar 2.10.0, you shouldn't set this option, use %s instead.",
-                                            code(PulsarOptions.PULSAR_MEMORY_LIMIT_BYTES.key()))
+                                            code(PULSAR_MEMORY_LIMIT_BYTES.key()))
                                     .build());
 
     public static final ConfigOption<Long> PULSAR_BATCHING_MAX_PUBLISH_DELAY_MICROS =

@@ -18,12 +18,10 @@
 
 package org.apache.flink.connector.pulsar.source.reader.split;
 
-import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
-import org.apache.flink.connector.pulsar.source.reader.source.PulsarUnorderedSourceReader;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.common.utils.PulsarTransactionUtils;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
+import org.apache.flink.connector.pulsar.source.reader.source.PulsarUnorderedSourceReader;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplitState;
 import org.apache.pulsar.client.admin.PulsarAdmin;
@@ -45,6 +43,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarTransactionUtils.createTransaction;
 
 /**
  * The split reader a given {@link PulsarPartitionSplit}, it would be closed once the {@link
@@ -106,7 +105,7 @@ public class PulsarUnorderedPartitionSplitReader<OUT> extends PulsarPartitionSpl
     @Override
     protected void finishedPollMessage(Message<byte[]> message) {
         if (sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
-            PulsarExceptionUtils.sneakyClient(() -> pulsarConsumer.acknowledge(message));
+            sneakyClient(() -> pulsarConsumer.acknowledge(message));
         }
 
         // Release message
@@ -154,6 +153,6 @@ public class PulsarUnorderedPartitionSplitReader<OUT> extends PulsarPartitionSpl
 
     private Transaction newTransaction() {
         long timeoutMillis = sourceConfiguration.getTransactionTimeoutMillis();
-        return PulsarTransactionUtils.createTransaction(pulsarClient, timeoutMillis);
+        return createTransaction(pulsarClient, timeoutMillis);
     }
 }

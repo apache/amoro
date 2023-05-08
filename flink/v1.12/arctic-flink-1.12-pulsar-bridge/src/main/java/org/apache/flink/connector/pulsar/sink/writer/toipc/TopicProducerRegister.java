@@ -18,13 +18,9 @@
 
 package org.apache.flink.connector.pulsar.sink.writer.toipc;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarClientFactory;
-import org.apache.flink.connector.pulsar.sink.config.PulsarSinkConfigUtils;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.common.utils.PulsarTransactionUtils;
-import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 import com.google.common.io.Closer;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
@@ -43,7 +39,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactory.createClient;
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarTransactionUtils.createTransaction;
+import static org.apache.flink.connector.pulsar.sink.config.PulsarSinkConfigUtils.createProducerBuilder;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -59,7 +58,7 @@ public class TopicProducerRegister implements Closeable {
     private final Map<String, Transaction> transactionRegister;
 
     public TopicProducerRegister(SinkConfiguration sinkConfiguration) {
-        this.pulsarClient = PulsarClientFactory.createClient(sinkConfiguration);
+        this.pulsarClient = createClient(sinkConfiguration);
         this.sinkConfiguration = sinkConfiguration;
         this.producerRegister = new HashMap<>();
         this.transactionRegister = new HashMap<>();
@@ -132,10 +131,10 @@ public class TopicProducerRegister implements Closeable {
             return (Producer<T>) producers.get(schemaInfo);
         } else {
             ProducerBuilder<T> builder =
-                    PulsarSinkConfigUtils.createProducerBuilder(pulsarClient, schema, sinkConfiguration);
+                    createProducerBuilder(pulsarClient, schema, sinkConfiguration);
             // Set the required topic name.
             builder.topic(topic);
-            Producer<T> producer = PulsarExceptionUtils.sneakyClient(builder::create);
+            Producer<T> producer = sneakyClient(builder::create);
             producers.put(schemaInfo, producer);
 
             return producer;
@@ -150,7 +149,7 @@ public class TopicProducerRegister implements Closeable {
                 topic,
                 t -> {
                     long timeoutMillis = sinkConfiguration.getTransactionTimeoutMillis();
-                    return PulsarTransactionUtils.createTransaction(pulsarClient, timeoutMillis);
+                    return createTransaction(pulsarClient, timeoutMillis);
                 });
     }
 

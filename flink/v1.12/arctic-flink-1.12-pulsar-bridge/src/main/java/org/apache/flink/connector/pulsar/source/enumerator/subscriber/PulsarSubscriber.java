@@ -18,11 +18,11 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.subscriber;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.source.enumerator.subscriber.impl.TopicListSubscriber;
 import org.apache.flink.connector.pulsar.source.enumerator.subscriber.impl.TopicPatternSubscriber;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator;
-import org.apache.flink.annotation.Internal;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.RegexSubscriptionMode;
 
@@ -55,7 +55,7 @@ public interface PulsarSubscriber extends Serializable {
      * @return A subscribed {@link TopicPartition} for each pulsar topic partition.
      */
     Set<TopicPartition> getSubscribedTopicPartitions(
-      PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism);
+            PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism);
 
     // ----------------- factory methods --------------
 

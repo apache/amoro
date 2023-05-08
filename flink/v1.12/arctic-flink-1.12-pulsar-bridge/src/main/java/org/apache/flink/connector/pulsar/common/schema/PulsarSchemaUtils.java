@@ -18,14 +18,12 @@
 
 package org.apache.flink.connector.pulsar.common.schema;
 
-import org.apache.flink.connector.pulsar.common.schema.factories.KeyValueSchemaFactory;
-import org.apache.pulsar.common.schema.SchemaInfo;
-import org.apache.pulsar.common.schema.SchemaType;
-import org.apache.flink.connector.pulsar.common.schema.factories.JSONSchemaFactory;
 import com.google.protobuf.Message;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.pulsar.common.schema.factories.AvroSchemaFactory;
+import org.apache.flink.connector.pulsar.common.schema.factories.JSONSchemaFactory;
+import org.apache.flink.connector.pulsar.common.schema.factories.KeyValueSchemaFactory;
 import org.apache.flink.connector.pulsar.common.schema.factories.PrimitiveSchemaFactory;
 import org.apache.flink.connector.pulsar.common.schema.factories.ProtobufNativeSchemaFactory;
 import org.apache.flink.connector.pulsar.common.schema.factories.ProtobufSchemaFactory;
@@ -47,6 +45,8 @@ import org.apache.pulsar.client.impl.schema.SchemaInfoImpl;
 import org.apache.pulsar.client.impl.schema.ShortSchema;
 import org.apache.pulsar.client.impl.schema.TimeSchema;
 import org.apache.pulsar.client.impl.schema.TimestampSchema;
+import org.apache.pulsar.common.schema.SchemaInfo;
+import org.apache.pulsar.common.schema.SchemaType;
 
 import java.util.EnumMap;
 import java.util.HashMap;

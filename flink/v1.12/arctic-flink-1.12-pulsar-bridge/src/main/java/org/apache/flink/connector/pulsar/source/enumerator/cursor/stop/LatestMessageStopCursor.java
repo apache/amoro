@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.cursor.stop;
 
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.pulsar.client.admin.PulsarAdmin;
@@ -52,7 +51,7 @@ public class LatestMessageStopCursor implements StopCursor {
     public void open(PulsarAdmin admin, TopicPartition partition) {
         if (messageId == null) {
             String topic = partition.getFullTopicName();
-            this.messageId = PulsarExceptionUtils.sneakyAdmin(() -> admin.topics().getLastMessageId(topic));
+            this.messageId = sneakyAdmin(() -> admin.topics().getLastMessageId(topic));
         }
     }
 }

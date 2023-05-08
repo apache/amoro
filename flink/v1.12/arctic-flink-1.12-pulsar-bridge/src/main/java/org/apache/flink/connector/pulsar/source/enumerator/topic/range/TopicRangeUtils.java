@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.topic.range;
 
-import org.apache.flink.connector.pulsar.sink.writer.message.PulsarMessageBuilder;
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.pulsar.sink.writer.message.PulsarMessageBuilder;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
 import org.apache.pulsar.client.api.KeySharedPolicy;

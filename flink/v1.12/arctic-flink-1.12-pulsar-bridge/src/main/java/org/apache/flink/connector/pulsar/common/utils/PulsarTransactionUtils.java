@@ -43,7 +43,7 @@ public final class PulsarTransactionUtils {
     public static Transaction createTransaction(PulsarClient pulsarClient, long timeoutMs) {
         try {
             CompletableFuture<Transaction> future =
-                    PulsarExceptionUtils.sneakyClient(pulsarClient::newTransaction)
+                    sneakyClient(pulsarClient::newTransaction)
                             .withTransactionTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                             .build();
 

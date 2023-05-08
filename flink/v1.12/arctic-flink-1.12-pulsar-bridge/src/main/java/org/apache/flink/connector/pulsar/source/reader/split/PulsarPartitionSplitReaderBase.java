@@ -18,14 +18,6 @@
 
 package org.apache.flink.connector.pulsar.source.reader.split;
 
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor.StopCondition;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
-import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
-import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
-import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessageCollector;
-import org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.api.common.time.Deadline;
 import org.apache.flink.connector.base.source.reader.RecordsBySplits;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
@@ -33,6 +25,12 @@ import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor.StopCondition;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
+import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
+import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
+import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessageCollector;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.util.Preconditions;
 import org.apache.pulsar.client.admin.PulsarAdmin;
@@ -56,6 +54,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
 import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.createConsumerBuilder;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode.JOIN;
 import static org.apache.pulsar.client.api.KeySharedPolicy.stickyHashRange;
 
 /**
@@ -186,7 +185,7 @@ abstract class PulsarPartitionSplitReaderBase<OUT>
     @Override
     public void close() {
         if (pulsarConsumer != null) {
-            PulsarExceptionUtils.sneakyClient(() -> pulsarConsumer.close());
+            sneakyClient(() -> pulsarConsumer.close());
         }
     }
 
@@ -226,7 +225,7 @@ abstract class PulsarPartitionSplitReaderBase<OUT>
                     sourceConfiguration.isAllowKeySharedOutOfOrderDelivery());
             consumerBuilder.keySharedPolicy(policy);
 
-            if (partition.getMode() == KeySharedMode.JOIN) {
+            if (partition.getMode() == JOIN) {
                 // Override the key shared subscription into exclusive for making it behaviors like
                 // a Pulsar Reader which supports partial key hash ranges.
                 consumerBuilder.subscriptionType(SubscriptionType.Exclusive);
@@ -234,6 +233,6 @@ abstract class PulsarPartitionSplitReaderBase<OUT>
         }
 
         // Create the consumer configuration by using common utils.
-        return PulsarExceptionUtils.sneakyClient(consumerBuilder::subscribe);
+        return sneakyClient(consumerBuilder::subscribe);
     }
 }

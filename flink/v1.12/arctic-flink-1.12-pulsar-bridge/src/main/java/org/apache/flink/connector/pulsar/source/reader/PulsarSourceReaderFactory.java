@@ -18,19 +18,18 @@
 
 package org.apache.flink.connector.pulsar.source.reader;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarClientFactory;
-import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
-import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
-import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
-import org.apache.flink.connector.pulsar.source.reader.source.PulsarUnorderedSourceReader;
-import org.apache.flink.connector.pulsar.source.reader.split.PulsarOrderedPartitionSplitReader;
-import org.apache.flink.connector.pulsar.source.reader.split.PulsarUnorderedPartitionSplitReader;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.source.SourceReader;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
+import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
+import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
+import org.apache.flink.connector.pulsar.source.reader.source.PulsarUnorderedSourceReader;
+import org.apache.flink.connector.pulsar.source.reader.split.PulsarOrderedPartitionSplitReader;
+import org.apache.flink.connector.pulsar.source.reader.split.PulsarUnorderedPartitionSplitReader;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -39,6 +38,9 @@ import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClient;
 import org.apache.pulsar.client.impl.PulsarClientImpl;
 
 import java.util.function.Supplier;
+
+import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactory.createAdmin;
+import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactory.createClient;
 
 /**
  * This factory class is used for creating different types of source reader for different
@@ -62,8 +64,8 @@ public final class PulsarSourceReaderFactory {
             PulsarDeserializationSchema<OUT> deserializationSchema,
             SourceConfiguration sourceConfiguration) {
 
-        PulsarClient pulsarClient = PulsarClientFactory.createClient(sourceConfiguration);
-        PulsarAdmin pulsarAdmin = PulsarClientFactory.createAdmin(sourceConfiguration);
+        PulsarClient pulsarClient = createClient(sourceConfiguration);
+        PulsarAdmin pulsarAdmin = createAdmin(sourceConfiguration);
 
         // Create a message queue with the predefined source option.
         int queueCapacity = sourceConfiguration.getMessageQueueCapacity();

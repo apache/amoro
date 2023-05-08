@@ -18,14 +18,13 @@
 
 package org.apache.flink.connector.pulsar.source.config;
 
-import org.apache.flink.connector.pulsar.common.config.PulsarConfiguration;
-import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
-import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
+import org.apache.flink.connector.pulsar.common.config.PulsarConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
 import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.SubscriptionMode;
 import org.apache.pulsar.client.api.SubscriptionType;
@@ -34,6 +33,17 @@ import java.time.Duration;
 import java.util.Objects;
 
 import static org.apache.flink.connector.base.source.reader.SourceReaderOptions.ELEMENT_QUEUE_CAPACITY;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ALLOW_KEY_SHARED_OUT_OF_ORDER_DELIVERY;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_AUTO_COMMIT_CURSOR_INTERVAL;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_RECORDS;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_MODE;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_VERIFY_INITIAL_OFFSETS;
 
 /** The configuration class for pulsar source. */
 @PublicEvolving
@@ -57,17 +67,17 @@ public class SourceConfiguration extends PulsarConfiguration {
         super(configuration);
 
         this.messageQueueCapacity = getInteger(ELEMENT_QUEUE_CAPACITY);
-        this.partitionDiscoveryIntervalMs = get(PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS);
-        this.enableAutoAcknowledgeMessage = get(PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE);
-        this.autoCommitCursorInterval = get(PulsarSourceOptions.PULSAR_AUTO_COMMIT_CURSOR_INTERVAL);
-        this.transactionTimeoutMillis = get(PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT);
-        this.maxFetchTime = get(PulsarSourceOptions.PULSAR_MAX_FETCH_TIME, Duration::ofMillis);
-        this.maxFetchRecords = get(PulsarSourceOptions.PULSAR_MAX_FETCH_RECORDS);
-        this.verifyInitialOffsets = get(PulsarSourceOptions.PULSAR_VERIFY_INITIAL_OFFSETS);
-        this.subscriptionName = get(PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME);
-        this.subscriptionType = get(PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE);
-        this.subscriptionMode = get(PulsarSourceOptions.PULSAR_SUBSCRIPTION_MODE);
-        this.allowKeySharedOutOfOrderDelivery = get(PulsarSourceOptions.PULSAR_ALLOW_KEY_SHARED_OUT_OF_ORDER_DELIVERY);
+        this.partitionDiscoveryIntervalMs = get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS);
+        this.enableAutoAcknowledgeMessage = get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE);
+        this.autoCommitCursorInterval = get(PULSAR_AUTO_COMMIT_CURSOR_INTERVAL);
+        this.transactionTimeoutMillis = get(PULSAR_READ_TRANSACTION_TIMEOUT);
+        this.maxFetchTime = get(PULSAR_MAX_FETCH_TIME, Duration::ofMillis);
+        this.maxFetchRecords = get(PULSAR_MAX_FETCH_RECORDS);
+        this.verifyInitialOffsets = get(PULSAR_VERIFY_INITIAL_OFFSETS);
+        this.subscriptionName = get(PULSAR_SUBSCRIPTION_NAME);
+        this.subscriptionType = get(PULSAR_SUBSCRIPTION_TYPE);
+        this.subscriptionMode = get(PULSAR_SUBSCRIPTION_MODE);
+        this.allowKeySharedOutOfOrderDelivery = get(PULSAR_ALLOW_KEY_SHARED_OUT_OF_ORDER_DELIVERY);
     }
 
     /** The capacity of the element queue in the source reader. */

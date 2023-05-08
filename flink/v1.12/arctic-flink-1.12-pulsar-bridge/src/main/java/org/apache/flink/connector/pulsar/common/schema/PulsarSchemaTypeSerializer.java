@@ -33,6 +33,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.haveProtobuf;
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.isProtobufTypeClass;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /** Wrap the pulsar {@code Schema} into a flink {@code TypeSerializer}. */
@@ -62,7 +64,7 @@ public class PulsarSchemaTypeSerializer<T> extends TypeSerializer<T> {
         Class<T> recordClass = schema.getRecordClass();
 
         // No exception wouldn't be thrown here if user don't provide protobuf-java.
-        if (PulsarSchemaUtils.haveProtobuf() && PulsarSchemaUtils.isProtobufTypeClass(recordClass)) {
+        if (haveProtobuf() && isProtobufTypeClass(recordClass)) {
             try {
                 Method newBuilderMethod = recordClass.getMethod("newBuilder");
                 Message.Builder builder = (Message.Builder) newBuilderMethod.invoke(null);

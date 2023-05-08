@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.pulsar.sink.config;
 
-import org.apache.flink.connector.pulsar.sink.PulsarSinkOptions;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.common.config.PulsarConfigValidator;
 import org.apache.pulsar.client.api.Producer;
@@ -36,6 +35,19 @@ import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULS
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_AUTH_PARAM_MAP;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_MEMORY_LIMIT_BYTES;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_ENABLED;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_MAX_BYTES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_MAX_MESSAGES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_MAX_PUBLISH_DELAY_MICROS;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_BATCHING_PARTITION_SWITCH_FREQUENCY_BY_PUBLISH_DELAY;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_CHUNKING_ENABLED;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_COMPRESSION_TYPE;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_INITIAL_SEQUENCE_ID;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES_ACROSS_PARTITIONS;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_PRODUCER_NAME;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_PRODUCER_PROPERTIES;
+import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_SEND_TIMEOUT_MS;
 import static org.apache.pulsar.client.api.MessageRoutingMode.SinglePartition;
 import static org.apache.pulsar.client.api.ProducerAccessMode.Shared;
 
@@ -52,10 +64,10 @@ public final class PulsarSinkConfigUtils {
                     .requiredOption(PULSAR_SERVICE_URL)
                     .requiredOption(PULSAR_ADMIN_URL)
                     .conflictOptions(PULSAR_AUTH_PARAMS, PULSAR_AUTH_PARAM_MAP)
-                    .conflictOptions(PULSAR_MEMORY_LIMIT_BYTES, PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES)
+                    .conflictOptions(PULSAR_MEMORY_LIMIT_BYTES, PULSAR_MAX_PENDING_MESSAGES)
                     .conflictOptions(
                             PULSAR_MEMORY_LIMIT_BYTES,
-                            PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES_ACROSS_PARTITIONS)
+                            PULSAR_MAX_PENDING_MESSAGES_ACROSS_PARTITIONS)
                     .build();
 
     /** Create a pulsar producer builder by using the given Configuration. */
@@ -64,32 +76,32 @@ public final class PulsarSinkConfigUtils {
         ProducerBuilder<T> builder = client.newProducer(schema);
 
         configuration.useOption(
-                PulsarSinkOptions.PULSAR_PRODUCER_NAME,
+                PULSAR_PRODUCER_NAME,
                 producerName -> String.format(producerName, UUID.randomUUID()),
                 builder::producerName);
         configuration.useOption(
-                PulsarSinkOptions.PULSAR_SEND_TIMEOUT_MS,
+                PULSAR_SEND_TIMEOUT_MS,
                 Math::toIntExact,
                 ms -> builder.sendTimeout(ms, MILLISECONDS));
-        configuration.useOption(PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES, builder::maxPendingMessages);
+        configuration.useOption(PULSAR_MAX_PENDING_MESSAGES, builder::maxPendingMessages);
         configuration.useOption(
-                PulsarSinkOptions.PULSAR_MAX_PENDING_MESSAGES_ACROSS_PARTITIONS,
+                PULSAR_MAX_PENDING_MESSAGES_ACROSS_PARTITIONS,
                 builder::maxPendingMessagesAcrossPartitions);
         configuration.useOption(
-                PulsarSinkOptions.PULSAR_BATCHING_MAX_PUBLISH_DELAY_MICROS,
+                PULSAR_BATCHING_MAX_PUBLISH_DELAY_MICROS,
                 s -> builder.batchingMaxPublishDelay(s, MICROSECONDS));
         configuration.useOption(
-                PulsarSinkOptions.PULSAR_BATCHING_PARTITION_SWITCH_FREQUENCY_BY_PUBLISH_DELAY,
+                PULSAR_BATCHING_PARTITION_SWITCH_FREQUENCY_BY_PUBLISH_DELAY,
                 builder::roundRobinRouterBatchingPartitionSwitchFrequency);
-        configuration.useOption(PulsarSinkOptions.PULSAR_BATCHING_MAX_MESSAGES, builder::batchingMaxMessages);
-        configuration.useOption(PulsarSinkOptions.PULSAR_BATCHING_MAX_BYTES, builder::batchingMaxBytes);
-        configuration.useOption(PulsarSinkOptions.PULSAR_BATCHING_ENABLED, builder::enableBatching);
-        configuration.useOption(PulsarSinkOptions.PULSAR_CHUNKING_ENABLED, builder::enableChunking);
-        configuration.useOption(PulsarSinkOptions.PULSAR_COMPRESSION_TYPE, builder::compressionType);
-        configuration.useOption(PulsarSinkOptions.PULSAR_INITIAL_SEQUENCE_ID, builder::initialSequenceId);
+        configuration.useOption(PULSAR_BATCHING_MAX_MESSAGES, builder::batchingMaxMessages);
+        configuration.useOption(PULSAR_BATCHING_MAX_BYTES, builder::batchingMaxBytes);
+        configuration.useOption(PULSAR_BATCHING_ENABLED, builder::enableBatching);
+        configuration.useOption(PULSAR_CHUNKING_ENABLED, builder::enableChunking);
+        configuration.useOption(PULSAR_COMPRESSION_TYPE, builder::compressionType);
+        configuration.useOption(PULSAR_INITIAL_SEQUENCE_ID, builder::initialSequenceId);
 
         // Set producer properties
-        Map<String, String> properties = configuration.getProperties(PulsarSinkOptions.PULSAR_PRODUCER_PROPERTIES);
+        Map<String, String> properties = configuration.getProperties(PULSAR_PRODUCER_PROPERTIES);
         if (!properties.isEmpty()) {
             builder.properties(properties);
         }

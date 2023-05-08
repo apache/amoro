@@ -18,11 +18,12 @@
 
 package org.apache.flink.connector.pulsar.common.schema.factories;
 
-import org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.schema.JSONSchema;
 import org.apache.pulsar.common.schema.SchemaInfo;
 import org.apache.pulsar.common.schema.SchemaType;
+
+import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
 /** The schema factory for pulsar's {@link JSONSchema}. */
 public class JSONSchemaFactory<T> extends BaseStructSchemaFactory<T> {
@@ -34,7 +35,7 @@ public class JSONSchemaFactory<T> extends BaseStructSchemaFactory<T> {
 
     @Override
     public Schema<T> createSchema(SchemaInfo info) {
-        Class<T> typeClass = PulsarSchemaUtils.decodeClassInfo(info);
+        Class<T> typeClass = decodeClassInfo(info);
         return JSONSchema.of(typeClass, info.getProperties());
     }
 }

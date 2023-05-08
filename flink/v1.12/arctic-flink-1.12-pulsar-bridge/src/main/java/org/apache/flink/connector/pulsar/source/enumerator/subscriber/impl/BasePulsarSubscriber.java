@@ -18,12 +18,12 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.subscriber.impl;
 
+import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicMetadata;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
-import org.apache.flink.connector.pulsar.source.enumerator.subscriber.PulsarSubscriber;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.partition.PartitionedTopicMetadata;
@@ -56,7 +56,7 @@ public abstract class BasePulsarSubscriber implements PulsarSubscriber {
     }
 
     protected List<TopicPartition> toTopicPartitions(
-      TopicMetadata metadata, List<TopicRange> ranges, KeySharedMode mode) {
+            TopicMetadata metadata, List<TopicRange> ranges, KeySharedMode mode) {
         if (!metadata.isPartitioned()) {
             // For non-partitioned topic.
             return toTopicPartitions(metadata.getName(), -1, ranges, mode);
