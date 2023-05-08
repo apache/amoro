@@ -31,7 +31,7 @@ import static org.apache.flink.table.api.DataTypes.STRING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class ProjectionTest {
+class TestProjection {
 
   @Test
   void testTopLevelProject() {

@@ -36,7 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class FlinkSinkTest extends FlinkTestBase {
+public class TestFlinkSink extends FlinkTestBase {
 
   @Test
   public void testKeyedSink() throws Exception {

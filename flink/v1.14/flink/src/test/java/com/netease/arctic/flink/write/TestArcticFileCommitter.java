@@ -38,9 +38,9 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.netease.arctic.flink.write.ArcticFileWriterTest.createArcticStreamWriter;
+import static com.netease.arctic.flink.write.TestArcticFileWriter.createArcticStreamWriter;
 
-public class ArcticFileCommitterTest extends FlinkTestBase {
+public class TestArcticFileCommitter extends FlinkTestBase {
 
   public ArcticTableLoader tableLoader;
 

@@ -32,7 +32,7 @@ import java.util.List;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
-public class TestCatalog extends FlinkTestBase {
+public class CatalogTest extends FlinkTestBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();

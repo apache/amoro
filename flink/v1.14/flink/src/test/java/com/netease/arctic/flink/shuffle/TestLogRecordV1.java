@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * This is a {@link LogRecordV1} log data test, include all data types.
  */
-public class LogRecordV1Test extends FormatTestBase {
+public class TestLogRecordV1 extends FormatTestBase {
 
   public final Schema userSchema = new Schema(
       new ArrayList<Types.NestedField>() {

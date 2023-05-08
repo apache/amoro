@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.flink.read.hybrid.reader.ReaderFunction;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
-import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunctionTest;
+import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.read.source.DataIterator;
@@ -102,8 +102,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-public class ArcticSourceTest extends RowDataReaderFunctionTest implements Serializable {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticSourceTest.class);
+public class TestArcticSource extends TestRowDataReaderFunction implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(TestArcticSource.class);
   private static final long serialVersionUID = 7418812854449034756L;
   private static final int PARALLELISM = 1;
 

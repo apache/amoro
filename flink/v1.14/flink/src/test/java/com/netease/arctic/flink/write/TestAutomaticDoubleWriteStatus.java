@@ -28,7 +28,7 @@ import java.time.Duration;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 
-public class AutomaticDoubleWriteStatusTest extends FlinkTestBase {
+public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
 
   @Test

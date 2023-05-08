@@ -24,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 
-public class CompatibleFlinkPropertyUtilTest {
+public class TestCompatibleFlinkPropertyUtil {
   @Test
   public void testGetNewProperty() {
     Configuration config = new Configuration();
