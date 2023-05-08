@@ -29,14 +29,14 @@ public class Resource {
     this.type = builder.type;
   }
 
-  protected Resource(OptimizerRegisterInfo registerInfo) {
-    this.containerName = registerInfo.getContainerName();
+  protected Resource(OptimizerRegisterInfo registerInfo, String containerName) {
     this.resourceId = registerInfo.getResourceId();
     this.groupName = registerInfo.getGroupName();
     this.threadCount = registerInfo.getThreadCount();
     this.memoryMb = registerInfo.getMemoryMb();
     this.properties = registerInfo.getProperties();
-    this.type =ResourceType.OPTIMIZER;
+    this.type = ResourceType.OPTIMIZER;
+    this.containerName = containerName;
   }
 
   public String getResourceId() {

@@ -53,7 +53,6 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     Assert.assertEquals(registerConfig.getMemorySize(), registerInfo.getMemoryMb());
     Assert.assertEquals(registerConfig.getExecutionParallel(), registerInfo.getThreadCount());
     Assert.assertEquals(optimizerProperties, registerInfo.getProperties());
-    Assert.assertNull(registerInfo.getContainerName());
   }
 
   static class TestTokenChangeListener implements OptimizerToucher.TokenChangeListener {
