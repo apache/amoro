@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.kohsuke.args4j.CmdLineException;
 
-public class OptimizerConfigTest {
+public class TestOptimizerConfig {
 
   @Test
   public void testParseArguments() throws CmdLineException {

@@ -22,11 +22,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
@@ -69,13 +67,7 @@ public class SerializationUtils {
 
   public static Object toObject(ByteBuffer buffer) {
     byte[] bytes = ByteBuffers.toByteArray(buffer);
-    try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
-      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        return ois.readObject();
-      }
-    } catch (IOException | ClassNotFoundException e) {
-      throw new IllegalArgumentException("deserialization error ", e);
-    }
+    return toObject(bytes);
   }
 
   public static Object toObject(byte[] bytes) {
@@ -86,18 +78,6 @@ public class SerializationUtils {
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("deserialization error ", e);
     }
-  }
-
-  public static IcebergContentFile<?> toInternalTableFile(ByteBuffer buffer) {
-    return (IcebergContentFile<?>) toObject(buffer);
-  }
-
-  public static ContentFile<?> toContentFile(ByteBuffer buffer) {
-    return (ContentFile<?>) toObject(buffer);
-  }
-
-  public static IcebergContentFile<?> toIcebergContentFile(ByteBuffer buffer) {
-    return (IcebergContentFile<?>) toObject(buffer);
   }
 
   public static byte[] serialize(final Object obj) throws IOException {
