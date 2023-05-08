@@ -90,10 +90,14 @@ grammar ArcticSqlExtend;
   }
 }
 
+extendStatement
+    : statement ';'* EOF
+    ;
+
 statement
-    : createTableHeader ('(' colTypeList ')')? tableProvider?
+    : createTableHeader ('(' colListAndPk ')')? tableProvider?
         createTableClauses
-        (AS? query)?                                                   #createTable
+        (AS? query)?                                                   #createTableWithPk
 
     | EXPLAIN (LOGICAL | FORMATTED | EXTENDED | CODEGEN | COST)?
         statement                                                      #explain
@@ -104,6 +108,14 @@ createTableHeader
     : CREATE TEMPORARY? EXTERNAL? TABLE (IF NOT EXISTS)? multipartIdentifier
     ;
 
+colListAndPk
+    :'(' colTypeList (',' primarySpec )? ')'                            #colListWithPk
+    | primarySpec                                                       #colListOnlyPk
+    ;
+
+primarySpec
+    : PRIMARY KEY identifierList
+    ;
 
 bucketSpec
     : CLUSTERED BY identifierList
@@ -128,8 +140,6 @@ commentSpec
 query
     : ctes? queryTerm queryOrganization
     ;
-
-
 
 
 ctes
@@ -1483,6 +1493,8 @@ AMPERSAND: '&';
 PIPE: '|';
 CONCAT_PIPE: '||';
 HAT: '^';
+KEY: 'KEY';
+
 
 STRING
     : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
