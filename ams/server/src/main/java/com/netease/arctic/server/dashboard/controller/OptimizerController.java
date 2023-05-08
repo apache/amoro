@@ -227,7 +227,8 @@ public class OptimizerController extends RestBaseController {
 
     ResourceGroup resourceGroup = optimizerManager.getResourceGroup(optimizerGroup);
     Resource resource = new Resource.Builder(resourceGroup.getContainer(), resourceGroup.getName(),
-        ResourceType.OPTIMIZER).setProperties(resourceGroup.getProperties())
+        ResourceType.OPTIMIZER)
+        .setProperties(resourceGroup.getProperties())
         .setThreadCount(parallelism)
         .build();
     try {

@@ -46,7 +46,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-optimizer</artifactId>
+            <artifactId>arctic-ams-optimizer</artifactId>
             <version>${project.version}</version>
             <!--<scope>provided</scope>-->
             <exclusions>

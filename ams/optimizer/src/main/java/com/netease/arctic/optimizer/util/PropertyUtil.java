@@ -8,7 +8,7 @@ public class PropertyUtil {
 
   public static String checkAndGetProperty(Map<String, String> properties, String key) {
     Preconditions.checkState(properties != null && properties.containsKey(key),
-        "Cannot find {} in properties", key);
+        "Cannot find %s in properties", key);
     return properties.get(key);
   }
 }

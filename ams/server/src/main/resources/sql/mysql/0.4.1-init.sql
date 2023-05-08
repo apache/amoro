@@ -99,7 +99,7 @@ CREATE TABLE `optimize_history`
     `total_records`                 bigint(20) DEFAULT NULL COMMENT 'Total records of the snapshot',
     `partition_cnt`                 int(11) NOT NULL COMMENT 'Partition cnt for this optimizing',
     `partitions`                    text COMMENT 'Partitions',
-    `max_change_transaction_id` mediumtext COMMENT 'Max change transaction id of these tasks',
+    `partition_optimized_sequence` mediumtext COMMENT 'optimized sequence of these tasks',
     `optimize_type`                 varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     PRIMARY KEY (`history_id`),
     KEY                             `table_name_record` (`catalog_name`,`db_name`,`table_name`,`history_id`)
@@ -129,6 +129,7 @@ CREATE TABLE `optimize_group`
 (
     `group_id`   int(11) NOT NULL AUTO_INCREMENT  COMMENT 'Optimize group unique id',
     `name`       varchar(50) NOT NULL  COMMENT 'Optimize group name',
+    `scheduling_policy`   varchar(20) COMMENT 'Optimize group scheduling policy',
     `properties` mediumtext  COMMENT 'Properties',
     `container`  varchar(100) DEFAULT NULL  COMMENT 'Container: local, flink',
     PRIMARY KEY (`group_id`),
@@ -144,8 +145,8 @@ CREATE TABLE `optimize_task`
     `table_name`                varchar(128) NOT NULL COMMENT 'Table name',
     `partition`                 varchar(128)  DEFAULT NULL COMMENT 'Partition',
     `task_commit_group`         varchar(40)   DEFAULT NULL COMMENT 'UUID. Commit group of task, task of one commit group should commit together',
-    `max_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Max change transaction id',
-    `min_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Min change transaction id',
+    `to_sequence`               bigint(20) NOT NULL DEFAULT '-1' COMMENT 'to sequence',
+    `from_sequence`             bigint(20) NOT NULL DEFAULT '-1' COMMENT 'from sequence',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `properties`                text COMMENT 'Task properties',
     `queue_id`                  int(11) NOT NULL COMMENT 'Task group id',
@@ -287,5 +288,18 @@ CREATE TABLE `platform_file_info` (
   `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='store files info saved in the platform';
+
+CREATE TABLE `table_blocker` (
+  `blocker_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Blocker unique id',
+  `catalog_name` varchar(64) NOT NULL COMMENT 'Catalog name',
+  `db_name` varchar(128) NOT NULL COMMENT 'Database name',
+  `table_name` varchar(128) NOT NULL COMMENT 'Table name',
+  `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
+  `create_time` datetime(3) DEFAULT NULL COMMENT 'Blocker create time',
+  `expiration_time` datetime(3) DEFAULT NULL COMMENT 'Blocker expiration time',
+  `properties` mediumtext COMMENT 'Blocker properties',
+  PRIMARY KEY (`blocker_id`),
+  KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
 
 INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');

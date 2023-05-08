@@ -11,6 +11,7 @@ import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
@@ -385,10 +386,20 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
             taskMap.size(), taskMap.values());
       }
-      buildCommit().commit();
-      status = OptimizingProcess.Status.SUCCESS;
-      endTime = System.currentTimeMillis();
-      persistProcessCompleted(true);
+      try {
+        buildCommit().commit();
+        status = Status.SUCCESS;
+        endTime = System.currentTimeMillis();
+        persistProcessCompleted(true);
+      } catch (OptimizingCommitException e) {
+        LOG.warn("Commit optimizing failed. inner message is " + e.getMessage(), e);
+        if (!e.isRetryable()) {
+          status = Status.FAILED;
+          failedReason = e.getMessage();
+          endTime = System.currentTimeMillis();
+          persistProcessCompleted(false);
+        }
+      }
     }
 
     @Override

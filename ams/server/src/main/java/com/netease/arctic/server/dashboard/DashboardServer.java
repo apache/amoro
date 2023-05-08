@@ -84,7 +84,7 @@ public class DashboardServer {
     this.serviceConfig = serviceConfig;
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
-    this.loginController = new LoginController();
+    this.loginController = new LoginController(serviceConfig);
     this.optimizerController = new OptimizerController(tableService, optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.restBaseController = new RestBaseController();
