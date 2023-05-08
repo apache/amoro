@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 import java.sql.Timestamp;
 
@@ -36,7 +36,7 @@ public class PartitionBaseInfo {
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.lastCommitTime = lastCommitTime;
-    this.size = AmsUtils.byteToXB(fileSize);
+    this.size = AmsUtil.byteToXB(fileSize);
   }
 
   public String getPartition() {
@@ -61,7 +61,7 @@ public class PartitionBaseInfo {
 
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
-    this.size = AmsUtils.byteToXB(fileSize);
+    this.size = AmsUtil.byteToXB(fileSize);
 
   }
 

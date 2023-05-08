@@ -26,7 +26,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
@@ -46,11 +46,9 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-import scala.unchecked;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -213,7 +211,7 @@ public class ArcticServiceContainer {
         throw new RuntimeException(
             "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
       }
-      InetAddress inetAddress = AmsUtils.lookForBindHost(
+      InetAddress inetAddress = AmsUtil.lookForBindHost(
           (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 

@@ -28,7 +28,7 @@ import com.netease.arctic.optimizing.BaseOptimizingInput;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -77,7 +77,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     OptimizingTaskResult taskResult = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
     Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
     Assert.assertNull(taskResult.getErrorMessage());
-    TestOptimizingOutput output = (TestOptimizingOutput) SerializationUtils.toObject(taskResult.getTaskOutput());
+    TestOptimizingOutput output = SerializationUtil.simpleDeserialize(taskResult.getTaskOutput());
     Assert.assertEquals(1, output.inputId());
   }
 
@@ -121,7 +121,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     public OptimizingTask toTask(long processId, int taskId) {
       OptimizingTask optimizingTask = new OptimizingTask(new OptimizingTaskId(processId, taskId));
-      optimizingTask.setTaskInput(SerializationUtils.toByteBuffer(this));
+      optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(this));
       Map<String, String> inputProperties = Maps.newHashMap();
       inputProperties.put(OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
           TestOptimizingExecutorFactory.class.getName());

@@ -5,7 +5,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,18 +21,18 @@ public class TaskFilesPersistency {
 
   public static RewriteFilesInput loadTaskInputs(long processId) {
     byte[] input = persistency.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
-    return (RewriteFilesInput) SerializationUtils.toObject(input);
+    return SerializationUtil.simpleDeserialize(input);
   }
 
   public static RewriteFilesOutput loadTaskOutput(byte[] content) {
-    return (RewriteFilesOutput) SerializationUtils.toObject(content);
+    return SerializationUtil.simpleDeserialize(content);
   }
 
   private static class DatabasePersistency extends PersistentBase {
 
     public void persistTaskInputs(long processId, List<RewriteFilesInput> tasks) {
       doAs(OptimizingMapper.class, mapper -> {
-        mapper.updateProcessInputFiles(processId, SerializationUtils.toByteBuffer(tasks).array());
+        mapper.updateProcessInputFiles(processId, SerializationUtil.simpleSerialize(tasks).array());
       });
     }
   }

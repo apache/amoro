@@ -29,8 +29,8 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CommonUtils {
-  private static final Logger LOG = LoggerFactory.getLogger(CommonUtils.class);
+public class CommonUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(CommonUtil.class);
 
   private static String[] TOKEN_WHITE_LIST = {
       "/login/current",

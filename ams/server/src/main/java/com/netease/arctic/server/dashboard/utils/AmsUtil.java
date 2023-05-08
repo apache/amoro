@@ -45,7 +45,7 @@ import static com.netease.arctic.server.ArcticManagementConf.HA_ZOOKEEPER_ADDRES
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 import static com.netease.arctic.server.ArcticManagementConf.THRIFT_BIND_PORT;
 
-public class AmsUtils {
+public class AmsUtil {
 
   public static TableIdentifier toTableIdentifier(com.netease.arctic.table.TableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
