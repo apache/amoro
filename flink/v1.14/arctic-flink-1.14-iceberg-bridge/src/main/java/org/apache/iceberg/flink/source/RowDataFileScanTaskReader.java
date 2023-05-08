@@ -19,7 +19,6 @@
 
 package org.apache.iceberg.flink.source;
 
-import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -32,6 +31,7 @@ import org.apache.iceberg.data.DeleteFilter;
 import org.apache.iceberg.encryption.InputFilesDecryptor;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
+import org.apache.iceberg.flink.data.AdaptHiveFlinkParquetReaders;
 import org.apache.iceberg.flink.data.FlinkAvroReader;
 import org.apache.iceberg.flink.data.FlinkOrcReader;
 import org.apache.iceberg.flink.data.RowDataProjection;
