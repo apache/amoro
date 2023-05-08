@@ -32,6 +32,7 @@ import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
@@ -72,14 +73,13 @@ public class TestOptimizeWrite extends SparkTestBase {
     );
 
     sources = Lists.newArrayList(
-        newRecord(schema,1, "aaa", "aaa"),
-        newRecord(schema,2, "bbb", "aaa"),
-        newRecord(schema,3, "aaa", "bbb"),
-        newRecord(schema,4, "bbb", "bbb"),
-        newRecord(schema,5, "aaa", "ccc"),
-        newRecord(schema,6, "bbb", "ccc")
+        newRecord(schema, 1, "aaa", "aaa"),
+        newRecord(schema, 2, "bbb", "aaa"),
+        newRecord(schema, 3, "aaa", "bbb"),
+        newRecord(schema, 4, "bbb", "bbb"),
+        newRecord(schema, 5, "aaa", "ccc"),
+        newRecord(schema, 6, "bbb", "ccc")
     );
-
 
     StructType structType = SparkSchemaUtil.convert(schema);
     Dataset<Row> ds = spark.createDataFrame(
@@ -96,7 +96,6 @@ public class TestOptimizeWrite extends SparkTestBase {
     sql("drop table " + sourceTable);
     sql("drop database " + database);
   }
-
 
   /**
    * 6 rows write to 2 partition, bucket=1, expect result 2 files.
@@ -147,7 +146,8 @@ public class TestOptimizeWrite extends SparkTestBase {
     Assert.assertEquals(6, rows.size());
     ArcticTable table = loadTable(identifier);
     int size = expectFileSize(2);
-    Assert.assertEquals(size,
+    Assert.assertEquals(
+        size,
         baseTableSize(identifier));
   }
 
@@ -164,7 +164,6 @@ public class TestOptimizeWrite extends SparkTestBase {
         .reduce(0, Integer::sum).longValue();
   }
 
-
   @Test
   public void testUnkeyedTablePartitioned() {
     sql("create table {0}.{1} ( \n" +
@@ -172,16 +171,16 @@ public class TestOptimizeWrite extends SparkTestBase {
         " column1 string , \n " +
         " column2 string \n" +
         ") using arctic \n" +
-        " partitioned by ( column1 ) \n" , database, sinkTable);
+        " partitioned by ( column1 ) \n", database, sinkTable);
     sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
 
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     int fileCount = expectFileSize(4);
-    Assert.assertEquals(fileCount,
+    Assert.assertEquals(
+        fileCount,
         baseTableSize(identifier));
-
   }
 
   public int expectFileSize(int buckets) {
@@ -190,7 +189,7 @@ public class TestOptimizeWrite extends SparkTestBase {
         sources,
         table.schema(),
         table.spec(),
-        table.isKeyedTable() ? table.asKeyedTable().primaryKeySpec(): null,
+        table.isKeyedTable() ? table.asKeyedTable().primaryKeySpec() : null,
         buckets
     );
   }
@@ -203,10 +202,10 @@ public class TestOptimizeWrite extends SparkTestBase {
       int buckets) {
     PartitionKey partitionKey = new PartitionKey(partitionSpec, schema);
     PrimaryKeyData primaryKey = keySpec == null ? null : new PrimaryKeyData(keySpec, schema);
-    int mask = buckets - 1 ;
+    int mask = buckets - 1;
 
     Set<TaskWriterKey> writerKeys = Sets.newHashSet();
-    for (GenericRecord row: sources){
+    for (GenericRecord row : sources) {
       partitionKey.partition(row);
       DataTreeNode node;
       if (keySpec != null) {
@@ -222,9 +221,9 @@ public class TestOptimizeWrite extends SparkTestBase {
     return writerKeys.size();
   }
 
-  public static Row genericRecordToSparkRow(GenericRecord record) {
+  public static Row genericRecordToSparkRow(Record record) {
     Object[] values = new Object[record.size()];
-    for (int i = 0 ; i < values.length; i++ ) {
+    for (int i = 0; i < values.length; i++) {
       values[i] = record.get(i);
     }
     return RowFactory.create(values);

@@ -37,7 +37,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
   private final String database = "db_def";
   private final String table = "testA";
   private final String sourceTable = "test_table";
-  private final String duplicateDataTable= "dt_table";
+  private final String duplicateDataTable = "dt_table";
   private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
   @Before
@@ -46,7 +46,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     sql("create database if not exists " + database);
     sql("create table {0}.{1} ( \n" +
         " id int , data string, pt string ) using arctic \n" +
-        " partitioned by (pt) \n" , database, sourceTable);
+        " partitioned by (pt) \n", database, sourceTable);
 
     sql("insert overwrite {0}.{1} values \n" +
             "( 1, ''aaaa'', ''0001''), \n" +
@@ -56,7 +56,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
             "( 5, ''aaaa'', ''0002''), \n" +
             "( 6, ''aaaa'', ''0002''), \n" +
             "( 7, ''aaaa'', ''0002''), \n" +
-            "( 8, ''aaaa'', ''0002'') \n" ,
+            "( 8, ''aaaa'', ''0002'') \n",
         database, sourceTable);
   }
 
@@ -82,7 +82,8 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
         expectedSchema.asStruct(), loadTable(identifier).schema().asStruct());
     Assert.assertEquals("Should be an unpartitioned table",
         0, loadTable(identifier).spec().fields().size());
-    assertEquals("Should have rows matching the source table",
+    assertEquals(
+        "Should have rows matching the source table",
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
   }
@@ -90,10 +91,11 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
   @Test
   public void testPrimaryKeyCTASHasDuplicateData() {
     sql("insert into {0}.{1} values \n" +
-                    "( 1, ''aaaa'', ''0001'')",
-            database, sourceTable);
+            "( 1, ''aaaa'', ''0001'')",
+        database, sourceTable);
     sql("select * from {0}.{1} group by id, data, pt", database, sourceTable);
-    Assert.assertThrows(SparkException.class,
+    Assert.assertThrows(
+        SparkException.class,
         () -> sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
             database, table, catalogNameArctic, database, sourceTable));
   }
@@ -113,12 +115,12 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
         .identity("id")
         .build();
 
-
     Assert.assertEquals("Should have expected nullable schema",
         expectedSchema.asStruct(), loadTable(identifier).schema().asStruct());
     Assert.assertEquals("Should be partitioned by id",
         expectedSpec, loadTable(identifier).spec());
-    assertEquals("Should have rows matching the source table",
+    assertEquals(
+        "Should have rows matching the source table",
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
   }
@@ -128,7 +130,8 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     sql("CREATE TABLE {0}.{1} USING arctic TBLPROPERTIES (''prop1''=''val1'', ''prop2''=''val2'')" +
         "AS SELECT * FROM {2}.{3}", database, table, database, sourceTable);
 
-    assertEquals("Should have rows matching the source table",
+    assertEquals(
+        "Should have rows matching the source table",
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
 
@@ -156,7 +159,8 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     List<Object[]> acture = sql("SELECT * FROM {0}.{1} ORDER BY id", database, table);
     sql("SELECT * FROM {0}.{1}.change ORDER BY id", database, table);
 
-    assertEquals("Should have rows matching the source table",
+    assertEquals(
+        "Should have rows matching the source table",
         acture,
         expect);
 
@@ -192,7 +196,8 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
         expectedSchema.asStruct(), loadTable(identifier).schema().asStruct());
     Assert.assertEquals("Should be an unpartitioned table",
         0, loadTable(identifier).spec().fields().size());
-    assertEquals("Should have rows matching the source table",
+    assertEquals(
+        "Should have rows matching the source table",
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
     rows = sql("select * from {0}.{1}.change", database, table);
