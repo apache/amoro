@@ -17,7 +17,7 @@ public class OptimizerConfigTest {
     Assert.assertEquals(1024, optimizerConfig.getMemorySize());
     Assert.assertEquals("g1", optimizerConfig.getGroupName());
     Assert.assertEquals(2000, optimizerConfig.getHeartBeat());
-    Assert.assertEquals(true, optimizerConfig.isExtendDiskStorage());
+    Assert.assertTrue(optimizerConfig.isExtendDiskStorage());
     Assert.assertEquals("/tmp/arctic", optimizerConfig.getDiskStoragePath());
     Assert.assertEquals(512, optimizerConfig.getMemoryStorageSize());
   }

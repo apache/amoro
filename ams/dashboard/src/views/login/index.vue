@@ -76,6 +76,7 @@ export default defineComponent({
           password: values.password
         })
         if (res.code !== 200) {
+          message.error(res.message)
           return
         }
         const { path, query } = store.historyPathInfo
