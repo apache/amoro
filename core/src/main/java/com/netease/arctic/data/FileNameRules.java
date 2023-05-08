@@ -19,9 +19,6 @@
 package com.netease.arctic.data;
 
 import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtils;

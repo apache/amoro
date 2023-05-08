@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.optimizing;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -12,11 +12,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -25,6 +20,12 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class is a temporary implementation，A delete multiplexed reader will be implemented in the future
