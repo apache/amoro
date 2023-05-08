@@ -51,6 +51,10 @@ public class TestAms extends ExternalResource {
     return mockAms.handler();
   }
 
+  public MockArcticMetastoreServer.OptimizerManagerHandler getOptimizerHandler() {
+    return mockAms.optimizerHandler();
+  }
+
   @Override
   protected void before() throws Throwable {
     if (SingletonResourceUtil.isUseSingletonResource()) {
