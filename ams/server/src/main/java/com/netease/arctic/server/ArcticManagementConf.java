@@ -227,7 +227,6 @@ public class ArcticManagementConf {
   public static final String CONTAINER_LIST = "containers";
   public static final String CONTAINER_NAME = "name";
   public static final String CONTAINER_IMPL = "container-impl";
-  public static final String EXTERNAL_CONTAINER_TYPE = "external";
   public static final String CONTAINER_PROPERTIES = "properties";
 
   //optimizer config
@@ -235,14 +234,6 @@ public class ArcticManagementConf {
   public static final String OPTIMIZER_GROUP_NAME = "name";
   public static final String OPTIMIZER_GROUP_CONTAINER = "container";
   public static final String OPTIMIZER_GROUP_PROPERTIES = "properties";
-
-  public static final String OPTIMIZER_GROUP_PARALLELISM = "parallelism";
-  public static final String OPTIMIZER_GROUP_MEMORY = "memory";
-  public static final String OPTIMIZER_GROUP_TASKMANAGER_MEMORY = "taskmanager.memory";
-  public static final String OPTIMIZER_GROUP_JOBMANAGER_MEMORY = "jobmanager.memory";
-  public static final String OPTIMIZER_GROUP_FLINK_HOME = "flink_home";
-  public static final String OPTIMIZER_GROUP_HADOOP_HOME = "hadoop_home";
-  public static final String OPTIMIZER_GROUP_HADOOP_CONF_DIR = "hadoop_conf_dir";
 
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
