@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.dashboard.utils.OptimizingUtils;
+import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
@@ -33,7 +33,7 @@ import com.netease.arctic.server.persistence.TaskFilesPersistency;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -95,14 +95,14 @@ public class TaskRuntime extends PersistentBase {
 
   public RewriteFilesOutput getOutput() {
     if (output == null && outputBytes != null) {
-      return (RewriteFilesOutput) SerializationUtils.toObject(outputBytes);
+      return SerializationUtil.simpleDeserialize(outputBytes);
     }
     return output;
   }
 
   public void setOutput(RewriteFilesOutput output) {
     this.output = output;
-    this.outputBytes = SerializationUtils.toByteBuffer(output);
+    this.outputBytes = SerializationUtil.simpleSerialize(output);
   }
 
   public ByteBuffer getOutputBytes() {
@@ -132,7 +132,7 @@ public class TaskRuntime extends PersistentBase {
   public OptimizingTask getOptimizingTask() {
     //TODO fill input and properties
     OptimizingTask optimizingTask = new OptimizingTask(taskId);
-    optimizingTask.setTaskInput(SerializationUtils.toByteBuffer(input));
+    optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(input));
     optimizingTask.setProperties(properties);
     return optimizingTask;
   }
@@ -248,12 +248,12 @@ public class TaskRuntime extends PersistentBase {
 
   private void finish(RewriteFilesOutput filesOutput) {
     statusMachine.accept(Status.SUCCESS);
-    summary.setNewFileCnt(OptimizingUtils.getFileCount(filesOutput));
-    summary.setNewFileSize(OptimizingUtils.getFileSize(filesOutput));
+    summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+    summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
     endTime = System.currentTimeMillis();
     costTime += endTime - startTime;
     output = filesOutput;
-    this.outputBytes = SerializationUtils.toByteBuffer(filesOutput);
+    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
     persistTaskRuntime(this);
   }
 

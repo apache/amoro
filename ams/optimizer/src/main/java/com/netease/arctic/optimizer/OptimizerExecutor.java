@@ -7,7 +7,7 @@ import com.netease.arctic.optimizer.util.PropertyUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -88,15 +88,14 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       String executorFactoryImpl = PropertyUtil.checkAndGetProperty(
           task.getProperties(),
           OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
-      TableOptimizing.OptimizingInput input =
-          (TableOptimizing.OptimizingInput) SerializationUtils.toObject(task.getTaskInput());
+      TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
           .impl(executorFactoryImpl).buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
       factory.initialize(task.getProperties());
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
-      ByteBuffer outputByteBuffer = SerializationUtils.toByteBuffer(output);
+      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setTaskOutput(outputByteBuffer);
       result.setSummary(result.summary);

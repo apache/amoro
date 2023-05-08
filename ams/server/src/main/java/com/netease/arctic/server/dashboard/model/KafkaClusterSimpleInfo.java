@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.dashboard.utils.CommonUtils;
+import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -92,7 +92,7 @@ public class KafkaClusterSimpleInfo {
             "both zk and broker address is blank");
     if (StringUtils.isNotBlank(brokerList)) {
       Preconditions
-          .checkArgument(CommonUtils.telnetOrPing(brokerList), "telnet broker address timeout! " + brokerList);
+          .checkArgument(CommonUtil.telnetOrPing(brokerList), "telnet broker address timeout! " + brokerList);
     }
 
   }

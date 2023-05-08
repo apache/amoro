@@ -22,14 +22,14 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class IcebergTableUtils {
+public class IcebergTableUtil {
   public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
     if (refresh) {
       internalTable.refresh();
@@ -49,7 +49,7 @@ public class IcebergTableUtils {
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES)
         .allEntries().build();
     for (IcebergFileEntry entry : manifestReader.entries()) {
-      validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
+      validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
     }
 
     return validFilesPath;

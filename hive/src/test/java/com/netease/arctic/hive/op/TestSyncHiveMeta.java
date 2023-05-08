@@ -31,7 +31,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -157,7 +157,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     List<DataFile> newFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
     Assert.assertEquals(1, newFiles.size());
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("2022-01-03"),
-        TableFileUtils.getFileDir(newFiles.get(0).path().toString()), newFiles,
+        TableFileUtil.getFileDir(newFiles.get(0).path().toString()), newFiles,
         (int) (System.currentTimeMillis() / 1000));
     newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
     TEST_HMS.getHiveClient().add_partition(newPartition);
