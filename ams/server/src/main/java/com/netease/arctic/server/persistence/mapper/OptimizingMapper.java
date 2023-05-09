@@ -96,7 +96,7 @@ public interface OptimizingMapper {
    */
   @Insert({
       "<script>",
-      "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, `partition`, start_time, " +
+      "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, partition_data, start_time, " +
           "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary) VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
       "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}, #{taskRuntime" +
@@ -110,7 +110,8 @@ public interface OptimizingMapper {
   })
   void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
 
-  @Select("SELECT process_id, task_id, retry_num, table_id, `partition`,  create_time, start_time, end_time, status, " +
+  @Select("SELECT process_id, task_id, retry_num, table_id, partition_data,  create_time, start_time, end_time, " +
+      "status, " +
       "fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary FROM task_runtime WHERE table_id = " +
       "#{table_id} AND process_id = #{process_id}")
   @Results({
@@ -118,7 +119,7 @@ public interface OptimizingMapper {
       @Result(property = "taskId.taskId", column = "task_id"),
       @Result(property = "retry", column = "retry_num"),
       @Result(property = "tableId", column = "table_id"),
-      @Result(property = "partition", column = "partition"),
+      @Result(property = "partition", column = "partition_data"),
       @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConvertor.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConvertor.class),
       @Result(property = "status", column = "status"),

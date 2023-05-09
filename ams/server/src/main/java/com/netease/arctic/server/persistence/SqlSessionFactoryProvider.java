@@ -29,17 +29,29 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
+import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.Duration;
 
 public class SqlSessionFactoryProvider {
+
+  private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
 
   private static final SqlSessionFactoryProvider INSTANCE = new SqlSessionFactoryProvider();
 
@@ -51,15 +63,12 @@ public class SqlSessionFactoryProvider {
 
   public void init(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
-    //          if (ArcticServiceContainer.conf.getString(ArcticManagementConf.DB_TYPE).equals("derby")) {
-    //            dataSource.setUrl(ArcticServiceContainer.conf.getString(ArcticManagementConf.MYBATIS_CONNECTION_URL));
-    //            dataSource.setDriverClassName(
-    //                ArcticServiceContainer.conf.getString(ArcticManagementConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
-    //          } else {
-    dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
-    dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
+    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+      dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
+      dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
+    }
     dataSource.setDefaultAutoCommit(false);
     dataSource.setMaxTotal(20);
     dataSource.setMaxIdle(16);
@@ -87,15 +96,6 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(ApiTokensMapper.class);
     configuration.addMapper(PlatformFileMapper.class);
     configuration.addMapper(ResourceMapper.class);
-    //TODO Derby
-    /*  if (ArcticServiceContainer.conf.getString(ArcticManagementConf.DB_TYPE).equals("derby")) {
-           configuration.addMapper(DerbyContainerMetadataMapper.class);
-           configuration.addMapper(DerbyFileInfoCacheMapper.class);
-           configuration.addMapper(DerbyCatalogMetadataMapper.class);
-           configuration.addMapper(DerbyTableMetadataMapper.class);
-            configuration.addMapper(DerbyOptimizeTasksMapper.class);
-           configuration.addMapper(DerbyPlatformFileInfoMapper.class);
-         }*/
     if (sqlSessionFactory == null) {
       synchronized (this) {
         if (sqlSessionFactory == null) {
@@ -103,12 +103,43 @@ public class SqlSessionFactoryProvider {
         }
       }
     }
+    createTablesIfNeed(config);
+  }
+
+  // create tables for derby database type
+  private void createTablesIfNeed(Configurations config) {
+    if (ArcticManagementConf.DB_TYPE_DERBY.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+      try (SqlSession sqlSession = get().openSession(true)) {
+        try(Connection connection = sqlSession.getConnection()) {
+          try(Statement statement = connection.createStatement()) {
+            String query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
+            try(ResultSet rs = statement.executeQuery(query)) {
+              if (!rs.next()) {
+                ScriptRunner runner = new ScriptRunner(connection);
+                runner.runScript(new InputStreamReader(new FileInputStream(getDerbyInitSqlScriptPath()),
+                    StandardCharsets.UTF_8));
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        throw new IllegalStateException("Create derby tables failed", e);
+      }
+    }
+  }
+
+  private String getDerbyInitSqlScriptPath() {
+    URL scriptUrl = ClassLoader.getSystemResource(DERBY_INIT_SQL_SCRIPT);
+    if (scriptUrl == null) {
+      throw new IllegalStateException("Cannot find derby init sql script:" + DERBY_INIT_SQL_SCRIPT);
+    }
+    return scriptUrl.getPath();
   }
 
   public SqlSessionFactory get() {
     Preconditions.checkState(
         sqlSessionFactory != null,
-        "Persistency configuration is not initialized yet.");
+        "Persistent configuration is not initialized yet.");
 
     return sqlSessionFactory;
   }

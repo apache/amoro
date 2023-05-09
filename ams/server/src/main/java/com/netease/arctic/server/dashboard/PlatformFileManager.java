@@ -22,9 +22,6 @@ public class PlatformFileManager extends PersistentBase {
   public Integer addFile(String name, String content) {
     PlatformFileInfo platformFileInfo = new PlatformFileInfo(name, content);
     doAs(PlatformFileMapper.class, e -> e.addFile(platformFileInfo));
-    if (serviceConfig.getString(ArcticManagementConf.DB_TYPE).equals("derby")) {
-      return getAs(PlatformFileMapper.class, e -> e.getFileId(content));
-    }
     return platformFileInfo.getFileId();
   }
 

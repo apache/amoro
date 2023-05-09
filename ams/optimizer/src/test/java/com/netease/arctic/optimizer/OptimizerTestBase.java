@@ -19,7 +19,6 @@
 package com.netease.arctic.optimizer;
 
 import com.netease.arctic.TestAms;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

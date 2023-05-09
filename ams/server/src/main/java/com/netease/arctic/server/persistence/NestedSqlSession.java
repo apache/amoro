@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 
 public final class NestedSqlSession implements Closeable {
   protected static final int MAX_NEST_BEGIN_COUNT = 5;
-  private static ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
+  private static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
   private int nestCount = 0;
   private SqlSession sqlSession;
 
