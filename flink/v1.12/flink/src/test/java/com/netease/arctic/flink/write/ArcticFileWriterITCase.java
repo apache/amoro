@@ -67,7 +67,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import static com.netease.arctic.flink.read.ArcticSourceTest.tableRecords;
+import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
 
 public class ArcticFileWriterITCase extends FlinkTestBase {
 
