@@ -211,7 +211,7 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_QUOTA,
             TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT))
-        .setMinorLeastInterval(CompatiblePropertyUtil.propertyAsInt(
+        .setMinorLeastFileCount(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
             TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT))
@@ -230,10 +230,6 @@ public class OptimizingConfig {
         .setFullTriggerInterval(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
-            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT))
-        .setMinorLeastFileCount(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT));
+            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT));
   }
 }
