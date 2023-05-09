@@ -18,7 +18,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   public RewriteFilesInput(
       IcebergDataFile[] rewrittenDataFiles,
       IcebergDataFile[] rePosDeletedDataFiles,
-      IcebergDeleteFile[] deleteFiles,
+      IcebergContentFile<?>[] deleteFiles,
       ArcticTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;

@@ -30,11 +30,16 @@ public class IcebergDataFile extends IcebergContentFile<DataFile> implements Dat
 
   private static final long serialVersionUID = 1L;
 
-  private DataFile dataFile;
+  private final DataFile dataFile;
 
   public IcebergDataFile(DataFile dataFile, long sequenceNumber) {
     super(sequenceNumber);
     this.dataFile = dataFile;
+  }
+
+  @Override
+  public DataFile internalFile() {
+    return dataFile;
   }
 
   @Override

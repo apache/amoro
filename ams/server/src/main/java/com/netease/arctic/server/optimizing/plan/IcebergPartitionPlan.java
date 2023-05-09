@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.clearspring.analytics.util.Lists;
+import com.clearspring.analytics.util.Preconditions;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.data.IcebergDataFile;
@@ -34,6 +35,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.glassfish.jersey.internal.guava.Sets;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +47,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   private final SequenceNumberFetcher sequenceNumberFetcher;
 
-  private TaskSplitter taskSpilitter;
+  private TaskSplitter taskSplitter;
   private Map<IcebergDataFile, List<IcebergDeleteFile>> fragementFiles = Maps.newHashMap();
   private Map<IcebergDataFile, List<IcebergDeleteFile>> segmentFiles = Maps.newHashMap();
   private Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
@@ -63,11 +65,15 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     this.sequenceNumberFetcher = sequenceNumberFetcher;
   }
 
-  public String getPartition() {
-    return partition;
+  @Override
+  public void addFile(DataFile dataFile, List<DeleteFile> deletes) {
+    addFile(dataFile, deletes, Collections.emptyList());
   }
 
-  public void addFile(DataFile dataFile, List<DeleteFile> deletes) {
+  @Override
+  public void addFile(DataFile dataFile, List<DeleteFile> deletes, List<IcebergDataFile> changeDeleteFiles) {
+    Preconditions.checkArgument(changeDeleteFiles.isEmpty(),
+        "iceberg format table should not have change delete files");
     IcebergDataFile contentFile = createDataFile(dataFile);
     if (dataFile.fileSizeInBytes() <= fragementSize) {
       fragementFiles.put(
@@ -103,34 +109,34 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   public boolean isNecessary() {
-    if (taskSpilitter == null) {
-      taskSpilitter = new TaskSplitter();
+    if (taskSplitter == null) {
+      taskSplitter = new TaskSplitter();
     }
-    return taskSpilitter.isNecessary();
+    return taskSplitter.isNecessary();
   }
 
   @Override
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-    if (taskSpilitter == null) {
-      taskSpilitter = new TaskSplitter();
+    if (taskSplitter == null) {
+      taskSplitter = new TaskSplitter();
     }
-    return taskSpilitter.splitTasks(targetTaskCount);
+    return taskSplitter.splitTasks(targetTaskCount);
   }
 
   @Override
   public OptimizingType getOptimizingType() {
-    if (taskSpilitter == null) {
-      taskSpilitter = new TaskSplitter();
+    if (taskSplitter == null) {
+      taskSplitter = new TaskSplitter();
     }
-    return taskSpilitter.getOptimizingType();
+    return taskSplitter.getOptimizingType();
   }
 
   @Override
   public long getCost() {
-    if (taskSpilitter == null) {
-      taskSpilitter = new TaskSplitter();
+    if (taskSplitter == null) {
+      taskSplitter = new TaskSplitter();
     }
-    return taskSpilitter.getCost();
+    return taskSplitter.getCost();
   }
 
   private class TaskSplitter {

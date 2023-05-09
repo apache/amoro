@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -50,7 +51,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private long planTime = System.currentTimeMillis();
   private int idGenerator = 1;
   private OptimizingType optimizingType = OptimizingType.MINOR;
-  private SequenceNumberFetcher sequenceNumberFetcher;
 
   public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
     super(tableRuntime);
@@ -59,7 +59,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
     this.availableCore = availableCore;
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, System.currentTimeMillis());
-    this.sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), targetSnapshotId);
   }
 
   public long getTargetSnapshotId() {
@@ -111,10 +110,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   private OptimizingTask buildTask(RewriteFilesInput input) {
     return new OptimizingTask(new OptimizingTaskId(processId, idGenerator++));
-  }
-
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
-    return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, sequenceNumberFetcher);
   }
 
   protected boolean filterPartition(String partition) {
