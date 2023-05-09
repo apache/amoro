@@ -42,6 +42,13 @@ public class IcebergTableUtil {
     }
   }
 
+  public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
+    if (refresh) {
+      internalTable.refresh();
+    }
+    return internalTable.currentSnapshot();
+  }
+
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
