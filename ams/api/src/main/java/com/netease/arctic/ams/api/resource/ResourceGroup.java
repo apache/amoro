@@ -56,9 +56,9 @@ public class ResourceGroup {
 
   //generate inner builder class, use addProperties instead of set
   public static class Builder {
-    private String name;
-    private String container;
-    private Map<String, String> properties = new HashMap<>();
+    private final String name;
+    private final String container;
+    private final Map<String, String> properties = new HashMap<>();
 
     public Builder(String name, String container) {
       Preconditions.checkArgument(name != null && container != null,
@@ -84,6 +84,11 @@ public class ResourceGroup {
 
     public Builder addProperty(String key, String value) {
       this.properties.put(key, value);
+      return this;
+    }
+
+    public Builder addProperties(Map<String, String> properties) {
+      this.properties.putAll(properties);
       return this;
     }
 

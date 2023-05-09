@@ -22,14 +22,12 @@ import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {
-  private static final ConcurrentHashMap<Class<?>, Class<?>> mapperIntfMap = new ConcurrentHashMap<>();
 
   protected PersistentBase() {
   }

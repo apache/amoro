@@ -17,7 +17,7 @@ import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.persistence.TaskFilesPersistency;
+import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -428,7 +428,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                   processId, targetSnapshotId, status, optimizingType, planTime, getSummary())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
-          () -> TaskFilesPersistency.persistTaskInputs(tableRuntime, processId, taskMap.values()),
+          () -> TaskFilesPersistence.persistTaskInputs(tableRuntime, processId, taskMap.values()),
           () -> tableRuntime.beginProcess(this)
       );
     }
@@ -453,7 +453,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private void loadTaskRuntimes() {
       List<TaskRuntime> taskRuntimes = getAs(OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
-      RewriteFilesInput inputs = TaskFilesPersistency.loadTaskInputs(processId);
+      RewriteFilesInput inputs = TaskFilesPersistence.loadTaskInputs(processId);
       taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwership(this);
         taskRuntime.setInput(inputs);
