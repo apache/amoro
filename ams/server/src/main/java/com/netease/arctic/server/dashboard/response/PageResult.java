@@ -77,7 +77,7 @@ public class PageResult<T,R> {
    * @param offset offset
    * @param limit  limit
    * @param <T>    queue element type
-   * @return response containins paging information
+   * @return response containing paging information
    */
   public static <T,R> PageResult<T,R> of(List<R> list, int offset, int limit) {
     if (CollectionUtils.isEmpty(list)) {

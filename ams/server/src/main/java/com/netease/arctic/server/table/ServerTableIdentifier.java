@@ -2,6 +2,7 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Objects;
 
@@ -88,12 +89,13 @@ public class ServerTableIdentifier {
 
   @Override
   public String toString() {
-    return "ServerTableIdentifier{" +
-        "id=" + id +
-        ", catalog='" + catalog + '\'' +
-        ", database='" + database + '\'' +
-        ", tableName='" + tableName + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("id", id)
+        .add("catalog", catalog)
+        .add("database", database)
+        .add("tableName", tableName)
+        .add("format", format)
+        .toString();
   }
 
   public static ServerTableIdentifier of(TableIdentifier tableIdentifier) {
