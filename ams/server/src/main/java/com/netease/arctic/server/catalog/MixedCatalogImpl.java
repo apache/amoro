@@ -31,7 +31,7 @@ public class MixedCatalogImpl extends InternalCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
-        .map(serverTableIdentifier -> serverTableIdentifier.getIdentifier())
+        .map(ServerTableIdentifier::getIdentifier)
         .collect(Collectors.toList());
   }
 
@@ -41,7 +41,7 @@ public class MixedCatalogImpl extends InternalCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
-        .map(serverTableIdentifier -> serverTableIdentifier.getIdentifier())
+        .map(ServerTableIdentifier::getIdentifier)
         .collect(Collectors.toList());
   }
 
@@ -62,7 +62,7 @@ public class MixedCatalogImpl extends InternalCatalog {
   public boolean exist(String database, String tableName) {
     ServerTableIdentifier tableIdentifier = getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableIdentifier(getMetadata().getCatalogName(), database, tableName));
-    return tableIdentifier == null ? false : getAs(TableMetaMapper.class, mapper ->
+    return tableIdentifier != null && getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableMetaById(tableIdentifier.getId())) != null;
   }
 
