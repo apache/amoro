@@ -95,7 +95,7 @@ extendStatement
     ;
 
 statement
-    : createTableHeader ('(' colListAndPk ')')? tableProvider?
+    : createTableHeader colListAndPk tableProvider?
         createTableClauses
         (AS? query)?                                                   #createTableWithPk
 

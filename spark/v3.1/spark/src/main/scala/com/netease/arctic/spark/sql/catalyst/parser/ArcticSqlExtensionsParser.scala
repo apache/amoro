@@ -20,16 +20,13 @@ package com.netease.arctic.spark.sql.catalyst.parser
 
 
 import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser
-import com.netease.arctic.spark.sql.parser.ArcticSqlExtendLexer
-import com.netease.arctic.spark.sql.parser.ArcticSqlCommandParser
-import com.netease.arctic.spark.sql.parser.ArcticSqlCommandLexer
+import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlLexer, ArcticExtendSparkSqlParser, ArcticSqlCommandLexer, ArcticSqlCommandParser, ArcticSqlExtendLexer, ArcticSqlExtendParser}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
-import org.apache.spark.sql.arctic.parser.ExtendAstBuilder
+import org.apache.spark.sql.arctic.parser.{ArcticExtendSparkSqlAstBuilder, ExtendAstBuilder}
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
@@ -48,6 +45,7 @@ import scala.util.Try
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {
 
+  private lazy val arcticExtendSparkAstBuilder = new ArcticExtendSparkSqlAstBuilder(delegate)
   private lazy val extendSparkSqlAstBuilder = new ExtendAstBuilder(delegate)
   private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
@@ -109,6 +107,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
     if (isArcticExtendSparkStatement(sql)) {
       Some(new ArcticSqlExtendLexer(charStream))
+//      Some(new ArcticExtendSparkSqlLexer(charStream))
     } else if (isArcticCommand(sql)) {
       Some(new ArcticSqlCommandLexer(charStream))
     } else {
@@ -118,6 +117,11 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
     lexer match {
+      case _: ArcticExtendSparkSqlLexer =>
+        val parser = new ArcticExtendSparkSqlParser(stream)
+        parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
+        parser.SQL_standard_keyword_behavior = conf.ansiEnabled
+        parser
       case _: ArcticSqlExtendLexer =>
         val parser = new ArcticSqlExtendParser(stream)
         parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
@@ -132,6 +136,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   }
 
   def toLogicalResult(parser: Parser): LogicalPlan = parser match {
+    case p: ArcticExtendSparkSqlParser =>
+      arcticExtendSparkAstBuilder.visitArcticCommand(p.arcticCommand())
     case p: ArcticSqlExtendParser =>
       extendSparkSqlAstBuilder.visitExtendStatement(p.extendStatement())
     case p: ArcticSqlCommandParser =>

@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.sql.parser;// Generated from C:/Users/hzzhangyongxiang/Projects/github.com/baiyangtx/arctic/spark/v3.1/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser\ArcticSqlExtend.g4 by ANTLR 4.10.1
+package com.netease.arctic.spark.sql.parser;// Generated from ArcticSqlExtend.g4 by ANTLR 4.7.2
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
