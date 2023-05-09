@@ -3,7 +3,6 @@ package com.netease.arctic.spark.test.suites.ut.sql.parser;
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser;
 import com.netease.arctic.spark.test.helper.ScalaTestHelper;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.spark.sql.arctic.parser.ExtendAstBuilder;
 import org.apache.spark.sql.catalyst.parser.AbstractSqlParser;
 import org.apache.spark.sql.catalyst.parser.AstBuilder;
 import org.apache.spark.sql.catalyst.parser.ParseException;
@@ -50,8 +49,6 @@ public class TestSqlExtendParser {
       "CREATE TABLE t1 (id int, PRIMARY KEY(id)) USING arctic SKEWED BY (id) ",
       "CREATE TABLE t1 (id int, pt string, PRIMARY KEY(id)) USING arctic " +
           "CLUSTERED BY(id,pt) SORTED BY (pt DESC) INTO 8 BUCKETS",
-      "CREATE TABLE t1 (id int, pt string, PRIMARY KEY(id)) USING arctic " +
-          "TBLPROPERTIES('a')",
       "CREATE TEMPORARY TABLE IF NOT EXISTS t1 (id int , PRIMARY KEY(id)) USING arctic",
       "CREATE TABLE t1 (id int, PRIMARY KEY(id)) USING arctic STORED BY 'a.b.c' ",
       "CREATE TABLE t1 (id int, pt string, PRIMARY KEY(id)) USING arctic " +
@@ -114,12 +111,29 @@ public class TestSqlExtendParser {
         "select a, b",
         "select a, b from db.c",
         "select a, b from db.c where x < 1",
-        "select a, b from db.c having x < 1",
+        "select a, b from db.c having x = 1",
+        "select a, b from db.c having x > 1",
+        "select a, b from db.c having x >= 1",
+        "select a, b from db.c having x <= 1",
         "select distinct a, b from db.c",
         "select all a, b from db.c",
-        "select a from 1k.2m"
+        "select a from 1k.2m",
+
+        "select a from db.c where x between 1 AND 10 ",
+        "select a from db.c where x not between 1 AND 10 ",
+        "select a from db.c where x in(1, 2, 3)",
+        "select a from db.c where x not in(1, 2, 3)",
+        "select a from db.c where x like 'a%'",
+        "select a from db.c where x is null ",
+        "select a from db.c where x is not null ",
+        "select a from db.c where x is true ",
+        "select a from db.c where x is false ",
+        "select a from db.c where x is unknown ",
 
 
+
+
+        "from a select b, c "
     );
 
     return queries.stream()
