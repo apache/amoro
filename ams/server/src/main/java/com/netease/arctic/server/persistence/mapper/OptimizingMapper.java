@@ -66,6 +66,7 @@ public interface OptimizingMapper {
       @Result(property = "failReason", column = "fail_reason"),
       @Result(property = "summary", column = "summary")
   })
+  // TODO useless?
   List<TableOptimizingProcess> selectOptimizingProcesses(@Param("tableId") long tableId);
 
   @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
