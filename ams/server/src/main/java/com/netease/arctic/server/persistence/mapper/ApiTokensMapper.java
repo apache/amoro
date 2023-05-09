@@ -28,7 +28,7 @@ public interface ApiTokensMapper {
 
   @Select("select secret from " +
           TABLE_NAME + " where apikey = #{apikey}")
-  String getSecretBykey(String apikey);
+  String getSecretByKey(String apikey);
 
   @Insert("insert into " + TABLE_NAME + " (apikey,secret,apply_time) values(#{apiTokens.apikey}," +
           "#{apiTokens.secret},#{apiTokens.applyTime})")

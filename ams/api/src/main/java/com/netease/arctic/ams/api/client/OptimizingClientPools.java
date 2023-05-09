@@ -20,6 +20,7 @@ package com.netease.arctic.ams.api.client;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.OptimizingService;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -47,7 +48,7 @@ public class OptimizingClientPools {
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
     return new ThriftClientPool<>(url,
         s -> new OptimizingService.Client(
-            new TMultiplexedProtocol(new TBinaryProtocol(s), "OptimizeManager")), c -> {
+            new TMultiplexedProtocol(new TBinaryProtocol(s), Constants.THRIFT_OPTIMIZING_SERVICE_NAME)), c -> {
       try {
         ((OptimizingService.Client) c).ping();
       } catch (TException e) {

@@ -1,10 +1,8 @@
 package com.netease.arctic.optimizer;
 
-import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.Collections;

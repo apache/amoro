@@ -21,6 +21,7 @@ package com.netease.arctic.server;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.PropertyNames;
@@ -64,8 +65,8 @@ public class ArcticServiceContainer {
 
   private final DefaultTableService tableService;
   private final DefaultOptimizingService optimizingService;
+  private final List<ResourceGroup> resourceGroups = new ArrayList<>();
   private Configurations serviceConfig;
-  private List<ResourceGroup> resourceGroups = new ArrayList<>();
   private TServer server;
 
   private ArcticServiceContainer() throws IllegalConfigurationException, FileNotFoundException {
@@ -79,7 +80,7 @@ public class ArcticServiceContainer {
       ArcticServiceContainer service = new ArcticServiceContainer();
       service.initInternalExecutors();
       service.initThriftService();
-      service.startInternalServices();
+      service.startThriftService();
       service.startHttpService();
     } catch (Throwable t) {
       LOG.error("Start AMS exception...", t);
@@ -91,12 +92,11 @@ public class ArcticServiceContainer {
     new ConfigurationHelper().init();
   }
 
-  private void startInternalServices() {
+  private void startThriftService() {
     tableService.initialize();
-    LOG.info("Internal table services have been started");
     Thread thread = new Thread(() -> {
       server.serve();
-      LOG.info("Thrift service has been started");
+      LOG.info("Thrift services have been started");
     }, "Thrift-server-thread");
     thread.setDaemon(true);
     thread.start();
@@ -138,12 +138,11 @@ public class ArcticServiceContainer {
 
     ArcticTableMetastore.Processor<TableManagementService> tableMetastoreProcessor =
         new ArcticTableMetastore.Processor<>(new TableManagementService(tableService));
-    processor.registerProcessor("TableMetastore", tableMetastoreProcessor);
+    processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
-    // register OptimizeManager
     OptimizingService.Processor<DefaultOptimizingService> optimizerManagerProcessor =
         new OptimizingService.Processor<>(optimizingService);
-    processor.registerProcessor("OptimizeManager", optimizerManagerProcessor);
+    processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
     TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
@@ -155,7 +154,7 @@ public class ArcticServiceContainer {
         .selectorThreads(selectorThreads)
         .acceptQueueSizePerThread(queueSizePerSelector);
     server = new TThreadedSelectorServer(args);
-    LOG.info("Started the thrift server on port [" + port + "]...");
+    LOG.info("Initialized the thrift server on port [" + port + "]...");
     LOG.info("Options.thriftWorkerThreads = " + workerThreads);
     LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
     LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);

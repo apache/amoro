@@ -3,6 +3,7 @@ package com.netease.arctic.ams.api.client;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.Constants;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
@@ -38,7 +39,7 @@ public class AmsClientPools {
         s -> {
           TProtocol protocol = new TBinaryProtocol(s);
           ArcticTableMetastore.Client tableMetastore = new ArcticTableMetastore.Client(
-              new TMultiplexedProtocol(protocol, "TableMetastore"));
+              new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
           return tableMetastore;
         },
         c -> {
