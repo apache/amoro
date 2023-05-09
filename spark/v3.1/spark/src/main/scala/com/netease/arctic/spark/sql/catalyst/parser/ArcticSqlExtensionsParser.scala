@@ -96,15 +96,20 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     normalized.contains("migrate") && normalized.contains("to arctic")
   }
 
-  private def isArcticExtendSparkStatement(sqlText: String): Boolean = {
+
+  private val arcticExtendSqlFilters: Seq[String => Boolean] = Seq(
+    s => s.contains("create table") && s.contains("primary key"),
+    s => s.contains("create temporary table") && s.contains("primary key")
+  )
+
+  private def isArcticExtendSql(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-    normalized.contains("create table") && normalized.contains(
-      "using arctic") && normalized.contains("primary key")
+    arcticExtendSqlFilters.exists(f => f(normalized))
   }
 
   private def buildLexer(sql: String): Option[Lexer] = {
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
-    if (isArcticExtendSparkStatement(sql)) {
+    if (isArcticExtendSql(sql)) {
       Some(new ArcticSqlExtendLexer(charStream))
     } else if (isArcticCommand(sql)) {
       Some(new ArcticSqlCommandLexer(charStream))

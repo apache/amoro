@@ -114,8 +114,7 @@ class ExtendAstBuilder(delegate: ParserInterface)
     if (temp) {
       val asSelect = if (ctx.query == null) "" else " AS ..."
       operationNotAllowed(
-        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead",
-        ctx)
+        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead", ctx)
     }
 
     val partitioning = partitionExpressions(partTransforms, partCols, ctx)
@@ -123,14 +122,12 @@ class ExtendAstBuilder(delegate: ParserInterface)
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
         operationNotAllowed(
-          "Schema may not be specified in a Create Table As Select (CTAS) statement",
-          ctx)
+          "Schema may not be specified in a Create Table As Select (CTAS) statement", ctx)
 
       case Some(_) if partCols.nonEmpty =>
         // non-reference partition columns are not allowed because schema can't be specified
         operationNotAllowed(
-          "Partition column types may not be specified in Create Table As Select (CTAS)",
-          ctx)
+          "Partition column types may not be specified in Create Table As Select (CTAS)", ctx)
 
       case Some(query) =>
         val propertiesMap = buildProperties(primaryForCtas, properties)
@@ -151,12 +148,9 @@ class ExtendAstBuilder(delegate: ParserInterface)
           ifNotExists = ifNotExists)
 
       case _ =>
-        // Note: table schema includes both the table columns list and the partition columns
-        // with data type.
         if (primaryForCtas.nonEmpty) {
           operationNotAllowed(
-            "Primary keys do not allow this input format in a Create Table",
-            ctx)
+            "Specifying a primary key without specifying a schema in a Create Table", ctx)
         }
         val primary = colListAndPk._2
         // Setting the primary key not nullable
@@ -234,8 +228,7 @@ class ExtendAstBuilder(delegate: ParserInterface)
     val location = visitLocationSpecList(ctx.locationSpec())
     val (cleanedOptions, newLocation) = cleanTableOptions(ctx, options, location)
     val comment = visitCommentSpecList(ctx.commentSpec())
-    val serdeInfo =
-      getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
+    val serdeInfo = getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
     (
       partTransforms,
       partCols,
@@ -363,35 +356,7 @@ class ExtendAstBuilder(delegate: ParserInterface)
   type InsertDirParams = (Boolean, CatalogStorageFormat, Option[String])
 
 
-  private def getTableAliasWithoutColumnAlias(
-      ctx: TableAliasContext,
-      op: String): Option[String] = {
-    if (ctx == null) {
-      None
-    } else {
-      val ident = ctx.strictIdentifier()
-      if (ctx.identifierList() != null) {
-        throw new ParseException(s"Columns aliases are not allowed in $op.", ctx.identifierList())
-      }
-      if (ident != null) Some(ident.getText) else None
-    }
-  }
 
-
-  /**
-   * Convert a constant of any type into a string. This is typically used in DDL commands, and its
-   * main purpose is to prevent slight differences due to back to back conversions i.e.:
-   * String -> Literal -> String.
-   */
-  protected def visitStringConstant(
-      ctx: ConstantContext,
-      legacyNullAsString: Boolean): String = withOrigin(ctx) {
-    ctx match {
-      case _: NullLiteralContext if !legacyNullAsString => null
-      case s: StringLiteralContext => createString(s)
-      case o => o.getText
-    }
-  }
 
   /**
    * Add ORDER BY/SORT BY/CLUSTER BY/DISTRIBUTE BY/LIMIT/WINDOWS clauses to the logical plan. These
@@ -448,7 +413,7 @@ class ExtendAstBuilder(delegate: ParserInterface)
   /**
    * Create a clause for DISTRIBUTE BY.
    */
-  protected def withRepartitionByExpression(
+  private def withRepartitionByExpression(
       ctx: QueryOrganizationContext,
       expressions: Seq[Expression],
       query: LogicalPlan): LogicalPlan = {
@@ -2246,7 +2211,7 @@ class ExtendAstBuilder(delegate: ParserInterface)
 
   /**
    * Convert a table property list into a key-value map.
-   * This should be called through [[visitPropertyKeyValues]] or [[visitPropertyKeys]].
+   * This should be called through [[visitPropertyKeyValues]] .
    */
   override def visitTablePropertyList(
       ctx: TablePropertyListContext): Map[String, String] = withOrigin(ctx) {
@@ -2272,20 +2237,6 @@ class ExtendAstBuilder(delegate: ParserInterface)
         ctx)
     }
     props
-  }
-
-  /**
-   * Parse a list of keys from a [[TablePropertyListContext]], assuming no values are specified.
-   */
-  def visitPropertyKeys(ctx: TablePropertyListContext): Seq[String] = {
-    val props = visitTablePropertyList(ctx)
-    val badKeys = props.filter { case (_, v) => v != null }.keys
-    if (badKeys.nonEmpty) {
-      operationNotAllowed(
-        s"Values should not be specified for key(s): ${badKeys.mkString("[", ",", "]")}",
-        ctx)
-    }
-    props.keys.toSeq
   }
 
   /**
@@ -2603,69 +2554,11 @@ class ExtendAstBuilder(delegate: ParserInterface)
     SerdeInfo(serdeProperties = entries.toMap)
   }
 
-  /**
-   * Throw a [[ParseException]] if the user specified incompatible SerDes through ROW FORMAT
-   * and STORED AS.
-   *
-   * The following are allowed. Anything else is not:
-   *   ROW FORMAT SERDE ... STORED AS [SEQUENCEFILE | RCFILE | TEXTFILE]
-   *   ROW FORMAT DELIMITED ... STORED AS TEXTFILE
-   *   ROW FORMAT ... STORED AS INPUTFORMAT ... OUTPUTFORMAT ...
-   */
-  protected def validateRowFormatFileFormat(
-      rowFormatCtx: RowFormatContext,
-      createFileFormatCtx: CreateFileFormatContext,
-      parentCtx: ParserRuleContext): Unit = {
-    if (rowFormatCtx == null || createFileFormatCtx == null) {
-      return
-    }
-    (rowFormatCtx, createFileFormatCtx.fileFormat) match {
-      case (_, ffTable: TableFileFormatContext) => // OK
-      case (
-            rfSerde: ArcticSqlExtendParser.RowFormatSerdeContext,
-            ffGeneric: GenericFileFormatContext) =>
-        ffGeneric.identifier.getText.toLowerCase(Locale.ROOT) match {
-          case ("sequencefile" | "textfile" | "rcfile") => // OK
-          case fmt =>
-            operationNotAllowed(
-              s"ROW FORMAT SERDE is incompatible with format '$fmt', which also specifies a serde",
-              parentCtx)
-        }
-      case (
-            rfDelimited: ArcticSqlExtendParser.RowFormatDelimitedContext,
-            ffGeneric: ArcticSqlExtendParser.GenericFileFormatContext) =>
-        ffGeneric.identifier.getText.toLowerCase(Locale.ROOT) match {
-          case "textfile" => // OK
-          case fmt => operationNotAllowed(
-              s"ROW FORMAT DELIMITED is only compatible with 'textfile', not '$fmt'",
-              parentCtx)
-        }
-      case _ =>
-        // should never happen
-        def str(ctx: ParserRuleContext): String = {
-          (0 until ctx.getChildCount).map { i => ctx.getChild(i).getText }.mkString(" ")
-        }
-        operationNotAllowed(
-          s"Unexpected combination of ${str(rowFormatCtx)} and ${str(createFileFormatCtx)}",
-          parentCtx)
-    }
-  }
-
-  protected def validateRowFormatFileFormat(
-      rowFormatCtx: Seq[ArcticSqlExtendParser.RowFormatContext],
-      createFileFormatCtx: Seq[CreateFileFormatContext],
-      parentCtx: ParserRuleContext): Unit = {
-    if (rowFormatCtx.size == 1 && createFileFormatCtx.size == 1) {
-      validateRowFormatFileFormat(rowFormatCtx.head, createFileFormatCtx.head, parentCtx)
-    }
-  }
 
   protected def getSerdeInfo(
       rowFormatCtx: Seq[RowFormatContext],
       createFileFormatCtx: Seq[CreateFileFormatContext],
-      ctx: ParserRuleContext,
-      skipCheck: Boolean = false): Option[SerdeInfo] = {
-    if (!skipCheck) validateRowFormatFileFormat(rowFormatCtx, createFileFormatCtx, ctx)
+      ctx: ParserRuleContext): Option[SerdeInfo] = {
     val rowFormatSerdeInfo = rowFormatCtx.map(visitRowFormat)
     val fileFormatSerdeInfo = createFileFormatCtx.map(visitCreateFileFormat)
     (fileFormatSerdeInfo ++ rowFormatSerdeInfo).reduceLeftOption((l, r) => l.merge(r))
@@ -2696,10 +2589,6 @@ class ExtendAstBuilder(delegate: ParserInterface)
       }
     }
   }
-
-
-
-
 
 
   /**
