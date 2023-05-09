@@ -25,7 +25,7 @@ import com.netease.arctic.server.persistence.mapper.ApiTokensMapper;
 public class APITokenManager extends PersistentBase {
 
   public String getSecretByKey(String key) {
-    return getAs(ApiTokensMapper.class, mapper -> mapper.getSecretBykey(key));
+    return getAs(ApiTokensMapper.class, mapper -> mapper.getSecretByKey(key));
   }
 
   public void insertApiToken(ApiTokens  apiToken) {
