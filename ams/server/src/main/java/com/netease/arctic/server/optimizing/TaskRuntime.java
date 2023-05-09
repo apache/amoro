@@ -29,7 +29,7 @@ import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.persistence.TaskFilesPersistency;
+import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
@@ -240,7 +240,7 @@ public class TaskRuntime extends PersistentBase {
     if (result.getErrorMessage() != null) {
       fail(result.getErrorMessage());
     } else {
-      finish(TaskFilesPersistency.loadTaskOutput(result.getTaskOutput()));
+      finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
     }
     owner.acceptResult(this);
     optimizingThread = null;
