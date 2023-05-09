@@ -19,6 +19,7 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 import java.util.Map;
@@ -196,12 +197,12 @@ public class ServerTableMeta {
 
   @Override
   public String toString() {
-    return "ArcticTableMeta{" +
-            "tableIdentifier=" + tableIdentifier +
-            ", schema=" + schema +
-            ", pkList=" + pkList +
-            ", partitionColumnList=" + partitionColumnList +
-            ", properties=" + properties +
-            '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("schema", schema)
+        .add("pkList", pkList)
+        .add("partitionColumnList", partitionColumnList)
+        .add("properties", properties)
+        .toString();
   }
 }

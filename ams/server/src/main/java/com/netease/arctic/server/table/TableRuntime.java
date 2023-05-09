@@ -31,6 +31,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -379,17 +380,17 @@ public class TableRuntime extends PersistentBase {
 
   @Override
   public String toString() {
-    return "TableOptimizingRuntime{" +
-        "tableIdentifier=" + tableIdentifier +
-        ", currentSnapshotId=" + currentSnapshotId +
-        ", currentChangeSnapshotId=" + currentChangeSnapshotId +
-        ", status=" + optimizingStatus +
-        ", currentStatusStartTime=" + currentStatusStartTime +
-        ", lastMajorOptimizingTime=" + lastMajorOptimizingTime +
-        ", lastFullOptimizingTime=" + lastFullOptimizingTime +
-        ", lastMinorOptimizingTime=" + lastMinorOptimizingTime +
-        ", tableConfiguration=" + tableConfiguration +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("currentSnapshotId", currentSnapshotId)
+        .add("lastOptimizedSnapshotId", lastOptimizedSnapshotId)
+        .add("optimizingStatus", optimizingStatus)
+        .add("currentStatusStartTime", currentStatusStartTime)
+        .add("lastMajorOptimizingTime", lastMajorOptimizingTime)
+        .add("lastFullOptimizingTime", lastFullOptimizingTime)
+        .add("lastMinorOptimizingTime", lastMinorOptimizingTime)
+        .add("tableConfiguration", tableConfiguration)
+        .toString();
   }
 
   public long getQuotaTime() {
