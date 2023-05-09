@@ -48,14 +48,14 @@ public class SchedulingPolicy {
     }
   }
 
-  private class QuotaOccupySorter implements Comparator<TableRuntime> {
+  private static class QuotaOccupySorter implements Comparator<TableRuntime> {
 
-    private Map<TableRuntime, Double> tableWeightMap = Maps.newHashMap();
+    private final Map<TableRuntime, Double> tableWeightMap = Maps.newHashMap();
 
     @Override
     public int compare(TableRuntime one, TableRuntime another) {
-      return tableWeightMap.computeIfAbsent(one, TableRuntime::calculateQuotaOccupy) >=
-          tableWeightMap.computeIfAbsent(another, TableRuntime::calculateQuotaOccupy) ? 1 : -1;
+      return Double.compare(tableWeightMap.computeIfAbsent(one, TableRuntime::calculateQuotaOccupy),
+          tableWeightMap.computeIfAbsent(another, TableRuntime::calculateQuotaOccupy));
     }
   }
 }
