@@ -36,12 +36,16 @@
         <module>v1.12/flink</module>
         <module>v1.12/flink-format</module>
         <module>v1.12/flink-runtime</module>
+        <module>v1.12/arctic-flink-1.12-iceberg-bridge</module>
+        <module>v1.12/arctic-flink-1.12-pulsar-bridge</module>
         <module>v1.14/flink</module>
         <module>v1.14/flink-format</module>
         <module>v1.14/flink-runtime</module>
+        <module>v1.14/arctic-flink-1.14-iceberg-bridge</module>
         <module>v1.15/flink</module>
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>
+        <module>v1.15/arctic-flink-1.15-iceberg-bridge</module>
     </modules>
 
     <properties>
