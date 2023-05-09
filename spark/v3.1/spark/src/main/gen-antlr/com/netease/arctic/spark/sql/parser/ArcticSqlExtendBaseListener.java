@@ -1,5 +1,5 @@
-package com.netease.arctic.spark.sql.parser;// Generated from ArcticSqlExtend.g4 by ANTLR 4.7.2
-
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlExtend.g4 by ANTLR 4.7.2
+package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -1635,18 +1635,6 @@ public class ArcticSqlExtendBaseListener implements ArcticSqlExtendListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterColPosition(ArcticSqlExtendParser.ColPositionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitColPosition(ArcticSqlExtendParser.ColPositionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterComplexDataType(ArcticSqlExtendParser.ComplexDataTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1690,18 +1678,6 @@ public class ArcticSqlExtendBaseListener implements ArcticSqlExtendListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPrimitiveDataType(ArcticSqlExtendParser.PrimitiveDataTypeContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterQualifiedColTypeWithPosition(ArcticSqlExtendParser.QualifiedColTypeWithPositionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitQualifiedColTypeWithPosition(ArcticSqlExtendParser.QualifiedColTypeWithPositionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

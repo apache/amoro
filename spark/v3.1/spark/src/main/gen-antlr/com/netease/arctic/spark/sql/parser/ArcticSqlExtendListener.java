@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.sql.parser;// Generated from ArcticSqlExtend.g4 by ANTLR 4.7.2
+package com.netease.arctic.spark.sql.parser;// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlExtend.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -1489,16 +1489,6 @@ public interface ArcticSqlExtendListener extends ParseTreeListener {
 	 */
 	void exitIntervalValue(ArcticSqlExtendParser.IntervalValueContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticSqlExtendParser#colPosition}.
-	 * @param ctx the parse tree
-	 */
-	void enterColPosition(ArcticSqlExtendParser.ColPositionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlExtendParser#colPosition}.
-	 * @param ctx the parse tree
-	 */
-	void exitColPosition(ArcticSqlExtendParser.ColPositionContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code complexDataType}
 	 * labeled alternative in {@link ArcticSqlExtendParser#dataType}.
 	 * @param ctx the parse tree
@@ -1546,16 +1536,6 @@ public interface ArcticSqlExtendListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPrimitiveDataType(ArcticSqlExtendParser.PrimitiveDataTypeContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link ArcticSqlExtendParser#qualifiedColTypeWithPosition}.
-	 * @param ctx the parse tree
-	 */
-	void enterQualifiedColTypeWithPosition(ArcticSqlExtendParser.QualifiedColTypeWithPositionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticSqlExtendParser#qualifiedColTypeWithPosition}.
-	 * @param ctx the parse tree
-	 */
-	void exitQualifiedColTypeWithPosition(ArcticSqlExtendParser.QualifiedColTypeWithPositionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticSqlExtendParser#colTypeList}.
 	 * @param ctx the parse tree

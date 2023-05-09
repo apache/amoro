@@ -25,18 +25,17 @@ import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{MultiAlias, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTableValuedFunction}
-import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat}
+import org.apache.spark.sql.catalyst.catalog.BucketSpec
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
-import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, Substring, Subtract, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
-import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.{ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils.IntervalUnit
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, IntervalUtils}
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
-import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
-import org.apache.spark.sql.connector.catalog.{SupportsNamespaces, TableCatalog}
+import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
@@ -48,8 +47,7 @@ import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-class ExtendAstBuilder(delegate: ParserInterface)
-  extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
+class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
     columns.map(c =>
@@ -268,7 +266,8 @@ class ExtendAstBuilder(delegate: ParserInterface)
    * Create a top-level plan with Common Table Expressions.
    */
   override def visitQuery(ctx: QueryContext): LogicalPlan = withOrigin(ctx) {
-    val query = plan(ctx.queryTerm).optionalMap(ctx.queryOrganization)(withQueryResultClauses)
+    val p = plan(ctx.queryTerm)
+    val query =  p.optionalMap(ctx.queryOrganization)(withQueryResultClauses)
 
     // Apply CTEs
     query.optionalMap(ctx.ctes)(withCTE)
@@ -343,20 +342,6 @@ class ExtendAstBuilder(delegate: ParserInterface)
         UnresolvedSubqueryColumnAliases(visitIdentifierList(columnAliases), plan))
     SubqueryAlias(ctx.name.getText, subQuery)
   }
-
-  /**
-   * Parameters used for writing query to a table:
-   *   (multipartIdentifier, tableColumnList, partitionKeys, ifPartitionNotExists).
-   */
-  type InsertTableParams = (Seq[String], Seq[String], Map[String, Option[String]], Boolean)
-
-  /**
-   * Parameters used for writing query to a directory: (isLocal, CatalogStorageFormat, provider).
-   */
-  type InsertDirParams = (Boolean, CatalogStorageFormat, Option[String])
-
-
-
 
   /**
    * Add ORDER BY/SORT BY/CLUSTER BY/DISTRIBUTE BY/LIMIT/WINDOWS clauses to the logical plan. These
@@ -628,6 +613,39 @@ class ExtendAstBuilder(delegate: ParserInterface)
       withPivot(ctx.pivotClause, from)
     } else {
       ctx.lateralView.asScala.foldLeft(from)(withGenerate)
+    }
+  }
+
+  /**
+   * Connect two queries by a Set operator.
+   *
+   * Supported Set operators are:
+   * - UNION [ DISTINCT | ALL ]
+   * - EXCEPT [ DISTINCT | ALL ]
+   * - MINUS [ DISTINCT | ALL ]
+   * - INTERSECT [DISTINCT | ALL]
+   */
+  override def visitSetOperation(ctx: ArcticSqlExtendParser.SetOperationContext): LogicalPlan = withOrigin(ctx) {
+    val left = plan(ctx.left)
+    val right = plan(ctx.right)
+    val all = Option(ctx.setQuantifier()).exists(_.ALL != null)
+    ctx.operator.getType match {
+      case ArcticSqlExtendParser.UNION if all =>
+        Union(left, right)
+      case ArcticSqlExtendParser.UNION =>
+        Distinct(Union(left, right))
+      case ArcticSqlExtendParser.INTERSECT if all =>
+        Intersect(left, right, isAll = true)
+      case ArcticSqlExtendParser.INTERSECT =>
+        Intersect(left, right, isAll = false)
+      case ArcticSqlExtendParser.EXCEPT if all =>
+        Except(left, right, isAll = true)
+      case ArcticSqlExtendParser.EXCEPT =>
+        Except(left, right, isAll = false)
+      case ArcticSqlExtendParser.SETMINUS if all =>
+        Except(left, right, isAll = true)
+      case ArcticSqlExtendParser.SETMINUS =>
+        Except(left, right, isAll = false)
     }
   }
 
@@ -2132,13 +2150,6 @@ class ExtendAstBuilder(delegate: ParserInterface)
   }
 
   /**
-   * Create a [[StructType]] from a sequence of [[StructField]]s.
-   */
-  protected def createStructType(ctx: ComplexColTypeListContext): StructType = {
-    StructType(Option(ctx).toSeq.flatMap(visitComplexColTypeList))
-  }
-
-  /**
    * Create a [[StructType]] from a number of column definitions.
    */
   override def visitComplexColTypeList(
@@ -2398,29 +2409,6 @@ class ExtendAstBuilder(delegate: ParserInterface)
     }
   }
 
-  private def cleanNamespaceProperties(
-      properties: Map[String, String],
-      ctx: ParserRuleContext): Map[String, String] = withOrigin(ctx) {
-    import SupportsNamespaces._
-    val legacyOn = conf.getConf(SQLConf.LEGACY_PROPERTY_NON_RESERVED)
-    properties.filter {
-      case (PROP_LOCATION, _) if !legacyOn =>
-        throw new ParseException(
-          s"$PROP_LOCATION is a reserved namespace property, please use" +
-            s" the LOCATION clause to specify it.",
-          ctx)
-      case (PROP_LOCATION, _) => false
-      case (PROP_OWNER, _) if !legacyOn =>
-        throw new ParseException(
-          s"$PROP_OWNER is a reserved namespace property, it will be" +
-            s" set to the current user.",
-          ctx)
-      case (PROP_OWNER, _) => false
-      case _ => true
-    }
-  }
-
-
 
 
   def cleanTableProperties(
@@ -2589,20 +2577,4 @@ class ExtendAstBuilder(delegate: ParserInterface)
       }
     }
   }
-
-
-  /**
-   * Parse new column info from ADD COLUMN into a QualifiedColType.
-   */
-  override def visitQualifiedColTypeWithPosition(
-      ctx: QualifiedColTypeWithPositionContext): QualifiedColType = withOrigin(ctx) {
-    QualifiedColType(
-      name = typedVisit[Seq[String]](ctx.name),
-      dataType = typedVisit[DataType](ctx.dataType),
-      nullable = ctx.NULL == null,
-      comment = Option(ctx.commentSpec()).map(visitCommentSpec),
-      position = Option(ctx.colPosition).map(typedVisit[ColumnPosition]))
-  }
-
-
 }

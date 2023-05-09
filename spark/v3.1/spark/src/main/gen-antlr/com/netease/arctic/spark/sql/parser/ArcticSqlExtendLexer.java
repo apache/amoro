@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.sql.parser;// Generated from ArcticSqlExtend.g4 by ANTLR 4.7.2
+package com.netease.arctic.spark.sql.parser;// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlExtend.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;

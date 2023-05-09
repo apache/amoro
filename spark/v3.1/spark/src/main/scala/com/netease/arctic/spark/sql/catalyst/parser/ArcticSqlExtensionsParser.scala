@@ -45,7 +45,7 @@ import scala.util.Try
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {
 
-  private lazy val extendSparkSqlAstBuilder = new ExtendAstBuilder(delegate)
+  private lazy val extendSparkSqlAstBuilder = new ExtendAstBuilder()
   private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
   /**
@@ -183,6 +183,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
       }
     }
   }
+
 
   private def replaceMergeIntoCommands(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsDown {
 

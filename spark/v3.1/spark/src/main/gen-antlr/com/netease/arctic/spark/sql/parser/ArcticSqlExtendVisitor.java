@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.sql.parser;// Generated from ArcticSqlExtend.g4 by ANTLR 4.7.2
+package com.netease.arctic.spark.sql.parser;// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlExtend.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -886,12 +886,6 @@ public interface ArcticSqlExtendVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIntervalValue(ArcticSqlExtendParser.IntervalValueContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticSqlExtendParser#colPosition}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitColPosition(ArcticSqlExtendParser.ColPositionContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code complexDataType}
 	 * labeled alternative in {@link ArcticSqlExtendParser#dataType}.
 	 * @param ctx the parse tree
@@ -919,12 +913,6 @@ public interface ArcticSqlExtendVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitPrimitiveDataType(ArcticSqlExtendParser.PrimitiveDataTypeContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link ArcticSqlExtendParser#qualifiedColTypeWithPosition}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitQualifiedColTypeWithPosition(ArcticSqlExtendParser.QualifiedColTypeWithPositionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticSqlExtendParser#colTypeList}.
 	 * @param ctx the parse tree
