@@ -23,7 +23,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 
 /**
- * AMS server columninfo.
+ * AMS server column info.
  */
 public class AMSColumnInfo {
   String field;
@@ -63,9 +63,6 @@ public class AMSColumnInfo {
     this.comment = comment;
   }
 
-  /**
-   * @return
-   */
   public static AMSColumnInfo buildFromNestedField(Types.NestedField field) {
     if (field == null) {
       return null;
@@ -78,10 +75,7 @@ public class AMSColumnInfo {
   }
 
   /**
-   * Construct ColumnInfo based on schema and primarykeyfield.
-   * @param schema schema
-   * @param pkf pkf
-   * @return
+   * Construct ColumnInfo based on schema and primary key field.
    */
   public static AMSColumnInfo buildFromPartitionSpec(Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
     return buildFromNestedField(schema.findField(pkf.fieldName()));

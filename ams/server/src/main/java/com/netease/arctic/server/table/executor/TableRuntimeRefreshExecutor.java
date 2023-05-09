@@ -27,10 +27,11 @@ import com.netease.arctic.server.table.TableRuntimeManager;
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
-  private static final long MAX_INTERVAL = 60 * 1000L;
+  private final long interval;
 
-  public TableRuntimeRefreshExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
+  public TableRuntimeRefreshExecutor(TableRuntimeManager tableRuntimes, int poolSize, long interval) {
     super(tableRuntimes, poolSize);
+    this.interval = interval;
   }
 
   @Override
@@ -39,8 +40,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4 / 5,
-            MAX_INTERVAL);
+    return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
   @Override

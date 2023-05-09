@@ -125,11 +125,6 @@ public class ArcticServiceContainer {
 
     LOG.info("Starting thrift server on port:" + port);
 
-    /*    if (serviceConfig.getString(ArcticManagementConf.DB_TYPE).equals("derby")) {
-      DerbyInstance derbyInstance = new DerbyInstance();
-      derbyInstance.createTable();
-    }*/
-
     TMultiplexedProcessor processor = new TMultiplexedProcessor();
     final TProtocolFactory protocolFactory;
     final TProtocolFactory inputProtoFactory;
@@ -170,6 +165,7 @@ public class ArcticServiceContainer {
       initResourceGroupConfig();
     }
 
+    @SuppressWarnings("unchecked")
     private void initResourceGroupConfig() throws IllegalConfigurationException {
       LOG.info("initializing resource group configuration...");
       JSONArray optimizeGroups = yamlConfig.getJSONArray(ArcticManagementConf.OPTIMIZER_GROUP_LIST);
@@ -184,9 +180,8 @@ public class ArcticServiceContainer {
                   groupBuilder.getContainer());
         }
         if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES)) {
-          groupConfig
-              .getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES, Map.class)
-              .forEach((key, value) -> groupBuilder.addProperty(String.valueOf(key), String.valueOf(value)));
+          groupBuilder.addProperties(groupConfig.getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
+              Map.class));
         }
         resourceGroups.add(groupBuilder.build());
       }
@@ -280,19 +275,4 @@ public class ArcticServiceContainer {
       }
     }
   }
-
-  /*public static class DerbyInstance extends PersistentBase {
-    public void createTable() {
-      //TODO
-    }
-
-    private static String getDerbyInitSqlDir() {
-      String derbyInitSqlDir = System.getProperty("derby.init.sql.dir");
-      if (derbyInitSqlDir == null) {
-        return System.getProperty("user.dir") + "/conf/derby/ams-init.sql".replace("/", File.separator);
-      } else {
-        return derbyInitSqlDir + "/ams-init.sql".replace("/", File.separator);
-      }
-    }
-  }*/
 }

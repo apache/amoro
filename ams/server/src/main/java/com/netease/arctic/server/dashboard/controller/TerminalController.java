@@ -25,8 +25,6 @@ import com.netease.arctic.server.dashboard.model.SqlResult;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.terminal.TerminalManager;
 import io.javalin.http.Context;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,10 +35,8 @@ import java.util.stream.Collectors;
  * terminal controller .
  */
 public class TerminalController {
-  private static final Logger LOG =
-          LoggerFactory.getLogger(TerminalController.class);
 
-  private TerminalManager terminalManager;
+  private final TerminalManager terminalManager;
 
   public TerminalController(TerminalManager terminalManager) {
     this.terminalManager = terminalManager;

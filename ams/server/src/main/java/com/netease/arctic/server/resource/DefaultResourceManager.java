@@ -58,7 +58,7 @@ public class DefaultResourceManager extends PersistentBase implements ResourceMa
 
   @Override
   public List<ResourceGroup> listResourceGroups(String containerName) {
-    return getAs(ResourceMapper.class, mapper -> mapper.selectResourceGroups()).stream()
+    return getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups).stream()
         .filter(group -> group.getContainer().equals(containerName))
         .collect(Collectors.toList());
   }

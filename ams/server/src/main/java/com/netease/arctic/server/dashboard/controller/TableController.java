@@ -51,7 +51,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import java.util.Collections;
 import java.util.Comparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -75,8 +74,8 @@ import java.util.stream.Collectors;
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
 
-  private TableService tableService;
-  private ServerTableDescriptor tableDescriptor;
+  private final TableService tableService;
+  private final ServerTableDescriptor tableDescriptor;
 
   public TableController(TableService tableService, ServerTableDescriptor tableDescriptor) {
     this.tableService = tableService;

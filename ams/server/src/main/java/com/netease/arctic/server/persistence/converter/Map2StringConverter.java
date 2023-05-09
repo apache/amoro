@@ -34,7 +34,7 @@ import java.util.Map;
 @MappedJdbcTypes(JdbcType.VARCHAR)
 @MappedTypes(Map.class)
 public class Map2StringConverter implements TypeHandler<Map<String, String>> {
-  private Gson gson = new Gson();
+  private final Gson gson = new Gson();
 
   @Override
   public void setParameter(PreparedStatement ps, int i, Map<String, String> parameter,
