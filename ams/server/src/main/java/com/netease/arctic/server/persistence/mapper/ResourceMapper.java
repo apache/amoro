@@ -17,7 +17,7 @@ import java.util.List;
 
 public interface ResourceMapper {
 
-  @Select("select group_name, properties, container_name from resource_group")
+  @Select("SELECT group_name, properties, container_name FROM resource_group")
   @Results({
       @Result(property = "name", column = "group_name"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
@@ -25,7 +25,7 @@ public interface ResourceMapper {
   })
   List<ResourceGroup> selectResourceGroups();
 
-  @Select("select group_name, properties, container_name from resource_group where group_name = #{resourceGroup}")
+  @Select("SELECT group_name, properties, container_name FROM resource_group WHERE group_name = #{resourceGroup}")
   @Results({
       @Result(property = "name", column = "group_name"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
@@ -33,8 +33,8 @@ public interface ResourceMapper {
   })
   ResourceGroup selectResourceGroup(@Param("resourceGroup") String groupName);
 
-  @Select("select resource_id, group_name, container_name, start_time, thread_count, total_memory, properties " +
-      "from resource where group_name = #{resourceGroup}")
+  @Select("SELECT resource_id, group_name, container_name, start_time, thread_count, total_memory, properties" +
+      " FROM resource WHERE group_name = #{resourceGroup}")
   @Results({
       @Result(property = "resourceId", column = "resource_id"),
       @Result(property = "group", column = "group_name"),
@@ -46,29 +46,30 @@ public interface ResourceMapper {
   })
   List<Resource> selectResourcesByGroup(@Param("resourceGroup") String groupName);
 
-  @Update("update resource_group set container_name = #{resourceGroup.container}, properties = #{resourceGroup" +
-      ".properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} where " +
-      "group_name = #{resourceGroup.name}")
+  @Update("UPDATE resource_group SET container_name = #{resourceGroup.container}," +
+      " properties = #{resourceGroup.properties," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " WHERE group_name = #{resourceGroup.name}")
   void updateResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
-  @Insert("insert into resource_group (group_name, container_name, properties) values (#{resourceGroup.name}, " +
-      "#{resourceGroup.container}, #{resourceGroup.properties, typeHandler=com.netease.arctic.server" +
-      ".persistence.converter.JsonSummaryConverter})")
+  @Insert("INSERT INTO resource_group (group_name, container_name, properties)" +
+      " VALUES (#{resourceGroup.name}, #{resourceGroup.container}," +
+      " #{resourceGroup.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
-  @Delete("delete from resource_group where group_name = #{resourceGroup.name}")
+  @Delete("DELETE FROM resource_group WHERE group_name = #{resourceGroup.name}")
   void deleteResourceGroup(@Param("resourceGroup") String groupName);
 
-  @Insert("insert into resource (resource_id, group_name, container_name, thread_count, total_memory, " +
-      "properties) values (#{resource.resourceId}, #{resource.groupName}, #{resource.containerName}, " +
-      "#{resource.threadCount}, #{resource.memoryMb}, #{resource.properties, typeHandler=com.netease.arctic" +
-      ".server.persistence.converter.JsonSummaryConverter})")
+  @Insert("INSERT INTO resource (resource_id, group_name, container_name, thread_count, total_memory, properties)" +
+      " VALUES (#{resource.resourceId}, #{resource.groupName}, #{resource.containerName}," +
+      " #{resource.threadCount}, #{resource.memoryMb}," +
+      " #{resource.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertResource(@Param("resource") Resource resource);
 
-  @Delete("delete from optimizer_instance where instance_id = #{resourceId}")
+  @Delete("DELETE FROM optimizer_instance WHERE instance_id = #{resourceId}")
   void deleteResource(@Param("resourceId") String resourceId);
 
-  @Select("select * from resource where resource_id = #{resourceId}")
+  @Select("SELECT * FROM resource WHERE resource_id = #{resourceId}")
   @Results({
       @Result(property = "resourceId", column = "resource_id"),
       @Result(property = "containerName", column = "container_name"),
