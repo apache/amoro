@@ -7,15 +7,13 @@ import com.netease.arctic.optimizer.util.PropertyUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.TableOptimizing;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
@@ -90,16 +88,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       String executorFactoryImpl = PropertyUtil.checkAndGetProperty(
           task.getProperties(),
           OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
-      TableOptimizing.OptimizingInput input = deserializeInput(task.getTaskInput());
+      TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
           .impl(executorFactoryImpl).buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
       factory.initialize(task.getProperties());
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
-      byte[] outputBytes = serializeOutput(output);
+      ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
-      result.setTaskOutput(outputBytes);
+      result.setTaskOutput(outputByteBuffer);
       result.setSummary(result.summary);
       LOG.info("Optimizer executor[{}] executed task[{}]", threadId, task.getTaskId());
       return result;
@@ -128,26 +126,5 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       }
     }
     throw new IllegalStateException("Operator is stopped");
-  }
-
-  private TableOptimizing.OptimizingInput deserializeInput(byte[] bytes) {
-    try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes)) {
-      try (ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
-        return (TableOptimizing.OptimizingInput) objectInputStream.readObject();
-      }
-    } catch (Exception e) {
-      throw new RuntimeException("Deserialized task input failed", e);
-    }
-  }
-
-  public byte[] serializeOutput(TableOptimizing.OptimizingOutput output) {
-    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-      try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-        objectOutputStream.writeObject(output);
-        return byteArrayOutputStream.toByteArray();
-      }
-    } catch (Exception e) {
-      throw new RuntimeException("Serialized task output failed", e);
-    }
   }
 }

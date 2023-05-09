@@ -28,7 +28,7 @@ import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
@@ -131,8 +131,8 @@ public class TableRuntime extends PersistentBase {
         if (table.isKeyedTable()) {
           long lastSnapshotId = currentSnapshotId;
           long changeSnapshotId = currentChangeSnapshotId;
-          currentSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
-          currentChangeSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+          currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
+          currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
           if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
             hasNewSnapshots = true;
             LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,

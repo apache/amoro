@@ -21,7 +21,7 @@ package com.netease.arctic.server;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.client.AmsServerInfo;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
-import com.netease.arctic.server.utils.ZookeeperUtils;
+import com.netease.arctic.server.utils.ZookeeperUtil;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.slf4j.Logger;
@@ -37,12 +37,12 @@ public class HighAvailabilityService {
 
   private final LeaderLatch leaderLatch;
   private final List<LeaderLatchListener> listeners = new ArrayList<>();
-  private final ZookeeperUtils zkService;
+  private final ZookeeperUtil zkService;
   private final String namespace;
 
   public HighAvailabilityService(String zkServerAddress, String namespace) {
     this.namespace = namespace;
-    zkService = new ZookeeperUtils(zkServerAddress);
+    zkService = new ZookeeperUtil(zkServerAddress);
     String lockPath = AmsHAProperties.getLeaderPath(namespace);
     try {
       zkService.create(lockPath);

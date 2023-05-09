@@ -9,7 +9,7 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 
-public class OptimizingUtils {
+public class OptimizingUtil {
 
   /**
    * Build current table optimize info.

@@ -21,8 +21,8 @@ package com.netease.arctic.server.table.executor;
 import com.google.common.base.Strings;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeManager;
-import com.netease.arctic.server.utils.HiveLocationUtils;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.HiveLocationUtil;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -30,7 +30,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ManifestFile;
@@ -144,21 +144,21 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static Set<String> getValidContentFiles(ArcticTable arcticTable) {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
-      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
+      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
       LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
-      Set<String> changeValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
+      Set<String> changeValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
       LOG.info("{} get {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
       validFiles.addAll(changeValidFiles);
     } else {
-      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asUnkeyedTable());
+      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
       validFiles.addAll(baseValidFiles);
     }
 
     LOG.info("{} get {} valid files", arcticTable.id(), validFiles.size());
 
     // add hive location to exclude
-    Set<String> hiveValidLocations = HiveLocationUtils.getHiveLocation(arcticTable);
+    Set<String> hiveValidLocations = HiveLocationUtil.getHiveLocation(arcticTable);
     LOG.info("{} get {} valid locations in the Hive", arcticTable.id(), hiveValidLocations.size());
     validFiles.addAll(hiveValidLocations);
 
@@ -184,7 +184,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
                                                FileStatus fileStatus,
                                                Long lastTime,
                                                Set<String> exclude) {
-    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
+    String location = TableFileUtil.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
@@ -197,7 +197,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
         if (location.endsWith(METADATA_FOLDER_NAME) || location.endsWith(DATA_FOLDER_NAME)) {
           return 0;
         }
-        TableFileUtils.deleteEmptyDirectory(io, location, exclude);
+        TableFileUtil.deleteEmptyDirectory(io, location, exclude);
         return deleteFileCnt;
       } else if (io.isEmptyDirectory(location) &&
           fileStatus.getModificationTime() < lastTime) {
@@ -205,7 +205,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
           return 0;
         }
 
-        TableFileUtils.deleteEmptyDirectory(io, location, exclude);
+        TableFileUtil.deleteEmptyDirectory(io, location, exclude);
         LOG.info("delete empty dir : {}[{}]", location, formatTime(fileStatus.getModificationTime()));
         return 0;
       } else {
@@ -213,7 +213,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       }
     } else {
       if (!exclude.contains(location) &&
-          !exclude.contains(TableFileUtils.getUriPath(new Path(location).getParent().toString())) &&
+          !exclude.contains(TableFileUtil.getUriPath(new Path(location).getParent().toString())) &&
           fileStatus.getModificationTime() < lastTime) {
         io.deleteFile(location);
         return 1;
@@ -253,12 +253,12 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
 
-      validFiles.add(TableFileUtils.getUriPath(manifestListLocation));
+      validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
 
       // valid data files
       List<ManifestFile> manifestFiles = snapshot.allManifests(internalTable.io());
       for (ManifestFile manifestFile : manifestFiles) {
-        validFiles.add(TableFileUtils.getUriPath(manifestFile.path()));
+        validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
       }
 
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
@@ -267,7 +267,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     Stream.concat(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
             Stream.of(ReachableFileUtil.versionHintLocation(internalTable)))
-        .map(TableFileUtils::getUriPath)
+        .map(TableFileUtil::getUriPath)
         .forEach(validFiles::add);
 
     return validFiles;
@@ -293,14 +293,14 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
                                            Long lastTime,
                                            Set<String> exclude,
                                            Pattern excludeFileNameRegex) {
-    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
+    String location = TableFileUtil.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
     } else {
       if (!exclude.contains(location) && fileStatus.getModificationTime() < lastTime &&
           (excludeFileNameRegex == null ||
-              !excludeFileNameRegex.matcher(TableFileUtils.getFileName(location)).matches())) {
+              !excludeFileNameRegex.matcher(TableFileUtil.getFileName(location)).matches())) {
         io.deleteFile(location);
         return 1;
       } else {

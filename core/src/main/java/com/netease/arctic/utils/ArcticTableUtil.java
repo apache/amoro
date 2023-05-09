@@ -31,7 +31,7 @@ public class ArcticTableUtil {
   public static String tableRootLocation(ArcticTable arcticTable) {
     String tableRootLocation;
     if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {
-      tableRootLocation = TableFileUtils.getFileDir(arcticTable.location());
+      tableRootLocation = TableFileUtil.getFileDir(arcticTable.location());
     } else {
       tableRootLocation = arcticTable.location();
     }

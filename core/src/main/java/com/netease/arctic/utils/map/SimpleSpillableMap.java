@@ -18,7 +18,7 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.annotation.Nullable;
@@ -41,24 +41,24 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
-  private final SerializationUtils.SimpleSerializer<K> keySerializer;
+  private final SerializationUtil.SimpleSerializer<K> keySerializer;
 
-  private final SerializationUtils.SimpleSerializer<T> valueSerializer;
+  private final SerializationUtil.SimpleSerializer<T> valueSerializer;
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
                                @Nullable String backendBaseDir,
                                SizeEstimator<K> keySizeEstimator,
                                SizeEstimator<T> valueSizeEstimator) {
     this(maxInMemorySizeInBytes, backendBaseDir,
-        SerializationUtils.JavaSerializer.INSTANT,
-        SerializationUtils.JavaSerializer.INSTANT,
+        SerializationUtil.JavaSerializer.INSTANT,
+        SerializationUtil.JavaSerializer.INSTANT,
         keySizeEstimator, valueSizeEstimator);
   }
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
                                @Nullable String backendBaseDir,
-                               SerializationUtils.SimpleSerializer<K> keySerializer,
-                               SerializationUtils.SimpleSerializer<T> valueSerializer,
+                               SerializationUtil.SimpleSerializer<K> keySerializer,
+                               SerializationUtil.SimpleSerializer<T> valueSerializer,
                                SizeEstimator<K> keySizeEstimator,
                                SizeEstimator<T> valueSizeEstimator) {
     this.memoryMap = Maps.newHashMap();
@@ -145,12 +145,13 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
     private final String columnFamily = UUID.randomUUID().toString();
 
-    private SerializationUtils.SimpleSerializer<K> keySerializer;
+    private SerializationUtil.SimpleSerializer<K> keySerializer;
 
-    private SerializationUtils.SimpleSerializer<T> valueSerializer;
+    private SerializationUtil.SimpleSerializer<T> valueSerializer;
 
-    public SimpleSpilledMap(SerializationUtils.SimpleSerializer<K> keySerializer,
-                            SerializationUtils.SimpleSerializer<T> valueSerializer,
+    public SimpleSpilledMap(
+        SerializationUtil.SimpleSerializer<K> keySerializer,
+                            SerializationUtil.SimpleSerializer<T> valueSerializer,
                             @Nullable String backendBaseDir) {
       rocksDB = RocksDBBackend.getOrCreateInstance(backendBaseDir);
       rocksDB.addColumnFamily(columnFamily);

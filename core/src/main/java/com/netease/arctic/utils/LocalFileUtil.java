@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Comparator;
 
-public class LocalFileUtils {
+public class LocalFileUtil {
 
   public static void deleteDirectory(File directory) throws IOException {
     if (directory.exists()) {

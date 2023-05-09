@@ -167,7 +167,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
-    OptimizerInstance optimizer = new OptimizerInstance(registerInfo);
+    OptimizerInstance optimizer = new OptimizerInstance(registerInfo, optimizerGroup.getContainer());
     if (LOG.isDebugEnabled()) {
       LOG.debug("Register optimizer: " + optimizer);
     }

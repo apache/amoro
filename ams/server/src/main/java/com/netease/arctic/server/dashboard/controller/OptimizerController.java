@@ -29,7 +29,7 @@ import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.dashboard.utils.OptimizingUtils;
+import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
@@ -99,7 +99,7 @@ public class OptimizerController extends RestBaseController {
         }
       });
       PageResult<TableRuntime, TableOptimizingInfo> amsPageResult = PageResult.of(tableRuntimes,
-          offset, pageSize, OptimizingUtils::buildTableOptimizeInfo);
+          offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
       LOG.error("Failed to get optimizerGroup tables", e);

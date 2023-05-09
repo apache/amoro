@@ -26,7 +26,7 @@ import com.netease.arctic.server.catalog.CatalogType;
 import com.netease.arctic.server.dashboard.model.LatestSessionInfo;
 import com.netease.arctic.server.dashboard.model.LogInfo;
 import com.netease.arctic.server.dashboard.model.SqlResult;
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalSessionFactory.SessionConfigOptions;
 import com.netease.arctic.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
@@ -100,7 +100,7 @@ public class TerminalManager {
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), connectorType);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress(serviceConfig));
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSHaAddress(serviceConfig));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
