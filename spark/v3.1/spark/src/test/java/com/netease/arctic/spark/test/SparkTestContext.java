@@ -8,7 +8,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
-import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
+import com.netease.arctic.spark.test.helper.HiveCatalogMetaTestUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;

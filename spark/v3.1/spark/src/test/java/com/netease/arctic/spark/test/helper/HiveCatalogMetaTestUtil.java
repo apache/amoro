@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.hive;
+package com.netease.arctic.spark.test.helper;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;

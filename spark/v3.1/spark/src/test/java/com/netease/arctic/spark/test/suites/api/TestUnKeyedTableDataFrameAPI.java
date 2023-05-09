@@ -19,10 +19,8 @@
 package com.netease.arctic.spark.test.suites.api;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -33,10 +31,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.types.StructType;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
