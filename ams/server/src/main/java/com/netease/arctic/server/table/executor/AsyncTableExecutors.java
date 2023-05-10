@@ -24,8 +24,7 @@ public class AsyncTableExecutors {
     this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableRuntimes,
         conf.getInteger(ArcticManagementConf.ORPHAN_CLEAN_THREAD_POOL_SIZE));
     this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableRuntimes,
-            conf.getLong(ArcticManagementConf.OPTIMIZING_CHECK_STATUS_INTERVAL),
-            conf.getInteger(ArcticManagementConf.OPTIMIZING_CHECK_THREAD_POOL_SIZE));
+        conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_POOL_SIZE));
     this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableRuntimes);
     this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableRuntimes,
         conf.getInteger(ArcticManagementConf.SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE));
