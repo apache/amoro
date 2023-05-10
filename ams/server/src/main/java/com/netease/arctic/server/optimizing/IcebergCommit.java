@@ -92,8 +92,8 @@ public class IcebergCommit {
       Set<DeleteFile> addDeleteFiles) throws OptimizingCommitException {
     try {
       Transaction transaction = icebergTable.newTransaction();
-      if (CollectionUtils.isNotEmpty(removedDataFiles)
-          || CollectionUtils.isNotEmpty(addedDataFiles)) {
+      if (CollectionUtils.isNotEmpty(removedDataFiles) ||
+          CollectionUtils.isNotEmpty(addedDataFiles)) {
         RewriteFiles dataFileRewrite = transaction.newRewrite();
         if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
           dataFileRewrite.validateFromSnapshot(targetSnapshotId);
@@ -116,21 +116,9 @@ public class IcebergCommit {
         addDeleteFileRewrite.commit();
       }
       transaction.commitTransaction();
-    } catch (ValidationException e) {
-      String missFileMessage = "Missing required files to delete";
-      String foundNewDeleteMessage = "found new delete for replaced data file";
-      String foundNewPosDeleteMessage = "found new position delete for replaced data file";
-      if (e.getMessage().contains(missFileMessage) ||
-          e.getMessage().contains(foundNewDeleteMessage) ||
-          e.getMessage().contains(foundNewPosDeleteMessage)) {
-        throw new OptimizingCommitException(String.format("Optimize commit table %s failed, " +
-            "give up commit and ignore. original message: %s", table.id(), e.getMessage()), false);
-      } else {
-        throw new OptimizingCommitException("unexpected commit error ", e);
-      }
-    } catch (Throwable t) {
-      LOG.error("unexpected commit error " + table.id(), t);
-      throw new RuntimeException("unexpected commit error ", t);
+    } catch (Exception e) {
+      LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
+      throw new OptimizingCommitException("unexpected commit error ", e);
     }
   }
 

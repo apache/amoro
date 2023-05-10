@@ -19,8 +19,8 @@
 package com.netease.arctic.server.utils;
 
 import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.FileContent;

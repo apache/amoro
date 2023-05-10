@@ -9,6 +9,7 @@ import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.OptimizingCommitException;
@@ -23,7 +24,6 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
-import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -123,7 +123,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
   }
 
-
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
     TaskRuntime task = Optional.ofNullable(retryQueue.poll())
@@ -146,6 +145,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   private void retryTask(TaskRuntime taskRuntime) {
+    taskRuntime.addRetryCount();
     taskRuntime.reset();
     retryQueue.offer(taskRuntime);
   }
@@ -174,7 +174,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
-
   }
 
   public void checkSuspending() {
@@ -198,7 +197,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       retryTask(task);
     });
   }
-
 
   private TaskRuntime pollOrPlan() {
     planLock.lock();
@@ -254,6 +252,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
+    private int retryCommitCount = 0;
 
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
@@ -314,7 +313,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS && allTasksPrepared()) {
           tableRuntime.beginCommitting();
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
-          if (taskRuntime.getRetry() < tableRuntime.getMaxRetryCount()) {
+          if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
             retryTask(taskRuntime);
           } else {
             clearTasks(this);
@@ -357,7 +356,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return taskMap;
     }
 
-
     /**
      * if all tasks are Prepared
      *
@@ -393,7 +391,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         persistProcessCompleted(true);
       } catch (OptimizingCommitException e) {
         LOG.warn("Commit optimizing failed. inner message is " + e.getMessage(), e);
-        if (!e.isRetryable()) {
+        if (!e.isRetryable() || ++retryCommitCount <= tableRuntime.getMaxCommitRetryCount()) {
           status = Status.FAILED;
           failedReason = e.getMessage();
           endTime = System.currentTimeMillis();
@@ -413,9 +411,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         case ICEBERG:
           return new IcebergCommit(targetSnapshotId, table, taskMap.values());
         case MIXED_ICEBERG:
-          return new MixedIcebergCommit(targetSnapshotId, table, taskMap.values());
         case MIXED_HIVE:
-          return new MixedHiveCommit(targetSnapshotId, table, taskMap.values());
+          //todo Add args
+          return new MixedIcebergCommit(table, taskMap.values(), targetSnapshotId, null, null);
         default:
           throw new IllegalStateException();
       }
@@ -451,7 +449,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private void loadTaskRuntimes() {
-      List<TaskRuntime> taskRuntimes = getAs(OptimizingMapper.class,
+      List<TaskRuntime> taskRuntimes = getAs(
+          OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       RewriteFilesInput inputs = TaskFilesPersistence.loadTaskInputs(processId);
       taskRuntimes.forEach(taskRuntime -> {
@@ -493,8 +492,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       OptimizingThread that = (OptimizingThread) o;
       return threadId == that.threadId && Objects.equal(token, that.token);
     }

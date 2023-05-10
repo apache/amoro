@@ -38,10 +38,12 @@ public class OptimizerConfig implements Serializable {
       usage = "Optimizer execution parallel", required = true)
   private int executionParallel;
 
-  @Option(name = "-m", aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_SIZE, usage = "Optimizer memory size(MB)", required = true)
+  @Option(name = "-m", aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_SIZE,
+      usage = "Optimizer memory size(MB)", required = true)
   private int memorySize;
 
-  @Option(name = "-g", aliases = "--" + PropertyNames.OPTIMIZER_GROUP_NAME, usage = "Group name optimizer belong", required = true)
+  @Option(name = "-g", aliases = "--" + PropertyNames.OPTIMIZER_GROUP_NAME,
+      usage = "Group name optimizer belong", required = true)
   private String groupName;
 
   @Option(name = "-hb", aliases = "--" + PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,

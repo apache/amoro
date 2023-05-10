@@ -19,11 +19,11 @@
 package com.netease.arctic.server.table.executor;
 
 import com.google.common.base.Strings;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -79,7 +79,8 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
       ArcticTable arcticTable = tableRuntime.loadTable();
 
-      boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+      boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(
+          arcticTable.properties(),
           TableProperties.ENABLE_ORPHAN_CLEAN,
           TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT);
 
@@ -165,13 +166,15 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return validFiles;
   }
 
-  private static int clearInternalTableContentsFiles(UnkeyedTable internalTable, long lastTime,
-                                                     Set<String> exclude) {
+  private static int clearInternalTableContentsFiles(
+      UnkeyedTable internalTable, long lastTime,
+      Set<String> exclude) {
     int deleteFilesCnt = 0;
     String dataLocation = internalTable.location() + File.separator + DATA_FOLDER_NAME;
     if (internalTable.io().exists(dataLocation)) {
       for (FileStatus fileStatus : internalTable.io().list(dataLocation)) {
-        deleteFilesCnt += deleteInvalidContentFiles(internalTable.io(),
+        deleteFilesCnt += deleteInvalidContentFiles(
+            internalTable.io(),
             fileStatus,
             lastTime,
             exclude);
@@ -180,10 +183,11 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return deleteFilesCnt;
   }
 
-  private static int deleteInvalidContentFiles(ArcticFileIO io,
-                                               FileStatus fileStatus,
-                                               Long lastTime,
-                                               Set<String> exclude) {
+  private static int deleteInvalidContentFiles(
+      ArcticFileIO io,
+      FileStatus fileStatus,
+      Long lastTime,
+      Set<String> exclude) {
     String location = TableFileUtil.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
@@ -232,7 +236,8 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     String metadataLocation = internalTable.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
     for (FileStatus fileStatus : internalTable.io().list(metadataLocation)) {
-      deleteFilesCnt += deleteInvalidMetadata(internalTable.io(),
+      deleteFilesCnt += deleteInvalidMetadata(
+          internalTable.io(),
           fileStatus,
           lastTime,
           validFiles,
@@ -288,11 +293,12 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return null;
   }
 
-  private static int deleteInvalidMetadata(ArcticFileIO io,
-                                           FileStatus fileStatus,
-                                           Long lastTime,
-                                           Set<String> exclude,
-                                           Pattern excludeFileNameRegex) {
+  private static int deleteInvalidMetadata(
+      ArcticFileIO io,
+      FileStatus fileStatus,
+      Long lastTime,
+      Set<String> exclude,
+      Pattern excludeFileNameRegex) {
     String location = TableFileUtil.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
