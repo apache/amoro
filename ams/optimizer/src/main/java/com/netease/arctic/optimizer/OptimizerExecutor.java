@@ -30,8 +30,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     while (isStarted()) {
       try {
         OptimizingTask task = pollTask();
-        if (task != null) {
-          ackTask(task);
+        if (task != null && ackTask(task)) {
           OptimizingTaskResult result = executeTask(task);
           completeTask(result);
         }
@@ -63,23 +62,20 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return task;
   }
 
-  private void ackTask(OptimizingTask task) {
-    while (isStarted()) {
-      try {
-        callAuthenticatedAms((client, token) -> {
-          client.ackTask(token, threadId, task.getTaskId());
-          return null;
-        });
-        LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
-        return;
-      } catch (TException exception) {
-        LOG.error(
-            String.format("Optimizer executor[%d] acknowledged task[%s] failed", threadId, task.getTaskId()),
-            exception);
-        waitAShortTime();
-      }
+  private boolean ackTask(OptimizingTask task) {
+    try {
+      callAuthenticatedAms((client, token) -> {
+        client.ackTask(token, threadId, task.getTaskId());
+        return null;
+      });
+      LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
+      return true;
+    } catch (TException exception) {
+      LOG.error(
+          String.format("Optimizer executor[%d] acknowledged task[%s] failed", threadId, task.getTaskId()),
+          exception);
+      return false;
     }
-    throw new IllegalStateException("Operator is stopped");
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -111,20 +107,15 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   private void completeTask(OptimizingTaskResult optimizingTaskResult) {
-    while (isStarted()) {
-      try {
-        callAuthenticatedAms((client, token) -> {
-          client.completeTask(token, optimizingTaskResult);
-          return null;
-        });
-        LOG.info("Optimizer executor[{}] completed task[{}] to ams", threadId, optimizingTaskResult.getTaskId());
-        return;
-      } catch (TException exception) {
-        LOG.error(String.format("Optimizer executor[%d] completed task[%s] failed", threadId,
-            optimizingTaskResult.getTaskId()), exception);
-        waitAShortTime();
-      }
+    try {
+      callAuthenticatedAms((client, token) -> {
+        client.completeTask(token, optimizingTaskResult);
+        return null;
+      });
+      LOG.info("Optimizer executor[{}] completed task[{}] to ams", threadId, optimizingTaskResult.getTaskId());
+    } catch (TException exception) {
+      LOG.error(String.format("Optimizer executor[%d] completed task[%s] failed", threadId,
+          optimizingTaskResult.getTaskId()), exception);
     }
-    throw new IllegalStateException("Operator is stopped");
   }
 }
