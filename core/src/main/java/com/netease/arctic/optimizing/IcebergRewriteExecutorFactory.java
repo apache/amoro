@@ -4,7 +4,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class IcebergFormatRewriteFilesExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
+public class IcebergRewriteExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
 
   private Map<String, String> properties;
 
@@ -15,7 +15,7 @@ public class IcebergFormatRewriteFilesExecutorFactory implements OptimizingExecu
 
   @Override
   public OptimizingExecutor createExecutor(RewriteFilesInput input) {
-    OptimizingConfig optimizingConfig = new OptimizingConfig(properties);
-    return new IcebergFormatRewriteFilesExecutor(input, input.getTable(), optimizingConfig.getStructLikeCollections());
+    OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
+    return new IcebergRewriteExecutor(input, input.getTable(), optimizingConfig.getStructLikeCollections());
   }
 }

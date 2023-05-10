@@ -60,8 +60,8 @@ public class AbstractOptimizerOperator implements Serializable {
   // Return null if got MISSING_RESULT error
   private boolean shouldReturnNull(Throwable t) {
     if (t instanceof TApplicationException) {
-      TApplicationException tApplicationException = (TApplicationException) t;
-      return tApplicationException.getType() == TApplicationException.MISSING_RESULT;
+      TApplicationException applicationException = (TApplicationException) t;
+      return applicationException.getType() == TApplicationException.MISSING_RESULT;
     }
     return false;
   }

@@ -1,10 +1,10 @@
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.utils.SerializationUtil;
 
 import java.util.Collection;
