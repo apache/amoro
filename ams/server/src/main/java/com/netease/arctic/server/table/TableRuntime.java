@@ -70,6 +70,7 @@ public class TableRuntime extends PersistentBase {
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private volatile long currentStatusStartTime = System.currentTimeMillis();
+  // TODO partition 级别
   private volatile long lastMajorOptimizingTime;
   private volatile long lastFullOptimizingTime;
   private volatile long lastMinorOptimizingTime;
