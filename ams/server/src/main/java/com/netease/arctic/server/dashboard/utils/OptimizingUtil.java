@@ -1,11 +1,11 @@
 package com.netease.arctic.server.dashboard.utils;
 
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 

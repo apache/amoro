@@ -367,8 +367,12 @@ public class TableRuntime extends PersistentBase {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
 
-  public int getMaxRetryCount() {
-    return tableConfiguration.getOptimizingConfig().getMaxRetryCount();
+  public int getMaxExecuteRetryCount() {
+    return tableConfiguration.getOptimizingConfig().getMaxExecuteRetryCount();
+  }
+
+  public int getMaxCommitRetryCount() {
+    return tableConfiguration.getOptimizingConfig().getMaxCommitRetryCount();
   }
 
   public long getNewestProcessId() {

@@ -27,9 +27,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class IcebergFormatRewriteFilesExecutor extends AbstractRewriteFilesExecutor {
+public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
-  public IcebergFormatRewriteFilesExecutor(
+  public IcebergRewriteExecutor(
       RewriteFilesInput input,
       ArcticTable table,
       StructLikeCollections structLikeCollections) {
@@ -78,7 +78,7 @@ public class IcebergFormatRewriteFilesExecutor extends AbstractRewriteFilesExecu
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
     appenderFactory.setAll(table.properties());
     return new RollingDataWriter<>(
-        new FileWriterFactory<Record>(){
+        new FileWriterFactory<Record>() {
 
           @Override
           public DataWriter newDataWriter(EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
