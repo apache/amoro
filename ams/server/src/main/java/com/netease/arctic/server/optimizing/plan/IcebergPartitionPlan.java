@@ -75,7 +75,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     Preconditions.checkArgument(changeDeleteFiles.isEmpty(),
         "iceberg format table should not have change delete files");
     IcebergDataFile contentFile = createDataFile(dataFile);
-    if (dataFile.fileSizeInBytes() <= fragementSize) {
+    if (dataFile.fileSizeInBytes() <= fragmentSize) {
       fragementFiles.put(
           contentFile,
           deletes.stream().map(delete -> createDeleteFile(delete)).collect(Collectors.toList()));

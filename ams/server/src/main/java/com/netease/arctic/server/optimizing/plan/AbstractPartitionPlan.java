@@ -7,6 +7,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.List;
 
@@ -16,18 +17,22 @@ public abstract class AbstractPartitionPlan {
   protected final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
-  protected final long fragementSize;
+  protected final long fragmentSize;
 
   protected ArcticTable tableObject;
   private long fromSequence = INVALID_SEQUENCE;
   private long toSequence = INVALID_SEQUENCE;
+  protected final long currentTime;
+  
+  protected boolean canAddFile = true;
 
   public AbstractPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition) {
     this.tableObject = table;
     this.partition = partition;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
-    this.fragementSize = config.getTargetSize() / config.getFragmentRatio();
+    this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
+    this.currentTime = System.currentTimeMillis();
   }
 
   public String getPartition() {
@@ -47,8 +52,21 @@ public abstract class AbstractPartitionPlan {
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
     throw new UnsupportedOperationException();
   }
+  
+  public void finishAddFiles() {
+    canAddFile = false;
+  }
+
+  protected void checkAllFilesAdded() {
+    Preconditions.checkArgument(!canAddFile, "adding files is not finished");
+  }
+
+  protected void checkSupportAddingFiles() {
+    Preconditions.checkArgument(canAddFile, "can't add more files");
+  }
 
   protected void markSequence(long sequence) {
+    checkSupportAddingFiles();
     if (fromSequence == INVALID_SEQUENCE || fromSequence > sequence) {
       fromSequence = sequence;
     }
@@ -58,10 +76,12 @@ public abstract class AbstractPartitionPlan {
   }
   
   public long getFromSequence() {
+    checkAllFilesAdded();
     return fromSequence;
   }
   
   public long getToSequence() {
+    checkAllFilesAdded();
     return toSequence;
   }
 }

@@ -411,6 +411,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return metricsSummary;
     }
 
+    @Override
+    public Map<String, Long> getFromSequence() {
+      return fromSequence;
+    }
+
+    @Override
+    public Map<String, Long> getToSequence() {
+      return toSequence;
+    }
+
     private IcebergCommit buildCommit() {
       ArcticTable table = tableRuntime.loadTable();
       switch (table.format()) {

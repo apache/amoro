@@ -1,8 +1,8 @@
 package com.netease.arctic.server.optimizing;
 
-import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.Map;
 
@@ -48,6 +48,8 @@ public class OptimizingConfig {
   private int fullTriggerInterval;
   private long maxFragmentSize;
   private long maxDuplicateSize;
+  
+  private boolean fullRewriteAllFiles;
 
   public OptimizingConfig() {
   }
@@ -177,22 +179,36 @@ public class OptimizingConfig {
     return this;
   }
 
+  public boolean isFullRewriteAllFiles() {
+    return fullRewriteAllFiles;
+  }
+
+  public OptimizingConfig setFullRewriteAllFiles(boolean fullRewriteAllFiles) {
+    this.fullRewriteAllFiles = fullRewriteAllFiles;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
         maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
-        targetSize == that.targetSize && maxFileCount == that.maxFileCount &&
-        fragmentRatio == that.fragmentRatio && minorLeastFileCount == that.minorLeastFileCount &&
-        minorLeastInterval == that.minorLeastInterval && majorLeastFileCount == that.majorLeastFileCount &&
+        targetSize == that.targetSize && maxFileCount == that.maxFileCount && fragmentRatio == that.fragmentRatio &&
+        minorLeastFileCount == that.minorLeastFileCount && minorLeastInterval == that.minorLeastInterval &&
+        majorLeastFileCount == that.majorLeastFileCount &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
-        fullTriggerInterval == that.fullTriggerInterval && Objects.equal(optimizerGroup, that.optimizerGroup);
+        fullTriggerInterval == that.fullTriggerInterval && maxFragmentSize == that.maxFragmentSize &&
+        maxDuplicateSize == that.maxDuplicateSize && fullRewriteAllFiles == that.fullRewriteAllFiles &&
+        Objects.equal(optimizerGroup, that.optimizerGroup);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
+        maxFileCount, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorLeastFileCount, majorDuplicateRatio,
+        fullTriggerInterval, maxFragmentSize, maxDuplicateSize, fullRewriteAllFiles);
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
@@ -247,6 +263,10 @@ public class OptimizingConfig {
         .setFullTriggerInterval(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
-            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT));
+            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT))
+        .setFullRewriteAllFiles(CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
+            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT));
   }
 }
