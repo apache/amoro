@@ -22,6 +22,8 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.exception.DuplicateRuntimeException;
@@ -29,10 +31,8 @@ import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.persistence.TaskFilesPersistency;
+import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.utils.SerializationUtil;
 
 import java.nio.ByteBuffer;
@@ -203,8 +203,8 @@ public class TaskRuntime extends PersistentBase {
     this.statusMachine = statusMachine;
   }
 
-  public void setRetry(int retry) {
-    this.retry = retry;
+  public void addRetryCount() {
+    retry++;
   }
 
   public void setStartTime(long startTime) {
@@ -240,10 +240,27 @@ public class TaskRuntime extends PersistentBase {
     if (result.getErrorMessage() != null) {
       fail(result.getErrorMessage());
     } else {
-      finish(TaskFilesPersistency.loadTaskOutput(result.getTaskOutput()));
+      finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
     }
     owner.acceptResult(this);
     optimizingThread = null;
+  }
+
+  /**
+   * Mix-Hive table need move file to hive location in Commit stage. so need to update output.
+   *
+   * @param filesOutput
+   */
+  public void updateOutput(RewriteFilesOutput filesOutput) {
+    if (this.output == null) {
+      throw new IllegalStateException("Old output must not be null");
+    }
+    statusMachine.accept(Status.SUCCESS);
+    summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+    summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+    output = filesOutput;
+    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
+    persistTaskRuntime(this);
   }
 
   private void finish(RewriteFilesOutput filesOutput) {

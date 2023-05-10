@@ -17,8 +17,11 @@ public class OptimizingConfig {
   //self-optimizing.group
   private String optimizerGroup;
 
-  //self-optimizing.num-retries
-  private int maxRetryCount;
+  //self-optimizing.execute.num-retries
+  private int maxExecuteRetryCount;
+
+  //self-optimizing.commit.num-retries
+  private int maxCommitRetryCount;
 
   //self-optimizing.target-size
   private long targetSize;
@@ -76,12 +79,21 @@ public class OptimizingConfig {
     return this;
   }
 
-  public int getMaxRetryCount() {
-    return maxRetryCount;
+  public int getMaxExecuteRetryCount() {
+    return maxExecuteRetryCount;
   }
 
-  public OptimizingConfig setMaxRetryCount(int maxRetryCount) {
-    this.maxRetryCount = maxRetryCount;
+  public OptimizingConfig setMaxExecuteRetryCount(int maxExecuteRetryCount) {
+    this.maxExecuteRetryCount = maxExecuteRetryCount;
+    return this;
+  }
+
+  public int getMaxCommitRetryCount() {
+    return maxCommitRetryCount;
+  }
+
+  public OptimizingConfig setMaxCommitRetryCount(int maxCommitRetryCount) {
+    this.maxCommitRetryCount = maxCommitRetryCount;
     return this;
   }
 
@@ -175,7 +187,8 @@ public class OptimizingConfig {
     }
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
-        maxRetryCount == that.maxRetryCount && targetSize == that.targetSize && maxFileCount == that.maxFileCount &&
+        maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
+        targetSize == that.targetSize && maxFileCount == that.maxFileCount &&
         fragmentRatio == that.fragmentRatio && minorLeastFileCount == that.minorLeastFileCount &&
         minorLeastInterval == that.minorLeastInterval && majorLeastFileCount == that.majorLeastFileCount &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
@@ -187,10 +200,14 @@ public class OptimizingConfig {
             properties,
             TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT))
-        .setMaxRetryCount(CompatiblePropertyUtil.propertyAsInt(
+        .setMaxExecuteRetryCount(CompatiblePropertyUtil.propertyAsInt(
             properties,
-            TableProperties.SELF_OPTIMIZING_RETRY_NUMBER,
-            TableProperties.SELF_OPTIMIZING_RETRY_NUMBER_DEFAULT))
+            TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER,
+            TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT))
+        .setMaxCommitRetryCount(CompatiblePropertyUtil.propertyAsInt(
+            properties,
+            TableProperties.SELF_OPTIMIZING_COMMIT_RETRY_NUMBER,
+            TableProperties.SELF_OPTIMIZING_COMMIT_RETRY_NUMBER_DEFAULT))
         .setOptimizerGroup(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.SELF_OPTIMIZING_GROUP,

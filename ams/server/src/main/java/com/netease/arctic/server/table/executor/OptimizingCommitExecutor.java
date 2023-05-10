@@ -9,16 +9,15 @@ import java.util.Optional;
 
 public class OptimizingCommitExecutor extends BaseTableExecutor {
 
-  private long interval;
+  private static final long INTERVAL = 60 * 1000L; // 1min
 
-  public OptimizingCommitExecutor(TableRuntimeManager tableRuntimes, long interval, int poolSize) {
+  public OptimizingCommitExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
-    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return interval;
+    return INTERVAL;
   }
 
   @Override

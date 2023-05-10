@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.optimizer.util.PropertyUtil.checkAndGetProperty;
-
 public abstract class AbstractResourceContainer implements ResourceContainer {
   private String containerName;
   private Map<String, String> containerProperties;
@@ -60,11 +58,13 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
       stringBuilder.append(" -hb ")
           .append(resource.getProperties().get(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL));
     }
-    if (org.apache.iceberg.util.PropertyUtil.propertyAsBoolean(resource.getProperties(),
+    if (org.apache.iceberg.util.PropertyUtil.propertyAsBoolean(
+        resource.getProperties(),
         PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE,
         PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT)) {
       stringBuilder.append(" -eds -dsp ")
-          .append(PropertyUtil.checkAndGetProperty(resource.getProperties(),
+          .append(PropertyUtil.checkAndGetProperty(
+              resource.getProperties(),
               PropertyNames.OPTIMIZER_DISK_STORAGE_PATH));
       if (resource.getProperties().containsKey(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE)) {
         stringBuilder.append(" -msz ")

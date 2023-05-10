@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -79,7 +79,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     return INTERVAL;
   }
 
-
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
@@ -89,7 +88,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       ArcticTable arcticTable = tableRuntime.loadTable();
-      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(
+          arcticTable.properties(),
           TableProperties.ENABLE_TABLE_EXPIRE,
           TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
       if (!needClean) {
@@ -140,7 +140,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         long baseOlderThan = startTime - baseSnapshotsKeepTime;
         LOG.info("{} base table expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
             arcticTable.id(), latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan);
-        expireSnapshots(baseTable,
+        expireSnapshots(
+            baseTable,
             min(latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan),
             baseExcludePaths);
         long baseCleanedTime = System.currentTimeMillis();
@@ -164,7 +165,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
             startTime - changeSnapshotsKeepTime : startTime - changeDataTTL;
         LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
             latestChangeFlinkCommitTime, changeOlderThan);
-        expireSnapshots(changeTable,
+        expireSnapshots(
+            changeTable,
             Math.min(latestChangeFlinkCommitTime, changeOlderThan),
             changeExclude);
         return null;
@@ -177,7 +179,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       long olderThan = startTime - baseSnapshotsKeepTime;
       LOG.info("{} unKeyedTable expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
           arcticTable.id(), latestFlinkCommitTime, optimizingSnapshotTime, olderThan);
-      expireSnapshots(unKeyedArcticTable,
+      expireSnapshots(
+          unKeyedArcticTable,
           min(latestFlinkCommitTime, optimizingSnapshotTime, olderThan),
           hiveLocations);
       long baseCleanedTime = System.currentTimeMillis();
@@ -222,7 +225,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     return Long.MAX_VALUE;
   }
 
-  public static void expireSnapshots(UnkeyedTable arcticInternalTable,
+  public static void expireSnapshots(
+      UnkeyedTable arcticInternalTable,
       long olderThan,
       Set<String> exclude) {
     LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);

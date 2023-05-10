@@ -5,8 +5,8 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
-import com.netease.arctic.optimizing.OptimizingConfig;
 import com.netease.arctic.optimizing.OptimizingDataReader;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.WriteOperationKind;
@@ -24,9 +24,9 @@ import org.apache.iceberg.io.WriteResult;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class MixFormatRewriteFilesExecutor extends AbstractRewriteFilesExecutor {
+public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
-  public MixFormatRewriteFilesExecutor(
+  public MixFormatRewriteExecutor(
       RewriteFilesInput input,
       ArcticTable table,
       StructLikeCollections structLikeCollections) {
@@ -48,7 +48,7 @@ public class MixFormatRewriteFilesExecutor extends AbstractRewriteFilesExecutor 
 
   @Override
   protected FileWriter<Record, DataWriteResult> dataWriter() {
-    String outputDir = new OptimizingConfig(input.getOptions()).getOutputDir();
+    String outputDir = OptimizingInputProperties.parse(input.getOptions()).getOutputDir();
 
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(getTransactionId(input.rewrittenDataFiles()))

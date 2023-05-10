@@ -50,7 +50,7 @@ public class TableMetadata implements Serializable {
       TableIdentifier tableIdentifier, TableMetaStore metaStore, String tableLocation,
       String baseLocation, String changeLocation, String primaryKey,
       String metaStoreSite, String hdfsSite, String coreSite,
-      String authMethod, String hadoopUsername, String krbKeyteb, String krbConf,
+      String authMethod, String hadoopUsername, String krbKeytab, String krbConf,
       String krbPrincipal, Map<String, String> properties) {
     this.tableIdentifier = tableIdentifier;
     this.metaStore = metaStore;
@@ -63,7 +63,7 @@ public class TableMetadata implements Serializable {
     this.coreSite = coreSite;
     this.authMethod = authMethod;
     this.hadoopUsername = hadoopUsername;
-    this.krbKeyteb = krbKeyteb;
+    this.krbKeytab = krbKeytab;
     this.krbConf = krbConf;
     this.krbPrincipal = krbPrincipal;
     this.properties = ImmutableMap.copyOf(properties);
@@ -100,7 +100,7 @@ public class TableMetadata implements Serializable {
       this.authMethod = this.authMethod.toUpperCase(Locale.ROOT);
     }
     this.hadoopUsername = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
-    this.krbKeyteb = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+    this.krbKeytab = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
     this.krbConf = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
     this.krbPrincipal = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
     this.properties = tableMeta.getProperties();
@@ -150,7 +150,7 @@ public class TableMetadata implements Serializable {
 
   private String hadoopUsername;
 
-  private String krbKeyteb;
+  private String krbKeytab;
 
   private String krbConf;
 
@@ -226,7 +226,7 @@ public class TableMetadata implements Serializable {
               .withBase64MetaStoreSite(metaStoreSite)
               .withBase64CoreSite(coreSite)
               .withBase64HdfsSite(hdfsSite)
-              .withBase64Auth(authMethod, hadoopUsername, krbKeyteb, krbConf, krbPrincipal)
+              .withBase64Auth(authMethod, hadoopUsername, krbKeytab, krbConf, krbPrincipal)
               .build();
         }
       }
@@ -282,12 +282,12 @@ public class TableMetadata implements Serializable {
     this.hadoopUsername = hadoopUsername;
   }
 
-  public String getKrbKeyteb() {
-    return krbKeyteb;
+  public String getKrbKeytab() {
+    return krbKeytab;
   }
 
-  public void setKrbKeyteb(String krbKeyteb) {
-    this.krbKeyteb = krbKeyteb;
+  public void setKrbKeytab(String krbKeytab) {
+    this.krbKeytab = krbKeytab;
   }
 
   public String getKrbConf() {

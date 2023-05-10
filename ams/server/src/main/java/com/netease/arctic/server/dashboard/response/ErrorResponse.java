@@ -19,6 +19,7 @@
 package com.netease.arctic.server.dashboard.response;
 
 import io.javalin.http.HttpCode;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class ErrorResponse extends Response {
   private String requestId;
@@ -50,11 +51,10 @@ public class ErrorResponse extends Response {
     this.requestId = requestId;
   }
 
-
   @Override
   public String toString() {
-    return "ErrorResponse{" +
-            "requestId='" + requestId + '\'' +
-            "} " + super.toString();
+    return MoreObjects.toStringHelper(this)
+        .add("requestId", requestId)
+        .toString();
   }
 }

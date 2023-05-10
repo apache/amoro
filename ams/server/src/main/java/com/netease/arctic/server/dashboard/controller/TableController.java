@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -75,8 +76,8 @@ import java.util.stream.Collectors;
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
 
-  private TableService tableService;
-  private ServerTableDescriptor tableDescriptor;
+  private final TableService tableService;
+  private final ServerTableDescriptor tableDescriptor;
 
   public TableController(TableService tableService, ServerTableDescriptor tableDescriptor) {
     this.tableService = tableService;

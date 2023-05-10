@@ -1,26 +1,26 @@
 package com.netease.arctic.server.persistence;
 
+import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.utils.SerializationUtil;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TaskFilesPersistency {
+public class TaskFilesPersistence {
 
-  private static final DatabasePersistency persistency = new DatabasePersistency();
+  private static final DatabasePersistence persistence = new DatabasePersistence();
 
   public static void persistTaskInputs(TableRuntime tableRuntime, long processId, Collection<TaskRuntime> tasks) {
-    persistency.persistTaskInputs(processId, tasks.stream().map(TaskRuntime::getInput).collect(Collectors.toList()));
+    persistence.persistTaskInputs(processId, tasks.stream().map(TaskRuntime::getInput).collect(Collectors.toList()));
   }
 
   public static RewriteFilesInput loadTaskInputs(long processId) {
-    byte[] input = persistency.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
+    byte[] input = persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
     return SerializationUtil.simpleDeserialize(input);
   }
 
@@ -28,12 +28,11 @@ public class TaskFilesPersistency {
     return SerializationUtil.simpleDeserialize(content);
   }
 
-  private static class DatabasePersistency extends PersistentBase {
+  private static class DatabasePersistence extends PersistentBase {
 
     public void persistTaskInputs(long processId, List<RewriteFilesInput> tasks) {
-      doAs(OptimizingMapper.class, mapper -> {
-        mapper.updateProcessInputFiles(processId, SerializationUtil.simpleSerialize(tasks).array());
-      });
+      doAs(OptimizingMapper.class, mapper ->
+          mapper.updateProcessInputFiles(processId, SerializationUtil.simpleSerialize(tasks).array()));
     }
   }
 }

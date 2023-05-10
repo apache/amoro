@@ -21,12 +21,12 @@ package com.netease.arctic.server.optimizing.plan;
 import com.clearspring.analytics.util.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
-import com.netease.arctic.server.optimizing.OptimizingType;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
-import com.netease.arctic.optimizing.IcebergFormatRewriteFilesExecutorFactory;
+import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SequenceNumberFetcher;
 import org.apache.iceberg.DataFile;
@@ -191,7 +191,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
       Map<String, String> taskProperties = Maps.newHashMap();
       taskProperties.put(
           OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
-          IcebergFormatRewriteFilesExecutorFactory.class.getName());
+          IcebergRewriteExecutorFactory.class.getName());
       tasks.add(new TaskDescriptor(partition, input, taskProperties));
       return tasks;
     }
