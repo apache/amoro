@@ -35,11 +35,15 @@ import java.util.Map;
 
 public class MixedHiveTables extends MixedTables {
 
-  private CachedHiveClientPool hiveClientPool;
+  private final CachedHiveClientPool hiveClientPool;
 
-  public MixedHiveTables(CatalogMeta catalogMeta, CachedHiveClientPool hiveClientPool) {
+  public MixedHiveTables(CatalogMeta catalogMeta) {
     super(catalogMeta);
-    this.hiveClientPool = hiveClientPool;
+    this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
+  }
+
+  CachedHiveClientPool getHiveClientPool() {
+    return hiveClientPool;
   }
 
   @Override
