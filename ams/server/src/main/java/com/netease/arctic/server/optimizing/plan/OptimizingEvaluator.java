@@ -104,7 +104,12 @@ public class OptimizingEvaluator {
       AbstractPartitionPlan evaluator = partitionEvaluatorMap.computeIfAbsent(partitionPath, this::buildEvaluator);
       evaluator.addFile(fileScanTask.file(), fileScanTask.deletes());
     }
+    finishAddingFiles();
     partitionEvaluatorMap.values().removeIf(plan -> !plan.isNecessary());
+  }
+  
+  private void finishAddingFiles() {
+    partitionEvaluatorMap.values().forEach(AbstractPartitionPlan::finishAddFiles);
   }
 
   private void initMixedFormatPartitionPlans() {
@@ -173,6 +178,7 @@ public class OptimizingEvaluator {
           fileScanTask.deletes().stream().map(OptimizingEvaluator::wrapDeleteFile).collect(Collectors.toList());
       evaluator.addFile(wrapBaseFile(fileScanTask.file()), deleteFiles, relatedChangeDeleteFiles);
     }
+    finishAddingFiles();
     partitionEvaluatorMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
@@ -343,7 +349,7 @@ public class OptimizingEvaluator {
     public void addFile(DataFile dataFile, List<DeleteFile> deletes, List<IcebergDataFile> changeDeletes) {
       boolean isSegment = false;
       int posDeleteCount = 0;
-      if (dataFile.fileSizeInBytes() <= fragementSize) {
+      if (dataFile.fileSizeInBytes() <= fragmentSize) {
         fragementFileSize += dataFile.fileSizeInBytes();
         fragementFileCount += 1;
       } else {

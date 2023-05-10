@@ -2,7 +2,6 @@ package com.netease.arctic.optimizing;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.ArrayList;
