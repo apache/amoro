@@ -57,25 +57,29 @@ public class SettingController extends RestBaseController {
    * get system settings.
    */
   public void getSystemSetting(Context ctx) {
-    LinkedHashMap<String, String> result = new LinkedHashMap<>();
+    Map<String, String> config = new HashMap<>();
     //Show core configuration first
-    putSetting(result, ArcticManagementConf.SERVER_EXPOSE_HOST.key(),
+    putSetting(config, ArcticManagementConf.SERVER_EXPOSE_HOST.key(),
         serviceConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST));
-    putSetting(result, ArcticManagementConf.THRIFT_BIND_PORT.key(),
+    putSetting(config, ArcticManagementConf.THRIFT_BIND_PORT.key(),
         serviceConfig.get(ArcticManagementConf.THRIFT_BIND_PORT));
-    putSetting(result, ArcticManagementConf.HTTP_SERVER_PORT.key(),
+    putSetting(config, ArcticManagementConf.HTTP_SERVER_PORT.key(),
         serviceConfig.get(ArcticManagementConf.HTTP_SERVER_PORT));
-    putSetting(result, ArcticManagementConf.DB_TYPE.key(), serviceConfig.get(ArcticManagementConf.DB_TYPE));
-    putSetting(result, ArcticManagementConf.DB_CONNECTION_URL.key(),
+    putSetting(config, ArcticManagementConf.DB_TYPE.key(), serviceConfig.get(ArcticManagementConf.DB_TYPE));
+    putSetting(config, ArcticManagementConf.DB_CONNECTION_URL.key(),
         serviceConfig.get(ArcticManagementConf.DB_CONNECTION_URL));
-    putSetting(result, ArcticManagementConf.DB_CONNECTION_URL.key(),
+    putSetting(config, ArcticManagementConf.DB_CONNECTION_URL.key(),
         serviceConfig.get(ArcticManagementConf.DB_CONNECTION_URL));
 
     serviceConfig.toMap().forEach((k, v) -> {
-      if (!result.containsKey(k)) {
-        putSetting(result, k, v);
+      if (!config.containsKey(k)) {
+        putSetting(config, k, v);
       }
     });
+
+    LinkedHashMap<String, String> result = new LinkedHashMap<>();
+    config.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey()).forEachOrdered(entry -> result.put(entry.getKey(), entry.getValue()));
     ctx.json(OkResponse.of(result));
   }
 

@@ -205,7 +205,6 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
     @Override
     public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
-      doAs(TableMetaMapper.class, mapper -> mapper.insertTableRuntime(tableRuntime));
       getQueueByGroup(tableRuntime.getOptimizerGroup()).refreshTable(tableRuntime);
     }
 

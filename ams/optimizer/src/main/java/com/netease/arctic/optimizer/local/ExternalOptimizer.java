@@ -5,7 +5,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.optimizer.Optimizer;
 import com.netease.arctic.optimizer.OptimizerConfig;
-import org.kohsuke.args4j.CmdLineException;
 
 import java.io.File;
 import java.io.IOException;

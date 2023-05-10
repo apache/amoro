@@ -1,13 +1,13 @@
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -90,8 +90,9 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
    * once get location from iceberg property, should update hive table location,
    * because only arctic update hive table location for unPartitioned table.
    */
-  private static void syncNoPartitionTable(ArcticTable arcticTable,
-                                           StructLikeMap<Map<String, String>> partitionProperty) {
+  private static void syncNoPartitionTable(
+      ArcticTable arcticTable,
+      StructLikeMap<Map<String, String>> partitionProperty) {
     Map<String, String> property = partitionProperty.get(TablePropertyUtil.EMPTY_STRUCT);
     if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
       LOG.debug("{} has no hive location in partition property", arcticTable.id());
@@ -124,8 +125,9 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     }
   }
 
-  private static void syncPartitionTable(ArcticTable arcticTable,
-                                         StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
+  private static void syncPartitionTable(
+      ArcticTable arcticTable,
+      StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
     Map<String, StructLike> icebergPartitionMap = new HashMap<>();
     for (StructLike structLike : partitionProperty.keySet()) {
       icebergPartitionMap.put(arcticTable.spec().partitionToPath(structLike), structLike);
@@ -170,10 +172,11 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   /**
    * if iceberg partition location is existed, should update hive table location.
    */
-  private static void handleInIcebergPartitions(ArcticTable arcticTable,
-                                                Set<String> inIcebergNotInHive,
-                                                Map<String, StructLike> icebergPartitionMap,
-                                                StructLikeMap<Map<String, String>> partitionProperty) {
+  private static void handleInIcebergPartitions(
+      ArcticTable arcticTable,
+      Set<String> inIcebergNotInHive,
+      Map<String, StructLike> icebergPartitionMap,
+      StructLikeMap<Map<String, String>> partitionProperty) {
     inIcebergNotInHive.forEach(partition -> {
       Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
       if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
@@ -187,16 +190,18 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
         List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
         HivePartitionUtil.createPartitionIfAbsent(((SupportHive) arcticTable).getHMSClient(),
             arcticTable,
-            HivePartitionUtil.partitionValuesAsList(icebergPartitionMap.get(partition),
+            HivePartitionUtil.partitionValuesAsList(
+                icebergPartitionMap.get(partition),
                 arcticTable.spec().partitionType()),
             currentLocation, dataFiles, transientTime);
       }
     });
   }
 
-  private static void handleInHivePartitions(ArcticTable arcticTable,
-                                             Set<String> inHiveNotInIceberg,
-                                             Map<String, Partition> hivePartitionMap) {
+  private static void handleInHivePartitions(
+      ArcticTable arcticTable,
+      Set<String> inHiveNotInIceberg,
+      Map<String, Partition> hivePartitionMap) {
     inHiveNotInIceberg.forEach(partition -> {
       Partition hivePartition = hivePartitionMap.get(partition);
       boolean isArctic = CompatibleHivePropertyUtil.propertyAsBoolean(hivePartition.getParameters(),
@@ -207,11 +212,12 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     });
   }
 
-  private static void handleInBothPartitions(ArcticTable arcticTable,
-                                             Set<String> inBoth,
-                                             Map<String, Partition> hivePartitionMap,
-                                             Map<String, StructLike> icebergPartitionMap,
-                                             StructLikeMap<Map<String, String>> partitionProperty) {
+  private static void handleInBothPartitions(
+      ArcticTable arcticTable,
+      Set<String> inBoth,
+      Map<String, Partition> hivePartitionMap,
+      Map<String, StructLike> icebergPartitionMap,
+      StructLikeMap<Map<String, String>> partitionProperty) {
     Set<String> inHiveNotInIceberg = new HashSet<>();
     inBoth.forEach(partition -> {
       Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
@@ -235,8 +241,9 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     handleInHivePartitions(arcticTable, inHiveNotInIceberg, hivePartitionMap);
   }
 
-  private static List<DataFile> getIcebergPartitionFiles(ArcticTable arcticTable,
-                                                         StructLike partition) {
+  private static List<DataFile> getIcebergPartitionFiles(
+      ArcticTable arcticTable,
+      StructLike partition) {
     UnkeyedTable baseStore;
     baseStore = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
 
@@ -255,5 +262,4 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
 
     return partitionFiles;
   }
-
 }

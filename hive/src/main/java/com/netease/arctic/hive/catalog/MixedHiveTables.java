@@ -196,7 +196,8 @@ public class MixedHiveTables extends MixedTables {
         } else {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(tableMeta, schema, partitionSpec);
           hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(tableMeta.getProperties(), TableProperties.BASE_FILE_FORMAT,
+              FileFormat.valueOf(PropertyUtil.propertyAsString(tableMeta.getProperties(),
+                  TableProperties.BASE_FILE_FORMAT,
                   TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
           setProToHive(hiveTable, primaryKeySpec);
           client.createTable(hiveTable);

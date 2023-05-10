@@ -1,6 +1,6 @@
 package com.netease.arctic.server.exception;
 
-public class OptimizingCommitException extends Exception{
+public class OptimizingCommitException extends Exception {
 
   private final boolean retryable;
 

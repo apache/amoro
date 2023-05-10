@@ -130,11 +130,11 @@ public class TerminalManager {
     String tableFormats = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
       return "arctic";
-    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
-        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
+    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name()) ||
+        catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
 
-      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
-          || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name()) ||
+          StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
         return "arctic";
       } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
         return "iceberg";

@@ -92,7 +92,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
             .map(IcebergContentFile::asDeleteFile).collect(Collectors.toList());
 
     List<PrimaryKeyedFile> dataFiles = Arrays.stream(icebergContentFiles)
-        .map(s -> (PrimaryKeyedFile)s.asDataFile()).collect(
+        .map(s -> (PrimaryKeyedFile)s.asDataFile().internalDataFile()).collect(
         Collectors.toList());
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
