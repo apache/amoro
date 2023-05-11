@@ -212,7 +212,7 @@ public class ArcticManagementConf {
           .withDescription("session timeout in minute");
 
   public static final ConfigOption<Long> BLOCKER_TIMEOUT =
-      ConfigOptions.key("arctic.ams.blocker.timeout")
+      ConfigOptions.key("blocker.timeout")
           .longType()
           .defaultValue(60000L)
           .withDescription("session timeout in Milliseconds");

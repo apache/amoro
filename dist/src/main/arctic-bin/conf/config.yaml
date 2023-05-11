@@ -81,3 +81,6 @@ optimizer_groups:
 #    properties:
 #      taskmanager.memory: 1024
 #      jobmanager.memory: 1024
+
+blocker:
+  timeout: 60000 # 1min
