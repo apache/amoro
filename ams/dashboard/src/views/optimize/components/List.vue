@@ -55,7 +55,8 @@ const STATUS_CONFIG = shallowReactive({
   idle: { title: 'idle', color: '#c9cdd4' },
   minor: { title: 'minor', color: '#0ad787' },
   major: { title: 'major', color: '#0ad787' },
-  full: { title: 'full', color: '#0ad787' }
+  full: { title: 'full', color: '#0ad787' },
+  committing: { title: 'committing', color: '#0ad787' }
 })
 
 const loading = ref<boolean>(false)

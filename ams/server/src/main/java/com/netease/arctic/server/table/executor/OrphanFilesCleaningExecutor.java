@@ -74,7 +74,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
       ArcticTable arcticTable = tableRuntime.loadTable();
