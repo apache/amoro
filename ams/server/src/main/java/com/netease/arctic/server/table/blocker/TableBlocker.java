@@ -21,6 +21,7 @@ package com.netease.arctic.server.table.blocker;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.blocker.RenewableBlocker;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.List;
@@ -97,13 +98,13 @@ public class TableBlocker {
 
   @Override
   public String toString() {
-    return "TableBlocker{" +
-        "tableIdentifier=" + tableIdentifier +
-        ", blockerId=" + blockerId +
-        ", operations=" + operations +
-        ", createTime=" + createTime +
-        ", expirationTime=" + expirationTime +
-        ", properties=" + properties +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("blockerId", blockerId)
+        .add("operations", operations)
+        .add("createTime", createTime)
+        .add("expirationTime", expirationTime)
+        .add("properties", properties)
+        .toString();
   }
 }
