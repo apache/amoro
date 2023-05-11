@@ -23,14 +23,14 @@ public interface OptimizingMapper {
   /**
    * OptimizingProcess operation below
    */
-  @Delete("delete from table_optimizing_process where table_id =#{tableId} and process_id < #{time}")
+  @Delete("DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
-  @Insert("insert into table_optimizing_process(table_id,catalog_name,db_name,table_name,process_id," +
-      "target_snapshot_id,status,optimizing_type,plan_time,summary) values (#{table.id},#{table.catalog},#{table" +
-      ".database},#{table.tableName},#{processId},#{targetSnapshotId},#{status}, #{optimizingType}," +
-      "#{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
-      "#{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+  @Insert("INSERT INTRO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
+      " target_snapshot_id, status, optimizing_type, plan_time, summary) VALUES (#{table.id}, #{table.catalog}," +
+      " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{status}, #{optimizingType}," +
+      " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertOptimizingProcess(
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
@@ -40,18 +40,18 @@ public interface OptimizingMapper {
       @Param("planTime") long planTime,
       @Param("summary") MetricsSummary summary);
 
-  @Update("UPDATE optimizing_table_process SET status = #{status}, endTime = #{endTime} " +
-      "WHERE tableId = #{tableId} AND processId = #{processId}")
+  @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
+      " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor} " +
+      " WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("optimizingStatus") OptimizingProcess.Status status,
       @Param("endTime") long endTime);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status, " +
-      "optimizing_type, plan_time, end_time, fail_reason, summary " +
-      "FROM table_optimizing_process " +
-      "WHERE table_id = #{tableId}")
+  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
+      " optimizing_type, plan_time, end_time, fail_reason, summary" +
+      " FROM table_optimizing_process WHERE table_id = #{tableId}")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -68,9 +68,10 @@ public interface OptimizingMapper {
   })
   List<TableOptimizingProcess> selectOptimizingProcesses(@Param("tableId") long tableId);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status, " +
-      "optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process " +
-      "WHERE catalog_name = #{catalogName} and db_name = #{dbName} and table_name = #{tableName}")
+  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
+      " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
+      " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}" +
+      " AND status = 'SUCCESS'")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -85,7 +86,8 @@ public interface OptimizingMapper {
       @Result(property = "failReason", column = "fail_reason"),
       @Result(property = "summary", column = "summary")
   })
-  List<TableOptimizingProcess> selectOptimizingProcessesByTable(@Param("catalogName") String catalogName, @Param(
+  List<TableOptimizingProcess> selectOptimizingProcessesByTable(
+      @Param("catalogName") String catalogName, @Param(
       "dbName") String dbName, @Param("tableName") String tableName);
 
   /**
@@ -93,29 +95,30 @@ public interface OptimizingMapper {
    */
   @Insert({
       "<script>",
-      "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, `partition`, start_time, " +
+      "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, partition_data, start_time, " +
           "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary) VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
-      "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}, #{taskRuntime" +
-          ".tableId}, #{taskRuntime.partition}, #{taskRuntime.startTime}, #{taskRuntime" +
-          ".endTime}, #{taskRuntime.status}, #{taskRuntime.failReason}, #{taskRuntime.optimizingThread" +
-          ".token}, #{taskRuntime.optimizingThread.threadId}, #{taskRuntime.outputBytes, typeHandler=com.netease" +
-          ".arctic.server.persistence.converter.JsonSummaryConverter}, #{taskRuntime.summary, typeHandler=com" +
-          ".netease.arctic.server.persistence.converter.JsonSummaryConverter})",
+      "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}," +
+          " #{taskRuntime.tableId}, #{taskRuntime.partition}, #{taskRuntime.startTime}," +
+          " #{taskRuntime.endTime}, #{taskRuntime.status}, #{taskRuntime.failReason}," +
+          " #{taskRuntime.optimizingThread.token}, #{taskRuntime.optimizingThread.threadId}," +
+          " #{taskRuntime.outputBytes," +
+          " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})",
       "</foreach>",
       "</script>"
   })
   void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
 
-  @Select("SELECT process_id, task_id, retry_num, table_id, `partition`,  create_time, start_time, end_time, status, " +
-      "fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary FROM task_runtime WHERE table_id = " +
-      "#{table_id} AND process_id = #{process_id}")
+  @Select("SELECT process_id, task_id, retry_num, table_id, partition_data,  create_time, start_time, end_time," +
+      " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary FROM task_runtime" +
+      " WHERE table_id = #{table_id} AND process_id = #{process_id}")
   @Results({
       @Result(property = "taskId.processId", column = "process_id"),
       @Result(property = "taskId.taskId", column = "task_id"),
       @Result(property = "retry", column = "retry_num"),
       @Result(property = "tableId", column = "table_id"),
-      @Result(property = "partition", column = "partition"),
+      @Result(property = "partition", column = "partition_data"),
       @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConvertor.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConvertor.class),
       @Result(property = "status", column = "status"),
@@ -128,20 +131,22 @@ public interface OptimizingMapper {
   List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Update("UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, " +
-      "start_time = #{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter" +
-      ".Long2TsConvertor}, end_time = #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence" +
-      ".converter.Long2TsConvertor}, " +
-      "cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}, " +
-      "fail_reason = #{taskRuntime.failReason}, rewrite_output = #{taskRuntime.outputBytes, typeHandler=com.netease" +
-      ".arctic.server.persistence.converter.JsonSummaryConverter} " +
-      "WHERE process_id = #{taskRuntime.taskId.processId} AND task_id = #{taskRuntime.taskId.taskId}")
+      "start_time = #{taskRuntime.startTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " end_time = #{taskRuntime.endTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}," +
+      " fail_reason = #{taskRuntime.failReason}," +
+      " rewrite_output = #{taskRuntime.outputBytes," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} " +
+      " WHERE process_id = #{taskRuntime.taskId.processId} AND task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
   @Update("UPDATE task_runtime SET status = #{status} WHERE process_id = #{taskRuntime.taskId.processId} AND " +
       "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskStatus(@Param("taskRuntime") TaskRuntime taskRuntime, TaskRuntime.Status status);
 
-  @Delete("delete from task_runtime where table_id = #{tableId} and process_id < #{time}")
+  @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
 
   /**
@@ -159,8 +164,7 @@ public interface OptimizingMapper {
    * Optimizing task quota operations below
    */
   @Select("SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason " +
-      "FROM optimizing_task_quota " +
-      "WHERE table_id = #{tableId} AND process_id >= #{startTime}")
+      "FROM optimizing_task_quota WHERE table_id = #{tableId} AND process_id >= #{startTime}")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "taskId", column = "task_id"),
@@ -174,14 +178,14 @@ public interface OptimizingMapper {
       @Param("tableId") long tableId,
       @Param("startTime") long startTime);
 
-  @Insert("replace INTO optimizing_task_quota (process_id, task_id, retry_num, table_id, start_time, end_time, " +
-      "fail_reason) VALUES (#{taskQuota.processId}, #{taskQuota.taskId}, #{taskQuota.retryNum}, #{taskQuota.tableId}," +
-      "#{taskQuota.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
-      "#{taskQuota.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
-      "#{taskQuota.failReason})")
+  @Insert("INSERT INTO optimizing_task_quota (process_id, task_id, retry_num, table_id, start_time, end_time," +
+      " fail_reason) VALUES (#{taskQuota.processId}, #{taskQuota.taskId}, #{taskQuota.retryNum}," +
+      " #{taskQuota.tableId}," +
+      " #{taskQuota.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
+      " #{taskQuota.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{taskQuota.failReason})")
   void insertTaskQuota(@Param("taskQuota") TaskRuntime.TaskQuota taskQuota);
 
-  @Delete("DELETE FROM optimizing_task_quota " +
-      "WHERE table_id = #{table_id} AND process_id < #{time}")
+  @Delete("DELETE FROM optimizing_task_quota WHERE table_id = #{table_id} AND process_id < #{time}")
   void deleteOptimizingQuotaBefore(@Param("table_id") long tableId, @Param("time") long timestamp);
 }

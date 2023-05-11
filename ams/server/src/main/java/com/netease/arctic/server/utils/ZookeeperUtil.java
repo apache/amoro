@@ -29,11 +29,11 @@ import java.nio.charset.StandardCharsets;
 /**
  * Provides ZooKeeper clients and operations.
  */
-public class ZookeeperUtils {
+public class ZookeeperUtil {
   private final CuratorFramework zkClient;
-  private static volatile ZookeeperUtils instance;
+  private static volatile ZookeeperUtil instance;
 
-  public ZookeeperUtils(String zkServerAddress) {
+  public ZookeeperUtil(String zkServerAddress) {
     ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
     this.zkClient = CuratorFrameworkFactory.builder()
         .connectString(zkServerAddress)
@@ -44,11 +44,11 @@ public class ZookeeperUtils {
     zkClient.start();
   }
 
-  public static ZookeeperUtils getInstance(String zkServerAddress) {
+  public static ZookeeperUtil getInstance(String zkServerAddress) {
     if (instance == null) {
-      synchronized (ZookeeperUtils.class) {
+      synchronized (ZookeeperUtil.class) {
         if (instance == null) {
-          instance = new ZookeeperUtils(zkServerAddress);
+          instance = new ZookeeperUtil(zkServerAddress);
         }
       }
     }

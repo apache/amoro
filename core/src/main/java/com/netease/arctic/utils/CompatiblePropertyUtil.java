@@ -76,7 +76,7 @@ public class CompatiblePropertyUtil {
         return TableProperties.OPTIMIZE_GROUP;
       case TableProperties.SELF_OPTIMIZING_QUOTA:
         return TableProperties.OPTIMIZE_QUOTA;
-      case TableProperties.SELF_OPTIMIZING_RETRY_NUMBER:
+      case TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER:
         return TableProperties.OPTIMIZE_RETRY_NUMBER;
       case TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT:
         return TableProperties.OPTIMIZE_EXECUTE_TIMEOUT;

@@ -138,6 +138,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
     ServerTableIdentifier tableIdentifier = catalog.createTable(tableMeta);
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
+    if (headHandler != null) {
+      headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+    }
   }
 
   @Override
@@ -390,7 +393,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    tableRuntimeMap.put(tableIdentifier, new TableRuntime(tableIdentifier, this));
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
+    tableRuntimeMap.put(tableIdentifier, tableRuntime);
+    if (headHandler != null) {
+      headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+    }
   }
 
   private void disposeTable(ExternalCatalog externalCatalog, ServerTableIdentifier tableIdentifier) {

@@ -19,7 +19,7 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -67,7 +67,7 @@ public class AMSDataFileInfo {
 
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
-    this.size = AmsUtils.byteToXB(fileSize);
+    this.size = AmsUtil.byteToXB(fileSize);
   }
 
   public String getPath() {
@@ -76,7 +76,7 @@ public class AMSDataFileInfo {
 
   public void setPath(String path) {
     this.path = path;
-    this.file = AmsUtils.getFileName(path);
+    this.file = AmsUtil.getFileName(path);
   }
 
   public String getPartition() {

@@ -78,6 +78,12 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used for refreshing tables.");
 
+  public static final ConfigOption<Long> SNAPSHOTS_REFRESHING_INTERVAL =
+      ConfigOptions.key("refresh-table-interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Interval for refreshing table metadata.");
+
   public static final ConfigOption<Boolean> HA_ENABLE =
       ConfigOptions.key("ha.enabled")
           .booleanType()
@@ -131,18 +137,6 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(19090)
           .withDescription("Port that the Http server is bound to.");
-
-  public static final ConfigOption<Long> OPTIMIZING_CHECK_STATUS_INTERVAL =
-      ConfigOptions.key("self-optimizing.check-table-status-interval")
-          .longType()
-          .defaultValue(60000L)
-          .withDescription("The interval at which self-optimizing checks the status of a table.");
-
-  public static final ConfigOption<Integer> OPTIMIZING_CHECK_THREAD_POOL_SIZE =
-      ConfigOptions.key("self-optimizing.check-table-status-thread-count")
-          .intType()
-          .defaultValue(3)
-          .withDescription("The number of threads that self-optimizing uses to check the status of a table.");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_POOL_SIZE =
       ConfigOptions.key("self-optimizing.commit-thread-count")

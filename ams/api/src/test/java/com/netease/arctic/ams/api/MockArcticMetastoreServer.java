@@ -18,6 +18,8 @@
 
 package com.netease.arctic.ams.api;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -43,6 +45,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -98,9 +101,9 @@ public class MockArcticMetastoreServer implements Runnable {
 
   public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
     MockArcticMetastoreServer server = getInstance();
-    if (!server.handler().catalogs.contains(catalogMeta.catalogName)) {
+    if (server.handler().getCatalogs().stream()
+        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName())))
       server.handler().createCatalog(catalogMeta);
-    }
   }
 
   public static String getHadoopSite() {
@@ -234,7 +237,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public void ping() throws TException {
+    public void ping() {
 
     }
 
@@ -351,8 +354,7 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-        Map<String, String> properties)
-        throws OperationConflictException, TException {
+        Map<String, String> properties) throws TException {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
@@ -364,7 +366,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
       Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
       if (blockers != null) {
         blockers.remove(blockerId);
@@ -397,7 +399,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
+    public void refreshTable(TableIdentifier tableIdentifier) throws TException {
 
     }
 
@@ -406,42 +408,58 @@ public class MockArcticMetastoreServer implements Runnable {
     }
   }
 
-  public class OptimizerManagerHandler implements OptimizingService.Iface {
+  public static class OptimizerManagerHandler implements OptimizingService.Iface {
 
     private final Map<String, OptimizerRegisterInfo> registeredOptimizers = new ConcurrentHashMap<>();
-    private final Queue<OptimizingTask> tasks = new ArrayBlockingQueue<>(100);
+    private final Queue<OptimizingTask> pendingTasks = new ArrayBlockingQueue<>(100);
+    private final Map<String, Map<Integer, OptimizingTaskId>> executingTasks = new ConcurrentHashMap<>();
+    private final Map<String, List<OptimizingTaskResult>> completedTasks = new ConcurrentHashMap<>();
 
     public void cleanUp() {
     }
 
     @Override
-    public void ping() throws TException {
+    public void ping() {
 
     }
 
     @Override
-    public void touch(String authToken) throws ArcticException, TException {
+    public void touch(String authToken) throws TException {
       checkToken(authToken);
     }
 
     @Override
-    public OptimizingTask pollTask(String authToken, int threadId) throws ArcticException, TException {
+    public OptimizingTask pollTask(String authToken, int threadId) throws TException {
       checkToken(authToken);
-      return null;
+      return pendingTasks.poll();
     }
 
     @Override
-    public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) throws ArcticException, TException {
+    public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) throws TException {
       checkToken(authToken);
+      if (!executingTasks.containsKey(authToken)) {
+        executingTasks.putIfAbsent(authToken, new ConcurrentHashMap<>());
+      }
+      Map<Integer, OptimizingTaskId> executingTasksMap = executingTasks.get(authToken);
+      if (executingTasksMap.containsKey(threadId)) {
+        throw new ArcticException(ErrorCodes.DUPLICATED_TASK_ERROR_CODE, "DuplicateTask", String.format("Optimizer:%s" +
+            " thread:%d is executing another task", authToken, threadId));
+      }
+      executingTasksMap.put(threadId, taskId);
     }
 
     @Override
-    public void completeTask(String authToken, OptimizingTaskResult taskResult) throws ArcticException, TException {
+    public void completeTask(String authToken, OptimizingTaskResult taskResult) throws TException {
       checkToken(authToken);
+      if (!completedTasks.containsKey(authToken)) {
+        completedTasks.putIfAbsent(authToken, new CopyOnWriteArrayList<>());
+      }
+      List<OptimizingTaskResult> completeTaskList = completedTasks.get(authToken);
+      completeTaskList.add(taskResult);
     }
 
     @Override
-    public String authenticate(OptimizerRegisterInfo registerInfo) throws ArcticException, TException {
+    public String authenticate(OptimizerRegisterInfo registerInfo) throws TException {
       String token = UUID.randomUUID().toString();
       registeredOptimizers.put(token, registerInfo);
       return token;
@@ -452,11 +470,19 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public boolean offerTask(OptimizingTask task) {
-      return tasks.offer(task);
+      return pendingTasks.offer(task);
     }
 
-    public Queue<OptimizingTask> getTasks() {
-      return tasks;
+    public Queue<OptimizingTask> getPendingTasks() {
+      return pendingTasks;
+    }
+
+    public Map<String, Map<Integer, OptimizingTaskId>> getExecutingTasks() {
+      return executingTasks;
+    }
+
+    public Map<String, List<OptimizingTaskResult>> getCompletedTasks() {
+      return completedTasks;
     }
 
     private void checkToken(String token) throws ArcticException {

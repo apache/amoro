@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 public class PartitionFileBaseInfo {
   private String commitId;
@@ -40,7 +40,7 @@ public class PartitionFileBaseInfo {
     this.commitTime = commitTime;
     this.partitionName = partitionName;
     this.path = path;
-    this.file = AmsUtils.getFileName(path);
+    this.file = AmsUtil.getFileName(path);
     this.fileSize = fileSize;
   }
 
@@ -86,7 +86,7 @@ public class PartitionFileBaseInfo {
 
   public void setPath(String path) {
     this.path = path;
-    this.file = AmsUtils.getFileName(path);
+    this.file = AmsUtil.getFileName(path);
   }
 
   public String getFile() {
@@ -99,6 +99,6 @@ public class PartitionFileBaseInfo {
 
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
-    this.size = AmsUtils.byteToXB(fileSize);
+    this.size = AmsUtil.byteToXB(fileSize);
   }
 }
