@@ -24,64 +24,48 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.glassfish.jersey.internal.guava.Sets;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public abstract class AbstractPartitionPlan {
+public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   public static final int INVALID_SEQUENCE = -1;
 
-  protected final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
   protected final long fragmentSize;
+  private TaskSplitter taskSplitter;
 
   protected ArcticTable tableObject;
   private long fromSequence = INVALID_SEQUENCE;
   private long toSequence = INVALID_SEQUENCE;
   protected final long planTime;
-  
-  protected boolean canAddFile = true;
 
-  public AbstractPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+  protected final Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
+  protected final Map<ContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
+  protected long fragmentFileSize = 0;
+  protected long segmentFileSize = 0;
+  protected long positionalDeleteBytes = 0L;
+  protected long equalityDeleteBytes = 0L;
+  protected int smallFileCount = 0;
+
+  public AbstractPartitionPlan(TableRuntime tableRuntime,
+                               ArcticTable table, String partition, long planTime) {
+    super(partition);
     this.tableObject = table;
-    this.partition = partition;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
   }
 
-  public String getPartition() {
-    return partition;
-  }
-
-  public abstract void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
-
-  public abstract boolean isNecessary();
-
-  public abstract long getCost();
-
-  public abstract OptimizingType getOptimizingType();
-
-  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-    throw new UnsupportedOperationException();
-  }
-  
-  public void finishAddFiles() {
-    canAddFile = false;
-  }
-
-  protected void checkAllFilesAdded() {
-    Preconditions.checkArgument(!canAddFile, "adding files is not finished");
-  }
-
-  protected void checkSupportAddingFiles() {
-    Preconditions.checkArgument(canAddFile, "can't add more files");
-  }
-
   protected void markSequence(long sequence) {
-    checkSupportAddingFiles();
     if (fromSequence == INVALID_SEQUENCE || fromSequence > sequence) {
       fromSequence = sequence;
     }
@@ -89,14 +73,55 @@ public abstract class AbstractPartitionPlan {
       toSequence = sequence;
     }
   }
-  
+
+  protected abstract TaskSplitter buildTaskSplitter();
+
+  @Override
+  public boolean isNecessary() {
+    if (taskSplitter == null) {
+      taskSplitter = buildTaskSplitter();
+    }
+    return taskSplitter.isNecessary();
+  }
+
+  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
+    if (taskSplitter == null) {
+      taskSplitter = buildTaskSplitter();
+    }
+    return taskSplitter.splitTasks(targetTaskCount);
+  }
+
+  @Override
+  public OptimizingType getOptimizingType() {
+    if (taskSplitter == null) {
+      taskSplitter = buildTaskSplitter();
+    }
+    return taskSplitter.getOptimizingType();
+  }
+
+  @Override
+  public long getCost() {
+    if (taskSplitter == null) {
+      taskSplitter = buildTaskSplitter();
+    }
+    return taskSplitter.getCost();
+  }
+
   public long getFromSequence() {
-    checkAllFilesAdded();
     return fromSequence;
   }
-  
+
   public long getToSequence() {
-    checkAllFilesAdded();
     return toSequence;
+  }
+
+  protected interface TaskSplitter {
+    List<TaskDescriptor> splitTasks(int targetTaskCount);
+
+    boolean isNecessary();
+    
+    OptimizingType getOptimizingType();
+
+    long getCost();
   }
 }
