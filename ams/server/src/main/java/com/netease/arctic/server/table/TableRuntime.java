@@ -432,7 +432,6 @@ public class TableRuntime extends PersistentBase {
       return getAs(TableBlockerMapper.class,
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
     } catch (Exception e) {
-      LOG.error("failed to get blockers for {}", tableIdentifier, e);
       throw e;
     } finally {
       blockerLock.unlock();
@@ -467,7 +466,6 @@ public class TableRuntime extends PersistentBase {
     } catch (OperationConflictException e) {
       throw e;
     } catch (Exception e) {
-      LOG.error("failed to block {} for {}", operations, tableIdentifier, e);
       throw e;
     } finally {
       blockerLock.unlock();
@@ -498,7 +496,6 @@ public class TableRuntime extends PersistentBase {
     } catch (NoSuchObjectException e) {
       throw e;
     } catch (Exception e) {
-      LOG.error("failed to renew blocker {} for {}", blockerId, tableIdentifier, e);
       throw e;
     } finally {
       blockerLock.unlock();
@@ -515,7 +512,6 @@ public class TableRuntime extends PersistentBase {
     try {
       doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
     } catch (Exception e) {
-      LOG.error("failed to release blocker {} for {}", blockerId, tableIdentifier, e);
       throw e;
     } finally {
       blockerLock.unlock();
@@ -535,7 +531,6 @@ public class TableRuntime extends PersistentBase {
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
       return conflict(operation, tableBlockers);
     } catch (Exception e) {
-      LOG.error("failed to check is blocked for {} {}", tableIdentifier, operation, e);
       throw e;
     } finally {
       blockerLock.unlock();
