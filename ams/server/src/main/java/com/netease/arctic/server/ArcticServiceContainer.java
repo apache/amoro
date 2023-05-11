@@ -63,28 +63,60 @@ public class ArcticServiceContainer {
 
   public static final String SERVER_CONFIG_PATH = "/conf/config.yaml";
 
-  private final DefaultTableService tableService;
-  private final DefaultOptimizingService optimizingService;
   private final List<ResourceGroup> resourceGroups = new ArrayList<>();
+  private final HighAvailabilityContainer haContainer;
+  private DefaultTableService tableService;
+  private DefaultOptimizingService optimizingService;
   private Configurations serviceConfig;
   private TServer server;
+  private DashboardServer dashboardServer;
 
-  private ArcticServiceContainer() throws IllegalConfigurationException, FileNotFoundException {
+  private ArcticServiceContainer() throws Exception {
     initConfig();
-    tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    haContainer = new HighAvailabilityContainer(serviceConfig);
   }
 
   public static void main(String[] args) {
     try {
       ArcticServiceContainer service = new ArcticServiceContainer();
-      service.initInternalExecutors();
-      service.initThriftService();
-      service.startThriftService();
-      service.startHttpService();
+      while (true) {
+        try {
+          service.waitLeaderShip();
+          service.startService();
+          service.waitFollowerShip();
+        } finally {
+          service.dispose();
+        }
+      }
     } catch (Throwable t) {
-      LOG.error("Start AMS exception...", t);
+      LOG.error("AMS encountered an unknown exception, will exist", t);
+      System.exit(1);
     }
+  }
+
+  public void waitLeaderShip() throws Exception {
+    haContainer.waitLeaderShip();
+  }
+
+  public void waitFollowerShip() throws Exception {
+    haContainer.waitFollowerShip();
+  }
+
+  public void startService() throws Exception {
+    tableService = new DefaultTableService(serviceConfig);
+    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    initInternalExecutors();
+    initThriftService();
+    startThriftService();
+    startHttpService();
+  }
+
+  public void dispose() {
+    server.stop();
+    dashboardServer.stopRestServer();
+    tableService.dispose();
+    tableService = null;
+    optimizingService = null;
   }
 
   private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
@@ -109,7 +141,8 @@ public class ArcticServiceContainer {
 
   private void startHttpService() {
     LOG.info("Initializing dashboard service...");
-    new DashboardServer(serviceConfig, tableService, optimizingService).startRestServer();
+    dashboardServer = new DashboardServer(serviceConfig, tableService, optimizingService);
+    dashboardServer.startRestServer();
     LOG.info("Dashboard service has been started on port: " +
         serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT));
   }

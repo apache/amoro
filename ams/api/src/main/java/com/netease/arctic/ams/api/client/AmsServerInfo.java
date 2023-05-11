@@ -38,4 +38,9 @@ public class AmsServerInfo {
   public int hashCode() {
     return Objects.hash(host, thriftBindPort);
   }
+
+  @Override
+  public String toString() {
+    return host + ":" + thriftBindPort;
+  }
 }
