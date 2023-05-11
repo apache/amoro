@@ -112,21 +112,6 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
       return this;
     }
 
-    public InternalRowFileAppenderFactory.Builder equalityFieldIds(int[] newEqualityFieldIds) {
-      this.equalityFieldIds = newEqualityFieldIds;
-      return this;
-    }
-
-    public InternalRowFileAppenderFactory.Builder eqDeleteRowSchema(Schema newEqDeleteRowSchema) {
-      this.eqDeleteRowSchema = newEqDeleteRowSchema;
-      return this;
-    }
-
-    public InternalRowFileAppenderFactory.Builder posDelRowSchema(Schema newPosDelRowSchema) {
-      this.posDeleteRowSchema = newPosDelRowSchema;
-      return this;
-    }
-
     public InternalRowFileAppenderFactory.Builder writeHive(boolean writeHive) {
       this.writeHive = writeHive;
       return this;

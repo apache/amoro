@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
-import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{asTableRelation, isArcticKeyedRelation, isArcticRelation}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, EqualNullSafe, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.TableCatalog
@@ -32,6 +32,8 @@ import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPlan] {
+
+  final private val SUM_ROW_ID_ALIAS_NAME = "_sum_"
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case a @ AppendData(r: DataSourceV2Relation, query, _, _)
@@ -46,15 +48,9 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
       a.copy(query = checkDataQuery)
 
-    case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, _, _)
+    case a @ OverwriteByExpression(r: DataSourceV2Relation, _, query, _, _)
         if checkDuplicatesEnabled() && isArcticKeyedRelation(r) =>
       val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-      var finalExpr: Expression = deleteExpr
-      deleteExpr match {
-        case expr: EqualNullSafe =>
-          finalExpr = expr.copy(query.output.last, expr.right)
-        case _ =>
-      }
       val checkDataQuery = QueryWithConstraintCheckPlan(query, validateQuery)
       a.copy(query = checkDataQuery)
 
@@ -66,13 +62,13 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       c.copy(query = checkDataQuery)
   }
 
-  def checkDuplicatesEnabled(): Boolean = {
+  private def checkDuplicatesEnabled(): Boolean = {
     java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
       SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
       SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
-  def isCreateKeyedTable(catalog: TableCatalog, props: Map[String, String]): Boolean = {
+  private def isCreateKeyedTable(catalog: TableCatalog, props: Map[String, String]): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog =>
         props.contains("primary.keys")
@@ -83,7 +79,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  def buildValidatePrimaryKeyDuplication(
+  private def buildValidatePrimaryKeyDuplication(
       r: DataSourceV2Relation,
       query: LogicalPlan): LogicalPlan = {
     r.table match {
@@ -104,7 +100,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  def buildValidatePrimaryKeyDuplication(
+  private def buildValidatePrimaryKeyDuplication(
       primaries: Array[String],
       query: LogicalPlan): LogicalPlan = {
     val attributes = query.output.filter(p => primaries.contains(p.name))
@@ -117,12 +113,10 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     Filter(havingExpr, aggPlan)
   }
 
-  protected def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
+  private def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
     attrs.find(attr => resolver(attr.name, attrName)).getOrElse {
       throw new UnsupportedOperationException(s"Cannot find $attrName in $attrs")
     }
   }
-
-  final private val SUM_ROW_ID_ALIAS_NAME = "_sum_"
 
 }

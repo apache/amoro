@@ -19,36 +19,34 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
+import com.netease.arctic.spark.sql.Exceptions
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.catalyst.analysis.{caseInsensitiveResolution, withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.{withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
-import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
+  private def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
     EliminateSubqueryAliases(aliasedTable) match {
       case r @ DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
         tbl match {
           case arctic: ArcticSparkTable =>
             if (arctic.table().isKeyedTable) {
-              val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-              val condRefs = cond.references.filter(f => primarys.contains(f.name))
+              val primaryKeys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+              val condRefs = cond.references.filter(f => primaryKeys.contains(f.name))
               if (condRefs.isEmpty) {
-                throw new UnsupportedOperationException(s"Condition ${cond.references}. " +
+                throw Exceptions.analysisException(s"Condition ${cond.references}. " +
                   s"is not allowed because is not a primary key")
               }
             }
         }
-      case p =>
-        throw new UnsupportedOperationException(s"$p is not an Arctic table")
     }
   }
 
@@ -106,29 +104,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
         notMatchedActions = resolvedNotMatchedActions)
   }
 
-  private def resolveLiteralFunction(
-      nameParts: Seq[String],
-      attribute: UnresolvedAttribute,
-      plan: LogicalPlan): Option[Expression] = {
-    if (nameParts.length != 1) return None
-    val isNamedExpression = plan match {
-      case Aggregate(_, aggregateExpressions, _) => aggregateExpressions.contains(attribute)
-      case Project(projectList, _) => projectList.contains(attribute)
-      case Window(windowExpressions, _, _, _) => windowExpressions.contains(attribute)
-      case _ => false
-    }
-    val wrapper: Expression => Expression =
-      if (isNamedExpression) f => Alias(f, toPrettySQL(f))() else identity
-    // support CURRENT_DATE and CURRENT_TIMESTAMP
-    val literalFunctions = Seq(CurrentDate(), CurrentTimestamp())
-    val name = nameParts.head
-    val func = literalFunctions.find(e => caseInsensitiveResolution(e.prettyName, name))
-    func.map(wrapper)
-  }
-
-  def resolveExpressionByArcticPlanChildren(
-      e: Expression,
-      q: LogicalPlan): Expression = {
+  def resolveExpressionByArcticPlanChildren(e: Expression, q: LogicalPlan): Expression = {
     resolveExpression(
       e,
       resolveColumnByName = nameParts => {
@@ -137,8 +113,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
       getAttrCandidates = () => {
         assert(q.children.length == 1)
         q.children.head.output
-      },
-      throws = true)
+      })
   }
 
   private def resolveCond(condName: String, cond: Expression, plan: LogicalPlan): Expression = {
@@ -167,54 +142,51 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
       getAttrCandidates = () => {
         assert(q.children.length == 1)
         q.children.head.output
-      },
-      throws = true)
+      })
   }
 
   private def resolveExpression(
       expr: Expression,
       resolveColumnByName: Seq[String] => Option[Expression],
       getAttrCandidates: () => Seq[Attribute],
-      throws: Boolean): Expression = {
-    def innerResolve(e: Expression, isTopLevel: Boolean): Expression = {
-      if (e.resolved) return e
-      e match {
-        case f: LambdaFunction if !f.bound => f
-
-        case GetColumnByOrdinal(ordinal, _) =>
-          val attrCandidates = getAttrCandidates()
-          assert(ordinal >= 0 && ordinal < attrCandidates.length)
-          attrCandidates(ordinal)
-
-        case u @ UnresolvedAttribute(nameParts) =>
-          val result = withPosition(u) {
-            resolveColumnByName(nameParts).map {
-              case Alias(child, _) if !isTopLevel => child
-              case other => other
-            }.getOrElse(u)
-          }
-          logDebug(s"Resolving $u to $result")
-          result
-
-        case u @ UnresolvedExtractValue(child, fieldName) =>
-          val newChild = innerResolve(child, isTopLevel = false)
-          if (newChild.resolved) {
-            withOrigin(u.origin) {
-              ExtractValue(newChild, fieldName, resolver)
-            }
-          } else {
-            u.copy(child = newChild)
-          }
-
-        case _ => e.mapChildren(innerResolve(_, isTopLevel = false))
-      }
+      isTopLevel: Boolean = true): Expression = {
+    if (expr.resolved) {
+      return expr
     }
 
-    try {
-      innerResolve(expr, isTopLevel = true)
-    } catch {
-      case _: AnalysisException if !throws => expr
+    expr match {
+      case f: LambdaFunction if !f.bound => f
+
+      case GetColumnByOrdinal(ordinal, _) =>
+        val attrCandidates = getAttrCandidates()
+        assert(ordinal >= 0 && ordinal < attrCandidates.length)
+        attrCandidates(ordinal)
+
+      case u @ UnresolvedAttribute(nameParts) =>
+        val result = withPosition(u) {
+          resolveColumnByName(nameParts).map {
+            case Alias(child, _) if !isTopLevel => child
+            case other => other
+          }.getOrElse(u)
+        }
+        logDebug(s"Resolving $u to $result")
+        result
+
+      case u @ UnresolvedExtractValue(child, fieldName) =>
+        val newChild = resolveExpression(child, resolveColumnByName, getAttrCandidates, isTopLevel = false)
+        if (newChild.resolved) {
+          withOrigin(u.origin) {
+            ExtractValue(newChild, fieldName, resolver)
+          }
+        } else {
+          u.copy(child = newChild)
+        }
+
+      case _ => expr.mapChildren(
+        resolveExpression(_, resolveColumnByName, getAttrCandidates, isTopLevel = false)
+      )
     }
+
   }
 
   // copied from ResolveReferences in Spark

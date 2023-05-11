@@ -63,11 +63,6 @@ public class SparkParquetReaders {
   private SparkParquetReaders() {
   }
 
-  public static ParquetValueReader<InternalRow> buildReader(
-      Schema expectedSchema,
-      MessageType fileSchema) {
-    return buildReader(expectedSchema, fileSchema, ImmutableMap.of());
-  }
 
   @SuppressWarnings("unchecked")
   public static ParquetValueReader<InternalRow> buildReader(

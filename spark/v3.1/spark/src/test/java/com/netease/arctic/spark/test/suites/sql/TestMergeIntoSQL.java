@@ -107,6 +107,33 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
   }
 
 
+  //TODO: failed.
+  @DisplayName("SQL: MERGE INTO for all actions with condition")
+  //@ParameterizedTest
+  @MethodSource("args")
+  public void testSetExactValue(TableFormat format, PrimaryKeySpec keySpec) {
+    setupTest(keySpec);
+    createViewSource(schema, source);
+
+    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
+        "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc' ");
+
+    List<Record> expects = ExpectResultHelper.expectMergeResult(
+            target, source, r -> r.getField("id")
+        ).whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> {
+          t.setField("data","ccc");
+          return t;
+        })
+        .results();
+
+    ArcticTable table = loadTable();
+    List<Record> actual = TestTableHelper.tableRecords(table);
+    DataComparator.build(expects, actual)
+        .ignoreOrder("id")
+        .assertRecordsEqual();
+  }
+
+
   @DisplayName("SQL: MERGE INTO for all actions with target no data")
   @ParameterizedTest
   @MethodSource("args")
