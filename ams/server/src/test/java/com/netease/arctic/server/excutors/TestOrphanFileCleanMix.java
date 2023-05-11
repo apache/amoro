@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.persistence.excutors;
+package com.netease.arctic.server.excutors;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -50,8 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.netease.arctic.server.persistence.excutors.ExecutorTestUtil.createRecords;
-import static com.netease.arctic.server.persistence.excutors.ExecutorTestUtil.writeAndCommitBaseAndChange;
 import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.DATA_FOLDER_NAME;
 import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.FLINK_JOB_ID;
 
@@ -87,7 +85,7 @@ public class TestOrphanFileCleanMix extends TableTestBase {
 
   @Test
   public void orphanDataFileClean() throws IOException {
-    writeAndCommitBaseAndChange(getArcticTable());
+    ExecutorTestUtil.writeAndCommitBaseAndChange(getArcticTable());
 
     UnkeyedTable baseTable = isKeyedTable() ?
         getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
@@ -143,7 +141,7 @@ public class TestOrphanFileCleanMix extends TableTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     List<DataFile> dataFiles = DataTestHelpers.writeChangeStore(
-        testKeyedTable, 1, ChangeAction.INSERT, createRecords(1, 100), false);
+        testKeyedTable, 1, ChangeAction.INSERT, ExecutorTestUtil.createRecords(1, 100), false);
     Set<String> pathAll = new HashSet<>();
     Set<String> fileInBaseStore = new HashSet<>();
     Set<String> fileOnlyInChangeLocation = new HashSet<>();
