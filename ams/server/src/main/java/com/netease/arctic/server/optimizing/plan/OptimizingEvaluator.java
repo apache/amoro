@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.MixedFormatTableFileScanHelper;
@@ -37,23 +38,19 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class OptimizingEvaluator {
-  private static final Logger LOG = LoggerFactory.getLogger(OptimizingEvaluator.class);
 
   protected final ArcticTable arcticTable;
   protected final TableRuntime tableRuntime;
   protected boolean isInitEvaluator = false;
 
-  protected Map<String, AbstractPartitionPlan> partitionEvaluatorMap = Maps.newHashMap();
+  protected Map<String, PartitionEvaluator> partitionEvaluatorMap = Maps.newHashMap();
 
   public OptimizingEvaluator(TableRuntime tableRuntime) {
     this(tableRuntime, tableRuntime.loadTable());
@@ -62,16 +59,6 @@ public class OptimizingEvaluator {
   public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table) {
     this.tableRuntime = tableRuntime;
     this.arcticTable = table;
-  }
-
-  public Map<String, Long> getFromSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFromSequence()));
-  }
-
-  public Map<String, Long> getToSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getToSequence()));
   }
 
   public ArcticTable getArcticTable() {
@@ -120,18 +107,13 @@ public class OptimizingEvaluator {
     for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
       StructLike partition = fileScanResult.file().partition();
       String partitionPath = partitionSpec.partitionToPath(partition);
-      AbstractPartitionPlan evaluator = partitionEvaluatorMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+      PartitionEvaluator evaluator = partitionEvaluatorMap.computeIfAbsent(partitionPath, this::buildEvaluator);
       evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-    finishAddingFiles();
     partitionEvaluatorMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
-  private void finishAddingFiles() {
-    partitionEvaluatorMap.values().forEach(AbstractPartitionPlan::finishAddFiles);
-  }
-
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
+  protected PartitionEvaluator buildEvaluator(String partitionPath) {
     return new PartitionEvaluatorImpl(tableRuntime, arcticTable, partitionPath);
   }
 
@@ -160,8 +142,8 @@ public class OptimizingEvaluator {
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
 
-    public PendingInput(Collection<AbstractPartitionPlan> evaluators) {
-      for (AbstractPartitionPlan e : evaluators) {
+    public PendingInput(Collection<PartitionEvaluator> evaluators) {
+      for (PartitionEvaluator e : evaluators) {
         PartitionEvaluatorImpl evaluator = (PartitionEvaluatorImpl) e;
         partitions.add(evaluator.getPartition());
         dataFileCount += evaluator.fragementFileCount + evaluator.segmentFileCount;
@@ -202,7 +184,10 @@ public class OptimizingEvaluator {
     }
   }
 
-  private static class PartitionEvaluatorImpl extends AbstractPartitionPlan {
+  private class PartitionEvaluatorImpl extends PartitionEvaluator {
+
+    private final OptimizingConfig config;
+    private final long fragmentSize;
 
     private int fragementFileCount = 0;
     private long fragementFileSize = 0;
@@ -216,7 +201,9 @@ public class OptimizingEvaluator {
 
     public PartitionEvaluatorImpl(TableRuntime tableRuntime, ArcticTable arcticTable,
                                   String partition) {
-      super(tableRuntime, arcticTable, partition, System.currentTimeMillis());
+      super(partition);
+      this.config = tableRuntime.getOptimizingConfig();
+      this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     }
 
     @Override
