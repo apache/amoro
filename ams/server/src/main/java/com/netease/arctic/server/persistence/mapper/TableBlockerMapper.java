@@ -37,11 +37,11 @@ import java.util.List;
 public interface TableBlockerMapper {
   String TABLE_NAME = "table_blocker";
 
-  @Select("select blocker_id,catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties from " + TABLE_NAME + " " +
-      "where catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
-      "and table_name = #{tableIdentifier.tableName} " +
-      "and expiration_time > #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  @Select("SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time," +
+      "expiration_time,properties FROM " + TABLE_NAME + " " +
+      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
+      "AND table_name = #{tableIdentifier.tableName} " +
+      "AND expiration_time > #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
   @Results({
       @Result(property = "blockerId", column = "blocker_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
@@ -59,10 +59,10 @@ public interface TableBlockerMapper {
   List<TableBlocker> selectBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier,
                                     @Param("now") long now);
 
-  @Select("select blocker_id,catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties from " + TABLE_NAME + " " +
-      "where blocker_id = #{blockerId} " +
-      "and expiration_time > #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  @Select("SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time," +
+      "expiration_time,properties FROM " + TABLE_NAME + " " +
+      "WHERE blocker_id = #{blockerId} " +
+      "AND expiration_time > #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
   @Results({
       @Result(property = "blockerId", column = "blocker_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
@@ -79,8 +79,8 @@ public interface TableBlockerMapper {
   })
   TableBlocker selectBlocker(@Param("blockerId") long blockerId, @Param("now") long now);
 
-  @Insert("insert into " + TABLE_NAME + " (catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties) values (" +
+  @Insert("INSERT INTO " + TABLE_NAME + " (catalog_name,db_name,table_name,operations,create_time," +
+      "expiration_time,properties) VALUES (" +
       "#{blocker.tableIdentifier.catalog}," +
       "#{blocker.tableIdentifier.database}," +
       "#{blocker.tableIdentifier.tableName}," +
@@ -92,23 +92,23 @@ public interface TableBlockerMapper {
   @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
   void insertBlocker(@Param("blocker") TableBlocker blocker);
 
-  @Update("update " + TABLE_NAME + " set " +
+  @Update("UPDATE " + TABLE_NAME + " SET " +
       "expiration_time = #{expirationTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
-      "where blocker_id = #{blockerId}")
+      "WHERE blocker_id = #{blockerId}")
   void updateBlockerExpirationTime(@Param("blockerId") long blockerId, @Param("expirationTime") long expirationTime);
 
-  @Delete("delete from " + TABLE_NAME + " " +
-      "where blocker_id = #{blockerId}")
+  @Delete("DELETE FROM " + TABLE_NAME + " " +
+      "WHERE blocker_id = #{blockerId}")
   void deleteBlocker(@Param("blockerId") long blockerId);
 
-  @Delete("delete from " + TABLE_NAME + " " +
-      "where catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
-      "and table_name = #{tableIdentifier.tableName} " +
-      "and expiration_time <= #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  @Delete("DELETE FROM " + TABLE_NAME + " " +
+      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
+      "AND table_name = #{tableIdentifier.tableName} " +
+      "AND expiration_time <= #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
   int deleteExpiredBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
 
-  @Delete("delete from " + TABLE_NAME + " " +
-      "where catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
-      "and table_name = #{tableIdentifier.tableName}")
+  @Delete("DELETE FROM " + TABLE_NAME + " " +
+      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
+      "AND table_name = #{tableIdentifier.tableName}")
   int deleteBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 }
