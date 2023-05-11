@@ -33,7 +33,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
@@ -63,8 +65,18 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   @Override
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
+  protected PartitionEvaluator buildEvaluator(String partitionPath) {
     return partitionPlannerFactory.buildPartitionPlanner(partitionPath);
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return partitionEvaluatorMap.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
+  }
+
+  public Map<String, Long> getToSequence() {
+    return partitionEvaluatorMap.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
   }
 
   @Override
@@ -88,14 +100,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     if (!isInitEvaluator) {
       initEvaluator();
     }
-    List<AbstractPartitionPlan> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
+    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
-    List<AbstractPartitionPlan> inputPartitions = Lists.newArrayList();
+    List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
     for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
-      AbstractPartitionPlan evaluator = evaluators.get(i);
+      PartitionEvaluator evaluator = evaluators.get(i);
       inputPartitions.add(evaluator);
       if (actualInputSize + evaluator.getCost() < maxInputSize) {
         actualInputSize += evaluator.getCost();
@@ -104,8 +116,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
     double avgThreadCost = actualInputSize / availableCore;
     List<TaskDescriptor> tasks = Lists.newArrayList();
-    for (AbstractPartitionPlan evaluator : inputPartitions) {
-      tasks.addAll(evaluator.splitTasks((int) (actualInputSize / avgThreadCost)));
+    for (PartitionEvaluator evaluator : inputPartitions) {
+      tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
     }
     if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
       optimizingType = OptimizingType.MAJOR;
@@ -148,7 +160,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       }
     }
 
-    public AbstractPartitionPlan buildPartitionPlanner(String partitionPath) {
+    public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
       if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
         return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
       } else {

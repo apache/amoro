@@ -40,15 +40,6 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   //  private static final int MAJAR_FRAGEMENT_FILES_COUNT = 1000;
 
-  private TaskSplitter taskSplitter;
-  private Map<IcebergDataFile, List<IcebergContentFile<?>>> fragementFiles = Maps.newHashMap();
-  private Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-  private Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
-  private Map<IcebergContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
-  private long fragementFileSize = 0;
-  private long segmentFileSize = 0;
-  private long positionalDeleteBytes = 0L;
-  private long equalityDeleteBytes = 0L;
   private int smallFileCount = 0;
 
   protected IcebergPartitionPlan(TableRuntime tableRuntime, String partition, ArcticTable table, long planTime) {
@@ -58,8 +49,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     if (dataFile.fileSizeInBytes() <= fragmentSize) {
-      fragementFiles.put(dataFile, deletes);
-      fragementFileSize += dataFile.fileSizeInBytes();
+      fragmentFiles.put(dataFile, deletes);
+      fragmentFileSize += dataFile.fileSizeInBytes();
       smallFileCount += 1;
     } else {
       segmentFiles.put(dataFile, deletes);
@@ -78,38 +69,11 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  public boolean isNecessary() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.isNecessary();
+  protected AbstractPartitionPlan.TaskSplitter buildTaskSplitter() {
+    return new TaskSplitter();
   }
 
-  @Override
-  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.splitTasks(targetTaskCount);
-  }
-
-  @Override
-  public OptimizingType getOptimizingType() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.getOptimizingType();
-  }
-
-  @Override
-  public long getCost() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.getCost();
-  }
-
-  private class TaskSplitter {
+  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
 
     Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
     Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
@@ -136,7 +100,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
           }
         }
       });
-      fragementFiles.forEach((icebergFile, deleteFileSet) -> {
+      fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
         rewriteDataFiles.add(icebergFile);
         deleteFiles.addAll(deleteFileSet);
       });
