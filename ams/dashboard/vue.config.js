@@ -43,7 +43,7 @@ const devServer = {
       target: ENV_HOST[ENV],
       changeOrigin: true,
       onProxyReq (proxyReq) {
-        proxyReq.setHeader('cookie', process.env.VUE_APP_COOKIE)
+        proxyReq.setHeader('cookie', '')
       }
     }
   }
@@ -96,6 +96,7 @@ module.exports = {
   css,
   devServer,
   publicPath: getPublicPath(),
+  outputDir: path.resolve(__dirname, './src/main/resources/static/'), // 静态资源打包到src/main/resources/static/
   productionSourceMap: !isProduction,
   chainWebpack: (config) => {
     // vue-svg-loader
