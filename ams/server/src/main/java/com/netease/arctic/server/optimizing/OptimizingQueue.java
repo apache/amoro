@@ -229,6 +229,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                 optimizingProcess.getTaskMap().size());
           }
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
+        } else {
+          tableRuntime.initStatus();
         }
       } catch (Throwable e) {
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);

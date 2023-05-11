@@ -19,6 +19,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -329,9 +330,21 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
                   .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
           Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
-              .forEach(tableIdentity -> syncTable(externalCatalog, tableIdentity));
+              .forEach(tableIdentity -> {
+                try {
+                  syncTable(externalCatalog, tableIdentity);
+                } catch (Exception e) {
+                  LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
+                }
+              });
           Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
-              .forEach(tableIdentity -> disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity)));
+              .forEach(tableIdentity -> {
+                try {
+                  disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                } catch (Exception e) {
+                  LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
+                }
+              });
         } catch (Exception e) {
           LOG.error("TableExplorer run error", e);
         }
@@ -342,10 +355,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+    try {
+      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
+      tableRuntimeMap.put(tableIdentifier, tableRuntime);
+      if (headHandler != null) {
+        headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+      }
+    } catch (Exception e) {
+      disposeTable(externalCatalog, tableIdentifier);
+      LOG.error("sync table {} error while build table runtime", tableIdentifier, e);
     }
   }
 
@@ -393,6 +411,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
     @Override
     public int hashCode() {
       return Objects.hashCode(database, tableName);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("database", database)
+          .add("tableName", tableName)
+          .toString();
     }
   }
 }
