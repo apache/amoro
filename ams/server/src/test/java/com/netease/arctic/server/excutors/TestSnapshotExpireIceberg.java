@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.persistence.excutors;
+package com.netease.arctic.server.excutors;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -42,7 +42,7 @@ import org.mockito.Mockito;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.netease.arctic.server.persistence.excutors.ExecutorTestUtil.writeAndCommitBaseStore;
+import static com.netease.arctic.server.excutors.ExecutorTestUtil.writeAndCommitBaseStore;
 
 @RunWith(Parameterized.class)
 public class TestSnapshotExpireIceberg extends TableTestBase {

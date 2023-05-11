@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.persistence.excutors;
+package com.netease.arctic.server.excutors;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
