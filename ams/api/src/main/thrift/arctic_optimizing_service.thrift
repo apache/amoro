@@ -22,13 +22,12 @@ struct OptimizingTaskResult {
 }
 
 struct OptimizerRegisterInfo {
-    1: string resourceId;
+    1: optional string resourceId;
     2: i32 threadCount;
     3: i32 memoryMb;
     4: i64 startTime;
     5: string groupName;
-    6: string containerName;
-    7: optional map<string, string> properties;
+    6: optional map<string, string> properties;
 }
 
 service OptimizingService {

@@ -29,8 +29,8 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
-public class TableFileUtils {
-  private static final Logger LOG = LoggerFactory.getLogger(TableFileUtils.class);
+public class TableFileUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(TableFileUtil.class);
 
   /**
    * Parse file name form file path

@@ -9,7 +9,7 @@ import java.util.Base64;
 /**
  * Util class to encode configuration files with base64
  */
-public class ConfigurationFileUtils {
+public class ConfigurationFileUtil {
   /**
    * encode target file with base64, such as krb5.conf、**.keytab files
    * @param filePath target file path

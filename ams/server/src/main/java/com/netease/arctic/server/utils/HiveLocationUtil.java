@@ -30,8 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class HiveLocationUtils {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtils.class);
+public class HiveLocationUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtil.class);
 
   /**
    * get table hive table/partition location

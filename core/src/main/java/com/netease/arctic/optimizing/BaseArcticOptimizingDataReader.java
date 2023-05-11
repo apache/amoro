@@ -87,7 +87,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
     this.sourceNodes = sourceNodes;
     this.reuseContainer = reuseContainer;
     this.rewriteFilesInput = rewriteFilesInput;
-    this.structLikeCollections = structLikeCollections == null? StructLikeCollections.DEFAULT: structLikeCollections;
+    this.structLikeCollections = structLikeCollections == null ? StructLikeCollections.DEFAULT : structLikeCollections;
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {

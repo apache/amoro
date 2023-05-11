@@ -18,18 +18,18 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeManager;
-import com.netease.arctic.server.utils.HiveLocationUtils;
-import com.netease.arctic.server.utils.IcebergTableUtils;
-import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.server.utils.HiveLocationUtil;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -79,7 +79,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     return INTERVAL;
   }
 
-
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
@@ -89,7 +88,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       ArcticTable arcticTable = tableRuntime.loadTable();
-      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(
+          arcticTable.properties(),
           TableProperties.ENABLE_TABLE_EXPIRE,
           TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
       if (!needClean) {
@@ -121,7 +121,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
     Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(arcticTable)) {
-      hiveLocations = HiveLocationUtils.getHiveLocation(arcticTable);
+      hiveLocations = HiveLocationUtil.getHiveLocation(arcticTable);
     }
 
     if (arcticTable.isKeyedTable()) {
@@ -133,14 +133,15 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
         // get valid files in the change store which shouldn't physically delete when expire the snapshot
         // in the base store
-        Set<String> baseExcludePaths = IcebergTableUtils.getAllContentFilePath(changeTable);
+        Set<String> baseExcludePaths = IcebergTableUtil.getAllContentFilePath(changeTable);
         baseExcludePaths.addAll(finalHiveLocations);
         long latestBaseFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(baseTable);
         long optimizingSnapshotTime = fetchOptimizingSnapshotTime(baseTable, tableRuntime);
         long baseOlderThan = startTime - baseSnapshotsKeepTime;
         LOG.info("{} base table expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
             arcticTable.id(), latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan);
-        expireSnapshots(baseTable,
+        expireSnapshots(
+            baseTable,
             min(latestBaseFlinkCommitTime, optimizingSnapshotTime, baseOlderThan),
             baseExcludePaths);
         long baseCleanedTime = System.currentTimeMillis();
@@ -155,7 +156,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
         // get valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
-        Set<String> changeExclude = IcebergTableUtils.getAllContentFilePath(baseTable);
+        Set<String> changeExclude = IcebergTableUtil.getAllContentFilePath(baseTable);
         changeExclude.addAll(finalHiveLocations);
 
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
@@ -164,7 +165,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
             startTime - changeSnapshotsKeepTime : startTime - changeDataTTL;
         LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
             latestChangeFlinkCommitTime, changeOlderThan);
-        expireSnapshots(changeTable,
+        expireSnapshots(
+            changeTable,
             Math.min(latestChangeFlinkCommitTime, changeOlderThan),
             changeExclude);
         return null;
@@ -177,7 +179,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       long olderThan = startTime - baseSnapshotsKeepTime;
       LOG.info("{} unKeyedTable expire with latestFlinkCommitTime={}, optimizingSnapshotTime={}, olderThan={}",
           arcticTable.id(), latestFlinkCommitTime, optimizingSnapshotTime, olderThan);
-      expireSnapshots(unKeyedArcticTable,
+      expireSnapshots(
+          unKeyedArcticTable,
           min(latestFlinkCommitTime, optimizingSnapshotTime, olderThan),
           hiveLocations);
       long baseCleanedTime = System.currentTimeMillis();
@@ -222,7 +225,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     return Long.MAX_VALUE;
   }
 
-  public static void expireSnapshots(UnkeyedTable arcticInternalTable,
+  public static void expireSnapshots(
+      UnkeyedTable arcticInternalTable,
       long olderThan,
       Set<String> exclude) {
     LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
@@ -234,7 +238,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         .expireOlderThan(olderThan)
         .deleteWith(file -> {
           try {
-            String filePath = TableFileUtils.getUriPath(file);
+            String filePath = TableFileUtil.getUriPath(file);
             if (!exclude.contains(filePath) && !exclude.contains(new Path(filePath).getParent().toString())) {
               arcticInternalTable.io().deleteFile(file);
             }
@@ -248,7 +252,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         })
         .cleanExpiredFiles(true)
         .commit();
-    parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 

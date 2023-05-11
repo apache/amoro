@@ -22,11 +22,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
@@ -42,12 +40,13 @@ import java.nio.ByteBuffer;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-public class SerializationUtils {
+@SuppressWarnings({"unchecked", "rawtypes"})
+public class SerializationUtil {
 
-  private static final ThreadLocal<KryoSerializerInstance> SERIALIZER =
+  private static final ThreadLocal<KryoSerializerInstance> KRYO_SERIALIZER =
           ThreadLocal.withInitial(KryoSerializerInstance::new);
 
-  public static ByteBuffer toByteBuffer(Object obj) {
+  public static ByteBuffer simpleSerialize(Object obj) {
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
       try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
         oos.writeObject(obj);
@@ -59,56 +58,31 @@ public class SerializationUtils {
     }
   }
 
-  public static ByteBuffer byteArrayToByteBuffer(byte[] bytes) {
-    return ByteBuffer.wrap(bytes);
-  }
-
-  public static byte[] byteBufferToByteArray(ByteBuffer buffer) {
-    return ByteBuffers.toByteArray(buffer);
-  }
-
-  public static Object toObject(ByteBuffer buffer) {
+  public static <T> T simpleDeserialize(ByteBuffer buffer) {
     byte[] bytes = ByteBuffers.toByteArray(buffer);
+    return simpleDeserialize(bytes);
+  }
+
+  public static <T> T simpleDeserialize(byte[] bytes) {
     try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
       try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        return ois.readObject();
+        return (T) ois.readObject();
       }
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("deserialization error ", e);
     }
   }
 
-  public static Object toObject(byte[] bytes) {
-    try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
-      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        return ois.readObject();
-      }
-    } catch (IOException | ClassNotFoundException e) {
-      throw new IllegalArgumentException("deserialization error ", e);
-    }
+  public static byte[] kryoSerialize(final Object obj) throws IOException {
+    return KRYO_SERIALIZER.get().serialize(obj);
   }
 
-  public static IcebergContentFile<?> toInternalTableFile(ByteBuffer buffer) {
-    return (IcebergContentFile<?>) toObject(buffer);
-  }
-
-  public static ContentFile<?> toContentFile(ByteBuffer buffer) {
-    return (ContentFile<?>) toObject(buffer);
-  }
-
-  public static IcebergContentFile<?> toIcebergContentFile(ByteBuffer buffer) {
-    return (IcebergContentFile<?>) toObject(buffer);
-  }
-
-  public static byte[] serialize(final Object obj) throws IOException {
-    return SERIALIZER.get().serialize(obj);
-  }
-
-  public static <T> T deserialize(final byte[] objectData) {
+  @SuppressWarnings("unchecked")
+  public static <T> T kryoDeserialize(final byte[] objectData) {
     if (objectData == null) {
-      throw new IllegalArgumentException("The byte[] must not be null");
+      throw new NullPointerException("The byte[] must not be null");
     }
-    return (T) SERIALIZER.get().deserialize(objectData);
+    return (T) KRYO_SERIALIZER.get().deserialize(objectData);
   }
 
   public static <T> SimpleSerializer<T> createJavaSimpleSerializer() {
@@ -209,9 +183,9 @@ public class SerializationUtils {
     @Override
     public byte[] serialize(StructLikeWrapper structLikeWrapper) {
       checkNotNull(structLikeWrapper);
-      StructLike copy = SerializationUtils.StructLikeCopy.copy(structLikeWrapper.get());
+      StructLike copy = SerializationUtil.StructLikeCopy.copy(structLikeWrapper.get());
       try {
-        return SerializationUtils.serialize(copy);
+        return SerializationUtil.kryoSerialize(copy);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -222,20 +196,20 @@ public class SerializationUtils {
       if (bytes == null) {
         return null;
       }
-      SerializationUtils.StructLikeCopy structLike = SerializationUtils.deserialize(bytes);
+      SerializationUtil.StructLikeCopy structLike = SerializationUtil.kryoDeserialize(bytes);
       return structLikeWrapperFactory.create().set(structLike);
     }
   }
 
   public static class JavaSerializer<T extends Serializable> implements SimpleSerializer<T> {
 
-    public static final JavaSerializer INSTANT = new JavaSerializer();
+    public static final JavaSerializer INSTANT = new JavaSerializer<>();
 
     @Override
     public byte[] serialize(T t) {
       try {
         checkNotNull(t);
-        return SerializationUtils.serialize(t);
+        return SerializationUtil.kryoSerialize(t);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -246,7 +220,7 @@ public class SerializationUtils {
       if (bytes == null) {
         return null;
       }
-      return SerializationUtils.deserialize(bytes);
+      return SerializationUtil.kryoDeserialize(bytes);
     }
   }
 

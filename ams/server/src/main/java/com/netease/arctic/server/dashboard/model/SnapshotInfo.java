@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 public class SnapshotInfo {
   private Long snapshotId;
   private String operation;
@@ -121,18 +123,18 @@ public class SnapshotInfo {
 
   @Override
   public String toString() {
-    return "SnapshotInfo{" +
-        "snapshotId=" + snapshotId +
-        ", operation='" + operation + '\'' +
-        ", totalSize=" + totalSize +
-        ", totalFiles=" + totalFiles +
-        ", totalRecords=" + totalRecords +
-        ", addedFiles=" + addedFiles +
-        ", addedFilesSize=" + addedFilesSize +
-        ", addedRecords=" + addedRecords +
-        ", removedFilesSize=" + removedFilesSize +
-        ", removedFiles=" + removedFiles +
-        ", removedRecords=" + removedRecords +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("snapshotId", snapshotId)
+        .add("operation", operation)
+        .add("totalSize", totalSize)
+        .add("totalFiles", totalFiles)
+        .add("totalRecords", totalRecords)
+        .add("addedFiles", addedFiles)
+        .add("addedFilesSize", addedFilesSize)
+        .add("addedRecords", addedRecords)
+        .add("removedFilesSize", removedFilesSize)
+        .add("removedFiles", removedFiles)
+        .add("removedRecords", removedRecords)
+        .toString();
   }
 }

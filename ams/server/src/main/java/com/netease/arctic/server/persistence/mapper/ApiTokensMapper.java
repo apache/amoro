@@ -26,15 +26,14 @@ import org.apache.ibatis.annotations.Select;
 public interface ApiTokensMapper {
   String TABLE_NAME = "api_tokens";
 
-  @Select("select secret from " +
-          TABLE_NAME + " where apikey = #{apikey}")
-  String getSecretBykey(String apikey);
+  @Select("SELECT secret FROM " + TABLE_NAME + " WHERE apikey = #{apikey}")
+  String getSecretByKey(String apikey);
 
-  @Insert("insert into " + TABLE_NAME + " (apikey,secret,apply_time) values(#{apiTokens.apikey}," +
-          "#{apiTokens.secret},#{apiTokens.applyTime})")
+  @Insert("INSERT INTO " + TABLE_NAME + " (apikey, secret, apply_time) VALUES(#{apiTokens.apikey}, " +
+          "#{apiTokens.secret}, #{apiTokens.applyTime})")
   void insert(@Param("apiTokens") ApiTokens apiTokens);
 
-  @Insert("delete from " + TABLE_NAME + " where id = #{id}")
+  @Insert("DELETE FROM " + TABLE_NAME + " WHERE id = #{id}")
   void delToken(@Param("id") Integer id);
 
 }

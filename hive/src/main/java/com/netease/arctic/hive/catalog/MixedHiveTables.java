@@ -35,11 +35,15 @@ import java.util.Map;
 
 public class MixedHiveTables extends MixedTables {
 
-  private CachedHiveClientPool hiveClientPool;
+  private final CachedHiveClientPool hiveClientPool;
 
-  public MixedHiveTables(CatalogMeta catalogMeta, CachedHiveClientPool hiveClientPool) {
+  public MixedHiveTables(CatalogMeta catalogMeta) {
     super(catalogMeta);
-    this.hiveClientPool = hiveClientPool;
+    this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
+  }
+
+  CachedHiveClientPool getHiveClientPool() {
+    return hiveClientPool;
   }
 
   @Override
@@ -196,7 +200,8 @@ public class MixedHiveTables extends MixedTables {
         } else {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(tableMeta, schema, partitionSpec);
           hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(tableMeta.getProperties(), TableProperties.BASE_FILE_FORMAT,
+              FileFormat.valueOf(PropertyUtil.propertyAsString(tableMeta.getProperties(),
+                  TableProperties.BASE_FILE_FORMAT,
                   TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
           setProToHive(hiveTable, primaryKeySpec);
           client.createTable(hiveTable);

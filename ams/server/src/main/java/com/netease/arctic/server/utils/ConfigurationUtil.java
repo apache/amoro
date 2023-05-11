@@ -40,12 +40,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Utility class for {@link Configurations} related helper functions.
  */
-public class ConfigurationUtils {
+public class ConfigurationUtil {
 
   private static final String[] EMPTY = new String[0];
 
   // Make sure that we cannot instantiate this class
-  private ConfigurationUtils() {
+  private ConfigurationUtil() {
   }
 
   /**

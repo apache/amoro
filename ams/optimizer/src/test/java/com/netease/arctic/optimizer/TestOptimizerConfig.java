@@ -1,11 +1,12 @@
 package com.netease.arctic.optimizer;
 
-import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
 import org.kohsuke.args4j.CmdLineException;
 
-public class OptimizerConfigTest {
+import java.util.UUID;
+
+public class TestOptimizerConfig {
 
   @Test
   public void testParseArguments() throws CmdLineException {

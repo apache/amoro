@@ -25,7 +25,7 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
@@ -135,7 +135,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
-    String directory = TableFileUtils.getFileDir(path);
+    String directory = TableFileUtil.getFileDir(path);
     long now = System.currentTimeMillis();
     IllegalArgumentException illegalArgumentException =
         Assert.assertThrows("should not successfully move a directory to trash",
@@ -157,7 +157,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
-    String directory = TableFileUtils.getFileDir(path);
+    String directory = TableFileUtil.getFileDir(path);
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
     String fileLocationInTrash =
@@ -266,7 +266,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   private String getTableRootLocation(ArcticTable table) {
     if (!ArcticTableUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
-      return TableFileUtils.getFileDir(table.location());
+      return TableFileUtil.getFileDir(table.location());
     } else {
       return table.location();
     }
