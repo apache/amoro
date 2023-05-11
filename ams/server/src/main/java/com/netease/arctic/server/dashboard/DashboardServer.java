@@ -51,7 +51,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -77,10 +77,11 @@ public class DashboardServer {
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
+  private final TerminalManager terminalManager;
 
   public DashboardServer(Configurations serviceConfig, TableService tableService,
                          OptimizerManager optimizerManager) {
-    PlatformFileManager platformFileManager = new PlatformFileManager(serviceConfig);
+    PlatformFileManager platformFileManager = new PlatformFileManager();
     this.serviceConfig = serviceConfig;
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
@@ -91,7 +92,7 @@ public class DashboardServer {
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
     this.tableController = new TableController(tableService, tableDescriptor);
-    TerminalManager terminalManager = new TerminalManager(serviceConfig, tableService);
+    this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
   }
@@ -102,16 +103,17 @@ public class DashboardServer {
   // read index.html content
   public String getFileContent() throws IOException {
     if ("".equals(indexHtml)) {
-      try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html");
-          InputStreamReader isr = new InputStreamReader(fileName, Charset.forName("UTF-8").newDecoder());
-          BufferedReader br = new BufferedReader(isr)) {
-        StringBuffer sb = new StringBuffer();
-        String line;
-        while ((line = br.readLine()) != null) {
-          //process the line
-          sb.append(line);
+      try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
+        try (InputStreamReader isr = new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
+            BufferedReader br = new BufferedReader(isr)) {
+          StringBuilder sb = new StringBuilder();
+          String line;
+          while ((line = br.readLine()) != null) {
+            //process the line
+            sb.append(line);
+          }
+          indexHtml = sb.toString();
         }
-        indexHtml = sb.toString();
       }
     }
     return indexHtml;
@@ -121,7 +123,7 @@ public class DashboardServer {
     app = Javalin.create(config -> {
       config.addStaticFiles(staticFiles -> {
         staticFiles.hostedPath = "/";
-        // change to host files on a subpath, like '/assets'
+        // change to host files on a sub path, like '/assets'
         staticFiles.directory = "/static";
         // the directory where your files are located
         staticFiles.location = Location.CLASSPATH;
@@ -135,10 +137,10 @@ public class DashboardServer {
         staticFiles.skipFileFunction = req -> false;
         // you can use this to skip certain files in the dir, based on the HttpServletRequest
       });
-      config.sessionHandler(() -> new SessionHandler());
+      config.sessionHandler(SessionHandler::new);
       config.enableCorsForAllOrigins();
     });
-    Integer port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
+    int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
     app.start(port);
     LOG.info("Javalin Rest server start at {}!!!", port);
 
@@ -155,8 +157,9 @@ public class DashboardServer {
               ctx.queryParam("signature"), ctx.queryParamMap());
         } else if (needLoginCheck(uriPath)) {
           if (null == ctx.sessionAttribute("user")) {
-            LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
-                ctx.sessionAttributeMap()));
+            ctx.sessionAttributeMap();
+            LOG.info("session info: {}", JSONObject.toJSONString(
+                            ctx.sessionAttributeMap()));
             throw new ForbiddenException();
           }
         }
@@ -166,18 +169,18 @@ public class DashboardServer {
     app.routes(() -> {
       /*backend routers*/
       path("", () -> {
-        //  /docs/latest can't be locationed to the index.html, so we add rule to redict to it.
+        //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
         get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
         // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
         get("/{page}", ctx -> ctx.html(getFileContent()));
         get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
       });
       path("/ams/v1", () -> {
-        /** login controller**/
+        // login controller
         get("/login/current", loginController::getCurrent);
         post("/login", loginController::login);
 
-        /**  table controller **/
+        // table controller
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
@@ -198,7 +201,7 @@ public class DashboardServer {
         get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
         get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
         get("/catalogs", tableController::getCatalogs);
-        /** catalog controller **/
+        // catalog controller
         post("/catalogs", catalogController::createCatalog);
         // make sure types is before
         get("/catalogs/types", catalogController::getCatalogTypeList);
@@ -209,7 +212,7 @@ public class DashboardServer {
         put("/catalogs/{catalogName}", catalogController::updateCatalog);
         get("/catalogs/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
         get("/catalogs/{catalogName}/config/{type}/{key}", catalogController::getCatalogConfFileContent);
-        /** optimize controller **/
+        // optimize controller
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
         get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
@@ -217,7 +220,7 @@ public class DashboardServer {
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
 
-        /** console controller **/
+        // console controller
         get("/terminal/examples", terminalController::getExamples);
         get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
         post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
@@ -226,26 +229,24 @@ public class DashboardServer {
         put("/terminal/{sessionId}/stop", terminalController::stopSql);
         get("/terminal/latestInfos/", terminalController::getLatestInfo);
 
-        /** file controller **/
+        // file controller
         post("/files", platformFileInfoController::uploadFile);
         get("/files/{fileId}", platformFileInfoController::downloadFile);
 
-        /** overview controller **/
-
-        /** setting controller **/
+        // setting controller
         get("/settings/containers", settingController::getContainerSetting);
         get("/settings/system", settingController::getSystemSetting);
 
-        /** health check **/
+        // health check
         get("/health/status", healthCheckController::healthCheck);
 
-        /** version controller **/
+        // version controller
         get("/versionInfo", versionController::getVersionInfo);
       });
       // for open api
       path("/api/ams/v1", () -> {
 
-        /**  table controller **/
+        // table controller
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
@@ -267,7 +268,7 @@ public class DashboardServer {
         get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
         get("/catalogs", tableController::getCatalogs);
 
-        /** optimize controller **/
+        // optimize controller
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
         get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
@@ -275,7 +276,7 @@ public class DashboardServer {
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
 
-        /** console controller **/
+        // console controller
         get("/terminal/examples", terminalController::getExamples);
         get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
         post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
@@ -284,10 +285,10 @@ public class DashboardServer {
         put("/terminal/{sessionId}/stop", terminalController::stopSql);
         get("/terminal/latestInfos/", terminalController::getLatestInfo);
 
-        /** health check **/
+        // health check
         get("/health/status", healthCheckController::healthCheck);
 
-        /** version controller **/
+        // version controller
         get("/versionInfo", versionController::getVersionInfo);
       });
     });
@@ -309,7 +310,6 @@ public class DashboardServer {
         } catch (Exception fe) {
           LOG.error("Failed to get index.html {}", fe.getMessage(), fe);
         }
-        return;
       } else if (e instanceof SignatureCheckException) {
         ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
       } else {
@@ -319,18 +319,19 @@ public class DashboardServer {
     });
 
     // default response handle
-    app.error(HttpCode.NOT_FOUND.getStatus(), ctx -> {
-      ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
-    });
+    app.error(HttpCode.NOT_FOUND.getStatus(), ctx ->
+        ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", "")));
 
-    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx -> {
-      ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
-    });
+    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx ->
+        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", "")));
   }
 
   public void stopRestServer() {
     if (app != null) {
       app.stop();
+    }
+    if (terminalManager != null) {
+      terminalManager.dispose();
     }
   }
 
@@ -383,7 +384,7 @@ public class DashboardServer {
     long receive = System.currentTimeMillis();
     APITokenManager apiTokenService = new APITokenManager();
     try {
-      //get secrect
+      //get secret
       String secrete = apiTokenService.getSecretByKey(apiKey);
 
       if (secrete == null) {
@@ -414,7 +415,7 @@ public class DashboardServer {
         throw new SignatureCheckException();
       }
     } catch (Exception e) {
-      LOG.error("api doFilter error. ex:{}", e);
+      LOG.error("api doFilter error.", e);
       throw new SignatureCheckException();
     } finally {
       LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);

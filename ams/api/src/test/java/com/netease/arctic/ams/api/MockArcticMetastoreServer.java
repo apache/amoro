@@ -18,8 +18,6 @@
 
 package com.netease.arctic.ams.api;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
