@@ -46,7 +46,7 @@ public class IcebergTableUtil {
     Set<String> validFilesPath = new HashSet<>();
 
     TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
-        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES)
+        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
         .allEntries().build();
     for (IcebergFileEntry entry : manifestReader.entries()) {
       validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
