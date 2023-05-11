@@ -19,13 +19,12 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.SequenceNumberFetcher;
+import com.netease.arctic.utils.TableTypeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -43,14 +41,15 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private static final int MAX_INPUT_FILE_COUNT_PER_THREAD = 5000;
   private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5 * 1024 * 1024 * 1024;
 
-  private Set<String> pendingPartitions;
+  private final Set<String> pendingPartitions;
 
   protected long processId;
-  protected long targetSnapshotId;
-  protected double availableCore;
-  private long planTime = System.currentTimeMillis();
-  private int idGenerator = 1;
+  // TODO check it
+  private final long targetSnapshotId;
+  private final double availableCore;
+  private final long planTime;
   private OptimizingType optimizingType = OptimizingType.MINOR;
+  private final PartitionPlannerFactory partitionPlannerFactory;
 
   public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
     super(tableRuntime);
@@ -58,7 +57,19 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
     this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
     this.availableCore = availableCore;
-    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, System.currentTimeMillis());
+    this.planTime = System.currentTimeMillis();
+    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
+    this.partitionPlannerFactory = new PartitionPlannerFactory(this.arcticTable, this.tableRuntime, this.planTime);
+  }
+
+  @Override
+  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
+    return partitionPlannerFactory.buildPartitionPlanner(partitionPath);
+  }
+
+  @Override
+  protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
+    return pendingPartitions::contains;
   }
 
   public long getTargetSnapshotId() {
@@ -108,22 +119,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return tasks;
   }
 
-  private OptimizingTask buildTask(RewriteFilesInput input) {
-    return new OptimizingTask(new OptimizingTaskId(processId, idGenerator++));
-  }
-
-  protected boolean filterPartition(String partition) {
-    return !pendingPartitions.contains(partition);
-  }
-
-  public ArcticTable getArcticTable() {
-    return arcticTable;
-  }
-
-  public TableRuntime getTableRuntime() {
-    return tableRuntime;
-  }
-
   public long getPlanTime() {
     return planTime;
   }
@@ -134,5 +129,35 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public long getProcessId() {
     return processId;
+  }
+
+  public static class PartitionPlannerFactory {
+    private final ArcticTable arcticTable;
+    private final TableRuntime tableRuntime;
+    private final String hiveLocation;
+    private final long planTime;
+
+    public PartitionPlannerFactory(ArcticTable arcticTable, TableRuntime tableRuntime, long planTime) {
+      this.arcticTable = arcticTable;
+      this.tableRuntime = tableRuntime;
+      this.planTime = planTime;
+      if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+        this.hiveLocation = (((SupportHive) arcticTable).hiveLocation());
+      } else {
+        this.hiveLocation = null;
+      }
+    }
+
+    public AbstractPartitionPlan buildPartitionPlanner(String partitionPath) {
+      if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+        return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
+      } else {
+        if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+          return new MixedHivePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+        } else {
+          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+        }
+      }
+    }
   }
 }
