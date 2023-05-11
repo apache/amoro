@@ -8,7 +8,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileStatus;
@@ -75,6 +75,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected StructLikeMap<Partition> partitionToDelete;
   protected StructLikeMap<Partition> partitionToCreate;
   protected final StructLikeMap<Partition> partitionToAlter;
+  protected final StructLikeMap<Partition> partitionToAlterLocation;
   protected String unpartitionTableLocation;
   protected Long txId = null;
   protected boolean validateLocation = true;
@@ -101,6 +102,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.partitionToAlter = StructLikeMap.create(table.spec().partitionType());
     this.partitionToCreate = StructLikeMap.create(table.spec().partitionType());
     this.partitionToDelete = StructLikeMap.create(table.spec().partitionType());
+    this.partitionToAlterLocation = StructLikeMap.create(table.spec().partitionType());
   }
 
   @Override
@@ -185,7 +187,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     for (DataFile d : addFiles) {
       List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(d.partition(), partitionSchema);
       String value = Joiner.on("/").join(partitionValues);
-      String location = TableFileUtils.getFileDir(d.path().toString());
+      String location = TableFileUtil.getFileDir(d.path().toString());
       partitionLocationMap.put(value, location);
       if (!partitionDataFileMap.containsKey(value)) {
         partitionDataFileMap.put(value, Lists.newArrayList());
@@ -273,7 +275,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkCreatePartitionDataFiles(List<DataFile> addFiles, String partitionLocation) {
     Path partitionPath = new Path(partitionLocation);
     for (DataFile df : addFiles) {
-      String fileDir = TableFileUtils.getFileDir(df.path().toString());
+      String fileDir = TableFileUtil.getFileDir(df.path().toString());
       Path dirPath = new Path(fileDir);
       if (!partitionPath.equals(dirPath)) {
         throw new CannotAlterHiveLocationException(
@@ -293,8 +295,10 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (isUnPartitioned) {
       partitionsToCheck.add(this.unpartitionTableLocation);
     } else {
-      partitionsToCheck = this.partitionToCreate.values()
-          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+      partitionsToCheck.addAll(this.partitionToCreate.values()
+          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
+      partitionsToCheck.addAll(this.partitionToAlterLocation.values()
+          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
     }
     for (String partitionLocation: partitionsToCheck) {
       List<String> addFilesPathCollect = addFiles.stream()
@@ -302,8 +306,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       List<String> deleteFilesPathCollect = deleteFiles.stream()
           .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
       try (ArcticFileIO io = table.io()) {
-        List<FileStatus> exisitedFiles = io.list(partitionLocation);
-        for (FileStatus filePath: exisitedFiles) {
+        List<FileStatus> existedFiles = io.list(partitionLocation);
+        for (FileStatus filePath: existedFiles) {
           if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
               !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
             io.deleteFile(String.valueOf(filePath.getPath().toString()));
@@ -348,6 +352,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         } else {
           // this partition is need to alter, rather than delete
           partitionToAlter.put(entry.getKey(), entry.getValue());
+          partitionToAlterLocation.put(entry.getKey(), entry.getValue());
           partitionToDelete.remove(entry.getKey());
           continue;
         }
@@ -423,7 +428,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (this.addFiles.isEmpty()) {
       unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
-      unpartitionTableLocation = TableFileUtils.getFileDir(this.addFiles.get(0).path().toString());
+      unpartitionTableLocation = TableFileUtil.getFileDir(this.addFiles.get(0).path().toString());
     }
   }
 

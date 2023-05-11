@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.response;
 
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 public class Response {
 
   private String message;
@@ -50,9 +52,9 @@ public class Response {
 
   @Override
   public String toString() {
-    return "Response{" +
-        "message='" + message + '\'' +
-        ", code=" + code +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("message", message)
+        .add("code", code)
+        .toString();
   }
 }

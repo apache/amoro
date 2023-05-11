@@ -41,7 +41,7 @@ public class PlatformFileInfoController extends RestBaseController {
   }
 
   /**
-   * uplaod file
+   * upload file
    *
    * @param ctx
    */

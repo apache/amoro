@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.client.OptimizingClientPools;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AbstractOptimizerOperator implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizerOperator.class);
-  private static final long CALL_AMS_INTERVAL = 5000;//1s
+  private static long CALL_AMS_INTERVAL = 5000;//5s
 
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
@@ -31,7 +32,9 @@ public class AbstractOptimizerOperator implements Serializable {
       try {
         return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()));
       } catch (Throwable t) {
-        if (shouldRetryLater(t)) {
+        if (shouldReturnNull(t)) {
+          return null;
+        } else if (shouldRetryLater(t)) {
           LOG.error("Call ams got an error and will try again later", t);
           waitAShortTime();
         } else {
@@ -49,9 +52,18 @@ public class AbstractOptimizerOperator implements Serializable {
       return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode() ||
           ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
     } else {
-      //Call ams again when got a unexpected error
+      //Call ams again when got an unexpected error
       return true;
     }
+  }
+
+  // Return null if got MISSING_RESULT error
+  private boolean shouldReturnNull(Throwable t) {
+    if (t instanceof TApplicationException) {
+      TApplicationException applicationException = (TApplicationException) t;
+      return applicationException.getType() == TApplicationException.MISSING_RESULT;
+    }
+    return false;
   }
 
   protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation) throws TException {
@@ -66,8 +78,9 @@ public class AbstractOptimizerOperator implements Serializable {
             //Reset the token when got a authorization error
             LOG.error("Got a authorization error while calling ams, reset token and wait for a new one", t);
             resetToken(token);
-          }
-          if (shouldRetryLater(t)) {
+          } else if (shouldReturnNull(t)) {
+            return null;
+          } else if (shouldRetryLater(t)) {
             LOG.error("Call ams got an error and will try again later", t);
             waitAShortTime();
           } else {

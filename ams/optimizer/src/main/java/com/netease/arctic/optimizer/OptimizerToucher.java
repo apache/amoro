@@ -3,7 +3,6 @@ package com.netease.arctic.optimizer;
 import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.PropertyNames;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -57,9 +56,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
           registerInfo.setMemoryMb(getConfig().getMemorySize());
           registerInfo.setGroupName(getConfig().getGroupName());
           registerInfo.setProperties(registerProperties);
-          if (registerProperties.containsKey(PropertyNames.RESOURCE_ID)) {
-            registerInfo.setResourceId(registerProperties.get(PropertyNames.RESOURCE_ID));
-          }
+          registerInfo.setResourceId(getConfig().getResourceId());
           return client.authenticate(registerInfo);
         });
         setToken(token);

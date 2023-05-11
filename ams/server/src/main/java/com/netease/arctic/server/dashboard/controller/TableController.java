@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -38,8 +39,8 @@ import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
-import com.netease.arctic.server.dashboard.utils.CommonUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
@@ -51,6 +52,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Collections;
+import java.util.Comparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -73,8 +76,8 @@ import java.util.stream.Collectors;
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
 
-  private TableService tableService;
-  private ServerTableDescriptor tableDescriptor;
+  private final TableService tableService;
+  private final ServerTableDescriptor tableDescriptor;
 
   public TableController(TableService tableService, ServerTableDescriptor tableDescriptor) {
     this.tableService = tableService;
@@ -90,7 +93,8 @@ public class TableController extends RestBaseController {
     String database = ctx.pathParam("db");
     String tableMame = ctx.pathParam("table");
 
-    Preconditions.checkArgument(catalog != null && database != null && tableMame != null,
+    Preconditions.checkArgument(
+        catalog != null && database != null && tableMame != null,
         "catalog.dabatase.tableName can not be null in any element");
     // get table from catalog
     if (!tableService.catalogExist(catalog)) {
@@ -108,11 +112,11 @@ public class TableController extends RestBaseController {
       Map<String, Object> baseMetrics = Maps.newHashMap();
       FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
       Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
-      baseMetrics.put("lastCommitTime", AmsUtils.longOrNull(baseSummary.get("visibleTime")));
-      baseMetrics.put("totalSize", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
+      baseMetrics.put("lastCommitTime", AmsUtil.longOrNull(baseSummary.get("visibleTime")));
+      baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
       baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
-      baseMetrics.put("averageFileSize", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
-      baseMetrics.put("baseWatermark", AmsUtils.longOrNull(serverTableMeta.getBaseWatermark()));
+      baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
+      baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
       tableSize += baseFilesStatistics.getTotalSize();
       tableFileCnt += baseFilesStatistics.getFileCnt();
       serverTableMeta.setBaseMetrics(baseMetrics);
@@ -121,11 +125,11 @@ public class TableController extends RestBaseController {
       if (tableBasicInfo.getChangeStatistics() != null) {
         FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
         Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-        changeMetrics.put("lastCommitTime", AmsUtils.longOrNull(changeSummary.get("visibleTime")));
-        changeMetrics.put("totalSize", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
+        changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
+        changeMetrics.put("totalSize", AmsUtil.byteToXB(changeFilesStatistics.getTotalSize()));
         changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-        changeMetrics.put("averageFileSize", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
-        changeMetrics.put("tableWatermark", AmsUtils.longOrNull(serverTableMeta.getTableWatermark()));
+        changeMetrics.put("averageFileSize", AmsUtil.byteToXB(changeFilesStatistics.getAverageSize()));
+        changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
         tableSize += changeFilesStatistics.getTotalSize();
         tableFileCnt += changeFilesStatistics.getFileCnt();
       } else {
@@ -141,10 +145,10 @@ public class TableController extends RestBaseController {
       Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       Map<String, Object> tableSummary = new HashMap<>();
-      tableSummary.put("size", AmsUtils.byteToXB(tableSize));
+      tableSummary.put("size", AmsUtil.byteToXB(tableSize));
       tableSummary.put("file", tableFileCnt);
-      tableSummary.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-      tableSummary.put("tableFormat", AmsUtils.formatString(tableFormat.name()));
+      tableSummary.put("averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+      tableSummary.put("tableFormat", AmsUtil.formatString(tableFormat.name()));
       serverTableMeta.setTableSummary(tableSummary);
       ctx.json(OkResponse.of(serverTableMeta));
     } catch (Throwable t) {
@@ -228,7 +232,7 @@ public class TableController extends RestBaseController {
   public void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
     Map<String, String> keyValues = new TreeMap<>();
     Map<String, String> tableProperties =
-        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
+        AmsUtil.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
     tableProperties.keySet().stream()
         .filter(key -> !key.endsWith("_DEFAULT"))
         .forEach(
@@ -236,7 +240,7 @@ public class TableController extends RestBaseController {
                 .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
     ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
     Map<String, String> hiveProperties =
-        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
+        AmsUtil.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
 
     hiveProperties.keySet().stream()
         .filter(key -> HiveTableProperties.EXPOSED.contains(hiveProperties.get(key)))
@@ -266,10 +270,11 @@ public class TableController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "no such table", ""));
     }
     List<BaseMajorCompactRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
-    List<BaseMajorCompactRecord> result = all.stream()
-        .skip(offset)
-        .limit(limit)
-        .collect(Collectors.toList());
+    List<BaseMajorCompactRecord> result =
+        all.stream().sorted(Comparator.comparingLong(BaseMajorCompactRecord::getCommitTime).reversed())
+            .skip(offset)
+            .limit(limit)
+            .collect(Collectors.toList());
     ctx.json(OkResponse.of(PageResult.of(result, all.size())));
   }
 
@@ -288,7 +293,7 @@ public class TableController extends RestBaseController {
           tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
       int offset = (page - 1) * pageSize;
       PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
-          offset, pageSize, AmsUtils::toTransactionsOfTable);
+          offset, pageSize, AmsUtil::toTransactionsOfTable);
       ctx.json(OkResponse.of(pageResult));
     } catch (Exception e) {
       LOG.error("Failed to list transactions ", e);
@@ -410,7 +415,7 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
 
-    String signCal = CommonUtils.generateTablePageToken(catalog, db, table);
+    String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
   }
 
@@ -502,8 +507,9 @@ public class TableController extends RestBaseController {
     return serverTableMeta;
   }
 
-  private void fillTableProperties(ServerTableMeta serverTableMeta,
-                                          Map<String, String> tableProperties) {
+  private void fillTableProperties(
+      ServerTableMeta serverTableMeta,
+      Map<String, String> tableProperties) {
     Map<String, String> properties = com.google.common.collect.Maps.newHashMap(tableProperties);
     serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
     serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));

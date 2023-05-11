@@ -49,6 +49,20 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return list.toArray(new IcebergDataFile[0]);
   }
 
+  public IcebergContentFile<?>[] allFiles() {
+    List<IcebergContentFile<?>> list = new ArrayList<>();
+    if (rewrittenDataFiles != null) {
+      Arrays.stream(rewrittenDataFiles).forEach(list::add);
+    }
+    if (rePosDeletedDataFiles != null) {
+      Arrays.stream(rePosDeletedDataFiles).forEach(list::add);
+    }
+    if (deleteFiles != null) {
+      Arrays.stream(deleteFiles).forEach(list::add);
+    }
+    return list.toArray(new IcebergDataFile[0]);
+  }
+
   public ArcticTable getTable() {
     return table;
   }

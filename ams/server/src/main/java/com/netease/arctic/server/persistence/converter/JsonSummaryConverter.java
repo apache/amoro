@@ -15,7 +15,7 @@ public class JsonSummaryConverter<T> extends BaseTypeHandler<T> {
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  private Class<T> clazz;
+  private final Class<T> clazz;
 
   public JsonSummaryConverter(Class<T> clazz) {
     if (clazz == null) {

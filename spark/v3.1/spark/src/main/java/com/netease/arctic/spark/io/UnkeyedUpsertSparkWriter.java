@@ -5,7 +5,6 @@ import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
-import com.netease.arctic.spark.io.ArcticSparkBaseTaskWriter;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

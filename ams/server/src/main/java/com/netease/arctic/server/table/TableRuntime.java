@@ -28,9 +28,10 @@ import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class TableRuntime extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(TableRuntime.class);
 
   private final TableRuntimeInitializer initializer;
-  private final TableRuntimeHandler headHandler;
+  private final TableRuntimeHandler tableChangeHandler;
   private final ServerTableIdentifier tableIdentifier;
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
   private final Lock lock = new ReentrantLock();
@@ -71,19 +72,16 @@ public class TableRuntime extends PersistentBase {
   protected TableRuntime(ServerTableIdentifier tableIdentifier, TableRuntimeInitializer initializer) {
     ArcticTable table = initializer.loadTable(tableIdentifier);
     this.initializer = initializer;
-    this.headHandler = initializer.getHeadHandler();
+    this.tableChangeHandler = initializer.getHeadHandler();
     this.tableIdentifier = tableIdentifier;
     this.tableConfiguration = TableConfiguration.parseConfig(table.properties());
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, this);
-    }
     persistTableRuntime();
   }
 
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeInitializer initializer) {
     this.initializer = initializer;
-    this.headHandler = initializer.getHeadHandler();
+    this.tableChangeHandler = initializer.getHeadHandler();
     this.tableIdentifier = ServerTableIdentifier.of(tableRuntimeMeta.getTableId(), tableRuntimeMeta.getCatalogName(),
         tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
@@ -117,8 +115,8 @@ public class TableRuntime extends PersistentBase {
     } finally {
       lock.unlock();
     }
-    if (headHandler != null) {
-      headHandler.fireTableRemoved(this);
+    if (tableChangeHandler != null) {
+      tableChangeHandler.fireTableRemoved(this);
     }
   }
 
@@ -131,8 +129,8 @@ public class TableRuntime extends PersistentBase {
         if (table.isKeyedTable()) {
           long lastSnapshotId = currentSnapshotId;
           long changeSnapshotId = currentChangeSnapshotId;
-          currentSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
-          currentChangeSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+          currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
+          currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
           if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
             hasNewSnapshots = true;
             LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
@@ -154,11 +152,11 @@ public class TableRuntime extends PersistentBase {
         if (hasNewSnapshots || updateConfigInternal(table.properties())) {
           persistUpdatingRuntime();
         }
-        if (configuration != tableConfiguration && headHandler != null) {
-          headHandler.fireConfigChanged(this, configuration);
+        if (configuration != tableConfiguration && tableChangeHandler != null) {
+          tableChangeHandler.fireConfigChanged(this, configuration);
         }
-        if (optimizingStatus == OptimizingStatus.PENDING && headHandler != null) {
-          headHandler.fireStatusChanged(this, OptimizingStatus.IDLE);
+        if (optimizingStatus == OptimizingStatus.PENDING && tableChangeHandler != null) {
+          tableChangeHandler.fireStatusChanged(this, OptimizingStatus.IDLE);
         }
       }
     } finally {
@@ -188,8 +186,8 @@ public class TableRuntime extends PersistentBase {
     try {
       if (updateConfigInternal(properties)) {
         persistUpdatingRuntime();
-        if (headHandler != null) {
-          headHandler.fireConfigChanged(this, originalConfig);
+        if (tableChangeHandler != null) {
+          tableChangeHandler.fireConfigChanged(this, originalConfig);
         }
       }
     } finally {
@@ -200,7 +198,7 @@ public class TableRuntime extends PersistentBase {
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
     if (!tableConfiguration.equals(newTableConfig)) {
-      if (!Objects.equals(this.optimizerGroup, getOptimizerGroup())) {
+      if (!Objects.equals(this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
         if (optimizingProcess != null) {
           optimizingProcess.close();
         }
@@ -221,8 +219,8 @@ public class TableRuntime extends PersistentBase {
       this.currentStatusStartTime = System.currentTimeMillis();
       this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
       persistUpdatingRuntime();
-      if (headHandler != null) {
-        headHandler.fireStatusChanged(this, originalStatus);
+      if (tableChangeHandler != null) {
+        tableChangeHandler.fireStatusChanged(this, originalStatus);
       }
     } finally {
       lock.unlock();
@@ -236,8 +234,8 @@ public class TableRuntime extends PersistentBase {
       this.currentStatusStartTime = System.currentTimeMillis();
       this.optimizingStatus = OptimizingStatus.COMMITTING;
       persistUpdatingRuntime();
-      if (headHandler != null) {
-        headHandler.fireStatusChanged(this, originalStatus);
+      if (tableChangeHandler != null) {
+        tableChangeHandler.fireStatusChanged(this, originalStatus);
       }
     } finally {
       lock.unlock();
@@ -279,10 +277,10 @@ public class TableRuntime extends PersistentBase {
         }
       }
       optimizingProcess = null;
-      evaluatePendingInput(loadTable());
       persistUpdatingRuntime();
-      if (headHandler != null) {
-        headHandler.fireStatusChanged(this, originalStatus);
+      refresh();
+      if (tableChangeHandler != null) {
+        tableChangeHandler.fireStatusChanged(this, originalStatus);
       }
     } finally {
       lock.unlock();
@@ -369,8 +367,12 @@ public class TableRuntime extends PersistentBase {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
 
-  public int getMaxRetryCount() {
-    return tableConfiguration.getOptimizingConfig().getMaxRetryCount();
+  public int getMaxExecuteRetryCount() {
+    return tableConfiguration.getOptimizingConfig().getMaxExecuteRetryCount();
+  }
+
+  public int getMaxCommitRetryCount() {
+    return tableConfiguration.getOptimizingConfig().getMaxCommitRetryCount();
   }
 
   public long getNewestProcessId() {
@@ -379,20 +381,23 @@ public class TableRuntime extends PersistentBase {
 
   @Override
   public String toString() {
-    return "TableOptimizingRuntime{" +
-        "tableIdentifier=" + tableIdentifier +
-        ", currentSnapshotId=" + currentSnapshotId +
-        ", currentChangeSnapshotId=" + currentChangeSnapshotId +
-        ", status=" + optimizingStatus +
-        ", currentStatusStartTime=" + currentStatusStartTime +
-        ", lastMajorOptimizingTime=" + lastMajorOptimizingTime +
-        ", lastFullOptimizingTime=" + lastFullOptimizingTime +
-        ", lastMinorOptimizingTime=" + lastMinorOptimizingTime +
-        ", tableConfiguration=" + tableConfiguration +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("currentSnapshotId", currentSnapshotId)
+        .add("lastOptimizedSnapshotId", lastOptimizedSnapshotId)
+        .add("optimizingStatus", optimizingStatus)
+        .add("currentStatusStartTime", currentStatusStartTime)
+        .add("lastMajorOptimizingTime", lastMajorOptimizingTime)
+        .add("lastFullOptimizingTime", lastFullOptimizingTime)
+        .add("lastMinorOptimizingTime", lastMinorOptimizingTime)
+        .add("tableConfiguration", tableConfiguration)
+        .toString();
   }
 
   public long getQuotaTime() {
+    if (optimizingProcess == null ) {
+      return 0;
+    }
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME;
     taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));

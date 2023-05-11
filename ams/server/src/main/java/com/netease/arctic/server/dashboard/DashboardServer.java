@@ -31,7 +31,7 @@ import com.netease.arctic.server.dashboard.controller.TableController;
 import com.netease.arctic.server.dashboard.controller.TerminalController;
 import com.netease.arctic.server.dashboard.controller.VersionController;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
-import com.netease.arctic.server.dashboard.utils.CommonUtils;
+import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
@@ -148,7 +148,7 @@ public class DashboardServer {
       String token = ctx.queryParam("token");
       // if token of api request is not empty, so we check the query by token first
       if (StringUtils.isNotEmpty(token)) {
-        CommonUtils.checkSinglePageToken(ctx);
+        CommonUtil.checkSinglePageToken(ctx);
       } else {
         if (needApiKeyCheck(uriPath)) {
           checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),

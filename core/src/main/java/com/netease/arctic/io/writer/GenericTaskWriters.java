@@ -19,8 +19,12 @@
 package com.netease.arctic.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
@@ -39,13 +43,13 @@ import java.util.Locale;
  */
 public class GenericTaskWriters {
 
-  public static Builder builderFor(KeyedTable table) {
+  public static Builder builderFor(ArcticTable table) {
     return new Builder(table);
   }
 
   public static class Builder {
 
-    private final KeyedTable table;
+    private final ArcticTable table;
 
     private Long transactionId;
     private int partitionId = 0;
@@ -53,7 +57,7 @@ public class GenericTaskWriters {
     private ChangeAction changeAction = ChangeAction.INSERT;
     private boolean orderedWriter = false;
 
-    Builder(KeyedTable table) {
+    Builder(ArcticTable table) {
       this.table = table;
     }
 
@@ -90,21 +94,23 @@ public class GenericTaskWriters {
           TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
       return new GenericBaseTaskWriter(
           fileFormat,
-          new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
-          new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-              table.baseTable().encryption(), partitionId, taskId, transactionId),
-          table.io(), fileSizeBytes, mask, table.baseTable().schema(),
-          table.spec(), table.primaryKeySpec(), orderedWriter);
+          new GenericAppenderFactory(baseStore.schema(), table.spec()),
+          new CommonOutputFileFactory(baseStore.location(), table.spec(), fileFormat, table.io(),
+              baseStore.encryption(), partitionId, taskId, transactionId),
+          table.io(), fileSizeBytes, mask, baseStore.schema(), table.spec(),
+          table.isKeyedTable() ? table.asKeyedTable().primaryKeySpec() : PrimaryKeySpec.noPrimaryKey(), orderedWriter);
     }
 
     public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
       writeBasePreconditions();
+      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
-          new GenericAppenderFactory(table.baseTable().schema(), table.spec());
+          new GenericAppenderFactory(baseStore.schema(), table.spec());
       appenderFactory.set(
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
           MetricsModes.Full.get().toString());
@@ -112,26 +118,29 @@ public class GenericTaskWriters {
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
           MetricsModes.Full.get().toString());
       return new SortedPosDeleteWriter<>(appenderFactory,
-          new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-              table.baseTable().encryption(), partitionId, taskId, transactionId), table.io(),
+          new CommonOutputFileFactory(baseStore.location(), table.spec(), fileFormat, table.io(),
+              baseStore.encryption(), partitionId, taskId, transactionId), table.io(),
           fileFormat, mask, index, partitionKey);
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
+      Preconditions.checkArgument(table.isKeyedTable(),
+          "Can only build change writer for table with primary key spec");
+      KeyedTable keyedTable = table.asKeyedTable();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.CHANGE_FILE_FORMAT,
           TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
           TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
           TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
-      Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
+      Schema changeWriteSchema = SchemaUtil.changeWriteSchema(keyedTable.changeTable().schema());
       return new GenericChangeTaskWriter(
           fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
-          new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
-              table.changeTable().encryption(), partitionId, taskId, transactionId),
-          table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-          changeAction, orderedWriter);
+          new CommonOutputFileFactory(keyedTable.changeLocation(), table.spec(), fileFormat, table.io(),
+              keyedTable.changeTable().encryption(), partitionId, taskId, transactionId),
+          keyedTable.io(), fileSizeBytes, mask, keyedTable.changeTable().schema(), table.spec(),
+          keyedTable.primaryKeySpec(), changeAction, orderedWriter);
     }
 
     private void writeBasePreconditions() {

@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.response;
 
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 public class OkResponse<R> extends Response {
   private static final OkResponse<?> OK = new OkResponse<>();
   private R result;
@@ -49,8 +51,8 @@ public class OkResponse<R> extends Response {
 
   @Override
   public String toString() {
-    return "OkResponse{" +
-        "result=" + result +
-        "} " + super.toString();
+    return MoreObjects.toStringHelper(this)
+        .add("result", result)
+        .toString();
   }
 }

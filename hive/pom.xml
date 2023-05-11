@@ -133,12 +133,9 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/ArcticHiveTestMain.java</include>
-                        <include>**/TestAdaptHiveReadConf.java</include>
-                    </includes>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
             </plugin>
         </plugins>

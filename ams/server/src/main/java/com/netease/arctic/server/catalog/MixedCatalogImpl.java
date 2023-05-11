@@ -2,10 +2,10 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
-import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public class MixedCatalogImpl extends InternalCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
-        .map(serverTableIdentifier -> serverTableIdentifier.getIdentifier())
+        .map(ServerTableIdentifier::getIdentifier)
         .collect(Collectors.toList());
   }
 
@@ -41,7 +41,7 @@ public class MixedCatalogImpl extends InternalCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
-        .map(serverTableIdentifier -> serverTableIdentifier.getIdentifier())
+        .map(ServerTableIdentifier::getIdentifier)
         .collect(Collectors.toList());
   }
 
@@ -62,7 +62,7 @@ public class MixedCatalogImpl extends InternalCatalog {
   public boolean exist(String database, String tableName) {
     ServerTableIdentifier tableIdentifier = getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableIdentifier(getMetadata().getCatalogName(), database, tableName));
-    return tableIdentifier == null ? false : getAs(TableMetaMapper.class, mapper ->
+    return tableIdentifier != null && getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableMetaById(tableIdentifier.getId())) != null;
   }
 

@@ -5,7 +5,7 @@ import java.util.Map;
 
 public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingInput {
 
-  private Map<String, String> options = new HashMap<>();
+  private final Map<String, String> options = new HashMap<>();
 
   @Override
   public void option(String name, String value) {

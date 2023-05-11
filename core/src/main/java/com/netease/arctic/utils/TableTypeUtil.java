@@ -1,6 +1,5 @@
 package com.netease.arctic.utils;
 
-import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.table.ArcticTable;
 

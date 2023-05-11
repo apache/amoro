@@ -31,42 +31,33 @@ import java.io.Serializable;
  */
 public class OptimizerConfig implements Serializable {
 
-  public static final String OPTIMIZER_AMS_URL = "ams-url";
-  public static final String AMS_HOME = "ams-home";
-  public static final String OPTIMIZER_EXECUTION_PARALLEL = "execution-parallel";
-  public static final String OPTIMIZER_MEMORY_SIZE = "memory-size";
-  public static final String OPTIMIZER_GROUP_NAME = "group-name";
-  public static final String OPTIMIZER_HEART_BEAT_INTERVAL = "heart-beat-interval";
-  public static final String OPTIMIZER_EXTEND_DISK_STORAGE = "extend-disk-storage";
-  public static final boolean OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT = false;
-  public static final String OPTIMIZER_DISK_STORAGE_PATH = "disk-storage-path";
-  public static final String OPTIMIZER_MEMORY_STORAGE_SIZE = "memory-storage-size";
-
-  @Option(name = "-a", aliases = "--" + OPTIMIZER_AMS_URL, usage = "The ams url", required = true)
+  @Option(name = "-a", aliases = "--" + PropertyNames.OPTIMIZER_AMS_URL, usage = "The ams url", required = true)
   private String amsUrl;
 
-  @Option(name = "-p", aliases = "--" + OPTIMIZER_EXECUTION_PARALLEL,
+  @Option(name = "-p", aliases = "--" + PropertyNames.OPTIMIZER_EXECUTION_PARALLEL,
       usage = "Optimizer execution parallel", required = true)
   private int executionParallel;
 
-  @Option(name = "-m", aliases = "--" + OPTIMIZER_MEMORY_SIZE, usage = "Optimizer memory size(MB)", required = true)
+  @Option(name = "-m", aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_SIZE,
+      usage = "Optimizer memory size(MB)", required = true)
   private int memorySize;
 
-  @Option(name = "-g", aliases = "--" + OPTIMIZER_GROUP_NAME, usage = "Group name optimizer belong", required = true)
+  @Option(name = "-g", aliases = "--" + PropertyNames.OPTIMIZER_GROUP_NAME,
+      usage = "Group name optimizer belong", required = true)
   private String groupName;
 
-  @Option(name = "-hb", aliases = "--" + OPTIMIZER_HEART_BEAT_INTERVAL,
+  @Option(name = "-hb", aliases = "--" + PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
       usage = "Heart beat interval with ams(ms), default 10s")
   private long heartBeat = 10000; // 10 s
 
-  @Option(name = "-eds", aliases = "--" + OPTIMIZER_EXTEND_DISK_STORAGE,
+  @Option(name = "-eds", aliases = "--" + PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE,
       usage = "Whether extend storage to disk, default false")
   private boolean extendDiskStorage = false;
 
-  @Option(name = "-dsp", aliases = "--" + OPTIMIZER_DISK_STORAGE_PATH, usage = "Disk storage path")
+  @Option(name = "-dsp", aliases = "--" + PropertyNames.OPTIMIZER_DISK_STORAGE_PATH, usage = "Disk storage path")
   private String diskStoragePath;
 
-  @Option(name = "-msz", aliases = "--" + OPTIMIZER_MEMORY_STORAGE_SIZE,
+  @Option(name = "-msz", aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE,
       usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
   private long memoryStorageSize = 512; // 512 M
 

@@ -19,12 +19,9 @@
 package com.netease.arctic.data;
 
 import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.FileFormat;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -96,7 +93,7 @@ public class FileNameRules {
    * @return fileMeta
    */
   public static DefaultKeyedFile.FileMeta parseChange(String path, long sequenceNumber) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
       DataFileType type;
@@ -120,7 +117,7 @@ public class FileNameRules {
    * @return fileMeta
    */
   public static DefaultKeyedFile.FileMeta parseBase(String path) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
@@ -143,7 +140,7 @@ public class FileNameRules {
    * @return file type, return INSERT_FILE if is not arctic file format
    */
   public static DataFileType parseFileTypeForChange(String path) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
       return DataFileType.ofShortName(matcher.group(2));
@@ -159,7 +156,7 @@ public class FileNameRules {
    * @return file type, return BASE_FILE if is not arctic file format
    */
   public static DataFileType parseFileTypeForBase(String path) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
       DataFileType type;
@@ -197,7 +194,7 @@ public class FileNameRules {
    * @return node, return node(0,0) if path is not arctic file format.
    */
   public static DataTreeNode parseFileNodeFromFileName(String path) {
-    path = TableFileUtils.getFileName(path);
+    path = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(path);
     if (matchArcticFileFormat(matcher)) {
       long nodeId = Long.parseLong(matcher.group(1));
@@ -214,7 +211,7 @@ public class FileNameRules {
    * @return transactionId, return 0 if path is not arctic file format.
    */
   public static long parseTransactionId(String path) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
       return Long.parseLong(matcher.group(3));
@@ -241,7 +238,7 @@ public class FileNameRules {
    * @return true if is arctic file format
    */
   public static boolean isArcticFileFormat(String path) {
-    String fileName = TableFileUtils.getFileName(path);
+    String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     return matchArcticFileFormat(matcher);
   }

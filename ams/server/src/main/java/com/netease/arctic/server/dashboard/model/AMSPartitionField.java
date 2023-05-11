@@ -80,10 +80,6 @@ public class AMSPartitionField {
     this.sourceFieldId = sourceFieldId;
   }
 
-  /**
-   *
-   * @return
-   */
   public static AMSPartitionField buildFromPartitionSpec(Schema schema, PartitionField pf) {
     return new Builder()
             .field(pf.name())

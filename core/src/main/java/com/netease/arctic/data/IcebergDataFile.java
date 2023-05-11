@@ -121,4 +121,8 @@ public class IcebergDataFile extends IcebergContentFile<DataFile> implements Dat
   public DataFile copyWithoutStats() {
     return new IcebergDataFile(dataFile.copyWithoutStats(), getSequenceNumber());
   }
+
+  public DataFile internalDataFile() {
+    return dataFile;
+  }
 }

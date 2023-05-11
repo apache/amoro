@@ -33,7 +33,7 @@ import java.util.List;
 public interface CatalogMetaMapper {
   String TABLE_NAME = "catalog_metadata";
 
-  @Select("select catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties from " +
+  @Select("SELECT catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties FROM " +
       TABLE_NAME)
   @Results({
       @Result(property = "catalogName", column = "catalog_name"),
@@ -44,8 +44,8 @@ public interface CatalogMetaMapper {
   })
   List<CatalogMeta> getCatalogs();
 
-  @Select("select catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties from " +
-      TABLE_NAME + " where catalog_name = #{catalogName}")
+  @Select("SELECT catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties FROM " +
+      TABLE_NAME + " WHERE catalog_name = #{catalogName}")
   @Results({
       @Result(property = "catalogName", column = "catalog_name"),
       @Result(property = "catalogType", column = "catalog_type"),
@@ -55,41 +55,43 @@ public interface CatalogMetaMapper {
   })
   List<CatalogMeta> getCatalog(@Param("catalogName") String catalogName);
 
-  @Insert("insert into " + TABLE_NAME +
-      " (catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties) values " +
-      "(#{catalogMeta.catalogName}, #{catalogMeta.catalogType}, #{catalogMeta.storageConfigs, typeHandler=com" +
-      ".netease.arctic.server.persistence.converter.Map2StringConverter}, #{catalogMeta.authConfigs, " +
-      "typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}, #{catalogMeta" +
-      ".catalogProperties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
+  @Insert("INSERT INTO " + TABLE_NAME +
+      " (catalog_name, catalog_metastore, storage_configs, auth_configs, catalog_properties)" +
+      " VALUES (#{catalogMeta.catalogName}, #{catalogMeta.catalogType}," +
+      " #{catalogMeta.storageConfigs," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " #{catalogMeta.authConfigs, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " #{catalogMeta.catalogProperties," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
   void insertCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 
-  @Delete("delete from " + TABLE_NAME + " where catalog_name=#{catalogName}")
+  @Delete("DELETE FROM " + TABLE_NAME + " WHERE catalog_name = #{catalogName}")
   int deleteCatalog(@Param("catalogName") String catalogName);
 
-  @Update("update " + TABLE_NAME + " set catalog_metastore=#{catalogMeta.catalogType}," +
-      "storage_configs=#{catalogMeta.storageConfigs, typeHandler=" +
-      "com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
-      "auth_configs=#{catalogMeta.authConfigs, typeHandler=" +
-      "com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
-      "catalog_properties=#{catalogMeta.catalogProperties, typeHandler=" +
-      "com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
-      "  where catalog_name=#{catalogMeta.catalogName}")
+  @Update("UPDATE " + TABLE_NAME + " SET catalog_metastore = #{catalogMeta.catalogType}," +
+      " storage_configs = #{catalogMeta.storageConfigs," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " auth_configs=#{catalogMeta.authConfigs," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " catalog_properties=#{catalogMeta.catalogProperties," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
+      " WHERE catalog_name = #{catalogMeta.catalogName}")
   Integer updateCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 
-  @Select("select table_count from " + TABLE_NAME + " where catalog_name=#{catalogName}")
+  @Select("SELECT table_count FROM " + TABLE_NAME + " WHERE catalog_name = #{catalogName}")
   Integer selectTableCount(@Param("catalogName") String catalogName);
 
-  @Update("update " + TABLE_NAME + " set table_count=table_count+#{tableCount} where catalog_name=#{catalogName}")
+  @Update("UPDATE " + TABLE_NAME + " SET table_count = table_count + #{tableCount} WHERE catalog_name = #{catalogName}")
   Integer incTableCount(@Param("tableCount") Integer tableCount, @Param("catalogName") String catalogName);
 
-  @Update("update " + TABLE_NAME + " set database_count=database_count+#{databaseCount} " +
-      "where catalog_name=#{catalogName}")
+  @Update("UPDATE " + TABLE_NAME + " SET database_count = database_count + #{databaseCount}" +
+      " WHERE catalog_name = #{catalogName}")
   Integer incDatabaseCount(@Param("databaseCount") Integer databaseCount, @Param("catalogName") String catalogName);
 
-  @Update("update " + TABLE_NAME + " set table_count=table_count-#{tableCount} where catalog_name=#{catalogName}")
+  @Update("UPDATE " + TABLE_NAME + " SET table_count = table_count - #{tableCount} WHERE catalog_name = #{catalogName}")
   Integer decTableCount(@Param("tableCount") Integer tableCount, @Param("catalogName") String catalogName);
 
-  @Update("update " + TABLE_NAME + " set database_count=database_count-#{databaseCount} " +
-      "where catalog_name=#{catalogName}")
+  @Update("UPDATE " + TABLE_NAME + " SET database_count = database_count - #{databaseCount}" +
+      " WHERE catalog_name = #{catalogName}")
   Integer decDatabaseCount(@Param("databaseCount") Integer databaseCount, @Param("catalogName") String catalogName);
 }
