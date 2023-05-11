@@ -1,11 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing.plan;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -13,13 +29,11 @@ import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.glassfish.jersey.internal.guava.Sets;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,55 +56,38 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   private boolean findAnyDelete = false;
 
   public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
-                                   ArcticTable table, String partition) {
-    super(tableRuntime, table, partition);
+                                   ArcticTable table, String partition, long planTime) {
+    super(tableRuntime, table, partition, planTime);
   }
 
   @Override
-  public void addFile(DataFile dataFile, List<DeleteFile> deletes) {
-    addFile(dataFile, deletes, Collections.emptyList());
-  }
-
-  @Override
-  public void addFile(DataFile dataFile, List<DeleteFile> deletes, List<IcebergDataFile> changeDeletes) {
-    IcebergDataFile contentFile = createDataFile(dataFile);
-    if (isChangeFile(contentFile)) {
-      markSequence(contentFile.getSequenceNumber());
+  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (isChangeFile(dataFile)) {
+      markSequence(dataFile.getSequenceNumber());
     }
-    if (!deletes.isEmpty() || !changeDeletes.isEmpty()) {
+    if (!deletes.isEmpty()) {
       findAnyDelete = true;
     }
-    if (isFragmentFile(contentFile)) {
-      fragmentFiles.put(
-          contentFile,
-          deletes.stream().map(this::createDeleteFile).collect(Collectors.toList()));
+    if (isFragmentFile(dataFile)) {
+      fragmentFiles.put(dataFile, deletes);
       fragmentFileSize += dataFile.fileSizeInBytes();
       smallFileCount += 1;
     } else {
-      segmentFiles.put(
-          contentFile,
-          deletes.stream().map(this::createDeleteFile).collect(Collectors.toList()));
+      segmentFiles.put(dataFile, deletes);
       segmentFileSize += dataFile.fileSizeInBytes();
     }
-    for (DeleteFile deleteFile : deletes) {
-      if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
-        equalityRelatedFiles.add(contentFile);
+    for (IcebergContentFile<?> deleteFile : deletes) {
+      if (deleteFile.content() == FileContent.DATA) {
+        markSequence(deleteFile.getSequenceNumber());
+      }
+      if (deleteFile.content() == FileContent.EQUALITY_DELETES || deleteFile.content() == FileContent.DATA) {
+        equalityRelatedFiles.add(dataFile);
         equalityDeleteFileMap
             .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
-            .add(contentFile);
+            .add(dataFile);
         equalityDeleteBytes += deleteFile.fileSizeInBytes();
         smallFileCount += 1;
       }
-    }
-
-    for (IcebergDataFile deleteFile : changeDeletes) {
-      equalityRelatedFiles.add(contentFile);
-      equalityDeleteFileMap
-          .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
-          .add(contentFile);
-      equalityDeleteBytes += deleteFile.fileSizeInBytes();
-      smallFileCount += 1;
-      markSequence(contentFile.getSequenceNumber());
     }
   }
 
@@ -133,22 +130,6 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     return file.type() == DataFileType.INSERT_FILE;
   }
 
-  private IcebergDeleteFile createDeleteFile(DeleteFile delete) {
-    if (delete instanceof IcebergDeleteFile) {
-      return ((IcebergDeleteFile) delete);
-    } else {
-      throw new IllegalStateException("delete file must be IcebergDeleteFile " + delete.path().toString());
-    }
-  }
-
-  private IcebergDataFile createDataFile(DataFile dataFile) {
-    if (dataFile instanceof IcebergDataFile) {
-      return ((IcebergDataFile) dataFile);
-    } else {
-      throw new IllegalStateException("delete file must be IcebergDataFile " + dataFile.path().toString());
-    }
-  }
-
   @Override
   public boolean isNecessary() {
     if (taskSplitter == null) {
@@ -183,7 +164,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   public boolean partitionShouldFullOptimizing() {
     return config.getFullTriggerInterval() > 0 &&
-        currentTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   private class SubFileTreeTask {
@@ -306,7 +287,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       return partitionShouldFullOptimizing() ||
           smallFileCount >= config.getMinorLeastFileCount() ||
           config.getMinorLeastInterval() > 0 &&
-              currentTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval() &&
+              planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval() &&
               subFileTreeTasks.stream().anyMatch(SubFileTreeTask::hasRewritePosDataFiles);
     }
 

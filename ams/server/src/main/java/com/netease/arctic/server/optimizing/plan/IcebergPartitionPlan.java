@@ -19,9 +19,8 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.clearspring.analytics.util.Lists;
-import com.clearspring.analytics.util.Preconditions;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
@@ -29,82 +28,53 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.SequenceNumberFetcher;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.glassfish.jersey.internal.guava.Sets;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   //  private static final int MAJAR_FRAGEMENT_FILES_COUNT = 1000;
 
-  private final SequenceNumberFetcher sequenceNumberFetcher;
-
   private TaskSplitter taskSplitter;
-  private Map<IcebergDataFile, List<IcebergDeleteFile>> fragementFiles = Maps.newHashMap();
-  private Map<IcebergDataFile, List<IcebergDeleteFile>> segmentFiles = Maps.newHashMap();
+  private Map<IcebergDataFile, List<IcebergContentFile<?>>> fragementFiles = Maps.newHashMap();
+  private Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
   private Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
-  private Map<DeleteFile, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
+  private Map<IcebergContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
   private long fragementFileSize = 0;
   private long segmentFileSize = 0;
   private long positionalDeleteBytes = 0L;
   private long equalityDeleteBytes = 0L;
   private int smallFileCount = 0;
 
-  protected IcebergPartitionPlan(
-      TableRuntime tableRuntime, String partition, ArcticTable table,
-      SequenceNumberFetcher sequenceNumberFetcher) {
-    super(tableRuntime, table, partition);
-    this.sequenceNumberFetcher = sequenceNumberFetcher;
+  protected IcebergPartitionPlan(TableRuntime tableRuntime, String partition, ArcticTable table, long planTime) {
+    super(tableRuntime, table, partition, planTime);
   }
 
   @Override
-  public void addFile(DataFile dataFile, List<DeleteFile> deletes) {
-    addFile(dataFile, deletes, Collections.emptyList());
-  }
-
-  @Override
-  public void addFile(DataFile dataFile, List<DeleteFile> deletes, List<IcebergDataFile> changeDeleteFiles) {
-    Preconditions.checkArgument(changeDeleteFiles.isEmpty(),
-        "iceberg format table should not have change delete files");
-    IcebergDataFile contentFile = createDataFile(dataFile);
+  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     if (dataFile.fileSizeInBytes() <= fragmentSize) {
-      fragementFiles.put(
-          contentFile,
-          deletes.stream().map(delete -> createDeleteFile(delete)).collect(Collectors.toList()));
+      fragementFiles.put(dataFile, deletes);
       fragementFileSize += dataFile.fileSizeInBytes();
       smallFileCount += 1;
     } else {
-      segmentFiles.put(
-          contentFile,
-          deletes.stream().map(delete -> createDeleteFile(delete)).collect(Collectors.toList()));
+      segmentFiles.put(dataFile, deletes);
       segmentFileSize += dataFile.fileSizeInBytes();
     }
-    for (DeleteFile deleteFile : deletes) {
+    for (IcebergContentFile<?> deleteFile : deletes) {
       if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
-        equalityRelatedFiles.add(contentFile);
+        equalityRelatedFiles.add(dataFile);
         equalityDeleteFileMap
             .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
-            .add(contentFile);
+            .add(dataFile);
         equalityDeleteBytes += deleteFile.fileSizeInBytes();
         smallFileCount += 1;
       }
     }
-  }
-
-  private IcebergDataFile createDataFile(DataFile dataFile) {
-    return new IcebergDataFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
-  }
-
-  private IcebergDeleteFile createDeleteFile(DeleteFile deleteFile) {
-    return new IcebergDeleteFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
   }
 
   @Override
@@ -142,7 +112,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   private class TaskSplitter {
 
     Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    Set<IcebergDeleteFile> deleteFiles = Sets.newHashSet();
+    Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
     Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
 
     long cost = -1;
