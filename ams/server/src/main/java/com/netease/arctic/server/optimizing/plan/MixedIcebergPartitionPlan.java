@@ -32,7 +32,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.glassfish.jersey.internal.guava.Sets;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Map;
@@ -41,17 +41,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
-
-  private TaskSplitter taskSplitter;
-  private final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-  private final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-  private final Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
-  private final Map<ContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
-  private long fragmentFileSize = 0;
-  private long segmentFileSize = 0;
-  private long positionalDeleteBytes = 0L;
-  private long equalityDeleteBytes = 0L;
-  private int smallFileCount = 0;
 
   private boolean findAnyDelete = false;
 
@@ -103,7 +92,6 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   protected boolean findAnyDelete() {
-    checkAllFilesAdded();
     return findAnyDelete;
   }
 
@@ -131,35 +119,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  public boolean isNecessary() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.isNecessary();
-  }
-
-  @Override
-  public long getCost() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.getCost();
-  }
-
-  @Override
-  public OptimizingType getOptimizingType() {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.getOptimizingType();
-  }
-
-  @Override
-  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-    if (taskSplitter == null) {
-      taskSplitter = new TaskSplitter();
-    }
-    return taskSplitter.splitTasks(targetTaskCount);
+  protected AbstractPartitionPlan.TaskSplitter buildTaskSplitter() {
+    return new TaskSplitter();
   }
 
   public boolean partitionShouldFullOptimizing() {
@@ -168,14 +129,12 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   private class SubFileTreeTask {
-    FileTree subTree;
-    Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
-    Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
+    private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
+    private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
+    private final Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
     long cost = -1;
 
     public SubFileTreeTask(FileTree subTree) {
-      this.subTree = subTree;
       Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
       Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
       subTree.collectFragmentFiles(fragmentFiles);
@@ -203,10 +162,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
             rewritePosDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           } else {
-            long posDeleteCount = deleteFileSet.stream()
-                .filter(file -> file.content() == FileContent.POSITION_DELETES)
-                .count();
-            if (posDeleteCount > 1) {
+            boolean posDeleteExist = deleteFileSet.stream()
+                .anyMatch(file -> file.content() == FileContent.POSITION_DELETES);
+            if (posDeleteExist) {
               rewritePosDataFiles.add(icebergFile);
               deleteFiles.addAll(deleteFileSet);
             }
@@ -267,7 +225,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  private class TaskSplitter {
+  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
 
     private List<SubFileTreeTask> subFileTreeTasks;
 
