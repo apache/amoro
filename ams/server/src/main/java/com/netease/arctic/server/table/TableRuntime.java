@@ -37,6 +37,7 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -108,6 +109,13 @@ public class TableRuntime extends PersistentBase {
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+  }
+
+  @VisibleForTesting
+  public TableRuntime(ArcticTable table) {
+    this.initializer = null;
+    this.tableChangeHandler = null;
+    this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
   }
 
   protected void recover(OptimizingProcess optimizingProcess) {

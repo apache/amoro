@@ -160,6 +160,21 @@ public class DataTestHelpers {
     }
   }
 
+  public static List<DataFile> writeAndCommitBaseStore(
+      ArcticTable table, long txId, List<Record> records,
+      boolean orderedWrite) {
+    List<DataFile> dataFiles = writeBaseStore(table, txId, records, orderedWrite);
+    AppendFiles appendFiles;
+    if (table.isKeyedTable()) {
+      appendFiles = table.asKeyedTable().baseTable().newAppend();
+    } else {
+      appendFiles = table.asUnkeyedTable().newAppend();
+    }
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+    return dataFiles;
+  }
+
   public static List<DataFile> writeAndCommitChangeStore(
       KeyedTable keyedTable, long txId, ChangeAction action,
       List<Record> records) {
