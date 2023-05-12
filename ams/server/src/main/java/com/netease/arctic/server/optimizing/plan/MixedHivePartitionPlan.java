@@ -28,7 +28,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.List;
-import java.util.Map;
 
 public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
@@ -76,13 +75,13 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected void fillTaskProperties(Map<String, String> properties) {
+  protected void fillTaskProperties(OptimizingInputProperties properties) {
     super.fillTaskProperties(properties);
     if (partitionShouldFullOptimizing()) {
       if (moveFilesToHiveLocation()) {
-        properties.put(OptimizingInputProperties.MOVE_FILE_TO_HIVE_LOCATION, "true");
+        properties.needMoveFile2HiveLocation();
       } else {
-        properties.put(OptimizingInputProperties.OUTPUT_DIR, constructCustomHiveSubdirectory());
+        properties.setOutputDir(constructCustomHiveSubdirectory());
       }
     }
   }
