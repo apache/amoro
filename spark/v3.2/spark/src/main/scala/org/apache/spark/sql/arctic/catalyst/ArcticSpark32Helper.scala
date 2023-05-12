@@ -24,7 +24,7 @@ import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
 import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergTruncateTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.connector.catalog.Table
@@ -68,6 +68,8 @@ object ArcticSpark32Helper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
+      case TruncateTransform(n, ref) =>
+        IcebergTruncateTransform(resolve(ref.fieldNames), width = n)
       case sort: SortOrder =>
         val catalystChild = toCatalyst(sort.expression(), query)
         catalyst.expressions.SortOrder(
