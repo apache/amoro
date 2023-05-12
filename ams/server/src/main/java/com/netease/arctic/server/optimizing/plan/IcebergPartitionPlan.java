@@ -123,7 +123,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
           rewriteDataFiles.toArray(new IcebergDataFile[rewriteDataFiles.size()]),
           rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
           deleteFiles.toArray(new IcebergDeleteFile[deleteFiles.size()]),
-          tableObject.asUnkeyedTable());
+          tableObject);
       List<TaskDescriptor> tasks = Lists.newArrayList();
       OptimizingInputProperties properties = new OptimizingInputProperties();
       properties.setExecutorFactoryImpl(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL);

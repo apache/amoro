@@ -42,12 +42,12 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
+public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
 
   private boolean findAnyDelete = false;
 
-  public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
-                                   ArcticTable table, String partition, long planTime) {
+  public KeyedTablePartitionPlan(TableRuntime tableRuntime,
+                                 ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 
@@ -210,7 +210,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           rewriteDataFiles.toArray(new IcebergDataFile[rewriteDataFiles.size()]),
           rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
           deleteFiles.toArray(new IcebergContentFile[deleteFiles.size()]),
-          tableObject.asUnkeyedTable());
+          tableObject);
       OptimizingInputProperties properties = new OptimizingInputProperties();
       fillTaskProperties(properties);
       return new TaskDescriptor(partition, input, properties.getProperties());

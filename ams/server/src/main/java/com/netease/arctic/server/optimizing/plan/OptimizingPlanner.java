@@ -165,9 +165,17 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
-          return new MixedHivePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          if (arcticTable.isKeyedTable()) {
+            return new HiveKeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          } else {
+            return new HiveUnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          }
         } else {
-          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          if (arcticTable.isKeyedTable()) {
+            return new KeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          } else {
+            return new UnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          }
         }
       }
     }

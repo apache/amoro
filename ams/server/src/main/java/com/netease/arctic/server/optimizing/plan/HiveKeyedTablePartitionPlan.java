@@ -29,12 +29,12 @@ import com.netease.arctic.table.ArcticTable;
 
 import java.util.List;
 
-public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
+public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
 
   private final String hiveLocation;
 
-  public MixedHivePartitionPlan(TableRuntime tableRuntime,
-                                ArcticTable table, String partition, String hiveLocation, long planTime) {
+  public HiveKeyedTablePartitionPlan(TableRuntime tableRuntime,
+                                     ArcticTable table, String partition, String hiveLocation, long planTime) {
     super(tableRuntime, table, partition, planTime);
     this.hiveLocation = hiveLocation;
   }
