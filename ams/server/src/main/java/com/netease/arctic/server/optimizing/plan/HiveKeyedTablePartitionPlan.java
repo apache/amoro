@@ -41,7 +41,7 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
 
   @Override
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
+    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
       return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile.path().toString());
     } else if (file.type() == DataFileType.INSERT_FILE) {

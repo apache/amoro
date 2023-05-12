@@ -51,7 +51,7 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
   }
 
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
+    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
       return dataFile.fileSizeInBytes() <= fragmentSize;
     } else {

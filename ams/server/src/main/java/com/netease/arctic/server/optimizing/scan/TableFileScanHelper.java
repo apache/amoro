@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 
@@ -39,6 +40,14 @@ public interface TableFileScanHelper {
 
     public List<IcebergContentFile<?>> deleteFiles() {
       return deleteFiles;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("file", file)
+          .add("deleteFiles", deleteFiles)
+          .toString();
     }
   }
 
