@@ -43,14 +43,9 @@ import java.util.Locale;
  */
 public class GenericTaskWriters {
 
-  public static Builder builderFor(KeyedTable table) {
+  public static Builder builderFor(ArcticTable table) {
     return new Builder(table);
   }
-
-  public static Builder builderFor(UnkeyedTable table) {
-    return new Builder(table);
-  }
-
   public static class Builder {
 
     private final ArcticTable table;
