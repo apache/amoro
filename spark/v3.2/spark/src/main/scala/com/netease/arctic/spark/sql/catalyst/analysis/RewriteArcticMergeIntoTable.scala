@@ -30,7 +30,7 @@ import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSER
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.arctic.catalyst.{ArcticSpark33Helper, ExpressionHelper}
+import org.apache.spark.sql.arctic.catalyst.{ArcticSpark32Helper, ExpressionHelper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
@@ -235,7 +235,7 @@ case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[Logical
       rowIdAttrs,
       ArcticExtensionUtils.isKeyedTable(relation))
     val writeBuilder =
-      ArcticSpark33Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
+      ArcticSpark32Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
     val write = writeBuilder.build()
     ArcticRowLevelWrite(writeRelation, mergeRows, options, projections, Some(write))
   }
