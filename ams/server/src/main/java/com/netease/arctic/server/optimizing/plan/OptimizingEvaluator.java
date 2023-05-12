@@ -20,11 +20,11 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.MixedFormatTableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -80,8 +80,7 @@ public class OptimizingEvaluator {
       if (arcticTable.isUnkeyedTable()) {
         long baseSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asUnkeyedTable(), true);
         tableFileScanHelper =
-            new MixedFormatTableFileScanHelper(arcticTable, baseSnapshotId, ArcticServiceConstants.INVALID_SNAPSHOT_ID,
-                null, null);
+            new UnkeyedTableFileScanHelper(arcticTable.asUnkeyedTable(), baseSnapshotId);
       } else {
         long baseSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable(), true);
         StructLikeMap<Long> partitionOptimizedSequence =
@@ -89,8 +88,9 @@ public class OptimizingEvaluator {
         StructLikeMap<Long> legacyPartitionMaxTransactionId =
             TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
         long changeSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable(), true);
-        tableFileScanHelper = new MixedFormatTableFileScanHelper(arcticTable, baseSnapshotId, changeSnapshotId,
-            partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+        tableFileScanHelper =
+            new KeyedTableFileScanHelper(arcticTable.asKeyedTable(), baseSnapshotId, changeSnapshotId,
+                partitionOptimizedSequence, legacyPartitionMaxTransactionId);
       }
     }
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
