@@ -53,20 +53,23 @@ public class TerminalManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
 
-  private Configurations serviceConfig;
+  private static final int SESSION_TIMEOUT_CHECK_INTERVAL = 5 * 60 * 1000; // 5min
+
+  private final Configurations serviceConfig;
   private final AtomicLong threadPoolCount = new AtomicLong();
   private final TableService tableService;
-  TerminalSessionFactory sessionFactory;
-  int resultLimits = 1000;
-  boolean stopOnError = false;
+  private final TerminalSessionFactory sessionFactory;
+  private final int resultLimits;
+  private final boolean stopOnError;
 
-  int sessionTimeout = 30;
-  int sessionTimeoutCheckInterval = 5;
+  private final int sessionTimeout;
 
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
+  private final Thread gcThread;
+  private boolean stop = false;
 
-  ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
+  private final ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
       new LinkedBlockingQueue<>(),
       r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
@@ -78,9 +81,9 @@ public class TerminalManager {
     this.stopOnError = conf.getBoolean(ArcticManagementConf.TERMINAL_STOP_ON_ERROR);
     this.sessionTimeout = conf.getInteger(ArcticManagementConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
-    Thread cleanThread = new Thread(new SessionCleanTask());
-    cleanThread.setName("terminal-session-gc");
-    cleanThread.start();
+    gcThread = new Thread(new SessionCleanTask());
+    gcThread.setName("terminal-session-gc");
+    gcThread.start();
   }
 
   /**
@@ -231,6 +234,14 @@ public class TerminalManager {
     return new LatestSessionInfo(sessionId, script);
   }
 
+  public void dispose() {
+    stop = true;
+    if (gcThread != null) {
+      gcThread.interrupt();
+    }
+    executionPool.shutdown();
+  }
+
   // ========================== private method =========================
 
   private String getSessionId(String loginId, TableMetaStore auth, String catalog) {
@@ -321,9 +332,9 @@ public class TerminalManager {
     @Override
     public void run() {
       LOG.info("Terminal Session Clean Task started");
-      LOG.info("Terminal Session Clean Task, check interval: " + sessionTimeoutCheckInterval + " minutes");
+      LOG.info("Terminal Session Clean Task, check interval: " + SESSION_TIMEOUT_CHECK_INTERVAL + " ms");
       LOG.info("Terminal Session Timeout: " + sessionTimeout + " minutes");
-      while (true) {
+      while (!stop) {
         try {
           List<TerminalSessionContext> sessionToRelease = checkIdleSession();
           sessionToRelease.forEach(this::releaseSession);
@@ -334,9 +345,8 @@ public class TerminalManager {
           LOG.error("error when check and release session", t);
         }
 
-        final long sleepInMillis = sessionTimeoutCheckInterval * MINUTE_IN_MILLIS;
         try {
-          Thread.sleep(sleepInMillis);
+          TimeUnit.MILLISECONDS.sleep(SESSION_TIMEOUT_CHECK_INTERVAL);
         } catch (InterruptedException e) {
           LOG.error("Interrupted when sleep", e);
         }

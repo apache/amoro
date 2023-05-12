@@ -52,6 +52,13 @@ public abstract class TableRuntimeHandler {
     handleTableRemoved(tableRuntime);
   }
 
+  public final void dispose() {
+    if (next != null) {
+      next.doDispose();
+    }
+    doDispose();
+  }
+
   protected abstract void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);
 
   protected abstract void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
@@ -61,4 +68,6 @@ public abstract class TableRuntimeHandler {
   protected abstract void handleTableRemoved(TableRuntime tableRuntime);
 
   protected abstract void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList);
+
+  protected abstract void doDispose();
 }

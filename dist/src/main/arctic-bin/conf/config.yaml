@@ -49,7 +49,7 @@ ams:
 
 #  High availability configuration.
 #  ha:
-#    enable: "true"
+#    enabled: true
 #    cluster-name: "default"
 #    zookeeper-address: "127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183"
 

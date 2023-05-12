@@ -18,34 +18,26 @@
 
 package com.netease.arctic.ams.api.properties;
 
+import org.apache.curator.shaded.com.google.common.base.Strings;
+
 public class AmsHAProperties {
   private static final String ROOT_PATH = "/arctic/ams";
   private static final String LEADER_PATH = "/leader";
   private static final String MASTER_PATH = "/master";
-  private static final String NAMESPACE_DEFAULT = "/master";
+  private static final String NAMESPACE_DEFAULT = "default";
 
-  public static String getBasePath(String namespace) {
-    if (namespace.isEmpty()) {
-      namespace = getNamespaceDefault();
+  private static String getBasePath(String namespace) {
+    if (Strings.isNullOrEmpty(namespace)) {
+      namespace = NAMESPACE_DEFAULT;
     }
     return "/" + namespace + ROOT_PATH;
   }
 
   public static String getMasterPath(String namespace) {
-    if (namespace.isEmpty()) {
-      namespace = getNamespaceDefault();
-    }
-    return "/" + namespace + ROOT_PATH + MASTER_PATH;
+    return getBasePath(namespace) + MASTER_PATH;
   }
 
   public static String getLeaderPath(String namespace) {
-    if (namespace.isEmpty()) {
-      namespace = getNamespaceDefault();
-    }
-    return "/" + namespace + ROOT_PATH + LEADER_PATH;
-  }
-
-  public static String getNamespaceDefault() {
-    return NAMESPACE_DEFAULT;
+    return getBasePath(namespace) + LEADER_PATH;
   }
 }
