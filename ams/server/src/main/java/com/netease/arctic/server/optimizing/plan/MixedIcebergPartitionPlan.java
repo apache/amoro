@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
@@ -109,10 +109,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  protected void fillTaskProperties(Map<String, String> properties) {
-    properties.put(
-        OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
-        MixFormatRewriteExecutorFactory.class.getName());
+  protected void fillTaskProperties(OptimizingInputProperties properties) {
+    properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
   }
 
   private boolean isChangeFile(IcebergDataFile dataFile) {
@@ -213,9 +211,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
           deleteFiles.toArray(new IcebergContentFile[deleteFiles.size()]),
           tableObject.asUnkeyedTable());
-      Map<String, String> taskProperties = Maps.newHashMap();
-      fillTaskProperties(taskProperties);
-      return new TaskDescriptor(partition, input, taskProperties);
+      OptimizingInputProperties properties = new OptimizingInputProperties();
+      fillTaskProperties(properties);
+      return new TaskDescriptor(partition, input, properties.getProperties());
     }
 
     // TODO
