@@ -110,6 +110,7 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
     ArcticTable table = createTarget(schema, tableBuilder ->
         tableBuilder.withPrimaryKeySpec(keySpec)
             .withProperty(TableProperties.UPSERT_ENABLED, "false")
+            .withProperty(TableProperties.CHANGE_FILE_FORMAT, "AVRO")
             .withPartitionSpec(ptSpec));
 
     createViewSource(schema, source);
