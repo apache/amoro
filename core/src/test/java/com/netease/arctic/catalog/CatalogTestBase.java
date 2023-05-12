@@ -18,14 +18,10 @@
 
 package com.netease.arctic.catalog;
 
-import com.google.common.collect.Maps;
-import com.netease.arctic.TableTestHelpers;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
 import org.junit.Before;
@@ -34,28 +30,20 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.util.Map;
-
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public abstract class CatalogTestBase {
 
-  protected static final String TEST_CATALOG_NAME = TableTestHelpers.TEST_CATALOG_NAME;
   @ClassRule
   public static TestAms TEST_AMS = new TestAms();
-  private final TableFormat testFormat;
+  private final CatalogTestHelper testHelper;
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
   private ArcticCatalog catalog;
   private CatalogMeta catalogMeta;
   private Catalog icebergCatalog;
 
-  public CatalogTestBase(TableFormat testFormat) {
-    this.testFormat = testFormat;
+  public CatalogTestBase(CatalogTestHelper testHelper) {
+    this.testHelper = testHelper;
   }
 
   public static MockArcticMetastoreServer.AmsHandler getAmsHandler() {
@@ -64,34 +52,16 @@ public abstract class CatalogTestBase {
 
   @Before
   public void setupCatalog() throws IOException {
-    catalogMeta = buildCatalogMeta();
+    catalogMeta = testHelper.buildCatalogMeta(temp.newFolder().getPath());
     getAmsHandler().createCatalog(catalogMeta);
-  }
-
-  protected CatalogMeta buildCatalogMeta() throws IOException {
-    Map<String, String> properties = Maps.newHashMap();
-    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, temp.newFolder().getPath());
-    return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
-        properties, testFormat);
-  }
-
-  private String getCatalogType() {
-    switch (testFormat) {
-      case ICEBERG:
-        return CATALOG_TYPE_HADOOP;
-      case MIXED_ICEBERG:
-        return CATALOG_TYPE_AMS;
-      case MIXED_HIVE:
-        return CATALOG_TYPE_HIVE;
-      default:
-        throw new UnsupportedOperationException("Unsupported table format:" + testFormat);
-    }
   }
 
   @After
   public void dropCatalog() {
-    getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
-    catalog = null;
+    if (catalogMeta != null) {
+      getAmsHandler().dropCatalog(catalogMeta.getCatalogName());
+      catalog = null;
+    }
   }
 
   protected ArcticCatalog getCatalog() {
@@ -102,7 +72,7 @@ public abstract class CatalogTestBase {
   }
 
   protected String getCatalogUrl() {
-    return TEST_AMS.getServerUrl() + "/" + TEST_CATALOG_NAME;
+    return TEST_AMS.getServerUrl() + "/" + catalogMeta.getCatalogName();
   }
 
   protected CatalogMeta getCatalogMeta() {
@@ -110,24 +80,13 @@ public abstract class CatalogTestBase {
   }
 
   protected TableFormat getTestFormat() {
-    return testFormat;
+    return testHelper.tableFormat();
   }
 
   protected Catalog getIcebergCatalog() {
-    if (TableFormat.ICEBERG.equals(testFormat)) {
-      if (icebergCatalog == null) {
-        icebergCatalog = buildIcebergCatalog();
-      }
-      return icebergCatalog;
-    } else {
-      throw new UnsupportedOperationException("Cannot get iceberg catalog for table format:" + testFormat);
+    if (icebergCatalog == null) {
+      icebergCatalog = testHelper.buildIcebergCatalog(catalogMeta);
     }
-  }
-
-  protected Catalog buildIcebergCatalog() {
-    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
-    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
-        catalogProperties, new Configuration());
+    return icebergCatalog;
   }
 }

@@ -41,6 +41,12 @@
         <!--arctic-->
         <dependency>
             <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.14-iceberg-bridge</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <exclusions>
                 <exclusion>

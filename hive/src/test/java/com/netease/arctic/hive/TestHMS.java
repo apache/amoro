@@ -75,6 +75,10 @@ public class TestHMS extends ExternalResource {
     return mockHms.getMetastorePort();
   }
 
+  public String getWareHouseLocation() {
+    return mockHms.getWareHouseLocation();
+  }
+
   @Override
   public void before() throws Exception {
     if (SingletonResourceUtil.isUseSingletonResource()) {
