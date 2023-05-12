@@ -58,7 +58,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
         if (partitionFilter != null) {
           StructLike partition = task.file().partition();
           String partitionPath = partitionSpec.partitionToPath(partition);
-          if (partitionFilter.test(partitionPath)) {
+          if (!partitionFilter.test(partitionPath)) {
             continue;
           }
         }

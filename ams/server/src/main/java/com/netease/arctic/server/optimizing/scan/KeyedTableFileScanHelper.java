@@ -27,8 +27,8 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -60,9 +60,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
-  private static final Logger LOG = LoggerFactory.getLogger(MixedFormatTableFileScanHelper.class);
-  private final ArcticTable arcticTable;
+public class KeyedTableFileScanHelper implements TableFileScanHelper {
+  private static final Logger LOG = LoggerFactory.getLogger(KeyedTableFileScanHelper.class);
+  private final KeyedTable arcticTable;
   private PartitionFilter partitionFilter;
 
   private final long changeSnapshotId;
@@ -70,9 +70,9 @@ public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
   private final StructLikeMap<Long> partitionOptimizedSequence;
   private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
 
-  public MixedFormatTableFileScanHelper(ArcticTable arcticTable, long baseSnapshotId, long changeSnapshotId,
-                                        StructLikeMap<Long> partitionOptimizedSequence,
-                                        StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+  public KeyedTableFileScanHelper(KeyedTable arcticTable, long baseSnapshotId, long changeSnapshotId,
+                                  StructLikeMap<Long> partitionOptimizedSequence,
+                                  StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     this.arcticTable = arcticTable;
     this.baseSnapshotId = baseSnapshotId;
     this.changeSnapshotId = changeSnapshotId;
@@ -85,36 +85,32 @@ public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
     List<FileScanResult> results = Lists.newArrayList();
     ChangeFiles changeFiles = new ChangeFiles(arcticTable);
     UnkeyedTable baseTable;
-    if (arcticTable.isUnkeyedTable()) {
-      baseTable = arcticTable.asUnkeyedTable();
-    } else {
-      baseTable = arcticTable.asKeyedTable().baseTable();
-      ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
-      if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-        long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence,
-            legacyPartitionMaxTransactionId);
-        if (maxSequence != Long.MIN_VALUE) {
-          ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newChangeScan()
-              .fromSequence(partitionOptimizedSequence)
-              .fromLegacyTransaction(legacyPartitionMaxTransactionId)
-              .toSequence(maxSequence)
-              .useSnapshot(changeSnapshotId);
-          for (IcebergContentFile<?> icebergContentFile : changeTableIncrementalScan.planFilesWithSequence()) {
-            changeFiles.addFile(wrapChangeFile(((IcebergDataFile) icebergContentFile)));
-          }
-          PartitionSpec partitionSpec = changeTable.spec();
-          changeFiles.allInsertFiles().forEach(insertFile -> {
-            if (partitionFilter != null) {
-              StructLike partition = insertFile.partition();
-              String partitionPath = partitionSpec.partitionToPath(partition);
-              if (!partitionFilter.test(partitionPath)) {
-                return;
-              }
-            }
-            List<IcebergContentFile<?>> relatedDeleteFiles = changeFiles.getRelatedDeleteFiles(insertFile);
-            results.add(new FileScanResult(insertFile, relatedDeleteFiles));
-          });
+    baseTable = arcticTable.baseTable();
+    ChangeTable changeTable = arcticTable.changeTable();
+    if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence,
+          legacyPartitionMaxTransactionId);
+      if (maxSequence != Long.MIN_VALUE) {
+        ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newChangeScan()
+            .fromSequence(partitionOptimizedSequence)
+            .fromLegacyTransaction(legacyPartitionMaxTransactionId)
+            .toSequence(maxSequence)
+            .useSnapshot(changeSnapshotId);
+        for (IcebergContentFile<?> icebergContentFile : changeTableIncrementalScan.planFilesWithSequence()) {
+          changeFiles.addFile(wrapChangeFile(((IcebergDataFile) icebergContentFile)));
         }
+        PartitionSpec partitionSpec = changeTable.spec();
+        changeFiles.allInsertFiles().forEach(insertFile -> {
+          if (partitionFilter != null) {
+            StructLike partition = insertFile.partition();
+            String partitionPath = partitionSpec.partitionToPath(partition);
+            if (!partitionFilter.test(partitionPath)) {
+              return;
+            }
+          }
+          List<IcebergContentFile<?>> relatedDeleteFiles = changeFiles.getRelatedDeleteFiles(insertFile);
+          results.add(new FileScanResult(insertFile, relatedDeleteFiles));
+        });
       }
     }
 
@@ -125,7 +121,7 @@ public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
         if (partitionFilter != null) {
           StructLike partition = task.file().partition();
           String partitionPath = partitionSpec.partitionToPath(partition);
-          if (partitionFilter.test(partitionPath)) {
+          if (!partitionFilter.test(partitionPath)) {
             continue;
           }
         }
@@ -165,11 +161,11 @@ public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
     return new IcebergDeleteFile(deleteFile, transactionId);
   }
 
-  private long getMaxSequenceLimit(ArcticTable arcticTable,
+  private long getMaxSequenceLimit(KeyedTable arcticTable,
                                    long changeSnapshotId,
                                    StructLikeMap<Long> partitionOptimizedSequence,
                                    StructLikeMap<Long> legacyPartitionMaxTransactionId) {
-    ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
+    ChangeTable changeTable = arcticTable.changeTable();
     Snapshot changeSnapshot = changeTable.snapshot(changeSnapshotId);
     int totalFilesInSummary = PropertyUtil
         .propertyAsInt(changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
@@ -219,14 +215,14 @@ public class MixedFormatTableFileScanHelper implements TableFileScanHelper {
 
 
   private static class ChangeFiles {
-    private final ArcticTable arcticTable;
+    private final KeyedTable arcticTable;
     private final Map<String, Map<DataTreeNode, List<IcebergContentFile<?>>>> cachedRelatedDeleteFiles =
         Maps.newHashMap();
 
     private final Map<String, Map<DataTreeNode, Set<IcebergContentFile<?>>>> equalityDeleteFiles = Maps.newHashMap();
     private final Map<String, Map<DataTreeNode, Set<IcebergDataFile>>> insertFiles = Maps.newHashMap();
 
-    public ChangeFiles(ArcticTable arcticTable) {
+    public ChangeFiles(KeyedTable arcticTable) {
       this.arcticTable = arcticTable;
     }
 
