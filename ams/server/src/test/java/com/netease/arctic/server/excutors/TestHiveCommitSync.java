@@ -53,7 +53,7 @@ import java.util.Map;
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
 @RunWith(Parameterized.class)
-public class TestHiveCommitSync extends TableTestBase {
+public class TestHiveCommitSync extends ExecutorTestBase {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
@@ -128,7 +128,7 @@ public class TestHiveCommitSync extends TableTestBase {
         getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
-    List<DataFile> dataFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     baseTable.updatePartitionProperties(null)
         .set(dataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, partitionLocation)
@@ -155,7 +155,7 @@ public class TestHiveCommitSync extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
@@ -208,7 +208,7 @@ public class TestHiveCommitSync extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
@@ -261,7 +261,7 @@ public class TestHiveCommitSync extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
@@ -298,7 +298,7 @@ public class TestHiveCommitSync extends TableTestBase {
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    List<DataFile> newDataFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 2, true);
+    List<DataFile> newDataFiles = writeAndCommitBaseAndHive(getArcticTable(), 2, true);
     String newPartitionLocation = TableFileUtil.getFileDir(newDataFiles.get(0).path().toString());
     baseTable.updatePartitionProperties(null)
         .set(newDataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newPartitionLocation)
