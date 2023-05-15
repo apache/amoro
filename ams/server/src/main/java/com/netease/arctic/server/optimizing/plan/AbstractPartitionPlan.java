@@ -42,7 +42,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
   protected final long fragmentSize;
-  protected final PartitionEvaluator evaluator;
+  protected final BasicPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
   protected ArcticTable tableObject;
@@ -54,14 +54,9 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
   protected final Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
   protected final Map<ContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
-  protected long fragmentFileSize = 0;
-  protected long segmentFileSize = 0;
-  protected long positionalDeleteBytes = 0L;
-  protected long equalityDeleteBytes = 0L;
-  protected int smallFileCount = 0;
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
-                               ArcticTable table, String partition, long planTime, PartitionEvaluator evaluator) {
+                               ArcticTable table, String partition, long planTime, BasicPartitionEvaluator evaluator) {
     super(partition);
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
@@ -71,34 +66,9 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     this.evaluator = evaluator;
   }
 
-  protected void markSequence(long sequence) {
-    if (fromSequence == INVALID_SEQUENCE || fromSequence > sequence) {
-      fromSequence = sequence;
-    }
-    if (toSequence == INVALID_SEQUENCE || toSequence < sequence) {
-      toSequence = sequence;
-    }
-  }
-
-  protected abstract TaskSplitter buildTaskSplitter();
-
-  protected abstract boolean partitionShouldFullOptimizing();
-
-  protected abstract OptimizingInputProperties buildTaskProperties();
-
   @Override
   public boolean isNecessary() {
     return evaluator.isNecessary();
-  }
-
-  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-    if (taskSplitter == null) {
-      taskSplitter = buildTaskSplitter();
-    }
-    return taskSplitter.splitTasks(targetTaskCount).stream()
-        .filter(SplitTask::isNotEmpty)
-        .map(task -> task.buildTask(buildTaskProperties()))
-        .collect(Collectors.toList());
   }
 
   @Override
@@ -111,6 +81,71 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     return evaluator.getCost();
   }
 
+  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    evaluator.addFile(dataFile, deletes);
+    if (isFragmentFile(dataFile)) {
+      fragmentFiles.put(dataFile, deletes);
+    } else {
+      segmentFiles.put(dataFile, deletes);
+    }
+    for (IcebergContentFile<?> deleteFile : deletes) {
+      if (deleteFile.content() == FileContent.EQUALITY_DELETES || deleteFile.content() == FileContent.DATA) {
+        equalityRelatedFiles.add(dataFile);
+        equalityDeleteFileMap
+            .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
+            .add(dataFile);
+      }
+    }
+  }
+
+  public List<TaskDescriptor> splitTasks(int targetTaskCount) {
+    if (taskSplitter == null) {
+      taskSplitter = buildTaskSplitter();
+    }
+    return taskSplitter.splitTasks(targetTaskCount).stream()
+        .filter(SplitTask::isNotEmpty)
+        .map(task -> task.buildTask(buildTaskProperties()))
+        .collect(Collectors.toList());
+  }
+
+  protected abstract TaskSplitter buildTaskSplitter();
+
+  protected abstract OptimizingInputProperties buildTaskProperties();
+
+  protected boolean findAnyDelete() {
+    return evaluator.getEqualityDeleteFileCount() + evaluator.getPosDeleteFileCount() > 0;
+  }
+
+  protected boolean isFragmentFile(IcebergDataFile file) {
+    return file.fileSizeInBytes() <= fragmentSize;
+  }
+
+  protected boolean partitionShouldFullOptimizing() {
+    return config.getFullTriggerInterval() > 0 &&
+        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+  }
+
+  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
+    if (config.isFullRewriteAllFiles()) {
+      return true;
+    } else {
+      return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
+    }
+  }
+
+  protected boolean canSegmentFileRewrite(IcebergDataFile icebergFile) {
+    return true;
+  }
+
+  protected void markSequence(long sequence) {
+    if (fromSequence == INVALID_SEQUENCE || fromSequence > sequence) {
+      fromSequence = sequence;
+    }
+    if (toSequence == INVALID_SEQUENCE || toSequence < sequence) {
+      toSequence = sequence;
+    }
+  }
+
   public long getFromSequence() {
     return fromSequence;
   }
@@ -119,38 +154,34 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     return toSequence;
   }
 
-  protected abstract class TaskSplitter {
-
-    public TaskSplitter() {
-    }
-
-    abstract List<SplitTask> splitTasks(int targetTaskCount);
-
+  protected interface TaskSplitter {
+    List<SplitTask> splitTasks(int targetTaskCount);
   }
 
   protected class SplitTask {
     private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
     private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
+
     private final Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
 
     public SplitTask(Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles,
                      Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles) {
       if (partitionShouldFullOptimizing()) {
         segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (shouldFullOptimizing(icebergFile, deleteFileSet)) {
+          if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           }
         });
         fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (shouldFullOptimizing(icebergFile, deleteFileSet)) {
+          if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           }
         });
       } else {
         segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (canRewriteFile(icebergFile) &&
+          if (canSegmentFileRewrite(icebergFile) &&
               getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
@@ -197,12 +228,5 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     private long getRecordCount(List<IcebergContentFile<?>> files) {
       return files.stream().mapToLong(ContentFile::recordCount).sum();
     }
-
   }
-
-  protected boolean canRewriteFile(IcebergDataFile icebergFile) {
-    return true;
-  }
-
-  protected abstract boolean shouldFullOptimizing(IcebergDataFile icebergFile, List<IcebergContentFile<?>> deleteFiles);
 }

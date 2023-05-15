@@ -1,15 +1,12 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.BinPacking;
 
@@ -18,57 +15,9 @@ import java.util.Map;
 
 public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
 
-  private boolean findAnyDelete = false;
-
   public UnkeyedTablePartitionPlan(TableRuntime tableRuntime,
                                    ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime, new DefaultPartitionEvaluator(tableRuntime, partition));
-  }
-
-  @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    evaluator.addFile(dataFile, deletes);
-    if (!deletes.isEmpty()) {
-      findAnyDelete = true;
-    }
-    if (isFragmentFile(dataFile)) {
-      fragmentFiles.put(dataFile, deletes);
-      fragmentFileSize += dataFile.fileSizeInBytes();
-      smallFileCount += 1;
-    } else {
-      segmentFiles.put(dataFile, deletes);
-      segmentFileSize += dataFile.fileSizeInBytes();
-    }
-    for (IcebergContentFile<?> deleteFile : deletes) {
-      if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
-        throw new UnsupportedOperationException("optimizing unkeyed table not support equality-delete");
-      }
-    }
-  }
-
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      return dataFile.fileSizeInBytes() <= fragmentSize;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
-  }
-
-  protected boolean findAnyDelete() {
-    return findAnyDelete;
-  }
-
-  protected boolean canRewriteFile(IcebergDataFile dataFile) {
-    return true;
-  }
-
-  protected boolean shouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
-    if (config.isFullRewriteAllFiles()) {
-      return true;
-    } else {
-      return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
-    }
+    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition));
   }
 
   @Override
@@ -83,12 +32,10 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
     return new TaskSplitter();
   }
 
-  public boolean partitionShouldFullOptimizing() {
-    return config.getFullTriggerInterval() > 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
-  }
-
-  private class TaskSplitter extends AbstractPartitionPlan.TaskSplitter {
+  /**
+   * split task with bin-packing
+   */
+  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
 
     @Override
     public List<AbstractPartitionPlan.SplitTask> splitTasks(int targetTaskCount) {
@@ -120,6 +67,9 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
     }
   }
 
+  /**
+   * util class for bin-pack
+   */
   private static class FileTask {
     private final IcebergDataFile file;
     private final List<IcebergContentFile<?>> deleteFiles;
