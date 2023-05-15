@@ -57,23 +57,18 @@ public class HiveUnkeyedTablePartitionPlan extends UnkeyedTablePartitionPlan {
   }
 
   @Override
-  protected void fillTaskProperties(OptimizingInputProperties properties) {
-    super.fillTaskProperties(properties);
-    if (partitionShouldFullOptimizing()) {
-      if (moveFilesToHiveLocation()) {
-        properties.needMoveFile2HiveLocation();
-      } else {
-        properties.setOutputDir(constructCustomHiveSubdirectory());
-      }
+  protected OptimizingInputProperties buildTaskProperties() {
+    OptimizingInputProperties properties = super.buildTaskProperties();
+    if (moveFilesToHiveLocation()) {
+      properties.needMoveFile2HiveLocation();
+    } else {
+      properties.setOutputDir(constructCustomHiveSubdirectory());
     }
+    return properties;
   }
 
   private String constructCustomHiveSubdirectory() {
-    if (tableObject.isKeyedTable()) {
-      return HiveTableUtil.newHiveSubdirectory(getToSequence());
-    } else {
-      return HiveTableUtil.newHiveSubdirectory();
-    }
+    return HiveTableUtil.newHiveSubdirectory();
   }
 
 }

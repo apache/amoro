@@ -91,15 +91,16 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   public List<TaskDescriptor> planTasks() {
     long startTime = System.nanoTime();
 
+    if (!isInitEvaluator) {
+      initEvaluator();
+    }
     if (!isNecessary()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
       }
       return Collections.emptyList();
     }
-    if (!isInitEvaluator) {
-      initEvaluator();
-    }
+
     List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
@@ -143,7 +144,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return processId;
   }
 
-  public static class PartitionPlannerFactory {
+  private static class PartitionPlannerFactory {
     private final ArcticTable arcticTable;
     private final TableRuntime tableRuntime;
     private final String hiveLocation;
