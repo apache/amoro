@@ -257,10 +257,10 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void createDatabase(String catalogName, String database) throws TException {
       databases.computeIfAbsent(catalogName, c -> new ArrayList<>());
+      if (databases.get(catalogName).contains(database)) {
+        throw new AlreadyExistsException("database exist");
+      }
       databases.computeIfPresent(catalogName, (c, dbList) -> {
-        if (dbList.contains(database)) {
-          throw new IllegalStateException("database exist");
-        }
         List<String> newList = new ArrayList<>(dbList);
         newList.add(database);
         return newList;
@@ -391,7 +391,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
+      meta.getCatalogProperties().put(key, value);
     }
   }
 
