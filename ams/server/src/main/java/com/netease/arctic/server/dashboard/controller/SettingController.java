@@ -94,7 +94,7 @@ public class SettingController extends RestBaseController {
    * get container settings.
    */
   public void getContainerSetting(Context ctx) {
-    List<ContainerMetadata> containerMetas = ResourceContainers.getMetadatas();
+    List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();
     List<Map<String, Object>> result = new ArrayList<>();
     Objects.requireNonNull(containerMetas).forEach(container -> {
       List<Map<String, String>> optimizeGroups =

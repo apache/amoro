@@ -40,6 +40,11 @@ public class MixedTables {
   protected CatalogMeta catalogMeta;
   protected Tables tables;
   protected TableMetaStore tableMetaStore;
+
+  /**
+   * @deprecated since 0.5.0, will be removed in 0.6.0;
+   */
+  @Deprecated
   protected AmsClient amsClient;
 
   public MixedTables(CatalogMeta catalogMeta) {

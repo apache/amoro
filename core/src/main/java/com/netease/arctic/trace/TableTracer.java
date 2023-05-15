@@ -26,7 +26,9 @@ import java.util.Map;
 
 /**
  * Tracing table changes.
+ * @deprecated since 0.5.0, will be removed in 0.6.0;
  */
+@Deprecated
 public interface TableTracer {
 
   /**
