@@ -51,6 +51,11 @@ import java.util.Map;
 public class BasicKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
+
+  /**
+   * @deprecated since 0.5.0, will be removed in 0.6.0;
+   */
+  @Deprecated
   protected final AmsClient client;
 
   protected final BaseTable baseTable;
