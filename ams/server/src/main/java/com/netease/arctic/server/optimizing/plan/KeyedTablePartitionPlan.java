@@ -25,11 +25,8 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -38,9 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
 
@@ -48,11 +43,12 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
 
   public KeyedTablePartitionPlan(TableRuntime tableRuntime,
                                  ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime);
+    super(tableRuntime, table, partition, planTime, new DefaultPartitionEvaluator(tableRuntime, partition));
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    evaluator.addFile(dataFile, deletes);
     if (isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
     }
@@ -97,20 +93,18 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     return findAnyDelete;
   }
 
+  @Override
   protected boolean canRewriteFile(IcebergDataFile dataFile) {
     return true;
   }
 
+  @Override
   protected boolean shouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
     if (config.isFullRewriteAllFiles()) {
       return true;
     } else {
       return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
     }
-  }
-
-  protected void fillTaskProperties(OptimizingInputProperties properties) {
-    properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
   }
 
   private boolean isChangeFile(IcebergDataFile dataFile) {
@@ -123,153 +117,38 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     return new TaskSplitter();
   }
 
-  public boolean partitionShouldFullOptimizing() {
+  @Override
+  protected boolean partitionShouldFullOptimizing() {
     return config.getFullTriggerInterval() > 0 &&
         planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
-  private class SubFileTreeTask {
-    private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
-    private final Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
-    long cost = -1;
-
-    public SubFileTreeTask(FileTree subTree) {
-      Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-      Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-      subTree.collectFragmentFiles(fragmentFiles);
-      subTree.collectSegmentFiles(segmentFiles);
-      if (partitionShouldFullOptimizing()) {
-        segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (shouldFullOptimizing(icebergFile, deleteFileSet)) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        });
-        fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (shouldFullOptimizing(icebergFile, deleteFileSet)) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        });
-      } else {
-        segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (canRewriteFile(icebergFile) &&
-              getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          } else if (equalityRelatedFiles.contains(icebergFile)) {
-            rewritePosDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          } else {
-            boolean posDeleteExist = deleteFileSet.stream()
-                .anyMatch(file -> file.content() == FileContent.POSITION_DELETES);
-            if (posDeleteExist) {
-              rewritePosDataFiles.add(icebergFile);
-              deleteFiles.addAll(deleteFileSet);
-            }
-          }
-        });
-        fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          rewriteDataFiles.add(icebergFile);
-          deleteFiles.addAll(deleteFileSet);
-        });
-      }
-    }
-
-    private long getRecordCount(List<IcebergContentFile<?>> files) {
-      return files.stream().mapToLong(ContentFile::recordCount).sum();
-    }
-
-    public boolean hasRewritePosDataFiles() {
-      return rewritePosDataFiles.size() > 0;
-    }
-
-    public long getCost() {
-      if (cost < 0) {
-        cost = rewriteDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() * 4 +
-            rewritePosDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() / 10 +
-            deleteFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum();
-      }
-      return cost;
-    }
-
-    public boolean isEmpty() {
-      return rewriteDataFiles.isEmpty() && rewritePosDataFiles.isEmpty();
-    }
-
-    public boolean isNotEmpty() {
-      return !isEmpty();
-    }
-
-    public TaskDescriptor getTask() {
-      if (isEmpty()) {
-        return null;
-      }
-      RewriteFilesInput input = new RewriteFilesInput(
-          rewriteDataFiles.toArray(new IcebergDataFile[rewriteDataFiles.size()]),
-          rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
-          deleteFiles.toArray(new IcebergContentFile[deleteFiles.size()]),
-          tableObject);
-      OptimizingInputProperties properties = new OptimizingInputProperties();
-      fillTaskProperties(properties);
-      return new TaskDescriptor(partition, input, properties.getProperties());
-    }
-
-    // TODO
-    public OptimizingType getOptimizingType() {
-      if (partitionShouldFullOptimizing()) {
-        return OptimizingType.FULL_MAJOR;
-      }
-      return OptimizingType.MAJOR;
-    }
+  @Override
+  protected OptimizingInputProperties buildTaskProperties() {
+    OptimizingInputProperties properties = new OptimizingInputProperties();
+    properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
+    return properties;
   }
 
-  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
+  private class TaskSplitter extends AbstractPartitionPlan.TaskSplitter {
 
-    private List<SubFileTreeTask> subFileTreeTasks;
-
-    private long cost = -1;
-
-    public TaskSplitter() {
+    @Override
+    public List<SplitTask> splitTasks(int targetTaskCount) {
+      List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
       segmentFiles.forEach(rootTree::addSegmentFile);
       fragmentFiles.forEach(rootTree::addFragmentFile);
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
-      subFileTreeTasks = subTrees.stream().map(SubFileTreeTask::new).collect(Collectors.toList());
-    }
-
-    public boolean isNecessary() {
-      return partitionShouldFullOptimizing() ||
-          smallFileCount >= config.getMinorLeastFileCount() ||
-          config.getMinorLeastInterval() > 0 &&
-              planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval() &&
-              subFileTreeTasks.stream().anyMatch(SubFileTreeTask::hasRewritePosDataFiles);
-    }
-
-    public long getCost() {
-      if (cost < 0) {
-        cost = subFileTreeTasks.stream().mapToLong(SubFileTreeTask::getCost).sum();
+      for (FileTree subTree : subTrees) {
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+        subTree.collectFragmentFiles(fragmentFiles);
+        subTree.collectSegmentFiles(segmentFiles);
+        result.add(new SplitTask(fragmentFiles, segmentFiles));
       }
-      return cost;
-    }
-
-    public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-      return subFileTreeTasks.stream().filter(SubFileTreeTask::isNotEmpty).map(SubFileTreeTask::getTask)
-          .collect(Collectors.toList());
-    }
-
-    public OptimizingType getOptimizingType() {
-      if (partitionShouldFullOptimizing()) {
-        return OptimizingType.FULL_MAJOR;
-      }
-      if (subFileTreeTasks.stream().anyMatch(t -> t.getOptimizingType() == OptimizingType.MAJOR)) {
-        return OptimizingType.MAJOR;
-      } else {
-        return OptimizingType.MINOR;
-      }
+      return result;
     }
   }
 

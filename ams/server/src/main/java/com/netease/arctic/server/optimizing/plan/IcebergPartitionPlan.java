@@ -18,33 +18,27 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
+import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.FileContent;
-import org.glassfish.jersey.internal.guava.Sets;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
-  //  private static final int MAJAR_FRAGEMENT_FILES_COUNT = 1000;
-
-  private int smallFileCount = 0;
-
   protected IcebergPartitionPlan(TableRuntime tableRuntime, String partition, ArcticTable table, long planTime) {
-    super(tableRuntime, table, partition, planTime);
+    super(tableRuntime, table, partition, planTime, new DefaultPartitionEvaluator(tableRuntime, partition));
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    evaluator.addFile(dataFile, deletes);
     if (dataFile.fileSizeInBytes() <= fragmentSize) {
       fragmentFiles.put(dataFile, deletes);
       fragmentFileSize += dataFile.fileSizeInBytes();
@@ -70,70 +64,28 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     return new TaskSplitter();
   }
 
-  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
+  @Override
+  protected boolean partitionShouldFullOptimizing() {
+    // TODO
+    return false;
+  }
 
-    Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
-    Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
+  @Override
+  protected OptimizingInputProperties buildTaskProperties() {
+    OptimizingInputProperties properties = new OptimizingInputProperties();
+    properties.setExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
+    return properties;
+  }
 
-    long cost = -1;
+  @Override
+  protected boolean shouldFullOptimizing(IcebergDataFile icebergFile, List<IcebergContentFile<?>> deleteFiles) {
+    return false;
+  }
 
-    public TaskSplitter() {
-      segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-        long deleteCount = deleteFileSet.stream().mapToLong(file -> file.recordCount()).sum();
-        if (deleteCount >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
-          rewriteDataFiles.add(icebergFile);
-          deleteFiles.addAll(deleteFileSet);
-        } else if (equalityRelatedFiles.contains(icebergFile)) {
-          rewritePosDataFiles.add(icebergFile);
-          deleteFiles.addAll(deleteFileSet);
-        } else {
-          long posDeleteCount = deleteFileSet.stream()
-              .filter(file -> file.content() == FileContent.POSITION_DELETES)
-              .count();
-          if (posDeleteCount > 1) {
-            rewritePosDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        }
-      });
-      fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-        rewriteDataFiles.add(icebergFile);
-        deleteFiles.addAll(deleteFileSet);
-      });
-    }
-
-    public boolean isNecessary() {
-      return smallFileCount >= config.getMinorLeastFileCount() ||
-          rewritePosDataFiles.size() > 0 && deleteFiles.size() > 0 &&
-              System.currentTimeMillis() - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
-    }
-
-    public long getCost() {
-      if (cost < 0) {
-        cost = rewriteDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() * 4 +
-            rewritePosDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() / 10 +
-            deleteFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum();
-      }
-      return cost;
-    }
-
-    public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-      RewriteFilesInput input = new RewriteFilesInput(
-          rewriteDataFiles.toArray(new IcebergDataFile[rewriteDataFiles.size()]),
-          rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
-          deleteFiles.toArray(new IcebergDeleteFile[deleteFiles.size()]),
-          tableObject);
-      List<TaskDescriptor> tasks = Lists.newArrayList();
-      OptimizingInputProperties properties = new OptimizingInputProperties();
-      properties.setExecutorFactoryImpl(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL);
-      tasks.add(new TaskDescriptor(partition, input, properties.getProperties()));
-      return tasks;
-    }
-
-    //TODO
-    public OptimizingType getOptimizingType() {
-      return OptimizingType.MAJOR;
+  private class TaskSplitter extends AbstractPartitionPlan.TaskSplitter {
+    @Override
+    public List<SplitTask> splitTasks(int targetTaskCount) {
+      return Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
     }
   }
 }

@@ -1,25 +1,20 @@
 package com.netease.arctic.server.optimizing.plan;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.BinPacking;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
 
@@ -27,11 +22,12 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
 
   public UnkeyedTablePartitionPlan(TableRuntime tableRuntime,
                                    ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime);
+    super(tableRuntime, table, partition, planTime, new DefaultPartitionEvaluator(tableRuntime, partition));
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    evaluator.addFile(dataFile, deletes);
     if (!deletes.isEmpty()) {
       findAnyDelete = true;
     }
@@ -75,8 +71,11 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  protected void fillTaskProperties(OptimizingInputProperties properties) {
+  @Override
+  protected OptimizingInputProperties buildTaskProperties() {
+    OptimizingInputProperties properties = new OptimizingInputProperties();
     properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
+    return properties;
   }
 
   @Override
@@ -87,6 +86,38 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
   public boolean partitionShouldFullOptimizing() {
     return config.getFullTriggerInterval() > 0 &&
         planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+  }
+
+  private class TaskSplitter extends AbstractPartitionPlan.TaskSplitter {
+
+    @Override
+    public List<AbstractPartitionPlan.SplitTask> splitTasks(int targetTaskCount) {
+      // bin-packing
+      List<FileTask> allDataFiles = Lists.newArrayList();
+      segmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
+      fragmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+
+      long taskSize = config.getTargetSize();
+      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
+      int taskCnt = (int) (sum / taskSize) + 1;
+      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
+          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
+
+      // collect
+      List<AbstractPartitionPlan.SplitTask> results = Lists.newArrayList();
+      for (List<FileTask> fileTasks : packed) {
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+        fileTasks.stream().filter(FileTask::isFragment)
+            .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        fileTasks.stream().filter(FileTask::isSegment)
+            .forEach(f -> segmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        results.add(new AbstractPartitionPlan.SplitTask(fragmentFiles, segmentFiles));
+      }
+      return results;
+    }
   }
 
   private static class FileTask {
@@ -114,156 +145,6 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
 
     public boolean isSegment() {
       return !isFragment;
-    }
-  }
-
-  private class SplitTask {
-    private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
-    private final Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
-
-    long cost = -1;
-
-    public SplitTask(List<FileTask> allFiles) {
-      if (partitionShouldFullOptimizing()) {
-        allFiles.forEach(f -> {
-          if (shouldFullOptimizing(f.getFile(), f.getDeleteFiles())) {
-            rewriteDataFiles.add(f.getFile());
-            deleteFiles.addAll(f.getDeleteFiles());
-          }
-        });
-      } else {
-        allFiles.stream().filter(FileTask::isSegment).forEach(f -> {
-          IcebergDataFile icebergFile = f.getFile();
-          List<IcebergContentFile<?>> deleteFileSet = f.getDeleteFiles();
-          if (canRewriteFile(icebergFile) &&
-              getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          } else if (equalityRelatedFiles.contains(icebergFile)) {
-            // for unkeyed table, equalityRelatedFiles is supposed to be empty
-            rewritePosDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          } else {
-            boolean posDeleteExist = deleteFileSet.stream()
-                .anyMatch(file -> file.content() == FileContent.POSITION_DELETES);
-            if (posDeleteExist) {
-              rewritePosDataFiles.add(icebergFile);
-              deleteFiles.addAll(deleteFileSet);
-            }
-          }
-        });
-        allFiles.stream().filter(FileTask::isFragment).forEach(f -> {
-          rewriteDataFiles.add(f.getFile());
-          deleteFiles.addAll(f.getDeleteFiles());
-        });
-      }
-    }
-
-    private long getRecordCount(List<IcebergContentFile<?>> files) {
-      return files.stream().mapToLong(ContentFile::recordCount).sum();
-    }
-
-    public boolean hasRewritePosDataFiles() {
-      return rewritePosDataFiles.size() > 0;
-    }
-
-    public long getCost() {
-      if (cost < 0) {
-        cost = rewriteDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() * 4 +
-            rewritePosDataFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum() / 10 +
-            deleteFiles.stream().mapToLong(file -> file.fileSizeInBytes()).sum();
-      }
-      return cost;
-    }
-
-    public boolean isEmpty() {
-      return rewriteDataFiles.isEmpty() && rewritePosDataFiles.isEmpty();
-    }
-
-    public boolean isNotEmpty() {
-      return !isEmpty();
-    }
-
-    public TaskDescriptor getTask() {
-      if (isEmpty()) {
-        return null;
-      }
-      RewriteFilesInput input = new RewriteFilesInput(
-          rewriteDataFiles.toArray(new IcebergDataFile[rewriteDataFiles.size()]),
-          rewritePosDataFiles.toArray(new IcebergDataFile[rewritePosDataFiles.size()]),
-          deleteFiles.toArray(new IcebergContentFile[deleteFiles.size()]),
-          tableObject);
-      OptimizingInputProperties properties = new OptimizingInputProperties();
-      fillTaskProperties(properties);
-      return new TaskDescriptor(partition, input, properties.getProperties());
-    }
-
-    // TODO
-    public OptimizingType getOptimizingType() {
-      if (partitionShouldFullOptimizing()) {
-        return OptimizingType.FULL_MAJOR;
-      }
-      return OptimizingType.MAJOR;
-    }
-  }
-
-  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
-
-    private final List<SplitTask> splitTasks;
-
-    private long cost = -1;
-
-    public TaskSplitter() {
-      List<FileTask> allDataFiles = Lists.newArrayList();
-      segmentFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
-      fragmentFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
-
-      long taskSize = config.getTargetSize();
-      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
-      int taskCnt = (int) (sum / taskSize) + 1;
-      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
-          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
-      splitTasks = Lists.newArrayList();
-      for (List<FileTask> files : packed) {
-        if (CollectionUtils.isNotEmpty(files)) {
-          splitTasks.add(new SplitTask(files));
-        }
-      }
-    }
-
-    public boolean isNecessary() {
-      return partitionShouldFullOptimizing() ||
-          smallFileCount >= config.getMinorLeastFileCount() ||
-          config.getMinorLeastInterval() > 0 &&
-              planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval() &&
-              splitTasks.stream().anyMatch(SplitTask::hasRewritePosDataFiles);
-    }
-
-    public long getCost() {
-      if (cost < 0) {
-        cost = splitTasks.stream().mapToLong(SplitTask::getCost).sum();
-      }
-      return cost;
-    }
-
-    public List<TaskDescriptor> splitTasks(int targetTaskCount) {
-      return splitTasks.stream().filter(SplitTask::isNotEmpty).map(
-              SplitTask::getTask)
-          .collect(Collectors.toList());
-    }
-
-    public OptimizingType getOptimizingType() {
-      if (partitionShouldFullOptimizing()) {
-        return OptimizingType.FULL_MAJOR;
-      }
-      if (splitTasks.stream().anyMatch(t -> t.getOptimizingType() == OptimizingType.MAJOR)) {
-        return OptimizingType.MAJOR;
-      } else {
-        return OptimizingType.MINOR;
-      }
     }
   }
 }

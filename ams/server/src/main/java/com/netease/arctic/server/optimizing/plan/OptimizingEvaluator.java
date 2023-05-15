@@ -114,7 +114,7 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    return new PartitionEvaluatorImpl(tableRuntime, arcticTable, partitionPath);
+    return new DefaultPartitionEvaluator(tableRuntime, partitionPath);
   }
 
   public boolean isNecessary() {
@@ -144,14 +144,14 @@ public class OptimizingEvaluator {
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator e : evaluators) {
-        PartitionEvaluatorImpl evaluator = (PartitionEvaluatorImpl) e;
+        DefaultPartitionEvaluator evaluator = (DefaultPartitionEvaluator) e;
         partitions.add(evaluator.getPartition());
-        dataFileCount += evaluator.fragementFileCount + evaluator.segmentFileCount;
-        dataFileSize += evaluator.fragementFileSize + evaluator.segmentFileSize;
-        positionalDeleteBytes += evaluator.positionalDeleteBytes;
-        positionalDeleteFileCount += evaluator.positionalDeleteFileCount;
-        equalityDeleteBytes += evaluator.equalityDeleteBytes;
-        equalityDeleteFileCount += evaluator.equalityDeleteFileCount;
+        dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
+        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
+        positionalDeleteBytes += evaluator.getPosDeleteFileSize();
+        positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
+        equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();
+        equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
       }
     }
 
@@ -183,85 +183,4 @@ public class OptimizingEvaluator {
       return equalityDeleteBytes;
     }
   }
-
-  private class PartitionEvaluatorImpl extends PartitionEvaluator {
-
-    private final OptimizingConfig config;
-    private final long fragmentSize;
-
-    private int fragementFileCount = 0;
-    private long fragementFileSize = 0;
-    private int segmentFileCount = 0;
-    private long segmentFileSize = 0;
-    private int equalityDeleteFileCount = 0;
-    private int positionalDeleteFileCount = 0;
-    private long positionalDeleteBytes = 0L;
-    private long equalityDeleteBytes = 0L;
-    private long rewriteSegmentFileSize = 0L;
-
-    public PartitionEvaluatorImpl(TableRuntime tableRuntime, ArcticTable arcticTable,
-                                  String partition) {
-      super(partition);
-      this.config = tableRuntime.getOptimizingConfig();
-      this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
-    }
-
-    @Override
-    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-      boolean isSegment = false;
-      int posDeleteCount = 0;
-      if (dataFile.fileSizeInBytes() <= fragmentSize) {
-        fragementFileSize += dataFile.fileSizeInBytes();
-        fragementFileCount += 1;
-      } else {
-        segmentFileSize += dataFile.fileSizeInBytes();
-        segmentFileCount += 1;
-        isSegment = true;
-      }
-
-      for (IcebergContentFile<?> delete : deletes) {
-        if (delete.content() == FileContent.DATA) {
-          equalityDeleteFileCount += 1;
-          equalityDeleteBytes += delete.fileSizeInBytes();
-        } else if (delete.content() == FileContent.EQUALITY_DELETES) {
-          equalityDeleteFileCount += 1;
-          equalityDeleteBytes += delete.fileSizeInBytes();
-        } else {
-          if (++posDeleteCount > 1 || isSegment &&
-              delete.recordCount() >= dataFile.recordCount() * config.getMajorDuplicateRatio()) {
-            rewriteSegmentFileSize += dataFile.fileSizeInBytes();
-          }
-          posDeleteCount += 1;
-          positionalDeleteBytes += delete.fileSizeInBytes();
-        }
-      }
-    }
-
-    @Override
-    public boolean isNecessary() {
-      return isMajorNecessary() || isMinorNecessary();
-    }
-
-    @Override
-    public long getCost() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public OptimizingType getOptimizingType() {
-      return isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
-    }
-
-    private boolean isMajorNecessary() {
-      return rewriteSegmentFileSize > 0;
-    }
-
-    private boolean isMinorNecessary() {
-      int sourceFileCount = fragementFileCount + equalityDeleteFileCount;
-      return sourceFileCount >= config.getMinorLeastFileCount() ||
-          (sourceFileCount > 1 &&
-              System.currentTimeMillis() - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
-    }
-  }
-
 }
