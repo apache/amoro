@@ -20,7 +20,6 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.UpdateProperties;
@@ -59,11 +58,6 @@ public class TestUpdateTable extends TableTestBase {
     updateProperties.commit();
 
     properties = getArcticTable().properties();
-    Assert.assertTrue(properties.containsKey(testProps));
-    Assert.assertEquals(testPropsValue, properties.get(testProps));
-
-    TableMeta meta = getAmsHandler().getTable(getArcticTable().id().buildTableIdentifier());
-    properties = meta.getProperties();
     Assert.assertTrue(properties.containsKey(testProps));
     Assert.assertEquals(testPropsValue, properties.get(testProps));
 

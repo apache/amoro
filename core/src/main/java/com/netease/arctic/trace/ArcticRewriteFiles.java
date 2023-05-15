@@ -34,14 +34,14 @@ import java.util.function.Supplier;
 /**
  * Wrap {@link RewriteFiles} with {@link TableTracer}.
  */
-public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements RewriteFiles {
+public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements RewriteFiles {
   private final RewriteFiles rewriteFiles;
 
   public static Builder buildFor(ArcticTable table) {
     return new Builder(table);
   }
 
-  protected TracedRewriteFiles(ArcticTable table, RewriteFiles rewriteFiles, TableTracer tracer) {
+  protected ArcticRewriteFiles(ArcticTable table, RewriteFiles rewriteFiles, TableTracer tracer) {
     super(table, rewriteFiles, tracer);
     this.rewriteFiles = rewriteFiles;
   }
@@ -85,14 +85,14 @@ public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticRewriteFiles, RewriteFiles> {
 
     private Builder(ArcticTable table) {
       super(table);
     }
 
     @Override
-    public ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> traceTable(
+    public ArcticUpdate.Builder<ArcticRewriteFiles, RewriteFiles> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.REPLACE, client, true);
@@ -102,17 +102,17 @@ public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     }
 
     @Override
-    protected TracedRewriteFiles updateWithWatermark(
+    protected ArcticRewriteFiles updateWithWatermark(
         TableTracer tableTracer,
         Transaction transaction,
         boolean autoCommitTransaction) {
-      return new TracedRewriteFiles(table, transaction.newRewrite(), tableTracer);
+      return new ArcticRewriteFiles(table, transaction.newRewrite(), tableTracer);
     }
 
     @Override
-    protected TracedRewriteFiles updateWithoutWatermark(
+    protected ArcticRewriteFiles updateWithoutWatermark(
         TableTracer tableTracer, Supplier<RewriteFiles> delegateSupplier) {
-      return new TracedRewriteFiles(table, delegateSupplier.get(), tableTracer);
+      return new ArcticRewriteFiles(table, delegateSupplier.get(), tableTracer);
     }
 
     @Override

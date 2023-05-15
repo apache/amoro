@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 /**
  * Wrap {@link DeleteFiles} with {@link TableTracer}.
  */
-public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {
+public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {
 
   private final DeleteFiles deleteFiles;
 
@@ -41,7 +41,7 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     return new Builder(table);
   }
 
-  protected TracedDeleteFiles(ArcticTable table, DeleteFiles deleteFiles, TableTracer tracer) {
+  protected ArcticDeleteFiles(ArcticTable table, DeleteFiles deleteFiles, TableTracer tracer) {
     super(table, deleteFiles, tracer);
     this.deleteFiles = deleteFiles;
   }
@@ -75,14 +75,14 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticDeleteFiles, DeleteFiles> {
 
     protected Builder(ArcticTable table) {
       super(table);
     }
 
     @Override
-    public ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+    public ArcticUpdate.Builder<ArcticDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client, true);
         traceTable(tracer);
@@ -91,17 +91,17 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     }
 
     @Override
-    protected TracedDeleteFiles updateWithWatermark(
+    protected ArcticDeleteFiles updateWithWatermark(
         TableTracer tableTracer,
         Transaction transaction,
         boolean autoCommitTransaction) {
-      return new TracedDeleteFiles(table, transaction.newDelete(), tableTracer);
+      return new ArcticDeleteFiles(table, transaction.newDelete(), tableTracer);
     }
 
     @Override
-    protected TracedDeleteFiles updateWithoutWatermark(
+    protected ArcticDeleteFiles updateWithoutWatermark(
         TableTracer tableTracer, Supplier<DeleteFiles> delegateSupplier) {
-      return new TracedDeleteFiles(table, delegateSupplier.get(), tableTracer);
+      return new ArcticDeleteFiles(table, delegateSupplier.get(), tableTracer);
     }
 
     @Override
