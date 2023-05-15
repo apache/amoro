@@ -253,6 +253,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
+    
+    private Map<String, Long> fromSequence;
+    private Map<String, Long> toSequence;
 
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
@@ -403,6 +406,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     @Override
     public MetricsSummary getSummary() {
       return metricsSummary;
+    }
+
+    @Override
+    public Map<String, Long> getFromSequence() {
+      return fromSequence;
+    }
+
+    @Override
+    public Map<String, Long> getToSequence() {
+      return toSequence;
     }
 
     private IcebergCommit buildCommit() {
