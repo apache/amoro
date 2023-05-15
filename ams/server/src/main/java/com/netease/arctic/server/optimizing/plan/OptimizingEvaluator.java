@@ -18,21 +18,16 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
-import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SequenceNumberFetcher;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -40,7 +35,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -114,7 +108,7 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    return new DefaultPartitionEvaluator(tableRuntime, partitionPath);
+    return new BasicPartitionEvaluator(tableRuntime, partitionPath);
   }
 
   public boolean isNecessary() {
@@ -144,7 +138,7 @@ public class OptimizingEvaluator {
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator e : evaluators) {
-        DefaultPartitionEvaluator evaluator = (DefaultPartitionEvaluator) e;
+        BasicPartitionEvaluator evaluator = (BasicPartitionEvaluator) e;
         partitions.add(evaluator.getPartition());
         dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
         dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();

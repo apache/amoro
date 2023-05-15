@@ -43,41 +43,45 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
+      // we treat all files in hive location as segment files
       return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile.path().toString());
     } else if (file.type() == DataFileType.INSERT_FILE) {
+      // we treat all insert files as fragment files
       return true;
     } else {
       throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
     }
   }
 
-
   private boolean notInHiveLocation(String filePath) {
     return !filePath.contains(hiveLocation);
   }
 
   @Override
-  protected boolean canRewriteFile(IcebergDataFile dataFile) {
+  protected boolean canSegmentFileRewrite(IcebergDataFile dataFile) {
+    // files in hive location should not be rewritten
     return notInHiveLocation(dataFile.path().toString());
   }
 
   @Override
-  protected boolean shouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
-    if (moveFilesToHiveLocation()) {
+  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
+    if (moveFiles2CurrentHiveLocation()) {
+      // if we are going to move files to old hive location, only files not in hive location should full optimizing
       return notInHiveLocation(dataFile.path().toString());
     } else {
+      // if we are going to rewrite all files to a new hive location, all files should full optimizing
       return true;
     }
   }
 
-  private boolean moveFilesToHiveLocation() {
+  private boolean moveFiles2CurrentHiveLocation() {
     return partitionShouldFullOptimizing() && !config.isFullRewriteAllFiles() && !findAnyDelete();
   }
 
   @Override
   protected OptimizingInputProperties buildTaskProperties() {
     OptimizingInputProperties properties = super.buildTaskProperties();
-    if (moveFilesToHiveLocation()) {
+    if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
     } else {
       properties.setOutputDir(constructCustomHiveSubdirectory());

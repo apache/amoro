@@ -30,7 +30,6 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -39,88 +38,45 @@ import java.util.function.Predicate;
 
 public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
 
-  private boolean findAnyDelete = false;
-
   public KeyedTablePartitionPlan(TableRuntime tableRuntime,
                                  ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime, new DefaultPartitionEvaluator(tableRuntime, partition));
+    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition));
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    evaluator.addFile(dataFile, deletes);
+    super.addFile(dataFile, deletes);
     if (isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
-    }
-    if (!deletes.isEmpty()) {
-      findAnyDelete = true;
-    }
-    if (isFragmentFile(dataFile)) {
-      fragmentFiles.put(dataFile, deletes);
-      fragmentFileSize += dataFile.fileSizeInBytes();
-      smallFileCount += 1;
-    } else {
-      segmentFiles.put(dataFile, deletes);
-      segmentFileSize += dataFile.fileSizeInBytes();
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
       if (deleteFile.content() == FileContent.DATA) {
         markSequence(deleteFile.getSequenceNumber());
       }
-      if (deleteFile.content() == FileContent.EQUALITY_DELETES || deleteFile.content() == FileContent.DATA) {
-        equalityRelatedFiles.add(dataFile);
-        equalityDeleteFileMap
-            .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
-            .add(dataFile);
-        equalityDeleteBytes += deleteFile.fileSizeInBytes();
-        smallFileCount += 1;
-      }
     }
   }
 
+  @Override
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
       return dataFile.fileSizeInBytes() <= fragmentSize;
     } else if (file.type() == DataFileType.INSERT_FILE) {
+      // for keyed table, we treat all insert files as fragment files
       return true;
     } else {
       throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
     }
   }
 
-  protected boolean findAnyDelete() {
-    return findAnyDelete;
-  }
-
-  @Override
-  protected boolean canRewriteFile(IcebergDataFile dataFile) {
-    return true;
-  }
-
-  @Override
-  protected boolean shouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
-    if (config.isFullRewriteAllFiles()) {
-      return true;
-    } else {
-      return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
-    }
-  }
-
   private boolean isChangeFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    return file.type() == DataFileType.INSERT_FILE;
+    return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
   }
 
   @Override
   protected AbstractPartitionPlan.TaskSplitter buildTaskSplitter() {
     return new TaskSplitter();
-  }
-
-  @Override
-  protected boolean partitionShouldFullOptimizing() {
-    return config.getFullTriggerInterval() > 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   @Override
@@ -130,7 +86,10 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     return properties;
   }
 
-  private class TaskSplitter extends AbstractPartitionPlan.TaskSplitter {
+  /**
+   * split task with {@link DataTreeNode}
+   */
+  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
 
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
