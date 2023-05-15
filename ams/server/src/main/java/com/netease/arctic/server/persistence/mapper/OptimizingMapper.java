@@ -26,7 +26,7 @@ public interface OptimizingMapper {
   @Delete("DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
-  @Insert("INSERT INTRO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
+  @Insert("INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
       " target_snapshot_id, status, optimizing_type, plan_time, summary) VALUES (#{table.id}, #{table.catalog}," +
       " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{status}, #{optimizingType}," +
       " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
@@ -138,13 +138,14 @@ public interface OptimizingMapper {
       " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}," +
       " fail_reason = #{taskRuntime.failReason}," +
       " rewrite_output = #{taskRuntime.outputBytes," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}, metrics_summary = " +
+      "#{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} " +
       " WHERE process_id = #{taskRuntime.taskId.processId} AND task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
   @Update("UPDATE task_runtime SET status = #{status} WHERE process_id = #{taskRuntime.taskId.processId} AND " +
       "task_id = #{taskRuntime.taskId.taskId}")
-  void updateTaskStatus(@Param("taskRuntime") TaskRuntime taskRuntime, TaskRuntime.Status status);
+  void updateTaskStatus(@Param("taskRuntime") TaskRuntime taskRuntime, @Param("status") TaskRuntime.Status status);
 
   @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
