@@ -107,9 +107,8 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
   }
 
 
-  //TODO: failed.
   @DisplayName("SQL: MERGE INTO for all actions with condition")
-  //@ParameterizedTest
+  @ParameterizedTest
   @MethodSource("args")
   public void testSetExactValue(TableFormat format, PrimaryKeySpec keySpec) {
     setupTest(keySpec);
@@ -201,9 +200,8 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .assertRecordsEqual();
   }
 
-  // TODO: test failed.
   @DisplayName("SQL: MERGE INTO for explicit column ")
-//  @ParameterizedTest
+  @ParameterizedTest
   @MethodSource("args")
   public void testExplicitColumn(TableFormat format, PrimaryKeySpec keySpec) {
     setupTest(keySpec);

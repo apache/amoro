@@ -24,12 +24,13 @@ import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.{withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
+import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, withPosition}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+import org.apache.spark.sql.sources.EqualTo
 
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -40,7 +41,8 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           case arctic: ArcticSparkTable =>
             if (arctic.table().isKeyedTable) {
               val primaryKeys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-              val condRefs = cond.references.filter(f => primaryKeys.contains(f.name))
+              val attributes = aliasedTable.output.filter(p => primaryKeys.contains(p.name))
+              val condRefs = cond.references.filter(f => attributes.contains(f))
               if (condRefs.isEmpty) {
                 throw Exceptions.analysisException(s"Condition ${cond.references}. " +
                   s"is not allowed because is not a primary key")
@@ -65,14 +67,17 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           val resolvedCond = cond.map(resolveCond("DELETE", _, m))
           DeleteAction(resolvedCond)
 
-        case UpdateAction(cond, _) =>
+        case UpdateAction(cond, assignments) =>
           val resolvedUpdateCondition = cond.map(resolveCond("UPDATE", _, m))
-          val assignments = aliasedTable.output.map { attr =>
-            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+          var finalAssignment = assignments
+          if (assignments.isEmpty) {
+            finalAssignment = aliasedTable.output.map { attr =>
+              Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+            }
           }
           // for UPDATE *, the value must be from the source table
           val resolvedAssignments =
-            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+            resolveAssignments(finalAssignment, m, resolveValuesWithSourceOnly = true)
           UpdateAction(resolvedUpdateCondition, resolvedAssignments)
 
         case _ =>
@@ -81,13 +86,16 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
-        case InsertAction(cond, _) =>
+        case InsertAction(cond, assignments) =>
           val resolvedCond = cond.map(resolveCond("INSERT", _, Project(Nil, m.sourceTable)))
-          val assignments = aliasedTable.output.map { attr =>
-            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+          var finalAssignment = assignments
+          if (assignments.isEmpty) {
+            finalAssignment = aliasedTable.output.map { attr =>
+              Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
+            }
           }
           val resolvedAssignments =
-            resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
+            resolveAssignments(finalAssignment, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)
 
         case _ =>

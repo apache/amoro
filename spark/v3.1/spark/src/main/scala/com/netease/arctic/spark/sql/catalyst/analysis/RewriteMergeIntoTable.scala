@@ -260,18 +260,36 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
       sourceOutput: Seq[Attribute]): Seq[Expression] = {
 
     action match {
-      case _: UpdateAction =>
-        Seq(Literal(UPDATE_OPERATION)) ++ targetOutput ++ sourceOutput
-
+      case u: UpdateAction =>
+        val finalSourceOutput = rebuildAttribute(sourceOutput, u.assignments)
+        Seq(Literal(UPDATE_OPERATION)) ++ targetOutput ++ finalSourceOutput
       case _: DeleteAction =>
         Seq(Literal(DELETE_OPERATION)) ++ targetOutput ++ sourceOutput
 
-      case _: InsertAction =>
-        Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ sourceOutput
+      case i: InsertAction =>
+        val finalSourceOutput = rebuildAttribute(sourceOutput, i.assignments)
+        Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ finalSourceOutput
 
       case other =>
         throw new UnsupportedOperationException(s"Unexpected action: $other")
     }
+  }
+
+  private def rebuildAttribute(sourceOutput: Seq[Attribute], assignments: Seq[Assignment]): Seq[Expression] = {
+    val expressions = sourceOutput.map(v => {
+      val assignment = assignments.find(f => {
+        f.key match {
+          case a: Attribute =>
+            a.name.equals(v.name)
+        }
+      })
+      if (assignment.isEmpty) {
+        v
+      } else {
+        assignment.get.value
+      }
+    })
+    expressions
   }
 
   private def buildMergeRowsOutput(
