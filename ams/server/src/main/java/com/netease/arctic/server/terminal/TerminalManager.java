@@ -103,7 +103,7 @@ public class TerminalManager {
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), connectorType);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSHaAddress(serviceConfig));
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSThriftAddress(serviceConfig));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
