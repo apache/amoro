@@ -41,6 +41,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
   private volatile boolean started = false;
   private TableRuntimeHandler headHandler;
+  private Timer tableExplorerTimer;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
@@ -247,11 +248,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (headHandler != null) {
       headHandler.startHandler(tableRuntimeMetaList);
     }
-    new Timer("ExternalTableExplorer", true)
-        .scheduleAtFixedRate(
-            new TableExplorer(),
-            0,
-            externalCatalogRefreshingInterval);
+    tableExplorerTimer = new Timer("ExternalTableExplorer", true);
+    tableExplorerTimer.scheduleAtFixedRate(
+        new TableExplorer(),
+        0,
+        externalCatalogRefreshingInterval);
     started = true;
   }
 
@@ -265,6 +266,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public boolean contains(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableIdentifier);
+  }
+
+  public void dispose() {
+    tableExplorerTimer.cancel();
+    headHandler.dispose();
   }
 
   private void validateTableIdentifier(TableIdentifier tableIdentifier) {

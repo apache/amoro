@@ -151,7 +151,9 @@ public class OptimizerController extends RestBaseController {
    */
   public void getOptimizerGroups(Context ctx) {
     try {
-      List<JSONObject> result = optimizerManager.listResourceGroups().stream().map(e -> {
+      List<JSONObject> result = optimizerManager.listResourceGroups().stream()
+          .filter(resourceGroup -> ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
+          .map(e -> {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("optimizerGroupName", e.getName());
         return jsonObject;
