@@ -19,11 +19,11 @@
 package com.netease.arctic.server.excutors;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
@@ -34,7 +34,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -54,24 +53,27 @@ import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecut
 import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.FLINK_JOB_ID;
 
 @RunWith(Parameterized.class)
-public class TestOrphanFileCleanMix extends TableTestBase {
+public class TestOrphanFileClean extends ExecutorTestBase {
 
-  public TestOrphanFileCleanMix(boolean ifKeyed, boolean ifPartitioned) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(ifKeyed, ifPartitioned));
-  }
-
-  @Parameterized.Parameters(name = "ifKeyed = {0}, ifPartitioned = {1}")
-  public static Object[][] parameters() {
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
     return new Object[][]{
-        {true, true},
-        {true, false},
-        {false, true},
-        {false, false}};
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, false)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, false)}};
   }
 
-  private static OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
-  private static TableRuntime tableRuntime;
+  public TestOrphanFileClean(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
+  protected static OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
+  protected static TableRuntime tableRuntime;
 
   @Before
   public void mock() {
@@ -85,7 +87,11 @@ public class TestOrphanFileCleanMix extends TableTestBase {
 
   @Test
   public void orphanDataFileClean() throws IOException {
-    ExecutorTestUtil.writeAndCommitBaseAndChange(getArcticTable());
+    if (isKeyedTable()) {
+      writeAndCommitBaseAndChange(getArcticTable());
+    } else {
+      writeAndCommitBaseStore(getArcticTable());
+    }
 
     UnkeyedTable baseTable = isKeyedTable() ?
         getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
@@ -94,6 +100,8 @@ public class TestOrphanFileCleanMix extends TableTestBase {
     String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
     OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
 
     String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet" : "";
@@ -103,17 +111,13 @@ public class TestOrphanFileCleanMix extends TableTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
     }
 
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
-
-
     orphanFilesCleaningExecutor.execute(tableRuntime);
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+
     if (isKeyedTable()) {
       Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
     }
-
 
     getArcticTable().updateProperties()
         .set(TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME, "0")
@@ -123,25 +127,61 @@ public class TestOrphanFileCleanMix extends TableTestBase {
 
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    baseTable.newScan().planFiles().forEach(
+        task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
     if (isKeyedTable()) {
       Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
-    }
-    for (FileScanTask task : baseTable.newScan().planFiles()) {
-      Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString()));
-    }
-    if (isKeyedTable()) {
-      for (FileScanTask task : getArcticTable().asKeyedTable().changeTable().newScan().planFiles()) {
-        Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString()));
-      }
+      getArcticTable().asKeyedTable().changeTable().newScan().planFiles().forEach(
+          task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
     }
   }
 
   @Test
-  public void orphanChangeDataFileInBaseClean() throws IOException {
+  public void orphanMetadataFileClean() throws IOException {
+    if (isKeyedTable()) {
+      writeAndCommitBaseAndChange(getArcticTable());
+    } else {
+      writeAndCommitBaseStore(getArcticTable());
+    }
+
+    UnkeyedTable baseTable = isKeyedTable() ?
+        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
+    String baseOrphanFilePath = baseTable.location() + File.separator + "metadata" +
+        File.separator + "orphan.avro";
+
+    String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
+        File.separator + "metadata" + File.separator + "orphan.avro" : "";
+
+    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
+    baseOrphanDataFile.createOrOverwrite().close();
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+
+    String changeInvalidMetadataJson = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
+        File.separator + "metadata" + File.separator + "v0.metadata.json" : "";
+    if (isKeyedTable()) {
+      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
+      changeOrphanDataFile.createOrOverwrite().close();
+      getArcticTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
+      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
+      Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
+    }
+
+    orphanFilesCleaningExecutor.cleanMetadata(getArcticTable(), System.currentTimeMillis());
+
+    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
+    if (isKeyedTable()) {
+      Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
+      Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
+    }
+    ExecutorTestBase.assertMetadataExists(getArcticTable());
+  }
+
+  @Test
+  public void orphanChangeDataFileInBaseClean() {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
-    List<DataFile> dataFiles = DataTestHelpers.writeChangeStore(
-        testKeyedTable, 1, ChangeAction.INSERT, ExecutorTestUtil.createRecords(1, 100), false);
+    List<DataFile> dataFiles = tableTestHelper().writeChangeStore(
+        testKeyedTable, 1, ChangeAction.INSERT, createRecords(1, 100), false);
     Set<String> pathAll = new HashSet<>();
     Set<String> fileInBaseStore = new HashSet<>();
     Set<String> fileOnlyInChangeLocation = new HashSet<>();
@@ -166,46 +206,12 @@ public class TestOrphanFileCleanMix extends TableTestBase {
   }
 
   @Test
-  public void orphanMetadataFileClean() throws IOException {
-    ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, false);
-
-    UnkeyedTable baseTable = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
-    String baseOrphanFilePath = baseTable.location() + File.separator + "metadata" +
-        File.separator + "orphan.avro";
-
-    String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + "orphan.avro" : "";
-
-    OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
-    baseOrphanDataFile.createOrOverwrite().close();
-
-    String changeInvalidMetadataJson = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-            File.separator + "metadata" + File.separator + "v0.metadata.json" : "";
-    if (isKeyedTable()) {
-      OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
-      changeOrphanDataFile.createOrOverwrite().close();
-      getArcticTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
-    }
-
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
-    if (isKeyedTable()) {
-      Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
-    }
-
-    orphanFilesCleaningExecutor.cleanMetadata(getArcticTable(), System.currentTimeMillis());
-    Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
-    if (isKeyedTable()) {
-      Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
-      Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
-    }
-    ExecutorTestUtil.assertMetadataExists(getArcticTable());
-  }
-
-  @Test
   public void notDeleteFlinkTemporaryFile() throws IOException {
-    ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, false);
+    if (isKeyedTable()) {
+      writeAndCommitBaseAndChange(getArcticTable());
+    } else {
+      writeAndCommitBaseStore(getArcticTable());
+    }
     String flinkJobId = "flinkJobTest";
     String fakeFlinkJobId = "fakeFlinkJobTest";
 
@@ -223,6 +229,8 @@ public class TestOrphanFileCleanMix extends TableTestBase {
 
     OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
+    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
+
     if (isKeyedTable()) {
       OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
@@ -237,10 +245,7 @@ public class TestOrphanFileCleanMix extends TableTestBase {
       AppendFiles appendFiles2 = getArcticTable().asKeyedTable().changeTable().newAppend();
       appendFiles2.set(FLINK_JOB_ID, flinkJobId);
       appendFiles2.commit();
-    }
 
-    Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
-    if (isKeyedTable()) {
       Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
       Assert.assertTrue(getArcticTable().io().exists(fakeChangeOrphanFilePath));
       Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
@@ -255,7 +260,7 @@ public class TestOrphanFileCleanMix extends TableTestBase {
       Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
     }
 
-    ExecutorTestUtil.assertMetadataExists(getArcticTable());
+    ExecutorTestBase.assertMetadataExists(getArcticTable());
   }
 
 }
