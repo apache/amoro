@@ -137,7 +137,9 @@ public class BasicKeyedTable implements KeyedTable {
   @Override
   public void refresh() {
     try {
-      this.tableMeta = client.getTable(this.tableMeta.getTableIdentifier());
+      if (client != null) {
+        this.tableMeta = client.getTable(this.tableMeta.getTableIdentifier());
+      }
     } catch (TException e) {
       throw new IllegalStateException("failed refresh table from ams", e);
     }
