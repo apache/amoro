@@ -159,7 +159,7 @@ public class AmsUtil {
     }
   }
 
-  public static String getAMSHaAddress(Configurations conf) {
+  public static String getAMSThriftAddress(Configurations conf) {
     if (conf.getBoolean(HA_ENABLE)) {
       return "zookeeper://" + conf.getString(HA_ZOOKEEPER_ADDRESS) + "/" + conf.getString(HA_CLUSTER_NAME) + "/";
     } else {
