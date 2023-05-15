@@ -30,7 +30,7 @@ public interface PlatformFileMapper {
   /**
    * add a file with content encoded by base64
    */
-  @Insert("INERT INTO " + TABLE_NAME + "(file_name, file_content_b64)" +
+  @Insert("INSERT INTO " + TABLE_NAME + "(file_name, file_content_b64)" +
           " VALUES(#{fileInfo.fileName}, #{fileInfo.fileContent})")
   @Options(useGeneratedKeys = true, keyProperty = "fileInfo.fileId")
   void addFile(@Param("fileInfo") PlatformFileInfo platformFileInfo);

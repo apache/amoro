@@ -72,7 +72,6 @@ public class DashboardServer {
   private final LoginController loginController;
   private final OptimizerController optimizerController;
   private final PlatformFileInfoController platformFileInfoController;
-  private final RestBaseController restBaseController;
   private final SettingController settingController;
   private final TableController tableController;
   private final TerminalController terminalController;
@@ -88,7 +87,6 @@ public class DashboardServer {
     this.loginController = new LoginController(serviceConfig);
     this.optimizerController = new OptimizerController(tableService, optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
-    this.restBaseController = new RestBaseController();
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
     this.tableController = new TableController(tableService, tableDescriptor);

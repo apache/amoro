@@ -274,10 +274,7 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
         containerProperties.put(PropertyNames.AMS_HOME, Environments.getArcticHome());
-        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, String.format(
-            "thrift://%s:%s",
-            serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-            serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT)));
+        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, AmsUtil.getAMSThriftAddress(serviceConfig));
         if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
           containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
         }

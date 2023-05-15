@@ -287,6 +287,16 @@ public class TableRuntime extends PersistentBase {
     }
   }
 
+  public void initStatus() {
+    lock.lock();
+    try {
+      optimizingStatus = OptimizingStatus.IDLE;
+      persistUpdatingRuntime();
+    } finally {
+      lock.unlock();
+    }
+  }
+
   private void persistTableRuntime() {
     doAs(TableMetaMapper.class, mapper -> mapper.insertTableRuntime(this));
   }

@@ -51,8 +51,16 @@ public abstract class PersistentBase {
   }
 
   protected void doAsTransaction(Runnable... operations) {
-    for (Runnable runnable : operations) {
-      runnable.run();
+    try (NestedSqlSession session = beginSession()) {
+      try {
+        for (Runnable runnable : operations) {
+          runnable.run();
+        }
+        session.commit();
+      } catch (Throwable t) {
+        session.rollback();
+        throw t;
+      }
     }
   }
 
