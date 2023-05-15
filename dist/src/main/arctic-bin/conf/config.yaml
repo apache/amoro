@@ -75,6 +75,8 @@ optimizer_groups:
     container: localContainer
     properties:
       memory: 1024 # MB
+  - name: external-group
+    container: external # The external container is used to host all externally launched optimizers.
 
 #  - name: flinkOp
 #    container: flinkContainer

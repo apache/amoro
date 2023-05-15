@@ -80,6 +80,10 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
 
+  /**
+   * @deprecated since 0.5.0, will be removed in 0.6.0;
+   */
+  @Deprecated
   private final AmsClient client;
 
   public BasicUnkeyedTable(
