@@ -73,8 +73,8 @@ public class IcebergCommit {
       if (task.getInput().rewrittenDataFiles() != null) {
         removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
       }
-      if (task.getInput().deleteFiles() != null) {
-        removedDeleteFiles.addAll(Arrays.stream(task.getInput().deleteFiles())
+      if (task.getInput().rewriteDeleteFiles() != null) {
+        removedDeleteFiles.addAll(Arrays.stream(task.getInput().rewriteDeleteFiles())
             .map(IcebergContentFile::asDeleteFile).collect(Collectors.toSet()));
       }
     }

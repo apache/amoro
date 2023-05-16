@@ -32,7 +32,7 @@ public class MetricsSummary {
     for (IcebergDataFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
       rewritePosDataSize += rewritePosDataFile.fileSizeInBytes();
     }
-    for (IcebergContentFile delete : input.deleteFiles()) {
+    for (IcebergContentFile<?> delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteFileCnt++;

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.netease.arctic.server.persistence.converter;
 
 import org.apache.ibatis.type.JdbcType;
