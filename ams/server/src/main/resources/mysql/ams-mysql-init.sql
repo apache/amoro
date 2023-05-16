@@ -78,6 +78,9 @@ CREATE TABLE `table_identifier`
 CREATE TABLE `table_metadata`
 (
     `table_id`        bigint(20) NOT NULL COMMENT 'table id',
+    `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
+    `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
@@ -190,5 +193,18 @@ CREATE TABLE `platform_file` (
   `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='store files info saved in the platform';
+
+CREATE TABLE `table_blocker` (
+  `blocker_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Blocker unique id',
+  `catalog_name` varchar(64) NOT NULL COMMENT 'Catalog name',
+  `db_name` varchar(128) NOT NULL COMMENT 'Database name',
+  `table_name` varchar(128) NOT NULL COMMENT 'Table name',
+  `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
+  `create_time` datetime(3) DEFAULT NULL COMMENT 'Blocker create time',
+  `expiration_time` datetime(3) DEFAULT NULL COMMENT 'Blocker expiration time',
+  `properties` mediumtext COMMENT 'Blocker properties',
+  PRIMARY KEY (`blocker_id`),
+  KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
 
 INSERT INTO catalog_metadata(catalog_name,catalog_metastore,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog','ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');

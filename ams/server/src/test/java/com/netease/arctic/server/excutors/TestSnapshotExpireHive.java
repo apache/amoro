@@ -18,8 +18,9 @@
 
 package com.netease.arctic.server.excutors;
 
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -40,29 +41,32 @@ import java.util.List;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
-public class TestSnapshotExpireHive extends TableTestBase {
+public class TestSnapshotExpireHive extends TestSnapshotExpire {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestSnapshotExpireHive(boolean ifKeyed, boolean ifPartitioned) {
-    super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(ifKeyed, ifPartitioned));
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
+    return new Object[][]{
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, false)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, true)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, false)}};
   }
 
-  @Parameterized.Parameters(name = "ifKeyed = {0}, ifPartitioned = {1}")
-  public static Object[][] parameters() {
-    return new Object[][]{
-        {true, true},
-        {true, false},
-        {false, true},
-        {false, false}};
+  public TestSnapshotExpireHive(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
   }
 
   @Test
   public void testExpireTableFiles() {
-    List<DataFile> hiveFiles = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, true);
-    List<DataFile> s2Files = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, false);
+    List<DataFile> hiveFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> s2Files = writeAndCommitBaseAndHive(getArcticTable(), 1, false);
 
     DeleteFiles deleteHiveFiles = isKeyedTable() ?
         getArcticTable().asKeyedTable().baseTable().newDelete() : getArcticTable().asUnkeyedTable().newDelete();
@@ -80,7 +84,7 @@ public class TestSnapshotExpireHive extends TableTestBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = ExecutorTestUtil.writeAndCommitBaseAndHive(getArcticTable(), 1, false);
+    List<DataFile> s3Files = writeAndCommitBaseAndHive(getArcticTable(), 1, false);
     s3Files.forEach(file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
 
     Set<String> hiveLocation = new HashSet<>();
