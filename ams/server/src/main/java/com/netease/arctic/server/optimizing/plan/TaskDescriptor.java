@@ -1,6 +1,7 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.optimizing.RewriteFilesInput;
+
 import java.util.Map;
 
 public class TaskDescriptor {
