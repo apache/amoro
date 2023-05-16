@@ -1,8 +1,7 @@
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -15,26 +14,18 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(Parameterized.class)
-public class BasicMixedTablePartitionPlan extends TableTestBase {
+public abstract class AbstractMixedTablePartitionPlan extends TableTestBase {
 
-  private TableRuntime tableRuntime;
+  protected TableRuntime tableRuntime;
 
-  public BasicMixedTablePartitionPlan(boolean hasPrimaryKey, boolean hasPartition) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(hasPrimaryKey, hasPartition));
-  }
-
-  @Parameterized.Parameters(name = "hasPrimaryKey={0}，hasPartition={1}")
-  public static Object[] parameters() {
-    return new Object[][] {{true, true}, {true, false}, {false, true}, {false, false}};
+  public AbstractMixedTablePartitionPlan(CatalogTestHelper catalogTestHelper,
+                                         TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
   }
 
   @Before
@@ -46,13 +37,12 @@ public class BasicMixedTablePartitionPlan extends TableTestBase {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(getConfig());
   }
 
-  @Test
   public void testSimple() {
-    List<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(6, "666", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
+    ArrayList<Record> newRecords = Lists.newArrayList(
+        tableTestHelper().generateTestRecord(6, "666", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(7, "777", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(8, "888", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
     long transactionId = beginTransaction();
     DataTestHelpers.writeAndCommitBaseStore(getArcticTable(), transactionId, newRecords, false);
@@ -66,18 +56,9 @@ public class BasicMixedTablePartitionPlan extends TableTestBase {
 
     List<TaskDescriptor> taskDescriptors = partitionPlan.splitTasks(0);
     System.out.println(taskDescriptors);
-
   }
-
-  private AbstractPartitionPlan getPartitionPlan() {
-    if (isKeyedTable()) {
-      return new KeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-          isPartitionedTable() ? "op_time_day=2022-01-01" : "", System.currentTimeMillis());
-    } else {
-      return new UnkeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-          isPartitionedTable() ? "op_time_day=2022-01-01" : "", System.currentTimeMillis());
-    }
-  }
+  
+  protected abstract AbstractPartitionPlan getPartitionPlan();
 
   private TableFileScanHelper getTableFileScanHelper() {
     if (isKeyedTable()) {
