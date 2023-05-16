@@ -18,31 +18,61 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.utils.TableFileUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.Tables;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Multimap;
+import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static com.netease.arctic.TableTestBase.newGenericRecord;
+import static com.netease.arctic.TableTestBase.partitionData;
+import static com.netease.arctic.TableTestBase.writeEqDeleteFile;
+import static com.netease.arctic.TableTestBase.writeNewDataFile;
+import static com.netease.arctic.TableTestBase.writePosDeleteFile;
+
 public class UnKeyedTableUtilTest extends TableTestBase {
+  @Rule
+  public TemporaryFolder tempFolder = new TemporaryFolder();
+
   public UnKeyedTableUtilTest() {
-    super(TableFormat.MIXED_ICEBERG, true, true);
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -134,6 +164,72 @@ public class UnKeyedTableUtilTest extends TableTestBase {
         .retainLast(1).expireOlderThan(System.currentTimeMillis()).cleanExpiredFiles(true).commit();
     s1FilePath.remove(TableFileUtils.getUriPath(result.dataFiles()[0].path().toString()));
     Assert.assertEquals(s1FilePath, UnKeyedTableUtil.getAllContentFilePath(getArcticTable().asKeyedTable().baseTable()));
+  }
+
+  @Test
+  public void testGetAllContentFilesForIcebergFormat() throws IOException {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+
+    String path = tempFolder.getRoot().getPath();
+    Table table = hadoopTables.create(com.netease.arctic.TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(),
+        tableProperties, path + "/test/table1");
+    List<DataFile> dataFiles = insertDataFiles(table, 10);
+    List<DeleteFile> eqDeleteFiles = insertEqDeleteFiles(table, 1);
+    List<DeleteFile> posDeleteFiles = insertPosDeleteFiles(table, dataFiles);
+    Set<String> realPaths = new HashSet<>();
+    dataFiles.stream().map(DataFile::path).map(CharSequence::toString).forEach(realPaths::add);
+    eqDeleteFiles.stream().map(DeleteFile::path).map(CharSequence::toString).forEach(realPaths::add);
+    posDeleteFiles.stream().map(DeleteFile::path).map(CharSequence::toString).forEach(realPaths::add);
+    Set<String> allContentFilePath = UnKeyedTableUtil.getAllContentFilePath(table);
+    Assert.assertEquals(realPaths, allContentFilePath);
+  }
+
+  private static List<DataFile> insertDataFiles(Table table, int length) throws IOException {
+    StructLike partitionData = partitionData(table.schema(), table.spec(), getOpTime());
+    DataFile result = writeNewDataFile(table, records(0, length, table.schema()), partitionData);
+
+    AppendFiles baseAppend = table.newAppend();
+    baseAppend.appendFile(result);
+    baseAppend.commit();
+
+    return Collections.singletonList(result);
+  }
+
+  private static List<Record> records(int start, int length, Schema tableSchema) {
+    List<Record> records = Lists.newArrayList();
+    for (int i = start; i < start + length; i++) {
+      records.add(newGenericRecord(tableSchema, i, "name", getOpTime()));
+    }
+    return records;
+  }
+
+  private static LocalDateTime getOpTime() {
+    return LocalDateTime.of(2022, 1, 1, 12, 0, 0);
+  }
+
+  private List<DeleteFile> insertPosDeleteFiles(Table table, List<DataFile> dataFiles) throws IOException {
+    Multimap<String, Long> file2Positions = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
+    for (DataFile dataFile : dataFiles) {
+      file2Positions.put(dataFile.path().toString(), 0L);
+    }
+    StructLike partitionData = partitionData(table.schema(), table.spec(), getOpTime());
+    DeleteFile result = writePosDeleteFile(table, file2Positions, partitionData);
+    RowDelta rowDelta = table.newRowDelta();
+    rowDelta.addDeletes(result);
+    rowDelta.commit();
+    return Collections.singletonList(result);
+  }
+
+  private List<DeleteFile> insertEqDeleteFiles(Table table, int length) throws IOException {
+    StructLike partitionData = partitionData(table.schema(), table.spec(), getOpTime());
+    DeleteFile result = writeEqDeleteFile(table, records(0, length, table.schema()), partitionData);
+
+    RowDelta rowDelta = table.newRowDelta();
+    rowDelta.addDeletes(result);
+    rowDelta.commit();
+    return Collections.singletonList(result);
   }
 
   private List<Record> writeRecords() {

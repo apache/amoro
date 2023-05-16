@@ -435,11 +435,11 @@ public class CatalogController extends RestBaseController {
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();
       String key = configKey.replaceAll("-", "\\.");
-      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      ctx.result(Base64.getDecoder().decode(storageConfig.get(key)));
     } else if (CONFIG_TYPE_AUTH.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getAuthConfigs();
       String key = configKey.replaceAll("-", "\\.");
-      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      ctx.result(Base64.getDecoder().decode(storageConfig.get(key)));
     } else {
       ctx.json(new ErrorResponse("Invalid request for " + confType));
     }

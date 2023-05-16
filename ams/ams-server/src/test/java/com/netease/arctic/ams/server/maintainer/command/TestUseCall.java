@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,15 +28,15 @@ public class TestUseCall extends CallCommandTestBase {
   @Test
   public void test() throws TException, CallCommand.FullTableNameException {
     Context context = new Context();
-    callFactory.generateUseCall(TableTestHelpers.TEST_CATALOG_NAME).call(context);
-    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context.getCatalog());
-    callFactory.generateUseCall(TableTestHelpers.TEST_DB_NAME).call(context);
-    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context.getDb());
+    callFactory.generateUseCall(TableTestHelper.TEST_CATALOG_NAME).call(context);
+    Assert.assertEquals(TableTestHelper.TEST_CATALOG_NAME, context.getCatalog());
+    callFactory.generateUseCall(TableTestHelper.TEST_DB_NAME).call(context);
+    Assert.assertEquals(TableTestHelper.TEST_DB_NAME, context.getDb());
 
     Context context1 = new Context();
-    callFactory.generateUseCall(String.format("%s.%s", TableTestHelpers.TEST_CATALOG_NAME, TableTestHelpers.TEST_DB_NAME))
+    callFactory.generateUseCall(String.format("%s.%s", TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME))
         .call(context1);
-    Assert.assertEquals(TableTestHelpers.TEST_CATALOG_NAME, context1.getCatalog());
-    Assert.assertEquals(TableTestHelpers.TEST_DB_NAME, context1.getDb());
+    Assert.assertEquals(TableTestHelper.TEST_CATALOG_NAME, context1.getCatalog());
+    Assert.assertEquals(TableTestHelper.TEST_DB_NAME, context1.getDb());
   }
 }

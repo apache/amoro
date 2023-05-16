@@ -34,9 +34,6 @@ public class TestHMS extends ExternalResource {
   private static HMSMockServer SINGLETON;
   private static TemporaryFolder SINGLETON_FOLDER;
 
-  private final HMSMockServer mockHms;
-  private TemporaryFolder hmsFolder;
-
   static {
     try {
       if (SingletonResourceUtil.isUseSingletonResource()) {
@@ -48,6 +45,9 @@ public class TestHMS extends ExternalResource {
       throw new UncheckedIOException(e);
     }
   }
+
+  private final HMSMockServer mockHms;
+  private TemporaryFolder hmsFolder;
 
   public TestHMS() {
     if (SingletonResourceUtil.isUseSingletonResource()) {
@@ -69,6 +69,10 @@ public class TestHMS extends ExternalResource {
 
   public HiveMetaStoreClient getHiveClient() {
     return mockHms.getClient();
+  }
+
+  public String getWareHouseLocation() {
+    return mockHms.getWareHouseLocation();
   }
 
   @Override

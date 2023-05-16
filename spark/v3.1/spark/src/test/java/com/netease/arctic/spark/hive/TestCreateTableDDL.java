@@ -718,6 +718,86 @@ public class TestCreateTableDDL extends SparkTestBase {
     assertTableNotExist(identifierB);
   }
 
+  @Test
+  public void testAlterKeyedTableAddColumnWithUppercaseLetters() throws TException {
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by (ts string, dt string) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableA);
+    assertTableExist(identifierA);
+    ArcticTable keyedTableA = loadTable(identifierA);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, keyedTableA.schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+    sql("alter table {0}.{1} add columns (newCol1 string, newCol2 string)", database, tableA);
+    sql("desc table {0}.{1}", database, tableA);
+    sql("alter table {0}.{1} add columns (newCol3 string, newCol4 string)", database, tableA);
+    sql("desc table {0}.{1}", database, tableA);
+
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "newcol1", "newcol2", "newcol3", "newcol4", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}", database, tableA);
+    assertTableNotExist(identifierA);
+  }
+
+  @Test
+  public void testAlterUnkeyedTableAddColumnWithUppercaseLetters() throws TException {
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string" +
+        ") using arctic \n" +
+        " partitioned by (ts string, dt string) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableA);
+    assertTableExist(identifierA);
+    ArcticTable keyedTableA = loadTable(identifierA);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, keyedTableA.schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+    sql("alter table {0}.{1} add columns (newCol1 string, newCol2 string)", database, tableA);
+
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "newcol1", "newcol2", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}", database, tableA);
+    assertTableNotExist(identifierA);
+  }
+
   private String rowToSqlValues(List<Object[]> rows) {
     List<String> rowValues = rows.stream().map(row -> {
       List<String> columns = Arrays.stream(row).map(value -> {

@@ -20,24 +20,25 @@ package com.netease.arctic.ams.server.maintainer.command;
 
 import com.google.common.collect.Iterables;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.server.maintainer.MaintainerConfig;
 import com.netease.arctic.catalog.CatalogManager;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.ChangeTable;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.io.CloseableIterable;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CallCommandTestBase extends TableDataTestBase {
 
   public static CallFactory callFactory = new DefaultCallFactory(
-      new MaintainerConfig(TEST_AMS.getServerUrl(), TEST_CATALOG_NAME),
+      new MaintainerConfig(TEST_AMS.getServerUrl(), CatalogTestHelper.TEST_CATALOG_NAME),
       new CatalogManager(TEST_AMS.getServerUrl()),
       new PooledAmsClient(TEST_AMS.getServerUrl())
   );
@@ -67,7 +68,7 @@ public class CallCommandTestBase extends TableDataTestBase {
 
   protected int removeMetadata() {
     RepairTableOperation tableOperation = new RepairTableOperation(new CatalogManager(getCatalogUrl()),
-        TableTestHelpers.TEST_TABLE_ID, ChangeLocationKind.INSTANT);
+        TableTestHelper.TEST_TABLE_ID, ChangeLocationKind.INSTANT);
 
     ChangeTable changeTable = getArcticTable().asKeyedTable().changeTable();
     int version = tableOperation.findVersion();

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,6 +61,6 @@ public class TestAnalyzeCall extends CallCommandTestBase {
   }
 
   private String call() {
-    return callFactory.generateAnalyzeCall(TableTestHelpers.TEST_TABLE_ID.toString()).call(new Context());
+    return callFactory.generateAnalyzeCall(TableTestHelper.TEST_TABLE_ID.toString()).call(new Context());
   }
 }
