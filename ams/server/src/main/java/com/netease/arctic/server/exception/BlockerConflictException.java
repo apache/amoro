@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.server.exception;
 
-@FunctionalInterface
-public interface SupplierWithException<T, E extends Exception> {
-  T get() throws E;
+public class BlockerConflictException extends ArcticRuntimeException {
+
+  public BlockerConflictException(String message) {
+    super(message);
+  }
 }

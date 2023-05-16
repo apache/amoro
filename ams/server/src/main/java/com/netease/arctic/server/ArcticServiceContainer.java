@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
@@ -164,12 +165,14 @@ public class ArcticServiceContainer {
     protocolFactory = new TBinaryProtocol.Factory();
     inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
 
-    ArcticTableMetastore.Processor<TableManagementService> tableMetastoreProcessor =
-        new ArcticTableMetastore.Processor<>(new TableManagementService(tableService));
+    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
+        new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
+            new TableManagementService(tableService), ArcticRuntimeException::transformCompatibleException));
     processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
-    OptimizingService.Processor<DefaultOptimizingService> optimizerManagerProcessor =
-        new OptimizingService.Processor<>(optimizingService);
+    OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
+        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
+            optimizingService, ArcticRuntimeException::transform2ArcticException));
     processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);

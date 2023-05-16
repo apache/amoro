@@ -23,16 +23,8 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import org.apache.iceberg.io.OutputFile;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.io.File;
-import java.io.IOException;
-
-import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.DATA_FOLDER_NAME;
 
 @RunWith(Parameterized.class)
 public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {

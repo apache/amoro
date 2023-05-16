@@ -65,7 +65,8 @@ public interface CatalogMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
   void insertCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 
-  @Delete("DELETE FROM " + TABLE_NAME + " WHERE catalog_name = #{catalogName}")
+  @Delete("DELETE FROM " + TABLE_NAME + " WHERE catalog_name = #{catalogName} AND database_count = 0" +
+      " AND table_count = 0")
   int deleteCatalog(@Param("catalogName") String catalogName);
 
   @Update("UPDATE " + TABLE_NAME + " SET catalog_metastore = #{catalogMeta.catalogType}," +

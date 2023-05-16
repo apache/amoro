@@ -20,8 +20,6 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
@@ -125,10 +123,8 @@ public interface TableService extends CatalogService, TableRuntimeManager {
    * blocker operations
    *
    * @return the created blocker
-   * @throws OperationConflictException if operations conflict
    */
-  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException;
+  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties);
 
   /**
    * release the blocker
@@ -139,9 +135,8 @@ public interface TableService extends CatalogService, TableRuntimeManager {
    * renew the blocker
    *
    * @return expiration time
-   * @throws NoSuchObjectException if blocker not exist, we keep this exception for compatibility with 0.4.1
    */
-  long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException;
+  long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
    * get blockers of table

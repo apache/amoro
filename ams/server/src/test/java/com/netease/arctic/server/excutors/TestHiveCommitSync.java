@@ -19,7 +19,6 @@
 package com.netease.arctic.server.excutors;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

@@ -22,10 +22,8 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -38,11 +36,8 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static com.netease.arctic.hive.catalog.HiveTableTestHelper.HIVE_TABLE_SCHEMA;
 
 public class ExecutorTestBase extends TableTestBase {
 
