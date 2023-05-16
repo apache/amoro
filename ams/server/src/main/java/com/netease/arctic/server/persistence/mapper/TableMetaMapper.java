@@ -132,14 +132,9 @@ public interface TableMetaMapper {
       @Param("tableId") long tableId,
       @Param("properties") Map<String, String> properties);
 
-  @Update("UPDATE table_metadata SET current_tx_id = #{txId} WHERE table_id = #{tableId}")
-  void updateTableTxId(
-      @Param("tableId") long tableId,
-      @Param("txId") Long txId);
-
   @Select("SELECT table_id, table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id FROM " +
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM " +
       "table_metadata WHERE table_id = #{tableId}")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
@@ -159,13 +154,12 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "currentTxId", column = "current_tx_id")
+          typeHandler = Map2StringConverter.class)
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
   @Select("SELECT table_id, primary_key, table_location, base_location, change_location, meta_store_site, hdfs_site," +
-      " core_site, auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id" +
+      " core_site, auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties " +
       " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
       " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{database}" +
       " AND table_name = #{tableName}")
@@ -184,8 +178,7 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class),
-      @Result(property = "currentTxId", column = "current_tx_id")
+          typeHandler = Map2StringConverter.class)
   })
   TableMetadata selectTableMetaByName(String catalogName, String databaseName, String tableName);
 

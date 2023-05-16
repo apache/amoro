@@ -132,8 +132,6 @@ public class TableMetadata implements Serializable {
 
   private Map<String, String> properties;
 
-  private Long currentTxId;
-
   private volatile TableMetaStore metaStore;
 
   public String getTableLocation() {
@@ -266,13 +264,5 @@ public class TableMetadata implements Serializable {
 
   public void setKrbPrincipal(String krbPrincipal) {
     this.krbPrincipal = krbPrincipal;
-  }
-
-  public Long getCurrentTxId() {
-    return currentTxId;
-  }
-
-  public void setCurrentTxId(Long currentTxId) {
-    this.currentTxId = currentTxId;
   }
 }

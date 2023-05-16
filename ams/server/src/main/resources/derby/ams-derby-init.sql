@@ -76,7 +76,6 @@ CREATE TABLE table_metadata (
     krb_keytab       CLOB(64m),
     krb_conf         CLOB(64m),
     krb_principal    CLOB(64m),
-    current_tx_id    BIGINT NOT NULL DEFAULT 0,
     current_schema_id INT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
