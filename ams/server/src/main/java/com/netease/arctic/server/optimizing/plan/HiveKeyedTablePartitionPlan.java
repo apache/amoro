@@ -75,7 +75,7 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
   }
 
   private boolean moveFiles2CurrentHiveLocation() {
-    return partitionShouldFullOptimizing() && !config.isFullRewriteAllFiles() && !findAnyDelete();
+    return isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
   }
 
   @Override

@@ -40,7 +40,7 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
 
   public KeyedTablePartitionPlan(TableRuntime tableRuntime,
                                  ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition));
+    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition, planTime));
   }
 
   @Override

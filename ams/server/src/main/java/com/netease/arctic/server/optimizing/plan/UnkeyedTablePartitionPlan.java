@@ -17,7 +17,7 @@ public class UnkeyedTablePartitionPlan extends AbstractPartitionPlan {
 
   public UnkeyedTablePartitionPlan(TableRuntime tableRuntime,
                                    ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition));
+    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition, planTime));
   }
 
   @Override
