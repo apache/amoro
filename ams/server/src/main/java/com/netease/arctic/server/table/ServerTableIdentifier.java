@@ -12,6 +12,10 @@ public class ServerTableIdentifier {
   private String database;
   private String tableName;
 
+  //used by the MyBatis framework.
+  private ServerTableIdentifier() {
+  }
+
   private ServerTableIdentifier(TableIdentifier tableIdentifier) {
     this.catalog = tableIdentifier.getCatalog();
     this.database = tableIdentifier.getDatabase();

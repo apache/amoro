@@ -134,7 +134,7 @@ public class MixedTables {
         fileIO, tableMetaStore.getConfiguration()), fileIO, amsClient, catalogMeta.getCatalogProperties());
   }
 
-  protected ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+  public ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec) {
     if (primaryKeySpec.primaryKeyExisted()) {
       return createKeyedTable(tableMeta, schema, primaryKeySpec, partitionSpec);
@@ -208,7 +208,7 @@ public class MixedTables {
         tableMetaStore.getConfiguration()), fileIO, amsClient, catalogMeta.getCatalogProperties());
   }
 
-  protected void dropTableByMeta(TableMeta tableMeta, boolean purge) {
+  public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       Map<String, String> tableProperties = Maps.newHashMap();
@@ -263,7 +263,7 @@ public class MixedTables {
     });
   }
 
-  protected void refreshCatalogMeta(CatalogMeta meta) {
+  public void refreshCatalogMeta(CatalogMeta meta) {
     initialize(meta);
   }
 

@@ -1,7 +1,7 @@
 package com.netease.arctic.server.persistence.mapper;
 
 import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
-import com.netease.arctic.server.persistence.converter.Long2TsConvertor;
+import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
@@ -31,7 +31,7 @@ public interface TableMetaMapper {
   String selectDatabase(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
 
   @Delete("DELETE FROM database_metadata WHERE catalog_name = #{catalogName} AND db_name = #{dbName}" +
-      " AND table_count=0")
+      " AND table_count = 0")
   Integer dropDb(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
 
   @Update("UPDATE database_metadata SET table_count = table_count + #{tableCount} WHERE db_name = #{databaseName}")
@@ -88,7 +88,7 @@ public interface TableMetaMapper {
       @Result(property = "coreSite", column = "core_site"),
       @Result(property = "authMethod", column = "auth_method"),
       @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeyteb", column = "krb_keytab"),
+      @Result(property = "krbKeytab", column = "krb_keytab"),
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
@@ -98,10 +98,10 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("database") String database);
 
-  @Insert("INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key, " +
-      " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
+  @Insert("INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key," +
+      " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site," +
       " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties)" +
-      " Values(" +
+      " VALUES(" +
       " #{tableMeta.tableIdentifier.id}," +
       " #{tableMeta.tableIdentifier.tableName}," +
       " #{tableMeta.tableIdentifier.database}," +
@@ -115,7 +115,7 @@ public interface TableMetaMapper {
       " #{tableMeta.coreSite, jdbcType=VARCHAR}," +
       " #{tableMeta.authMethod, jdbcType=VARCHAR}," +
       " #{tableMeta.hadoopUsername, jdbcType=VARCHAR}," +
-      " #{tableMeta.krbKeyteb, jdbcType=VARCHAR}," +
+      " #{tableMeta.krbKeytab, jdbcType=VARCHAR}," +
       " #{tableMeta.krbConf, jdbcType=VARCHAR}," +
       " #{tableMeta.krbPrincipal, jdbcType=VARCHAR}," +
       " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
@@ -150,7 +150,7 @@ public interface TableMetaMapper {
       @Result(property = "coreSite", column = "core_site"),
       @Result(property = "authMethod", column = "auth_method"),
       @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeyteb", column = "krb_keytab"),
+      @Result(property = "krbKeytab", column = "krb_keytab"),
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
@@ -158,13 +158,18 @@ public interface TableMetaMapper {
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
-  @Select("SELECT table_id, primary_key, table_location, base_location, change_location, meta_store_site, hdfs_site," +
-      " core_site, auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties " +
+  @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name," +
+      " table_identifier.db_name as db_name, table_identifier.table_name as table_name,  primary_key," +
+      " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, auth_method," +
+      " hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id" +
       " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
-      " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{database}" +
-      " AND table_name = #{tableName}")
+      " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{databaseName}" +
+      " AND table_identifier.table_name = #{tableName}")
   @Results({
-      @Result(property = "tableId", column = "table_id"),
+      @Result(property = "tableIdentifier.id", column = "table_id"),
+      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+      @Result(property = "tableIdentifier.database", column = "db_name"),
+      @Result(property = "tableIdentifier.tableName", column = "table_name"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -174,13 +179,14 @@ public interface TableMetaMapper {
       @Result(property = "coreSite", column = "core_site"),
       @Result(property = "authMethod", column = "auth_method"),
       @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeyteb", column = "krb_keytab"),
+      @Result(property = "krbKeytab", column = "krb_keytab"),
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
           typeHandler = Map2StringConverter.class)
   })
-  TableMetadata selectTableMetaByName(String catalogName, String databaseName, String tableName);
+  TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
+      @Param("databaseName") String databaseName, @Param("tableName") String tableName);
 
   @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
       " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")
@@ -188,7 +194,7 @@ public interface TableMetaMapper {
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
   @Delete("DELETE FROM table_identifier WHERE table_id = #{tableId}")
-  Integer deleteTableIdById(@Param("tableIdentifier") long tableId);
+  Integer deleteTableIdById(@Param("tableId") long tableId);
 
   @Delete("DELETE FROM table_identifier WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}" +
       " AND table_name = #{tableName}")
@@ -245,14 +251,14 @@ public interface TableMetaMapper {
       " current_change_snapshotId =#{runtime.currentChangeSnapshotId}," +
       " last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId}," +
       " last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, " +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " last_minor_optimizing_time = #{runtime.lastMinorOptimizingTime," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " last_full_optimizing_time = #{runtime.lastFullOptimizingTime," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " optimizing_status = #{runtime.optimizingStatus}," +
       " optimizing_status_start_time = #{runtime.currentStatusStartTime," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " optimizing_process_id = #{runtime.processId}," +
       " optimizer_group = #{runtime.optimizerGroup}," +
       " table_config = #{runtime.tableConfiguration," +
@@ -269,14 +275,14 @@ public interface TableMetaMapper {
       " optimizer_group, table_config) VALUES (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
       " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}," +
       " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}, #{runtime.lastMajorOptimizingTime, " +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.lastMinorOptimizingTime," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.lastFullOptimizingTime," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.optimizingStatus}," +
       " #{runtime.currentStatusStartTime, " +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.processId}, #{runtime.optimizerGroup}," +
       " #{runtime.tableConfiguration," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
@@ -292,14 +298,14 @@ public interface TableMetaMapper {
       @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
       @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
       @Result(property = "lastMajorOptimizingTime", column = "last_major_optimizing_time", typeHandler =
-          Long2TsConvertor.class),
+          Long2TsConverter.class),
       @Result(property = "lastMinorOptimizingTime", column = "last_minor_optimizing_time", typeHandler =
-          Long2TsConvertor.class),
+          Long2TsConverter.class),
       @Result(property = "lastFullOptimizingTime", column = "last_full_optimizing_time", typeHandler =
-          Long2TsConvertor.class),
+          Long2TsConverter.class),
       @Result(property = "tableStatus", column = "optimizing_status"),
       @Result(property = "currentStatusStartTime", column = "optimizing_status_start_time", typeHandler =
-          Long2TsConvertor.class),
+          Long2TsConverter.class),
       @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
       @Result(property = "optimizerGroup", column = "optimizer_group"),
       @Result(property = "tableConfig", column = "table_config", typeHandler = JsonSummaryConverter.class)

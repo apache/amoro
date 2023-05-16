@@ -2,7 +2,7 @@ package com.netease.arctic.server.persistence.mapper;
 
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.persistence.converter.Long2TsConvertor;
+import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import org.apache.ibatis.annotations.Delete;
@@ -39,7 +39,7 @@ public interface ResourceMapper {
       @Result(property = "resourceId", column = "resource_id"),
       @Result(property = "group", column = "group_name"),
       @Result(property = "container", column = "container_name"),
-      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConvertor.class),
+      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
       @Result(property = "threadCount", column = "thread_count"),
       @Result(property = "totalMemory", column = "total_memory"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
@@ -74,7 +74,7 @@ public interface ResourceMapper {
       @Result(property = "resourceId", column = "resource_id"),
       @Result(property = "containerName", column = "container_name"),
       @Result(property = "groupName", column = "group_name"),
-      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConvertor.class),
+      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
       @Result(property = "threadCount", column = "thread_count"),
       @Result(property = "memoryMb", column = "total_memory"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),

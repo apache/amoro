@@ -25,6 +25,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.PlatformFileMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
+import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -95,6 +96,7 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(ApiTokensMapper.class);
     configuration.addMapper(PlatformFileMapper.class);
     configuration.addMapper(ResourceMapper.class);
+    configuration.addMapper(TableBlockerMapper.class);
     if (sqlSessionFactory == null) {
       synchronized (this) {
         if (sqlSessionFactory == null) {
