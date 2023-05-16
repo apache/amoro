@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.server.catalog.CatalogType;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.spark.ArcticSparkCatalog;

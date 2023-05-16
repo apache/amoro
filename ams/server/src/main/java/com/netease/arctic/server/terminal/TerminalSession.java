@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.server.catalog.CatalogType;
 
 import java.util.List;
