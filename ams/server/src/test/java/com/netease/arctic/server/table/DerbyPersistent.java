@@ -70,11 +70,11 @@ public class DerbyPersistent extends ExternalResource {
 
   private static void truncateAllTables() {
     try (SqlSession sqlSession = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
-      try(Connection connection = sqlSession.getConnection()) {
-        try(Statement statement = connection.createStatement()) {
+      try (Connection connection = sqlSession.getConnection()) {
+        try (Statement statement = connection.createStatement()) {
           String query = "SELECT TABLENAME FROM SYS.SYSTABLES WHERE TABLETYPE='T'";
           List<String> tableList = Lists.newArrayList();
-          try(ResultSet rs = statement.executeQuery(query)) {
+          try (ResultSet rs = statement.executeQuery(query)) {
             while (rs.next()) {
               tableList.add(rs.getString(1));
             }
