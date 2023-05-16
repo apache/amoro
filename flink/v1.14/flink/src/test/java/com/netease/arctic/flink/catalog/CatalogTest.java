@@ -18,10 +18,14 @@
 
 package com.netease.arctic.flink.catalog;
 
-import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
+
+import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.UpdateProperties;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,8 +33,11 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
 
 public class CatalogTest extends FlinkTestBase {
 
@@ -43,6 +50,26 @@ public class CatalogTest extends FlinkTestBase {
   public void before() throws Exception {
     super.before();
     super.config(TEST_CATALOG_NAME);
+  }
+
+  @Test
+  public void testRefresh() {
+    ArcticTableLoader tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+
+    tableLoader.open();
+    ArcticTable arcticTable = tableLoader.loadArcticTable();
+    boolean catchUp = true;
+    String catchUpTs = "1";
+
+    UpdateProperties updateProperties = arcticTable.updateProperties();
+    updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(catchUp));
+    updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), catchUpTs);
+    updateProperties.commit();
+
+    arcticTable.refresh();
+    Map<String, String> properties = arcticTable.properties();
+    Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
+    Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
   }
 
   @Test

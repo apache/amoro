@@ -18,6 +18,16 @@
 
 package com.netease.arctic.flink.write;
 
+import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.types.RowKind;
+
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
@@ -31,15 +41,6 @@ import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
-import org.apache.flink.streaming.api.CheckpointingMode;
-import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.CheckpointConfig;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
@@ -240,7 +241,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     List<Object[]> expected = isGapNone ? expects.subList(1, expects.size()) : expects.subList(2, expects.size());
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
-//    Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP_DEFAULT)));
+    Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
   }
 
   private void checkLogstoreDataAccuracy(String topic, List<Object[]> expects) {
