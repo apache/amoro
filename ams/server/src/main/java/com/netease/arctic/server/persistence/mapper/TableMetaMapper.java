@@ -43,11 +43,14 @@ public interface TableMetaMapper {
   @Select("select table_count from database_metadata where db_name=#{databaseName}")
   Integer selectTableCount(@Param("databaseName") String databaseName);
 
-  @Select("select table_id, primary_key, " +
+  @Select("select table_id, table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties from table_metadata")
   @Results({
-      @Result(property = "tableId", column = "table_id"),
+      @Result(property = "tableIdentifier.id", column = "table_id"),
+      @Result(property = "tableIdentifier.tableName", column = "table_name"),
+      @Result(property = "tableIdentifier.database", column = "db_name"),
+      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -72,7 +75,7 @@ public interface TableMetaMapper {
       "inner join table_identifier on table_metadata.table_id=table_identifier.table_id where " +
       "table_identifier.catalog_name=#{catalogName} and table_identifier.db_name=#{database}")
   @Results({
-      @Result(property = "tableId", column = "table_id"),
+      @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
@@ -95,11 +98,14 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("database") String database);
 
-  @Insert("insert into table_metadata(table_id, primary_key, " +
+  @Insert("insert into table_metadata(table_id, table_name, db_name, catalog_name, primary_key, " +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties)" +
       " values(" +
-      " #{tableMeta.tableId}," +
+      " #{tableMeta.tableIdentifier.id}," +
+      " #{tableMeta.tableIdentifier.tableName}," +
+      " #{tableMeta.tableIdentifier.database}," +
+      " #{tableMeta.tableIdentifier.catalog}," +
       " #{tableMeta.primaryKey, jdbcType=VARCHAR}," +
       " #{tableMeta.tableLocation, jdbcType=VARCHAR}," +
       " #{tableMeta.baseLocation, jdbcType=VARCHAR}," +
@@ -133,12 +139,15 @@ public interface TableMetaMapper {
       @Param("tableId") long tableId,
       @Param("txId") Long txId);
 
-  @Select("select table_id, primary_key, " +
+  @Select("select table_id, table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id from " +
       "table_metadata where table_id = #{tableId}")
   @Results({
-      @Result(property = "tableId", column = "table_id"),
+      @Result(property = "tableIdentifier.id", column = "table_id"),
+      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+      @Result(property = "tableIdentifier.database", column = "db_name"),
+      @Result(property = "tableIdentifier.tableName", column = "table_name"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),

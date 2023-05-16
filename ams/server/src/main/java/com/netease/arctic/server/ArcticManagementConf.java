@@ -231,7 +231,7 @@ public class ArcticManagementConf {
   public static final String CONTAINER_PROPERTIES = "properties";
 
   //optimize config
-  public static final String OPTIMIZER_GROUP_LIST = "optimize_group";
+  public static final String OPTIMIZER_GROUP_LIST = "optimizer_group";
   public static final String OPTIMIZER_GROUP_NAME = "name";
   public static final String OPTIMIZER_GROUP_CONTAINER = "container";
   public static final String OPTIMIZER_GROUP_PROPERTIES = "properties";

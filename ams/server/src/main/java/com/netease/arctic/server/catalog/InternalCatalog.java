@@ -46,12 +46,13 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   public ServerTableIdentifier createTable(TableMeta tableMeta) {
     ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
-    TableMetadata tableMetadata = new TableMetadata(tableMeta, getMetadata());
+    TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
         () -> createTableInternal(tableMetadata),
-        () -> doAsExisted(CatalogMetaMapper.class, mapper ->
-                mapper.incTableCount(1, name()),
+        () -> doAsExisted(
+            CatalogMetaMapper.class,
+            mapper -> mapper.incTableCount(1, name()),
             () -> new ObjectNotExistsException(name())),
         () -> doAsExisted(
             TableMetaMapper.class,
