@@ -65,11 +65,8 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
           val resolvedCond = cond.map(resolveCond("DELETE", _, m))
           DeleteAction(resolvedCond)
 
-        case UpdateAction(cond, _) =>
+        case UpdateAction(cond, assignments) =>
           val resolvedUpdateCondition = cond.map(resolveCond("UPDATE", _, m))
-          val assignments = aliasedTable.output.map { attr =>
-            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
-          }
           // for UPDATE *, the value must be from the source table
           val resolvedAssignments =
             resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
@@ -91,11 +88,8 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
-        case InsertAction(cond, _) =>
+        case InsertAction(cond, assignments) =>
           val resolvedCond = cond.map(resolveCond("INSERT", _, Project(Nil, m.sourceTable)))
-          val assignments = aliasedTable.output.map { attr =>
-            Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
-          }
           val resolvedAssignments =
             resolveAssignments(assignments, m, resolveValuesWithSourceOnly = true)
           InsertAction(resolvedCond, resolvedAssignments)

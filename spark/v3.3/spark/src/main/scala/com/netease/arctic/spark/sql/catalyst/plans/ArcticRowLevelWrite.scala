@@ -28,7 +28,7 @@ case class ArcticRowLevelWrite(
     query: LogicalPlan,
     options: Map[String, String],
     projections: WriteQueryProjections,
-    write: Option[Write] = None) extends V2WriteCommandLike {
+    write: Option[Write] = None) extends V2WriteCommandLike with Command{
 
   def isByName: Boolean = false
 
