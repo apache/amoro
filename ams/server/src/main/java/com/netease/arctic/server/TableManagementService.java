@@ -30,6 +30,7 @@ import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
+import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -105,8 +106,8 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-    return 0;
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+    throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
   }
 
   @Override
