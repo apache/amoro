@@ -396,11 +396,6 @@ public class MockArcticMetastoreServer implements Runnable {
       }
     }
 
-    @Override
-    public void refreshTable(TableIdentifier tableIdentifier) throws TException {
-
-    }
-
     public void updateMeta(CatalogMeta meta, String key, String value) {
       meta.getCatalogProperties().put(key, value);
     }

@@ -19,9 +19,9 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.exception.BlockerConflictException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -455,10 +455,9 @@ public class TableRuntime extends PersistentBase {
    * @param properties     -
    * @param blockerTimeout -
    * @return TableBlocker if success
-   * @throws OperationConflictException when operations have been blocked
    */
   public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
-                            long blockerTimeout) throws OperationConflictException {
+                            long blockerTimeout) {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
     Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
@@ -468,15 +467,11 @@ public class TableRuntime extends PersistentBase {
       List<TableBlocker> tableBlockers =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, now));
       if (conflict(operations, tableBlockers)) {
-        throw new OperationConflictException(operations + " is conflict with " + tableBlockers);
+        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
       }
       TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
       doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
       return tableBlocker;
-    } catch (OperationConflictException e) {
-      throw e;
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -489,24 +484,19 @@ public class TableRuntime extends PersistentBase {
    * @param blockerTimeout - timeout
    * @throws IllegalStateException if blocker not exist
    */
-  public long renew(String blockerId, long blockerTimeout) throws NoSuchObjectException {
+  public long renew(String blockerId, long blockerTimeout) {
     blockerLock.lock();
     try {
       long now = System.currentTimeMillis();
       TableBlocker tableBlocker =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
       if (tableBlocker == null) {
-        throw new NoSuchObjectException(
-            tableIdentifier + " illegal blockerId " + blockerId + ", it may be released or expired");
+        throw new ObjectNotExistsException("Blocker " + blockerId);
       }
       long expirationTime = now + blockerTimeout;
       doAs(TableBlockerMapper.class,
           mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
       return expirationTime;
-    } catch (NoSuchObjectException e) {
-      throw e;
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }

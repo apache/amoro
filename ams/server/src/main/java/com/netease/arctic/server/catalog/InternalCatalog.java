@@ -19,10 +19,11 @@ public abstract class InternalCatalog extends ServerCatalog {
   public void createDatabase(String databaseName) {
     if (!exist(databaseName)) {
       doAsTransaction(
+          // make sure catalog existed in database
           () -> doAsExisted(
               CatalogMetaMapper.class,
               mapper -> mapper.incDatabaseCount(1, name()),
-              () -> new ObjectNotExistsException(name())),
+              () -> new ObjectNotExistsException("Catalog " + name())),
           () -> doAs(
               TableMetaMapper.class,
               mapper -> mapper.insertDatabase(getMetadata().getCatalogName(), databaseName)),
