@@ -11,17 +11,20 @@ import java.util.List;
 public class RewriteFilesInput extends BaseOptimizingInput {
   private final IcebergDataFile[] rewrittenDataFiles;
   private final IcebergDataFile[] rePosDeletedDataFiles;
-  private final IcebergContentFile<?>[] deleteFiles;
+  private final IcebergContentFile<?>[] readOnlyDeleteFiles;
+  private final IcebergContentFile<?>[] rewriteDeleteFiles;
   private ArcticTable table;
 
   public RewriteFilesInput(
       IcebergDataFile[] rewrittenDataFiles,
       IcebergDataFile[] rePosDeletedDataFiles,
-      IcebergContentFile<?>[] deleteFiles,
+      IcebergContentFile<?>[] readOnlyDeleteFiles,
+      IcebergContentFile<?>[] rewriteDeleteFiles,
       ArcticTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;
-    this.deleteFiles = deleteFiles;
+    this.readOnlyDeleteFiles = readOnlyDeleteFiles;
+    this.rewriteDeleteFiles = rewriteDeleteFiles;
     this.table = table;
   }
 
@@ -33,8 +36,23 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return rePosDeletedDataFiles;
   }
 
+  public IcebergContentFile<?>[] readOnlyDeleteFiles() {
+    return readOnlyDeleteFiles;
+  }
+
+  public IcebergContentFile<?>[] rewriteDeleteFiles() {
+    return rewriteDeleteFiles;
+  }
+
   public IcebergContentFile<?>[] deleteFiles() {
-    return deleteFiles;
+    List<IcebergContentFile<?>> list = new ArrayList<>();
+    if (readOnlyDeleteFiles != null) {
+      Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
+    }
+    if (rewriteDeleteFiles != null) {
+      Arrays.stream(rewriteDeleteFiles).forEach(list::add);
+    }
+    return list.toArray(new IcebergContentFile<?>[0]);
   }
 
   public IcebergDataFile[] dataFiles() {
@@ -56,8 +74,11 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     if (rePosDeletedDataFiles != null) {
       Arrays.stream(rePosDeletedDataFiles).forEach(list::add);
     }
-    if (deleteFiles != null) {
-      Arrays.stream(deleteFiles).forEach(list::add);
+    if (readOnlyDeleteFiles != null) {
+      Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
+    }
+    if (rewriteDeleteFiles != null) {
+      Arrays.stream(rewriteDeleteFiles).forEach(list::add);
     }
     return list.toArray(new IcebergDataFile[0]);
   }
