@@ -18,8 +18,6 @@
 
 package com.netease.arctic.ams.api;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -198,6 +196,7 @@ public class MockArcticMetastoreServer implements Runnable {
   }
 
   public static class AmsHandler implements ArcticTableMetastore.Iface {
+    private static final long DEFAULT_BLOCKER_TIMEOUT = 60_000;
     private final ConcurrentLinkedQueue<CatalogMeta> catalogs = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TableMeta> tables = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
@@ -250,10 +249,10 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void createDatabase(String catalogName, String database) throws TException {
       databases.computeIfAbsent(catalogName, c -> new ArrayList<>());
+      if (databases.get(catalogName).contains(database)) {
+        throw new AlreadyExistsException("database exist");
+      }
       databases.computeIfPresent(catalogName, (c, dbList) -> {
-        if (dbList.contains(database)) {
-          throw new IllegalStateException("database exist");
-        }
         List<String> newList = new ArrayList<>(dbList);
         newList.add(database);
         return newList;
@@ -330,8 +329,8 @@ public class MockArcticMetastoreServer implements Runnable {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
-      properties.put("expiration.time", (now + 60000) + "");
-      properties.put("blocker.timeout", 60000 + "");
+      properties.put("expiration.time", (now + DEFAULT_BLOCKER_TIMEOUT) + "");
+      properties.put("blocker.timeout", DEFAULT_BLOCKER_TIMEOUT + "");
       Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, properties);
       blockers.put(blocker.getBlockerId(), blocker);
       return blocker;
@@ -346,8 +345,18 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
-      return 0;
+    public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers == null) {
+        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+      }
+      Blocker blocker = blockers.get(blockerId);
+      if (blocker == null) {
+        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+      }
+      long expirationTime = System.currentTimeMillis() + DEFAULT_BLOCKER_TIMEOUT;
+      blocker.getProperties().put("expiration.time", expirationTime + "");
+      return expirationTime;
     }
 
     @Override
@@ -360,13 +369,8 @@ public class MockArcticMetastoreServer implements Runnable {
       }
     }
 
-    @Override
-    public void refreshTable(TableIdentifier tableIdentifier) throws TException {
-
-    }
-
     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
+      meta.getCatalogProperties().put(key, value);
     }
   }
 

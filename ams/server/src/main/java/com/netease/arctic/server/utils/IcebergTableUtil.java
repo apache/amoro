@@ -42,11 +42,18 @@ public class IcebergTableUtil {
     }
   }
 
+  public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
+    if (refresh) {
+      internalTable.refresh();
+    }
+    return internalTable.currentSnapshot();
+  }
+
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
     TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
-        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES)
+        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
         .allEntries().build();
     for (IcebergFileEntry entry : manifestReader.entries()) {
       validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));

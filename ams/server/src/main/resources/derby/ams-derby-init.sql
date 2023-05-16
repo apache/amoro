@@ -124,9 +124,9 @@ CREATE TABLE task_runtime (
     retry_num       INT,
     table_id        BIGINT NOT NULL,
     partition_data  VARCHAR(128),
-    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    start_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_time        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    create_time     TIMESTAMP DEFAULT NULL,
+    start_time      TIMESTAMP DEFAULT NULL,
+    end_time        TIMESTAMP DEFAULT NULL,
     cost_time       BIGINT,
     status          VARCHAR(16),
     fail_reason     VARCHAR(4096),
@@ -164,6 +164,18 @@ CREATE TABLE platform_file (
     file_path          VARCHAR(100),
     add_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT platform_file_pk PRIMARY KEY (id)
+);
+
+CREATE TABLE table_blocker (
+  blocker_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+  catalog_name varchar(64) NOT NULL,
+  db_name varchar(128) NOT NULL,
+  table_name varchar(128) NOT NULL,
+  operations varchar(128) NOT NULL,
+  create_time timestamp DEFAULT NULL,
+  expiration_time timestamp DEFAULT NULL,
+  properties clob(64m),
+  PRIMARY KEY (blocker_id)
 );
 
 INSERT INTO catalog_metadata(catalog_name,catalog_metastore,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog','ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');

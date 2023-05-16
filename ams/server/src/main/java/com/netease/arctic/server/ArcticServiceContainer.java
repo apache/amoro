@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
@@ -63,28 +64,60 @@ public class ArcticServiceContainer {
 
   public static final String SERVER_CONFIG_PATH = "/conf/config.yaml";
 
-  private final DefaultTableService tableService;
-  private final DefaultOptimizingService optimizingService;
   private final List<ResourceGroup> resourceGroups = new ArrayList<>();
+  private final HighAvailabilityContainer haContainer;
+  private DefaultTableService tableService;
+  private DefaultOptimizingService optimizingService;
   private Configurations serviceConfig;
   private TServer server;
+  private DashboardServer dashboardServer;
 
-  private ArcticServiceContainer() throws IllegalConfigurationException, FileNotFoundException {
+  private ArcticServiceContainer() throws Exception {
     initConfig();
-    tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    haContainer = new HighAvailabilityContainer(serviceConfig);
   }
 
   public static void main(String[] args) {
     try {
       ArcticServiceContainer service = new ArcticServiceContainer();
-      service.initInternalExecutors();
-      service.initThriftService();
-      service.startThriftService();
-      service.startHttpService();
+      while (true) {
+        try {
+          service.waitLeaderShip();
+          service.startService();
+          service.waitFollowerShip();
+        } finally {
+          service.dispose();
+        }
+      }
     } catch (Throwable t) {
-      LOG.error("Start AMS exception...", t);
+      LOG.error("AMS encountered an unknown exception, will exist", t);
+      System.exit(1);
     }
+  }
+
+  public void waitLeaderShip() throws Exception {
+    haContainer.waitLeaderShip();
+  }
+
+  public void waitFollowerShip() throws Exception {
+    haContainer.waitFollowerShip();
+  }
+
+  public void startService() throws Exception {
+    tableService = new DefaultTableService(serviceConfig);
+    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    initInternalExecutors();
+    initThriftService();
+    startThriftService();
+    startHttpService();
+  }
+
+  public void dispose() {
+    server.stop();
+    dashboardServer.stopRestServer();
+    tableService.dispose();
+    tableService = null;
+    optimizingService = null;
   }
 
   private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
@@ -109,7 +142,8 @@ public class ArcticServiceContainer {
 
   private void startHttpService() {
     LOG.info("Initializing dashboard service...");
-    new DashboardServer(serviceConfig, tableService, optimizingService).startRestServer();
+    dashboardServer = new DashboardServer(serviceConfig, tableService, optimizingService);
+    dashboardServer.startRestServer();
     LOG.info("Dashboard service has been started on port: " +
         serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT));
   }
@@ -131,12 +165,14 @@ public class ArcticServiceContainer {
     protocolFactory = new TBinaryProtocol.Factory();
     inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
 
-    ArcticTableMetastore.Processor<TableManagementService> tableMetastoreProcessor =
-        new ArcticTableMetastore.Processor<>(new TableManagementService(tableService));
+    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
+        new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
+            new TableManagementService(tableService), ArcticRuntimeException::transformCompatibleException));
     processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
-    OptimizingService.Processor<DefaultOptimizingService> optimizerManagerProcessor =
-        new OptimizingService.Processor<>(optimizingService);
+    OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
+        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
+            optimizingService, ArcticRuntimeException::transform2ArcticException));
     processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
@@ -241,10 +277,7 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
         containerProperties.put(PropertyNames.AMS_HOME, Environments.getArcticHome());
-        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, String.format(
-            "thrift://%s:%s",
-            serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-            serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT)));
+        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, AmsUtil.getAMSThriftAddress(serviceConfig));
         if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
           containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
         }

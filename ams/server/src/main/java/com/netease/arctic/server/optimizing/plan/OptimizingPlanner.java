@@ -19,13 +19,12 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.api.OptimizingTask;
-import com.netease.arctic.ams.api.OptimizingTaskId;
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.SequenceNumberFetcher;
+import com.netease.arctic.utils.TableTypeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
@@ -42,15 +43,15 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private static final int MAX_INPUT_FILE_COUNT_PER_THREAD = 5000;
   private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5 * 1024 * 1024 * 1024;
 
-  private Set<String> pendingPartitions;
+  private final Set<String> pendingPartitions;
 
   protected long processId;
-  protected long targetSnapshotId;
-  protected double availableCore;
-  private long planTime = System.currentTimeMillis();
-  private int idGenerator = 1;
+  // TODO check it
+  private final long targetSnapshotId;
+  private final double availableCore;
+  private final long planTime;
   private OptimizingType optimizingType = OptimizingType.MINOR;
-  private SequenceNumberFetcher sequenceNumberFetcher;
+  private final PartitionPlannerFactory partitionPlannerFactory;
 
   public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
     super(tableRuntime);
@@ -58,8 +59,29 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
     this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
     this.availableCore = availableCore;
-    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, System.currentTimeMillis());
-    this.sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), targetSnapshotId);
+    this.planTime = System.currentTimeMillis();
+    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
+    this.partitionPlannerFactory = new PartitionPlannerFactory(this.arcticTable, this.tableRuntime, this.planTime);
+  }
+
+  @Override
+  protected PartitionEvaluator buildEvaluator(String partitionPath) {
+    return partitionPlannerFactory.buildPartitionPlanner(partitionPath);
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return partitionEvaluatorMap.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
+  }
+
+  public Map<String, Long> getToSequence() {
+    return partitionEvaluatorMap.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
+  }
+
+  @Override
+  protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
+    return pendingPartitions::contains;
   }
 
   public long getTargetSnapshotId() {
@@ -69,23 +91,24 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   public List<TaskDescriptor> planTasks() {
     long startTime = System.nanoTime();
 
+    if (!isInitEvaluator) {
+      initEvaluator();
+    }
     if (!isNecessary()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
       }
       return Collections.emptyList();
     }
-    if (!isInitEvaluator) {
-      initEvaluator();
-    }
-    List<AbstractPartitionPlan> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
+
+    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
-    List<AbstractPartitionPlan> inputPartitions = Lists.newArrayList();
+    List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
     for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
-      AbstractPartitionPlan evaluator = evaluators.get(i);
+      PartitionEvaluator evaluator = evaluators.get(i);
       inputPartitions.add(evaluator);
       if (actualInputSize + evaluator.getCost() < maxInputSize) {
         actualInputSize += evaluator.getCost();
@@ -94,8 +117,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
     double avgThreadCost = actualInputSize / availableCore;
     List<TaskDescriptor> tasks = Lists.newArrayList();
-    for (AbstractPartitionPlan evaluator : inputPartitions) {
-      tasks.addAll(evaluator.splitTasks((int) (actualInputSize / avgThreadCost)));
+    for (PartitionEvaluator evaluator : inputPartitions) {
+      tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
     }
     if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
       optimizingType = OptimizingType.MAJOR;
@@ -109,26 +132,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return tasks;
   }
 
-  private OptimizingTask buildTask(RewriteFilesInput input) {
-    return new OptimizingTask(new OptimizingTaskId(processId, idGenerator++));
-  }
-
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
-    return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, sequenceNumberFetcher);
-  }
-
-  protected boolean filterPartition(String partition) {
-    return !pendingPartitions.contains(partition);
-  }
-
-  public ArcticTable getArcticTable() {
-    return arcticTable;
-  }
-
-  public TableRuntime getTableRuntime() {
-    return tableRuntime;
-  }
-
   public long getPlanTime() {
     return planTime;
   }
@@ -139,5 +142,43 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public long getProcessId() {
     return processId;
+  }
+
+  private static class PartitionPlannerFactory {
+    private final ArcticTable arcticTable;
+    private final TableRuntime tableRuntime;
+    private final String hiveLocation;
+    private final long planTime;
+
+    public PartitionPlannerFactory(ArcticTable arcticTable, TableRuntime tableRuntime, long planTime) {
+      this.arcticTable = arcticTable;
+      this.tableRuntime = tableRuntime;
+      this.planTime = planTime;
+      if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+        this.hiveLocation = (((SupportHive) arcticTable).hiveLocation());
+      } else {
+        this.hiveLocation = null;
+      }
+    }
+
+    public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
+      if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+        return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
+      } else {
+        if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+          if (arcticTable.isKeyedTable()) {
+            return new HiveKeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          } else {
+            return new HiveUnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          }
+        } else {
+          if (arcticTable.isKeyedTable()) {
+            return new KeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          } else {
+            return new UnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
+          }
+        }
+      }
+    }
   }
 }

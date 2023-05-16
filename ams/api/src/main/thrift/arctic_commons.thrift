@@ -29,10 +29,6 @@ exception OperationConflictException {
   1: string message
 }
 
-exception OperationErrorException {
-  1: string message
-}
-
 exception ArcticException {
   1: i32 errorCode
   2: string errorName

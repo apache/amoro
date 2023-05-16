@@ -1,5 +1,6 @@
 package com.netease.arctic.hive.catalog;
 
+import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -38,7 +39,11 @@ public class MixedHiveTables extends MixedTables {
   private final CachedHiveClientPool hiveClientPool;
 
   public MixedHiveTables(CatalogMeta catalogMeta) {
-    super(catalogMeta);
+    this(catalogMeta, null);
+  }
+
+  public MixedHiveTables(CatalogMeta catalogMeta, AmsClient amsClient) {
+    super(catalogMeta, amsClient);
     this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 

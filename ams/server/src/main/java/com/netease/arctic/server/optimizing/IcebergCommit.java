@@ -29,6 +29,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.glassfish.jersey.internal.guava.Sets;
@@ -72,8 +73,8 @@ public class IcebergCommit {
       if (task.getInput().rewrittenDataFiles() != null) {
         removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
       }
-      if (task.getInput().deleteFiles() != null) {
-        removedDeleteFiles.addAll(Arrays.stream(task.getInput().deleteFiles())
+      if (task.getInput().rewrittenDeleteFiles() != null) {
+        removedDeleteFiles.addAll(Arrays.stream(task.getInput().rewrittenDeleteFiles())
             .map(IcebergContentFile::asDeleteFile).collect(Collectors.toSet()));
       }
     }
@@ -106,14 +107,10 @@ public class IcebergCommit {
         dataFileRewrite.commit();
       }
       if (CollectionUtils.isNotEmpty(addDeleteFiles)) {
-        RewriteFiles addDeleteFileRewrite = transaction.newRewrite();
-        addDeleteFileRewrite.rewriteFiles(
-            Collections.emptySet(),
-            Collections.emptySet(),
-            Collections.emptySet(),
-            addDeleteFiles);
-        addDeleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        addDeleteFileRewrite.commit();
+        RowDelta addDeleteFileRowDelta = transaction.newRowDelta();
+        addDeleteFiles.forEach(addDeleteFileRowDelta::addDeletes);
+        addDeleteFileRowDelta.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        addDeleteFileRowDelta.commit();
       }
       transaction.commitTransaction();
     } catch (Exception e) {

@@ -1,6 +1,5 @@
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -12,11 +11,6 @@ public class ServerTableIdentifier {
   private String catalog;
   private String database;
   private String tableName;
-  private TableFormat format;
-
-  public ServerTableIdentifier() {
-
-  }
 
   private ServerTableIdentifier(TableIdentifier tableIdentifier) {
     this.catalog = tableIdentifier.getCatalog();
@@ -94,7 +88,6 @@ public class ServerTableIdentifier {
         .add("catalog", catalog)
         .add("database", database)
         .add("tableName", tableName)
-        .add("format", format)
         .toString();
   }
 

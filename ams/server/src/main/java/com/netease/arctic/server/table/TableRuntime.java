@@ -18,7 +18,10 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.exception.BlockerConflictException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -27,22 +30,30 @@ import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class TableRuntime extends PersistentBase {
 
@@ -60,6 +71,7 @@ public class TableRuntime extends PersistentBase {
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private volatile long currentStatusStartTime = System.currentTimeMillis();
+  // TODO partition 级别
   private volatile long lastMajorOptimizingTime;
   private volatile long lastFullOptimizingTime;
   private volatile long lastMinorOptimizingTime;
@@ -68,6 +80,8 @@ public class TableRuntime extends PersistentBase {
   private volatile TableConfiguration tableConfiguration;
   private volatile long processId;
   private volatile OptimizingEvaluator.PendingInput pendingInput;
+
+  private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(ServerTableIdentifier tableIdentifier, TableRuntimeInitializer initializer) {
     ArcticTable table = initializer.loadTable(tableIdentifier);
@@ -95,6 +109,13 @@ public class TableRuntime extends PersistentBase {
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+  }
+
+  @VisibleForTesting
+  public TableRuntime(ArcticTable table) {
+    this.initializer = null;
+    this.tableChangeHandler = null;
+    this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
   }
 
   protected void recover(OptimizingProcess optimizingProcess) {
@@ -287,6 +308,16 @@ public class TableRuntime extends PersistentBase {
     }
   }
 
+  public void initStatus() {
+    lock.lock();
+    try {
+      optimizingStatus = OptimizingStatus.IDLE;
+      persistUpdatingRuntime();
+    } finally {
+      lock.unlock();
+    }
+  }
+
   private void persistTableRuntime() {
     doAs(TableMetaMapper.class, mapper -> mapper.insertTableRuntime(this));
   }
@@ -407,5 +438,134 @@ public class TableRuntime extends PersistentBase {
 
   public double calculateQuotaOccupy() {
     return getQuotaTime() / tableConfiguration.getOptimizingConfig().getTargetQuota();
+  }
+
+  /**
+   * Get all valid blockers.
+   *
+   * @return all valid blockers
+   */
+  public List<TableBlocker> getBlockers() {
+    blockerLock.lock();
+    try {
+      return getAs(TableBlockerMapper.class,
+          mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      blockerLock.unlock();
+    }
+  }
+
+  /**
+   * Block some operations for table.
+   *
+   * @param operations     - operations to be blocked
+   * @param properties     -
+   * @param blockerTimeout -
+   * @return TableBlocker if success
+   */
+  public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
+                            long blockerTimeout) {
+    Preconditions.checkNotNull(operations, "operations should not be null");
+    Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
+    Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
+    blockerLock.lock();
+    try {
+      long now = System.currentTimeMillis();
+      List<TableBlocker> tableBlockers =
+          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, now));
+      if (conflict(operations, tableBlockers)) {
+        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
+      }
+      TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
+      doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
+      return tableBlocker;
+    } finally {
+      blockerLock.unlock();
+    }
+  }
+
+  /**
+   * Renew blocker.
+   *
+   * @param blockerId      - blockerId
+   * @param blockerTimeout - timeout
+   * @throws IllegalStateException if blocker not exist
+   */
+  public long renew(String blockerId, long blockerTimeout) {
+    blockerLock.lock();
+    try {
+      long now = System.currentTimeMillis();
+      TableBlocker tableBlocker =
+          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
+      if (tableBlocker == null) {
+        throw new ObjectNotExistsException("Blocker " + blockerId);
+      }
+      long expirationTime = now + blockerTimeout;
+      doAs(TableBlockerMapper.class,
+          mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
+      return expirationTime;
+    } finally {
+      blockerLock.unlock();
+    }
+  }
+
+  /**
+   * Release blocker, succeed when blocker not exist.
+   *
+   * @param blockerId - blockerId
+   */
+  public void release(String blockerId) {
+    blockerLock.lock();
+    try {
+      doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      blockerLock.unlock();
+    }
+  }
+
+  /**
+   * Check if operation are blocked now.
+   *
+   * @param operation - operation to check
+   * @return true if blocked
+   */
+  public boolean isBlocked(BlockableOperation operation) {
+    blockerLock.lock();
+    try {
+      List<TableBlocker> tableBlockers =
+          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
+      return conflict(operation, tableBlockers);
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      blockerLock.unlock();
+    }
+  }
+
+  private boolean conflict(List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
+    return blockableOperations.stream()
+        .anyMatch(operation -> conflict(operation, blockers));
+  }
+
+  private boolean conflict(BlockableOperation blockableOperation, List<TableBlocker> blockers) {
+    return blockers.stream()
+        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
+  }
+
+  private TableBlocker buildTableBlocker(ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                                         Map<String, String> properties, long now, long blockerTimeout) {
+    TableBlocker tableBlocker = new TableBlocker();
+    tableBlocker.setTableIdentifier(tableIdentifier);
+    tableBlocker.setCreateTime(now);
+    tableBlocker.setExpirationTime(now + blockerTimeout);
+    tableBlocker.setOperations(operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
+    HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
+    propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
+    tableBlocker.setProperties(propertiesOfTableBlocker);
+    return tableBlocker;
   }
 }

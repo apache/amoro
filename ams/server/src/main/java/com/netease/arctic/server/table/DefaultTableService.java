@@ -2,6 +2,8 @@ package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -16,9 +18,11 @@ import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +39,18 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
+  private final long blockerTimeout;
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
   private volatile boolean started = false;
   private TableRuntimeHandler headHandler;
+  private Timer tableExplorerTimer;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
         configuration.getLong(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL);
+    this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
   }
 
   @Override
@@ -71,6 +78,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void createCatalog(CatalogMeta catalogMeta) {
     checkStarted();
+    if (catalogExist(catalogMeta.getCatalogName())) {
+      throw new AlreadyExistsException("Catalog " + catalogMeta.getCatalogName());
+    }
     doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalogMeta));
     initServerCatalog(catalogMeta);
   }
@@ -90,7 +100,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     doAsExisted(
         CatalogMetaMapper.class,
         mapper -> mapper.deleteCatalog(catalogName),
-        () -> new IllegalMetadataException("Catalog " + catalogName + " has more than one table"));
+        () -> new IllegalMetadataException("Catalog " + catalogName + " has more than one database or table"));
     internalCatalogMap.remove(catalogName);
     externalCatalogMap.remove(catalogName);
   }
@@ -99,13 +109,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public void updateCatalog(CatalogMeta catalogMeta) {
     checkStarted();
     ServerCatalog catalog = getServerCatalog(catalogMeta.getCatalogName());
+    validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
     doAs(CatalogMetaMapper.class, mapper -> mapper.updateCatalog(catalogMeta));
     catalog.updateMetadata(catalogMeta);
   }
 
   @Override
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
-    validataTableExists(tableIdentifier);
+    validateTableExists(tableIdentifier);
     return Optional.ofNullable(getAs(TableMetaMapper.class, mapper ->
             mapper.selectTableMetaByName(tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(), tableIdentifier.getTableName())))
@@ -115,7 +126,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData) {
     checkStarted();
-    validataTableExists(tableIdentifier);
+    validateTableExists(tableIdentifier);
     ServerTableIdentifier serverTableIdentifier = getInternalCatalog(tableIdentifier.getCatalog())
         .dropTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier))
@@ -208,15 +219,47 @@ public class DefaultTableService extends PersistentBase implements TableService 
         tableIdentifier.getTableName());
   }
 
+  @Override
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                       Map<String, String> properties) {
+    checkStarted();
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .block(operations, properties, blockerTimeout)
+        .buildBlocker();
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    checkStarted();
+    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    if (tableRuntime != null) {
+      tableRuntime.release(blockerId);
+    }
+  }
+
+  @Override
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    checkStarted();
+    TableRuntime tableRuntime = getAndCheckExist(ServerTableIdentifier.of(tableIdentifier));
+    return tableRuntime.renew(blockerId, blockerTimeout);
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    checkStarted();
+    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+        .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
+  }
+
   private ServerCatalog getServerCatalog(String catalogName) {
     ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
         .orElse(externalCatalogMap.get(catalogName));
-    return Optional.of(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   private InternalCatalog getInternalCatalog(String catalogName) {
-    return Optional.ofNullable(internalCatalogMap.get(catalogName))
-        .orElseThrow(() -> new ObjectNotExistsException("InternalCatalog " + catalogName));
+    return Optional.ofNullable(internalCatalogMap.get(catalogName)).orElseThrow(() ->
+        new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   @Override
@@ -246,12 +289,20 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (headHandler != null) {
       headHandler.startHandler(tableRuntimeMetaList);
     }
-    new Timer("ExternalTableExplorer", true)
-        .scheduleAtFixedRate(
-            new TableExplorer(),
-            0,
-            externalCatalogRefreshingInterval);
+    tableExplorerTimer = new Timer("ExternalTableExplorer", true);
+    tableExplorerTimer.scheduleAtFixedRate(
+        new TableExplorer(),
+        0,
+        externalCatalogRefreshingInterval);
     started = true;
+  }
+
+  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+    TableRuntime tableRuntime = get(tableIdentifier);
+    if (tableRuntime == null) {
+      throw new ObjectNotExistsException(tableIdentifier);
+    }
+    return tableRuntime;
   }
 
   @Override
@@ -264,6 +315,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public boolean contains(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableIdentifier);
+  }
+
+  public void dispose() {
+    if (tableExplorerTimer != null) {
+      tableExplorerTimer.cancel();
+    }
+    if (headHandler != null) {
+      headHandler.dispose();
+    }
   }
 
   private void validateTableIdentifier(TableIdentifier tableIdentifier) {
@@ -280,25 +340,21 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   private void validateTableNotExists(TableIdentifier tableIdentifier) {
     validateTableIdentifier(tableIdentifier);
-
     if (tableExist(tableIdentifier)) {
-      String exception = String.format("The table is existed, catalog: %s, db: %s, table:%s",
-          tableIdentifier.getCatalog(), tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-
-      LOG.warn(exception);
       throw new AlreadyExistsException(tableIdentifier);
     }
   }
 
-  private void validataTableExists(TableIdentifier tableIdentifier) {
+  private void validateTableExists(TableIdentifier tableIdentifier) {
     validateTableIdentifier(tableIdentifier);
-
     if (!tableExist(tableIdentifier)) {
-      String exception = String.format("The table is not existed, catalog: %s, db: %s, table:%s",
-          tableIdentifier.getCatalog(), tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-
-      LOG.warn(exception);
       throw new ObjectNotExistsException(tableIdentifier);
+    }
+  }
+
+  private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {
+    if (!oldMeta.getCatalogType().equals(newMeta.getCatalogType())) {
+      throw new IllegalMetadataException("Cannot update catalog type");
     }
   }
 
@@ -329,9 +385,21 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
                   .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
           Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
-              .forEach(tableIdentity -> syncTable(externalCatalog, tableIdentity));
+              .forEach(tableIdentity -> {
+                try {
+                  syncTable(externalCatalog, tableIdentity);
+                } catch (Exception e) {
+                  LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
+                }
+              });
           Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
-              .forEach(tableIdentity -> disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity)));
+              .forEach(tableIdentity -> {
+                try {
+                  disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                } catch (Exception e) {
+                  LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
+                }
+              });
         } catch (Exception e) {
           LOG.error("TableExplorer run error", e);
         }
@@ -342,10 +410,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+    try {
+      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
+      tableRuntimeMap.put(tableIdentifier, tableRuntime);
+      if (headHandler != null) {
+        headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+      }
+    } catch (Exception e) {
+      disposeTable(externalCatalog, tableIdentifier);
+      LOG.error("sync table {} error while build table runtime", tableIdentifier, e);
     }
   }
 
@@ -393,6 +466,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
     @Override
     public int hashCode() {
       return Objects.hashCode(database, tableName);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("database", database)
+          .add("tableName", tableName)
+          .toString();
     }
   }
 }

@@ -52,6 +52,8 @@ public abstract class IcebergContentFile<F> implements ContentFile<F>, Serializa
     Preconditions.checkArgument(isDataFile(), "Not a data file");
     return (IcebergDataFile) this;
   }
+  
+  public abstract F internalFile();
 
   public IcebergDeleteFile asDeleteFile() {
     Preconditions.checkArgument(isDeleteFile(), "Not a delete file");

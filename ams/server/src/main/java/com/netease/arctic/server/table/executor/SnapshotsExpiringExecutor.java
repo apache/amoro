@@ -160,7 +160,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         changeExclude.addAll(finalHiveLocations);
 
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
-        // avoid getting expired snapshots when deleting ttl files
+        // keep ttl <= snapshot keep time to avoid getting expired snapshots(but can't get) when deleting files.
+        // if ttl > snapshot keep time, some files will not be deleted correctly.
         long changeOlderThan = changeDataTTL <= changeSnapshotsKeepTime ?
             startTime - changeSnapshotsKeepTime : startTime - changeDataTTL;
         LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
@@ -214,7 +215,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
    */
   public static long fetchOptimizingSnapshotTime(UnkeyedTable table, TableRuntime tableRuntime) {
     if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE) {
-
       long currentSnapshotId = tableRuntime.getCurrentSnapshotId();
       for (Snapshot snapshot : table.snapshots()) {
         if (snapshot.snapshotId() == currentSnapshotId) {
@@ -256,7 +256,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
-  private static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long ttl) {
+  public static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long ttl) {
     if (changeTable.snapshots() == null) {
       return null;
     }
@@ -266,7 +266,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         .orElse(null);
   }
 
-  private static List<DataFile> getClosestExpireDataFiles(UnkeyedTable changeTable, Snapshot closestExpireSnapshot) {
+  public static List<DataFile> getClosestExpireDataFiles(UnkeyedTable changeTable, Snapshot closestExpireSnapshot) {
     List<DataFile> changeTTLDataFiles = new ArrayList<>();
     long recentExpireSnapshotId = closestExpireSnapshot.snapshotId();
     try (CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan()

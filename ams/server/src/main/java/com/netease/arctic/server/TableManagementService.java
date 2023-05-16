@@ -19,33 +19,25 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
-import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
 public class TableManagementService implements AmsClient, ArcticTableMetastore.Iface {
-
-  public static final Logger LOG = LoggerFactory.getLogger(TableManagementService.class);
 
   private final TableService tableService;
 
@@ -57,76 +49,60 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   public void ping() {
   }
 
-  private <T> T getAs(Supplier<T> supplier) throws ArcticException {
-    try {
-      return supplier.get();
-    } catch (Throwable throwable) {
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
-  }
-
-  private void doAs(Runnable runnable) throws ArcticException {
-    try {
-      runnable.run();
-    } catch (Throwable throwable) {
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  @Override
+  public List<CatalogMeta> getCatalogs() {
+    return tableService.listCatalogMetas();
   }
 
   @Override
-  public List<CatalogMeta> getCatalogs() throws ArcticException {
-    return getAs(tableService::listCatalogMetas);
+  public CatalogMeta getCatalog(String name) {
+    return tableService.getCatalogMeta(name);
   }
 
   @Override
-  public CatalogMeta getCatalog(String name) throws ArcticException {
-    return getAs(() -> tableService.getCatalogMeta(name));
+  public List<String> getDatabases(String catalogName) {
+    return tableService.listDatabases(catalogName);
   }
 
   @Override
-  public List<String> getDatabases(String catalogName) throws ArcticException {
-    return getAs(() -> tableService.listDatabases(catalogName));
+  public void createDatabase(String catalogName, String database) {
+    tableService.createDatabase(catalogName, database);
   }
 
   @Override
-  public void createDatabase(String catalogName, String database) throws ArcticException {
-    doAs(() -> tableService.createDatabase(catalogName, database));
+  public void dropDatabase(String catalogName, String database) {
+    tableService.dropDatabase(catalogName, database);
   }
 
   @Override
-  public void dropDatabase(String catalogName, String database) throws ArcticException {
-    doAs(() -> tableService.dropDatabase(catalogName, database));
-  }
-
-  @Override
-  public void createTableMeta(TableMeta tableMeta) throws ArcticException {
+  public void createTableMeta(TableMeta tableMeta) {
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
 
-    doAs(() -> tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta));
+    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta);
   }
 
   @Override
-  public List<TableMeta> listTables(String catalogName, String database) throws ArcticException {
-    List<TableMetadata> tableMetadataList = getAs(() -> tableService.listTableMetas(catalogName, database));
+  public List<TableMeta> listTables(String catalogName, String database) {
+    List<TableMetadata> tableMetadataList = tableService.listTableMetas(catalogName, database);
     return tableMetadataList.stream()
             .map(TableMetadata::buildTableMeta)
             .collect(Collectors.toList());
   }
 
   @Override
-  public TableMeta getTable(TableIdentifier tableIdentifier) throws ArcticException {
-    return getAs(() -> tableService.loadTableMetadata(tableIdentifier)).buildTableMeta();
+  public TableMeta getTable(TableIdentifier tableIdentifier) {
+    return tableService.loadTableMetadata(tableIdentifier).buildTableMeta();
   }
 
   @Override
-  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) throws ArcticException {
-    doAs(() -> tableService.dropTableMetadata(tableIdentifier, deleteData));
+  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) {
+    tableService.dropTableMetadata(tableIdentifier, deleteData);
   }
 
   @Override
-  public void tableCommit(TableCommitMeta commit) throws ArcticException {
+  public void tableCommit(TableCommitMeta commit) {
   }
 
   @Override
@@ -137,27 +113,22 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   @Override
   public Blocker block(
       TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException, TException {
-    return null;
+      throws OperationConflictException {
+    return tableService.block(tableIdentifier, operations, properties);
   }
 
   @Override
-  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    tableService.releaseBlocker(tableIdentifier, blockerId);
   }
 
   @Override
-  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException, TException {
-    return 0;
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+    return tableService.renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override
-  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    return null;
-  }
-
-  @Override
-  public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    return tableService.getBlockers(tableIdentifier);
   }
 }

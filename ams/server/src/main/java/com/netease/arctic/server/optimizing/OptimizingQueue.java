@@ -229,6 +229,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                 optimizingProcess.getTaskMap().size());
           }
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
+        } else {
+          tableRuntime.initStatus();
         }
       } catch (Throwable e) {
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
@@ -254,6 +256,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
 
+    // TODO persist
+    private Map<String, Long> fromSequence = Maps.newHashMap();
+    private Map<String, Long> toSequence = Maps.newHashMap();
+
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
       tableRuntime = planner.getTableRuntime();
@@ -262,6 +268,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       targetSnapshotId = planner.getTargetSnapshotId();
       metricsSummary = new MetricsSummary(taskMap.values());
       loadTaskRuntimes(planner.planTasks());
+      fromSequence = planner.getFromSequence();
+      toSequence = planner.getToSequence();
       beginAndPersistProcess();
     }
 
@@ -403,6 +411,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     @Override
     public MetricsSummary getSummary() {
       return metricsSummary;
+    }
+
+    @Override
+    public Map<String, Long> getFromSequence() {
+      return fromSequence;
+    }
+
+    @Override
+    public Map<String, Long> getToSequence() {
+      return toSequence;
     }
 
     private IcebergCommit buildCommit() {

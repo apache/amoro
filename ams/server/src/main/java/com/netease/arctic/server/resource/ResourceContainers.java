@@ -10,8 +10,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ResourceContainers {
+  public static final String EXTERNAL_CONTAINER_NAME = "external";
   private static final Map<String, ContainerWrapper> globalContainers = Maps.newHashMap();
   private static volatile boolean isInitialized = false;
+
+  static {
+    ContainerMetadata metadata = new ContainerMetadata(EXTERNAL_CONTAINER_NAME, "");
+    ContainerWrapper externalContainer = new ContainerWrapper(metadata, null);
+    globalContainers.put(EXTERNAL_CONTAINER_NAME, externalContainer);
+  }
 
   public static void init(List<ContainerMetadata> containerList) {
     Preconditions.checkState(!isInitialized, "OptimizerContainers has been initialized");
@@ -28,7 +35,7 @@ public class ResourceContainers {
         .orElseThrow(() -> new IllegalArgumentException("ResourceContainer not found: " + name));
   }
 
-  public static List<ContainerMetadata> getMetadatas() {
+  public static List<ContainerMetadata> getMetadataList() {
     Preconditions.checkState(isInitialized, "OptimizerContainers not been initialized");
     return globalContainers.values()
         .stream()
@@ -41,7 +48,8 @@ public class ResourceContainers {
   }
 
   public static boolean contains(String name) {
-    return get(name) != null;
+    checkInitialized();
+    return globalContainers.containsKey(name);
   }
 
   private static class ContainerWrapper {
@@ -51,6 +59,11 @@ public class ResourceContainers {
     public ContainerWrapper(ContainerMetadata metadata) {
       this.metadata = metadata;
       this.container = loadResourceContainer(metadata.getImplClass());
+    }
+
+    ContainerWrapper(ContainerMetadata metadata, ResourceContainer container) {
+      this.metadata = metadata;
+      this.container = container;
     }
 
     public ResourceContainer getContainer() {

@@ -182,8 +182,8 @@ public class MixedIcebergCommit extends IcebergCommit {
       }
 
       //Only position delete need to remove
-      if (input.deleteFiles() != null) {
-        Arrays.stream(input.deleteFiles())
+      if (input.rewrittenDeleteFiles() != null) {
+        Arrays.stream(input.rewrittenDeleteFiles())
             .filter(IcebergContentFile::isDeleteFile)
             .map(IcebergContentFile::asDeleteFile)
             .forEach(removedDeleteFiles::add);

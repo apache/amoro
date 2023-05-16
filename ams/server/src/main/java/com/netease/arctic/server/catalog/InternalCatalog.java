@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
+import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
@@ -18,10 +19,11 @@ public abstract class InternalCatalog extends ServerCatalog {
   public void createDatabase(String databaseName) {
     if (!exist(databaseName)) {
       doAsTransaction(
+          // make sure catalog existed in database
           () -> doAsExisted(
               CatalogMetaMapper.class,
               mapper -> mapper.incDatabaseCount(1, name()),
-              () -> new ObjectNotExistsException(name())),
+              () -> new ObjectNotExistsException("Catalog " + name())),
           () -> doAs(
               TableMetaMapper.class,
               mapper -> mapper.insertDatabase(getMetadata().getCatalogName(), databaseName)),
@@ -46,12 +48,13 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   public ServerTableIdentifier createTable(TableMeta tableMeta) {
     ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
-    TableMetadata tableMetadata = new TableMetadata(tableMeta, getMetadata());
+    TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
         () -> createTableInternal(tableMetadata),
-        () -> doAsExisted(CatalogMetaMapper.class, mapper ->
-                mapper.incTableCount(1, name()),
+        () -> doAsExisted(
+            CatalogMetaMapper.class,
+            mapper -> mapper.incTableCount(1, name()),
             () -> new ObjectNotExistsException(name())),
         () -> doAsExisted(
             TableMetaMapper.class,
@@ -74,6 +77,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.deleteTableIdById(tableIdentifier.getId()),
             () -> new ObjectNotExistsException(getTableDesc(databaseName, tableName))),
+        () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
         () -> dropTableInternal(databaseName, tableName),
         () -> doAsExisted(
             CatalogMetaMapper.class,

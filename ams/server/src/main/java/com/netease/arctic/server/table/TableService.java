@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
@@ -32,7 +34,8 @@ public interface TableService extends CatalogService, TableRuntimeManager {
 
   /**
    * create table metadata
-   * @param tableMeta   table metadata info
+   *
+   * @param tableMeta table metadata info
    * @throws MetaException when the table metadata is not match
    */
   void createTable(String catalogName, TableMeta tableMeta);
@@ -49,8 +52,8 @@ public interface TableService extends CatalogService, TableRuntimeManager {
   /**
    * delete the table metadata
    *
-   * @param tableIdentifier     table id
-   * @param deleteData          if delete the external table
+   * @param tableIdentifier table id
+   * @param deleteData      if delete the external table
    * @throws MetaException when table metadata is not match
    */
   @Deprecated
@@ -87,13 +90,11 @@ public interface TableService extends CatalogService, TableRuntimeManager {
 
   /**
    * create arctic database
-   *
    */
   void createDatabase(String catalogName, String dbName);
 
   /**
    * drop arctic database
-   *
    */
   void dropDatabase(String catalogName, String dbName);
 
@@ -117,4 +118,30 @@ public interface TableService extends CatalogService, TableRuntimeManager {
    * @return True when the table is existed.
    */
   boolean tableExist(TableIdentifier tableIdentifier);
+
+  /**
+   * blocker operations
+   *
+   * @return the created blocker
+   */
+  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties);
+
+  /**
+   * release the blocker
+   */
+  void releaseBlocker(TableIdentifier tableIdentifier, String blockerId);
+
+  /**
+   * renew the blocker
+   *
+   * @return expiration time
+   */
+  long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
+
+  /**
+   * get blockers of table
+   *
+   * @return block list
+   */
+  List<Blocker> getBlockers(TableIdentifier tableIdentifier);
 }
