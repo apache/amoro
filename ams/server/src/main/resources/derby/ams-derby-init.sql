@@ -62,6 +62,9 @@ CREATE TABLE table_identifier (
 
 CREATE TABLE table_metadata (
     table_id         BIGINT NOT NULL,
+    catalog_name     VARCHAR(256),
+    db_name          VARCHAR(256),
+    table_name       VARCHAR(256),
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),

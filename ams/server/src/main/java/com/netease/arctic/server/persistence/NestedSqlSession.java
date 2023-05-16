@@ -50,14 +50,15 @@ public final class NestedSqlSession implements Closeable {
   }
 
   public void rollback() {
-    Preconditions.checkState(sqlSession != null, "session already closed");
-    Preconditions.checkState(nestCount >= 0, "Illegal nested transaction count:" + nestCount);
-    nestCount = 0;
-    sqlSession.rollback(true);
+    if (nestCount > 0) {
+      Preconditions.checkState(sqlSession != null, "session already closed");
+      nestCount = 0;
+      sqlSession.rollback(true);
+    }
   }
 
   public void close() {
-    if (nestCount == 0) {
+    if (nestCount == 0 && sqlSession != null) {
       sqlSession.close();
       sqlSession = null;
       sessions.set(null);
