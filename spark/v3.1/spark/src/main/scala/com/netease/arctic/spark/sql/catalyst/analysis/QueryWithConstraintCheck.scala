@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticKeyedRelation
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog, SparkSQLProperties}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.TableCatalog

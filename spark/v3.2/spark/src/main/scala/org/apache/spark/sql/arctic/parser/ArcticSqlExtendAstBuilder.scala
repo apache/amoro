@@ -18,39 +18,39 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
+import java.util
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.{ArrayBuffer, Set}
+
 import com.netease.arctic.spark.sql.parser.{ArcticSqlExtendBaseVisitor, ArcticSqlExtendParser}
-import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
+import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.apache.commons.codec.DecoderException
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.{GlobalTempView, LocalTempView, MultiAlias, PersistedView, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFieldName, UnresolvedFieldPosition, UnresolvedFunc, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedNamespace, UnresolvedPartitionSpec, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTable, UnresolvedTableOrView, UnresolvedTableValuedFunction, UnresolvedView}
-import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, FunctionResource, FunctionResourceType}
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.{MultiAlias, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTable, UnresolvedTableOrView, UnresolvedTableValuedFunction, UnresolvedView}
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat}
+import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BaseGroupingSets, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentDate, CurrentRow, CurrentTimestamp, CurrentUser, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, GroupingSets, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LateralSubquery, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RangeFrame, Remainder, RLike, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, Substring, Subtract, TryCast, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
-import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BaseGroupingSets, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentDate, CurrentRow, CurrentTimestamp, CurrentUser, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, GroupingSets, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LateralSubquery, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, Substring, Subtract, TryCast, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
-import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, DateTimeUtils, IntervalUtils}
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
-import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
+import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.connector.catalog.{CatalogV2Util, SupportsNamespaces, TableCatalog}
-import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
+import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.Utils.isTesting
 import org.apache.spark.util.random.RandomSampler
-
-import java.util
-import java.util.Locale
-import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, Set}
 
 class ArcticSqlExtendAstBuilder()
   extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
@@ -71,8 +71,7 @@ class ArcticSqlExtendAstBuilder()
 
   type colListAndPk = (Seq[StructField], Seq[String])
 
-  private def visitColListAndPk(ctx: ArcticSqlExtendParser.ColListAndPkContext)
-      : colListAndPk = {
+  private def visitColListAndPk(ctx: ArcticSqlExtendParser.ColListAndPkContext): colListAndPk = {
     ctx match {
       case colWithPk: ColListWithPkContext =>
         (visitColTypeList(colWithPk.colTypeList()), visitPrimarySpec(colWithPk.primarySpec()))
@@ -83,10 +82,10 @@ class ArcticSqlExtendAstBuilder()
     }
   }
 
-  override def visitExtendStatement(ctx: ArcticSqlExtendParser.ExtendStatementContext): LogicalPlan = withOrigin(ctx) {
+  override def visitExtendStatement(ctx: ArcticSqlExtendParser.ExtendStatementContext)
+      : LogicalPlan = withOrigin(ctx) {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
-
 
   override def visitCreateTableWithPk(ctx: ArcticSqlExtendParser.CreateTableWithPkContext)
       : LogicalPlan = withOrigin(ctx) {
@@ -183,8 +182,6 @@ class ArcticSqlExtendAstBuilder()
           ifNotExists = ifNotExists)
     }
   }
-
-
 
   /**
    * Build a properties with primary key.
@@ -362,8 +359,6 @@ class ArcticSqlExtendAstBuilder()
     SubqueryAlias(ctx.name.getText, subQuery)
   }
 
-
-
   /**
    * Parameters used for writing query to a table:
    * (UnresolvedRelation, tableColumnList, partitionKeys, ifPartitionNotExists).
@@ -374,7 +369,6 @@ class ArcticSqlExtendAstBuilder()
    * Parameters used for writing query to a directory: (isLocal, CatalogStorageFormat, provider).
    */
   type InsertDirParams = (Boolean, CatalogStorageFormat, Option[String])
-
 
   private def getTableAliasWithoutColumnAlias(
       ctx: TableAliasContext,
@@ -389,8 +383,6 @@ class ArcticSqlExtendAstBuilder()
       if (ident != null) Some(ident.getText) else None
     }
   }
-
-
 
   /**
    * Convert a constant of any type into a string. This is typically used in DDL commands, and its
@@ -1278,7 +1270,6 @@ class ArcticSqlExtendAstBuilder()
   override def visitIdentifierSeq(ctx: IdentifierSeqContext): Seq[String] = withOrigin(ctx) {
     ctx.ident.asScala.map(_.getText).toSeq
   }
-
 
   /**
    * Create a multi-part identifier.
@@ -2895,8 +2886,6 @@ class ArcticSqlExtendAstBuilder()
       case _ => true
     }
   }
-
-
 
   def cleanTableProperties(
       ctx: ParserRuleContext,

@@ -32,8 +32,6 @@ import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 public class ArcticSparkChangeTable extends SparkTable {

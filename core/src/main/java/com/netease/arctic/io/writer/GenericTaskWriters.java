@@ -46,6 +46,7 @@ public class GenericTaskWriters {
   public static Builder builderFor(ArcticTable table) {
     return new Builder(table);
   }
+
   public static class Builder {
 
     private final ArcticTable table;

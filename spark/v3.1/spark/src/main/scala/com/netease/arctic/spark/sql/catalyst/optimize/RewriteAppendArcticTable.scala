@@ -18,9 +18,11 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
+import java.util
+
 import com.netease.arctic.spark.sql.catalyst.plans._
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
@@ -29,8 +31,6 @@ import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-
-import java.util
 
 case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -67,7 +67,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
   }
-
 
   def buildJoinCondition(
       primaries: util.List[String],

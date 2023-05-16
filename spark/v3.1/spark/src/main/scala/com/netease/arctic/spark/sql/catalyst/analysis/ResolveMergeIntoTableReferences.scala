@@ -24,13 +24,12 @@ import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, withPosition}
+import org.apache.spark.sql.catalyst.analysis.{withPosition, AnalysisErrorAt, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.sql.sources.EqualTo
 
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -181,7 +180,8 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
         result
 
       case u @ UnresolvedExtractValue(child, fieldName) =>
-        val newChild = resolveExpression(child, resolveColumnByName, getAttrCandidates, isTopLevel = false)
+        val newChild =
+          resolveExpression(child, resolveColumnByName, getAttrCandidates, isTopLevel = false)
         if (newChild.resolved) {
           withOrigin(u.origin) {
             ExtractValue(newChild, fieldName, resolver)
@@ -191,8 +191,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
         }
 
       case _ => expr.mapChildren(
-        resolveExpression(_, resolveColumnByName, getAttrCandidates, isTopLevel = false)
-      )
+          resolveExpression(_, resolveColumnByName, getAttrCandidates, isTopLevel = false))
     }
 
   }

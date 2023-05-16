@@ -18,12 +18,19 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
+import java.util.Locale
+import javax.xml.bind.DatatypeConverter
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+
 import com.netease.arctic.spark.sql.parser.{ArcticSqlExtendBaseVisitor, ArcticSqlExtendParser}
-import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
+import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
+import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{MultiAlias, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunction, UnresolvedGenerator, UnresolvedHaving, UnresolvedInlineTable, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTableValuedFunction}
 import org.apache.spark.sql.catalyst.catalog.BucketSpec
 import org.apache.spark.sql.catalyst.expressions._
@@ -31,21 +38,15 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, IntervalUtils}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils.IntervalUnit
-import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, IntervalUtils}
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.catalog.TableCatalog
-import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 import org.apache.spark.util.random.RandomSampler
-
-import java.util.Locale
-import javax.xml.bind.DatatypeConverter
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
 class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHelper with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
@@ -64,8 +65,7 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
 
   type colListAndPk = (Seq[StructField], Seq[String])
 
-  private def visitColListAndPk(ctx: ArcticSqlExtendParser.ColListAndPkContext)
-      : colListAndPk = {
+  private def visitColListAndPk(ctx: ArcticSqlExtendParser.ColListAndPkContext): colListAndPk = {
     ctx match {
       case colWithPk: ColListWithPkContext =>
         (visitColTypeList(colWithPk.colTypeList()), visitPrimarySpec(colWithPk.primarySpec()))
@@ -76,8 +76,8 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     }
   }
 
-
-  override def visitExtendStatement(ctx: ArcticSqlExtendParser.ExtendStatementContext): LogicalPlan = withOrigin(ctx) {
+  override def visitExtendStatement(ctx: ArcticSqlExtendParser.ExtendStatementContext)
+      : LogicalPlan = withOrigin(ctx) {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
 
@@ -112,7 +112,8 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     if (temp) {
       val asSelect = if (ctx.query == null) "" else " AS ..."
       operationNotAllowed(
-        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead", ctx)
+        s"CREATE TEMPORARY TABLE ...$asSelect, use CREATE TEMPORARY VIEW instead",
+        ctx)
     }
 
     val partitioning = partitionExpressions(partTransforms, partCols, ctx)
@@ -120,12 +121,14 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     Option(ctx.query).map(plan) match {
       case Some(_) if columns.nonEmpty =>
         operationNotAllowed(
-          "Schema may not be specified in a Create Table As Select (CTAS) statement", ctx)
+          "Schema may not be specified in a Create Table As Select (CTAS) statement",
+          ctx)
 
       case Some(_) if partCols.nonEmpty =>
         // non-reference partition columns are not allowed because schema can't be specified
         operationNotAllowed(
-          "Partition column types may not be specified in Create Table As Select (CTAS)", ctx)
+          "Partition column types may not be specified in Create Table As Select (CTAS)",
+          ctx)
 
       case Some(query) =>
         val propertiesMap = buildProperties(primaryForCtas, properties)
@@ -148,7 +151,8 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
       case _ =>
         if (primaryForCtas.nonEmpty) {
           operationNotAllowed(
-            "Specifying a primary key without specifying a schema in a Create Table", ctx)
+            "Specifying a primary key without specifying a schema in a Create Table",
+            ctx)
         }
         val primary = colListAndPk._2
         // Setting the primary key not nullable
@@ -194,7 +198,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
       Option[String],
       Option[SerdeInfo])
 
-
   /**
    * Create a comment string.
    */
@@ -226,7 +229,8 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     val location = visitLocationSpecList(ctx.locationSpec())
     val (cleanedOptions, newLocation) = cleanTableOptions(ctx, options, location)
     val comment = visitCommentSpecList(ctx.commentSpec())
-    val serdeInfo = getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
+    val serdeInfo =
+      getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
     (
       partTransforms,
       partCols,
@@ -255,8 +259,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     }
   }
 
-
-
   /* ********************************************************************************************
    * Plan parsing
    * ******************************************************************************************** */
@@ -267,13 +269,11 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
    */
   override def visitQuery(ctx: QueryContext): LogicalPlan = withOrigin(ctx) {
     val p = plan(ctx.queryTerm)
-    val query =  p.optionalMap(ctx.queryOrganization)(withQueryResultClauses)
+    val query = p.optionalMap(ctx.queryOrganization)(withQueryResultClauses)
 
     // Apply CTEs
     query.optionalMap(ctx.ctes)(withCTE)
   }
-
-
 
   private def withCTE(ctx: CtesContext, plan: LogicalPlan): LogicalPlan = {
     val ctes = ctx.namedQuery.asScala.map { nCtx =>
@@ -625,30 +625,30 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
    * - MINUS [ DISTINCT | ALL ]
    * - INTERSECT [DISTINCT | ALL]
    */
-  override def visitSetOperation(ctx: ArcticSqlExtendParser.SetOperationContext): LogicalPlan = withOrigin(ctx) {
-    val left = plan(ctx.left)
-    val right = plan(ctx.right)
-    val all = Option(ctx.setQuantifier()).exists(_.ALL != null)
-    ctx.operator.getType match {
-      case ArcticSqlExtendParser.UNION if all =>
-        Union(left, right)
-      case ArcticSqlExtendParser.UNION =>
-        Distinct(Union(left, right))
-      case ArcticSqlExtendParser.INTERSECT if all =>
-        Intersect(left, right, isAll = true)
-      case ArcticSqlExtendParser.INTERSECT =>
-        Intersect(left, right, isAll = false)
-      case ArcticSqlExtendParser.EXCEPT if all =>
-        Except(left, right, isAll = true)
-      case ArcticSqlExtendParser.EXCEPT =>
-        Except(left, right, isAll = false)
-      case ArcticSqlExtendParser.SETMINUS if all =>
-        Except(left, right, isAll = true)
-      case ArcticSqlExtendParser.SETMINUS =>
-        Except(left, right, isAll = false)
+  override def visitSetOperation(ctx: ArcticSqlExtendParser.SetOperationContext): LogicalPlan =
+    withOrigin(ctx) {
+      val left = plan(ctx.left)
+      val right = plan(ctx.right)
+      val all = Option(ctx.setQuantifier()).exists(_.ALL != null)
+      ctx.operator.getType match {
+        case ArcticSqlExtendParser.UNION if all =>
+          Union(left, right)
+        case ArcticSqlExtendParser.UNION =>
+          Distinct(Union(left, right))
+        case ArcticSqlExtendParser.INTERSECT if all =>
+          Intersect(left, right, isAll = true)
+        case ArcticSqlExtendParser.INTERSECT =>
+          Intersect(left, right, isAll = false)
+        case ArcticSqlExtendParser.EXCEPT if all =>
+          Except(left, right, isAll = true)
+        case ArcticSqlExtendParser.EXCEPT =>
+          Except(left, right, isAll = false)
+        case ArcticSqlExtendParser.SETMINUS if all =>
+          Except(left, right, isAll = true)
+        case ArcticSqlExtendParser.SETMINUS =>
+          Except(left, right, isAll = false)
+      }
     }
-  }
-
 
   /**
    * Add a [[WithWindowDefinition]] operator to a logical plan.
@@ -1037,8 +1037,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
   override def visitIdentifierSeq(ctx: IdentifierSeqContext): Seq[String] = withOrigin(ctx) {
     ctx.ident.asScala.map(_.getText).toSeq
   }
-
-
 
   /**
    * Create a multi-part identifier.
@@ -2298,7 +2296,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
     (multipartIdentifier, temporary, ifNotExists, ctx.EXTERNAL != null)
   }
 
-
   /**
    * Parse a qualified name to a multipart name.
    */
@@ -2408,8 +2405,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
         .getOrElse(throw new ParseException(s"Invalid transform argument", ctx))
     }
   }
-
-
 
   def cleanTableProperties(
       ctx: ParserRuleContext,
@@ -2541,7 +2536,6 @@ class ExtendAstBuilder extends ArcticSqlExtendBaseVisitor[AnyRef] with SQLConfHe
         }
     SerdeInfo(serdeProperties = entries.toMap)
   }
-
 
   protected def getSerdeInfo(
       rowFormatCtx: Seq[RowFormatContext],

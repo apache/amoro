@@ -18,30 +18,30 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import scala.collection.{mutable, Seq}
+
 import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.{ArcticRowLevelWrite, MergeIntoArcticTable, MergeRows}
 import com.netease.arctic.spark.sql.connector.expressions.Expressions
-import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
+import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.arctic.catalyst.ExpressionHelper
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, IsNotNull, Literal}
-import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.NamedReference
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.{IntegerType, StructType}
-
-import scala.collection.{Seq, mutable}
 
 case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
@@ -275,7 +275,9 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     }
   }
 
-  private def rebuildAttribute(sourceOutput: Seq[Attribute], assignments: Seq[Assignment]): Seq[Expression] = {
+  private def rebuildAttribute(
+      sourceOutput: Seq[Attribute],
+      assignments: Seq[Assignment]): Seq[Expression] = {
     val expressions = sourceOutput.map(v => {
       val assignment = assignments.find(f => {
         f.key match {
