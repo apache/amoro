@@ -426,7 +426,7 @@ public class TableRuntime extends PersistentBase {
   }
 
   public long getQuotaTime() {
-    if (optimizingProcess == null ) {
+    if (optimizingProcess == null) {
       return 0;
     }
     long calculatingEndTime = System.currentTimeMillis();
