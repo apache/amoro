@@ -93,6 +93,7 @@
         <flink.version>1.12.7</flink.version>
         <junit4.version>4.13</junit4.version>
         <junit5.jupiter.version>5.9.1</junit5.jupiter.version>
+        <junit5.vintage.version>5.9.1</junit5.vintage.version>
         <junit5.platform.version>1.9.1</junit5.platform.version>
         <commons-pool2.version>2.10.0</commons-pool2.version>
         <cglib.version>2.2.2</cglib.version>
@@ -300,6 +301,12 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit5.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit5.vintage.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
