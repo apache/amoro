@@ -10,6 +10,7 @@ public class AsyncTableExecutors {
   private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
+  private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
@@ -26,6 +27,7 @@ public class AsyncTableExecutors {
     this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableRuntimes,
         conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_POOL_SIZE));
     this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableRuntimes);
+    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableRuntimes);
     this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableRuntimes,
         conf.getInteger(ArcticManagementConf.SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE));
     this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableRuntimes,

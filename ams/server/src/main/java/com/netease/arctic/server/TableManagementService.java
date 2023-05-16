@@ -33,6 +33,8 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.utils.RunnableWithException;
+import com.netease.arctic.server.utils.SupplierWithException;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,7 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
     try {
       return supplier.get();
     } catch (Throwable throwable) {
+      LOG.error("call ArcticTableMetastore error", throwable);
       throw ArcticRuntimeException.transformThrift(throwable);
     }
   }
@@ -69,7 +72,26 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
     try {
       runnable.run();
     } catch (Throwable throwable) {
+      LOG.error("call ArcticTableMetastore error", throwable);
       throw ArcticRuntimeException.transformThrift(throwable);
+    }
+  }
+
+  private <T, E extends Exception> T getAsWithException(SupplierWithException<T, E> supplier) throws E {
+    try {
+      return supplier.get();
+    } catch (Throwable throwable) {
+      LOG.error("call ArcticTableMetastore error", throwable);
+      throw throwable;
+    }
+  }
+
+  private <E extends Exception> void doAsWithException(RunnableWithException<E> runnable) throws E {
+    try {
+      runnable.run();
+    } catch (Throwable throwable) {
+      LOG.error("call ArcticTableMetastore error", throwable);
+      throw throwable;
     }
   }
 
@@ -137,27 +159,27 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   @Override
   public Blocker block(
       TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException, TException {
-    return null;
+      throws OperationConflictException {
+    return getAsWithException(() -> tableService.block(tableIdentifier, operations, properties));
   }
 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-
+    doAsWithException(() -> tableService.releaseBlocker(tableIdentifier, blockerId));
   }
 
   @Override
-  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException, TException {
-    return 0;
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+    return getAsWithException(() -> tableService.renewBlocker(tableIdentifier, blockerId));
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    return null;
+    return getAsWithException(() -> tableService.getBlockers(tableIdentifier));
   }
 
   @Override
   public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-
+    // TODO
   }
 }
