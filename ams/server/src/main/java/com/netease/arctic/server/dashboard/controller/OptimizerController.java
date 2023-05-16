@@ -154,10 +154,10 @@ public class OptimizerController extends RestBaseController {
       List<JSONObject> result = optimizerManager.listResourceGroups().stream()
           .filter(resourceGroup -> !ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
           .map(e -> {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("optimizerGroupName", e.getName());
-        return jsonObject;
-      }).collect(Collectors.toList());
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("optimizerGroupName", e.getName());
+            return jsonObject;
+          }).collect(Collectors.toList());
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
       LOG.error("Failed to get optimizerGroups", e);

@@ -109,10 +109,10 @@ public class SqlSessionFactoryProvider {
   private void createTablesIfNeed(Configurations config) {
     if (ArcticManagementConf.DB_TYPE_DERBY.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
       try (SqlSession sqlSession = get().openSession(true)) {
-        try(Connection connection = sqlSession.getConnection()) {
-          try(Statement statement = connection.createStatement()) {
+        try (Connection connection = sqlSession.getConnection()) {
+          try (Statement statement = connection.createStatement()) {
             String query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
-            try(ResultSet rs = statement.executeQuery(query)) {
+            try (ResultSet rs = statement.executeQuery(query)) {
               if (!rs.next()) {
                 ScriptRunner runner = new ScriptRunner(connection);
                 runner.runScript(new InputStreamReader(new FileInputStream(getDerbyInitSqlScriptPath()),
