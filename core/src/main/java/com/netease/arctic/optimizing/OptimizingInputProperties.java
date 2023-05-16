@@ -18,6 +18,8 @@ public class OptimizingInputProperties {
 
   public static final String MOVE_FILE_TO_HIVE_LOCATION = "move-files-to-hive-location";
 
+  public static final String TASK_EXECUTOR_FACTORY_IMPL = "task-executor-factory-impl";
+
   private Map<String, String> properties;
 
   private OptimizingInputProperties(Map<String, String> properties) {
@@ -47,6 +49,11 @@ public class OptimizingInputProperties {
     return this;
   }
 
+  public OptimizingInputProperties setExecutorFactoryImpl(String executorFactoryImpl) {
+    properties.put(TASK_EXECUTOR_FACTORY_IMPL, executorFactoryImpl);
+    return this;
+  }
+
   public OptimizingInputProperties needMoveFile2HiveLocation() {
     properties.put(MOVE_FILE_TO_HIVE_LOCATION, "true");
     return this;
@@ -66,11 +73,19 @@ public class OptimizingInputProperties {
     return properties.get(OUTPUT_DIR);
   }
 
+  public String getExecutorFactoryImpl() {
+    return properties.get(TASK_EXECUTOR_FACTORY_IMPL);
+  }
+
   public boolean getMoveFile2HiveLocation() {
     String s = properties.get(MOVE_FILE_TO_HIVE_LOCATION);
     if (StringUtils.isBlank(s)) {
       return false;
     }
     return Boolean.parseBoolean(s);
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
   }
 }

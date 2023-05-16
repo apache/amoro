@@ -137,11 +137,13 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
         new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
         new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
                                  new IcebergDeleteFile(posDeleteFile, 3L)},
+        new IcebergDeleteFile[] {},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
         new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
         new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDeleteFile[] {},
         new IcebergDeleteFile[] {},
         getArcticTable());
   }
