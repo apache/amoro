@@ -62,7 +62,7 @@ public class LoginController {
           "user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "bad user " + postBody.get("user") + "or password!",
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "bad user " + postBody.get("user") + " or password!",
           null));
     }
   }
