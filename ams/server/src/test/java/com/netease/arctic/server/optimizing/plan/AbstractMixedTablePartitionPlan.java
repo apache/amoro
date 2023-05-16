@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
@@ -11,13 +12,18 @@ import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class AbstractMixedTablePartitionPlan extends TableTestBase {
 
@@ -37,7 +43,7 @@ public abstract class AbstractMixedTablePartitionPlan extends TableTestBase {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(getConfig());
   }
 
-  public void testSimple() {
+  public List<TaskDescriptor> testOptimizeFragmentFiles() {
     ArrayList<Record> newRecords = Lists.newArrayList(
         tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
@@ -63,11 +69,36 @@ public abstract class AbstractMixedTablePartitionPlan extends TableTestBase {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
 
-    List<TaskDescriptor> taskDescriptors = partitionPlan.splitTasks(0);
-    System.out.println(taskDescriptors);
+    return partitionPlan.splitTasks(0);
   }
-  
+
+  private void assertTask(TaskDescriptor expect, TaskDescriptor actual) {
+    Assert.assertEquals(expect.getPartition(), actual.getPartition());
+    assertFiles(expect.getInput().rewrittenDeleteFiles(), actual.getInput().rewrittenDeleteFiles());
+    assertFiles(expect.getInput().rewrittenDataFiles(), actual.getInput().rewrittenDataFiles());
+    assertFiles(expect.getInput().readOnlyDeleteFiles(), actual.getInput().readOnlyDeleteFiles());
+    assertFiles(expect.getInput().rePosDeletedDataFiles(), actual.getInput().rePosDeletedDataFiles());
+    Assert.assertEquals(expect.properties(), actual.properties());
+  }
+
+  private void assertFiles(IcebergContentFile<?>[] expect, IcebergContentFile<?>[] actual) {
+    if (expect == null) {
+      Assert.assertNull(actual);
+      return;
+    }
+    Assert.assertEquals(expect.length, actual.length);
+    Set<String> expectFilesPath =
+        Arrays.stream(expect).map(ContentFile::path).map(CharSequence::toString).collect(Collectors.toSet());
+    Set<String> actualFilesPath =
+        Arrays.stream(actual).map(ContentFile::path).map(CharSequence::toString).collect(Collectors.toSet());
+    Assert.assertEquals(expectFilesPath, actualFilesPath);
+  }
+
   protected abstract AbstractPartitionPlan getPartitionPlan();
+
+  protected String getPartition() {
+    return isPartitionedTable() ? "op_time_day=2022-01-01" : "";
+  }
 
   private TableFileScanHelper getTableFileScanHelper() {
     if (isKeyedTable()) {

@@ -3,9 +3,12 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public class UnkeyedPartitionPlan extends AbstractMixedTablePartitionPlan {
@@ -23,12 +26,14 @@ public class UnkeyedPartitionPlan extends AbstractMixedTablePartitionPlan {
   }
 
   @Test
-  public void testMixedIceberg() {
-    testSimple();
+  public void testFragmentFiles() {
+    List<TaskDescriptor> taskDescriptors = testOptimizeFragmentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    
+    // TODO
   }
 
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new UnkeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-        isPartitionedTable() ? "op_time_day=2022-01-01" : "", System.currentTimeMillis());
+    return new UnkeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), System.currentTimeMillis());
   }
 }

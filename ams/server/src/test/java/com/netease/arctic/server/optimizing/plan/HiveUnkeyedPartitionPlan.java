@@ -5,10 +5,13 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public class HiveUnkeyedPartitionPlan extends AbstractMixedTablePartitionPlan {
@@ -28,15 +31,18 @@ public class HiveUnkeyedPartitionPlan extends AbstractMixedTablePartitionPlan {
   }
 
   @Test
-  public void testHive() {
-    testSimple();
+  public void testFragmentFiles() {
+    List<TaskDescriptor> taskDescriptors = testOptimizeFragmentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+
+    // TODO
   }
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    return new HiveUnkeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-        isPartitionedTable() ? "op_time_day=2022-01-01" : "", hiveLocation, System.currentTimeMillis());
+    return new HiveUnkeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), hiveLocation,
+        System.currentTimeMillis());
   }
 }
