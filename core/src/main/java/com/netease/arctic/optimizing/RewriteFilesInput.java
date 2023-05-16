@@ -12,19 +12,19 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   private final IcebergDataFile[] rewrittenDataFiles;
   private final IcebergDataFile[] rePosDeletedDataFiles;
   private final IcebergContentFile<?>[] readOnlyDeleteFiles;
-  private final IcebergContentFile<?>[] rewriteDeleteFiles;
+  private final IcebergContentFile<?>[] rewrittenDeleteFiles;
   private ArcticTable table;
 
   public RewriteFilesInput(
       IcebergDataFile[] rewrittenDataFiles,
       IcebergDataFile[] rePosDeletedDataFiles,
       IcebergContentFile<?>[] readOnlyDeleteFiles,
-      IcebergContentFile<?>[] rewriteDeleteFiles,
+      IcebergContentFile<?>[] rewrittenDeleteFiles,
       ArcticTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;
     this.readOnlyDeleteFiles = readOnlyDeleteFiles;
-    this.rewriteDeleteFiles = rewriteDeleteFiles;
+    this.rewrittenDeleteFiles = rewrittenDeleteFiles;
     this.table = table;
   }
 
@@ -40,17 +40,17 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return readOnlyDeleteFiles;
   }
 
-  public IcebergContentFile<?>[] rewriteDeleteFiles() {
-    return rewriteDeleteFiles;
+  public IcebergContentFile<?>[] rewrittenDeleteFiles() {
+    return rewrittenDeleteFiles;
   }
 
   public IcebergContentFile<?>[] deleteFiles() {
     List<IcebergContentFile<?>> list = new ArrayList<>();
     if (readOnlyDeleteFiles != null) {
-      Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
+      list.addAll(Arrays.asList(readOnlyDeleteFiles));
     }
-    if (rewriteDeleteFiles != null) {
-      Arrays.stream(rewriteDeleteFiles).forEach(list::add);
+    if (rewrittenDeleteFiles != null) {
+      list.addAll(Arrays.asList(rewrittenDeleteFiles));
     }
     return list.toArray(new IcebergContentFile<?>[0]);
   }
@@ -58,10 +58,10 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   public IcebergDataFile[] dataFiles() {
     List<IcebergDataFile> list = new ArrayList<>();
     if (rewrittenDataFiles != null) {
-      Arrays.stream(rewrittenDataFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rewrittenDataFiles));
     }
     if (rePosDeletedDataFiles != null) {
-      Arrays.stream(rePosDeletedDataFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rePosDeletedDataFiles));
     }
     return list.toArray(new IcebergDataFile[0]);
   }
@@ -69,18 +69,18 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   public IcebergContentFile<?>[] allFiles() {
     List<IcebergContentFile<?>> list = new ArrayList<>();
     if (rewrittenDataFiles != null) {
-      Arrays.stream(rewrittenDataFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rewrittenDataFiles));
     }
     if (rePosDeletedDataFiles != null) {
-      Arrays.stream(rePosDeletedDataFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rePosDeletedDataFiles));
     }
     if (readOnlyDeleteFiles != null) {
       Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
     }
-    if (rewriteDeleteFiles != null) {
-      Arrays.stream(rewriteDeleteFiles).forEach(list::add);
+    if (rewrittenDeleteFiles != null) {
+      Arrays.stream(rewrittenDeleteFiles).forEach(list::add);
     }
-    return list.toArray(new IcebergDataFile[0]);
+    return list.toArray(new IcebergContentFile<?>[0]);
   }
 
   public ArcticTable getTable() {
