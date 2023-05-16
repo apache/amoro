@@ -19,7 +19,6 @@
 package com.netease.arctic.server;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -57,49 +56,51 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   public void ping() {
   }
 
-  private <T> T getAs(Supplier<T> supplier) throws ArcticException {
+  private <T> T getAs(Supplier<T> supplier) throws TException {
     try {
       return supplier.get();
     } catch (Throwable throwable) {
-      throw ArcticRuntimeException.transformThrift(throwable);
+      LOG.error("Error when calling table service read", throwable);
+      throw ArcticRuntimeException.transformCompatibleException(throwable);
     }
   }
 
-  private void doAs(Runnable runnable) throws ArcticException {
+  private void doAs(Runnable runnable) throws TException {
     try {
       runnable.run();
     } catch (Throwable throwable) {
-      throw ArcticRuntimeException.transformThrift(throwable);
+      LOG.error("Error when calling table service write", throwable);
+      throw ArcticRuntimeException.transformCompatibleException(throwable);
     }
   }
 
   @Override
-  public List<CatalogMeta> getCatalogs() throws ArcticException {
+  public List<CatalogMeta> getCatalogs() throws TException {
     return getAs(tableService::listCatalogMetas);
   }
 
   @Override
-  public CatalogMeta getCatalog(String name) throws ArcticException {
+  public CatalogMeta getCatalog(String name) throws TException {
     return getAs(() -> tableService.getCatalogMeta(name));
   }
 
   @Override
-  public List<String> getDatabases(String catalogName) throws ArcticException {
+  public List<String> getDatabases(String catalogName) throws TException {
     return getAs(() -> tableService.listDatabases(catalogName));
   }
 
   @Override
-  public void createDatabase(String catalogName, String database) throws ArcticException {
+  public void createDatabase(String catalogName, String database) throws TException {
     doAs(() -> tableService.createDatabase(catalogName, database));
   }
 
   @Override
-  public void dropDatabase(String catalogName, String database) throws ArcticException {
+  public void dropDatabase(String catalogName, String database) throws TException {
     doAs(() -> tableService.dropDatabase(catalogName, database));
   }
 
   @Override
-  public void createTableMeta(TableMeta tableMeta) throws ArcticException {
+  public void createTableMeta(TableMeta tableMeta) throws TException {
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
@@ -108,7 +109,7 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public List<TableMeta> listTables(String catalogName, String database) throws ArcticException {
+  public List<TableMeta> listTables(String catalogName, String database) throws TException {
     List<TableMetadata> tableMetadataList = getAs(() -> tableService.listTableMetas(catalogName, database));
     return tableMetadataList.stream()
             .map(TableMetadata::buildTableMeta)
@@ -116,17 +117,17 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public TableMeta getTable(TableIdentifier tableIdentifier) throws ArcticException {
+  public TableMeta getTable(TableIdentifier tableIdentifier) throws TException {
     return getAs(() -> tableService.loadTableMetadata(tableIdentifier)).buildTableMeta();
   }
 
   @Override
-  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) throws ArcticException {
+  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) throws TException {
     doAs(() -> tableService.dropTableMetadata(tableIdentifier, deleteData));
   }
 
   @Override
-  public void tableCommit(TableCommitMeta commit) throws ArcticException {
+  public void tableCommit(TableCommitMeta commit) throws TException {
   }
 
   @Override

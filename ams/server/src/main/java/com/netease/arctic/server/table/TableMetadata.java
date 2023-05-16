@@ -43,34 +43,11 @@ import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DE
 
 public class TableMetadata implements Serializable {
 
-  public TableMetadata() {
+  private TableMetadata() {
   }
 
-  public TableMetadata(
-      TableIdentifier tableIdentifier, TableMetaStore metaStore, String tableLocation,
-      String baseLocation, String changeLocation, String primaryKey,
-      String metaStoreSite, String hdfsSite, String coreSite,
-      String authMethod, String hadoopUsername, String krbKeyteb, String krbConf,
-      String krbPrincipal, Map<String, String> properties) {
-    this.tableIdentifier = tableIdentifier;
-    this.metaStore = metaStore;
-    this.tableLocation = tableLocation;
-    this.baseLocation = baseLocation;
-    this.changeLocation = changeLocation;
-    this.primaryKey = primaryKey;
-    this.metaStoreSite = metaStoreSite;
-    this.hdfsSite = hdfsSite;
-    this.coreSite = coreSite;
-    this.authMethod = authMethod;
-    this.hadoopUsername = hadoopUsername;
-    this.krbKeyteb = krbKeyteb;
-    this.krbConf = krbConf;
-    this.krbPrincipal = krbPrincipal;
-    this.properties = ImmutableMap.copyOf(properties);
-  }
-
-  public TableMetadata(TableMeta tableMeta, CatalogMeta catalogMeta) {
-    this.tableIdentifier = tableMeta.getTableIdentifier();
+  public TableMetadata(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
+    this.tableIdentifier = identifier;
     if (tableMeta.getLocations() != null &&
         tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
       this.tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
@@ -108,7 +85,7 @@ public class TableMetadata implements Serializable {
 
   public TableMeta buildTableMeta() {
     TableMeta meta = new TableMeta();
-    meta.setTableIdentifier(tableIdentifier);
+    meta.setTableIdentifier(tableIdentifier.getIdentifier());
     Map<String, String> locations = new HashMap<>();
     PropertiesUtil.putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_TABLE, tableLocation);
     PropertiesUtil.putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_CHANGE, changeLocation);
@@ -129,8 +106,7 @@ public class TableMetadata implements Serializable {
     return meta;
   }
 
-  private long tableId;
-  private TableIdentifier tableIdentifier;
+  private ServerTableIdentifier tableIdentifier;
 
   private String tableLocation;
 
@@ -161,14 +137,6 @@ public class TableMetadata implements Serializable {
   private Long currentTxId;
 
   private volatile TableMetaStore metaStore;
-
-  public long getTableId() {
-    return tableId;
-  }
-
-  public void setTableId(long tableId) {
-    this.tableId = tableId;
-  }
 
   public String getTableLocation() {
     return tableLocation;
@@ -210,12 +178,8 @@ public class TableMetadata implements Serializable {
     this.properties = properties;
   }
 
-  public TableIdentifier getTableIdentifier() {
+  public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;
-  }
-
-  public void setTableIdentifier(TableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
   }
 
   public TableMetaStore getMetaStore() {

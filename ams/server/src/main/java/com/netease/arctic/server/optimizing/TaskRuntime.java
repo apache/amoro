@@ -61,7 +61,6 @@ public class TaskRuntime extends PersistentBase {
   private Map<String, String> properties;
 
   private TaskRuntime() {
-
   }
 
   public TaskRuntime(
