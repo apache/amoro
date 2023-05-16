@@ -32,11 +32,21 @@ import java.util.List;
 public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
 
   private final String hiveLocation;
+  private long maxSequence = 0;
 
   public HiveKeyedTablePartitionPlan(TableRuntime tableRuntime,
                                      ArcticTable table, String partition, String hiveLocation, long planTime) {
     super(tableRuntime, table, partition, planTime);
     this.hiveLocation = hiveLocation;
+  }
+
+  @Override
+  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    super.addFile(dataFile, deletes);
+    long sequenceNumber = dataFile.getSequenceNumber();
+    if (sequenceNumber > maxSequence) {
+      maxSequence = sequenceNumber;
+    }
   }
 
   @Override
@@ -90,7 +100,7 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
   }
 
   private String constructCustomHiveSubdirectory() {
-    return HiveTableUtil.newHiveSubdirectory(getToSequence());
+    return HiveTableUtil.newHiveSubdirectory(maxSequence);
   }
 
 }
