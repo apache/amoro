@@ -4,6 +4,7 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
+import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -33,6 +34,9 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
   @Override
   public List<FileScanResult> scan() {
     List<FileScanResult> results = Lists.newArrayList();
+    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      return results;
+    }
 
     PartitionSpec partitionSpec = table.spec();
     try (CloseableIterable<FileScanTask> filesIterable =
