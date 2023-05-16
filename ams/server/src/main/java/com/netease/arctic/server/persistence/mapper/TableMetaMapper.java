@@ -21,31 +21,31 @@ import java.util.Map;
 
 public interface TableMetaMapper {
 
-  @Insert("insert into database_metadata(catalog_name, db_name) values( #{catalogName}, #{dbName})")
+  @Insert("INSERT INTO database_metadata(catalog_name, db_name) VALUES( #{catalogName}, #{dbName})")
   void insertDatabase(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
 
-  @Select("select db_name from database_metadata where catalog_name = #{catalogName}")
+  @Select("SELECT db_name FROM database_metadata WHERE catalog_name = #{catalogName}")
   List<String> selectDatabases(@Param("catalogName") String catalogName);
 
-  @Select("select db_name from database_metadata where catalog_name = #{catalogName} and db_name=#{dbName}")
+  @Select("SELECT db_name FROM database_metadata WHERE catalog_name = #{catalogName} AND db_name=#{dbName}")
   String selectDatabase(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
 
-  @Delete("delete from database_metadata where catalog_name = #{catalogName} and db_name = #{dbName}" +
-      " and table_count=0")
+  @Delete("DELETE FROM database_metadata WHERE catalog_name = #{catalogName} AND db_name = #{dbName}" +
+      " AND table_count=0")
   Integer dropDb(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
 
-  @Update("update database_metadata set table_count=table_count+#{tableCount} where db_name=#{databaseName}")
+  @Update("UPDATE database_metadata SET table_count = table_count + #{tableCount} WHERE db_name = #{databaseName}")
   Integer incTableCount(@Param("tableCount") Integer tableCount, @Param("databaseName") String databaseName);
 
-  @Update("update database_metadata set table_count=table_count-#{tableCount} where db_name=#{databaseName}")
+  @Update("UPDATE database_metadata SET table_count = table_count - #{tableCount} WHERE db_name = #{databaseName}")
   Integer decTableCount(@Param("tableCount") Integer tableCount, @Param("databaseName") String databaseName);
 
-  @Select("select table_count from database_metadata where db_name=#{databaseName}")
+  @Select("SELECT table_count FROM database_metadata WHERE db_name = #{databaseName}")
   Integer selectTableCount(@Param("databaseName") String databaseName);
 
-  @Select("select table_id, table_name, db_name, catalog_name, primary_key, " +
+  @Select("SELECT table_id, table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties from table_metadata")
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM table_metadata")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
@@ -60,7 +60,7 @@ public interface TableMetaMapper {
       @Result(property = "coreSite", column = "core_site"),
       @Result(property = "authMethod", column = "auth_method"),
       @Result(property = "hadoopUsername", column = "hadoop_username"),
-      @Result(property = "krbKeyteb", column = "krb_keytab"),
+      @Result(property = "krbKeytab", column = "krb_keytab"),
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
@@ -68,12 +68,12 @@ public interface TableMetaMapper {
   })
   List<TableMetadata> selectTableMetas();
 
-  @Select("select table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
+  @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
       "table_identifier.db_name as db_name, table_identifier.table_name as table_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties from table_metadata " +
-      "inner join table_identifier on table_metadata.table_id=table_identifier.table_id where " +
-      "table_identifier.catalog_name=#{catalogName} and table_identifier.db_name=#{database}")
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM table_metadata " +
+      "INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id WHERE " +
+      "table_identifier.catalog_name=#{catalogName} AND table_identifier.db_name=#{database}")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
@@ -98,10 +98,10 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("database") String database);
 
-  @Insert("insert into table_metadata(table_id, table_name, db_name, catalog_name, primary_key, " +
+  @Insert("INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key, " +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties)" +
-      " values(" +
+      " Values(" +
       " #{tableMeta.tableIdentifier.id}," +
       " #{tableMeta.tableIdentifier.tableName}," +
       " #{tableMeta.tableIdentifier.database}," +
@@ -122,27 +122,25 @@ public interface TableMetaMapper {
       " )")
   void insertTableMeta(@Param("tableMeta") TableMetadata tableMeta);
 
-  @Delete("delete from table_metadata where table_id = #{tableId}")
+  @Delete("DELETE FROM table_metadata WHERE table_id = #{tableId}")
   void deleteTableMetaById(@Param("tableId") long tableId);
 
-  @Update("update table_metadata set " +
-      "properties = #{properties, typeHandler=com.netease.arctic.server.persistence.converter" +
-      ".Map2StringConverter} where table_id = #{tableId}")
+  @Update("UPDATE table_metadata SET properties =" +
+      " #{properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
+      " WHERE table_id = #{tableId}")
   void updateTableProperties(
       @Param("tableId") long tableId,
       @Param("properties") Map<String, String> properties);
 
-  @Update("update table_metadata set " +
-      "current_tx_id = #{txId} where " +
-      "table_id = #{tableId}")
+  @Update("UPDATE table_metadata SET current_tx_id = #{txId} WHERE table_id = #{tableId}")
   void updateTableTxId(
       @Param("tableId") long tableId,
       @Param("txId") Long txId);
 
-  @Select("select table_id, table_name, db_name, catalog_name, primary_key, " +
+  @Select("SELECT table_id, table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id from " +
-      "table_metadata where table_id = #{tableId}")
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id FROM " +
+      "table_metadata WHERE table_id = #{tableId}")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
@@ -166,12 +164,11 @@ public interface TableMetaMapper {
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
-  @Select("select table_id, primary_key, " +
-      "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id from " +
-      "table_metadata inner join table_identifier on table_metadata.table_id=table_identifier.table_id where " +
-      " table_identifier.catalog_name=#{catalogName} and table_identifier.db_name=#{database} and " +
-      "table_name=#{tableName}")
+  @Select("SELECT table_id, primary_key, table_location, base_location, change_location, meta_store_site, hdfs_site," +
+      " core_site, auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id" +
+      " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
+      " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{database}" +
+      " AND table_name = #{tableName}")
   @Results({
       @Result(property = "tableId", column = "table_id"),
       @Result(property = "primaryKey", column = "primary_key"),
@@ -192,26 +189,23 @@ public interface TableMetaMapper {
   })
   TableMetadata selectTableMetaByName(String catalogName, String databaseName, String tableName);
 
-  @Insert("insert into table_identifier(catalog_name, db_name, table_name) values(" +
-      " #{tableIdentifier.catalog}," +
-      " #{tableIdentifier.database}," +
-      " #{tableIdentifier.tableName}" +
-      " )")
+  @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
+      " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
-  @Delete("delete from table_identifier where table_id = #{tableId}")
+  @Delete("DELETE FROM table_identifier WHERE table_id = #{tableId}")
   Integer deleteTableIdById(@Param("tableIdentifier") long tableId);
 
-  @Delete("delete from table_identifier where catalog_name=#{catalogName} and db_name=#{databaseName} and " +
-      "table_name=#{tableName}")
+  @Delete("DELETE FROM table_identifier WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}" +
+      " AND table_name = #{tableName}")
   Integer deleteTableIdByName(
       @Param("catalogName") String catalogName,
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("select table_id, catalog_name, db_name, table_name from table_identifier where " +
-      "catalog_name=#{catalogName} and db_name=#{databaseName} and table_name=#{tableName}")
+  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+      " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "tableName", column = "table_name"),
@@ -223,8 +217,8 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("select table_id, catalog_name, db_name, table_name from table_identifier where " +
-      "catalog_name=#{catalogName} and db_name=#{databaseName}")
+  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+      " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
@@ -235,7 +229,8 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("databaseName") String databaseName);
 
-  @Select("select table_id, catalog_name, db_name, table_name from table_identifier where catalog_name=#{catalogName}")
+  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+      " WHERE catalog_name = #{catalogName}")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
@@ -244,7 +239,7 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(@Param("catalogName") String catalogName);
 
-  @Select("select table_id, catalog_name, db_name, table_name from table_identifier")
+  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
@@ -253,39 +248,48 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
-  @Update("update table_runtime set current_snapshot_id = #{runtime.currentSnapshotId}, current_change_snapshotId = " +
-      "#{runtime.currentChangeSnapshotId}, last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId}, " +
-      "last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, " +
-      "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, last_minor_optimizing_time " +
-      "= #{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.server.persistence.converter" +
-      ".Long2TsConvertor}, last_full_optimizing_time = #{runtime.lastFullOptimizingTime, typeHandler=com.netease" +
-      ".arctic.server.persistence.converter.Long2TsConvertor}, optimizing_status = #{runtime.optimizingStatus}, " +
-      "optimizing_status_start_time = #{runtime.currentStatusStartTime, typeHandler=com.netease.arctic.server" +
-      ".persistence.converter.Long2TsConvertor}, optimizing_process_id = #{runtime.processId}, optimizer_group = " +
-      "#{runtime.optimizerGroup}, table_config = #{runtime.tableConfiguration, typeHandler=com.netease.arctic" +
-      ".server.persistence.converter.JsonSummaryConverter} where table_id = #{runtime.tableIdentifier.id}")
+  @Update("UPDATE table_runtime SET current_snapshot_id = #{runtime.currentSnapshotId}," +
+      " current_change_snapshotId =#{runtime.currentChangeSnapshotId}," +
+      " last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId}," +
+      " last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " last_minor_optimizing_time = #{runtime.lastMinorOptimizingTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " last_full_optimizing_time = #{runtime.lastFullOptimizingTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " optimizing_status = #{runtime.optimizingStatus}," +
+      " optimizing_status_start_time = #{runtime.currentStatusStartTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " optimizing_process_id = #{runtime.processId}," +
+      " optimizer_group = #{runtime.optimizerGroup}," +
+      " table_config = #{runtime.tableConfiguration," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " WHERE table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
 
-  @Delete("delete from table_runtime where table_id = #{tableId}")
+  @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
 
-  @Insert("insert into table_runtime (table_id,catalog_name,db_name,table_name,current_snapshot_id," +
-      "current_change_snapshotId,last_optimized_snapshotId,last_major_optimizing_time,last_minor_optimizing_time," +
-      "last_full_optimizing_time," +
-      "optimizing_status,optimizing_status_start_time,optimizing_process_id,optimizer_group,table_config) values " +
-      "(#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}, #{runtime.tableIdentifier.database}," +
-      "#{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}, #{runtime.currentChangeSnapshotId}," +
-      "#{runtime.lastOptimizedSnapshotId}," +
-      "#{runtime.lastMajorOptimizingTime, typeHandler=com.netease.arctic.server.persistence.converter" +
-      ".Long2TsConvertor},#{runtime.lastMinorOptimizingTime, typeHandler=com.netease.arctic.server.persistence" +
-      ".converter.Long2TsConvertor},#{runtime.lastFullOptimizingTime, typeHandler=com.netease.arctic.server" +
-      ".persistence.converter.Long2TsConvertor},#{runtime.optimizingStatus}, #{runtime.currentStatusStartTime, " +
-      "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, #{runtime.processId}," +
-      "#{runtime.optimizerGroup}, #{runtime.tableConfiguration, typeHandler=com.netease.arctic.server.persistence" +
-      ".converter.JsonSummaryConverter})")
+  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id," +
+      " current_change_snapshotId, last_optimized_snapshotId, last_major_optimizing_time, last_minor_optimizing_time," +
+      " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id," +
+      " optimizer_group, table_config) VALUES (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
+      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}," +
+      " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}, #{runtime.lastMajorOptimizingTime, " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{runtime.lastMinorOptimizingTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{runtime.lastFullOptimizingTime," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{runtime.optimizingStatus}," +
+      " #{runtime.currentStatusStartTime, " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{runtime.processId}, #{runtime.optimizerGroup}," +
+      " #{runtime.tableConfiguration," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
-  @Select("select * from table_runtime")
+  @Select("SELECT * FROM table_runtime")
   @Results({
       @Result(property = "tableId", column = "table_id"),
       @Result(property = "catalogName", column = "catalog_name"),
@@ -309,7 +313,7 @@ public interface TableMetaMapper {
   })
   List<TableRuntimeMeta> selectTableRuntimeMetas();
 
-  @Select("select * from table_runtime where table_id=#{tableId}")
+  @Select("SELECT * FROM table_runtime WHERE table_id = #{tableId}")
   @Results({
       @Result(property = "tableId", column = "table_id"),
       @Result(property = "catalogName", column = "catalog_name"),

@@ -32,7 +32,6 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
-import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -69,6 +68,8 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
+
+  private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
@@ -205,7 +206,6 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
     @Override
     public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
-      doAs(TableMetaMapper.class, mapper -> mapper.insertTableRuntime(tableRuntime));
       getQueueByGroup(tableRuntime.getOptimizerGroup()).refreshTable(tableRuntime);
     }
 
@@ -219,12 +219,17 @@ public class DefaultOptimizingService extends DefaultResourceManager
     protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeMetaList);
-      new Timer("OptimizerMonitor", true)
-          .schedule(
-              new SuspendingDetector(),
-              ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL,
-              ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
+      optimizerMonitorTimer = new Timer("OptimizerMonitor", true);
+      optimizerMonitorTimer.schedule(
+          new SuspendingDetector(),
+          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL,
+          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
       LOG.info("OptimizerManagementService initializing has completed");
+    }
+
+    @Override
+    protected void doDispose() {
+      optimizerMonitorTimer.cancel();
     }
   }
 

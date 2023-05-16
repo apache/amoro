@@ -40,6 +40,10 @@ public class DataReaderCommon {
           MetadataColumns.TRANSACTION_ID_FILED_ID,
           convertConstant.apply(Types.LongType.get(), arcticFileScanTask.file().transactionId()));
 
+      idToConstant.put(
+          MetadataColumns.TREE_NODE_ID,
+          convertConstant.apply(Types.LongType.get(), arcticFileScanTask.file().node().getId()));
+
       if (arcticFileScanTask.fileType() == DataFileType.BASE_FILE) {
         idToConstant.put(
             MetadataColumns.FILE_OFFSET_FILED_ID,

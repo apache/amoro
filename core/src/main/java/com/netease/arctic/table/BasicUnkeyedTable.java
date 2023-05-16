@@ -29,10 +29,10 @@ import com.netease.arctic.trace.ArcticOverwriteFiles;
 import com.netease.arctic.trace.ArcticReplacePartitions;
 import com.netease.arctic.trace.ArcticRowDelta;
 import com.netease.arctic.trace.TraceOperations;
-import com.netease.arctic.trace.TracedDeleteFiles;
-import com.netease.arctic.trace.TracedRewriteFiles;
+import com.netease.arctic.trace.ArcticDeleteFiles;
+import com.netease.arctic.trace.ArcticRewriteFiles;
 import com.netease.arctic.trace.TracedSchemaUpdate;
-import com.netease.arctic.trace.TracedTransaction;
+import com.netease.arctic.trace.ArcticTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -80,6 +80,10 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
 
+  /**
+   * @deprecated since 0.5.0, will be removed in 0.6.0;
+   */
+  @Deprecated
   private final AmsClient client;
 
   public BasicUnkeyedTable(
@@ -235,7 +239,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public RewriteFiles newRewrite() {
-    return TracedRewriteFiles.buildFor(this)
+    return ArcticRewriteFiles.buildFor(this)
         .traceTable(client, this)
         .onTableStore(icebergTable)
         .build();
@@ -266,7 +270,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public DeleteFiles newDelete() {
-    return TracedDeleteFiles.buildFor(this)
+    return ArcticDeleteFiles.buildFor(this)
         .traceTable(client, this)
         .onTableStore(icebergTable)
         .build();
@@ -285,11 +289,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
+    AmsTableTracer tableTracer = null;
     if (client != null) {
-      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client, false));
-    } else {
-      return transaction;
+      tableTracer = new AmsTableTracer(this, client, false);
     }
+    return new ArcticTransaction(this, transaction, tableTracer);
   }
 
   @Override

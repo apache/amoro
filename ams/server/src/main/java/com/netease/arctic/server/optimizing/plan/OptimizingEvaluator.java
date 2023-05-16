@@ -53,7 +53,7 @@ public class OptimizingEvaluator {
     long maxFragmentSize = targetFileSize / tableRuntime.getOptimizingConfig().getFragmentRatio();
     List<FileScanTask> fileScanTasks;
     try (CloseableIterable<FileScanTask> filesIterable =
-        arcticTable.asUnkeyedTable().newScan().planFiles()) {
+        arcticTable.asUnkeyedTable().newScan().useSnapshot(tableRuntime.getCurrentSnapshotId()).planFiles()) {
       fileScanTasks = Lists.newArrayList(filesIterable);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + arcticTable.id(), e);

@@ -35,7 +35,6 @@ public class VersionController {
 
   /**
    * get versionInfo.
-   * @return {@link VersionInfo}
    */
   public void getVersionInfo(Context ctx) {
     Properties prop = new Properties();

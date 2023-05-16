@@ -21,12 +21,13 @@ package com.netease.arctic.server;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
-import com.netease.arctic.server.dashboard.utils.AmsUtils;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
@@ -46,11 +47,9 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-import scala.unchecked;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -64,28 +63,60 @@ public class ArcticServiceContainer {
 
   public static final String SERVER_CONFIG_PATH = "/conf/config.yaml";
 
-  private final DefaultTableService tableService;
-  private final DefaultOptimizingService optimizingService;
+  private final List<ResourceGroup> resourceGroups = new ArrayList<>();
+  private final HighAvailabilityContainer haContainer;
+  private DefaultTableService tableService;
+  private DefaultOptimizingService optimizingService;
   private Configurations serviceConfig;
-  private List<ResourceGroup> resourceGroups = new ArrayList<>();
   private TServer server;
+  private DashboardServer dashboardServer;
 
-  private ArcticServiceContainer() throws IllegalConfigurationException, FileNotFoundException {
+  private ArcticServiceContainer() throws Exception {
     initConfig();
-    tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    haContainer = new HighAvailabilityContainer(serviceConfig);
   }
 
   public static void main(String[] args) {
     try {
       ArcticServiceContainer service = new ArcticServiceContainer();
-      service.initInternalExecutors();
-      service.initThriftService();
-      service.startInternalServices();
-      service.startHttpService();
+      while (true) {
+        try {
+          service.waitLeaderShip();
+          service.startService();
+          service.waitFollowerShip();
+        } finally {
+          service.dispose();
+        }
+      }
     } catch (Throwable t) {
-      LOG.error("Start AMS exception...", t);
+      LOG.error("AMS encountered an unknown exception, will exist", t);
+      System.exit(1);
     }
+  }
+
+  public void waitLeaderShip() throws Exception {
+    haContainer.waitLeaderShip();
+  }
+
+  public void waitFollowerShip() throws Exception {
+    haContainer.waitFollowerShip();
+  }
+
+  public void startService() throws Exception {
+    tableService = new DefaultTableService(serviceConfig);
+    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    initInternalExecutors();
+    initThriftService();
+    startThriftService();
+    startHttpService();
+  }
+
+  public void dispose() {
+    server.stop();
+    dashboardServer.stopRestServer();
+    tableService.dispose();
+    tableService = null;
+    optimizingService = null;
   }
 
   private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
@@ -93,12 +124,11 @@ public class ArcticServiceContainer {
     new ConfigurationHelper().init();
   }
 
-  private void startInternalServices() {
+  private void startThriftService() {
     tableService.initialize();
-    LOG.info("Internal table services have been started");
     Thread thread = new Thread(() -> {
       server.serve();
-      LOG.info("Thrift service has been started");
+      LOG.info("Thrift services have been started");
     }, "Thrift-server-thread");
     thread.setDaemon(true);
     thread.start();
@@ -111,7 +141,8 @@ public class ArcticServiceContainer {
 
   private void startHttpService() {
     LOG.info("Initializing dashboard service...");
-    new DashboardServer(serviceConfig, tableService, optimizingService).startRestServer();
+    dashboardServer = new DashboardServer(serviceConfig, tableService, optimizingService);
+    dashboardServer.startRestServer();
     LOG.info("Dashboard service has been started on port: " +
         serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT));
   }
@@ -127,11 +158,6 @@ public class ArcticServiceContainer {
 
     LOG.info("Starting thrift server on port:" + port);
 
-    /*    if (serviceConfig.getString(ArcticManagementConf.DB_TYPE).equals("derby")) {
-      DerbyInstance derbyInstance = new DerbyInstance();
-      derbyInstance.createTable();
-    }*/
-
     TMultiplexedProcessor processor = new TMultiplexedProcessor();
     final TProtocolFactory protocolFactory;
     final TProtocolFactory inputProtoFactory;
@@ -140,12 +166,11 @@ public class ArcticServiceContainer {
 
     ArcticTableMetastore.Processor<TableManagementService> tableMetastoreProcessor =
         new ArcticTableMetastore.Processor<>(new TableManagementService(tableService));
-    processor.registerProcessor("TableMetastore", tableMetastoreProcessor);
+    processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
-    // register OptimizeManager
     OptimizingService.Processor<DefaultOptimizingService> optimizerManagerProcessor =
         new OptimizingService.Processor<>(optimizingService);
-    processor.registerProcessor("OptimizeManager", optimizerManagerProcessor);
+    processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
     TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
@@ -157,7 +182,7 @@ public class ArcticServiceContainer {
         .selectorThreads(selectorThreads)
         .acceptQueueSizePerThread(queueSizePerSelector);
     server = new TThreadedSelectorServer(args);
-    LOG.info("Started the thrift server on port [" + port + "]...");
+    LOG.info("Initialized the thrift server on port [" + port + "]...");
     LOG.info("Options.thriftWorkerThreads = " + workerThreads);
     LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
     LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);
@@ -173,6 +198,7 @@ public class ArcticServiceContainer {
       initResourceGroupConfig();
     }
 
+    @SuppressWarnings("unchecked")
     private void initResourceGroupConfig() throws IllegalConfigurationException {
       LOG.info("initializing resource group configuration...");
       JSONArray optimizeGroups = yamlConfig.getJSONArray(ArcticManagementConf.OPTIMIZER_GROUP_LIST);
@@ -187,9 +213,8 @@ public class ArcticServiceContainer {
                   groupBuilder.getContainer());
         }
         if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES)) {
-          groupConfig
-              .getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES, Map.class)
-              .forEach((key, value) -> groupBuilder.addProperty(String.valueOf(key), String.valueOf(value)));
+          groupBuilder.addProperties(groupConfig.getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
+              Map.class));
         }
         resourceGroups.add(groupBuilder.build());
       }
@@ -213,7 +238,7 @@ public class ArcticServiceContainer {
         throw new RuntimeException(
             "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
       }
-      InetAddress inetAddress = AmsUtils.lookForBindHost(
+      InetAddress inetAddress = AmsUtil.lookForBindHost(
           (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
@@ -249,10 +274,7 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
         containerProperties.put(PropertyNames.AMS_HOME, Environments.getArcticHome());
-        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, String.format(
-            "thrift://%s:%s",
-            serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-            serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT)));
+        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, AmsUtil.getAMSThriftAddress(serviceConfig));
         if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
           containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
         }
@@ -283,19 +305,4 @@ public class ArcticServiceContainer {
       }
     }
   }
-
-  /*public static class DerbyInstance extends PersistentBase {
-    public void createTable() {
-      //TODO
-    }
-
-    private static String getDerbyInitSqlDir() {
-      String derbyInitSqlDir = System.getProperty("derby.init.sql.dir");
-      if (derbyInitSqlDir == null) {
-        return System.getProperty("user.dir") + "/conf/derby/ams-init.sql".replace("/", File.separator);
-      } else {
-        return derbyInitSqlDir + "/ams-init.sql".replace("/", File.separator);
-      }
-    }
-  }*/
 }

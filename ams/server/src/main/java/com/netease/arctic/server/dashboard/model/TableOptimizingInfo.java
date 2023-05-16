@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard.model;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /**
  * Current optimize state of an ArcticTable.
@@ -114,16 +115,16 @@ public class TableOptimizingInfo {
 
   @Override
   public String toString() {
-    return "TableOptimizeInfo{" +
-        "tableIdentifier=" + tableIdentifier +
-        ", tableName='" + tableName + '\'' +
-        ", optimizeStatus=" + optimizeStatus +
-        ", duration=" + duration +
-        ", fileCount=" + fileCount +
-        ", fileSize=" + fileSize +
-        ", quota=" + quota +
-        ", quotaOccupation=" + quotaOccupation +
-        ", groupName='" + groupName + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("tableName", tableName)
+        .add("optimizeStatus", optimizeStatus)
+        .add("duration", duration)
+        .add("fileCount", fileCount)
+        .add("fileSize", fileSize)
+        .add("quota", quota)
+        .add("quotaOccupation", quotaOccupation)
+        .add("groupName", groupName)
+        .toString();
   }
 }

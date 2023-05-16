@@ -33,16 +33,16 @@ public interface OptimizerMapper {
 
   @Insert("INSERT INTO optimizer (token, resource_id, group_name, start_time, touch_time, thread_count, total_memory," +
       " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId},  #{optimizer.groupName}," +
-      "#{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
-      "#{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}, " +
-      "#{optimizer.threadCount}, #{optimizer.memoryMb}, " +
-      "#{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " #{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConvertor}," +
+      " #{optimizer.threadCount}, #{optimizer.memoryMb}," +
+      " #{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertOptimizer(@Param("optimizer") OptimizerInstance optimizer);
 
-  @Update("update optimizer set touch_time=CURRENT_TIMESTAMP where token = #{token}")
+  @Update("UPDATE optimizer SET touch_time = CURRENT_TIMESTAMP WHERE token = #{token}")
   void updateTouchTime(@Param("token") String token);
 
-  @Delete("delete from optimizer where token = #{token}")
+  @Delete("DELETE FROM optimizer WHERE token = #{token}")
   void deleteOptimizer(@Param("token") String token);
 }
 

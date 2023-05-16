@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
+import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
@@ -75,6 +76,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.deleteTableIdById(tableIdentifier.getId()),
             () -> new ObjectNotExistsException(getTableDesc(databaseName, tableName))),
+        () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
         () -> dropTableInternal(databaseName, tableName),
         () -> doAsExisted(
             CatalogMetaMapper.class,

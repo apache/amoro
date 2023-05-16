@@ -4,5 +4,5 @@ public enum CatalogType {
   AMS,
   HIVE,
   HADOOP,
-  CUSTOM;
+  CUSTOM
 }

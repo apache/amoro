@@ -60,13 +60,13 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   @Override
   public void initialize(
       AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), properties);
     super.initialize(client, meta, properties);
+    this.hiveClientPool = ((MixedHiveTables)tables).getHiveClientPool();
   }
 
   @Override
   protected MixedTables newMixedTables(CatalogMeta catalogMeta) {
-    return new MixedHiveTables(catalogMeta, hiveClientPool);
+    return new MixedHiveTables(catalogMeta);
   }
 
   @Override

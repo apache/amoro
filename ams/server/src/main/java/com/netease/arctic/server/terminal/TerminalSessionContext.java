@@ -107,7 +107,7 @@ public class TerminalSessionContext {
   }
 
   public void release() {
-    if (this.session != null){
+    if (this.session != null) {
       this.session.release();
     }
   }

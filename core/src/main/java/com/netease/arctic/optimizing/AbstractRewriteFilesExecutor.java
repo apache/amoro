@@ -60,11 +60,11 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
     dataReader = dataReader();
   }
 
-  abstract protected OptimizingDataReader dataReader();
+  protected abstract OptimizingDataReader dataReader();
 
-  abstract protected FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter();
+  protected abstract FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter();
 
-  abstract protected FileWriter<Record, DataWriteResult> dataWriter();
+  protected abstract FileWriter<Record, DataWriteResult> dataWriter();
 
   @Override
   public RewriteFilesOutput execute() {
@@ -108,11 +108,11 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
         if (posDeleteWriter instanceof SetTreeNode) {
           DataTreeNode dataTreeNode =
               DataTreeNode.ofId((Long) record.getField(com.netease.arctic.table.MetadataColumns.TREE_NODE_NAME));
-          ((SetTreeNode)posDeleteWriter).setTreeNode(dataTreeNode);
+          ((SetTreeNode) posDeleteWriter).setTreeNode(dataTreeNode);
         }
         posDeleteWriter.write(positionDelete);
       }
-    }finally {
+    } finally {
       posDeleteWriter.close();
     }
 
@@ -128,10 +128,9 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
         Record record = records.next();
         writer.write(record);
       }
-    }finally {
+    } finally {
       writer.close();
     }
-
 
     result.addAll(writer.result().dataFiles());
 
@@ -163,7 +162,8 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   }
 
   protected long targetSize() {
-    return PropertyUtil.propertyAsLong(table.properties(),
+    return PropertyUtil.propertyAsLong(
+        table.properties(),
         com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
         com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
   }
