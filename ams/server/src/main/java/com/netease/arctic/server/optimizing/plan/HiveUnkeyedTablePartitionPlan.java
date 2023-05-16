@@ -54,7 +54,7 @@ public class HiveUnkeyedTablePartitionPlan extends UnkeyedTablePartitionPlan {
   }
 
   private boolean moveFiles2CurrentHiveLocation() {
-    return isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
+    return evaluator.isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
   }
 
   @Override
