@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing.scan;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
+import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.utils.SequenceNumberFetcher;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -51,6 +52,9 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   @Override
   public List<FileScanResult> scan() {
     List<FileScanResult> results = Lists.newArrayList();
+    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      return results;
+    }
     PartitionSpec partitionSpec = table.spec();
     try (CloseableIterable<FileScanTask> filesIterable =
              table.newScan().useSnapshot(snapshotId).planFiles()) {
