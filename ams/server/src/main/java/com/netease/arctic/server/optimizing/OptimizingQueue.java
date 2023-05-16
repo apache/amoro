@@ -255,9 +255,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
-    
-    private Map<String, Long> fromSequence;
-    private Map<String, Long> toSequence;
 
     // TODO persist
     private Map<String, Long> fromSequence = Maps.newHashMap();
