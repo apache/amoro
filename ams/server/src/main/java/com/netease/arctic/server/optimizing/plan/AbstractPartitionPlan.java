@@ -52,8 +52,8 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-  protected final Set<IcebergDataFile> equalityRelatedFiles = Sets.newHashSet();
-  protected final Map<ContentFile<?>, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
+  protected final Map<String, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
+  protected final Map<String, Set<IcebergDataFile>> posDeleteFileMap = Maps.newHashMap();
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
                                ArcticTable table, String partition, long planTime, BasicPartitionEvaluator evaluator) {
@@ -89,10 +89,13 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
       segmentFiles.put(dataFile, deletes);
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
-      if (deleteFile.content() == FileContent.EQUALITY_DELETES || deleteFile.content() == FileContent.DATA) {
-        equalityRelatedFiles.add(dataFile);
+      if (deleteFile.content() == FileContent.POSITION_DELETES) {
+        posDeleteFileMap
+            .computeIfAbsent(deleteFile.path().toString(), delete -> Sets.newHashSet())
+            .add(dataFile);
+      } else {
         equalityDeleteFileMap
-            .computeIfAbsent(deleteFile, delete -> Sets.newHashSet())
+            .computeIfAbsent(deleteFile.path().toString(), delete -> Sets.newHashSet())
             .add(dataFile);
       }
     }
@@ -118,11 +121,6 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
   protected boolean isFragmentFile(IcebergDataFile file) {
     return file.fileSizeInBytes() <= fragmentSize;
-  }
-
-  protected boolean partitionShouldFullOptimizing() {
-    return config.getFullTriggerInterval() > 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
@@ -166,7 +164,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
     public SplitTask(Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles,
                      Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles) {
-      if (partitionShouldFullOptimizing()) {
+      if (evaluator.isFullNecessary()) {
         segmentFiles.forEach((icebergFile, deleteFileSet) -> {
           if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
             rewriteDataFiles.add(icebergFile);
@@ -185,7 +183,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
               getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
-          } else if (equalityRelatedFiles.contains(icebergFile)) {
+          } else if (equalityDeleteFileMap.containsKey(icebergFile.path().toString())) {
             rewritePosDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           } else {

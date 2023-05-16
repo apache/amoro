@@ -16,6 +16,7 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   private final OptimizingConfig config;
   private final TableRuntime tableRuntime;
   private final long fragmentSize;
+  private final long planTime;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -37,13 +38,14 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
 
   private long cost = -1;
 
-  public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition) {
+  public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     super(partition);
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
+    this.planTime = planTime;
   }
-  
+
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
@@ -68,7 +70,7 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   private void addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount += 1;
-    
+
     for (IcebergContentFile<?> delete : deletes) {
       addDelete(delete);
     }
@@ -114,7 +116,7 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
 
   @Override
   public boolean isNecessary() {
-    return isMajorNecessary() || isMinorNecessary();
+    return isFullNecessary() || isMajorNecessary() || isMinorNecessary();
   }
 
   @Override
@@ -129,18 +131,24 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
 
   @Override
   public OptimizingType getOptimizingType() {
-    return isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+    return isFullNecessary() ? OptimizingType.FULL_MAJOR :
+        isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
   }
 
-  private boolean isMajorNecessary() {
+  public boolean isMajorNecessary() {
     return rewriteSegmentFileSize > 0;
   }
 
-  private boolean isMinorNecessary() {
+  public boolean isMinorNecessary() {
     int sourceFileCount = fragmentFileCount + equalityDeleteFileCount;
     return sourceFileCount >= config.getMinorLeastFileCount() ||
         (sourceFileCount > 1 &&
-            System.currentTimeMillis() - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
+            planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
+  }
+
+  public boolean isFullNecessary() {
+    return config.getFullTriggerInterval() > 0 &&
+        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   public int getFragmentFileCount() {

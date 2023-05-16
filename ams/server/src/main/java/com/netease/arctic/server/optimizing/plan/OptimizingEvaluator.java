@@ -108,7 +108,7 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    return new BasicPartitionEvaluator(tableRuntime, partitionPath);
+    return new BasicPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
   }
 
   public boolean isNecessary() {
