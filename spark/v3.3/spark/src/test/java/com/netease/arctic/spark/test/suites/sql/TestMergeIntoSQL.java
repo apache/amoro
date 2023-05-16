@@ -119,7 +119,6 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .assertRecordsEqual();
   }
 
-  //TODO: failed.
   @DisplayName("SQL: MERGE INTO for all actions with condition")
   @ParameterizedTest
   @MethodSource("args")
@@ -210,7 +209,6 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .assertRecordsEqual();
   }
 
-  // TODO: test failed.
   @DisplayName("SQL: MERGE INTO for explicit column ")
   @ParameterizedTest
   @MethodSource("args")
