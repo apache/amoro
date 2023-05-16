@@ -38,8 +38,9 @@ case class ResolveMergeIntoArcticTableReferences(spark: SparkSession) extends Ru
         tbl match {
           case arctic: ArcticSparkTable =>
             if (arctic.table().isKeyedTable) {
-              val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-              val condRefs = cond.references.filter(f => primaries.contains(f.name))
+              val primaryKeys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+              val attributes = aliasedTable.output.filter(p => primaryKeys.contains(p.name))
+              val condRefs = cond.references.filter(f => attributes.contains(f))
               if (condRefs.isEmpty) {
                 throw new UnsupportedOperationException(
                   s"Condition ${cond.references}. is not allowed because is not a primary key")
