@@ -115,8 +115,8 @@ public class ArcticRuntimeException extends RuntimeException {
       return new NoSuchObjectException(throwable.getMessage());
     } else if (throwable.getClass().equals(AlreadyExistsException.class)) {
       return new com.netease.arctic.ams.api.AlreadyExistsException(throwable.getMessage());
-    } else if (throwable.getClass().equals(IllegalMetadataException.class)
-        || throwable.getClass().equals(PersistenceException.class)) {
+    } else if (throwable.getClass().equals(IllegalMetadataException.class) ||
+        throwable.getClass().equals(PersistenceException.class)) {
       return new MetaException(throwable.getMessage());
     } else if (throwable.getClass().equals(IllegalArgumentException.class)) {
       return new InvalidObjectException(throwable.getMessage());
