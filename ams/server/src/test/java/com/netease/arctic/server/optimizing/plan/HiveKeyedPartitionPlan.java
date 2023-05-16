@@ -11,22 +11,20 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class BasicMixedHivePartitionPlan extends AbstractMixedTablePartitionPlan {
+public class HiveKeyedPartitionPlan extends AbstractMixedTablePartitionPlan {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public BasicMixedHivePartitionPlan(boolean hasPrimaryKey, boolean hasPartition) {
+  public HiveKeyedPartitionPlan(boolean hasPartition) {
     super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(hasPrimaryKey, hasPartition));
+        new HiveTableTestHelper(true, hasPartition));
   }
 
-  @Parameterized.Parameters(name = "hasPrimaryKey={0}，hasPartition={1}")
+  @Parameterized.Parameters(name = "hasPartition={0}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {true, true},
-        {true, false},
-        {false, true},
-        {false, false}};
+        {true},
+        {false}};
   }
 
   @Test
@@ -34,17 +32,11 @@ public class BasicMixedHivePartitionPlan extends AbstractMixedTablePartitionPlan
     testSimple();
   }
 
-
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    if (isKeyedTable()) {
-      return new HiveKeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-          isPartitionedTable() ? "op_time_day=2022-01-01" : "", hiveLocation, System.currentTimeMillis());
-    } else {
-      return new HiveUnkeyedTablePartitionPlan(tableRuntime, getArcticTable(),
-          isPartitionedTable() ? "op_time_day=2022-01-01" : "", hiveLocation, System.currentTimeMillis());
-    }
+    return new HiveKeyedTablePartitionPlan(tableRuntime, getArcticTable(),
+        isPartitionedTable() ? "op_time_day=2022-01-01" : "", hiveLocation, System.currentTimeMillis());
   }
 }

@@ -39,12 +39,21 @@ public abstract class AbstractMixedTablePartitionPlan extends TableTestBase {
 
   public void testSimple() {
     ArrayList<Record> newRecords = Lists.newArrayList(
+        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
+    );
+    long transactionId = beginTransaction();
+    DataTestHelpers.writeAndCommitBaseStore(getArcticTable(), transactionId, newRecords, false);
+
+    newRecords = Lists.newArrayList(
         tableTestHelper().generateTestRecord(6, "666", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(7, "777", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(8, "888", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    long transactionId = beginTransaction();
+    transactionId = beginTransaction();
     DataTestHelpers.writeAndCommitBaseStore(getArcticTable(), transactionId, newRecords, false);
 
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
