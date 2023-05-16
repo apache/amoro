@@ -19,8 +19,8 @@
 package com.netease.arctic.utils.map;
 
 import com.netease.arctic.ArcticIOException;
-import com.netease.arctic.utils.LocalFileUtils;
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.LocalFileUtil;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.lang.Validate;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.rocksdb.AbstractImmutableNativeReference;
@@ -108,7 +108,7 @@ public class RocksDBBackend {
   private void setup() {
     try {
       LOG.info("DELETING RocksDB instance persisted at " + rocksDBBasePath);
-      LocalFileUtils.deleteDirectory(new File(rocksDBBasePath));
+      LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
 
       final DBOptions dbOptions = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
               .setWalDir(rocksDBBasePath).setStatsDumpPeriodSec(300).setStatistics(new Statistics());
@@ -120,7 +120,7 @@ public class RocksDBBackend {
       });
       final List<ColumnFamilyDescriptor> managedColumnFamilies = loadManagedColumnFamilies(dbOptions);
       final List<ColumnFamilyHandle> managedHandles = new ArrayList<>();
-      LocalFileUtils.mkdir(new File(rocksDBBasePath));
+      LocalFileUtil.mkdir(new File(rocksDBBasePath));
       rocksDB = RocksDB.open(dbOptions, rocksDBBasePath, managedColumnFamilies, managedHandles);
 
       Validate.isTrue(managedHandles.size() == managedColumnFamilies.size(),
@@ -186,7 +186,7 @@ public class RocksDBBackend {
       Validate.isTrue(key != null && value != null,
               "values or keys in rocksdb can not be null!");
       byte[] payload = serializePayload(value);
-      rocksDB.put(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key), payload);
+      rocksDB.put(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key), payload);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -222,7 +222,7 @@ public class RocksDBBackend {
   public <K extends Serializable> void delete(String columnFamilyName, K key) {
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      rocksDB.delete(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key));
+      rocksDB.delete(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -254,8 +254,8 @@ public class RocksDBBackend {
     Validate.isTrue(!closed);
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key));
-      return val == null ? null : SerializationUtils.deserialize(val);
+      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
+      return val == null ? null : SerializationUtil.kryoDeserialize(val);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -353,7 +353,7 @@ public class RocksDBBackend {
       descriptorMap.clear();
       rocksDB.close();
       try {
-        LocalFileUtils.deleteDirectory(new File(rocksDBBasePath));
+        LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
       } catch (IOException e) {
         throw new ArcticIOException(e.getMessage(), e);
       }
@@ -369,7 +369,7 @@ public class RocksDBBackend {
   }
 
   private byte[] serializePayload(Object value) throws IOException {
-    byte[] payload = SerializationUtils.serialize(value);
+    byte[] payload = SerializationUtil.kryoSerialize(value);
     totalBytesWritten += payload.length;
     return payload;
   }
@@ -401,7 +401,7 @@ public class RocksDBBackend {
       if (!hasNext()) {
         throw new IllegalStateException("next() called on rocksDB with no more valid entries");
       }
-      R val = SerializationUtils.deserialize(iterator.value());
+      R val = SerializationUtil.kryoDeserialize(iterator.value());
       iterator.next();
       return val;
     }

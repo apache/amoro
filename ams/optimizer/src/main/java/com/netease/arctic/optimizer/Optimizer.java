@@ -34,6 +34,11 @@ public class Optimizer {
     toucher.withTokenChangeListener(new SetTokenToExecutors()).start();
   }
 
+  public void stopOptimizing() {
+    toucher.stop();
+    Arrays.stream(executors).forEach(OptimizerExecutor::stop);
+  }
+
   public OptimizerToucher getToucher() {
     return toucher;
   }

@@ -22,8 +22,8 @@ public abstract class BaseTableExecutor extends TableRuntimeHandler {
 
   private static final long START_DELAY = 10 * 1000L;
 
-  private ScheduledExecutorService executor;
-  private TableRuntimeManager tableRuntimes;
+  private final ScheduledExecutorService executor;
+  private final TableRuntimeManager tableRuntimes;
 
   protected BaseTableExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
     this.tableRuntimes = tableRuntimes;
@@ -100,6 +100,11 @@ public abstract class BaseTableExecutor extends TableRuntimeHandler {
   @Override
   public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected void doDispose() {
+    executor.shutdown();
   }
 
   protected long getStartDelay() {

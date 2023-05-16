@@ -25,16 +25,13 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
-import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCapability;
 import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ArcticSparkChangeTable extends SparkTable {
 
@@ -69,12 +66,7 @@ public class ArcticSparkChangeTable extends SparkTable {
   }
 
   public Schema buildSchema(BasicUnkeyedTable table) {
-    Schema schema = table.schema();
-    List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
-    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(MetadataColumns.FILE_OFFSET_FILED);
-    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
-    return new Schema(columns);
+    return MetadataColumns.appendChangeStoreMetadataColumns(table.schema());
   }
 
   @Override

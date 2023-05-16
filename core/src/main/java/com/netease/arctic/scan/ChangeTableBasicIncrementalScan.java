@@ -20,8 +20,8 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.FileNameRules;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.ChangeTable;
 import org.apache.iceberg.BaseCombinedScanTask;
 import org.apache.iceberg.CombinedScanTask;

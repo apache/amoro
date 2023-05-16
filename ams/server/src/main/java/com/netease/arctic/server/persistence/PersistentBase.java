@@ -22,14 +22,12 @@ import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {
-  private static final ConcurrentHashMap<Class<?>, Class<?>> mapperIntfMap = new ConcurrentHashMap<>();
 
   protected PersistentBase() {
   }
@@ -53,8 +51,16 @@ public abstract class PersistentBase {
   }
 
   protected void doAsTransaction(Runnable... operations) {
-    for (Runnable runnable : operations) {
-      runnable.run();
+    try (NestedSqlSession session = beginSession()) {
+      try {
+        for (Runnable runnable : operations) {
+          runnable.run();
+        }
+        session.commit();
+      } catch (Throwable t) {
+        session.rollback();
+        throw t;
+      }
     }
   }
 

@@ -433,7 +433,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
 
     Object rawValue = getRawValueFromOption(configOption).orElseGet(configOption::defaultValue);
     try {
-      return ConfigurationUtils.convertToEnum(rawValue, enumClass);
+      return ConfigurationUtil.convertToEnum(rawValue, enumClass);
     } catch (IllegalArgumentException ex) {
       final String errorMessage =
           String.format(
@@ -544,9 +544,9 @@ public class Configurations implements java.io.Serializable, Cloneable {
 
     try {
       if (option.isList()) {
-        return rawValue.map(v -> ConfigurationUtils.convertToList(v, clazz));
+        return rawValue.map(v -> ConfigurationUtil.convertToList(v, clazz));
       } else {
-        return rawValue.map(v -> ConfigurationUtils.convertValue(v, clazz));
+        return rawValue.map(v -> ConfigurationUtil.convertValue(v, clazz));
       }
     } catch (Exception e) {
       throw new IllegalArgumentException(
@@ -568,7 +568,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
     synchronized (this.confData) {
       Map<String, String> ret = new HashMap<>(this.confData.size());
       for (Map.Entry<String, Object> entry : confData.entrySet()) {
-        ret.put(entry.getKey(), ConfigurationUtils.convertToString(entry.getValue()));
+        ret.put(entry.getKey(), ConfigurationUtil.convertToString(entry.getValue()));
       }
       return ret;
     }

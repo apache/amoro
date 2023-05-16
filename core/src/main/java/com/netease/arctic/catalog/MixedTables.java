@@ -7,6 +7,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -26,8 +27,11 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Tables;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class MixedTables {
 
@@ -36,10 +40,20 @@ public class MixedTables {
   protected CatalogMeta catalogMeta;
   protected Tables tables;
   protected TableMetaStore tableMetaStore;
+
+  /**
+   * @deprecated since 0.5.0, will be removed in 0.6.0;
+   */
+  @Deprecated
   protected AmsClient amsClient;
 
   public MixedTables(CatalogMeta catalogMeta) {
+    this(catalogMeta, null);
+  }
+
+  public MixedTables(CatalogMeta catalogMeta, AmsClient amsClient) {
     initialize(catalogMeta);
+    this.amsClient = amsClient;
   }
 
   private void initialize(CatalogMeta meta) {
@@ -195,26 +209,46 @@ public class MixedTables {
   }
 
   protected void dropTableByMeta(TableMeta tableMeta, boolean purge) {
-    String baseLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
-    String changeLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
-
-    try {
-      if (StringUtils.isNotBlank(baseLocation)) {
-        dropInternalTable(tableMetaStore, baseLocation, purge);
-      }
-      if (StringUtils.isNotBlank(changeLocation)) {
-        dropInternalTable(tableMetaStore, changeLocation, purge);
-      }
-    } catch (Exception e) {
-      LOG.warn("drop base/change iceberg table fail ", e);
-    }
-
     try {
       ArcticFileIO fileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
-      String tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
-      if (fileIO.exists(tableLocation) && purge) {
-        LOG.info("try to delete table directory location is " + tableLocation);
-        fileIO.deleteDirectoryRecursively(tableLocation);
+      Map<String, String> tableProperties = Maps.newHashMap();
+      try {
+        ArcticTable arcticTable = loadTableByMeta(tableMeta);
+        tableProperties.putAll(arcticTable.properties());
+      } catch (Exception loadException) {
+        LOG.warn("load table failed when dropping table", loadException);
+      }
+
+      // If purge is true, all manifest/data files must be located under the table directory.
+      if (!purge) {
+        String baseLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
+        String changeLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
+        try {
+          if (StringUtils.isNotBlank(baseLocation)) {
+            dropInternalTable(tableMetaStore, baseLocation, purge);
+          }
+          if (StringUtils.isNotBlank(changeLocation)) {
+            dropInternalTable(tableMetaStore, changeLocation, purge);
+          }
+        } catch (Exception e) {
+          LOG.warn("drop base/change iceberg table fail ", e);
+        }
+      } else {
+        String tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
+        if (fileIO.exists(tableLocation)) {
+          LOG.info("try to delete table directory location is " + tableLocation);
+          fileIO.deleteDirectoryRecursively(tableLocation);
+        }
+      }
+
+      // delete custom trash location
+      String customTrashLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+      if (customTrashLocation != null) {
+        TableIdentifier tableId = TableIdentifier.of(tableMeta.getTableIdentifier());
+        String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableId, customTrashLocation);
+        if (fileIO.exists(trashParentLocation)) {
+          fileIO.deleteDirectoryRecursively(trashParentLocation);
+        }
       }
     } catch (Exception e) {
       LOG.warn("drop table directory fail ", e);

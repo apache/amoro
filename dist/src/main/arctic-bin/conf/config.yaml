@@ -5,6 +5,7 @@ ams:
   server-expose-host: "127.0.0.1"
   refresh-external-catalog-interval: 180000 # 3min
   refresh-table-thread-count: 10
+  refresh-table-interval: 60000 #1min
   expire-table-thread-count: 10
   clean-orphan-file-thread-count: 10
   sync-hive-tables-thread-count: 10
@@ -20,8 +21,6 @@ ams:
     bind-port: 1630
 
   self-optimizing:
-    check-table-status-interval: 60000 # 1min
-    check-table-status-thread-count: 3
     commit-thread-count: 10
 
   database:
@@ -50,7 +49,7 @@ ams:
 
 #  High availability configuration.
 #  ha:
-#    enable: "true"
+#    enabled: true
 #    cluster-name: "default"
 #    zookeeper-address: "127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183"
 
@@ -71,14 +70,19 @@ containers:
 #      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
 #      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
 
-optimizer_group:
+optimizer_groups:
   - name: default
     container: localContainer
     properties:
       memory: 1024 # MB
+  - name: external-group
+    container: external # The external container is used to host all externally launched optimizers.
 
 #  - name: flinkOp
 #    container: flinkContainer
 #    properties:
 #      taskmanager.memory: 1024
 #      jobmanager.memory: 1024
+
+blocker:
+  timeout: 60000 # 1min

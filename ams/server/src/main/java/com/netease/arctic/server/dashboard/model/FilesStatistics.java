@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 public class FilesStatistics {
   private int fileCnt;
   private long totalSize;
@@ -95,10 +97,10 @@ public class FilesStatistics {
 
   @Override
   public String toString() {
-    return "FilesStatistics{" +
-        "fileCnt=" + fileCnt +
-        ", totalSize=" + totalSize +
-        ", averageSize=" + averageSize +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("fileCnt", fileCnt)
+        .add("totalSize", totalSize)
+        .add("averageSize", averageSize)
+        .toString();
   }
 }

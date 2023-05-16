@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class OptimizingHistory {
   private TableIdentifier tableIdentifier;
@@ -198,25 +199,24 @@ public class OptimizingHistory {
 
   @Override
   public String toString() {
-    return "OptimizeHistory{" +
-        "tableIdentifier=" + tableIdentifier +
-        // ", optimizeRange=" + optimizeRange +
-        ", optimizeType=" + optimizeType +
-        ", recordId=" + recordId +
-        ", visibleTime=" + visibleTime +
-        ", commitTime=" + commitTime +
-        ", planTime=" + planTime +
-        ", duration=" + duration +
-        ", totalFilesStatBeforeOptimize=" + totalFilesStatBeforeOptimize +
-        ", insertFilesStatBeforeOptimize=" + insertFilesStatBeforeOptimize +
-        ", deleteFilesStatBeforeOptimize=" + deleteFilesStatBeforeOptimize +
-        ", baseFilesStatBeforeOptimize=" + baseFilesStatBeforeOptimize +
-        ", posDeleteFilesStatBeforeOptimize=" + posDeleteFilesStatBeforeOptimize +
-        ", totalFilesStatAfterOptimize=" + totalFilesStatAfterOptimize +
-        ", snapshotInfo=" + snapshotInfo +
-        ", partitionCnt=" + partitionCnt +
-        ", partitions='" + partitions + '\'' +
-        ", baseTableMaxTransactionId='" + baseTableMaxTransactionId + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("tableIdentifier", tableIdentifier)
+        .add("optimizeType", optimizeType)
+        .add("recordId", recordId)
+        .add("visibleTime", visibleTime)
+        .add("commitTime", commitTime)
+        .add("planTime", planTime)
+        .add("duration", duration)
+        .add("totalFilesStatBeforeOptimize", totalFilesStatBeforeOptimize)
+        .add("insertFilesStatBeforeOptimize", insertFilesStatBeforeOptimize)
+        .add("deleteFilesStatBeforeOptimize", deleteFilesStatBeforeOptimize)
+        .add("baseFilesStatBeforeOptimize", baseFilesStatBeforeOptimize)
+        .add("posDeleteFilesStatBeforeOptimize", posDeleteFilesStatBeforeOptimize)
+        .add("totalFilesStatAfterOptimize", totalFilesStatAfterOptimize)
+        .add("snapshotInfo", snapshotInfo)
+        .add("partitionCnt", partitionCnt)
+        .add("partitions", partitions)
+        .add("baseTableMaxTransactionId", baseTableMaxTransactionId)
+        .toString();
   }
 }

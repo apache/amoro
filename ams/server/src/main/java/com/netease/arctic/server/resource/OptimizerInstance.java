@@ -33,8 +33,8 @@ public class OptimizerInstance extends Resource {
   public OptimizerInstance() {
   }
 
-  public OptimizerInstance(OptimizerRegisterInfo registerInfo) {
-    super(registerInfo);
+  public OptimizerInstance(OptimizerRegisterInfo registerInfo, String containerName) {
+    super(registerInfo, containerName);
     this.token = UUID.randomUUID().toString();
     this.touchTime = System.currentTimeMillis();
     this.startTime = registerInfo.getStartTime();
