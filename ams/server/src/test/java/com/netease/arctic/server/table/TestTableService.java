@@ -33,7 +33,6 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
 import com.netease.arctic.server.exception.AlreadyExistsException;
-import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.junit.After;
@@ -84,8 +83,10 @@ public class TestTableService extends TableServiceTestBase {
     switch (catalogTestHelper.tableFormat()) {
       case MIXED_HIVE:
         mixedTables = new MixedHiveTables(catalogMeta);
+        break;
       case MIXED_ICEBERG:
         mixedTables = new MixedTables(catalogMeta);
+        break;
     }
   }
 
