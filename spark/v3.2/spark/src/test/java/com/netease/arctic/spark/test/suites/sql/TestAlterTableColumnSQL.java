@@ -25,11 +25,11 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
             Types.StructType.of(
                 Types.NestedField.optional(1, "id", Types.LongType.get()),
                 Types.NestedField.optional(2, "data", Types.StringType.get()),
-                Types.NestedField.optional(3, "ts", Types.StringType.get()),
                 Types.NestedField.optional(4, "point", Types.StructType.of(
                     Types.NestedField.required(5, "x", Types.DoubleType.get()),
                     Types.NestedField.required(6, "y", Types.DoubleType.get())
-                )))),
+                )),
+                Types.NestedField.optional(3, "ts", Types.StringType.get()))),
         Arguments.of(TableFormat.MIXED_ICEBERG, "",
             Types.StructType.of(
             Types.NestedField.optional(1, "id", Types.LongType.get()),
