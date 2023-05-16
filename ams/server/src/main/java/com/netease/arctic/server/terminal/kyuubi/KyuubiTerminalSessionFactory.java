@@ -19,7 +19,6 @@
 package com.netease.arctic.server.terminal.kyuubi;
 
 import com.clearspring.analytics.util.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
@@ -111,7 +110,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     logMessage(logs, "try to create a kyuubi connection via url: " + kyuubiJdbcUrl);
     logMessage(logs, "");
 
-    Map<String, String> sessionConf = Maps.newLinkedHashMap();
+    Map<String, String> sessionConf = configuration.toMap();
     sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
 

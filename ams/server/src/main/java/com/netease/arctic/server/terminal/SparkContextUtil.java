@@ -18,9 +18,12 @@
 
 package com.netease.arctic.server.terminal;
 
+import com.netease.arctic.hive.utils.CatalogUtil;
+import com.netease.arctic.server.catalog.CatalogType;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
+import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.SparkCatalog;
 import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
@@ -50,8 +53,18 @@ public class SparkContextUtil {
           sparkConf.put("spark.sql.catalog." + catalog + "." + key, property);
         }
       } else {
-        sparkConf.put("spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
-        sparkConf.put("spark.sql.catalog." + catalog + ".url", catalogUrlBase + catalog);
+        String sparkCatalogPrefix = "spark.sql.catalog." + catalog;
+        String catalogClassName = ArcticSparkCatalog.class.getName();
+        String type =
+            sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
+        if (sessionConfig.getBoolean(
+            TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE) &&
+            CatalogType.HIVE.name().equalsIgnoreCase(type)) {
+          sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
+          catalogClassName = ArcticSparkSessionCatalog.class.getName();
+        }
+        sparkConf.put(sparkCatalogPrefix, catalogClassName);
+        sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + catalog);
       }
     }
     return sparkConf;
