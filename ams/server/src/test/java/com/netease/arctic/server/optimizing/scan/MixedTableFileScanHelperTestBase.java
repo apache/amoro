@@ -29,6 +29,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.RowDelta;
 import org.junit.Assert;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public abstract class MixedTableFileScanHelperTestBase extends TableTestBase {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  protected void appendBase(List<DataFile> dataFiles) {
+  protected List<DataFile> appendBase(List<DataFile> dataFiles) {
     AppendFiles appendFiles;
     if (getArcticTable().isKeyedTable()) {
       appendFiles = getArcticTable().asKeyedTable().baseTable().newAppend();
@@ -48,6 +49,19 @@ public abstract class MixedTableFileScanHelperTestBase extends TableTestBase {
     }
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+    return dataFiles;
+  }
+
+  protected List<DeleteFile> appendBasePosDelete(List<DeleteFile> deleteFiles) {
+    RowDelta rowDelta;
+    if (getArcticTable().isKeyedTable()) {
+      rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    } else {
+      rowDelta = getArcticTable().asUnkeyedTable().newRowDelta();
+    }
+    deleteFiles.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+    return deleteFiles;
   }
 
   protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
