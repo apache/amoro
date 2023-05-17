@@ -108,10 +108,15 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
       taskSplitter = buildTaskSplitter();
     }
     this.splitTasks = taskSplitter.splitTasks(targetTaskCount).stream()
-        .filter(SplitTask::isNotEmpty).collect(Collectors.toList());
+        .filter(this::taskNeedExecute).collect(Collectors.toList());
     return this.splitTasks.stream()
         .map(task -> task.buildTask(buildTaskProperties()))
         .collect(Collectors.toList());
+  }
+
+  protected boolean taskNeedExecute(SplitTask task) {
+    // if there are no delete files and no more than 1 rewrite files, we should not execute
+    return !task.getDeleteFiles().isEmpty() || task.getRewriteDataFiles().size() > 1;
   }
 
   private boolean isOptimizing(IcebergDataFile dataFile) {
@@ -209,15 +214,24 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
         });
       }
     }
-    
+
+    public Set<IcebergDataFile> getRewriteDataFiles() {
+      return rewriteDataFiles;
+    }
+
+    public Set<IcebergContentFile<?>> getDeleteFiles() {
+      return deleteFiles;
+    }
+
+    public Set<IcebergDataFile> getRewritePosDataFiles() {
+      return rewritePosDataFiles;
+    }
+
     public boolean contains(IcebergDataFile dataFile) {
       return rewriteDataFiles.contains(dataFile) || rewritePosDataFiles.contains(dataFile);
     }
 
     public TaskDescriptor buildTask(OptimizingInputProperties properties) {
-      if (isEmpty()) {
-        return null;
-      }
       Set<IcebergContentFile<?>> readOnlyDeleteFiles = Sets.newHashSet();
       Set<IcebergContentFile<?>> rewriteDeleteFiles = Sets.newHashSet();
       for (IcebergContentFile<?> deleteFile : deleteFiles) {
@@ -242,14 +256,6 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
           rewriteDeleteFiles.toArray(new IcebergContentFile[0]),
           tableObject);
       return new TaskDescriptor(partition, input, properties.getProperties());
-    }
-
-    public boolean isEmpty() {
-      return rewriteDataFiles.isEmpty() && rewritePosDataFiles.isEmpty();
-    }
-
-    public boolean isNotEmpty() {
-      return !isEmpty();
     }
 
     private long getRecordCount(List<IcebergContentFile<?>> files) {
