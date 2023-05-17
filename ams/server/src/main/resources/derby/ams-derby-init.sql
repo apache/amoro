@@ -117,6 +117,8 @@ CREATE TABLE table_optimizing_process (
     fail_reason         VARCHAR(4096),
     rewrite_input       BLOB(64m),
     summary             CLOB(64m),
+    from_sequence       CLOB(64m),
+    to_sequence         CLOB(64m),
     CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id)
 );
 

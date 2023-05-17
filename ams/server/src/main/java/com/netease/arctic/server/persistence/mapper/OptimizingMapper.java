@@ -17,6 +17,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OptimizingMapper {
 
@@ -27,10 +28,14 @@ public interface OptimizingMapper {
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
   @Insert("INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
-      " target_snapshot_id, status, optimizing_type, plan_time, summary) VALUES (#{table.id}, #{table.catalog}," +
+      " target_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence, to_sequence) VALUES" +
+      " (#{table.id}, #{table.catalog}," +
       " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{status}, #{optimizingType}," +
       " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}," +
+      " #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}" +
+      ")")
   void insertOptimizingProcess(
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
@@ -38,7 +43,9 @@ public interface OptimizingMapper {
       @Param("status") OptimizingProcess.Status status,
       @Param("optimizingType") OptimizingType optimizingType,
       @Param("planTime") long planTime,
-      @Param("summary") MetricsSummary summary);
+      @Param("summary") MetricsSummary summary,
+      @Param("fromSequence") Map<String, Long> fromSequence,
+      @Param("toSequence") Map<String, Long> toSequence);
 
   @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
       " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
