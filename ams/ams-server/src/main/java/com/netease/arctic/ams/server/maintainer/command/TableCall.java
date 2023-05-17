@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.maintainer.command;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogManager;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -78,7 +79,12 @@ public class TableCall implements CallCommand {
       }
       case DROP_METADATA: {
         ArcticCatalog arcticCatalog = catalogManager.getArcticCatalog(identifier.getCatalog());
-        arcticCatalog.dropTable(identifier, false);
+        if (arcticCatalog instanceof ArcticHiveCatalog) {
+          ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)arcticCatalog;
+          arcticHiveCatalog.dropTableButNotDropHiveTable(identifier);
+        } else {
+          arcticCatalog.dropTable(identifier, false);
+        }
         return ok();
       }
       default: {
