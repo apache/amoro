@@ -26,7 +26,6 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
-import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
@@ -35,7 +34,9 @@ import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
@@ -75,7 +76,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = beginTransaction();
-    DataTestHelpers.writeAndCommitBaseStore(getArcticTable(), transactionId, newRecords, false);
+    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     newRecords = Lists.newArrayList(
         tableTestHelper().generateTestRecord(6, "666", 0, "2022-01-01T12:00:00"),
@@ -84,7 +85,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
         tableTestHelper().generateTestRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
     transactionId = beginTransaction();
-    DataTestHelpers.writeAndCommitBaseStore(getArcticTable(), transactionId, newRecords, false);
+    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     TableFileScanHelper tableFileScanHelper = getBaseTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getPartitionPlan();
@@ -94,6 +95,17 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     }
 
     return partitionPlan.splitTasks(0);
+  }
+
+  private void appendBase(List<DataFile> dataFiles) {
+    AppendFiles appendFiles;
+    if (getArcticTable().isKeyedTable()) {
+      appendFiles = getArcticTable().asKeyedTable().baseTable().newAppend();
+    } else {
+      appendFiles = getArcticTable().asUnkeyedTable().newAppend();
+    }
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
   }
 
   protected Map<String, String> buildProperties() {
@@ -125,7 +137,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     assertFiles(expect.getInput().rePosDeletedDataFiles(), actual.getInput().rePosDeletedDataFiles());
     assertTaskProperties(expect.properties(), actual.properties());
   }
-  
+
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {
     Assert.assertEquals(expect, actual);
   }

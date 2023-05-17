@@ -19,25 +19,32 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.StructProjection;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.ArcticTable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.iceberg.util.StructLikeSet;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class TableDataView {
 
   private ArcticTable arcticTable;
+
+  private Schema schema;
+
+  private int schemaSize;
 
   private Schema primary;
 
@@ -53,6 +60,8 @@ public class TableDataView {
       int partitionCount,
       int primaryUpperBound) {
     this.arcticTable = arcticTable;
+    this.schema = arcticTable.schema();
+    this.schemaSize = schema.columns().size();
     this.primary = primary;
     this.primaryUpperBound = primaryUpperBound;
     this.view = StructLikeMap.create(primary.asStruct());
@@ -60,37 +69,100 @@ public class TableDataView {
   }
 
   public WriteResult upsert(int count) throws IOException {
+    List<Record> scatter = randomRecord(count);
+    List<RecordWithAction> upsert = new ArrayList<>();
+    for (Record record : scatter) {
+      upsert.add(new RecordWithAction(record, ChangeAction.DELETE));
+      upsert.add(new RecordWithAction(record, ChangeAction.INSERT));
+    }
+    return doWrite(upsert);
+  }
+
+  public WriteResult onlyDelete(int count) throws IOException {
+    List<Record> scatter = randomRecord(count);
+    List<RecordWithAction> delete =
+        scatter.stream().map(s -> new RecordWithAction(s, ChangeAction.DELETE)).collect(Collectors.toList());
+    return doWrite(delete);
+  }
+
+  private WriteResult doWrite(List<RecordWithAction> upsert) throws IOException {
+    writeView(upsert);
+    WriteResult writeResult = writeFile(upsert);
+    upsertCommit(writeResult);
+    return writeResult;
+  }
+
+  private List<Record> randomRecord(int count) {
     Random random = new Random();
     int[] ids = new int[count];
     for (int i = 0; i < count; i++) {
       ids[i] = random.nextInt(primaryUpperBound);
     }
     List<Record> scatter = generator.scatter(ids);
-    List<RecordWithAction> upsert = new ArrayList<>();
-    for (Record record: scatter) {
-      upsert.add(new RecordWithAction(record, ChangeAction.DELETE));
-      upsert.add(new RecordWithAction(record, ChangeAction.INSERT));
-    }
-    writeView(upsert);
-    WriteResult writer = writeFile(upsert);
-    upsertCommit(writer);
-    return writer;
+    return scatter;
   }
 
   public int getSize() {
     return view.size();
   }
 
+  public MatchResult match(List<Record> records) {
+    if ((view.size() == 0 && CollectionUtils.isEmpty(records))) {
+      return MatchResult.ok();
+    }
+
+    List<Record> notInView = new ArrayList<>();
+    List<Record> inViewButDuplicate = new ArrayList<>();
+    StructLikeSet intersection = StructLikeSet.create(schema.asStruct());
+    for (Record record : records) {
+      Record viewRecord = view.get(record);
+      if (equRecord(viewRecord, record)) {
+        if (intersection.contains(record)) {
+          inViewButDuplicate.add(record);
+        } else {
+          intersection.add(record);
+        }
+      } else {
+        notInView.add(record);
+      }
+    }
+
+    if (intersection.size() == view.size()) {
+      return MatchResult.of(notInView, inViewButDuplicate, null);
+    }
+
+    List<Record> missInView = new ArrayList<>();
+    for (Record viewRecord : view.values()) {
+      if (!intersection.contains(viewRecord)) {
+        missInView.add(viewRecord);
+      }
+    }
+    return new MatchResult(notInView, inViewButDuplicate, missInView);
+  }
+
+  private boolean equRecord(Record r1, Record r2) {
+    if (r2.size() < schemaSize) {
+      return false;
+    }
+    for (int i = 0; i < schemaSize; i++) {
+      boolean equals = r1.get(i).equals(r2.get(i));
+      if (!equals) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private void upsertCommit(WriteResult writeResult) {
     AppendFiles appendFiles = arcticTable.asKeyedTable().changeTable().newAppend();
-    for (DataFile dataFile: writeResult.dataFiles()) {
+    for (DataFile dataFile : writeResult.dataFiles()) {
       appendFiles.appendFile(dataFile);
     }
     appendFiles.commit();
   }
 
   private void writeView(List<RecordWithAction> records) {
-    for (RecordWithAction record: records) {
+    for (RecordWithAction record : records) {
       ChangeAction action = record.getAction();
       if (action == ChangeAction.DELETE || action == ChangeAction.UPDATE_BEFORE) {
         view.remove(record);
@@ -108,12 +180,41 @@ public class TableDataView {
         .withTransactionId(0L)
         .buildChangeWriter();
     try {
-      for (Record record: records) {
+      for (Record record : records) {
         writer.write(record);
       }
-    }finally {
+    } finally {
       writer.close();
     }
     return writer.complete();
+  }
+
+  public static class MatchResult {
+
+    private List<Record> notInView;
+
+    private List<Record> inViewButDuplicate;
+
+    private List<Record> missInView;
+
+    private MatchResult(List<Record> notInView, List<Record> inViewButDuplicate, List<Record> missInView) {
+      this.notInView = notInView;
+      this.inViewButDuplicate = inViewButDuplicate;
+      this.missInView = missInView;
+    }
+
+    public static MatchResult of(List<Record> notInView, List<Record> inViewButDuplicate, List<Record> missInView) {
+      return new MatchResult(notInView, inViewButDuplicate, missInView);
+    }
+
+    public static MatchResult ok() {
+      return new MatchResult(null, null, null);
+    }
+
+    public boolean isOk() {
+      return CollectionUtils.isEmpty(notInView) &&
+          CollectionUtils.isEmpty(inViewButDuplicate) &&
+          CollectionUtils.isEmpty(missInView);
+    }
   }
 }

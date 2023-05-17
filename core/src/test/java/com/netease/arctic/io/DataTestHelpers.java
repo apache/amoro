@@ -110,7 +110,7 @@ public class DataTestHelpers {
   }
 
   public static List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action,
+      KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records, boolean orderedWrite) {
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(keyedTable)
         .withChangeAction(action)
@@ -176,7 +176,7 @@ public class DataTestHelpers {
   }
 
   public static List<DataFile> writeAndCommitChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action,
+      KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records) {
     List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records, false);
     AppendFiles appendFiles = keyedTable.changeTable().newAppend();

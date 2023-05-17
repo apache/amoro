@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.commit;
+package com.netease.arctic.server.optimizing.commit;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
@@ -24,29 +24,16 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.optimizing.IcebergCommit;
-import com.netease.arctic.server.optimizing.MixedIcebergCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SequenceNumberFetcher;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -59,8 +46,6 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,9 +53,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 @RunWith(Parameterized.class)
 public class TestIcebergCommit extends TableTestBase {
-  protected int i;
+  protected int fileSeq;
   protected PartitionSpec spec;
   protected StructLike partitionData;
   protected String partitionPath;
@@ -275,20 +266,22 @@ public class TestIcebergCommit extends TableTestBase {
     arcticTable.asUnkeyedTable().newRowDelta().addDeletes((DeleteFile) contentFile).commit();
   }
 
-
   protected Map<String, ContentFile<?>> getAllFiles() {
     if (arcticTable.asUnkeyedTable().currentSnapshot() == null) {
       return Collections.emptyMap();
     }
     Map<String, ContentFile<?>> maps = new HashMap<>();
     CloseableIterable<FileScanTask> fileScanTasks = arcticTable.asUnkeyedTable().newScan().planFiles();
-    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(),
+    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+        arcticTable.asUnkeyedTable(),
         arcticTable.asUnkeyedTable().currentSnapshot().snapshotId());
     for (FileScanTask fileScanTask : fileScanTasks) {
-      maps.put(fileScanTask.file().path().toString(), new IcebergDataFile(fileScanTask.file(),
+      maps.put(fileScanTask.file().path().toString(), new IcebergDataFile(
+          fileScanTask.file(),
           sequenceNumberFetcher.sequenceNumberOf(fileScanTask.file().path().toString())));
       for (DeleteFile deleteFile : fileScanTask.deletes()) {
-        maps.put(deleteFile.path().toString(), new IcebergDeleteFile(deleteFile,
+        maps.put(deleteFile.path().toString(), new IcebergDeleteFile(
+            deleteFile,
             sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString())));
       }
     }
@@ -297,7 +290,7 @@ public class TestIcebergCommit extends TableTestBase {
 
   protected ContentFile<?> getEqualityDeleteFile() {
     return FileMetadata.deleteFileBuilder(spec)
-        .withPath(String.format("1-ED-0-00000-0-00-%s.parquet", i++))
+        .withPath(String.format("1-ED-0-00000-0-00-%s.parquet", fileSeq++))
         .ofPositionDeletes()
         .withFileSizeInBytes(10)
         .withPartitionPath(partitionPath)
@@ -322,7 +315,6 @@ public class TestIcebergCommit extends TableTestBase {
         dataOutput,
         deleteOutput,
         null);
-
 
     TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
     Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
@@ -361,7 +353,7 @@ public class TestIcebergCommit extends TableTestBase {
           .map(s -> allFiles.get(s.path().toString()))
           .toArray(IcebergContentFile[]::new);
     }
-    return new RewriteFilesInput(rewriteData, rewritePos, delete, arcticTable);
+    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }
 
   private void checkFile(ContentFile<?>[] files) {
@@ -375,7 +367,7 @@ public class TestIcebergCommit extends TableTestBase {
 
   private DataFile getChangeDataFile() {
     return DataFiles.builder(spec)
-        .withPath(String.format("1-I-0-00000-0-00-%s.parquet", i++))
+        .withPath(String.format("1-I-0-00000-0-00-%s.parquet", fileSeq++))
         .withFileSizeInBytes(10)
         .withPartitionPath(partitionPath)
         .withRecordCount(1)
@@ -385,7 +377,7 @@ public class TestIcebergCommit extends TableTestBase {
 
   private DataFile getBaseDataFile() {
     return DataFiles.builder(spec)
-        .withPath(String.format("1-B-0-00000-0-00-%s.parquet", i++))
+        .withPath(String.format("1-B-0-00000-0-00-%s.parquet", fileSeq++))
         .withFileSizeInBytes(10)
         .withPartitionPath(partitionPath)
         .withRecordCount(1)
@@ -395,7 +387,7 @@ public class TestIcebergCommit extends TableTestBase {
 
   private DeleteFile getPositionDeleteFile() {
     return FileMetadata.deleteFileBuilder(spec)
-        .withPath(String.format("1-PD-0-00000-0-00-%s.parquet", i++))
+        .withPath(String.format("1-PD-0-00000-0-00-%s.parquet", fileSeq++))
         .ofPositionDeletes()
         .withFileSizeInBytes(10)
         .withPartitionPath(partitionPath)
