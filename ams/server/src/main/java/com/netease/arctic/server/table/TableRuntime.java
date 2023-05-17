@@ -212,21 +212,6 @@ public class TableRuntime extends PersistentBase {
     }
   }
 
-  public void tryUpdatingConfig(Map<String, String> properties) {
-    lock.lock();
-    TableConfiguration originalConfig = this.tableConfiguration;
-    try {
-      if (updateConfigInternal(properties)) {
-        persistUpdatingRuntime();
-        if (tableChangeHandler != null) {
-          tableChangeHandler.fireConfigChanged(this, originalConfig);
-        }
-      }
-    } finally {
-      lock.unlock();
-    }
-  }
-
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
     if (!tableConfiguration.equals(newTableConfig)) {

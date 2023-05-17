@@ -58,7 +58,7 @@ public abstract class InternalCatalog extends ServerCatalog {
     TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
-        () -> createTableInternal(tableMetadata),
+        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
         () -> doAsExisted(
             CatalogMetaMapper.class,
             mapper -> mapper.incTableCount(1, name()),
@@ -84,6 +84,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.deleteTableIdById(tableIdentifier.getId()),
             () -> new ObjectNotExistsException(getTableDesc(databaseName, tableName))),
+        () -> doAs(TableMetaMapper.class, mapper -> mapper.deleteTableMetaById(tableIdentifier.getId())),
         () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
         () -> dropTableInternal(databaseName, tableName),
         () -> doAsExisted(
@@ -105,7 +106,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .toString();
   }
 
-  private String getTableDesc(String database, String tableName) {
+  protected String getTableDesc(String database, String tableName) {
     return new StringBuilder()
         .append(name())
         .append('.')
@@ -139,7 +140,7 @@ public abstract class InternalCatalog extends ServerCatalog {
     //do nothing, create internal table default done on client side
   }
 
-  private void validateTableIdentifier(TableIdentifier tableIdentifier) {
+  protected void validateTableIdentifier(TableIdentifier tableIdentifier) {
     if (!name().equals(tableIdentifier.getCatalog())) {
       throw new IllegalMetadataException("Catalog name is error in table identifier");
     }
