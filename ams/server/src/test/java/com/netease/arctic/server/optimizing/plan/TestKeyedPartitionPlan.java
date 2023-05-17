@@ -29,6 +29,7 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
@@ -173,7 +174,7 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
+        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
   }
 }

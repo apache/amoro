@@ -70,14 +70,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private final StructLikeMap<Long> partitionOptimizedSequence;
   private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
 
-  public KeyedTableFileScanHelper(KeyedTable arcticTable, long baseSnapshotId, long changeSnapshotId,
-                                  StructLikeMap<Long> partitionOptimizedSequence,
-                                  StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+  public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
     this.arcticTable = arcticTable;
-    this.baseSnapshotId = baseSnapshotId;
-    this.changeSnapshotId = changeSnapshotId;
-    this.partitionOptimizedSequence = partitionOptimizedSequence;
-    this.legacyPartitionMaxTransactionId = legacyPartitionMaxTransactionId;
+    this.baseSnapshotId = snapshot.baseSnapshotId();
+    this.changeSnapshotId = snapshot.changeSnapshotId();
+    this.partitionOptimizedSequence = snapshot.partitionOptimizedSequence();
+    this.legacyPartitionMaxTransactionId = snapshot.legacyPartitionMaxTransactionId();
   }
 
   @Override
