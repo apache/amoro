@@ -229,6 +229,6 @@ public class TestMixIcebergCommit extends TestIcebergCommit {
           )
           .toArray(IcebergContentFile[]::new);
     }
-    return new RewriteFilesInput(rewriteData, rewritePos, delete, arcticTable);
+    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }
 }
