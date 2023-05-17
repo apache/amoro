@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class TableDataView {
 
@@ -68,21 +69,37 @@ public class TableDataView {
   }
 
   public WriteResult upsert(int count) throws IOException {
+    List<Record> scatter = randomRecord(count);
+    List<RecordWithAction> upsert = new ArrayList<>();
+    for (Record record : scatter) {
+      upsert.add(new RecordWithAction(record, ChangeAction.DELETE));
+      upsert.add(new RecordWithAction(record, ChangeAction.INSERT));
+    }
+    return doWrite(upsert);
+  }
+
+  public WriteResult onlyDelete(int count) throws IOException {
+    List<Record> scatter = randomRecord(count);
+    List<RecordWithAction> delete =
+        scatter.stream().map(s -> new RecordWithAction(s, ChangeAction.DELETE)).collect(Collectors.toList());
+    return doWrite(delete);
+  }
+
+  private WriteResult doWrite(List<RecordWithAction> upsert) throws IOException {
+    writeView(upsert);
+    WriteResult writeResult = writeFile(upsert);
+    upsertCommit(writeResult);
+    return writeResult;
+  }
+
+  private List<Record> randomRecord(int count) {
     Random random = new Random();
     int[] ids = new int[count];
     for (int i = 0; i < count; i++) {
       ids[i] = random.nextInt(primaryUpperBound);
     }
     List<Record> scatter = generator.scatter(ids);
-    List<RecordWithAction> upsert = new ArrayList<>();
-    for (Record record : scatter) {
-      upsert.add(new RecordWithAction(record, ChangeAction.DELETE));
-      upsert.add(new RecordWithAction(record, ChangeAction.INSERT));
-    }
-    writeView(upsert);
-    WriteResult writer = writeFile(upsert);
-    upsertCommit(writer);
-    return writer;
+    return scatter;
   }
 
   public int getSize() {
