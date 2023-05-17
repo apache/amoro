@@ -124,7 +124,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected List<TaskDescriptor> planWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
-    AbstractPartitionPlan partitionPlan = getPartitionPlan();
+    AbstractPartitionPlan partitionPlan = getAndCheckPartitionPlan();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
@@ -218,6 +218,12 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   protected abstract AbstractPartitionPlan getPartitionPlan();
+
+  protected AbstractPartitionPlan getAndCheckPartitionPlan() {
+    AbstractPartitionPlan plan = getPartitionPlan();
+    Assert.assertEquals(getPartition(), plan.getPartition());
+    return plan;
+  }
 
   protected abstract TableFileScanHelper getTableFileScanHelper();
 
