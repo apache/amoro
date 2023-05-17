@@ -47,52 +47,22 @@ public class MixedHiveCatalogImpl extends MixedCatalogImpl {
 
   @Override
   public void createDatabase(String databaseName) {
-    // do not support
+    // do not handle database operations
   }
 
   @Override
   public void dropDatabase(String databaseName) {
-    // do not support
+    // do not handle database operations
   }
 
   @Override
-  public ServerTableIdentifier createTable(TableMeta tableMeta) {
-    validateTableIdentifier(tableMeta.getTableIdentifier());
-    ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
-    TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
-    doAsTransaction(
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
-        () -> doAsExisted(
-            CatalogMetaMapper.class,
-            mapper -> mapper.incTableCount(1, name()),
-            () -> new ObjectNotExistsException(name())));
-    return getAs(
-        TableMetaMapper.class,
-        mapper -> mapper.selectTableIdentifier(tableMeta.getTableIdentifier().getCatalog(),
-            tableMeta.getTableIdentifier().getDatabase(), tableMeta.getTableIdentifier().getTableName()));
+  protected void decreaseDatabaseTableCount(String databaseName) {
+    // do not handle database operations
   }
 
   @Override
-  public ServerTableIdentifier dropTable(String databaseName, String tableName) {
-    ServerTableIdentifier tableIdentifier = getAs(TableMetaMapper.class, mapper -> mapper
-        .selectTableIdentifier(getMetadata().getCatalogName(), databaseName, tableName));
-    if (tableIdentifier.getId() == null) {
-      throw new ObjectNotExistsException(getTableDesc(databaseName, tableName));
-    }
-    doAsTransaction(
-        () -> doAsExisted(
-            TableMetaMapper.class,
-            mapper -> mapper.deleteTableIdById(tableIdentifier.getId()),
-            () -> new ObjectNotExistsException(getTableDesc(databaseName, tableName))),
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.deleteTableMetaById(tableIdentifier.getId())),
-        () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
-        () -> dropTableInternal(databaseName, tableName),
-        () -> doAsExisted(
-            CatalogMetaMapper.class,
-            mapper -> mapper.decTableCount(1, tableIdentifier.getCatalog()),
-            () -> new ObjectNotExistsException(name())));
-    return tableIdentifier;
+  protected void increaseDatabaseTableCount(String databaseName) {
+    // do not handle database operations
   }
 
   @Override
