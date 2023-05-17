@@ -104,6 +104,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     return ImmutableList.copyOf(authOptimizers.values());
   }
 
+  public void removeOptimizer(String resourceId) {
+    authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
+  }
+
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
     retryQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
     taskQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
@@ -284,8 +288,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       optimizingType = tableRuntimeMeta.getOptimizingType();
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
-      metricsSummary = new MetricsSummary(taskMap.values());
       loadTaskRuntimes();
+      metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.constructTableRuntime(this);
     }
 
@@ -336,6 +340,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             persistProcessCompleted(false);
           }
         }
+      } catch (Exception e) {
+        LOG.error("accept result error:", e);
       } finally {
         tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
         lock.unlock();
@@ -473,13 +479,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         doAsTransaction(
             () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
             () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime)),
+                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
+                    new MetricsSummary(taskMap.values()))),
             () -> tableRuntime.completeProcess(true)
         );
       } else {
         doAsTransaction(
             () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime)),
+                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
+                    new MetricsSummary(taskMap.values()))),
             () -> tableRuntime.completeProcess(true)
         );
       }
