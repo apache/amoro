@@ -105,7 +105,7 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
     return DataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
