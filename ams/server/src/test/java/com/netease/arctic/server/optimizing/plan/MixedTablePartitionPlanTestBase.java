@@ -26,7 +26,6 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
-import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
