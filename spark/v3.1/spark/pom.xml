@@ -345,11 +345,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/spark/test/**.java</include>
-                    </includes>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
