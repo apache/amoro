@@ -23,19 +23,17 @@ import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import java.util.HashMap;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class BasicTableTestHelper implements TableTestHelper {
 
@@ -69,7 +67,8 @@ public class BasicTableTestHelper implements TableTestHelper {
     this.tableProperties = tableProperties;
   }
 
-  public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition,
+  public BasicTableTestHelper(
+      boolean hasPrimaryKey, boolean hasPartition,
       Map<String, String> tableProperties) {
     this(TABLE_SCHEMA, hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
         hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
@@ -117,7 +116,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   @Override
-  public List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression,
+  public List<Record> readKeyedTable(
+      KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
     return DataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
@@ -129,7 +129,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   @Override
-  public List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema,
+  public List<Record> readBaseStore(
+      ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
     return DataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }

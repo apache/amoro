@@ -19,12 +19,12 @@
 package com.netease.arctic.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
-import java.util.Map;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 
-public class RecordWithAction implements Record  {
+import java.util.Map;
+
+public class RecordWithAction implements Record {
 
   private Record record;
 
@@ -64,6 +64,11 @@ public class RecordWithAction implements Record  {
   }
 
   @Override
+  public <T> T get(int pos, Class<T> javaClass) {
+    return record.get(pos, javaClass);
+  }
+
+  @Override
   public Record copy() {
     return new RecordWithAction(record.copy(), action);
   }
@@ -91,11 +96,6 @@ public class RecordWithAction implements Record  {
   @Override
   public int size() {
     return record.size();
-  }
-
-  @Override
-  public <T> T get(int pos, Class<T> javaClass) {
-    return record.get(pos, javaClass);
   }
 
   @Override
