@@ -45,11 +45,11 @@ import java.util.stream.Collectors;
 public class IcebergCommit {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergCommit.class);
 
-  private final long targetSnapshotId;
+  private final Long targetSnapshotId;
   private final ArcticTable table;
   private final Collection<TaskRuntime> tasks;
 
-  IcebergCommit(long targetSnapshotId, ArcticTable table, Collection<TaskRuntime> tasks) {
+  public IcebergCommit(Long targetSnapshotId, ArcticTable table, Collection<TaskRuntime> tasks) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;

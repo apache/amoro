@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
 public class MixedIcebergCommit extends IcebergCommit {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedIcebergCommit.class);
@@ -58,19 +60,19 @@ public class MixedIcebergCommit extends IcebergCommit {
 
   protected Collection<TaskRuntime> tasks;
 
-  protected long fromSnapshotId;
+  protected Long fromSnapshotId;
 
   protected StructLikeMap<Long> fromSequenceOfPartitions;
 
   protected StructLikeMap<Long> toSequenceOfPartitions;
 
   public MixedIcebergCommit(
-      ArcticTable table, Collection<TaskRuntime> tasks, long fromSnapshotId,
+      ArcticTable table, Collection<TaskRuntime> tasks, Long fromSnapshotId,
       StructLikeMap<Long> fromSequenceOfPartitions, StructLikeMap<Long> toSequenceOfPartitions) {
     super(fromSnapshotId, table, tasks);
     this.table = table;
     this.tasks = tasks;
-    this.fromSnapshotId = fromSnapshotId;
+    this.fromSnapshotId = fromSnapshotId == null ? INVALID_SNAPSHOT_ID : fromSnapshotId;
     this.fromSequenceOfPartitions = fromSequenceOfPartitions;
     this.toSequenceOfPartitions = toSequenceOfPartitions;
   }
@@ -251,6 +253,7 @@ public class MixedIcebergCommit extends IcebergCommit {
     OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(table.asKeyedTable());
     overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
     overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
+    overwriteBaseFiles.dynamic(false);
     toSequenceOfPartitions.forEach(overwriteBaseFiles::updateOptimizedSequence);
     addedDataFiles.forEach(overwriteBaseFiles::addFile);
     addedDeleteFiles.forEach(overwriteBaseFiles::addFile);
@@ -310,21 +313,16 @@ public class MixedIcebergCommit extends IcebergCommit {
     Long optimizedSequence = partitionOptimizedSequence.getOrDefault(partitionData, -1L);
     Long fromSequence = fromSequenceOfPartitions.getOrDefault(partitionData, Long.MAX_VALUE);
 
-    //Only base file
-    if (fromSequence == null) {
-      return false;
-    }
-
     return optimizedSequence >= fromSequence;
   }
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
     long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
-    if (currentSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (currentSnapshotId == INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }
 
-    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == INVALID_SNAPSHOT_ID) {
       snapshotId = null;
     }
 
