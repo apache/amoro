@@ -113,9 +113,20 @@ public class TableRuntime extends PersistentBase {
 
   @VisibleForTesting
   public TableRuntime(ArcticTable table) {
-    this.initializer = null;
+    this.initializer = new TableRuntimeInitializer() {
+      @Override
+      public ArcticTable loadTable(ServerTableIdentifier tableIdentifier) {
+        return table;
+      }
+
+      @Override
+      public TableRuntimeHandler getHeadHandler() {
+        return null;
+      }
+    };
     this.tableChangeHandler = null;
     this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
+    this.tableConfiguration = TableConfiguration.parseConfig(table.properties());
   }
 
   protected void recover(OptimizingProcess optimizingProcess) {

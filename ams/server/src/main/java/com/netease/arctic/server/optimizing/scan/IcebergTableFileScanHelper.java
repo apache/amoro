@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;
-  private SequenceNumberFetcher sequenceNumberFetcher;
+  private final SequenceNumberFetcher sequenceNumberFetcher;
   private PartitionFilter partitionFilter;
   private final long snapshotId;
 

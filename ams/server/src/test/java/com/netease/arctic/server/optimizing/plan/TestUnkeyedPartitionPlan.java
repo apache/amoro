@@ -27,6 +27,8 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,11 +58,11 @@ public class TestUnkeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    List<TaskDescriptor> taskDescriptors = testOptimizeFragmentFiles();
+    List<TaskDescriptor> taskDescriptors = testFragmentFilesBase();
     Assert.assertEquals(1, taskDescriptors.size());
-    List<TableFileScanHelper.FileScanResult> baseFiles = scanBaseFiles();
-    Assert.assertEquals(2, baseFiles.size());
-    List<IcebergDataFile> files = baseFiles.stream()
+    List<TableFileScanHelper.FileScanResult> actualFiles = scanFiles();
+    Assert.assertEquals(2, actualFiles.size());
+    List<IcebergDataFile> files = actualFiles.stream()
         .map(TableFileScanHelper.FileScanResult::file)
         .collect(Collectors.toList());
     TaskDescriptor actual = taskDescriptors.get(0);
@@ -74,7 +76,25 @@ public class TestUnkeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     assertTask(expect, actual);
   }
 
+  @Test
+  public void testSegmentFiles() {
+    testSegmentFilesBase();
+  }
+
+  @Test
+  public void testOnlyOneFragmentFiles() {
+    testOnlyOneFragmentFileBase();
+  }
+
+  @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new UnkeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), System.currentTimeMillis());
+    return new UnkeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
+        System.currentTimeMillis());
+  }
+
+  @Override
+  protected TableFileScanHelper getTableFileScanHelper() {
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
+    return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
   }
 }

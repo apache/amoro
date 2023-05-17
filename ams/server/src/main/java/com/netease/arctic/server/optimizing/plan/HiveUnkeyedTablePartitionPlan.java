@@ -26,7 +26,7 @@ public class HiveUnkeyedTablePartitionPlan extends UnkeyedTablePartitionPlan {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
       // we treat all files in hive location as segment files
-      return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile.path().toString());
+      return dataFile.fileSizeInBytes() <= maxFragmentSize && notInHiveLocation(dataFile.path().toString());
     } else {
       throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
     }
