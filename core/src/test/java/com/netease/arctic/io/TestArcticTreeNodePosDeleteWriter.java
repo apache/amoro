@@ -27,8 +27,6 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.IOException;
-import java.util.List;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -39,6 +37,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {

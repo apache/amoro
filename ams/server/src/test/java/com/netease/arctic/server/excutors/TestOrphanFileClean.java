@@ -181,7 +181,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     List<DataFile> dataFiles = tableTestHelper().writeChangeStore(
-        testKeyedTable, 1, ChangeAction.INSERT, createRecords(1, 100), false);
+        testKeyedTable, 1L, ChangeAction.INSERT, createRecords(1, 100), false);
     Set<String> pathAll = new HashSet<>();
     Set<String> fileInBaseStore = new HashSet<>();
     Set<String> fileOnlyInChangeLocation = new HashSet<>();

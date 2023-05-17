@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.commit;
+package com.netease.arctic.server.optimizing.commit;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
@@ -36,29 +35,24 @@ import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.optimizing.MixedIcebergCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
-import com.netease.arctic.table.KeyedTable;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.FileMetadata;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RunWith(Parameterized.class)
 public class TestMixIcebergCommit extends TestIcebergCommit {
@@ -114,7 +108,7 @@ public class TestMixIcebergCommit extends TestIcebergCommit {
 
   protected DataFile getEqualityDeleteFile() {
     return DataFiles.builder(spec)
-        .withPath(String.format("1-ED-0-00000-0-00-%s.parquet", i++))
+        .withPath(String.format("1-ED-0-00000-0-00-%s.parquet", fileSeq++))
         .withFileSizeInBytes(10)
         .withPartitionPath(partitionPath)
         .withRecordCount(1)
@@ -225,7 +219,7 @@ public class TestMixIcebergCommit extends TestIcebergCommit {
                 } else {
                   return IcebergContentFile.wrap(s, 0);
                 }
-              }
+          }
           )
           .toArray(IcebergContentFile[]::new);
     }
