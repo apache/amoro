@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 
 public class TableDataView {
 
+  private Random random = new Random();
+
   private ArcticTable arcticTable;
 
   private Schema schema;
@@ -78,6 +80,26 @@ public class TableDataView {
     return doWrite(upsert);
   }
 
+  public WriteResult cdc(int count) throws IOException {
+    List<Record> scatter = randomRecord(count);
+    List<RecordWithAction> cdc = new ArrayList<>();
+    for (Record record : scatter) {
+      if (view.containsKey(record)) {
+        if (random.nextBoolean()) {
+          //delete
+          cdc.add(new RecordWithAction(view.get(record), ChangeAction.DELETE));
+        } else {
+          // update
+          cdc.add(new RecordWithAction(view.get(record), ChangeAction.UPDATE_BEFORE));
+          cdc.add(new RecordWithAction(record, ChangeAction.UPDATE_AFTER));
+        }
+      } else {
+        cdc.add(new RecordWithAction(record, ChangeAction.DELETE));
+      }
+    }
+    return doWrite(cdc);
+  }
+
   public WriteResult onlyDelete(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
     List<RecordWithAction> delete =
@@ -93,7 +115,6 @@ public class TableDataView {
   }
 
   private List<Record> randomRecord(int count) {
-    Random random = new Random();
     int[] ids = new int[count];
     for (int i = 0; i < count; i++) {
       ids[i] = random.nextInt(primaryUpperBound);
