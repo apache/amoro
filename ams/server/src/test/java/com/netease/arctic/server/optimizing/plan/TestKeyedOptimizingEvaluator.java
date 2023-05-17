@@ -26,16 +26,23 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestKeyedOptimizingEvaluator extends TableTestBase {
@@ -76,6 +83,24 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
     Assert.assertFalse(optimizingEvaluator.isNecessary());
     OptimizingEvaluator.PendingInput pendingInput = optimizingEvaluator.getPendingInput();
     assertEmptyInput(pendingInput);
+
+    // add more files
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
+    transactionId = getArcticTable().beginTransaction("");
+    OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
+
+    optimizingEvaluator = buildOptimizingEvaluator();
+    Assert.assertTrue(optimizingEvaluator.isNecessary());
+    pendingInput = optimizingEvaluator.getPendingInput();
+
+    KeyedTableFileScanHelper scan = new KeyedTableFileScanHelper(getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
+    List<DataFile> dataFiles =
+        scan.scan().stream().map(TableFileScanHelper.FileScanResult::file).collect(Collectors.toList());
+
+    assertInput(pendingInput, FileInfo.buildFileInfo(getArcticTable().spec(), dataFiles));
   }
 
   @Override
@@ -91,7 +116,7 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
   protected TableRuntime buildTableRuntime() {
     return new TableRuntime(getArcticTable());
   }
-  
+
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {
     Assert.assertEquals(input.getPartitions().size(), 0);
@@ -101,6 +126,64 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
     Assert.assertEquals(input.getEqualityDeleteFileCount(), 0);
     Assert.assertEquals(input.getPositionalDeleteBytes(), 0);
     Assert.assertEquals(input.getPositionalDeleteFileCount(), 0);
+  }
+
+  protected void assertInput(OptimizingEvaluator.PendingInput input, FileInfo fileInfo) {
+    Assert.assertEquals(input.getPartitions(), fileInfo.getPartitions());
+    Assert.assertEquals(input.getDataFileCount(), fileInfo.getDataFileCount());
+    Assert.assertEquals(input.getDataFileSize(), fileInfo.getDataFileSize());
+    Assert.assertEquals(input.getEqualityDeleteBytes(), fileInfo.getEqualityDeleteBytes());
+    Assert.assertEquals(input.getEqualityDeleteFileCount(), fileInfo.getEqualityDeleteFileCount());
+    Assert.assertEquals(input.getPositionalDeleteBytes(), fileInfo.getPositionalDeleteBytes());
+    Assert.assertEquals(input.getPositionalDeleteFileCount(), fileInfo.getPositionalDeleteFileCount());
+  }
+
+  private static class FileInfo {
+    private Set<String> partitions = Sets.newHashSet();
+    private int dataFileCount = 0;
+    private long dataFileSize = 0;
+    private int equalityDeleteFileCount = 0;
+    private int positionalDeleteFileCount = 0;
+    private long positionalDeleteBytes = 0L;
+    private long equalityDeleteBytes = 0L;
+
+    public static FileInfo buildFileInfo(PartitionSpec spec, List<DataFile> dataFiles) {
+      FileInfo fileInfo = new FileInfo();
+      for (DataFile dataFile : dataFiles) {
+        fileInfo.dataFileCount++;
+        fileInfo.dataFileSize += dataFile.fileSizeInBytes();
+        fileInfo.partitions.add(spec.partitionToPath(dataFile.partition()));
+      }
+      return fileInfo;
+    }
+
+    public Set<String> getPartitions() {
+      return partitions;
+    }
+
+    public int getDataFileCount() {
+      return dataFileCount;
+    }
+
+    public long getDataFileSize() {
+      return dataFileSize;
+    }
+
+    public int getEqualityDeleteFileCount() {
+      return equalityDeleteFileCount;
+    }
+
+    public int getPositionalDeleteFileCount() {
+      return positionalDeleteFileCount;
+    }
+
+    public long getPositionalDeleteBytes() {
+      return positionalDeleteBytes;
+    }
+
+    public long getEqualityDeleteBytes() {
+      return equalityDeleteBytes;
+    }
   }
 
   protected void updateChangeHashBucket(int bucket) {
