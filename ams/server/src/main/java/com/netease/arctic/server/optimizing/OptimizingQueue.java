@@ -25,9 +25,14 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -430,11 +435,25 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           return new IcebergCommit(targetSnapshotId, table, taskMap.values());
         case MIXED_ICEBERG:
         case MIXED_HIVE:
-          //todo Add args
-          return new MixedIcebergCommit(table, taskMap.values(), targetSnapshotId, null, null);
+          return new MixedIcebergCommit(table, taskMap.values(), targetSnapshotId,
+              convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
         default:
           throw new IllegalStateException();
       }
+    }
+
+    private StructLikeMap<Long> convertPartitionSequence(ArcticTable table, Map<String, Long> partitionSequence) {
+      PartitionSpec spec = table.spec();
+      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
+      partitionSequence.forEach((partition, sequence) -> {
+        if (spec.isUnpartitioned()) {
+          results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
+        } else {
+          StructLike partitionData = ArcticDataFiles.data(spec, partition);
+          results.put(partitionData, sequence);
+        }
+      });
+      return null;
     }
 
     private void beginAndPersistProcess() {
