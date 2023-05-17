@@ -63,10 +63,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             CatalogMetaMapper.class,
             mapper -> mapper.incTableCount(1, name()),
             () -> new ObjectNotExistsException(name())),
-        () -> doAsExisted(
-            TableMetaMapper.class,
-            mapper -> mapper.incTableCount(1, tableIdentifier.getDatabase()),
-            () -> new ObjectNotExistsException(getDatabaseDesc(tableIdentifier.getDatabase()))));
+        () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
     return getAs(
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifier(tableMeta.getTableIdentifier().getCatalog(),
@@ -91,10 +88,7 @@ public abstract class InternalCatalog extends ServerCatalog {
             CatalogMetaMapper.class,
             mapper -> mapper.decTableCount(1, tableIdentifier.getCatalog()),
             () -> new ObjectNotExistsException(name())),
-        () -> doAsExisted(
-            TableMetaMapper.class,
-            mapper -> mapper.decTableCount(1, tableIdentifier.getDatabase()),
-            () -> new ObjectNotExistsException(getDatabaseDesc(tableIdentifier.getDatabase()))));
+        () -> decreaseDatabaseTableCount(tableIdentifier.getDatabase()));
     return tableIdentifier;
   }
 
@@ -122,6 +116,20 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   public Integer getTableCount(String databaseName) {
     return getAs(TableMetaMapper.class, mapper -> mapper.selectTableCount(name()));
+  }
+
+  protected void decreaseDatabaseTableCount(String databaseName) {
+    doAsExisted(
+        TableMetaMapper.class,
+        mapper -> mapper.decTableCount(1, databaseName),
+        () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
+  }
+
+  protected void increaseDatabaseTableCount(String databaseName) {
+    doAsExisted(
+        TableMetaMapper.class,
+        mapper -> mapper.incTableCount(1, databaseName),
+        () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
   }
 
   protected void createTableInternal(TableMetadata tableMetaData) {
