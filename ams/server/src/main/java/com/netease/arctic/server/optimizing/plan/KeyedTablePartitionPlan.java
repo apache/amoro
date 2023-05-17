@@ -69,6 +69,15 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     }
   }
 
+  @Override
+  protected boolean taskNeedExecute(SplitTask task) {
+    if (super.taskNeedExecute(task)) {
+      return true;
+    } else {
+      return task.getRewriteDataFiles().stream().anyMatch(this::isChangeFile);
+    }
+  }
+
   protected boolean isChangeFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;

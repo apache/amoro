@@ -28,9 +28,7 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
@@ -72,6 +70,18 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     return planWithCurrentFiles();
   }
 
+  public void testOnlyOneFragmentFileBase() {
+    closeFullOptimizing();
+    // write fragment file
+    List<Record> newRecords = generateRecord(1, 4, "2022-01-01T12:00:00");
+    long transactionId = beginTransaction();
+    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertTrue(taskDescriptors.isEmpty());
+  }
+
   public void testSegmentFilesBase() {
     closeFullOptimizing();
     List<Record> newRecords = generateRecord(1, 40, "2022-01-01T12:00:00");
@@ -110,7 +120,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     Assert.assertTrue(taskDescriptors.isEmpty());
   }
 
-  private List<TaskDescriptor> planWithCurrentFiles() {
+  protected List<TaskDescriptor> planWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getPartitionPlan();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
@@ -138,7 +148,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, ratio + "").commit();
   }
 
-  private void closeFullOptimizing() {
+  protected void closeFullOptimizing() {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
   }
 
@@ -166,7 +176,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     return targetFileSizeBytes / ratio;
   }
 
-  private List<DataFile> appendBase(List<DataFile> dataFiles) {
+  protected List<DataFile> appendBase(List<DataFile> dataFiles) {
     AppendFiles appendFiles;
     if (getArcticTable().isKeyedTable()) {
       appendFiles = getArcticTable().asKeyedTable().baseTable().newAppend();
@@ -206,7 +216,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     }));
   }
 
-  protected List<TableFileScanHelper.FileScanResult> scanBaseFiles() {
+  protected List<TableFileScanHelper.FileScanResult> scanFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     return tableFileScanHelper.scan();
   }
@@ -239,28 +249,20 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
 
   protected abstract AbstractPartitionPlan getPartitionPlan();
 
+  protected abstract TableFileScanHelper getTableFileScanHelper();
+
   protected String getPartition() {
     return isPartitionedTable() ? "op_time_day=2022-01-01" : "";
   }
 
-  private TableFileScanHelper getTableFileScanHelper() {
-    if (isKeyedTable()) {
-      return new KeyedTableFileScanHelper(getArcticTable().asKeyedTable(),
-          getArcticTable().asKeyedTable().baseTable().currentSnapshot().snapshotId(), -1, null, null);
-    } else {
-      return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(),
-          getArcticTable().asUnkeyedTable().currentSnapshot().snapshotId());
-    }
-  }
-
-  private long beginTransaction() {
+  protected long beginTransaction() {
     if (isKeyedTable()) {
       return getArcticTable().asKeyedTable().beginTransaction("");
     } else {
       return 0;
     }
   }
-  
+
   protected TableRuntime buildTableRuntime() {
     return new TableRuntime(getArcticTable());
   }
