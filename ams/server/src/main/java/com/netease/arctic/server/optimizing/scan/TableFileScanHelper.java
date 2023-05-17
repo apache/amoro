@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 
