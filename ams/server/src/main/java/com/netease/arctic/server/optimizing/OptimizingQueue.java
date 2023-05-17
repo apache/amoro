@@ -265,7 +265,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
 
-    // TODO persist
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
 
@@ -466,7 +465,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary())),
+                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary(), getFromSequence(),
+                  getToSequence())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(tableRuntime, processId, taskMap.values()),
