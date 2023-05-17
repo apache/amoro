@@ -56,7 +56,7 @@ public class TestCatalogService extends TableServiceTestBase {
     // include a default catalog
     Assert.assertEquals(1, catalogMetas.size());
     Assert.assertEquals(catalogMeta, catalogMetas.stream().filter(meta ->
-        meta.getCatalogName().equals(catalogMeta.getCatalogName()))
+            meta.getCatalogName().equals(catalogMeta.getCatalogName()))
         .findAny().orElseThrow(() -> new IllegalStateException("Cannot find expect catalog")));
 
     // test catalogExist
@@ -66,7 +66,7 @@ public class TestCatalogService extends TableServiceTestBase {
     tableService().dropCatalog(catalogMeta.getCatalogName());
 
     // test drop not existed catalog
-    Assert.assertThrows(ObjectNotExistsException.class, ()->
+    Assert.assertThrows(ObjectNotExistsException.class, () ->
         tableService().getCatalogMeta(catalogMeta.getCatalogName()));
 
     Assert.assertFalse(tableService().catalogExist(catalogMeta.getCatalogName()));

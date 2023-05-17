@@ -65,7 +65,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
+    return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -213,12 +213,12 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(thirdSnapshot, closestExpireSnapshot2);
     Assert.assertEquals(firstSnapshot, closestExpireSnapshot3);
 
-    Set<CharSequence> ClosestFilesPath = new HashSet<>(SnapshotsExpiringExecutor.getClosestExpireDataFiles(
+    Set<CharSequence> closestFilesPath = new HashSet<>(SnapshotsExpiringExecutor.getClosestExpireDataFiles(
         testKeyedTable.changeTable(), closestExpireSnapshot))
         .stream().map(ContentFile::path).collect(Collectors.toSet());
     Set<CharSequence> top8FilesPath = top8Files.stream().map(ContentFile::path).collect(Collectors.toSet());
 
-    Assert.assertTrue(top8FilesPath.equals(ClosestFilesPath));
+    Assert.assertTrue(top8FilesPath.equals(closestFilesPath));
   }
 
   @Test

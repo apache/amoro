@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestOptimizerExecutor extends OptimizerTestBase {
 
-  private final static String FAILED_TASK_MESSAGE = "Execute Task failed";
+  private static final String FAILED_TASK_MESSAGE = "Execute Task failed";
 
   private OptimizerExecutor optimizerExecutor;
 
@@ -147,7 +147,9 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     private final TestOptimizingInput input;
 
-    private TestOptimizingExecutor(TestOptimizingInput input) {this.input = input;}
+    private TestOptimizingExecutor(TestOptimizingInput input) {
+      this.input = input;
+    }
 
     @Override
     public TestOptimizingOutput execute() {
@@ -164,7 +166,9 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     private final int inputId;
 
-    private TestOptimizingOutput(int inputId) {this.inputId = inputId;}
+    private TestOptimizingOutput(int inputId) {
+      this.inputId = inputId;
+    }
 
     @Override
     public Map<String, String> summary() {

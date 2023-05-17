@@ -69,7 +69,7 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  private boolean isChangeFile(IcebergDataFile dataFile) {
+  protected boolean isChangeFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
   }

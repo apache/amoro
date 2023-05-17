@@ -31,7 +31,7 @@ import java.sql.Timestamp;
 
 @MappedJdbcTypes(JdbcType.TIMESTAMP)
 @MappedTypes(long.class)
-public class Long2TsConvertor extends LongTypeHandler {
+public class Long2TsConverter extends LongTypeHandler {
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, Long parameter, JdbcType jdbcType)
       throws SQLException {

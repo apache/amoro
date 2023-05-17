@@ -114,32 +114,34 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       }
     }
 
-    PartitionSpec partitionSpec = baseTable.spec();
-    try (CloseableIterable<FileScanTask> filesIterable =
-             baseTable.newScan().useSnapshot(baseSnapshotId).planFiles()) {
-      for (FileScanTask task : filesIterable) {
-        if (partitionFilter != null) {
-          StructLike partition = task.file().partition();
-          String partitionPath = partitionSpec.partitionToPath(partition);
-          if (!partitionFilter.test(partitionPath)) {
-            continue;
+    if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      PartitionSpec partitionSpec = baseTable.spec();
+      try (CloseableIterable<FileScanTask> filesIterable =
+               baseTable.newScan().useSnapshot(baseSnapshotId).planFiles()) {
+        for (FileScanTask task : filesIterable) {
+          if (partitionFilter != null) {
+            StructLike partition = task.file().partition();
+            String partitionPath = partitionSpec.partitionToPath(partition);
+            if (!partitionFilter.test(partitionPath)) {
+              continue;
+            }
           }
+          IcebergDataFile dataFile = wrapBaseFile(task.file());
+          List<IcebergContentFile<?>> deleteFiles =
+              task.deletes().stream().map(this::wrapDeleteFile).collect(Collectors.toList());
+          List<IcebergContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
+          deleteFiles.addAll(relatedChangeDeleteFiles);
+          results.add(new FileScanResult(dataFile, deleteFiles));
         }
-        IcebergDataFile dataFile = wrapBaseFile(task.file());
-        List<IcebergContentFile<?>> deleteFiles =
-            task.deletes().stream().map(this::wrapDeleteFile).collect(Collectors.toList());
-        List<IcebergContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
-        deleteFiles.addAll(relatedChangeDeleteFiles);
-        results.add(new FileScanResult(dataFile, deleteFiles));
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to close table scan of " + arcticTable.id(), e);
       }
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + arcticTable.id(), e);
     }
     return results;
   }
 
   @Override
-  public TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter) {
+  public KeyedTableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter) {
     this.partitionFilter = partitionFilter;
     return this;
   }
@@ -264,10 +266,10 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         return partitionDeleteFiles.get(node);
       } else {
         List<IcebergContentFile<?>> result = Lists.newArrayList();
-        for (Map.Entry<DataTreeNode, List<IcebergContentFile<?>>> entry : partitionDeleteFiles.entrySet()) {
+        for (Map.Entry<DataTreeNode, Set<IcebergContentFile<?>>> entry : equalityDeleteFiles.get(partition)
+            .entrySet()) {
           DataTreeNode deleteNode = entry.getKey();
           if (node.isSonOf(deleteNode) || deleteNode.isSonOf(node)) {
-            // TODO 去重
             result.addAll(entry.getValue());
           }
         }

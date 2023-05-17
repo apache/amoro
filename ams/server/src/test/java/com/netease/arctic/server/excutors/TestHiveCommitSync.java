@@ -63,7 +63,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "ifKeyed = {0}, ifPartitioned = {1}")
   public static Object[][] parameters() {
-    return new Object[][]{
+    return new Object[][] {
         {true, true},
         {true, false},
         {false, true},
@@ -130,7 +130,8 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     baseTable.updatePartitionProperties(null)
-        .set(dataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, partitionLocation)
+        .set(dataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partitionLocation)
         .commit();
 
     List<String> partitionValues =
@@ -158,8 +159,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client ->
-    {
+    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
@@ -211,8 +211,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client ->
-    {
+    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
@@ -264,8 +263,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client ->
-    {
+    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
@@ -300,7 +298,8 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     List<DataFile> newDataFiles = writeAndCommitBaseAndHive(getArcticTable(), 2, true);
     String newPartitionLocation = TableFileUtil.getFileDir(newDataFiles.get(0).path().toString());
     baseTable.updatePartitionProperties(null)
-        .set(newDataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newPartitionLocation)
+        .set(newDataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            newPartitionLocation)
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 

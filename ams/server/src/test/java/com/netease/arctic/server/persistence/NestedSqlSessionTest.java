@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 public class NestedSqlSessionTest {
 
   @Test
@@ -45,7 +46,7 @@ public class NestedSqlSessionTest {
     Supplier<SqlSession> sessionSupplier = () -> sqlSession;
 
     NestedSqlSession session = NestedSqlSession.openSession(sessionSupplier);
-//    verify(sqlSession, times(1)).beginTransaction();
+    //    verify(sqlSession, times(1)).beginTransaction();
     verifyNoMoreInteractions(sqlSession);
 
     session.rollback();
