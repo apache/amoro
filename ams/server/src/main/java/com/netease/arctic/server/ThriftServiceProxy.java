@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.function.Function;
@@ -48,14 +49,15 @@ public class ThriftServiceProxy<S> implements InvocationHandler {
     Object result;
     try {
       result = method.invoke(service, args);
-    } catch (Throwable t) {
+    } catch (InvocationTargetException e) {
+      Throwable exception = e.getTargetException();
       String errorMessage = String.format("Thrift service:%s.%s execute failed",
           service.getClass().getSimpleName(), method.getName());
-      LOG.error(errorMessage, t);
+      LOG.error(errorMessage, exception);
       if (exceptionTransfer != null) {
-        throw exceptionTransfer.apply(t);
+        throw exceptionTransfer.apply(exception);
       } else {
-        throw t;
+        throw exception;
       }
     }
     return result;
