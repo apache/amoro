@@ -41,14 +41,6 @@ public interface TableFileScanHelper {
     public List<IcebergContentFile<?>> deleteFiles() {
       return deleteFiles;
     }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("file", file)
-          .add("deleteFiles", deleteFiles)
-          .toString();
-    }
   }
 
   interface PartitionFilter {
