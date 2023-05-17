@@ -26,18 +26,26 @@ import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.ArcticTable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.collect.Collections2;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 
 public class TableDataView {
 
   private ArcticTable arcticTable;
+
+  private Schema schema;
+
+  private int schemaSize;
 
   private Schema primary;
 
@@ -53,6 +61,8 @@ public class TableDataView {
       int partitionCount,
       int primaryUpperBound) {
     this.arcticTable = arcticTable;
+    this.schema = arcticTable.schema();
+    this.schemaSize = schema.columns().size();
     this.primary = primary;
     this.primaryUpperBound = primaryUpperBound;
     this.view = StructLikeMap.create(primary.asStruct());
@@ -79,6 +89,44 @@ public class TableDataView {
 
   public int getSize() {
     return view.size();
+  }
+
+  public List<Record> notInIntersection(List<Record> records) {
+    if ((view.size() == 0 && CollectionUtils.isEmpty(records))) {
+      return Collections.emptyList();
+    }
+
+    List<Record> notInView = new ArrayList<>();
+    List<Record> intersection = new ArrayList<>();
+    for (Record record: records) {
+      Record viewRecord = view.get(record);
+      if (equRecord(viewRecord, record)) {
+        intersection.add(record);
+      } else {
+        notInView.add(record);
+      }
+    }
+
+    if (intersection.size() == view.size()) {
+      return notInView;
+    }
+
+    for (Record intersectionRecord: intersection) {
+
+    }
+  }
+
+  private boolean equRecord(Record r1, Record r2) {
+    if (r2.size() < schemaSize) {
+      return false;
+    }
+    for (int i = 0; i < schemaSize; i++) {
+      boolean equals = r1.get(i).equals(r2.get(i));
+      if (!equals) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void upsertCommit(WriteResult writeResult) {

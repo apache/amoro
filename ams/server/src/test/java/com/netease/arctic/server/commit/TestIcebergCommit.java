@@ -361,7 +361,7 @@ public class TestIcebergCommit extends TableTestBase {
           .map(s -> allFiles.get(s.path().toString()))
           .toArray(IcebergContentFile[]::new);
     }
-    return new RewriteFilesInput(rewriteData, rewritePos, delete, arcticTable);
+    return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }
 
   private void checkFile(ContentFile<?>[] files) {
