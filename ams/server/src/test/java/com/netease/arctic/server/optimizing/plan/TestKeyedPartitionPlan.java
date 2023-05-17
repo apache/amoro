@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -27,8 +26,6 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import org.junit.Assert;
@@ -87,9 +84,7 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
           Collections.emptySet().toArray(new IcebergContentFile[0]),
           Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
 
-      Map<String, String> properties = Maps.newHashMap();
-      properties.put(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-          MixFormatRewriteExecutorFactory.class.getName());
+      Map<String, String> properties = buildProperties();
       TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
       assertTask(expect, actual);
     }
