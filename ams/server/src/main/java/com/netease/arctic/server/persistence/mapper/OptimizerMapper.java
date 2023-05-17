@@ -32,11 +32,11 @@ import org.apache.ibatis.annotations.Update;
 public interface OptimizerMapper {
 
   @Insert("INSERT INTO optimizer (token, resource_id, group_name, start_time, touch_time, thread_count, total_memory," +
-      " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId},  #{optimizer.groupName}," +
+      " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId, jdbcType=VARCHAR},  #{optimizer.groupName}," +
       " #{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{optimizer.threadCount}, #{optimizer.memoryMb}," +
-      " #{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " #{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
   void insertOptimizer(@Param("optimizer") OptimizerInstance optimizer);
 
   @Update("UPDATE optimizer SET touch_time = CURRENT_TIMESTAMP WHERE token = #{token}")

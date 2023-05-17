@@ -41,17 +41,19 @@ public interface OptimizingMapper {
       @Param("summary") MetricsSummary summary);
 
   @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
-      " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter} " +
+      " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
+      "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
       " WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("optimizingStatus") OptimizingProcess.Status status,
-      @Param("endTime") long endTime);
+      @Param("endTime") long endTime,
+      @Param("summary") MetricsSummary summary);
 
   @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
-      " optimizing_type, plan_time, end_time, fail_reason, summary" +
-      " FROM table_optimizing_process WHERE table_id = #{tableId}")
+      " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
+      " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -64,10 +66,11 @@ public interface OptimizingMapper {
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
       @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary")
+      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
   })
-  // TODO useless?
-  List<TableOptimizingProcess> selectOptimizingProcesses(@Param("tableId") long tableId);
+  List<TableOptimizingProcess> selectOptimizingProcessesByTable(
+      @Param("catalogName") String catalogName, @Param(
+      "dbName") String dbName, @Param("tableName") String tableName);
 
   @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
       " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
@@ -85,9 +88,9 @@ public interface OptimizingMapper {
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
       @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary")
+      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
   })
-  List<TableOptimizingProcess> selectOptimizingProcessesByTable(
+  List<TableOptimizingProcess> selectSuccessOptimizingProcesses(
       @Param("catalogName") String catalogName, @Param(
       "dbName") String dbName, @Param("tableName") String tableName);
 
