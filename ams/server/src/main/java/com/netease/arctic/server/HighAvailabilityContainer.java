@@ -90,7 +90,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
-    if ( followerLath != null) {
+    if (followerLath != null) {
       followerLath.await();
     }
     LOG.info("Became the follower of AMS");

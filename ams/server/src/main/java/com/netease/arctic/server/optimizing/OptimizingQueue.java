@@ -255,9 +255,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
-    
-    private Map<String, Long> fromSequence;
-    private Map<String, Long> toSequence;
+
+    // TODO persist
+    private Map<String, Long> fromSequence = Maps.newHashMap();
+    private Map<String, Long> toSequence = Maps.newHashMap();
 
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
@@ -267,6 +268,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       targetSnapshotId = planner.getTargetSnapshotId();
       metricsSummary = new MetricsSummary(taskMap.values());
       loadTaskRuntimes(planner.planTasks());
+      fromSequence = planner.getFromSequence();
+      toSequence = planner.getToSequence();
       beginAndPersistProcess();
     }
 

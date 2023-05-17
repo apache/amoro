@@ -16,9 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.server.optimizing.plan;
 
-@FunctionalInterface
-public interface SupplierWithException<T, E extends Exception> {
-  T get() throws E;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.server.optimizing.OptimizingType;
+
+import java.util.List;
+
+public abstract class PartitionEvaluator {
+
+  protected final String partition;
+
+  public PartitionEvaluator(String partition) {
+    this.partition = partition;
+  }
+
+  public String getPartition() {
+    return partition;
+  }
+
+  public abstract void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+
+  public abstract boolean isNecessary();
+
+  public abstract long getCost();
+
+  public abstract OptimizingType getOptimizingType();
+
 }

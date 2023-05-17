@@ -39,6 +39,11 @@ public class IcebergDeleteFile extends IcebergContentFile<DeleteFile> implements
   }
 
   @Override
+  public DeleteFile internalFile() {
+    return deleteFile;
+  }
+
+  @Override
   public List<Long> splitOffsets() {
     return deleteFile.splitOffsets();
   }

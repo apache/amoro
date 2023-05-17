@@ -131,7 +131,7 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend:mvn thrift:compile -pl ams/api-->
+            <!--Compile thrift api with commend: mvn thrift:compile -pl ams/api-->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>maven-thrift-plugin</artifactId>

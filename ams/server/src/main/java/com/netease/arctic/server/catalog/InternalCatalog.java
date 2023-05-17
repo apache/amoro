@@ -1,7 +1,9 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
@@ -19,14 +21,17 @@ public abstract class InternalCatalog extends ServerCatalog {
   public void createDatabase(String databaseName) {
     if (!exist(databaseName)) {
       doAsTransaction(
+          // make sure catalog existed in database
           () -> doAsExisted(
               CatalogMetaMapper.class,
               mapper -> mapper.incDatabaseCount(1, name()),
-              () -> new ObjectNotExistsException(name())),
+              () -> new ObjectNotExistsException("Catalog " + name())),
           () -> doAs(
               TableMetaMapper.class,
               mapper -> mapper.insertDatabase(getMetadata().getCatalogName(), databaseName)),
           () -> createDatabaseInternal(databaseName));
+    } else {
+      throw new AlreadyExistsException("Database " + databaseName);
     }
   }
 
@@ -42,10 +47,13 @@ public abstract class InternalCatalog extends ServerCatalog {
               CatalogMetaMapper.class,
               mapper -> mapper.decDatabaseCount(1, name()),
               () -> new ObjectNotExistsException(name())));
+    } else {
+      throw new ObjectNotExistsException("Database " + databaseName);
     }
   }
 
   public ServerTableIdentifier createTable(TableMeta tableMeta) {
+    validateTableIdentifier(tableMeta.getTableIdentifier());
     ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
     TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
     doAsTransaction(
@@ -129,5 +137,11 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   protected void dropDatabaseInternal(String databaseName) {
     //do nothing, create internal table default done on client side
+  }
+
+  private void validateTableIdentifier(TableIdentifier tableIdentifier) {
+    if (!name().equals(tableIdentifier.getCatalog())) {
+      throw new IllegalMetadataException("Catalog name is error in table identifier");
+    }
   }
 }

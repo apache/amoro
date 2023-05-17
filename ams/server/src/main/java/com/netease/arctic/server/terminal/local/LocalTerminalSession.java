@@ -57,9 +57,17 @@ public class LocalTerminalSession implements TerminalSession {
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
-      session.sql("use `" + catalog + "`");
+      if (TerminalSession.canUseSparkSessionCatalog(sessionConfigs, catalog)) {
+        session.sql("use `spark_catalog`");
+        logs.add(String.format("current catalog is %s, " +
+                "since it's a hive type catalog and can use spark session catalog, " +
+                "switch to spark_catalog before execution",
+            currentCatalog));
+      } else {
+        session.sql("use `" + catalog + "`");
+        logs.add("switch to new catalog via: use " + catalog);
+      }
       currentCatalog = catalog;
-      logs.add("switch to new catalog via: use " + catalog);
     }
 
     Dataset<Row> ds = session.sql(statement);

@@ -16,9 +16,33 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.server.table;
 
-@FunctionalInterface
-public interface RunnableWithException<E extends Exception> {
-  void run() throws E;
+import com.netease.arctic.server.utils.Configurations;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+
+public abstract class TableServiceTestBase {
+
+  @ClassRule
+  public static DerbyPersistent DERBY = new DerbyPersistent();
+
+  private static DefaultTableService TABLE_SERVICE = null;
+
+  @BeforeClass
+  public static void initTableService() {
+    TABLE_SERVICE = new DefaultTableService(new Configurations());
+    TABLE_SERVICE.initialize();
+  }
+
+  @AfterClass
+  public static void disposeTableService() {
+    TABLE_SERVICE.dispose();
+  }
+
+  protected DefaultTableService tableService() {
+    return TABLE_SERVICE;
+  }
+
 }

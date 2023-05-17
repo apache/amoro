@@ -36,11 +36,17 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 public class BasicCatalogTestHelper implements CatalogTestHelper {
 
   private final TableFormat tableFormat;
+  private final Map<String, String> catalogProperties;
 
   public BasicCatalogTestHelper(TableFormat tableFormat) {
+    this(tableFormat, Maps.newHashMap());
+  }
+
+  public BasicCatalogTestHelper(TableFormat tableFormat, Map<String, String> catalogProperties) {
     Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
         tableFormat.equals(TableFormat.MIXED_ICEBERG), "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
+    this.catalogProperties = catalogProperties;
   }
 
   @Override
@@ -50,7 +56,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
 
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
-    Map<String, String> properties = Maps.newHashMap();
+    Map<String, String> properties = Maps.newHashMap(catalogProperties);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, baseDir);
     return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
         properties, tableFormat());

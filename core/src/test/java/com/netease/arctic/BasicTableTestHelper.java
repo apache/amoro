@@ -23,9 +23,11 @@ import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import java.util.HashMap;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -33,6 +35,7 @@ import org.apache.iceberg.types.Types;
 
 import java.util.List;
 import java.util.Map;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class BasicTableTestHelper implements TableTestHelper {
 
@@ -58,6 +61,8 @@ public class BasicTableTestHelper implements TableTestHelper {
       Schema tableSchema,
       PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec, Map<String, String> tableProperties) {
+    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;
@@ -71,7 +76,7 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, Maps.newHashMap());
+    this(hasPrimaryKey, hasPartition, null);
   }
 
   @Override

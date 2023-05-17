@@ -62,6 +62,9 @@ CREATE TABLE table_identifier (
 
 CREATE TABLE table_metadata (
     table_id         BIGINT NOT NULL,
+    catalog_name     VARCHAR(256),
+    db_name          VARCHAR(256),
+    table_name       VARCHAR(256),
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),
@@ -76,7 +79,6 @@ CREATE TABLE table_metadata (
     krb_keytab       CLOB(64m),
     krb_conf         CLOB(64m),
     krb_principal    CLOB(64m),
-    current_tx_id    BIGINT NOT NULL DEFAULT 0,
     current_schema_id INT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );

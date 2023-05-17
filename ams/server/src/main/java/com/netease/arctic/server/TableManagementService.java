@@ -25,28 +25,19 @@ import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
-import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.server.utils.RunnableWithException;
-import com.netease.arctic.server.utils.SupplierWithException;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
 public class TableManagementService implements AmsClient, ArcticTableMetastore.Iface {
-
-  public static final Logger LOG = LoggerFactory.getLogger(TableManagementService.class);
 
   private final TableService tableService;
 
@@ -58,127 +49,86 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   public void ping() {
   }
 
-  private <T> T getAs(Supplier<T> supplier) throws TException {
-    try {
-      return supplier.get();
-    } catch (Throwable throwable) {
-      LOG.error("Error when calling table service read", throwable);
-      throw ArcticRuntimeException.transformCompatibleException(throwable);
-    }
-  }
-
-  private void doAs(Runnable runnable) throws TException {
-    try {
-      runnable.run();
-    } catch (Throwable throwable) {
-      LOG.error("Error when calling table service write", throwable);
-      throw ArcticRuntimeException.transformCompatibleException(throwable);
-    }
-  }
-
-  private <T, E extends Exception> T getAsWithException(SupplierWithException<T, E> supplier) throws E {
-    try {
-      return supplier.get();
-    } catch (Throwable throwable) {
-      LOG.error("call ArcticTableMetastore error", throwable);
-      throw throwable;
-    }
-  }
-
-  private <E extends Exception> void doAsWithException(RunnableWithException<E> runnable) throws E {
-    try {
-      runnable.run();
-    } catch (Throwable throwable) {
-      LOG.error("call ArcticTableMetastore error", throwable);
-      throw throwable;
-    }
+  @Override
+  public List<CatalogMeta> getCatalogs() {
+    return tableService.listCatalogMetas();
   }
 
   @Override
-  public List<CatalogMeta> getCatalogs() throws TException {
-    return getAs(tableService::listCatalogMetas);
+  public CatalogMeta getCatalog(String name) {
+    return tableService.getCatalogMeta(name);
   }
 
   @Override
-  public CatalogMeta getCatalog(String name) throws TException {
-    return getAs(() -> tableService.getCatalogMeta(name));
+  public List<String> getDatabases(String catalogName) {
+    return tableService.listDatabases(catalogName);
   }
 
   @Override
-  public List<String> getDatabases(String catalogName) throws TException {
-    return getAs(() -> tableService.listDatabases(catalogName));
+  public void createDatabase(String catalogName, String database) {
+    tableService.createDatabase(catalogName, database);
   }
 
   @Override
-  public void createDatabase(String catalogName, String database) throws TException {
-    doAs(() -> tableService.createDatabase(catalogName, database));
+  public void dropDatabase(String catalogName, String database) {
+    tableService.dropDatabase(catalogName, database);
   }
 
   @Override
-  public void dropDatabase(String catalogName, String database) throws TException {
-    doAs(() -> tableService.dropDatabase(catalogName, database));
-  }
-
-  @Override
-  public void createTableMeta(TableMeta tableMeta) throws TException {
+  public void createTableMeta(TableMeta tableMeta) {
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
 
-    doAs(() -> tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta));
+    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta);
   }
 
   @Override
-  public List<TableMeta> listTables(String catalogName, String database) throws TException {
-    List<TableMetadata> tableMetadataList = getAs(() -> tableService.listTableMetas(catalogName, database));
+  public List<TableMeta> listTables(String catalogName, String database) {
+    List<TableMetadata> tableMetadataList = tableService.listTableMetas(catalogName, database);
     return tableMetadataList.stream()
             .map(TableMetadata::buildTableMeta)
             .collect(Collectors.toList());
   }
 
   @Override
-  public TableMeta getTable(TableIdentifier tableIdentifier) throws TException {
-    return getAs(() -> tableService.loadTableMetadata(tableIdentifier)).buildTableMeta();
+  public TableMeta getTable(TableIdentifier tableIdentifier) {
+    return tableService.loadTableMetadata(tableIdentifier).buildTableMeta();
   }
 
   @Override
-  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) throws TException {
-    doAs(() -> tableService.dropTableMetadata(tableIdentifier, deleteData));
+  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) {
+    tableService.dropTableMetadata(tableIdentifier, deleteData);
   }
 
   @Override
-  public void tableCommit(TableCommitMeta commit) throws TException {
+  public void tableCommit(TableCommitMeta commit) {
   }
 
   @Override
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-    return 0;
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+    throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
   }
 
   @Override
   public Blocker block(
       TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
       throws OperationConflictException {
-    return getAsWithException(() -> tableService.block(tableIdentifier, operations, properties));
+    return tableService.block(tableIdentifier, operations, properties);
   }
 
   @Override
-  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-    doAsWithException(() -> tableService.releaseBlocker(tableIdentifier, blockerId));
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    tableService.releaseBlocker(tableIdentifier, blockerId);
   }
 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
-    return getAsWithException(() -> tableService.renewBlocker(tableIdentifier, blockerId));
+    return tableService.renewBlocker(tableIdentifier, blockerId);
   }
 
   @Override
-  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    return getAsWithException(() -> tableService.getBlockers(tableIdentifier));
-  }
-
-  @Override
-  public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-    // TODO
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    return tableService.getBlockers(tableIdentifier);
   }
 }
