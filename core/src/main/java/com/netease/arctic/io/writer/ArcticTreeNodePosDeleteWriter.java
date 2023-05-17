@@ -132,7 +132,7 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
 
   @Override
   public void setTreeNode(DataTreeNode treeNode) {
-    if (currentTreeNode.equals(treeNode)) return;
+    if (currentTreeNode != null && currentTreeNode.equals(treeNode)) return;
 
     currentDeleteWriter = posDeletes.computeIfAbsent(treeNode,
         this::generatePosDelete);

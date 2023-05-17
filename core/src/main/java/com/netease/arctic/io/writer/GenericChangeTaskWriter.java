@@ -79,6 +79,9 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
 
   @Override
   protected ChangeAction action(Record data) {
+    if (data instanceof RecordWithAction) {
+      return ((RecordWithAction)data).getAction();
+    }
     return writeAction;
   }
 }
