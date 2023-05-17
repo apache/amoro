@@ -110,10 +110,11 @@ public class TableDataView {
     if (intersection.size() == view.size()) {
       return notInView;
     }
+    return null;
 
-    for (Record intersectionRecord: intersection) {
-
-    }
+    // for (Record intersectionRecord: intersection) {
+    //
+    // }
   }
 
   private boolean equRecord(Record r1, Record r2) {
