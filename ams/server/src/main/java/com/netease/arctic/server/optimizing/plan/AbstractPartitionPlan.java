@@ -41,7 +41,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
-  protected final long fragmentSize;
+  protected final long maxFragmentSize;
   protected final BasicPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
@@ -63,7 +63,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
-    this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
+    this.maxFragmentSize = config.maxFragmentSize();
     this.planTime = planTime;
     this.evaluator = evaluator;
   }
@@ -127,7 +127,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   }
 
   protected boolean isFragmentFile(IcebergDataFile file) {
-    return file.fileSizeInBytes() <= fragmentSize;
+    return file.fileSizeInBytes() <= maxFragmentSize;
   }
 
   protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {

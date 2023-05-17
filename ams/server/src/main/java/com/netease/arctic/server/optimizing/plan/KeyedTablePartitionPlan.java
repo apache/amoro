@@ -60,7 +60,7 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
-      return dataFile.fileSizeInBytes() <= fragmentSize;
+      return dataFile.fileSizeInBytes() <= maxFragmentSize;
     } else if (file.type() == DataFileType.INSERT_FILE) {
       // for keyed table, we treat all insert files as fragment files
       return true;

@@ -26,25 +26,25 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
-import com.netease.arctic.server.dashboard.utils.AmsUtil;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.PropertyUtil;
 import org.junit.Assert;
-import org.junit.Before;
-import org.mockito.Mockito;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,52 +52,121 @@ import java.util.stream.Collectors;
 
 public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
 
-  protected TableRuntime tableRuntime;
-
   public MixedTablePartitionPlanTestBase(CatalogTestHelper catalogTestHelper,
                                          TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  @Before
-  public void mock() {
-    tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.loadTable()).thenReturn(getArcticTable());
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id())));
-    Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(getConfig());
-  }
-
-  public List<TaskDescriptor> testOptimizeFragmentFiles() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
-    );
+  public List<TaskDescriptor> testFragmentFilesBase() {
+    closeFullOptimizing();
+    // write fragment file
+    List<Record> newRecords = generateRecord(1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
     appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
-    newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(6, "666", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(8, "888", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(9, "999", 0, "2022-01-01T12:00:00")
-    );
+    // write fragment file
+    newRecords = generateRecord(5, 8, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
-    TableFileScanHelper tableFileScanHelper = getBaseTableFileScanHelper();
+    return planWithCurrentFiles();
+  }
+
+  public void testSegmentFilesBase() {
+    closeFullOptimizing();
+    List<Record> newRecords = generateRecord(1, 40, "2022-01-01T12:00:00");
+    List<DataFile> dataFiles = Lists.newArrayList();
+    long transactionId;
+
+    // write data files
+    transactionId = beginTransaction();
+    dataFiles.addAll(
+        appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+    // write data files
+    newRecords = generateRecord(41, 80, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    dataFiles.addAll(
+        appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+    setFragmentRatio(dataFiles);
+    assertSegmentFiles(dataFiles);
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertTrue(taskDescriptors.isEmpty());
+
+    // plan with delete files
+    List<DeleteFile> posDeleteFiles = Lists.newArrayList();
+    for (DataFile dataFile : dataFiles) {
+      posDeleteFiles.addAll(
+          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
+              Collections.singletonList(0L)));
+    }
+    appendBasePosDelete(posDeleteFiles);
+
+    taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertTrue(taskDescriptors.isEmpty());
+  }
+
+  private List<TaskDescriptor> planWithCurrentFiles() {
+    TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getPartitionPlan();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-
     return partitionPlan.splitTasks(0);
   }
 
-  private void appendBase(List<DataFile> dataFiles) {
+  protected List<Record> generateRecord(int from, int to, String opTime) {
+    List<Record> newRecords = Lists.newArrayList();
+    for (int i = from; i <= to; i++) {
+      newRecords.add(tableTestHelper().generateTestRecord(i, i + "", 0, opTime));
+    }
+    return newRecords;
+  }
+
+  private void setFragmentRatio(List<DataFile> dataFiles) {
+    Long minFileSizeBytes = dataFiles.stream().map(ContentFile::fileSizeInBytes).min(Long::compareTo)
+        .orElseThrow(() -> new IllegalStateException("dataFiles can't not be empty"));
+    long targetFileSizeBytes =
+        PropertyUtil.propertyAsLong(getArcticTable().properties(), TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    long ratio = targetFileSizeBytes / minFileSizeBytes + 1;
+    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, ratio + "").commit();
+  }
+
+  private void closeFullOptimizing() {
+    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  }
+
+  private void assertSegmentFiles(List<DataFile> files) {
+    long maxFragmentFileSizeBytes = getMaxFragmentFileSizeBytes();
+    for (DataFile file : files) {
+      Assert.assertTrue(file.fileSizeInBytes() > maxFragmentFileSizeBytes);
+    }
+  }
+
+  private void assertFragmentFiles(List<DataFile> files) {
+    long maxFragmentFileSizeBytes = getMaxFragmentFileSizeBytes();
+    for (DataFile file : files) {
+      Assert.assertTrue(file.fileSizeInBytes() <= maxFragmentFileSizeBytes);
+    }
+  }
+
+  private long getMaxFragmentFileSizeBytes() {
+    long targetFileSizeBytes =
+        PropertyUtil.propertyAsLong(getArcticTable().properties(), TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    long ratio =
+        PropertyUtil.propertyAsLong(getArcticTable().properties(), TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+    return targetFileSizeBytes / ratio;
+  }
+
+  private List<DataFile> appendBase(List<DataFile> dataFiles) {
     AppendFiles appendFiles;
     if (getArcticTable().isKeyedTable()) {
       appendFiles = getArcticTable().asKeyedTable().baseTable().newAppend();
@@ -106,6 +175,19 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     }
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+    return dataFiles;
+  }
+
+  protected List<DeleteFile> appendBasePosDelete(List<DeleteFile> deleteFiles) {
+    RowDelta rowDelta;
+    if (getArcticTable().isKeyedTable()) {
+      rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    } else {
+      rowDelta = getArcticTable().asUnkeyedTable().newRowDelta();
+    }
+    deleteFiles.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+    return deleteFiles;
   }
 
   protected Map<String, String> buildProperties() {
@@ -116,7 +198,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
   }
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
-    TableFileScanHelper tableFileScanHelper = getBaseTableFileScanHelper();
+    TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
     return scan.stream().collect(Collectors.groupingBy(f -> {
       PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) f.file().internalFile();
@@ -125,7 +207,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
   }
 
   protected List<TableFileScanHelper.FileScanResult> scanBaseFiles() {
-    TableFileScanHelper tableFileScanHelper = getBaseTableFileScanHelper();
+    TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     return tableFileScanHelper.scan();
   }
 
@@ -161,7 +243,7 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
     return isPartitionedTable() ? "op_time_day=2022-01-01" : "";
   }
 
-  private TableFileScanHelper getBaseTableFileScanHelper() {
+  private TableFileScanHelper getTableFileScanHelper() {
     if (isKeyedTable()) {
       return new KeyedTableFileScanHelper(getArcticTable().asKeyedTable(),
           getArcticTable().asKeyedTable().baseTable().currentSnapshot().snapshotId(), -1, null, null);
@@ -178,8 +260,8 @@ public abstract class MixedTablePartitionPlanTestBase extends TableTestBase {
       return 0;
     }
   }
-
-  private OptimizingConfig getConfig() {
-    return OptimizingConfig.parseOptimizingConfig(getArcticTable().properties());
+  
+  protected TableRuntime buildTableRuntime() {
+    return new TableRuntime(getArcticTable());
   }
 }
