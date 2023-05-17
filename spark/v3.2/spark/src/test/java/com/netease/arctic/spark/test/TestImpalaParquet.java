@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.test;
 
 import com.google.common.collect.Iterators;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
@@ -42,7 +43,7 @@ public class TestImpalaParquet {
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
 
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+            Files.localInput(HMSMockServer.class.getClassLoader().getResource("string_is_bytes.parquet").getFile()))
         .project(schema)
         .withNameMapping(mapping)
         .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
@@ -60,7 +61,7 @@ public class TestImpalaParquet {
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
 
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+            Files.localInput(HMSMockServer.class.getClassLoader().getResource("string_is_bytes.parquet").getFile()))
         .project(schema)
         .withNameMapping(mapping)
         .filter(Expressions.in("str", "aa"))
