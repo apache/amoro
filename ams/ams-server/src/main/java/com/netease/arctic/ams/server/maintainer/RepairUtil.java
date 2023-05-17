@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.TableIdentifier;
@@ -86,7 +87,7 @@ public class RepairUtil {
     AmsClient client = new PooledAmsClient(thriftAddress);
     CatalogMeta catalogMeta = client.getCatalog(identifier.getCatalog());
     TableMetaStore tableMetaStore = buildMetaStore(catalogMeta);
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+    ArcticHadoopFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
     TableMeta tableMeta = client.getTable(identifier.buildTableIdentifier());
     String tableRootLocation = tableMeta.locations.get(MetaTableProperties.LOCATION_KEY_TABLE);
     Map<String, String> mergedProperties = com.netease.arctic.utils.CatalogUtil.mergeCatalogPropertiesToTable(

@@ -26,6 +26,7 @@ public interface SupportFileRecycleOperations extends ArcticFileIO {
   default boolean supportsFileRecycle() {
     return true;
   }
+  
   boolean fileRecoverable(String path);
 
   boolean recover(String path);

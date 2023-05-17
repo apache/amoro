@@ -29,6 +29,7 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
@@ -39,7 +40,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -148,17 +148,20 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
     String oldFilePath = targetFile.path().toString();
     String newFilePath = TableFileUtils.getNewFilePath(hiveLocation, oldFilePath);
 
-    if (!arcticTable.io().exists(newFilePath)) {
-      if (!arcticTable.io().exists(hiveLocation)) {
-        LOG.debug("{} hive location {} does not exist and need to mkdir before rename", arcticTable.id(), hiveLocation);
-        arcticTable.io().mkdirs(hiveLocation);
+    try (ArcticHadoopFileIO io = ((SupportHive) arcticTable).io()) {
+      if (!io.exists(newFilePath)) {
+        if (!io.exists(hiveLocation)) {
+          LOG.debug(
+              "{} hive location {} does not exist and need to mkdir before rename", arcticTable.id(), hiveLocation);
+          io.asDirectoryFileIO().makeDirectories(hiveLocation);
+        }
+        io.asDirectoryFileIO().rename(oldFilePath, newFilePath);
+        LOG.debug("{} move file from {} to {}", arcticTable.id(), oldFilePath, newFilePath);
       }
-      arcticTable.io().rename(oldFilePath, newFilePath);
-      LOG.debug("{} move file from {} to {}", arcticTable.id(), oldFilePath, newFilePath);
-    }
 
-    // org.apache.iceberg.BaseFile.set
-    ((StructLike) targetFile).set(1, newFilePath);
-    return targetFile;
+      // org.apache.iceberg.BaseFile.set
+      ((StructLike) targetFile).set(1, newFilePath);
+      return targetFile;
+    }
   }
 }

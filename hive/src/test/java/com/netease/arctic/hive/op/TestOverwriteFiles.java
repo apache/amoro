@@ -190,7 +190,7 @@ public class TestOverwriteFiles extends TableTestBase {
     TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(), "new_table", hiveTable);
     String tableRootLocation = ArcticTableUtil.tableRootLocation(getArcticTable());
     String newTableLocation = tableRootLocation.replace(getArcticTable().id().getTableName(), "new_table");
-    getArcticTable().io().deleteDirectoryRecursively(newTableLocation);
+    getArcticTable().io().asDirectoryFileIO().deletePrefix(newTableLocation);
   }
 
   @Test

@@ -50,33 +50,7 @@ public interface ArcticFileIO extends FileIO {
     return inputFile.exists();
   }
 
-  /**
-   * Create a new directory and all non-existent parents directories.
-   *
-   * @param path source path
-   */
   @Deprecated
-  void mkdirs(String path);
-
-  /**
-   * Rename file from old path to new path
-   *
-   * @param oldPath source path
-   * @param newPath target path
-   */
-  @Deprecated
-  void rename(String oldPath, String newPath);
-
-  /**
-   * Delete a directory recursively
-   *
-   * @param path the path to delete.
-   */
-  @Deprecated
-  void deleteDirectoryRecursively(String path);
-
-  @Deprecated
-    //TODO FileStatus is a hadoop object, need to be replaced
   List<FileStatus> list(String location);
 
   /**
@@ -124,28 +98,10 @@ public interface ArcticFileIO extends FileIO {
   /**
    * Return this cast to {@link SupportFileRecycleOperations} if it is.
    */
-  default SupportFileRecycleOperations fileRecycleIO() {
+  default SupportFileRecycleOperations asFileRecycleIO() {
     if (supportsFileRecycle()) {
       return (SupportFileRecycleOperations) this;
     }
     throw new IllegalStateException("Doesn't support file recycle");
   }
-
-  /**
-   * Check if a location is a directory.
-   *
-   * @param location source location
-   * @return true if the location is a directory
-   */
-  @Deprecated
-  boolean isDirectory(String location);
-
-  /**
-   * Check if a location is an empty directory.
-   *
-   * @param location source location
-   * @return true if the location is an empty directory
-   */
-  @Deprecated
-  boolean isEmptyDirectory(String location);
 }

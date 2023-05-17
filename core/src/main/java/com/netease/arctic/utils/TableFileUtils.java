@@ -23,10 +23,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URI;
-import java.util.Collections;
 import java.util.Set;
 
 public class TableFileUtils {
@@ -68,16 +66,22 @@ public class TableFileUtils {
    * @param exclude       the directory will not be deleted
    */
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath, Set<String> exclude) {
+    Preconditions.checkArgument(
+        io.supportDirectoryOperation(),
+        "The fileIo doesn't support directory operation");
     Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
-    Preconditions.checkArgument(io.isDirectory(directoryPath), "The target path is not directory");
+    Preconditions.checkArgument(
+        io.asDirectoryFileIO().isDirectory(directoryPath),
+        "The target path is not directory");
+
     String parent = new Path(directoryPath).getParent().toString();
     if (exclude.contains(directoryPath) || exclude.contains(parent)) {
       return;
     }
 
     LOG.debug("current path {} and parent path {} not in exclude.", directoryPath, parent);
-    if (io.isEmptyDirectory(directoryPath)) {
-      io.deleteDirectoryRecursively(directoryPath);
+    if (io.asDirectoryFileIO().isEmptyDirectory(directoryPath)) {
+      io.asDirectoryFileIO().deletePrefix(directoryPath);
       LOG.debug("success delete empty directory {}", directoryPath);
       deleteEmptyDirectory(io, parent, exclude);
     }

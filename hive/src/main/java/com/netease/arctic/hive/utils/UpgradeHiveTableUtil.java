@@ -22,6 +22,7 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -97,14 +98,15 @@ public class UpgradeHiveTableUtil {
       throws Exception {
     Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
-    arcticTable.io().mkdirs(hiveDataLocation);
+    ArcticHadoopFileIO io = arcticTable.io();
+    io.makeDirectories(hiveDataLocation);
     String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {
       newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
-      arcticTable.io().mkdirs(newPath);
+      io.makeDirectories(newPath);
       for (FileStatus fileStatus : arcticTable.io().list(hiveTable.getSd().getLocation())) {
         if (!fileStatus.isDirectory()) {
-          arcticTable.io().rename(fileStatus.getPath().toString(), newPath);
+          io.asDirectoryFileIO().rename(fileStatus.getPath().toString(), newPath);
         }
       }
 
@@ -124,10 +126,10 @@ public class UpgradeHiveTableUtil {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
         String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubdirectory(DEFAULT_TXID);
-        arcticTable.io().mkdirs(newLocation);
+        io.makeDirectories(newLocation);
         for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
           if (!fileStatus.isDirectory()) {
-            arcticTable.io().rename(fileStatus.getPath().toString(), newLocation);
+            arcticTable.io().asDirectoryFileIO().rename(fileStatus.getPath().toString(), newLocation);
           }
         }
         HivePartitionUtil.alterPartition(arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);

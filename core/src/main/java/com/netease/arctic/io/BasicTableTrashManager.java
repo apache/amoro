@@ -40,12 +40,12 @@ class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
   private final TableIdentifier tableIdentifier;
-  private final ArcticFileIO arcticFileIO;
+  private final ArcticHadoopFileIO arcticFileIO;
   private final String tableRootLocation;
   private final String trashLocation;
 
   BasicTableTrashManager(
-      TableIdentifier tableIdentifier, ArcticFileIO arcticFileIO,
+      TableIdentifier tableIdentifier, ArcticHadoopFileIO arcticFileIO,
       String tableRootLocation, String trashLocation) {
     this.tableIdentifier = tableIdentifier;
     this.arcticFileIO = arcticFileIO;
@@ -107,7 +107,7 @@ class BasicTableTrashManager implements TableTrashManager {
           System.currentTimeMillis());
       String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
       if (!arcticFileIO.exists(targetFileDir)) {
-        arcticFileIO.mkdirs(targetFileDir);
+        arcticFileIO.makeDirectories(targetFileDir);
       }
       if (arcticFileIO.exists(targetFileLocation)) {
         arcticFileIO.deleteFile(targetFileLocation);
@@ -159,7 +159,7 @@ class BasicTableTrashManager implements TableTrashManager {
         continue;
       }
       if (localDate.isBefore(expirationDate)) {
-        arcticFileIO.deleteDirectoryRecursively(datePath.getPath().toString());
+        arcticFileIO.deletePrefix(datePath.getPath().toString());
         LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
             datePath.getPath().toString());
       } else {

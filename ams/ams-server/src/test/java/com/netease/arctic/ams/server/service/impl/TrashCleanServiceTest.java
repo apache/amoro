@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,7 +36,10 @@ public class TrashCleanServiceTest extends TableTestBase {
   @Test
   public void clean() throws IOException {
     ArcticTable table = this.testKeyedTable;
-    String trashLocation = TableTrashManagers.build(table).getTrashLocation();
+
+    String customTrashRootLocation = table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+    String trashLocation = TableTrashManagers.getTrashLocation(table.id(), table.location(), customTrashRootLocation);
+
     String file1 = createTrashFileInDay(table, trashLocation, 9, "test1.parquet");
     String file2 = createTrashFileInDay(table, trashLocation, 9, "test2.parquet");
     String file3 = createTrashFileInDay(table, trashLocation, 9, "test/test3.parquet");

@@ -24,8 +24,7 @@ import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.io.TableTrashManager;
-import com.netease.arctic.io.TableTrashManagers;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -33,7 +32,6 @@ import org.apache.commons.lang3.RandomUtils;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -54,14 +52,14 @@ public class TrashCleanService {
     }
 
     Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
-    cleanTasks.checkRunningTask(tableIds,
+    cleanTasks.checkRunningTask(
+        tableIds,
         () -> RandomUtils.nextLong(0, CHECK_INTERVAL),
         () -> CHECK_INTERVAL,
         TableTrashCleanTask::new,
         true);
     LOG.info("Schedule Trash Cleaner finished with {} tasks", tableIds.size());
   }
-
 
   public static class TableTrashCleanTask implements ScheduledTasks.Task {
     private final TableIdentifier tableIdentifier;
@@ -88,11 +86,15 @@ public class TrashCleanService {
         TableProperties.TABLE_TRASH_KEEP_DAYS_DEFAULT);
     LocalDate expirationDate = LocalDate.now().minusDays(keepDays);
 
-    TableTrashManager tableTrashManager = TableTrashManagers.build(arcticTable);
+    try (ArcticFileIO io = arcticTable.io();) {
+      if (!io.supportsFileRecycle()) {
+        return;
+      }
 
-    LOG.info("{} clean trash, keepDays={}", arcticTable.id(), keepDays);
-    tableTrashManager.cleanFiles(expirationDate);
-    LOG.info("{} clean trash finished", arcticTable.id());
+      LOG.info("{} clean trash, keepDays={}", arcticTable.id(), keepDays);
+      io.asFileRecycleIO().expireRecycle(expirationDate);
+      LOG.info("{} clean trash finished", arcticTable.id());
+    }
   }
 }
 

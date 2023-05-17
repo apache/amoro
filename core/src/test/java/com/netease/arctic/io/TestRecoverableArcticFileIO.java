@@ -29,7 +29,6 @@ import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -42,7 +41,8 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
   private String file3;
 
   public TestRecoverableArcticFileIO() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
 
@@ -50,9 +50,10 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
   public void before() {
     ArcticTable arcticTable = getArcticTable();
     trashManager = TableTrashManagers.build(arcticTable.id(), arcticTable.location(),
-        arcticTable.properties(), arcticTable.io());
+        arcticTable.properties(), (ArcticHadoopFileIO) arcticTable.io());
     recoverableArcticFileIO =
-        new RecoverableHadoopFileIO(getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
+        new RecoverableHadoopFileIO(
+            getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
     arcticFileIO = arcticTable.io();
 
     file1 = getArcticTable().location() + "/base/test/test1/test1.parquet";
@@ -65,13 +66,6 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
     createFile(file1);
     Assert.assertTrue(recoverableArcticFileIO.exists(file1));
     Assert.assertFalse(recoverableArcticFileIO.exists(file2));
-  }
-
-  @Test
-  public void mkdirs() {
-    String dir = getArcticTable().location() + "location";
-    recoverableArcticFileIO.mkdirs(dir);
-    arcticFileIO.exists(dir);
   }
 
   @Test
@@ -89,7 +83,7 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
     createFile(file2);
     createFile(file3);
     String dir = getArcticTable().location() + "/base/test";
-    recoverableArcticFileIO.deleteDirectoryRecursively(dir);
+    recoverableArcticFileIO.deletePrefix(dir);
     Assert.assertFalse(arcticFileIO.exists(dir));
   }
 
@@ -112,7 +106,7 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
   @Test
   public void isEmptyDirectory() {
     String dir = getArcticTable().location() + "location";
-    arcticFileIO.mkdirs(dir);
+    arcticFileIO.asDirectoryFileIO().makeDirectories(dir);
     Assert.assertTrue(recoverableArcticFileIO.isEmptyDirectory(dir));
     Assert.assertFalse(recoverableArcticFileIO.isEmptyDirectory(getArcticTable().location()));
   }

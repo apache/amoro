@@ -36,7 +36,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -84,22 +83,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO
     });
   }
 
-  @Override
-  public void deleteDirectoryRecursively(String path) {
-    tableMetaStore.doAs(() -> {
-      Path toDelete = new Path(path);
-      FileSystem fs = getFs(toDelete);
-      try {
-        if (!fs.delete(toDelete, true)) {
-          throw new IOException("Fail to delete directory:" + path + " recursively, " +
-              "file system return false, need to check the hdfs path");
-        }
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to delete directory:" + path + " recursively", e);
-      }
-      return null;
-    });
-  }
 
   @Override
   public List<FileStatus> list(String location) {
@@ -222,11 +205,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO
         throw new UncheckedIOException("Fail to check file exist for " + path, e);
       }
     });
-  }
-
-  @Override
-  public void mkdirs(String path) {
-    this.makeDirectories(path);
   }
 
   @Override

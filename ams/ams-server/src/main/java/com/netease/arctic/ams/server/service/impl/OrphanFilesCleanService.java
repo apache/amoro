@@ -41,6 +41,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,9 +216,10 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                                FileStatus fileStatus,
                                                Long lastTime,
                                                Set<String> exclude) {
+    Preconditions.checkArgument(io.supportDirectoryOperation());
     String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
-    if (io.isDirectory(location)) {
-      if (!io.isEmptyDirectory(location)) {
+    if (io.asDirectoryFileIO().isDirectory(location)) {
+      if (!io.asDirectoryFileIO().isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
         int deleteFileCnt = 0;
         for (FileStatus file : io.list(location)) {
@@ -230,7 +232,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         }
         TableFileUtils.deleteEmptyDirectory(io, location, exclude);
         return deleteFileCnt;
-      } else if (io.isEmptyDirectory(location) &&
+      } else if (io.asDirectoryFileIO().isEmptyDirectory(location) &&
           fileStatus.getModificationTime() < lastTime) {
         if (location.endsWith(METADATA_FOLDER_NAME) || location.endsWith(DATA_FOLDER_NAME)) {
           return 0;
@@ -259,8 +261,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                            Long lastTime,
                                            Set<String> exclude,
                                            Pattern excludeFileNameRegex) {
+    Preconditions.checkArgument(io.supportDirectoryOperation());
     String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
-    if (io.isDirectory(location)) {
+    if (io.asDirectoryFileIO().isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
     } else {
