@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestUnkeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
+public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   public TestUnkeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
                                   TableTestHelper tableTestHelper) {

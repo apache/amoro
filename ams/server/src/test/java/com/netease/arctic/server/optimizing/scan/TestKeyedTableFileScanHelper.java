@@ -25,6 +25,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -69,7 +70,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
   @Test
   public void testScanEmptySnapshot() {
     long transactionId = getArcticTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
     assertScanResult(scan, 0);
@@ -84,7 +86,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
@@ -119,7 +122,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
     );
 
     long transactionId = getArcticTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     transactionId = getArcticTable().beginTransaction("");
     appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.DELETE,
@@ -159,15 +163,15 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    List<DataFile> dataFiles =
-        appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
-    appendBasePosDelete(posDeleteFiles);
+    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 

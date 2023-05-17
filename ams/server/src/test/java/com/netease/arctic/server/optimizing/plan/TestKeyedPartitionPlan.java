@@ -28,17 +28,12 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +45,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
+public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
 
   public TestKeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper) {
@@ -117,10 +112,11 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     updateChangeHashBucket(1);
     closeFullOptimizing();
     // write fragment file
-    List<Record> newRecords = generateRecord(1, 4, "2022-01-01T12:00:00");
+    List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-        newRecords, false));
+    OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
 
     List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
 
@@ -146,12 +142,6 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     return super.getArcticTable().asKeyedTable();
   }
 
-  private void appendChange(List<DataFile> dataFiles) {
-    AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
-    dataFiles.forEach(appendFiles::appendFile);
-    appendFiles.commit();
-  }
-
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new KeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
@@ -168,13 +158,7 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
-    StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
-    StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
+    return new KeyedTableFileScanHelper(getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
   }
 }
