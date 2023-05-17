@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -61,7 +62,8 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
 
   @Test
   public void testScanEmptySnapshot() {
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), 0L, Collections.emptyList(), false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), 0L, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
     assertScanResult(scan, 0);
@@ -75,8 +77,10 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
         tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
     );
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
@@ -104,15 +108,15 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
         tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> dataFiles =
-        appendBase(tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), 0L, dataFile,
               Collections.singletonList(0L)));
     }
-    appendBasePosDelete(posDeleteFiles);
+    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
