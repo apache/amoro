@@ -57,7 +57,7 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    List<TaskDescriptor> taskDescriptors = testOptimizeFragmentFiles();
+    List<TaskDescriptor> taskDescriptors = testFragmentFilesBase();
     Assert.assertEquals(4, taskDescriptors.size());
     Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> baseFiles = scanBaseFilesGroupByNode();
     Assert.assertEquals(4, baseFiles.size());
@@ -90,8 +90,14 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     }
   }
 
+  @Test
+  public void testSegmentFiles() {
+    testSegmentFilesBase();
+  }
+
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new KeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), System.currentTimeMillis());
+    return new KeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
+        System.currentTimeMillis());
   }
 }

@@ -56,7 +56,7 @@ public class TestUnkeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    List<TaskDescriptor> taskDescriptors = testOptimizeFragmentFiles();
+    List<TaskDescriptor> taskDescriptors = testFragmentFilesBase();
     Assert.assertEquals(1, taskDescriptors.size());
     List<TableFileScanHelper.FileScanResult> baseFiles = scanBaseFiles();
     Assert.assertEquals(2, baseFiles.size());
@@ -74,7 +74,13 @@ public class TestUnkeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     assertTask(expect, actual);
   }
 
+  @Test
+  public void testSegmentFiles() {
+    testSegmentFilesBase();
+  }
+
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new UnkeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), System.currentTimeMillis());
+    return new UnkeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
+        System.currentTimeMillis());
   }
 }

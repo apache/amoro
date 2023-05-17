@@ -54,7 +54,7 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     if (file.type() == DataFileType.BASE_FILE) {
       // we treat all files in hive location as segment files
-      return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile.path().toString());
+      return dataFile.fileSizeInBytes() <= maxFragmentSize && notInHiveLocation(dataFile.path().toString());
     } else if (file.type() == DataFileType.INSERT_FILE) {
       // we treat all insert files as fragment files
       return true;

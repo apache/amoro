@@ -65,7 +65,7 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    return new HiveKeyedTablePartitionPlan(tableRuntime, getArcticTable(), getPartition(), hiveLocation,
+    return new HiveKeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
         System.currentTimeMillis());
   }
 }
