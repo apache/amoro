@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
@@ -33,7 +34,9 @@ import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
+import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -72,7 +75,7 @@ public class ArcticServiceContainer {
   private TServer server;
   private DashboardServer dashboardServer;
 
-  private ArcticServiceContainer() throws Exception {
+  public ArcticServiceContainer() throws Exception {
     initConfig();
     haContainer = new HighAvailabilityContainer(serviceConfig);
   }
@@ -85,6 +88,8 @@ public class ArcticServiceContainer {
           service.waitLeaderShip();
           service.startService();
           service.waitFollowerShip();
+        } catch (Exception e) {
+          LOG.error("AMS start error", e);
         } finally {
           service.dispose();
         }
@@ -118,6 +123,25 @@ public class ArcticServiceContainer {
     tableService.dispose();
     tableService = null;
     optimizingService = null;
+  }
+
+  public boolean isStarted() {
+    return server != null && server.isServing();
+  }
+
+  @VisibleForTesting
+  void setConfig(ConfigOption option, Object value) {
+    serviceConfig.set(option, value);
+  }
+
+  @VisibleForTesting
+  TableService getTableService() {
+    return this.tableService;
+  }
+
+  @VisibleForTesting
+  DefaultOptimizingService getOptimizingService() {
+    return this.optimizingService;
   }
 
   private void initConfig() throws IllegalConfigurationException, FileNotFoundException {

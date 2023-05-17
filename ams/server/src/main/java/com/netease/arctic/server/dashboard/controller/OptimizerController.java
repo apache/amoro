@@ -212,6 +212,7 @@ public class OptimizerController extends RestBaseController {
       resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
       ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
       optimizerManager.deleteResource(resourceId);
+      optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
       ctx.json(OkResponse.of("Success to release optimizer"));
     } catch (Exception e) {
       LOG.error("Failed to release optimizer", e);

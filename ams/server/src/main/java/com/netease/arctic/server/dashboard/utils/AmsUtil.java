@@ -161,9 +161,9 @@ public class AmsUtil {
 
   public static String getAMSThriftAddress(Configurations conf) {
     if (conf.getBoolean(HA_ENABLE)) {
-      return "zookeeper://" + conf.getString(HA_ZOOKEEPER_ADDRESS) + "/" + conf.getString(HA_CLUSTER_NAME) + "/";
+      return "zookeeper://" + conf.getString(HA_ZOOKEEPER_ADDRESS) + "/" + conf.getString(HA_CLUSTER_NAME);
     } else {
-      return "thrift://" + conf.getString(SERVER_EXPOSE_HOST) + ":" + conf.getInteger(THRIFT_BIND_PORT) + "/";
+      return "thrift://" + conf.getString(SERVER_EXPOSE_HOST) + ":" + conf.getInteger(THRIFT_BIND_PORT);
     }
   }
 

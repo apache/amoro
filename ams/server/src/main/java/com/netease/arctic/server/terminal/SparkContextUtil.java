@@ -63,7 +63,7 @@ public class SparkContextUtil {
           catalogClassName = ArcticSparkSessionCatalog.class.getName();
         }
         sparkConf.put(sparkCatalogPrefix, catalogClassName);
-        sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + catalog);
+        sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + "/" + catalog);
       }
     }
     return sparkConf;

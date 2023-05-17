@@ -426,6 +426,7 @@ public class TaskRuntime extends PersistentBase {
       this.processId = task.getTaskId().getProcessId();
       this.taskId = task.getTaskId().getTaskId();
       this.tableId = task.getTableId();
+      this.retryNum = task.getRetry();
     }
 
     public long getStartTime() {
