@@ -36,7 +36,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor {
+public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor<RewriteFilesOutput> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractRewriteFilesExecutor.class);
 
