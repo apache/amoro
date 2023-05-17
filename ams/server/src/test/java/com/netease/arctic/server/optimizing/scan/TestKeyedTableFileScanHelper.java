@@ -220,8 +220,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
+        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {

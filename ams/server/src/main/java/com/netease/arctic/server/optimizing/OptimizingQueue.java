@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
@@ -17,6 +18,7 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
@@ -229,8 +231,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (LOG.isDebugEnabled()) {
         LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       }
+      ArcticTable arcticTable = tableRuntime.loadTable();
+      TableSnapshot currentSnapshot = tableRuntime.getCurrentSnapshot(arcticTable, true);
+      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+        LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+        continue;
+      }
       try {
-        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime, getAvailableCore(tableRuntime));
+        OptimizingPlanner planner =
+            new OptimizingPlanner(tableRuntime, arcticTable, currentSnapshot, getAvailableCore(tableRuntime));
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           if (LOG.isDebugEnabled()) {

@@ -22,6 +22,7 @@ import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -46,18 +47,16 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private final Set<String> pendingPartitions;
 
   protected long processId;
-  // TODO check it
-  private final long targetSnapshotId;
   private final double availableCore;
   private final long planTime;
   private OptimizingType optimizingType = OptimizingType.MINOR;
   private final PartitionPlannerFactory partitionPlannerFactory;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
-    super(tableRuntime);
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TableSnapshot tableSnapshot,
+                           double availableCore) {
+    super(tableRuntime, table, tableSnapshot);
     this.pendingPartitions = tableRuntime.getPendingInput() == null ?
         new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
-    this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
@@ -85,7 +84,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public long getTargetSnapshotId() {
-    return targetSnapshotId;
+    return currentSnapshot.snapshotId();
   }
 
   public List<TaskDescriptor> planTasks() {
