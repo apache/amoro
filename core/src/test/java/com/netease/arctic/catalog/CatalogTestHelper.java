@@ -32,4 +32,6 @@ public interface CatalogTestHelper {
   CatalogMeta buildCatalogMeta(String baseDir);
 
   Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
+
+  MixedTables buildMixedTables(CatalogMeta catalogMeta);
 }

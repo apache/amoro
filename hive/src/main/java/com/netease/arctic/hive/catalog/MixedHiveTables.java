@@ -47,7 +47,7 @@ public class MixedHiveTables extends MixedTables {
     this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 
-  CachedHiveClientPool getHiveClientPool() {
+  public CachedHiveClientPool getHiveClientPool() {
     return hiveClientPool;
   }
 
@@ -222,6 +222,24 @@ public class MixedHiveTables extends MixedTables {
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
         tableMetaStore.getConfiguration()), fileIO, tableLocation, amsClient, hiveClientPool,
         catalogMeta.getCatalogProperties());
+  }
+
+  @Override
+  public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
+    super.dropTableByMeta(tableMeta, purge);
+    // drop hive table operation will only delete hive table metadata
+    // delete data files operation will use BasicArcticCatalog
+    try {
+      hiveClientPool.run(client -> {
+        client.dropTable(tableMeta.getTableIdentifier().getDatabase(),
+            tableMeta.getTableIdentifier().getTableName(),
+            false /* deleteData */,
+            false /* ignoreUnknownTab */);
+        return null;
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException("Failed to drop table:" + tableMeta.getTableIdentifier(), e);
+    }
   }
 
   protected void fillTableProperties(TableMeta meta) {

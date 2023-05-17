@@ -18,28 +18,44 @@
 
 package com.netease.arctic.server.table;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
+@RunWith(Parameterized.class)
 public class TestCatalogService extends TableServiceTestBase {
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
+
+  private final CatalogTestHelper catalogTestHelper;
+
+  @Parameterized.Parameters(name = "{0}")
+  public static Object[] parameters() {
+    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())}};
+  }
+
+  public TestCatalogService(CatalogTestHelper catalogTestHelper) {
+    this.catalogTestHelper = catalogTestHelper;
+  }
 
   @Test
   public void testCreateAndDropCatalog() {
-    CatalogTestHelper catalogTestHelper = new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG,
-        Collections.singletonMap("k", "v"));
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     // test create catalog
     tableService().createCatalog(catalogMeta);
@@ -53,7 +69,6 @@ public class TestCatalogService extends TableServiceTestBase {
 
     // test get catalog list
     List<CatalogMeta> catalogMetas = tableService().listCatalogMetas();
-    // include a default catalog
     Assert.assertEquals(1, catalogMetas.size());
     Assert.assertEquals(catalogMeta, catalogMetas.stream().filter(meta ->
             meta.getCatalogName().equals(catalogMeta.getCatalogName()))
@@ -74,15 +89,10 @@ public class TestCatalogService extends TableServiceTestBase {
 
   @Test
   public void testUpdateCatalog() {
-    Map<String, String> catalogProperties = Maps.newHashMap();
-    catalogProperties.put("k1", "v1");
-    catalogProperties.put("k2", "v2");
-    CatalogTestHelper catalogTestHelper = new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG, catalogProperties);
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     tableService().createCatalog(catalogMeta);
 
     CatalogMeta updateCatalogMeta = new CatalogMeta(catalogMeta);
-    updateCatalogMeta.getCatalogProperties().remove("k1");
     updateCatalogMeta.getCatalogProperties().put("k2", "V2");
     updateCatalogMeta.getCatalogProperties().put("k3", "v3");
     tableService().updateCatalog(updateCatalogMeta);
@@ -93,7 +103,7 @@ public class TestCatalogService extends TableServiceTestBase {
 
     // test update catalog type
     final CatalogMeta updateCatalogMeta2 = new CatalogMeta(updateCatalogMeta);
-    updateCatalogMeta2.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HIVE);
+    updateCatalogMeta2.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_CUSTOM);
     Assert.assertThrows(IllegalMetadataException.class, () -> tableService().updateCatalog(updateCatalogMeta2));
 
     // test update unknown catalog
@@ -103,7 +113,7 @@ public class TestCatalogService extends TableServiceTestBase {
 
   @Test
   public void testDropCatalogWithDatabase() {
-    CatalogTestHelper catalogTestHelper = new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG);
+    Assume.assumeTrue(catalogTestHelper.tableFormat().equals(TableFormat.MIXED_ICEBERG));
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     tableService().createCatalog(catalogMeta);
 
