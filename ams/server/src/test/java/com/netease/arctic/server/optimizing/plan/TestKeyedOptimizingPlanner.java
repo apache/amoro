@@ -59,7 +59,7 @@ public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
 
   @Override
   protected OptimizingPlanner buildOptimizingEvaluator() {
-    return new OptimizingPlanner(buildTableRuntime(), getArcticTable(),
+    return new OptimizingPlanner(getTableRuntime(), getArcticTable(),
         OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()), 1);
   }
 }
