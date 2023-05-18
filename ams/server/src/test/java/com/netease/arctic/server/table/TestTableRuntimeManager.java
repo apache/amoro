@@ -25,10 +25,9 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.table.ArcticTable;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -36,40 +35,56 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestTableRuntimeManager extends AMSTableTestBase {
 
-  private ServerTableIdentifier serverTableIdentifier;
-
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
                             new BasicTableTestHelper(true, true)},
                            {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                            new HiveTableTestHelper(true, true)},
+                            new BasicTableTestHelper(false, true)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(true, true)}};
   }
 
   public TestTableRuntimeManager(CatalogTestHelper catalogTestHelper,
       TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
-  }
-
-  @Before
-  public void initTable() {
-    createDatabase();
-    createTable();
-    serverTableIdentifier = tableService().listTables().get(0);
-  }
-
-  @After
-  public void disposeTable() {
-    dropTable();
-    dropDatabase();
+    super(catalogTestHelper, tableTestHelper, true);
   }
 
   @Test
   public void testLoadTable() {
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier);
+    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    validateArcticTable(arcticTable);
+
+    // test load not existed table
+    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().loadTable(
+        ServerTableIdentifier.of(null, "unknown", "unknown", "unknown")));
+  }
+
+  @Test
+  public void testTableContains() {
+    Assert.assertTrue(tableService().contains(serverTableIdentifier()));
+    ServerTableIdentifier copyId = ServerTableIdentifier.of(null,
+        serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
+        serverTableIdentifier().getTableName());
+    Assert.assertFalse(tableService().contains(copyId));
+    copyId = ServerTableIdentifier.of(serverTableIdentifier().getId(),
+        serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
+        "unknown");
+    Assert.assertFalse(tableService().contains(copyId));
+  }
+
+  @Test
+  public void testTableRuntime() {
+    TableRuntime tableRuntime = tableService().get(serverTableIdentifier());
+    validateArcticTable(tableRuntime.loadTable());
+  }
+
+  private void validateArcticTable(ArcticTable arcticTable) {
     Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
+    Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
+    Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());
+    Assert.assertEquals(tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
   }
 
 }

@@ -54,13 +54,22 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private CatalogMeta catalogMeta;
   private TableMeta tableMeta;
 
+  private boolean autoInitTable;
+  private ServerTableIdentifier serverTableIdentifier;
+
   public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    this(catalogTestHelper, tableTestHelper, false);
+  }
+
+  public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+      boolean autoInitTable) {
     this.catalogTestHelper = catalogTestHelper;
     this.tableTestHelper = tableTestHelper;
+    this.autoInitTable = autoInitTable;
   }
 
   @Before
-  public void initCatalog() throws IOException, TException {
+  public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
     if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
@@ -73,10 +82,19 @@ public class AMSTableTestBase extends TableServiceTestBase {
     Database database = new Database();
     database.setName(TableTestHelper.TEST_DB_NAME);
     TEST_HMS.getHiveClient().createDatabase(database);
+    if (autoInitTable) {
+      createDatabase();
+      createTable();
+      serverTableIdentifier = tableService().listTables().get(0);
+    }
   }
 
   @After
-  public void dropCatalog() throws TException {
+  public void dispose() throws TException {
+    if (autoInitTable) {
+      dropTable();
+      dropDatabase();
+    }
     if (catalogMeta != null) {
       tableService().dropCatalog(catalogMeta.getCatalogName());
       TEST_HMS.getHiveClient().dropDatabase(TableTestHelper.TEST_DB_NAME, false, true);
@@ -146,5 +164,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected TableMeta tableMeta() {
     return tableMeta;
+  }
+
+  protected ServerTableIdentifier serverTableIdentifier() {
+    return serverTableIdentifier;
   }
 }
