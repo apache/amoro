@@ -20,8 +20,8 @@ package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableManager;
+import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

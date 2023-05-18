@@ -50,7 +50,8 @@ import java.util.stream.Collectors;
  * optimize controller.
  *
  * @Description: optimizer is a task to compact small files in arctic table.
- * OptimizerController is the optimizer interface's controller, through this interface, you can getRuntime the optimized table,
+ * OptimizerController is the optimizer interface's controller,
+ * through this interface, you can getRuntime the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
  */
 public class OptimizerController extends RestBaseController {

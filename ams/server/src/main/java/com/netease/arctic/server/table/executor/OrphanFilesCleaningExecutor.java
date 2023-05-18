@@ -20,8 +20,8 @@ package com.netease.arctic.server.table.executor;
 
 import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableManager;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
@@ -266,8 +266,13 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
         validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
       }
 
-      LOG.info("{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
-          formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
+      LOG.info("{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
+          tableIdentifier,
+          snapshot.snapshotId(),
+          formatTime(snapshot.timestampMillis()),
+          validFiles.size() - before,
+          cnt,
+          size);
     }
     Stream.concat(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
