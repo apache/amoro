@@ -239,7 +239,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
               getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
-          } else if (equalityDeleteFileMap.containsKey(icebergFile.path().toString())) {
+          } else if (deleteFileSet.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
             rewritePosDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           } else {
