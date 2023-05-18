@@ -19,16 +19,9 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
-import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
-import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.thrift.TException;
 
@@ -36,13 +29,11 @@ import java.util.List;
 
 public class MixedHiveCatalogImpl extends MixedCatalogImpl {
 
-  private final MixedHiveTables mixedTables;
   private final CachedHiveClientPool hiveClientPool;
 
-  protected MixedHiveCatalogImpl(CatalogMeta metadata) {
-    super(metadata, new MixedHiveTables(metadata));
-    this.mixedTables = (MixedHiveTables)tables();
-    this.hiveClientPool = mixedTables.getHiveClientPool();
+  protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
+    super(catalogMeta, new MixedHiveTables(catalogMeta));
+    hiveClientPool = ((MixedHiveTables)tables()).getHiveClientPool();
   }
 
   @Override
@@ -88,5 +79,9 @@ public class MixedHiveCatalogImpl extends MixedCatalogImpl {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to list databases", e);
     }
+  }
+
+  public CachedHiveClientPool getHiveClient() {
+    return hiveClientPool;
   }
 }
