@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.maintainer.command;
 import com.netease.arctic.ams.server.maintainer.RepairUtil;
 import com.netease.arctic.catalog.CatalogManager;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
@@ -30,6 +31,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.io.FileInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,7 @@ class RepairTableOperation {
 
   private String location;
 
-  private ArcticFileIO fileIO;
+  private final ArcticHadoopFileIO fileIO;
 
   RepairTableOperation(CatalogManager catalogManager, TableIdentifier identifier, LocationKind locationKind) {
     try {
@@ -83,14 +85,14 @@ class RepairTableOperation {
         }
 
         // List the metadata directory to find the version files, and try to recover the max available version
-        FileStatus[] fileStatuses = fileIO.list(metadataRoot().toString())
-            .stream()
-            .filter(name -> VERSION_PATTERN.matcher(name.getPath().getName()).matches())
-            .toArray(s -> new FileStatus[s]);
+        Iterable<FileInfo> files = fileIO.listPrefix(metadataRoot().toString());
         int maxVersion = 0;
+        for (FileInfo file : files) {
+          if (!VERSION_PATTERN.matcher(file.location()).matches()){
+            continue;
+          }
 
-        for (FileStatus file : fileStatuses) {
-          int currentVersion = version(file.getPath().getName());
+          int currentVersion = version(file.location());
           if (currentVersion > maxVersion && getMetadataFile(currentVersion) != null) {
             maxVersion = currentVersion;
           }

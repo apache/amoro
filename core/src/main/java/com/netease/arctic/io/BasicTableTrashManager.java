@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 /**
  * Basic implementation of {@link TableTrashManager}.
@@ -145,26 +147,24 @@ class BasicTableTrashManager implements TableTrashManager {
     if (!arcticFileIO.exists(this.trashLocation)) {
       return;
     }
-    List<FileStatus> datePaths = arcticFileIO.list(this.trashLocation);
-    if (datePaths.isEmpty()) {
-      return;
-    }
-    for (FileStatus datePath : datePaths) {
-      String dateName = TableFileUtils.getFileName(datePath.getPath().toString());
+    Iterable<FileInfo> datePaths = arcticFileIO.listPrefix(this.trashLocation);
+
+    for (FileInfo datePath : datePaths) {
+      String dateName = TableFileUtils.getFileName(datePath.location());
       LocalDate localDate;
       try {
         localDate = parseDate(dateName);
       } catch (Exception e) {
-        LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.getPath().toString(), e);
+        LOG.warn("{} failed to parse path to date {}", tableIdentifier, datePath.location(), e);
         continue;
       }
       if (localDate.isBefore(expirationDate)) {
-        arcticFileIO.deletePrefix(datePath.getPath().toString());
+        arcticFileIO.deletePrefix(datePath.location());
         LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
-            datePath.getPath().toString());
+            datePath.location());
       } else {
         LOG.info("{} should not delete files in trash for date {},  {}", tableIdentifier, localDate,
-            datePath.getPath().toString());
+            datePath.location());
       }
     }
   }
@@ -173,10 +173,10 @@ class BasicTableTrashManager implements TableTrashManager {
     if (!arcticFileIO.exists(this.trashLocation)) {
       return null;
     }
-    List<FileStatus> datePaths = arcticFileIO.list(this.trashLocation);
     String relativeLocation = getRelativeFileLocation(this.tableRootLocation, path);
-    for (FileStatus datePath : datePaths) {
-      String fullLocation = datePath.getPath().toString() + "/" + relativeLocation;
+
+    for (FileInfo f: arcticFileIO.listPrefix(trashLocation)){
+      String fullLocation = f.location() + "/" + relativeLocation;
       if (arcticFileIO.exists(fullLocation)) {
         if (arcticFileIO.isDirectory(fullLocation)) {
           throw new IllegalArgumentException("can't restore a directory from trash " + fullLocation);

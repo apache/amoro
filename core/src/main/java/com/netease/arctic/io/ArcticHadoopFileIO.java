@@ -98,20 +98,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO
     });
   }
 
-  @VisibleForTesting
-  public List<FileStatus> list(String location, Callable<List<FileStatus>> callable) {
-    return tableMetaStore.doAs(() -> {
-      callable.call();
-      Path path = new Path(location);
-      FileSystem fs = getFs(path);
-      try {
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        return Lists.newArrayList(fileStatuses);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to list files in " + location, e);
-      }
-    });
-  }
 
   @VisibleForTesting
   public List<FileStatus> listWithoutDoAs(String location) {

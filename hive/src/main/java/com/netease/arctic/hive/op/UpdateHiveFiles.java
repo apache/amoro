@@ -7,6 +7,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -37,7 +38,6 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
 
 public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements SnapshotUpdate<T> {
@@ -82,7 +81,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected boolean checkOrphanFiles = false;
   protected int commitTimestamp; // in seconds
 
-  public UpdateHiveFiles(Transaction transaction, boolean insideTransaction,
+  public UpdateHiveFiles(
+      Transaction transaction, boolean insideTransaction,
       UnkeyedHiveTable table, T delegate,
       HMSClientPool hmsClient, HMSClientPool transactionClient) {
     this.transaction = transaction;
@@ -225,12 +225,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     Types.StructType partitionSchema = table.spec().partitionType();
 
     Set<String> checkedPartitionValues = Sets.newHashSet();
-    Set<Path> deleteFileLocations = Sets.newHashSet();
+    Set<String> deleteFileLocations = Sets.newHashSet();
 
     for (DataFile dataFile : deleteFiles) {
       List<String> values = HivePartitionUtil.partitionValuesAsList(dataFile.partition(), partitionSchema);
       String pathValue = Joiner.on("/").join(values);
-      deleteFileLocations.add(new Path(dataFile.path().toString()));
+      deleteFileLocations.add(dataFile.path().toString());
       if (checkedPartitionValues.contains(pathValue)) {
         continue;
       }
@@ -251,22 +251,20 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     return deletePartitions;
   }
 
-  private void checkPartitionDelete(Set<Path> deleteFiles, Partition partition) {
+  private void checkPartitionDelete(Set<String> deleteFiles, Partition partition) {
     String partitionLocation = partition.getSd().getLocation();
 
-    try (ArcticFileIO io = table.io()) {
-      List<FileStatus> files = io.list(partitionLocation);
-      for (FileStatus f : files) {
-        Path filePath = f.getPath();
-        if (!deleteFiles.contains(filePath)) {
-          throw new CannotAlterHiveLocationException(
-              "can't delete hive partition: " + partitionToString(partition) +
-                  ", file under partition is not deleted: " +
-                  filePath.toString());
-        }
-      }
+    try (ArcticHadoopFileIO io = table.io()) {
+      io.listPrefix(partitionLocation)
+          .forEach(f -> {
+            if (!deleteFiles.contains(f.location())) {
+              throw new CannotAlterHiveLocationException(
+                  "can't delete hive partition: " + partitionToString(partition) +
+                      ", file under partition is not deleted: " +
+                      f.location());
+            }
+          });
     }
-
   }
 
   /**
@@ -286,7 +284,6 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     }
   }
 
-
   /**
    * check files in the partition, and delete orphan files
    */
@@ -300,20 +297,19 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       partitionsToCheck.addAll(this.partitionToAlterLocation.values()
           .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
     }
-    for (String partitionLocation: partitionsToCheck) {
+    for (String partitionLocation : partitionsToCheck) {
       List<String> addFilesPathCollect = addFiles.stream()
           .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
       List<String> deleteFilesPathCollect = deleteFiles.stream()
           .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
-      try (ArcticFileIO io = table.io()) {
-        List<FileStatus> existedFiles = io.list(partitionLocation);
-        for (FileStatus filePath: existedFiles) {
-          if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
-              !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
-            io.deleteFile(String.valueOf(filePath.getPath().toString()));
-            LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
+      try (ArcticHadoopFileIO io = table.io()) {
+        io.listPrefix(partitionLocation).forEach(f -> {
+          if (!addFilesPathCollect.contains(f.location()) &&
+              !deleteFilesPathCollect.contains(f.location())) {
+            io.deleteFile(f.location());
+            LOG.warn("Delete orphan file path: {}", f.location());
           }
-        }
+        });
       }
     }
   }
@@ -408,12 +404,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
     if (!partitionToAlter.isEmpty()) {
       try {
-        transactionClient.run(c ->  {
+        transactionClient.run(c -> {
           try {
             c.alterPartitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
           } catch (InvocationTargetException | InstantiationException |
-              IllegalAccessException | NoSuchMethodException |
-              ClassNotFoundException e) {
+                   IllegalAccessException | NoSuchMethodException |
+                   ClassNotFoundException e) {
             throw new RuntimeException(e);
           }
           return null;

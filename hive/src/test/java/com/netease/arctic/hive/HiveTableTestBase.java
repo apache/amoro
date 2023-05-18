@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -230,10 +231,13 @@ public class HiveTableTestBase extends TableTestBase {
         (short) -1);
 
     List<String> fileNameList = new ArrayList<>();
-    for (Partition p : partitions) {
-      fileNameList.addAll(table.io().list(p.getSd()
-          .getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    try(ArcticFileIO io = table.io()) {
+      for (Partition p : partitions) {
+        io.asPrefixFileIO().listPrefix(p.getSd().getLocation())
+            .forEach(f -> fileNameList.add(f.location()));
+      }
     }
+
     Assert.assertEquals(exceptedFiles, fileNameList);
   }
 

@@ -104,11 +104,11 @@ public class UpgradeHiveTableUtil {
     if (hiveTable.getPartitionKeys().isEmpty()) {
       newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
       io.makeDirectories(newPath);
-      for (FileStatus fileStatus : arcticTable.io().list(hiveTable.getSd().getLocation())) {
-        if (!fileStatus.isDirectory()) {
-          io.asDirectoryFileIO().rename(fileStatus.getPath().toString(), newPath);
+      io.listPrefix(hiveTable.getSd().getLocation()).forEach(f -> {
+        if (!io.isDirectory(f.location())) {
+          io.asDirectoryFileIO().rename(f.location(), newPath);
         }
-      }
+      });
 
       try {
         HiveTableUtil.alterTableLocation(arcticHiveCatalog.getHMSClient(), arcticTable.id(), newPath);
@@ -127,11 +127,12 @@ public class UpgradeHiveTableUtil {
         String oldLocation = partitionLocations.get(i);
         String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubdirectory(DEFAULT_TXID);
         io.makeDirectories(newLocation);
-        for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
-          if (!fileStatus.isDirectory()) {
-            arcticTable.io().asDirectoryFileIO().rename(fileStatus.getPath().toString(), newLocation);
+
+        io.listPrefix(oldLocation).forEach(f -> {
+          if (!io.isDirectory(f.location())){
+            arcticTable.io().asDirectoryFileIO().rename(f.location(), newLocation);
           }
-        }
+        });
         HivePartitionUtil.alterPartition(arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);
       }
     }

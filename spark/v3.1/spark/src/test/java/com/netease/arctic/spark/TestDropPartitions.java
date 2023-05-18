@@ -72,6 +72,7 @@ public class TestDropPartitions extends SparkTestBase {
     KeyedTable keyedTable = loadTable(identifier).asKeyedTable();
     List<FileStatus> exceptList = keyedTable.changeTable().io().list(keyedTable.changeLocation());
 
+
     sql("alter table {0}.{1} drop if exists partition (ts=1, name=''aaa'')", database, dropPartitionTable);
     sql("select * from {0}.{1}", database,dropPartitionTable);
     Assert.assertEquals(4, rows.size());

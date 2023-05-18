@@ -70,7 +70,7 @@ public class RepairUtil {
     return tableMeta.locations.get(MetaTableProperties.LOCATION_KEY_BASE);
   }
 
-  public static ArcticFileIO arcticFileIO(String thriftAddress, String catalogName) {
+  public static ArcticHadoopFileIO arcticFileIO(String thriftAddress, String catalogName) {
     AmsClient client = new PooledAmsClient(thriftAddress);
     CatalogMeta catalogMeta = null;
     try {
