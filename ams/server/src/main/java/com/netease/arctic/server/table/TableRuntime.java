@@ -76,7 +76,7 @@ public class TableRuntime extends PersistentBase {
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private volatile long currentStatusStartTime = System.currentTimeMillis();
-  // TODO partition 级别
+  // TODO change to partition level
   private volatile long lastMajorOptimizingTime;
   private volatile long lastFullOptimizingTime;
   private volatile long lastMinorOptimizingTime;
@@ -467,8 +467,6 @@ public class TableRuntime extends PersistentBase {
     try {
       return getAs(TableBlockerMapper.class,
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -537,8 +535,6 @@ public class TableRuntime extends PersistentBase {
     blockerLock.lock();
     try {
       doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -556,8 +552,6 @@ public class TableRuntime extends PersistentBase {
       List<TableBlocker> tableBlockers =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
       return conflict(operation, tableBlockers);
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
