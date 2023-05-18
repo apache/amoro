@@ -46,7 +46,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBase {
+public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public TestKeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
                                       TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
