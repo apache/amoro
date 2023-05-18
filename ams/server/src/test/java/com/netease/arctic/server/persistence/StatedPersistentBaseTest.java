@@ -17,15 +17,19 @@ public class StatedPersistentBaseTest {
       assertEquals(1, state.get(), "State should be modified safely within the lock");
       objectUnderTest.setIntField(42);
       objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(), "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(), "String field should be modified safely within the lock");
+      assertEquals(42, objectUnderTest.getIntField(),
+          "Int field should be modified safely within the lock");
+      assertEquals("modified", objectUnderTest.getStringField(),
+          "String field should be modified safely within the lock");
       throw new RuntimeException("Test exception");
     });
 
     // Verify that the state of the object was restored after the exception
     assertEquals(1, state.get(), "State should be restored after an exception");
-    assertEquals(0, objectUnderTest.getIntField(), "Int field should be restored after an exception");
-    assertEquals("initial", objectUnderTest.getStringField(), "String field should be restored after an exception");
+    assertEquals(0, objectUnderTest.getIntField(),
+        "Int field should be restored after an exception");
+    assertEquals("initial", objectUnderTest.getStringField(),
+        "String field should be restored after an exception");
   }
 
   @Test
@@ -39,8 +43,10 @@ public class StatedPersistentBaseTest {
       assertEquals(1, state.get(), "State should be modified safely within the lock");
       objectUnderTest.setIntField(42);
       objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(), "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(), "String field should be modified safely within the lock");
+      assertEquals(42, objectUnderTest.getIntField(),
+          "Int field should be modified safely within the lock");
+      assertEquals("modified", objectUnderTest.getStringField(),
+          "String field should be modified safely within the lock");
       throw new RuntimeException("Test exception");
     });
 

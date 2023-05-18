@@ -1,7 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 

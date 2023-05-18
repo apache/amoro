@@ -16,12 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.flow;
+package com.netease.arctic.server.optimizing.flow.checker;
 
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
+import com.netease.arctic.server.optimizing.flow.TableDataView;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -41,7 +43,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
+public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
   private final TableDataView view;
 
