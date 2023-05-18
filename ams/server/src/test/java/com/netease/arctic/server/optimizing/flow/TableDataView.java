@@ -19,6 +19,8 @@
 package com.netease.arctic.server.optimizing.flow;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -28,10 +30,22 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.PartitionKey;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.BaseTaskWriter;
+import org.apache.iceberg.io.FileAppenderFactory;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.ArrayUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
@@ -41,6 +55,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+
 public class TableDataView {
 
   private final Random random = new Random();
@@ -49,9 +65,13 @@ public class TableDataView {
 
   private final Schema schema;
 
+  private final Schema primary;
+
   private final int schemaSize;
 
   private final int primaryUpperBound;
+
+  private final long targetFileSize;
 
   private final StructLikeMap<Record> view;
 
@@ -61,11 +81,19 @@ public class TableDataView {
       ArcticTable arcticTable,
       Schema primary,
       int partitionCount,
-      int primaryUpperBound) {
+      int primaryUpperBound,
+      long targetFileSize) {
     this.arcticTable = arcticTable;
     this.schema = arcticTable.schema();
+    this.primary = primary;
     this.schemaSize = schema.columns().size();
     this.primaryUpperBound = primaryUpperBound;
+
+    this.targetFileSize = targetFileSize;
+    if (arcticTable.format() != TableFormat.ICEBERG) {
+      arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
+    }
+
     this.view = StructLikeMap.create(primary.asStruct());
     this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(), primary, partitionCount);
   }
@@ -220,7 +248,7 @@ public class TableDataView {
     if (arcticTable.isKeyedTable()) {
       return writeKeyedTable(records);
     } else {
-      return null;
+      return writeUnKeyedTable(records);
     }
   }
 
@@ -239,17 +267,23 @@ public class TableDataView {
   }
 
   private WriteResult writeUnKeyedTable(List<RecordWithAction> records) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
-        .withTransactionId(0L)
-        .buildChangeWriter();
-    try {
-      for (Record record : records) {
-        writer.write(record);
+    GenericTaskDeltaWriter deltaWriter = createTaskWriter(
+        primary.columns().stream().map(Types.NestedField::fieldId).collect(Collectors.toList()),
+        schema,
+        arcticTable.asUnkeyedTable(),
+        FileFormat.PARQUET,
+        OutputFileFactory.builderFor(arcticTable.asUnkeyedTable(),
+            1,
+            1).format(FileFormat.PARQUET).build()
+    );
+    for (RecordWithAction record: records) {
+      if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
+        deltaWriter.delete(record);
+      } else {
+        deltaWriter.write(record);
       }
-    } finally {
-      writer.close();
     }
-    return writer.complete();
+    return deltaWriter.complete();
   }
 
   public static class PKWithAction {
@@ -314,6 +348,94 @@ public class TableDataView {
           .add("inViewButDuplicate", inViewButDuplicate)
           .add("missInView", missInView)
           .toString();
+    }
+  }
+
+  private GenericTaskDeltaWriter createTaskWriter(
+      List<Integer> equalityFieldIds,
+      Schema eqDeleteRowSchema,
+      Table table,
+      FileFormat format,
+      OutputFileFactory fileFactory) {
+    FileAppenderFactory<Record> appenderFactory =
+        new GenericAppenderFactory(
+            table.schema(),
+            table.spec(),
+            ArrayUtil.toIntArray(equalityFieldIds),
+            eqDeleteRowSchema,
+            null);
+
+    List<String> columns = Lists.newArrayList();
+    for (Integer fieldId : equalityFieldIds) {
+      columns.add(table.schema().findField(fieldId).name());
+    }
+    Schema deleteSchema = table.schema().select(columns);
+
+    PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
+
+    return new GenericTaskDeltaWriter(
+        table.schema(),
+        deleteSchema,
+        table.spec(),
+        format,
+        appenderFactory,
+        fileFactory,
+        table.io(),
+        partitionKey,
+        targetFileSize);
+  }
+
+  private static class GenericTaskDeltaWriter extends BaseTaskWriter<Record> {
+    private final GenericEqualityDeltaWriter deltaWriter;
+
+    private GenericTaskDeltaWriter(
+        Schema schema,
+        Schema deleteSchema,
+        PartitionSpec spec,
+        FileFormat format,
+        FileAppenderFactory<Record> appenderFactory,
+        OutputFileFactory fileFactory,
+        FileIO io,
+        PartitionKey partitionKey,
+        long targetFileSize) {
+      super(spec, format, appenderFactory, fileFactory, io, targetFileSize);
+      this.deltaWriter = new GenericEqualityDeltaWriter(partitionKey, schema, deleteSchema);
+    }
+
+    @Override
+    public void write(Record row) throws IOException {
+      deltaWriter.write(row);
+    }
+
+    public void delete(Record row) throws IOException {
+      deltaWriter.delete(row);
+    }
+
+    // The caller of this function is responsible for passing in a record with only the key fields
+    public void deleteKey(Record key) throws IOException {
+      deltaWriter.deleteKey(key);
+    }
+
+    @Override
+    public void close() throws IOException {
+      deltaWriter.close();
+    }
+
+    private class GenericEqualityDeltaWriter extends BaseEqualityDeltaWriter {
+      private GenericEqualityDeltaWriter(
+          PartitionKey partition, Schema schema, Schema eqDeleteSchema) {
+        super(partition, schema, eqDeleteSchema);
+      }
+
+      @Override
+      protected StructLike asStructLike(Record row) {
+        return row;
+      }
+
+      @Override
+      protected StructLike asStructLikeKey(Record data) {
+        return data;
+      }
     }
   }
 }
