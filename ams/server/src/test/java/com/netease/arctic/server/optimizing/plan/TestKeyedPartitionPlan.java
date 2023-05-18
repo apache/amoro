@@ -96,6 +96,33 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
         Collections.emptyList());
   }
 
+  @Test
+  public void testChangeFilesWithDelete() {
+    updateChangeHashBucket(1);
+    closeFullOptimizing();
+    List<Record> newRecords;
+    long transactionId;
+    // write fragment file
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    List<DataFile> deleteFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.DELETE,
+            newRecords, false));
+
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertEquals(1, taskDescriptors.size());
+
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        deleteFiles);
+  }
+
   @Override
   protected KeyedTable getArcticTable() {
     return super.getArcticTable().asKeyedTable();
