@@ -29,6 +29,7 @@ import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
@@ -110,7 +111,8 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     dataFiles.addAll(OptimizingTestHelpers.appendChange(getArcticTable(),
         tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
             newRecords, false)));
-    
+    Snapshot fromSnapshot = getArcticTable().changeTable().currentSnapshot();
+
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     List<DataFile> deleteFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
@@ -122,8 +124,13 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     dataFiles.addAll(OptimizingTestHelpers.appendChange(getArcticTable(),
         tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
             newRecords, false)));
+    Snapshot toSnapshot = getArcticTable().changeTable().currentSnapshot();
 
-    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+    AbstractPartitionPlan plan = buildPlanWithCurrentFiles();
+    Assert.assertEquals(fromSnapshot.sequenceNumber(), plan.getFromSequence());
+    Assert.assertEquals(toSnapshot.sequenceNumber(), plan.getToSequence());
+
+    List<TaskDescriptor> taskDescriptors = plan.splitTasks(0);
 
     Assert.assertEquals(1, taskDescriptors.size());
 
