@@ -278,13 +278,18 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   protected List<TaskDescriptor> planWithCurrentFiles() {
+    AbstractPartitionPlan partitionPlan = buildPlanWithCurrentFiles();
+    return partitionPlan.splitTasks(0);
+  }
+
+  protected AbstractPartitionPlan buildPlanWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getAndCheckPartitionPlan();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-    return partitionPlan.splitTasks(0);
+    return partitionPlan;
   }
 
   private void setFragmentRatio(List<DataFile> dataFiles) {
