@@ -23,21 +23,12 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
@@ -58,27 +49,17 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    List<TaskDescriptor> taskDescriptors = testFragmentFilesBase();
-    Assert.assertEquals(1, taskDescriptors.size());
-    List<TableFileScanHelper.FileScanResult> actualFiles = scanFiles();
-    Assert.assertEquals(2, actualFiles.size());
-    List<IcebergDataFile> files = actualFiles.stream()
-        .map(TableFileScanHelper.FileScanResult::file)
-        .collect(Collectors.toList());
-    TaskDescriptor actual = taskDescriptors.get(0);
-    RewriteFilesInput rewriteFilesInput = new RewriteFilesInput(files.toArray(new IcebergDataFile[0]),
-        Collections.emptySet().toArray(new IcebergDataFile[0]),
-        Collections.emptySet().toArray(new IcebergContentFile[0]),
-        Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
-
-    Map<String, String> properties = buildProperties();
-    TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
-    assertTask(expect, actual);
+    testFragmentFilesBase();
   }
 
   @Test
   public void testSegmentFiles() {
     testSegmentFilesBase();
+  }
+
+  @Test
+  public void testWithDeleteFiles() {
+    testWithDeleteFilesBase();
   }
 
   @Test
