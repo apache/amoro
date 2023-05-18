@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
-  
+
   protected TableRuntime tableRuntime;
 
   public MixedTablePlanTestBase(CatalogTestHelper catalogTestHelper,
@@ -105,7 +105,9 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   public void testSegmentFilesBase() {
+    // 1.Step1
     closeFullOptimizing();
+    updateBaseHashBucket(1);
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
     List<DataFile> dataFiles = Lists.newArrayList();
     long transactionId;
@@ -128,6 +130,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
+    // 2.Step2
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList());
+
+    // 3.Step3
+    closeFullOptimizing();
     // plan with delete files
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
@@ -135,17 +146,23 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
           DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
-    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
+    List<DeleteFile> deleteFiles = OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
     taskDescriptors = planWithCurrentFiles();
 
     Assert.assertTrue(taskDescriptors.isEmpty());
+
+    // 4.Step4
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(), deleteFiles);
   }
 
   public void testWithDeleteFilesBase() {
     closeFullOptimizing();
     updateBaseHashBucket(1);
-    
+
     List<Record> newRecords;
     long transactionId;
     List<DataFile> rePosSegmentFiles = Lists.newArrayList();
@@ -192,7 +209,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     List<DataFile> segmentFiles = Lists.newArrayList();
     segmentFiles.addAll(rePosSegmentFiles);
     segmentFiles.addAll(rewrittenSegmentFiles);
-    
+
     setFragmentRatio(segmentFiles);
     assertSegmentFiles(segmentFiles);
     assertFragmentFiles(fragmentFiles);
@@ -205,6 +222,22 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     rewrittenDataFiles.addAll(rewrittenSegmentFiles);
     assertTask(taskDescriptors.get(0), rewrittenDataFiles, rePosSegmentFiles, readOnlyDeleteFiles,
         rewrittenDeleteFiles);
+
+
+    // test full optimizing
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    rewrittenDataFiles = Lists.newArrayList();
+    rewrittenDataFiles.addAll(fragmentFiles);
+    rewrittenDataFiles.addAll(segmentFiles);
+
+    List<DeleteFile> deleteFiles = Lists.newArrayList();
+    deleteFiles.addAll(readOnlyDeleteFiles);
+    deleteFiles.addAll(rewrittenDeleteFiles);
+
+    assertTask(taskDescriptors.get(0), rewrittenDataFiles, Collections.emptyList(), Collections.emptyList(),
+        deleteFiles);
   }
 
   private List<DeleteFile> appendPosDelete(long transactionId, List<DataFile> dataFiles, int pos) {
@@ -246,6 +279,10 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected void closeFullOptimizing() {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  }
+
+  protected void openFullOptimizing() {
+    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "3600").commit();
   }
 
   private void assertSegmentFiles(List<DataFile> files) {
