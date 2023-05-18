@@ -65,7 +65,7 @@ public class HMSMockServer {
   public static final Logger LOG = LoggerFactory.getLogger(HMSMockServer.class);
 
   private static final String DEFAULT_DATABASE_NAME = "default";
-  private static final int DEFAULT_POOL_SIZE = 21;
+  private static final int DEFAULT_POOL_SIZE = 50;
 
   // create the metastore handlers based on whether we're working with Hive2 or Hive3 dependencies
   // we need to do this because there is a breaking API change between Hive2 and Hive3
