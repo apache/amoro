@@ -16,9 +16,11 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   private OptimizerToucher.TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
+  private long startTime;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);
+    this.startTime = System.currentTimeMillis();
   }
 
   public OptimizerToucher withTokenChangeListener(OptimizerToucher.TokenChangeListener tokenChangeListener) {
@@ -57,6 +59,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
           registerInfo.setGroupName(getConfig().getGroupName());
           registerInfo.setProperties(registerProperties);
           registerInfo.setResourceId(getConfig().getResourceId());
+          registerInfo.setStartTime(startTime);
           return client.authenticate(registerInfo);
         });
         setToken(token);

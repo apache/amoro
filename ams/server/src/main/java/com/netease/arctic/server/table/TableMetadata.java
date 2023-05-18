@@ -20,7 +20,6 @@ package com.netease.arctic.server.table;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -29,7 +28,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -133,8 +131,6 @@ public class TableMetadata implements Serializable {
   private String krbPrincipal;
 
   private Map<String, String> properties;
-
-  private Long currentTxId;
 
   private volatile TableMetaStore metaStore;
 
@@ -268,13 +264,5 @@ public class TableMetadata implements Serializable {
 
   public void setKrbPrincipal(String krbPrincipal) {
     this.krbPrincipal = krbPrincipal;
-  }
-
-  public Long getCurrentTxId() {
-    return currentTxId;
-  }
-
-  public void setCurrentTxId(Long currentTxId) {
-    this.currentTxId = currentTxId;
   }
 }

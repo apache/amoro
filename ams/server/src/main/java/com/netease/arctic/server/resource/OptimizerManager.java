@@ -8,4 +8,6 @@ public interface OptimizerManager extends ResourceManager {
   List<OptimizerInstance> listOptimizers();
 
   List<OptimizerInstance> listOptimizers(String groupName);
+
+  void deleteOptimizer(String groupName, String resourceId);
 }

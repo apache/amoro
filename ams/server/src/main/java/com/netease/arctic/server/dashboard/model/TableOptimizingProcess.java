@@ -1,5 +1,6 @@
 package com.netease.arctic.server.dashboard.model;
 
+import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 public class TableOptimizingProcess {
@@ -15,7 +16,7 @@ public class TableOptimizingProcess {
   private long planTime;
   private long endTime;
   private String failReason;
-  private String summary;
+  private MetricsSummary summary;
 
   public TableOptimizingProcess() {
   }
@@ -108,11 +109,11 @@ public class TableOptimizingProcess {
     this.failReason = failReason;
   }
 
-  public String getSummary() {
+  public MetricsSummary getSummary() {
     return summary;
   }
 
-  public void setSummary(String summary) {
+  public void setSummary(MetricsSummary summary) {
     this.summary = summary;
   }
 }

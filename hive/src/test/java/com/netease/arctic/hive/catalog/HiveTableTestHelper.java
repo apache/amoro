@@ -85,7 +85,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
     return HiveDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 

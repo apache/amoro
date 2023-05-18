@@ -1,6 +1,5 @@
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -13,6 +12,7 @@ public class ServerTableIdentifier {
   private String database;
   private String tableName;
 
+  //used by the MyBatis framework.
   private ServerTableIdentifier() {
   }
 
@@ -92,7 +92,6 @@ public class ServerTableIdentifier {
         .add("catalog", catalog)
         .add("database", database)
         .add("tableName", tableName)
-        .add("format", format)
         .toString();
   }
 

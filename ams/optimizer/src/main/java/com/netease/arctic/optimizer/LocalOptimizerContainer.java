@@ -58,10 +58,19 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
   public void releaseOptimizer(Resource resource) {
     long jobId = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
         JOB_ID_PROPERTY));
-    String cmd = "kill -9 " + jobId;
-    Runtime runtime = Runtime.getRuntime();
+
+    String os = System.getProperty("os.name").toLowerCase();
+    String cmd;
+    String[] finalCmd;
+    if (os.contains("win")) {
+      cmd = "taskkill /PID " + jobId + " /F ";
+      finalCmd = new String[] {"cmd", "/c", cmd};
+    } else {
+      cmd = "kill -9 " + jobId;
+      finalCmd = new String[] {"/bin/sh", "-c", cmd};
+    }
     try {
-      String[] finalCmd = {"/bin/sh", "-c", cmd};
+      Runtime runtime = Runtime.getRuntime();
       LOG.info("Stopping optimizer using command:" + cmd);
       runtime.exec(finalCmd);
     } catch (Exception e) {

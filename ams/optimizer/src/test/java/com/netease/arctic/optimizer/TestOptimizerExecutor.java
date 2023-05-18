@@ -23,10 +23,10 @@ import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.optimizing.BaseOptimizingInput;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.thrift.TException;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestOptimizerExecutor extends OptimizerTestBase {
 
-  private final static String FAILED_TASK_MESSAGE = "Execute Task failed";
+  private static final String FAILED_TASK_MESSAGE = "Execute Task failed";
 
   private OptimizerExecutor optimizerExecutor;
 
@@ -123,7 +123,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
       OptimizingTask optimizingTask = new OptimizingTask(new OptimizingTaskId(processId, taskId));
       optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(this));
       Map<String, String> inputProperties = Maps.newHashMap();
-      inputProperties.put(OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+      inputProperties.put(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
           TestOptimizingExecutorFactory.class.getName());
       optimizingTask.setProperties(inputProperties);
       return optimizingTask;
@@ -147,7 +147,9 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     private final TestOptimizingInput input;
 
-    private TestOptimizingExecutor(TestOptimizingInput input) {this.input = input;}
+    private TestOptimizingExecutor(TestOptimizingInput input) {
+      this.input = input;
+    }
 
     @Override
     public TestOptimizingOutput execute() {
@@ -164,7 +166,9 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     private final int inputId;
 
-    private TestOptimizingOutput(int inputId) {this.inputId = inputId;}
+    private TestOptimizingOutput(int inputId) {
+      this.inputId = inputId;
+    }
 
     @Override
     public Map<String, String> summary() {

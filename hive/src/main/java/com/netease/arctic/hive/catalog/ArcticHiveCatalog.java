@@ -119,24 +119,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     }
   }
 
-  @Override
-  protected void doDropTable(TableMeta meta, boolean purge) {
-    // drop hive table operation will only delete hive table metadata
-    // delete data files operation will use BasicArcticCatalog
-    try {
-      hiveClientPool.run(client -> {
-        client.dropTable(meta.getTableIdentifier().getDatabase(),
-            meta.getTableIdentifier().getTableName(),
-            false /* deleteData */,
-            false /* ignoreUnknownTab */);
-        return null;
-      });
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
-    }
-    super.doDropTable(meta, purge);
-  }
-
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
     TableMeta meta = getArcticTableMeta(tableIdentifier);
     super.doDropTable(meta, false);

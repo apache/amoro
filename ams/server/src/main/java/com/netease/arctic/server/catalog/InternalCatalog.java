@@ -1,7 +1,9 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
@@ -19,14 +21,17 @@ public abstract class InternalCatalog extends ServerCatalog {
   public void createDatabase(String databaseName) {
     if (!exist(databaseName)) {
       doAsTransaction(
+          // make sure catalog existed in database
           () -> doAsExisted(
               CatalogMetaMapper.class,
               mapper -> mapper.incDatabaseCount(1, name()),
-              () -> new ObjectNotExistsException(name())),
+              () -> new ObjectNotExistsException("Catalog " + name())),
           () -> doAs(
               TableMetaMapper.class,
               mapper -> mapper.insertDatabase(getMetadata().getCatalogName(), databaseName)),
           () -> createDatabaseInternal(databaseName));
+    } else {
+      throw new AlreadyExistsException("Database " + databaseName);
     }
   }
 
@@ -42,23 +47,23 @@ public abstract class InternalCatalog extends ServerCatalog {
               CatalogMetaMapper.class,
               mapper -> mapper.decDatabaseCount(1, name()),
               () -> new ObjectNotExistsException(name())));
+    } else {
+      throw new ObjectNotExistsException("Database " + databaseName);
     }
   }
 
   public ServerTableIdentifier createTable(TableMeta tableMeta) {
+    validateTableIdentifier(tableMeta.getTableIdentifier());
     ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
     TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
-        () -> createTableInternal(tableMetadata),
+        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
         () -> doAsExisted(
             CatalogMetaMapper.class,
             mapper -> mapper.incTableCount(1, name()),
             () -> new ObjectNotExistsException(name())),
-        () -> doAsExisted(
-            TableMetaMapper.class,
-            mapper -> mapper.incTableCount(1, tableIdentifier.getDatabase()),
-            () -> new ObjectNotExistsException(getDatabaseDesc(tableIdentifier.getDatabase()))));
+        () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
     return getAs(
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifier(tableMeta.getTableIdentifier().getCatalog(),
@@ -76,16 +81,14 @@ public abstract class InternalCatalog extends ServerCatalog {
             TableMetaMapper.class,
             mapper -> mapper.deleteTableIdById(tableIdentifier.getId()),
             () -> new ObjectNotExistsException(getTableDesc(databaseName, tableName))),
+        () -> doAs(TableMetaMapper.class, mapper -> mapper.deleteTableMetaById(tableIdentifier.getId())),
         () -> doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier)),
         () -> dropTableInternal(databaseName, tableName),
         () -> doAsExisted(
             CatalogMetaMapper.class,
             mapper -> mapper.decTableCount(1, tableIdentifier.getCatalog()),
             () -> new ObjectNotExistsException(name())),
-        () -> doAsExisted(
-            TableMetaMapper.class,
-            mapper -> mapper.decTableCount(1, tableIdentifier.getDatabase()),
-            () -> new ObjectNotExistsException(getDatabaseDesc(tableIdentifier.getDatabase()))));
+        () -> decreaseDatabaseTableCount(tableIdentifier.getDatabase()));
     return tableIdentifier;
   }
 
@@ -97,7 +100,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .toString();
   }
 
-  private String getTableDesc(String database, String tableName) {
+  protected String getTableDesc(String database, String tableName) {
     return new StringBuilder()
         .append(name())
         .append('.')
@@ -115,6 +118,20 @@ public abstract class InternalCatalog extends ServerCatalog {
     return getAs(TableMetaMapper.class, mapper -> mapper.selectTableCount(name()));
   }
 
+  protected void decreaseDatabaseTableCount(String databaseName) {
+    doAsExisted(
+        TableMetaMapper.class,
+        mapper -> mapper.decTableCount(1, databaseName),
+        () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
+  }
+
+  protected void increaseDatabaseTableCount(String databaseName) {
+    doAsExisted(
+        TableMetaMapper.class,
+        mapper -> mapper.incTableCount(1, databaseName),
+        () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
+  }
+
   protected void createTableInternal(TableMetadata tableMetaData) {
     //do nothing, create internal table default done on client side
   }
@@ -129,5 +146,11 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   protected void dropDatabaseInternal(String databaseName) {
     //do nothing, create internal table default done on client side
+  }
+
+  protected void validateTableIdentifier(TableIdentifier tableIdentifier) {
+    if (!name().equals(tableIdentifier.getCatalog())) {
+      throw new IllegalMetadataException("Catalog name is error in table identifier");
+    }
   }
 }

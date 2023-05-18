@@ -162,7 +162,7 @@ public class ServerTableDescriptor extends PersistentBase {
   public List<BaseMajorCompactRecord> getOptimizeInfo(String catalog, String db, String table) {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
-        mapper -> mapper.selectOptimizingProcessesByTable(catalog, db, table));
+        mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
     return tableOptimizingProcesses.stream().map(e -> {
       BaseMajorCompactRecord record = new BaseMajorCompactRecord();
       List<TaskRuntime> taskRuntimes = getAs(

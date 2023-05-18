@@ -19,15 +19,18 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.exception.BlockerConflictException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
+import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
@@ -36,9 +39,12 @@ import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +75,7 @@ public class TableRuntime extends PersistentBase {
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private volatile long currentStatusStartTime = System.currentTimeMillis();
+  // TODO change to partition level
   private volatile long lastMajorOptimizingTime;
   private volatile long lastFullOptimizingTime;
   private volatile long lastMinorOptimizingTime;
@@ -105,6 +112,24 @@ public class TableRuntime extends PersistentBase {
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+  }
+
+  @VisibleForTesting
+  public TableRuntime(ArcticTable table) {
+    this.initializer = new TableRuntimeInitializer() {
+      @Override
+      public ArcticTable loadTable(ServerTableIdentifier tableIdentifier) {
+        return table;
+      }
+
+      @Override
+      public TableRuntimeHandler getHeadHandler() {
+        return null;
+      }
+    };
+    this.tableChangeHandler = null;
+    this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
+    this.tableConfiguration = TableConfiguration.parseConfig(table.properties());
   }
 
   protected void recover(OptimizingProcess optimizingProcess) {
@@ -407,7 +432,7 @@ public class TableRuntime extends PersistentBase {
   }
 
   public long getQuotaTime() {
-    if (optimizingProcess == null ) {
+    if (optimizingProcess == null) {
       return 0;
     }
     long calculatingEndTime = System.currentTimeMillis();
@@ -431,8 +456,6 @@ public class TableRuntime extends PersistentBase {
     try {
       return getAs(TableBlockerMapper.class,
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -445,10 +468,9 @@ public class TableRuntime extends PersistentBase {
    * @param properties     -
    * @param blockerTimeout -
    * @return TableBlocker if success
-   * @throws OperationConflictException when operations have been blocked
    */
   public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
-                            long blockerTimeout) throws OperationConflictException {
+                            long blockerTimeout) {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
     Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
@@ -458,15 +480,11 @@ public class TableRuntime extends PersistentBase {
       List<TableBlocker> tableBlockers =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, now));
       if (conflict(operations, tableBlockers)) {
-        throw new OperationConflictException(operations + " is conflict with " + tableBlockers);
+        throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
       }
       TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
       doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
       return tableBlocker;
-    } catch (OperationConflictException e) {
-      throw e;
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -479,24 +497,19 @@ public class TableRuntime extends PersistentBase {
    * @param blockerTimeout - timeout
    * @throws IllegalStateException if blocker not exist
    */
-  public long renew(String blockerId, long blockerTimeout) throws NoSuchObjectException {
+  public long renew(String blockerId, long blockerTimeout) {
     blockerLock.lock();
     try {
       long now = System.currentTimeMillis();
       TableBlocker tableBlocker =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
       if (tableBlocker == null) {
-        throw new NoSuchObjectException(
-            tableIdentifier + " illegal blockerId " + blockerId + ", it may be released or expired");
+        throw new ObjectNotExistsException("Blocker " + blockerId);
       }
       long expirationTime = now + blockerTimeout;
       doAs(TableBlockerMapper.class,
           mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
       return expirationTime;
-    } catch (NoSuchObjectException e) {
-      throw e;
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -511,8 +524,6 @@ public class TableRuntime extends PersistentBase {
     blockerLock.lock();
     try {
       doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlocker(Long.parseLong(blockerId)));
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }
@@ -530,8 +541,6 @@ public class TableRuntime extends PersistentBase {
       List<TableBlocker> tableBlockers =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
       return conflict(operation, tableBlockers);
-    } catch (Exception e) {
-      throw e;
     } finally {
       blockerLock.unlock();
     }

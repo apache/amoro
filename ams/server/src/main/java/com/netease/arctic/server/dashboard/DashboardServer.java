@@ -25,7 +25,6 @@ import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
 import com.netease.arctic.server.dashboard.controller.OptimizerController;
 import com.netease.arctic.server.dashboard.controller.PlatformFileInfoController;
-import com.netease.arctic.server.dashboard.controller.RestBaseController;
 import com.netease.arctic.server.dashboard.controller.SettingController;
 import com.netease.arctic.server.dashboard.controller.TableController;
 import com.netease.arctic.server.dashboard.controller.TerminalController;
