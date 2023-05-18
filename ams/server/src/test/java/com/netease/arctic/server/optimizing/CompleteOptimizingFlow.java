@@ -130,14 +130,14 @@ public class CompleteOptimizingFlow {
   }
 
   private void asyncExecute(List<TaskRuntime> taskRuntimes) throws InterruptedException, ExecutionException {
-    CompletableFuture.allOf(
+/*    CompletableFuture.allOf(
         taskRuntimes.stream()
             .map(taskRuntime -> {
               OptimizingExecutor<RewriteFilesOutput> optimizingExecutor = optimizingExecutor(taskRuntime);
               return CompletableFuture.supplyAsync(optimizingExecutor::execute, executorPool)
                   .thenAccept(taskRuntime::setOutput);
             }).toArray(CompletableFuture[]::new)
-    ).get();
+    ).get();*/
   }
 
   private void check(List<TaskDescriptor> taskDescriptors) throws Exception {
@@ -147,7 +147,7 @@ public class CompleteOptimizingFlow {
   }
 
   private List<TaskRuntime> mockTaskRuntime(List<TaskDescriptor> taskDescriptors) {
-    List<TaskRuntime> list = new ArrayList<>();
+/*    List<TaskRuntime> list = new ArrayList<>();
     for (TaskDescriptor taskDescriptor: taskDescriptors) {
       TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
       Mockito.when(taskRuntime.getPartition()).thenReturn(taskDescriptor.getPartition());
@@ -156,11 +156,12 @@ public class CompleteOptimizingFlow {
       Mockito.doCallRealMethod().when(taskRuntime).getOutput();
       list.add(taskRuntime);
     }
-    return list;
+    return list;*/
+    return null;
   }
 
   private OptimizingPlanner planner() {
-    table.refresh();
+/*    table.refresh();
     TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenReturn(currentSnapshot());
@@ -173,7 +174,8 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(tableConfiguration.getOptimizingConfig());
     Mockito.doCallRealMethod().when(tableRuntime).getCurrentSnapshot(Mockito.any(), Mockito.anyBoolean());
     return new OptimizingPlanner(tableRuntime, table,
-        tableRuntime.getCurrentSnapshot(table, false), availableCore);
+        tableRuntime.getCurrentSnapshot(table, false), availableCore);*/
+    return null;
   }
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {

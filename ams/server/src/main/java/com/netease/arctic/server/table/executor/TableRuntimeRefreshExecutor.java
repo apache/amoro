@@ -63,7 +63,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
       ArcticTable table = loadTable(tableRuntime);
-      tableRuntime.refreshTable(table);
+      tableRuntime.refresh(table);
       if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId()) {
         tryEvalutingPendingInput(tableRuntime, table);
       }

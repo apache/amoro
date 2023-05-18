@@ -11,6 +11,7 @@ public class TaskDescriptor {
   private Map<String, String> properties;
 
   TaskDescriptor(long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
+    this.tableId = tableId;
     this.partition = partition;
     this.input = input;
     this.properties = properties;

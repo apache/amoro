@@ -21,15 +21,22 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
+import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class IcebergTableUtil {
+public class IcebergTableUtils {
   public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
     if (refresh) {
       internalTable.refresh();
@@ -39,6 +46,22 @@ public class IcebergTableUtil {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
       return currentSnapshot.snapshotId();
+    }
+  }
+
+  public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
+    tableRuntime.refresh(arcticTable);
+    if (arcticTable.isUnkeyedTable()) {
+      return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
+    } else {
+      StructLikeMap<Long> partitionOptimizedSequence =
+          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
+      StructLikeMap<Long> legacyPartitionMaxTransactionId =
+          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
+          tableRuntime.getCurrentChangeSnapshotId(),
+          partitionOptimizedSequence,
+          legacyPartitionMaxTransactionId);
     }
   }
 

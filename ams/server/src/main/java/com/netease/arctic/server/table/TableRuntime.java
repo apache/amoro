@@ -28,23 +28,17 @@ import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
-import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +69,6 @@ public class TableRuntime extends PersistentBase {
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private volatile long currentStatusStartTime = System.currentTimeMillis();
-  // TODO change to partition level
   private volatile long lastMajorOptimizingTime;
   private volatile long lastFullOptimizingTime;
   private volatile long lastMinorOptimizingTime;
@@ -114,24 +107,6 @@ public class TableRuntime extends PersistentBase {
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
   }
 
-  @VisibleForTesting
-  public TableRuntime(ArcticTable table) {
-    this.initializer = new TableRuntimeInitializer() {
-      @Override
-      public ArcticTable loadTable(ServerTableIdentifier tableIdentifier) {
-        return table;
-      }
-
-      @Override
-      public TableRuntimeHandler getHeadHandler() {
-        return null;
-      }
-    };
-    this.tableChangeHandler = null;
-    this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
-    this.tableConfiguration = TableConfiguration.parseConfig(table.properties());
-  }
-
   protected void recover(OptimizingProcess optimizingProcess) {
     if (!optimizingStatus.isProcessing() || !Objects.equals(optimizingProcess.getProcessId(), processId)) {
       throw new IllegalStateException("Table runtime and processing are not matched!");
@@ -156,8 +131,8 @@ public class TableRuntime extends PersistentBase {
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
-      currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      currentSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
+      currentChangeSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
         LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
             currentSnapshotId, currentChangeSnapshotId);
@@ -175,7 +150,7 @@ public class TableRuntime extends PersistentBase {
     return false;
   }
 
-  public void refreshTable(ArcticTable table) {
+  public TableRuntime refresh(ArcticTable table) {
     lock.lock();
     try {
       TableConfiguration configuration = tableConfiguration;
@@ -185,6 +160,7 @@ public class TableRuntime extends PersistentBase {
       if (configuration != tableConfiguration) {
         tableHandler.handleTableChanged(this, configuration);
       }
+      return this;
     } finally {
       lock.unlock();
     }
@@ -220,19 +196,6 @@ public class TableRuntime extends PersistentBase {
 
   public OptimizingEvaluator.PendingInput getPendingInput() {
     return pendingInput;
-  }
-
-  public void tryUpdatingConfig(Map<String, String> properties) {
-    lock.lock();
-    TableConfiguration originalConfig = this.tableConfiguration;
-    try {
-      if (updateConfigInternal(properties)) {
-        persistUpdatingRuntime();
-        tableHandler.handleTableChanged(this, originalConfig);
-      }
-    } finally {
-      lock.unlock();
-    }
   }
 
   private boolean updateConfigInternal(Map<String, String> properties) {
