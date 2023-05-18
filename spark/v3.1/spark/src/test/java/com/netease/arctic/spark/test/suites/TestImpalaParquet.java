@@ -19,30 +19,42 @@
 package com.netease.arctic.spark.test.suites;
 
 import com.google.common.collect.Iterators;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
+import com.netease.arctic.spark.test.helper.ResourceInputFile;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
 public class TestImpalaParquet {
 
+  InputFile targetInputParquet;
+
+  @BeforeEach
+  public void setup() {
+    targetInputParquet = ResourceInputFile.newFile(HMSMockServer.class.getClassLoader(),
+        "string_is_bytes.parquet");
+  }
+
+
   @Test
   public void sparkRead() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
 
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(targetInputParquet)
         .project(schema)
         .withNameMapping(mapping)
         .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
@@ -58,9 +70,7 @@ public class TestImpalaParquet {
   public void genericFilter() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-
-            Files.localInput(this.getClass().getClassLoader().getResource("string_is_bytes.parquet").getFile()))
+    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(targetInputParquet)
         .project(schema)
         .withNameMapping(mapping)
         .filter(Expressions.in("str", "aa"))
