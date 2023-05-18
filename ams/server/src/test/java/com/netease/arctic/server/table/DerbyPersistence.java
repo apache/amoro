@@ -36,8 +36,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class DerbyPersistent extends ExternalResource {
-  private static final Logger LOG = LoggerFactory.getLogger(DerbyPersistent.class);
+public class DerbyPersistence extends ExternalResource {
+  private static final Logger LOG = LoggerFactory.getLogger(DerbyPersistence.class);
 
   private static final TemporaryFolder SINGLETON_FOLDER;
 

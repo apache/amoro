@@ -1,6 +1,5 @@
 package com.netease.arctic.hive.optimizing;
 
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.optimizing.OptimizingDataReader;
@@ -22,8 +21,7 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,7 +50,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     AdaptHiveGenericArcticDataReader reader = arcticDataReader(table.schema());
 
     // Change returned value by readData  from Iterator to Iterable in future
-    CloseableIterator<Record> closeableIterator = reader.readData(nodeFileScanTask(input.rewrittenDataFiles()));
+    CloseableIterator<Record> closeableIterator = reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
     return wrapIterator2Iterable(closeableIterator);
   }
 
@@ -64,7 +62,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
         com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD
     );
     AdaptHiveGenericArcticDataReader reader = arcticDataReader(schema);
-    return wrapIterator2Iterable(reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFiles())));
+    return wrapIterator2Iterable(reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));
   }
 
   @Override
@@ -81,21 +79,21 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     }
 
     return new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema,
-            primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-            false, IdentityPartitionConverters::convertConstant, null,
+        primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+        false, IdentityPartitionConverters::convertConstant, null,
         false, structLikeCollections);
   }
 
-  private NodeFileScanTask nodeFileScanTask(IcebergContentFile[] icebergContentFiles) {
-    List<DeleteFile> posDeleteList = input.deleteFiles() == null ? Collections.EMPTY_LIST :
-        Arrays.stream(input.deleteFiles()).filter(s -> s.isDeleteFile())
-            .map(IcebergContentFile::asDeleteFile).collect(Collectors.toList());
+  private NodeFileScanTask nodeFileScanTask(List<PrimaryKeyedFile> dataFiles) {
+    List<DeleteFile> posDeleteList = input.positionDeleteForMixed();
 
-    List<PrimaryKeyedFile> dataFiles = Arrays.stream(icebergContentFiles)
-        .map(s -> (PrimaryKeyedFile)s.asDataFile().internalDataFile()).collect(
-        Collectors.toList());
+    List<PrimaryKeyedFile> equlityDeleteList = input.equalityDeleteForMixed();
 
-    List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
+    List<PrimaryKeyedFile> allTaskFiles = new ArrayList<>();
+    allTaskFiles.addAll(equlityDeleteList);
+    allTaskFiles.addAll(dataFiles);
+
+    List<ArcticFileScanTask> fileScanTasks = allTaskFiles.stream()
         .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
         .collect(Collectors.toList());
     return new NodeFileScanTask(fileScanTasks);

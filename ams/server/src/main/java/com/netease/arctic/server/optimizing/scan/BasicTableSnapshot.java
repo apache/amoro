@@ -16,33 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.server.optimizing.scan;
 
-import com.netease.arctic.server.utils.Configurations;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+public class BasicTableSnapshot implements TableSnapshot {
+  private final long snapshotId;
 
-public abstract class TableServiceTestBase {
-
-  @ClassRule
-  public static DerbyPersistence DERBY = new DerbyPersistence();
-
-  private static DefaultTableService TABLE_SERVICE = null;
-
-  @BeforeClass
-  public static void initTableService() {
-    TABLE_SERVICE = new DefaultTableService(new Configurations());
-    TABLE_SERVICE.initialize();
+  public BasicTableSnapshot(long snapshotId) {
+    this.snapshotId = snapshotId;
   }
 
-  @AfterClass
-  public static void disposeTableService() {
-    TABLE_SERVICE.dispose();
+  @Override
+  public long snapshotId() {
+    return snapshotId;
   }
-
-  protected DefaultTableService tableService() {
-    return TABLE_SERVICE;
-  }
-
 }

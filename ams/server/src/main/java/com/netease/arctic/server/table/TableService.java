@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
-import org.apache.hadoop.hive.metastore.api.MetaException;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ public interface TableService extends CatalogService, TableRuntimeManager {
    * create table metadata
    *
    * @param tableMeta table metadata info
-   * @throws MetaException when the table metadata is not match
    */
   void createTable(String catalogName, TableMeta tableMeta);
 
@@ -54,18 +52,9 @@ public interface TableService extends CatalogService, TableRuntimeManager {
    *
    * @param tableIdentifier table id
    * @param deleteData      if delete the external table
-   * @throws MetaException when table metadata is not match
    */
   @Deprecated
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
-
-  /**
-   * update the arctic table properties
-   *
-   * @param tableIdentifier table id
-   * @param properties      arctic table properties
-   */
-  void updateTableProperties(ServerTableIdentifier tableIdentifier, Map<String, String> properties);
 
   /**
    * load arctic databases name

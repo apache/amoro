@@ -23,18 +23,18 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
-public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
+import java.util.List;
 
-  public TestUnkeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
-                                  TableTestHelper tableTestHelper) {
+@RunWith(Parameterized.class)
+public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
+  public TestKeyedOptimizingPlanner(CatalogTestHelper catalogTestHelper,
+                                    TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -42,40 +42,24 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
   public static Object[][] parameters() {
     return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
+            new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+            new BasicTableTestHelper(true, false)}};
   }
 
   @Test
+  @Override
   public void testFragmentFiles() {
-    testFragmentFilesBase();
-  }
-
-  @Test
-  public void testSegmentFiles() {
-    testSegmentFilesBase();
-  }
-
-  @Test
-  public void testWithDeleteFiles() {
-    testWithDeleteFilesBase();
-  }
-
-  @Test
-  public void testOnlyOneFragmentFiles() {
-    testOnlyOneFragmentFileBase();
+    super.testFragmentFiles();
+    OptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
+    Assert.assertTrue(optimizingEvaluator.isNecessary());
+    List<TaskDescriptor> taskDescriptors = optimizingEvaluator.planTasks();
+    Assert.assertEquals(1, taskDescriptors.size());
   }
 
   @Override
-  protected AbstractPartitionPlan getPartitionPlan() {
-    return new UnkeyedTablePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
-        System.currentTimeMillis());
-  }
-
-  @Override
-  protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
-    return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
+  protected OptimizingPlanner buildOptimizingEvaluator() {
+    return new OptimizingPlanner(getTableRuntime(), getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()), 1);
   }
 }

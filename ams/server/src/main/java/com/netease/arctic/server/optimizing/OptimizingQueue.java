@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
@@ -17,6 +18,7 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
@@ -229,8 +231,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (LOG.isDebugEnabled()) {
         LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       }
+      ArcticTable arcticTable = tableRuntime.loadTable();
+      TableSnapshot currentSnapshot = tableRuntime.getCurrentSnapshot(arcticTable, true);
+      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+        LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+        continue;
+      }
       try {
-        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime, getAvailableCore(tableRuntime));
+        OptimizingPlanner planner =
+            new OptimizingPlanner(tableRuntime, arcticTable, currentSnapshot, getAvailableCore(tableRuntime));
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           if (LOG.isDebugEnabled()) {
@@ -265,7 +274,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
 
-    // TODO persist
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
 
@@ -459,14 +467,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           results.put(partitionData, sequence);
         }
       });
-      return null;
+      return results;
     }
 
     private void beginAndPersistProcess() {
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary())),
+                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary(), getFromSequence(),
+                  getToSequence())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(tableRuntime, processId, taskMap.values()),

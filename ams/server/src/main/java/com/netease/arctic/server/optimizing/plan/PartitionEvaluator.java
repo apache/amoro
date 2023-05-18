@@ -44,4 +44,20 @@ public abstract class PartitionEvaluator {
 
   public abstract OptimizingType getOptimizingType();
 
+  public abstract int getFragmentFileCount();
+
+  public abstract long getFragmentFileSize();
+
+  public abstract int getSegmentFileCount();
+
+  public abstract long getSegmentFileSize();
+
+  public abstract int getEqualityDeleteFileCount();
+
+  public abstract long getEqualityDeleteFileSize();
+
+  public abstract int getPosDeleteFileCount();
+
+  public abstract long getPosDeleteFileSize();
+
 }

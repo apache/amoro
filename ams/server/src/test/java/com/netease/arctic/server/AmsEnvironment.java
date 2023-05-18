@@ -1,13 +1,19 @@
 package com.netease.arctic.server;
 
+<<<<<<< HEAD
 import com.google.common.base.Preconditions;
+=======
+>>>>>>> 5a47e7ff21f658f7cda32bb691f7930df72e24dd
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+<<<<<<< HEAD
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
+=======
+>>>>>>> 5a47e7ff21f658f7cda32bb691f7930df72e24dd
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
@@ -58,7 +64,7 @@ public class AmsEnvironment {
     AmsEnvironment amsEnvironment = new AmsEnvironment();
     amsEnvironment.start();
     amsEnvironment.startOptimizer();
-    Thread.sleep(2*60*1000);
+    Thread.sleep(2 * 60 * 1000);
     amsEnvironment.stopOptimizer();
   }
 
@@ -129,7 +135,7 @@ public class AmsEnvironment {
 
   public void startOptimizer() {
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024","-a", getAmsUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {

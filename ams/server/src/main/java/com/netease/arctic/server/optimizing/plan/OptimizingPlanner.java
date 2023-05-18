@@ -22,6 +22,7 @@ import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -31,10 +32,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -43,21 +42,22 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private static final int MAX_INPUT_FILE_COUNT_PER_THREAD = 5000;
   private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5 * 1024 * 1024 * 1024;
 
-  private final Set<String> pendingPartitions;
+  private final TableFileScanHelper.PartitionFilter partitionFilter;
 
   protected long processId;
-  // TODO check it
-  private final long targetSnapshotId;
   private final double availableCore;
   private final long planTime;
   private OptimizingType optimizingType = OptimizingType.MINOR;
   private final PartitionPlannerFactory partitionPlannerFactory;
+  private List<TaskDescriptor> tasks;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
-    super(tableRuntime);
-    this.pendingPartitions = tableRuntime.getPendingInput() == null ?
-        new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
-    this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TableSnapshot tableSnapshot,
+                           double availableCore) {
+    super(tableRuntime, table, tableSnapshot);
+    this.partitionFilter = tableRuntime.getPendingInput() == null ?
+        partition -> true :
+        tableRuntime.getPendingInput().getPartitions()::contains;
+
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
@@ -81,24 +81,35 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   @Override
   protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
-    return pendingPartitions::contains;
+    return partitionFilter;
   }
 
   public long getTargetSnapshotId() {
-    return targetSnapshotId;
+    return currentSnapshot.snapshotId();
+  }
+
+  @Override
+  public boolean isNecessary() {
+    if (!super.isNecessary()) {
+      return false;
+    }
+    return !planTasks().isEmpty();
   }
 
   public List<TaskDescriptor> planTasks() {
+    if (this.tasks != null) {
+      return this.tasks;
+    }
     long startTime = System.nanoTime();
 
     if (!isInitEvaluator) {
       initEvaluator();
     }
-    if (!isNecessary()) {
+    if (!super.isNecessary()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
       }
-      return Collections.emptyList();
+      return cacheAndReturnTasks(Collections.emptyList());
     }
 
     List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
@@ -129,7 +140,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
           getOptimizingType(), endTime - startTime, (endTime - startTime) / 1_000_000);
       LOG.debug("{} {} plan get {} tasks", tableRuntime.getTableIdentifier(), getOptimizingType(), tasks.size());
     }
-    return tasks;
+    return cacheAndReturnTasks(tasks);
+  }
+
+  private List<TaskDescriptor> cacheAndReturnTasks(List<TaskDescriptor> tasks) {
+    this.tasks = tasks;
+    return this.tasks;
   }
 
   public long getPlanTime() {

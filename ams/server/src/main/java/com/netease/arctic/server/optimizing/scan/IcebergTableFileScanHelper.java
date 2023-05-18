@@ -43,9 +43,9 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private PartitionFilter partitionFilter;
   private final long snapshotId;
 
-  public IcebergTableFileScanHelper(Table table, SequenceNumberFetcher sequenceNumberFetcher, long snapshotId) {
+  public IcebergTableFileScanHelper(Table table, long snapshotId) {
     this.table = table;
-    this.sequenceNumberFetcher = sequenceNumberFetcher;
+    this.sequenceNumberFetcher = new SequenceNumberFetcher(table, snapshotId);
     this.snapshotId = snapshotId;
   }
 

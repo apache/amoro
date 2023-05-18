@@ -24,20 +24,12 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,11 +37,9 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
+public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
 
   public TestKeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper) {
@@ -67,37 +57,8 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    List<TaskDescriptor> taskDescriptors = testFragmentFilesBase();
-    Assert.assertEquals(4, taskDescriptors.size());
-    Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> baseFiles = scanBaseFilesGroupByNode();
-    Assert.assertEquals(4, baseFiles.size());
-    for (Map.Entry<DataTreeNode, List<TableFileScanHelper.FileScanResult>> entry : baseFiles.entrySet()) {
-      DataTreeNode key = entry.getKey();
-      int taskId = 0;
-      if (key.getIndex() == 0) {
-        taskId = 0;
-      } else if (key.getIndex() == 2) {
-        taskId = 1;
-      } else if (key.getIndex() == 1) {
-        taskId = 2;
-      } else if (key.getIndex() == 3) {
-        taskId = 3;
-      } else {
-        Assert.fail("unexpected tree node " + key);
-      }
-      List<IcebergDataFile> files = entry.getValue().stream()
-          .map(TableFileScanHelper.FileScanResult::file)
-          .collect(Collectors.toList());
-      TaskDescriptor actual = taskDescriptors.get(taskId);
-      RewriteFilesInput rewriteFilesInput = new RewriteFilesInput(files.toArray(new IcebergDataFile[0]),
-          Collections.emptySet().toArray(new IcebergDataFile[0]),
-          Collections.emptySet().toArray(new IcebergContentFile[0]),
-          Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
-
-      Map<String, String> properties = buildProperties();
-      TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
-      assertTask(expect, actual);
-    }
+    updateBaseHashBucket(1);
+    testFragmentFilesBase();
   }
 
   @Test
@@ -112,32 +73,54 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
   }
 
   @Test
+  public void testWithDeleteFiles() {
+    testWithDeleteFilesBase();
+  }
+
+  @Test
   public void testOnlyOneChangeFiles() {
     updateChangeHashBucket(1);
     closeFullOptimizing();
     // write fragment file
-    List<Record> newRecords = generateRecord(1, 4, "2022-01-01T12:00:00");
+    List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-        newRecords, false));
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
 
     List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
 
     Assert.assertEquals(1, taskDescriptors.size());
-    List<TableFileScanHelper.FileScanResult> actualFiles = scanFiles();
-    Assert.assertEquals(1, actualFiles.size());
-    List<IcebergDataFile> files = actualFiles.stream()
-        .map(TableFileScanHelper.FileScanResult::file)
-        .collect(Collectors.toList());
-    TaskDescriptor actual = taskDescriptors.get(0);
-    RewriteFilesInput rewriteFilesInput = new RewriteFilesInput(files.toArray(new IcebergDataFile[0]),
-        Collections.emptySet().toArray(new IcebergDataFile[0]),
-        Collections.emptySet().toArray(new IcebergContentFile[0]),
-        Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
 
-    Map<String, String> properties = buildProperties();
-    TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
-    assertTask(expect, actual);
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList());
+  }
+
+  @Test
+  public void testChangeFilesWithDelete() {
+    updateChangeHashBucket(1);
+    closeFullOptimizing();
+    List<Record> newRecords;
+    long transactionId;
+    // write fragment file
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    List<DataFile> deleteFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.DELETE,
+            newRecords, false));
+
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertEquals(1, taskDescriptors.size());
+
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        deleteFiles);
   }
 
   @Override
@@ -145,35 +128,15 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     return super.getArcticTable().asKeyedTable();
   }
 
-  private void appendChange(List<DataFile> dataFiles) {
-    AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
-    dataFiles.forEach(appendFiles::appendFile);
-    appendFiles.commit();
-  }
-
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new KeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
+    return new KeyedTablePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
         System.currentTimeMillis());
-  }
-
-  protected void updateChangeHashBucket(int bucket) {
-    getArcticTable().updateProperties().set(TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
-  }
-
-  protected void updateBaseHashBucket(int bucket) {
-    getArcticTable().updateProperties().set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
-    StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
-    StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableFileScanHelper(getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
   }
 }

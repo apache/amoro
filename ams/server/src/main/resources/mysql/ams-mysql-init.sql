@@ -135,6 +135,8 @@ CREATE TABLE `table_optimizing_process`
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
+    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition'
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';

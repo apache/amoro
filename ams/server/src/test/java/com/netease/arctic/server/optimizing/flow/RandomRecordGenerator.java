@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
@@ -41,19 +41,19 @@ import java.util.UUID;
 
 public class RandomRecordGenerator {
 
-  private Random random = new Random();
+  private final Random random = new Random();
 
-  private Schema primary;
+  private final Schema primary;
 
-  private Set<Integer> primaryIds = new HashSet<>();
+  private final Set<Integer> primaryIds = new HashSet<>();
 
   private Map<Integer, Object>[] partitionValues;
 
-  private Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
+  private final Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
 
-  private Set<Integer> partitionIds = new HashSet<>();
+  private final Set<Integer> partitionIds = new HashSet<>();
 
-  private Schema schema;
+  private final Schema schema;
 
   public RandomRecordGenerator(Schema schema, PartitionSpec spec, Schema primary, int partitionCount) {
     this.schema = schema;
@@ -91,13 +91,13 @@ public class RandomRecordGenerator {
     Preconditions.checkNotNull(primary, "This method is only for primary table");
     Preconditions.checkNotNull(primaries);
     List<Record> list = new ArrayList<>();
-    for (int i = 0; i < primaries.length; i++) {
-      list.add(randomRecord(primaries[i]));
+    for (int j : primaries) {
+      list.add(randomRecord(j));
     }
     return list;
   }
 
-  private Record randomRecord(int primaryValue) {
+  public Record randomRecord(int primaryValue) {
     Record record = GenericRecord.create(schema);
     Random random = new Random();
     List<Types.NestedField> columns = schema.columns();
