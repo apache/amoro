@@ -28,8 +28,11 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.ContentFile;
@@ -39,6 +42,8 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.junit.Assert;
+import org.junit.Before;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,26 +54,41 @@ import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
 
+  protected TableRuntime tableRuntime;
+
   public MixedTablePlanTestBase(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  public List<TaskDescriptor> testFragmentFilesBase() {
+  @Before
+  public void mock() {
+    tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.loadTable()).thenReturn(getArcticTable());
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id())));
+    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
+  }
+
+  public void testFragmentFilesBase() {
     closeFullOptimizing();
+    List<DataFile> fragmentFiles = Lists.newArrayList();
     // write fragment file
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
-    OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
     // write fragment file
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
-    OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    return planWithCurrentFiles();
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(taskDescriptors.get(0), fragmentFiles, Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList());
   }
 
   public void testOnlyOneFragmentFileBase() {
@@ -85,7 +105,9 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   public void testSegmentFilesBase() {
+    // 1.Step1
     closeFullOptimizing();
+    updateBaseHashBucket(1);
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
     List<DataFile> dataFiles = Lists.newArrayList();
     long transactionId;
@@ -108,6 +130,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
+    // 2.Step2
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList());
+
+    // 3.Step3
+    closeFullOptimizing();
     // plan with delete files
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
@@ -115,11 +146,115 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
           DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
-    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
+    List<DeleteFile> deleteFiles = OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
     taskDescriptors = planWithCurrentFiles();
 
     Assert.assertTrue(taskDescriptors.isEmpty());
+
+    // 4.Step4
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(), deleteFiles);
+  }
+
+  public void testWithDeleteFilesBase() {
+    closeFullOptimizing();
+    updateBaseHashBucket(1);
+
+    List<Record> newRecords;
+    long transactionId;
+    List<DataFile> rePosSegmentFiles = Lists.newArrayList();
+    List<DataFile> rewrittenSegmentFiles = Lists.newArrayList();
+    List<DataFile> fragmentFiles = Lists.newArrayList();
+    List<DeleteFile> readOnlyDeleteFiles = Lists.newArrayList();
+    List<DeleteFile> rewrittenDeleteFiles = Lists.newArrayList();
+
+    // 1.write segment files
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    rePosSegmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+    // 2.write pos-delete
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 0));
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 1));
+
+    // 3.write segment files
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 41, 80, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    rewrittenSegmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+    // 4.write pos-delete (radio >= 0.5)
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rewrittenSegmentFiles, 0, 19));
+
+    // 5.write fragment files
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 81, 84, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+    // 6.write fragment files
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 85, 88, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+
+
+    // 7. write pos-delete
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, fragmentFiles, 0, 0));
+
+    List<DataFile> segmentFiles = Lists.newArrayList();
+    segmentFiles.addAll(rePosSegmentFiles);
+    segmentFiles.addAll(rewrittenSegmentFiles);
+
+    setFragmentRatio(segmentFiles);
+    assertSegmentFiles(segmentFiles);
+    assertFragmentFiles(fragmentFiles);
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+
+    List<DataFile> rewrittenDataFiles = Lists.newArrayList();
+    rewrittenDataFiles.addAll(fragmentFiles);
+    rewrittenDataFiles.addAll(rewrittenSegmentFiles);
+    assertTask(taskDescriptors.get(0), rewrittenDataFiles, rePosSegmentFiles, readOnlyDeleteFiles,
+        rewrittenDeleteFiles);
+
+
+    // test full optimizing
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+    Assert.assertEquals(1, taskDescriptors.size());
+    rewrittenDataFiles = Lists.newArrayList();
+    rewrittenDataFiles.addAll(fragmentFiles);
+    rewrittenDataFiles.addAll(segmentFiles);
+
+    List<DeleteFile> deleteFiles = Lists.newArrayList();
+    deleteFiles.addAll(readOnlyDeleteFiles);
+    deleteFiles.addAll(rewrittenDeleteFiles);
+
+    assertTask(taskDescriptors.get(0), rewrittenDataFiles, Collections.emptyList(), Collections.emptyList(),
+        deleteFiles);
+  }
+
+  private List<DeleteFile> appendPosDelete(long transactionId, List<DataFile> dataFiles, int pos) {
+    return appendPosDelete(transactionId, dataFiles, pos, pos);
+  }
+
+  private List<DeleteFile> appendPosDelete(long transactionId, List<DataFile> dataFiles, int fromPos, int toPos) {
+    List<DeleteFile> posDeleteFiles = Lists.newArrayList();
+    List<Long> pos = Lists.newArrayList();
+    for (long i = fromPos; i <= toPos; i++) {
+      pos.add(i);
+    }
+    for (DataFile dataFile : dataFiles) {
+      posDeleteFiles.addAll(
+          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile, pos));
+    }
+    return OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
   }
 
   protected List<TaskDescriptor> planWithCurrentFiles() {
@@ -144,6 +279,10 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected void closeFullOptimizing() {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  }
+
+  protected void openFullOptimizing() {
+    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "3600").commit();
   }
 
   private void assertSegmentFiles(List<DataFile> files) {
@@ -191,29 +330,31 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     return tableFileScanHelper.scan();
   }
 
-  protected void assertTask(TaskDescriptor expect, TaskDescriptor actual) {
-    Assert.assertEquals(expect.getPartition(), actual.getPartition());
-    assertFiles(expect.getInput().rewrittenDeleteFiles(), actual.getInput().rewrittenDeleteFiles());
-    assertFiles(expect.getInput().rewrittenDataFiles(), actual.getInput().rewrittenDataFiles());
-    assertFiles(expect.getInput().readOnlyDeleteFiles(), actual.getInput().readOnlyDeleteFiles());
-    assertFiles(expect.getInput().rePosDeletedDataFiles(), actual.getInput().rePosDeletedDataFiles());
-    assertTaskProperties(expect.properties(), actual.properties());
+  protected void assertTask(TaskDescriptor actual, List<DataFile> rewrittenDataFiles,
+                            List<DataFile> rePosDeletedDataFiles, List<? extends ContentFile<?>> readOnlyDeleteFiles,
+                            List<? extends ContentFile<?>> rewrittenDeleteFiles) {
+    Assert.assertEquals(actual.getPartition(), getPartition());
+    assertFiles(rewrittenDeleteFiles, actual.getInput().rewrittenDeleteFiles());
+    assertFiles(rewrittenDataFiles, actual.getInput().rewrittenDataFiles());
+    assertFiles(readOnlyDeleteFiles, actual.getInput().readOnlyDeleteFiles());
+    assertFiles(rePosDeletedDataFiles, actual.getInput().rePosDeletedDataFiles());
+    assertTaskProperties(buildProperties(), actual.properties());
   }
 
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {
     Assert.assertEquals(expect, actual);
   }
 
-  private void assertFiles(IcebergContentFile<?>[] expect, IcebergContentFile<?>[] actual) {
+  private void assertFiles(List<? extends ContentFile<?>> expect, IcebergContentFile<?>[] actual) {
     if (expect == null) {
       Assert.assertNull(actual);
       return;
     }
-    Assert.assertEquals(expect.length, actual.length);
+    Assert.assertEquals(expect.size(), actual.length);
     Set<String> expectFilesPath =
-        Arrays.stream(expect).map(ContentFile::path).map(CharSequence::toString).collect(Collectors.toSet());
-    Set<String> actualFilesPath =
         Arrays.stream(actual).map(ContentFile::path).map(CharSequence::toString).collect(Collectors.toSet());
+    Set<String> actualFilesPath =
+        expect.stream().map(ContentFile::path).map(CharSequence::toString).collect(Collectors.toSet());
     Assert.assertEquals(expectFilesPath, actualFilesPath);
   }
 
@@ -239,7 +380,19 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
   }
 
-  protected TableRuntime buildTableRuntime() {
-    return new TableRuntime(getArcticTable());
+  protected TableRuntime getTableRuntime() {
+    return tableRuntime;
+  }
+
+  private OptimizingConfig getConfig() {
+    return OptimizingConfig.parseOptimizingConfig(getArcticTable().properties());
+  }
+
+  protected void updateChangeHashBucket(int bucket) {
+    getArcticTable().updateProperties().set(TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
+  }
+
+  protected void updateBaseHashBucket(int bucket) {
+    getArcticTable().updateProperties().set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
   }
 }

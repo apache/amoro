@@ -169,6 +169,46 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
     List<SplitTask> splitTasks(int targetTaskCount);
   }
 
+  @Override
+  public int getFragmentFileCount() {
+    return evaluator.getFragmentFileCount();
+  }
+
+  @Override
+  public long getFragmentFileSize() {
+    return evaluator.getFragmentFileSize();
+  }
+
+  @Override
+  public int getSegmentFileCount() {
+    return evaluator.getSegmentFileCount();
+  }
+
+  @Override
+  public long getSegmentFileSize() {
+    return evaluator.getSegmentFileSize();
+  }
+
+  @Override
+  public int getEqualityDeleteFileCount() {
+    return evaluator.getEqualityDeleteFileCount();
+  }
+
+  @Override
+  public long getEqualityDeleteFileSize() {
+    return evaluator.getEqualityDeleteFileSize();
+  }
+
+  @Override
+  public int getPosDeleteFileCount() {
+    return evaluator.getPosDeleteFileCount();
+  }
+
+  @Override
+  public long getPosDeleteFileSize() {
+    return evaluator.getPosDeleteFileSize();
+  }
+
   protected class SplitTask {
     private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
     private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();

@@ -1,43 +1,33 @@
 package com.netease.arctic.server;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.ams.api.resource.ResourceType;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
-import com.netease.arctic.server.catalog.CatalogBuilder;
-import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.ResourceContainers;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.shaded.com.google.common.io.MoreFiles;
 import org.apache.curator.shaded.com.google.common.io.RecursiveDeleteOption;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;
-import org.junit.jupiter.api.BeforeAll;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AmsEnvironment {
 
@@ -58,7 +48,7 @@ public class AmsEnvironment {
     AmsEnvironment amsEnvironment = new AmsEnvironment();
     amsEnvironment.start();
     amsEnvironment.startOptimizer();
-    Thread.sleep(2*60*1000);
+    Thread.sleep(2 * 60 * 1000);
     amsEnvironment.stopOptimizer();
   }
 
@@ -129,7 +119,7 @@ public class AmsEnvironment {
 
   public void startOptimizer() {
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024","-a", getAmsUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {

@@ -123,8 +123,7 @@ public class OptimizingEvaluator {
     private long equalityDeleteBytes = 0L;
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
-      for (PartitionEvaluator e : evaluators) {
-        BasicPartitionEvaluator evaluator = (BasicPartitionEvaluator) e;
+      for (PartitionEvaluator evaluator : evaluators) {
         partitions.add(evaluator.getPartition());
         dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
         dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();

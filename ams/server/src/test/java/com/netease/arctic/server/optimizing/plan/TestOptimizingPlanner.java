@@ -24,13 +24,21 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import org.apache.iceberg.DataFile;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RunWith(Parameterized.class)
-public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
-  public TestKeyedOptimizingPlanner(CatalogTestHelper catalogTestHelper,
-                                    TableTestHelper tableTestHelper) {
+public class TestOptimizingPlanner extends TestOptimizingEvaluator {
+  public TestOptimizingPlanner(CatalogTestHelper catalogTestHelper,
+                               TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -40,12 +48,30 @@ public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)}};
+            new BasicTableTestHelper(true, false)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, false)}};
+  }
+
+  @Test
+  @Override
+  public void testFragmentFiles() {
+    super.testFragmentFiles();
+    OptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
+    Assert.assertTrue(optimizingEvaluator.isNecessary());
+    List<TaskDescriptor> taskDescriptors = optimizingEvaluator.planTasks();
+    Assert.assertEquals(1, taskDescriptors.size());
+    List<DataFile> dataFiles =
+        scanFiles().stream().map(TableFileScanHelper.FileScanResult::file).collect(Collectors.toList());
+    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList());
   }
 
   @Override
-  protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingPlanner(buildTableRuntime(), getArcticTable(),
-        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()), 1);
+  protected OptimizingPlanner buildOptimizingEvaluator() {
+    return new OptimizingPlanner(getTableRuntime(), getArcticTable(),
+        OptimizingTestHelpers.getCurrentTableSnapshot(getArcticTable()), 1);
   }
 }
