@@ -21,6 +21,8 @@ package com.netease.arctic.spark.test.suites.sql;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.helper.TableFiles;
+import com.netease.arctic.spark.test.helper.TestTableHelper;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -43,11 +45,6 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
     );
   }
 
-  /**
-   * TODO:
-   * 1. check the hive meta store for mixed-hive
-   * 2. make sure the drop partition only du the metadata-delete.
-   */
   @DisplayName("Test `test drop partiton`")
   @ParameterizedTest
   @MethodSource
@@ -62,6 +59,12 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
     sql("alter table " + target().database + "." + target().table + " drop if exists partition (day='c')");
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);
+    TableFiles files = TestTableHelper.files(loadTable());
+    if (primaryKeyDDL.isEmpty()) {
+      Assertions.assertEquals(2, files.baseDataFiles.size());
+    } else {
+      Assertions.assertEquals(2, files.changeInsertFiles.size());
+    }
     Assertions.assertEquals(2, sql.collectAsList().size());
   }
 }
