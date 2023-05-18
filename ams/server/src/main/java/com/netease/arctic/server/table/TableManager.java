@@ -1,6 +1,5 @@
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.table.ArcticTable;
 
 public interface TableManager extends TableRuntimeHandler {

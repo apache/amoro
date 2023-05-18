@@ -28,12 +28,14 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -64,10 +66,28 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.loadTable()).thenReturn(getArcticTable());
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id())));
+    ServerTableIdentifier id = ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id()));
+    id.setId(0L);
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
+    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
+  }
+
+  private long getCurrentSnapshotId() {
+    if (getArcticTable().isKeyedTable()) {
+      return IcebergTableUtils.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), false);
+    } else {
+      return IcebergTableUtils.getSnapshotId(getArcticTable().asUnkeyedTable(), false);
+    }
+  }
+
+  private long getCurrentChangeSnapshotId() {
+    if (getArcticTable().isKeyedTable()) {
+      return IcebergTableUtils.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), false);
+    } else {
+      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+    }
   }
 
   public void testFragmentFilesBase() {
