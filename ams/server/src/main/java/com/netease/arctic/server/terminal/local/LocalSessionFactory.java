@@ -60,7 +60,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     SparkSession session = context.cloneSession();
     List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
     List<String> initializeLogs = Lists.newArrayList();
-    initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
+    initializeLogs.add("setup session, session factory: " + LocalSessionFactory.class.getName());
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     sparkConf.put(com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE, "true");

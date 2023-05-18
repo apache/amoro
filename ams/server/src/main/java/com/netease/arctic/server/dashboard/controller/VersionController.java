@@ -28,13 +28,13 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /** optimize controller.
- * @Description: get version and commitTime
+ * @Description: getRuntime version and commitTime
  */
 public class VersionController {
   private static final Logger LOG = LoggerFactory.getLogger(VersionController.class);
 
   /**
-   * get versionInfo.
+   * getRuntime versionInfo.
    */
   public void getVersionInfo(Context ctx) {
     Properties prop = new Properties();

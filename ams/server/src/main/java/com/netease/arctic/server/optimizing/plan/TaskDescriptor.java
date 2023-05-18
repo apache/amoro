@@ -4,11 +4,12 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import java.util.Map;
 
 public class TaskDescriptor {
+  private long tableId;
   private String partition;
   private RewriteFilesInput input;
   private Map<String, String> properties;
 
-  TaskDescriptor(String partition, RewriteFilesInput input, Map<String, String> properties) {
+  TaskDescriptor(long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
     this.partition = partition;
     this.input = input;
     this.properties = properties;
@@ -24,5 +25,9 @@ public class TaskDescriptor {
 
   public Map<String, String> properties() {
     return properties;
+  }
+
+  public long getTableId() {
+    return tableId;
   }
 }

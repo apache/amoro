@@ -33,7 +33,7 @@ public class TableRuntimeMeta {
   public TableRuntimeMeta() {
   }
 
-  public TableRuntime constructTableRuntime(TableRuntimeInitializer initializer) {
+  public TableRuntime constructTableRuntime(TableManager initializer) {
     if (tableRuntime == null) {
       tableRuntime = new TableRuntime(this, initializer);
     }

@@ -57,7 +57,7 @@ public class IcebergCommit {
   }
 
   public void commit() throws OptimizingCommitException {
-    LOG.info("{} get tasks to commit {}", table.id(), tasks);
+    LOG.info("{} getRuntime tasks to commit {}", table.id(), tasks);
 
     // collect files
     Set<DataFile> addedDataFiles = Sets.newHashSet();

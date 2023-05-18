@@ -21,7 +21,7 @@ package com.netease.arctic.server.table.executor;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -70,7 +70,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   // 1 days
   private static final long INTERVAL = 60 * 60 * 1000L;
 
-  public SnapshotsExpiringExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
+  public SnapshotsExpiringExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
   }
 
@@ -87,7 +87,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      ArcticTable arcticTable = tableRuntime.loadTable();
+      ArcticTable arcticTable = loadTable(tableRuntime);
       boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(
           arcticTable.properties(),
           TableProperties.ENABLE_TABLE_EXPIRE,
@@ -131,7 +131,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         UnkeyedTable baseTable = keyedArcticTable.baseTable();
         UnkeyedTable changeTable = keyedArcticTable.changeTable();
 
-        // get valid files in the change store which shouldn't physically delete when expire the snapshot
+        // getRuntime valid files in the change store which shouldn't physically delete when expire the snapshot
         // in the base store
         Set<String> baseExcludePaths = IcebergTableUtil.getAllContentFilePath(changeTable);
         baseExcludePaths.addAll(finalHiveLocations);
@@ -154,13 +154,13 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
           deleteChangeFile(keyedArcticTable, closestExpireDataFiles, closestExpireSnapshot.sequenceNumber());
         }
 
-        // get valid files in the base store which shouldn't physically delete when expire the snapshot
+        // getRuntime valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
         Set<String> changeExclude = IcebergTableUtil.getAllContentFilePath(baseTable);
         changeExclude.addAll(finalHiveLocations);
 
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
-        // keep ttl <= snapshot keep time to avoid getting expired snapshots(but can't get) when deleting files.
+        // keep ttl <= snapshot keep time to avoid getting expired snapshots(but can't getRuntime) when deleting files.
         // if ttl > snapshot keep time, some files will not be deleted correctly.
         long changeOlderThan = changeDataTTL <= changeSnapshotsKeepTime ?
             startTime - changeSnapshotsKeepTime : startTime - changeDataTTL;

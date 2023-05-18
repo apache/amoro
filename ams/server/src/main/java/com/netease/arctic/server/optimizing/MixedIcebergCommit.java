@@ -149,9 +149,9 @@ public class MixedIcebergCommit extends IcebergCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} get no tasks to commit", table.id());
+      LOG.info("{} getRuntime no tasks to commit", table.id());
     }
-    LOG.info("{} get tasks to commit with from snapshot id = {}", table.id(),
+    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
         fromSnapshotId);
 
     prepareCommit();

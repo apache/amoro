@@ -37,7 +37,9 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.TableConfiguration;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableRuntimeHandler;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
@@ -68,15 +70,20 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
-
+  private final TableManager tableManager;
+  private RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
-    tableService.addHandler(new TableRuntimeHandlerImpl());
+    this.tableManager = tableService;
+    this.tableHandlerChain = new TableRuntimeHandlerImpl();
   }
 
-  //TODO optimizig code
+  public RuntimeHandlerChain getTableRuntimeHandler() {
+    return tableHandlerChain;
+  }
+
   public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
@@ -84,7 +91,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     optimizerGroups.forEach(group -> {
       String groupName = group.getName();
       List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
-      optimizingQueueByGroup.put(groupName, new OptimizingQueue(group,
+      optimizingQueueByGroup.put(groupName, new OptimizingQueue(tableManager, group,
           Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new)));
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
@@ -186,7 +193,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     return getQueueByGroup(group).getOptimizers();
   }
 
-  private class TableRuntimeHandlerImpl extends TableRuntimeHandler {
+  private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
 
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {

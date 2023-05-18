@@ -42,13 +42,13 @@ public class TerminalController {
     this.terminalManager = terminalManager;
   }
 
-  /** get sql example list */
+  /** getRuntime sql example list */
   public void getExamples(Context ctx) {
     List<String> examples = Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
     ctx.json(OkResponse.of(examples));
   }
 
-  /** get sql examples*/
+  /** getRuntime sql examples*/
   public void getSqlExamples(Context ctx) {
     String exampleName = ctx.pathParam("exampleName");
 
@@ -58,7 +58,7 @@ public class TerminalController {
         return;
       }
     }
-    throw new IllegalArgumentException("can not get example name : " + exampleName);
+    throw new IllegalArgumentException("can not getRuntime example name : " + exampleName);
   }
 
   /** execute some sql*/
@@ -72,13 +72,13 @@ public class TerminalController {
     ctx.json(OkResponse.of(new SessionInfo(sessionId)));
   }
 
-  /** get execute logs of some session */
+  /** getRuntime execute logs of some session */
   public void getLogs(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     ctx.json(OkResponse.of(terminalManager.getExecutionLog(sessionId)));
   }
 
-  /** get execute result of some session*/
+  /** getRuntime execute result of some session*/
   public void getSqlResult(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     List<SqlResult> results = terminalManager.getExecutionResults(sessionId);
@@ -92,7 +92,7 @@ public class TerminalController {
     ctx.json(OkResponse.ok());
   }
 
-  /** get latest sql info **/
+  /** getRuntime latest sql info **/
   public void getLatestInfo(Context ctx) {
     String terminalId = ctx.cookie("JSESSIONID");
     LatestSessionInfo sessionInfo = terminalManager.getLastSessionInfo(terminalId);

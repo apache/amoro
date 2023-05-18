@@ -26,29 +26,24 @@ public class OptimizingEvaluator {
 
   protected final ArcticTable arcticTable;
   protected final TableRuntime tableRuntime;
-  protected boolean isInitEvaluator = false;
-
-  protected Map<String, AbstractPartitionPlan> partitionEvaluatorMap = Maps.newHashMap();
-
-  public OptimizingEvaluator(TableRuntime tableRuntime) {
-    this(tableRuntime, tableRuntime.loadTable());
-  }
+  protected boolean isInitialized = false;
+  protected Map<String, AbstractPartitionPlan> partitionPlanMap = Maps.newHashMap();
 
   public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table) {
     this.tableRuntime = tableRuntime;
     this.arcticTable = table;
   }
 
-  protected void initEvaluator() {
+  protected void initPartitionPlans() {
     if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      initPartitionPlans();
+      initIcebergPartitionPlans();
     } else {
       throw new UnsupportedOperationException();
     }
-    isInitEvaluator = true;
+    isInitialized = true;
   }
 
-  private void initPartitionPlans() {
+  private void initIcebergPartitionPlans() {
     long targetFileSize = tableRuntime.getTargetSize();
     long maxFragmentSize = targetFileSize / tableRuntime.getOptimizingConfig().getFragmentRatio();
     List<FileScanTask> fileScanTasks;
@@ -65,14 +60,14 @@ public class OptimizingEvaluator {
       if (fiterPartition(partitionPath)) {
         continue;
       }
-      AbstractPartitionPlan evaluator = partitionEvaluatorMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+      AbstractPartitionPlan evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildPartitionPlan);
       evaluator.addFile(fileScanTask.file(), fileScanTask.deletes());
     }
-    partitionEvaluatorMap.values().removeIf(plan -> !plan.isNecessary());
+    partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
-    return new PartitionEvaluatorImpl(tableRuntime, partitionPath);
+  protected AbstractPartitionPlan buildPartitionPlan(String partitionPath) {
+    return new PartitionPlanForEvaluating(tableRuntime, partitionPath);
   }
 
   protected boolean fiterPartition(String partition) {
@@ -80,17 +75,17 @@ public class OptimizingEvaluator {
   }
 
   public boolean isNecessary() {
-    if (!isInitEvaluator) {
-      initEvaluator();
+    if (!isInitialized) {
+      initPartitionPlans();
     }
-    return !partitionEvaluatorMap.isEmpty();
+    return !partitionPlanMap.isEmpty();
   }
 
   public PendingInput getPendingInput() {
-    if (!isInitEvaluator) {
-      initEvaluator();
+    if (!isInitialized) {
+      initPartitionPlans();
     }
-    return new PendingInput(partitionEvaluatorMap.values());
+    return new PendingInput(partitionPlanMap.values());
   }
 
   public static class PendingInput {
@@ -106,7 +101,7 @@ public class OptimizingEvaluator {
 
     public PendingInput(Collection<AbstractPartitionPlan> evaluators) {
       for (AbstractPartitionPlan e : evaluators) {
-        PartitionEvaluatorImpl evaluator = (PartitionEvaluatorImpl) e;
+        PartitionPlanForEvaluating evaluator = (PartitionPlanForEvaluating) e;
         partitions.add(evaluator.getPartition());
         dataFileCount += evaluator.fragementFileCount + evaluator.segmentFileCount;
         dataFileSize += evaluator.fragementFileSize + evaluator.segmentFileSize;
@@ -146,7 +141,7 @@ public class OptimizingEvaluator {
     }
   }
 
-  private class PartitionEvaluatorImpl extends AbstractPartitionPlan {
+  private class PartitionPlanForEvaluating extends AbstractPartitionPlan {
 
     private int fragementFileCount = 0;
     private long fragementFileSize = 0;
@@ -158,7 +153,7 @@ public class OptimizingEvaluator {
     private long equalityDeleteBytes = 0L;
     private long rewriteSegmentFileSize = 0L;
 
-    public PartitionEvaluatorImpl(TableRuntime tableRuntime, String partition) {
+    public PartitionPlanForEvaluating(TableRuntime tableRuntime, String partition) {
       super(tableRuntime, arcticTable, partition);
     }
 

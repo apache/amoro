@@ -48,7 +48,7 @@ public class PlatformFileInfoController extends RestBaseController {
   public void uploadFile(Context ctx) {
     try {
       InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
-      //todo get file name
+      //todo getRuntime file name
       String name = ctx.uploadedFile("file").getFilename();
       byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
       String content = Base64.getEncoder().encodeToString(bytes);
