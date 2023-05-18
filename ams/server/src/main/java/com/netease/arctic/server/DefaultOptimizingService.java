@@ -19,14 +19,12 @@
 package com.netease.arctic.server;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
@@ -61,7 +59,7 @@ import java.util.stream.Collectors;
  * acknowledging tasks,and completing tasks. The code uses several data structures, including maps for optimizing queues
  * ,task runtimes, and authenticated optimizers.
  * <p>
- * The code also includes a TimerTask for detecting and removing expired optimizersand suspending tasks.
+ * The code also includes a TimerTask for detecting and removing expired optimizers and suspending tasks.
  */
 public class DefaultOptimizingService extends DefaultResourceManager
     implements OptimizingService.Iface, OptimizerManager {
@@ -84,6 +82,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     return tableHandlerChain;
   }
 
+  //TODO optimizing code
   public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
@@ -102,64 +101,40 @@ public class DefaultOptimizingService extends DefaultResourceManager
   }
 
   @Override
-  public void touch(String authToken) throws ArcticException {
-    try {
-      LOG.info("Optimizer {} touching", authToken);
-      OptimizingQueue queue = getQueueByToken(authToken);
-      queue.touch(authToken);
-    } catch (Throwable throwable) {
-      LOG.error("Optimizer touch failed.", throwable);
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  public void touch(String authToken) {
+    LOG.info("Optimizer {} touching", authToken);
+    OptimizingQueue queue = getQueueByToken(authToken);
+    queue.touch(authToken);
   }
 
   @Override
-  public OptimizingTask pollTask(String authToken, int threadId) throws ArcticException {
-    try {
-      LOG.info("Optimizer {} polling task", authToken);
-      OptimizingQueue queue = getQueueByToken(authToken);
-      return queue.pollTask(authToken, threadId);
-    } catch (Throwable throwable) {
-      LOG.error("Optimizer polling task failed.", throwable);
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  public OptimizingTask pollTask(String authToken, int threadId) {
+    LOG.info("Optimizer {} polling task", authToken);
+    OptimizingQueue queue = getQueueByToken(authToken);
+    return queue.pollTask(authToken, threadId);
   }
 
   @Override
-  public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) throws ArcticException {
-    try {
-      LOG.info("Ack task {} by optimizer {}.", taskId, authToken);
-      OptimizingQueue queue = getQueueByToken(authToken);
-      queue.ackTask(authToken, threadId, taskId);
-    } catch (Throwable throwable) {
-      LOG.error("Ack task {} failed.", taskId, throwable);
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
+    LOG.info("Ack task {} by optimizer {}.", taskId, authToken);
+    OptimizingQueue queue = getQueueByToken(authToken);
+    queue.ackTask(authToken, threadId, taskId);
   }
 
   @Override
-  public void completeTask(String authToken, OptimizingTaskResult taskResult) throws ArcticException {
-    try {
-      OptimizingQueue queue = getQueueByToken(authToken);
-      queue.completeTask(authToken, taskResult);
-    } catch (Throwable throwable) {
-      LOG.error("Complete task {} failed.", taskResult, throwable);
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  public void completeTask(String authToken, OptimizingTaskResult taskResult) {
+    LOG.info("Optimizer {} complete task {}", authToken, taskResult.getTaskId());
+    OptimizingQueue queue = getQueueByToken(authToken);
+    queue.completeTask(authToken, taskResult);
   }
 
   @Override
-  public String authenticate(OptimizerRegisterInfo registerInfo) throws ArcticException {
-    try {
-      LOG.info("Register optimizer {}.", registerInfo);
-      OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
-      String token = queue.authenticate(registerInfo);
-      optimizingQueueByToken.put(token, queue);
-      return token;
-    } catch (Throwable throwable) {
-      LOG.error("Register {} failed.", registerInfo, throwable);
-      throw ArcticRuntimeException.transformThrift(throwable);
-    }
+  public String authenticate(OptimizerRegisterInfo registerInfo) {
+    LOG.info("Register optimizer {}.", registerInfo);
+    OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
+    String token = queue.authenticate(registerInfo);
+    optimizingQueueByToken.put(token, queue);
+    return token;
   }
 
   /**
@@ -191,6 +166,11 @@ public class DefaultOptimizingService extends DefaultResourceManager
   @Override
   public List<OptimizerInstance> listOptimizers(String group) {
     return getQueueByGroup(group).getOptimizers();
+  }
+
+  @Override
+  public void deleteOptimizer(String group, String resourceId) {
+    getQueueByGroup(group).removeOptimizer(resourceId);
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {

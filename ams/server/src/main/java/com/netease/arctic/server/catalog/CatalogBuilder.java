@@ -33,11 +33,10 @@ public class CatalogBuilder {
           return new MixedCatalogImpl(catalogMeta);
         }
       case CATALOG_TYPE_HIVE:
-        //TODO support HMS
         if (tableFormat.equals(TableFormat.ICEBERG)) {
           return new IcebergCatalogImpl(catalogMeta);
         } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
-          return new MixedCatalogImpl(catalogMeta);
+          return new MixedHiveCatalogImpl(catalogMeta);
         } else {
           throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
         }

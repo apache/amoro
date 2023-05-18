@@ -1,6 +1,7 @@
 package com.netease.arctic.optimizing;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.SetTreeNode;
@@ -36,7 +37,7 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor {
+public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor<RewriteFilesOutput> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractRewriteFilesExecutor.class);
 
@@ -169,7 +170,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   }
 
   protected StructLike partition() {
-    IcebergDataFile[] dataFiles = input.dataFiles();
+    IcebergContentFile<?>[] dataFiles = input.allFiles();
     return dataFiles[0].partition();
   }
 

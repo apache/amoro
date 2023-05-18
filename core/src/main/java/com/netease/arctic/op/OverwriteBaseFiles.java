@@ -98,6 +98,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
+  public OverwriteBaseFiles dynamic(boolean enable) {
+    this.dynamic = enable;
+    return this;
+  }
+
   /**
    * Update optimized sequence for partition.
    * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.

@@ -95,7 +95,6 @@ CREATE TABLE `table_metadata`
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
-    `current_tx_id`   bigint(20) NOT NULL DEFAULT 0 COMMENT 'current transaction id',
     `current_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
@@ -136,6 +135,8 @@ CREATE TABLE `table_optimizing_process`
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
+    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition'
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';

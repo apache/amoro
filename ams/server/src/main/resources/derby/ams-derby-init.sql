@@ -1,12 +1,12 @@
 CREATE TABLE catalog_metadata (
-    catalog_id             INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    catalog_id             INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     catalog_name           VARCHAR(64) NOT NULL,
     catalog_metastore      VARCHAR(64) NOT NULL,
     storage_configs        CLOB(64m),
     auth_configs           CLOB(64m),
     catalog_properties     CLOB(64m),
-    database_count         INTEGER NOT NULL DEFAULT 0,
-    table_count            INTEGER NOT NULL DEFAULT 0,
+    database_count         INT NOT NULL DEFAULT 0,
+    table_count            INT NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_id),
     CONSTRAINT catalog_name_index UNIQUE (catalog_name)
 );
@@ -14,19 +14,19 @@ CREATE TABLE catalog_metadata (
 CREATE TABLE database_metadata (
     catalog_name           VARCHAR(64) NOT NULL,
     db_name                VARCHAR(128) NOT NULL,
-    table_count            INTEGER NOT NULL DEFAULT 0,
+    table_count            INT NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name)
 );
 
 CREATE TABLE optimizer (
-    token                      VARCHAR(50) NOT NULL,
-    resource_id                VARCHAR(100),
+    token                      VARCHAR(300) NOT NULL,
+    resource_id                VARCHAR(100) DEFAULT NULL,
     group_name                 VARCHAR(50),
     container_name             VARCHAR(100),
     start_time                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     touch_time                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    thread_count               INTEGER,
-    total_memory               BIGINT,
+    thread_count               INT,
+    total_memory               INT,
     properties                 CLOB(64m),
     PRIMARY KEY (token)
 );
@@ -36,8 +36,8 @@ CREATE TABLE resource (
     resource_type             SMALLINT DEFAULT 0,
     container_name            VARCHAR(100),
     group_name                VARCHAR(50),
-    thread_count              INTEGER,
-    total_memory              BIGINT,
+    thread_count              INT,
+    total_memory              INT,
     start_time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     properties                CLOB(64m),
     CONSTRAINT resource_pk PRIMARY KEY (resource_id),
@@ -62,6 +62,9 @@ CREATE TABLE table_identifier (
 
 CREATE TABLE table_metadata (
     table_id         BIGINT NOT NULL,
+    catalog_name     VARCHAR(256),
+    db_name          VARCHAR(256),
+    table_name       VARCHAR(256),
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),
@@ -76,7 +79,6 @@ CREATE TABLE table_metadata (
     krb_keytab       CLOB(64m),
     krb_conf         CLOB(64m),
     krb_principal    CLOB(64m),
-    current_tx_id    BIGINT NOT NULL DEFAULT 0,
     current_schema_id INT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
@@ -115,6 +117,8 @@ CREATE TABLE table_optimizing_process (
     fail_reason         VARCHAR(4096),
     rewrite_input       BLOB(64m),
     summary             CLOB(64m),
+    from_sequence       CLOB(64m),
+    to_sequence         CLOB(64m),
     CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id)
 );
 

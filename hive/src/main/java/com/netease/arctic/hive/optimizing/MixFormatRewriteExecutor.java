@@ -11,6 +11,7 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
@@ -43,7 +44,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
     FileAppenderFactory<Record> appenderFactory = fullMetricAppenderFactory();
     return new ArcticTreeNodePosDeleteWriter<>(
         appenderFactory, deleteFileFormat(), partition(),
-        io, encryptionManager(), getTransactionId(input.rePosDeletedDataFiles()), baseLocation(), table.spec());
+        io, encryptionManager(), getTransactionId(input.rePosDeletedDataFilesForMixed()), baseLocation(), table.spec());
   }
 
   @Override
@@ -51,7 +52,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
     String outputDir = OptimizingInputProperties.parse(input.getOptions()).getOutputDir();
 
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-        .withTransactionId(getTransactionId(input.rewrittenDataFiles()))
+        .withTransactionId(getTransactionId(input.rewrittenDataFilesForMixed()))
         .withTaskId(0)
         .withCustomHiveSubdirectory(outputDir)
         .withTargetFileSize(targetSize())
@@ -60,9 +61,8 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
     return wrapTaskWriter2FileWriter(writer);
   }
 
-  public long getTransactionId(IcebergContentFile<?>[] icebergContentFiles) {
-    return Arrays.stream(icebergContentFiles)
-        .mapToLong(s -> ((PrimaryKeyedFile) s.asDataFile()).transactionId()).max().getAsLong();
+  public long getTransactionId(List<PrimaryKeyedFile> dataFiles) {
+    return dataFiles.stream().mapToLong(PrimaryKeyedFile::transactionId).max().getAsLong();
   }
 
   public String baseLocation() {

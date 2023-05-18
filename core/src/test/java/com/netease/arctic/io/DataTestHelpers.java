@@ -20,6 +20,8 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.io.reader.AbstractArcticDataReader;
 import com.netease.arctic.io.reader.AbstractIcebergDataReader;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
@@ -27,6 +29,7 @@ import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
@@ -37,6 +40,7 @@ import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Files;
@@ -110,7 +114,7 @@ public class DataTestHelpers {
   }
 
   public static List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action,
+      KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records, boolean orderedWrite) {
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(keyedTable)
         .withChangeAction(action)
@@ -160,8 +164,41 @@ public class DataTestHelpers {
     }
   }
 
+  public static List<DeleteFile> writeBaseStorePosDelete(
+      ArcticTable table, long txId, DataFile dataFile, List<Long> pos) {
+    GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(table);
+    DataTreeNode node = FileNameRules.parseFileNodeFromFileName(dataFile.path().toString());
+    if (table.isKeyedTable()) {
+      builder.withTransactionId(txId);
+    }
+    try (SortedPosDeleteWriter<Record> writer = builder.buildBasePosDeleteWriter(node.mask(), node.index(),
+        dataFile.partition())) {
+      for (Long p : pos) {
+        writer.delete(dataFile.path().toString(), p);
+      }
+      return writer.complete();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static List<DataFile> writeAndCommitBaseStore(
+      ArcticTable table, long txId, List<Record> records,
+      boolean orderedWrite) {
+    List<DataFile> dataFiles = writeBaseStore(table, txId, records, orderedWrite);
+    AppendFiles appendFiles;
+    if (table.isKeyedTable()) {
+      appendFiles = table.asKeyedTable().baseTable().newAppend();
+    } else {
+      appendFiles = table.asUnkeyedTable().newAppend();
+    }
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+    return dataFiles;
+  }
+
   public static List<DataFile> writeAndCommitChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action,
+      KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records) {
     List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records, false);
     AppendFiles appendFiles = keyedTable.changeTable().newAppend();

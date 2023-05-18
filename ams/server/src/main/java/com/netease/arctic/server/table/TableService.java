@@ -20,8 +20,6 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
-import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
@@ -38,7 +36,6 @@ public interface TableService extends CatalogService, TableManager {
    * create table metadata
    *
    * @param tableMeta table metadata info
-   * @throws MetaException when the table metadata is not match
    */
   void createTable(String catalogName, TableMeta tableMeta);
 
@@ -56,18 +53,9 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @param tableIdentifier table id
    * @param deleteData      if delete the external table
-   * @throws MetaException when table metadata is not match
    */
   @Deprecated
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
-
-  /**
-   * update the arctic table properties
-   *
-   * @param tableIdentifier table id
-   * @param properties      arctic table properties
-   */
-  void updateTableProperties(ServerTableIdentifier tableIdentifier, Map<String, String> properties);
 
   /**
    * load arctic databases name
@@ -125,10 +113,8 @@ public interface TableService extends CatalogService, TableManager {
    * blocker operations
    *
    * @return the created blocker
-   * @throws OperationConflictException if operations conflict
    */
-  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
-      throws OperationConflictException;
+  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties);
 
   /**
    * release the blocker
@@ -139,9 +125,8 @@ public interface TableService extends CatalogService, TableManager {
    * renew the blocker
    *
    * @return expiration time
-   * @throws NoSuchObjectException if blocker not exist, we keep this exception for compatibility with 0.4.1
    */
-  long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException;
+  long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
    * getRuntime blockers of table

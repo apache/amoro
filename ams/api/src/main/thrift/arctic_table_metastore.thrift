@@ -146,7 +146,4 @@ service ArcticTableMetastore {
         throws(1: arctic_commons.NoSuchObjectException e)
 
     list<Blocker> getBlockers(1:arctic_commons.TableIdentifier tableIdentifier)
-
-    void refreshTable(1:arctic_commons.TableIdentifier tableIdentifier)
-         throws(1: arctic_commons.OperationErrorException e);
 }

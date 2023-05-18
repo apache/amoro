@@ -166,7 +166,7 @@ public class ConvertStructUtil {
     Map<String, String> properties = new HashMap<>();
     Map<String, String> locations = new HashMap<>();
 
-    public TableMetaBuilder(TableIdentifier identifier, org.apache.iceberg.Schema schema) {
+    public TableMetaBuilder(TableIdentifier identifier, Schema schema) {
       meta.setTableIdentifier(identifier.buildTableIdentifier());
       this.schema = schema;
     }

@@ -152,12 +152,12 @@ public class OptimizerController extends RestBaseController {
   public void getOptimizerGroups(Context ctx) {
     try {
       List<JSONObject> result = optimizerManager.listResourceGroups().stream()
-          .filter(resourceGroup -> ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
+          .filter(resourceGroup -> !ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
           .map(e -> {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("optimizerGroupName", e.getName());
-        return jsonObject;
-      }).collect(Collectors.toList());
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("optimizerGroupName", e.getName());
+            return jsonObject;
+          }).collect(Collectors.toList());
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
       LOG.error("Failed to getRuntime optimizerGroups", e);
@@ -212,6 +212,7 @@ public class OptimizerController extends RestBaseController {
       resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
       ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
       optimizerManager.deleteResource(resourceId);
+      optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
       ctx.json(OkResponse.of("Success to release optimizer"));
     } catch (Exception e) {
       LOG.error("Failed to release optimizer", e);

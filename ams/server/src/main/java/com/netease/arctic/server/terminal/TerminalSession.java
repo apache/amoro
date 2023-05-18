@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.terminal;
 
+import com.netease.arctic.server.catalog.CatalogType;
+
 import java.util.List;
 import java.util.Map;
 
@@ -84,4 +86,14 @@ public interface TerminalSession {
    * close session and release resources.
    */
   void release();
+
+  static boolean canUseSparkSessionCatalog(Map<String, String> sessionConf, String catalog) {
+    String usingSessionCatalogForHiveKey =
+        TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE.key();
+    String usingSessionCatalogForHive =
+        sessionConf.getOrDefault(usingSessionCatalogForHiveKey, "false");
+    String type =
+        sessionConf.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
+    return usingSessionCatalogForHive.equals("true") && CatalogType.HIVE.name().equalsIgnoreCase(type);
+  }
 }

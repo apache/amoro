@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.utils;
+package com.netease.arctic.server.optimizing.scan;
 
-@FunctionalInterface
-public interface SupplierWithException<T, E extends Exception> {
-  T get() throws E;
+public interface TableSnapshot {
+
+  long snapshotId();
 }

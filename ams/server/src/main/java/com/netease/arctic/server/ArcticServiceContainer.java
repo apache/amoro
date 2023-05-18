@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
@@ -28,10 +29,12 @@ import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.table.executor.BlockerExpiringExecutor;
 import com.netease.arctic.server.table.executor.HiveCommitSyncExecutor;
@@ -78,7 +81,7 @@ public class ArcticServiceContainer {
   private TServer server;
   private DashboardServer dashboardServer;
 
-  private ArcticServiceContainer() throws Exception {
+  public ArcticServiceContainer() throws Exception {
     initConfig();
     haContainer = new HighAvailabilityContainer(serviceConfig);
   }
@@ -91,6 +94,8 @@ public class ArcticServiceContainer {
           service.waitLeaderShip();
           service.startService();
           service.waitFollowerShip();
+        } catch (Exception e) {
+          LOG.error("AMS start error", e);
         } finally {
           service.dispose();
         }
@@ -139,6 +144,25 @@ public class ArcticServiceContainer {
     optimizingService = null;
   }
 
+  public boolean isStarted() {
+    return server != null && server.isServing();
+  }
+
+  @VisibleForTesting
+  void setConfig(ConfigOption option, Object value) {
+    serviceConfig.set(option, value);
+  }
+
+  @VisibleForTesting
+  TableService getTableService() {
+    return this.tableService;
+  }
+
+  @VisibleForTesting
+  DefaultOptimizingService getOptimizingService() {
+    return this.optimizingService;
+  }
+
   private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
@@ -178,12 +202,14 @@ public class ArcticServiceContainer {
     protocolFactory = new TBinaryProtocol.Factory();
     inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
 
-    ArcticTableMetastore.Processor<TableManagementService> tableMetastoreProcessor =
-        new ArcticTableMetastore.Processor<>(new TableManagementService(tableService));
+    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
+        new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
+            new TableManagementService(tableService), ArcticRuntimeException::transformCompatibleException));
     processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
-    OptimizingService.Processor<DefaultOptimizingService> optimizerManagerProcessor =
-        new OptimizingService.Processor<>(optimizingService);
+    OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
+        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
+            optimizingService, ArcticRuntimeException::transform2ArcticException));
     processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);

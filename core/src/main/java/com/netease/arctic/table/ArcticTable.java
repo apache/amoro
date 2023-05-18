@@ -38,6 +38,9 @@ public interface ArcticTable extends Serializable {
    */
   TableIdentifier id();
 
+  /**
+   * Returns the {@link TableFormat} of this table
+   */
   TableFormat format();
 
   /**

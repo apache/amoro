@@ -27,7 +27,6 @@ import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.spark.SparkConf;
@@ -65,7 +64,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     sparkConf.put(com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE, "true");
 
-    Map<String, String> finallyConf = Maps.newLinkedHashMap();
+    Map<String, String> finallyConf = configuration.toMap();
     catalogs.stream()
         .filter(c -> isIcebergCatalog(c, configuration))
         .forEach(c -> setHadoopConfigToSparkSession(c, session, metaStore));

@@ -316,7 +316,7 @@ public class CatalogController extends RestBaseController {
         }
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
-      info.setProperties(catalogMeta.getCatalogProperties());
+      info.setProperties(Maps.newHashMap(catalogMeta.getCatalogProperties()));
       info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));
       return;

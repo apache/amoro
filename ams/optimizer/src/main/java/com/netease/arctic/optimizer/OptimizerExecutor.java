@@ -2,10 +2,10 @@ package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.properties.OptimizingTaskProperties;
 import com.netease.arctic.optimizer.util.PropertyUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.common.DynConstructors;
@@ -83,7 +83,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     try {
       String executorFactoryImpl = PropertyUtil.checkAndGetProperty(
           task.getProperties(),
-          OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
+          OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL);
       TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
           .impl(executorFactoryImpl).buildChecked();

@@ -25,6 +25,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.PlatformFileMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
+import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -95,6 +96,7 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(ApiTokensMapper.class);
     configuration.addMapper(PlatformFileMapper.class);
     configuration.addMapper(ResourceMapper.class);
+    configuration.addMapper(TableBlockerMapper.class);
     if (sqlSessionFactory == null) {
       synchronized (this) {
         if (sqlSessionFactory == null) {
@@ -109,10 +111,10 @@ public class SqlSessionFactoryProvider {
   private void createTablesIfNeed(Configurations config) {
     if (ArcticManagementConf.DB_TYPE_DERBY.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
       try (SqlSession sqlSession = get().openSession(true)) {
-        try(Connection connection = sqlSession.getConnection()) {
-          try(Statement statement = connection.createStatement()) {
+        try (Connection connection = sqlSession.getConnection()) {
+          try (Statement statement = connection.createStatement()) {
             String query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
-            try(ResultSet rs = statement.executeQuery(query)) {
+            try (ResultSet rs = statement.executeQuery(query)) {
               if (!rs.next()) {
                 ScriptRunner runner = new ScriptRunner(connection);
                 runner.runScript(new InputStreamReader(new FileInputStream(getDerbyInitSqlScriptPath()),

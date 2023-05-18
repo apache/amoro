@@ -189,7 +189,8 @@ public class PersistentBaseTest {
     Mockito.doReturn(testMapper).when(persistentBase).getMapper(any(), any());
     Mockito.doReturn(1).when(testMapper).doSomething();
 
-    int result = persistentBase.getAs(TestMapper.class, TestMapper::doSomething, new TestPredicate(), new TestSupplier());
+    int result =
+        persistentBase.getAs(TestMapper.class, TestMapper::doSomething, new TestPredicate(), new TestSupplier());
 
     assert result == 1;
     verify(sqlSession).commit();
