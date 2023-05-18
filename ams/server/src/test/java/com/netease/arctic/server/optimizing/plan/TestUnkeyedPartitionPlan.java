@@ -26,6 +26,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.table.UnkeyedTable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -75,7 +76,12 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
-    return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    return new UnkeyedTableFileScanHelper(getArcticTable(), baseSnapshotId);
+  }
+
+  @Override
+  protected UnkeyedTable getArcticTable() {
+    return super.getArcticTable().asUnkeyedTable();
   }
 }

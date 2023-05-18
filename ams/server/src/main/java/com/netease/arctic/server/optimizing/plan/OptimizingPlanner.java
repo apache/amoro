@@ -175,7 +175,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
     public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
       if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-        return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
+        return new IcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
           if (arcticTable.isKeyedTable()) {
