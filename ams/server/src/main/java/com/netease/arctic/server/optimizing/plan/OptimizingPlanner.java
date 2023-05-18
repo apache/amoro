@@ -44,7 +44,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private static final int MAX_INPUT_FILE_COUNT_PER_THREAD = 5000;
   private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5 * 1024 * 1024 * 1024;
 
-  private final Set<String> pendingPartitions;
+  private final TableFileScanHelper.PartitionFilter partitionFilter;
 
   protected long processId;
   private final double availableCore;
@@ -56,8 +56,10 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TableSnapshot tableSnapshot,
                            double availableCore) {
     super(tableRuntime, table, tableSnapshot);
-    this.pendingPartitions = tableRuntime.getPendingInput() == null ?
-        new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
+    this.partitionFilter = tableRuntime.getPendingInput() == null ?
+        partition -> true:
+        tableRuntime.getPendingInput().getPartitions()::contains;
+
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
     this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
@@ -81,7 +83,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   @Override
   protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
-    return pendingPartitions::contains;
+    return partitionFilter;
   }
 
   public long getTargetSnapshotId() {
