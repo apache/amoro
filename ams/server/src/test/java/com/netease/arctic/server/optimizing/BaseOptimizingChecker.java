@@ -4,6 +4,12 @@ import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -11,11 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BaseOptimizingChecker extends PersistentBase {
 

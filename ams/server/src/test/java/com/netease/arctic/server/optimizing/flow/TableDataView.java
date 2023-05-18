@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import com.google.common.base.Objects;
 import com.netease.arctic.data.ChangeAction;
@@ -27,6 +27,8 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
@@ -41,21 +43,19 @@ import java.util.stream.Collectors;
 
 public class TableDataView {
 
-  private Random random = new Random();
+  private final Random random = new Random();
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
 
-  private Schema schema;
+  private final Schema schema;
 
-  private int schemaSize;
+  private final int schemaSize;
 
-  private Schema primary;
+  private final int primaryUpperBound;
 
-  private int primaryUpperBound;
+  private final StructLikeMap<Record> view;
 
-  private StructLikeMap<Record> view;
-
-  private RandomRecordGenerator generator;
+  private final RandomRecordGenerator generator;
 
   public TableDataView(
       ArcticTable arcticTable,
@@ -65,7 +65,6 @@ public class TableDataView {
     this.arcticTable = arcticTable;
     this.schema = arcticTable.schema();
     this.schemaSize = schema.columns().size();
-    this.primary = primary;
     this.primaryUpperBound = primaryUpperBound;
     this.view = StructLikeMap.create(primary.asStruct());
     this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(), primary, partitionCount);
@@ -168,8 +167,7 @@ public class TableDataView {
     for (int i = 0; i < count; i++) {
       ids[i] = random.nextInt(primaryUpperBound);
     }
-    List<Record> scatter = generator.scatter(ids);
-    return scatter;
+    return generator.scatter(ids);
   }
 
   private boolean equRecord(Record r1, Record r2) {
@@ -186,11 +184,22 @@ public class TableDataView {
   }
 
   private void upsertCommit(WriteResult writeResult) {
-    AppendFiles appendFiles = arcticTable.asKeyedTable().changeTable().newAppend();
-    for (DataFile dataFile : writeResult.dataFiles()) {
-      appendFiles.appendFile(dataFile);
+    if (arcticTable.isKeyedTable()) {
+      AppendFiles appendFiles = arcticTable.asKeyedTable().changeTable().newAppend();
+      for (DataFile dataFile : writeResult.dataFiles()) {
+        appendFiles.appendFile(dataFile);
+      }
+      appendFiles.commit();
+    } else {
+      RowDelta rowDelta = arcticTable.asUnkeyedTable().newRowDelta();
+      for (DataFile dataFile: writeResult.dataFiles()) {
+        rowDelta.addRows(dataFile);
+      }
+      for (DeleteFile deleteFile: writeResult.deleteFiles()) {
+        rowDelta.addDeletes(deleteFile);
+      }
+      rowDelta.commit();
     }
-    appendFiles.commit();
   }
 
   private void writeView(List<RecordWithAction> records) {
@@ -208,6 +217,14 @@ public class TableDataView {
   }
 
   private WriteResult writeFile(List<RecordWithAction> records) throws IOException {
+    if (arcticTable.isKeyedTable()) {
+      return writeKeyedTable(records);
+    } else {
+      return null;
+    }
+  }
+
+  private WriteResult writeKeyedTable(List<RecordWithAction> records) throws IOException {
     GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
         .withTransactionId(0L)
         .buildChangeWriter();
@@ -221,10 +238,24 @@ public class TableDataView {
     return writer.complete();
   }
 
-  public static class PKWithAction{
-    private int pk;
+  private WriteResult writeUnKeyedTable(List<RecordWithAction> records) throws IOException {
+    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
+        .withTransactionId(0L)
+        .buildChangeWriter();
+    try {
+      for (Record record : records) {
+        writer.write(record);
+      }
+    } finally {
+      writer.close();
+    }
+    return writer.complete();
+  }
 
-    private ChangeAction action;
+  public static class PKWithAction {
+    private final int pk;
+
+    private final ChangeAction action;
 
     public PKWithAction(int pk, ChangeAction action) {
       this.pk = pk;
@@ -232,11 +263,11 @@ public class TableDataView {
     }
   }
 
-  public static abstract class CustomData{
+  public abstract static class CustomData {
 
     private StructLikeMap<Record> view;
 
-    abstract public List<PKWithAction> data();
+    public abstract  List<PKWithAction> data();
 
     private void accept(StructLikeMap<Record> view) {
       this.view = view;
@@ -250,11 +281,11 @@ public class TableDataView {
 
   public static class MatchResult {
 
-    private List<Record> notInView;
+    private final List<Record> notInView;
 
-    private List<Record> inViewButDuplicate;
+    private final List<Record> inViewButDuplicate;
 
-    private List<Record> missInView;
+    private final List<Record> missInView;
 
     private MatchResult(List<Record> notInView, List<Record> inViewButDuplicate, List<Record> missInView) {
       this.notInView = notInView;
