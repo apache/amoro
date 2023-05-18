@@ -467,7 +467,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           results.put(partitionData, sequence);
         }
       });
-      return null;
+      return results;
     }
 
     private void beginAndPersistProcess() {

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -107,20 +108,14 @@ public class TableDataView {
     return doWrite(delete);
   }
 
-  private WriteResult doWrite(List<RecordWithAction> upsert) throws IOException {
-    writeView(upsert);
-    WriteResult writeResult = writeFile(upsert);
-    upsertCommit(writeResult);
-    return writeResult;
-  }
-
-  private List<Record> randomRecord(int count) {
-    int[] ids = new int[count];
-    for (int i = 0; i < count; i++) {
-      ids[i] = random.nextInt(primaryUpperBound);
+  public WriteResult custom(CustomData customData) throws IOException {
+    customData.accept(view);
+    List<PKWithAction> data = customData.data();
+    List<RecordWithAction> records = new ArrayList<>();
+    for (PKWithAction pkWithAction: data) {
+      records.add(new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
     }
-    List<Record> scatter = generator.scatter(ids);
-    return scatter;
+    return doWrite(records);
   }
 
   public int getSize() {
@@ -159,6 +154,22 @@ public class TableDataView {
       }
     }
     return new MatchResult(notInView, inViewButDuplicate, missInView);
+  }
+
+  private WriteResult doWrite(List<RecordWithAction> upsert) throws IOException {
+    writeView(upsert);
+    WriteResult writeResult = writeFile(upsert);
+    upsertCommit(writeResult);
+    return writeResult;
+  }
+
+  private List<Record> randomRecord(int count) {
+    int[] ids = new int[count];
+    for (int i = 0; i < count; i++) {
+      ids[i] = random.nextInt(primaryUpperBound);
+    }
+    List<Record> scatter = generator.scatter(ids);
+    return scatter;
   }
 
   private boolean equRecord(Record r1, Record r2) {
@@ -210,6 +221,33 @@ public class TableDataView {
     return writer.complete();
   }
 
+  public static class PKWithAction{
+    private int pk;
+
+    private ChangeAction action;
+
+    public PKWithAction(int pk, ChangeAction action) {
+      this.pk = pk;
+      this.action = action;
+    }
+  }
+
+  public static abstract class CustomData{
+
+    private StructLikeMap<Record> view;
+
+    abstract public List<PKWithAction> data();
+
+    private void accept(StructLikeMap<Record> view) {
+      this.view = view;
+    }
+
+    protected boolean alreadyExists(Record record) {
+      return view.containsKey(record);
+    }
+
+  }
+
   public static class MatchResult {
 
     private List<Record> notInView;
@@ -236,6 +274,15 @@ public class TableDataView {
       return CollectionUtils.isEmpty(notInView) &&
           CollectionUtils.isEmpty(inViewButDuplicate) &&
           CollectionUtils.isEmpty(missInView);
+    }
+
+    @Override
+    public String toString() {
+      return Objects.toStringHelper(this)
+          .add("notInView", notInView)
+          .add("inViewButDuplicate", inViewButDuplicate)
+          .add("missInView", missInView)
+          .toString();
     }
   }
 }

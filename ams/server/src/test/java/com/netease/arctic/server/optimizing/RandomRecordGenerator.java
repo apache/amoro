@@ -97,7 +97,7 @@ public class RandomRecordGenerator {
     return list;
   }
 
-  private Record randomRecord(int primaryValue) {
+  public Record randomRecord(int primaryValue) {
     Record record = GenericRecord.create(schema);
     Random random = new Random();
     List<Types.NestedField> columns = schema.columns();
