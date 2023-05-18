@@ -36,13 +36,7 @@ import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
-import com.netease.arctic.server.table.executor.BlockerExpiringExecutor;
-import com.netease.arctic.server.table.executor.HiveCommitSyncExecutor;
-import com.netease.arctic.server.table.executor.OptimizingCommitExecutor;
-import com.netease.arctic.server.table.executor.OptimizingExpiringExecutor;
-import com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor;
-import com.netease.arctic.server.table.executor.SnapshotsExpiringExecutor;
-import com.netease.arctic.server.table.executor.TableRuntimeRefreshExecutor;
+import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -58,10 +52,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -163,7 +158,7 @@ public class ArcticServiceContainer {
     return this.optimizingService;
   }
 
-  private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
+  private void initConfig() throws IllegalConfigurationException, IOException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
@@ -232,7 +227,7 @@ public class ArcticServiceContainer {
 
     private JSONObject yamlConfig;
 
-    public void init() throws IllegalConfigurationException, FileNotFoundException {
+    public void init() throws IllegalConfigurationException, IOException {
       initServiceConfig();
       initContainerConfig();
       initResourceGroupConfig();
@@ -261,10 +256,10 @@ public class ArcticServiceContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void initServiceConfig() throws FileNotFoundException {
+    private void initServiceConfig() throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getArcticHome() + SERVER_CONFIG_PATH;
-      yamlConfig = new JSONObject(new Yaml().loadAs(new FileInputStream(configPath), Map.class));
+      yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);

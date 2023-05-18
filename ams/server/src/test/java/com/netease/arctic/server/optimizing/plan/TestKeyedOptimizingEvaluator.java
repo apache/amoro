@@ -109,12 +109,12 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(buildTableRuntime(), getArcticTable(),
-        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
+    return new OptimizingEvaluator(buildTableRuntime(), getArcticTable());
   }
 
   protected TableRuntime buildTableRuntime() {
-    return new TableRuntime(getArcticTable());
+//    return new TableRuntime(getArcticTable());
+    return null;
   }
 
 

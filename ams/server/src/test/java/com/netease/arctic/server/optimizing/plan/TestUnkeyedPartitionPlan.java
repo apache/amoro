@@ -28,7 +28,7 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +72,7 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
         Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
 
     Map<String, String> properties = buildProperties();
-    TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
+    TaskDescriptor expect = new TaskDescriptor(-1, getPartition(), rewriteFilesInput, properties);
     assertTask(expect, actual);
   }
 
@@ -94,7 +94,7 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
     return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
   }
 }

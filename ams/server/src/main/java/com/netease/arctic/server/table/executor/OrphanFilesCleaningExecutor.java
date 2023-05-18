@@ -23,7 +23,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.utils.HiveLocationUtil;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -145,14 +145,14 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static Set<String> getValidContentFiles(ArcticTable arcticTable) {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
-      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
+      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
       LOG.info("{} getRuntime {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
-      Set<String> changeValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
+      Set<String> changeValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
       LOG.info("{} getRuntime {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
       validFiles.addAll(changeValidFiles);
     } else {
-      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
+      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asUnkeyedTable());
       validFiles.addAll(baseValidFiles);
     }
 

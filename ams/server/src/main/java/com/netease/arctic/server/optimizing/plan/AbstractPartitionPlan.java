@@ -255,7 +255,8 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
           readOnlyDeleteFiles.toArray(new IcebergContentFile[0]),
           rewriteDeleteFiles.toArray(new IcebergContentFile[0]),
           tableObject);
-      return new TaskDescriptor(partition, input, properties.getProperties());
+      return new TaskDescriptor(tableRuntime.getTableIdentifier().getId(),
+          partition, input, properties.getProperties());
     }
 
     private long getRecordCount(List<IcebergContentFile<?>> files) {

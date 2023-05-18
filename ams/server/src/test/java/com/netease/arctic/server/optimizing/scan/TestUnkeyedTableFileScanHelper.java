@@ -25,7 +25,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
@@ -125,7 +125,7 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
 
   @Override
   protected UnkeyedTableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
     return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
   }
 }

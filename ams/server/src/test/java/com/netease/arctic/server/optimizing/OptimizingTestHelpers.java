@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -36,8 +36,8 @@ import java.util.List;
 
 public class OptimizingTestHelpers {
   public static KeyedTableSnapshot getCurrentKeyedTableSnapshot(KeyedTable keyedTable) {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(keyedTable.baseTable(), true);
+    long changeSnapshotId = IcebergTableUtils.getSnapshotId(keyedTable.changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
     StructLikeMap<Long> legacyPartitionMaxTransactionId =

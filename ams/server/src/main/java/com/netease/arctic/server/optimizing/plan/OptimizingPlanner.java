@@ -32,10 +32,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -53,17 +51,15 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private final PartitionPlannerFactory partitionPlannerFactory;
   private List<TaskDescriptor> tasks;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TableSnapshot tableSnapshot,
-                           double availableCore) {
-    super(tableRuntime, table, tableSnapshot);
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
+    super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
         partition -> true:
         tableRuntime.getPendingInput().getPartitions()::contains;
-
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
-    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
-    this.partitionPlannerFactory = new PartitionPlannerFactory(this.arcticTable, this.tableRuntime, this.planTime);
+    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
+    this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
   }
 
   @Override
@@ -72,12 +68,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public Map<String, Long> getFromSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
+    return partitionPlanMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
   }
 
   public Map<String, Long> getToSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
+    return partitionPlanMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
   }
 
@@ -104,7 +100,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
     long startTime = System.nanoTime();
 
-    if (!isInitEvaluator) {
+    if (!isInitialized) {
       initEvaluator();
     }
     if (!super.isNecessary()) {
@@ -114,7 +110,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
+    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
