@@ -21,7 +21,7 @@ package com.netease.arctic.server.table.executor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
+import com.netease.arctic.server.table.TableManager;
 
 public class BlockerExpiringExecutor extends BaseTableExecutor {
 
@@ -29,7 +29,7 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
-  public BlockerExpiringExecutor(TableRuntimeManager tableRuntimes) {
+  public BlockerExpiringExecutor(TableManager tableRuntimes) {
     super(tableRuntimes, 1);
   }
 

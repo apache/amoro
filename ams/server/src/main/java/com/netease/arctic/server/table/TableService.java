@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import java.util.List;
 import java.util.Map;
 
-public interface TableService extends CatalogService, TableRuntimeManager {
+public interface TableService extends CatalogService, TableManager {
 
   void initialize();
 
@@ -144,7 +144,7 @@ public interface TableService extends CatalogService, TableRuntimeManager {
   long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException;
 
   /**
-   * get blockers of table
+   * getRuntime blockers of table
    *
    * @return block list
    */

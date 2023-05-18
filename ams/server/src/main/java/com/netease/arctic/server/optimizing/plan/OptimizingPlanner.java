@@ -52,8 +52,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private OptimizingType optimizingType = OptimizingType.MINOR;
   private SequenceNumberFetcher sequenceNumberFetcher;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, double availableCore) {
-    super(tableRuntime);
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
+    super(tableRuntime, table);
     this.pendingPartitions = tableRuntime.getPendingInput() == null ?
         new HashSet<>() : tableRuntime.getPendingInput().getPartitions();
     this.targetSnapshotId = tableRuntime.getCurrentSnapshotId();
@@ -75,10 +75,10 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       }
       return Collections.emptyList();
     }
-    if (!isInitEvaluator) {
-      initEvaluator();
+    if (!isInitialized) {
+      initPartitionPlans();
     }
-    List<AbstractPartitionPlan> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
+    List<AbstractPartitionPlan> evaluators = new ArrayList<>(partitionPlanMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
@@ -104,7 +104,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     if (LOG.isDebugEnabled()) {
       LOG.debug("{} ==== {} plan tasks cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
           getOptimizingType(), endTime - startTime, (endTime - startTime) / 1_000_000);
-      LOG.debug("{} {} plan get {} tasks", tableRuntime.getTableIdentifier(), getOptimizingType(), tasks.size());
+      LOG.debug("{} {} plan getRuntime {} tasks", tableRuntime.getTableIdentifier(), getOptimizingType(), tasks.size());
     }
     return tasks;
   }
@@ -113,7 +113,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return new OptimizingTask(new OptimizingTaskId(processId, idGenerator++));
   }
 
-  protected AbstractPartitionPlan buildEvaluator(String partitionPath) {
+  protected AbstractPartitionPlan buildPartitionPlan(String partitionPath) {
     return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, sequenceNumberFetcher);
   }
 

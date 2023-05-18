@@ -1,6 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
+import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 
@@ -22,7 +23,8 @@ public class SchedulingPolicy {
     tableLock.lock();
     try {
       return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING)
+          .filter(tableRuntime -> tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING &&
+              tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId())
           .sorted(tableSorter)
           .collect(Collectors.toList());
     } finally {

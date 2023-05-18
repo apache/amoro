@@ -192,7 +192,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
       taskProperties.put(
           OptimizingTaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
           IcebergRewriteExecutorFactory.class.getName());
-      tasks.add(new TaskDescriptor(partition, input, taskProperties));
+      tasks.add(new TaskDescriptor(tableRuntime.getTableIdentifier().getId(),
+          partition, input, taskProperties));
       return tasks;
     }
 

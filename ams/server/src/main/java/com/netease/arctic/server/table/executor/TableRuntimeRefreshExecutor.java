@@ -18,8 +18,11 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
+import com.netease.arctic.server.table.TableManager;
+import com.netease.arctic.table.ArcticTable;
 
 /**
  * Service for expiring tables periodically.
@@ -29,7 +32,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   // 1 minutes
   private final long interval;
 
-  public TableRuntimeRefreshExecutor(TableRuntimeManager tableRuntimes, int poolSize, long interval) {
+  public TableRuntimeRefreshExecutor(TableManager tableRuntimes, int poolSize, long interval) {
     super(tableRuntimes, poolSize);
     this.interval = interval;
   }
@@ -44,9 +47,26 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   @Override
+  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    tryEvalutingPendingInput(tableRuntime, loadTable(tableRuntime));
+  }
+
+  private void tryEvalutingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
+    OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+    if (evaluator.isNecessary()) {
+      tableRuntime.setPendingInput(evaluator.getPendingInput());
+    }
+  }
+
+  @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      tableRuntime.refresh();
+      long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
+      ArcticTable table = loadTable(tableRuntime);
+      tableRuntime.refreshTable(table);
+      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId()) {
+        tryEvalutingPendingInput(tableRuntime, table);
+      }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }

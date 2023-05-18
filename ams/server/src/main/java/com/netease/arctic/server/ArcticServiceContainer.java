@@ -33,6 +33,13 @@ import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
+import com.netease.arctic.server.table.executor.BlockerExpiringExecutor;
+import com.netease.arctic.server.table.executor.HiveCommitSyncExecutor;
+import com.netease.arctic.server.table.executor.OptimizingCommitExecutor;
+import com.netease.arctic.server.table.executor.OptimizingExpiringExecutor;
+import com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor;
+import com.netease.arctic.server.table.executor.SnapshotsExpiringExecutor;
+import com.netease.arctic.server.table.executor.TableRuntimeRefreshExecutor;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -105,7 +112,20 @@ public class ArcticServiceContainer {
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
-    initInternalExecutors();
+
+    LOG.info("Setting up AMS table executors...");
+    AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
+    tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
+    tableService.initialize();
+    LOG.info("AMS table service have been initialized");
+
     initThriftService();
     startThriftService();
     startHttpService();
@@ -125,18 +145,12 @@ public class ArcticServiceContainer {
   }
 
   private void startThriftService() {
-    tableService.initialize();
     Thread thread = new Thread(() -> {
       server.serve();
       LOG.info("Thrift services have been started");
     }, "Thrift-server-thread");
     thread.setDaemon(true);
     thread.start();
-  }
-
-  private void initInternalExecutors() {
-    LOG.info("Initializing AMS table executors...");
-    AsyncTableExecutors.getInstance().initialize(tableService, serviceConfig);
   }
 
   private void startHttpService() {
