@@ -160,6 +160,11 @@ public class DefaultOptimizingService extends DefaultResourceManager
     return getQueueByGroup(group).getOptimizers();
   }
 
+  @Override
+  public void deleteOptimizer(String group, String resourceId) {
+    getQueueByGroup(group).removeOptimizer(resourceId);
+  }
+
   private class TableRuntimeHandlerImpl extends TableRuntimeHandler {
 
     @Override

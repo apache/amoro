@@ -25,7 +25,9 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
@@ -67,8 +69,9 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
 
   @Test
   public void testScanEmptySnapshot() {
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
+    long transactionId = getArcticTable().beginTransaction("");
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
     assertScanResult(scan, 0);
@@ -82,8 +85,9 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    long transactionId = getArcticTable().beginTransaction("");
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
@@ -98,10 +102,10 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), transactionId, ChangeAction.INSERT,
+    long transactionId = getArcticTable().beginTransaction("");
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
         newRecords, false));
-    long sequenceNumber = getArcticTable().asKeyedTable().changeTable().currentSnapshot().sequenceNumber();
+    long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
@@ -117,11 +121,12 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
     );
 
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    long transactionId = getArcticTable().beginTransaction("");
+    OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
-    transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), transactionId, ChangeAction.DELETE,
+    transactionId = getArcticTable().beginTransaction("");
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.DELETE,
         newRecords, false));
 
     newRecords = Lists.newArrayList(
@@ -131,8 +136,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(4, "4444", 0, "2022-01-02T12:00:00")
     );
 
-    transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), transactionId, ChangeAction.INSERT,
+    transactionId = getArcticTable().beginTransaction("");
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
         newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
@@ -157,16 +162,16 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
-    long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    List<DataFile> dataFiles =
-        appendBase(tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    long transactionId = getArcticTable().beginTransaction("");
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
           DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
-    appendBasePosDelete(posDeleteFiles);
+    OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
@@ -182,14 +187,14 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
     );
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), null, ChangeAction.INSERT,
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
         newRecords, false));
-    long sequenceNumber = getArcticTable().asKeyedTable().changeTable().currentSnapshot().sequenceNumber();
+    long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), null, ChangeAction.INSERT,
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
         newRecords, false));
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), null, ChangeAction.INSERT,
+    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
         newRecords, false));
 
     // check all files
@@ -213,20 +218,25 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
   }
 
   protected KeyedTableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
+    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
+        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable().asKeyedTable());
-    return new KeyedTableFileScanHelper(getArcticTable().asKeyedTable(), baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
+    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
+        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {
-    AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
+    AppendFiles appendFiles = getArcticTable().changeTable().newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+  }
+
+  @Override
+  protected KeyedTable getArcticTable() {
+    return super.getArcticTable().asKeyedTable();
   }
 
   @Test

@@ -28,6 +28,9 @@ import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
+import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
@@ -36,10 +39,12 @@ import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,25 +210,26 @@ public class TableRuntime extends PersistentBase {
   }
 
   private void evaluatePendingInput(ArcticTable table) {
-    OptimizingEvaluator evaluator = new OptimizingEvaluator(this, table);
+    OptimizingEvaluator evaluator = new OptimizingEvaluator(this, table, getCurrentSnapshot(table, false));
     if (evaluator.isNecessary()) {
       pendingInput = evaluator.getPendingInput();
       optimizingStatus = OptimizingStatus.PENDING;
     }
   }
 
-  public void tryUpdatingConfig(Map<String, String> properties) {
-    lock.lock();
-    TableConfiguration originalConfig = this.tableConfiguration;
-    try {
-      if (updateConfigInternal(properties)) {
-        persistUpdatingRuntime();
-        if (tableChangeHandler != null) {
-          tableChangeHandler.fireConfigChanged(this, originalConfig);
-        }
-      }
-    } finally {
-      lock.unlock();
+  public TableSnapshot getCurrentSnapshot(ArcticTable arcticTable, boolean refresh) {
+    if (arcticTable.isUnkeyedTable()) {
+      long snapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asUnkeyedTable(), refresh);
+      return new BasicTableSnapshot(snapshotId);
+    } else {
+      long baseSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable(), refresh);
+      long changeSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable(), refresh);
+      StructLikeMap<Long> partitionOptimizedSequence =
+          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
+      StructLikeMap<Long> legacyPartitionMaxTransactionId =
+          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId, partitionOptimizedSequence,
+          legacyPartitionMaxTransactionId);
     }
   }
 

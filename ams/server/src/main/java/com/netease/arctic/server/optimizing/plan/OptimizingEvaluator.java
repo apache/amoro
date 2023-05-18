@@ -20,19 +20,17 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.SequenceNumberFetcher;
-import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
 import java.util.Map;
@@ -42,17 +40,15 @@ public class OptimizingEvaluator {
 
   protected final ArcticTable arcticTable;
   protected final TableRuntime tableRuntime;
+  protected final TableSnapshot currentSnapshot;
   protected boolean isInitEvaluator = false;
 
   protected Map<String, PartitionEvaluator> partitionEvaluatorMap = Maps.newHashMap();
 
-  public OptimizingEvaluator(TableRuntime tableRuntime) {
-    this(tableRuntime, tableRuntime.loadTable());
-  }
-
-  public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table) {
+  public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table, TableSnapshot currentSnapshot) {
     this.tableRuntime = tableRuntime;
     this.arcticTable = table;
+    this.currentSnapshot = currentSnapshot;
   }
 
   public ArcticTable getArcticTable() {
@@ -66,25 +62,14 @@ public class OptimizingEvaluator {
   protected void initEvaluator() {
     TableFileScanHelper tableFileScanHelper;
     if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      long currentSnapshotId = tableRuntime.getCurrentSnapshotId();
-      tableFileScanHelper = new IcebergTableFileScanHelper(arcticTable.asUnkeyedTable(),
-          new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), currentSnapshotId), currentSnapshotId);
+      tableFileScanHelper = new IcebergTableFileScanHelper(arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
     } else {
-      // TODO refresh snapshotId
       if (arcticTable.isUnkeyedTable()) {
-        long baseSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asUnkeyedTable(), true);
         tableFileScanHelper =
-            new UnkeyedTableFileScanHelper(arcticTable.asUnkeyedTable(), baseSnapshotId);
+            new UnkeyedTableFileScanHelper(arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
       } else {
-        long baseSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable(), true);
-        StructLikeMap<Long> partitionOptimizedSequence =
-            TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
-        StructLikeMap<Long> legacyPartitionMaxTransactionId =
-            TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
-        long changeSnapshotId = IcebergTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable(), true);
         tableFileScanHelper =
-            new KeyedTableFileScanHelper(arcticTable.asKeyedTable(), baseSnapshotId, changeSnapshotId,
-                partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+            new KeyedTableFileScanHelper(arcticTable.asKeyedTable(), ((KeyedTableSnapshot) currentSnapshot));
       }
     }
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());

@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
@@ -17,6 +18,7 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
@@ -102,6 +104,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   public List<OptimizerInstance> getOptimizers() {
     return ImmutableList.copyOf(authOptimizers.values());
+  }
+
+  public void removeOptimizer(String resourceId) {
+    authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
@@ -225,8 +231,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (LOG.isDebugEnabled()) {
         LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       }
+      ArcticTable arcticTable = tableRuntime.loadTable();
+      TableSnapshot currentSnapshot = tableRuntime.getCurrentSnapshot(arcticTable, true);
+      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+        LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+        continue;
+      }
       try {
-        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime, getAvailableCore(tableRuntime));
+        OptimizingPlanner planner =
+            new OptimizingPlanner(tableRuntime, arcticTable, currentSnapshot, getAvailableCore(tableRuntime));
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           if (LOG.isDebugEnabled()) {
@@ -261,7 +274,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
 
-    // TODO persist
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
 
@@ -284,8 +296,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       optimizingType = tableRuntimeMeta.getOptimizingType();
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
-      metricsSummary = new MetricsSummary(taskMap.values());
       loadTaskRuntimes();
+      metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.constructTableRuntime(this);
     }
 
@@ -336,6 +348,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             persistProcessCompleted(false);
           }
         }
+      } catch (Exception e) {
+        LOG.error("accept result error:", e);
       } finally {
         tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
         lock.unlock();
@@ -460,7 +474,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary())),
+                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary(), getFromSequence(),
+                  getToSequence())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(tableRuntime, processId, taskMap.values()),
@@ -473,13 +488,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         doAsTransaction(
             () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
             () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime)),
+                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
+                    new MetricsSummary(taskMap.values()))),
             () -> tableRuntime.completeProcess(true)
         );
       } else {
         doAsTransaction(
             () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime)),
+                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
+                    new MetricsSummary(taskMap.values()))),
             () -> tableRuntime.completeProcess(true)
         );
       }

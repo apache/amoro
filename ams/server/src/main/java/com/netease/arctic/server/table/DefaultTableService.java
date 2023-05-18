@@ -22,6 +22,7 @@ import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,14 +146,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (headHandler != null) {
       headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
     }
-  }
-
-  @Override
-  public void updateTableProperties(ServerTableIdentifier tableIdentifier, Map<String, String> properties) {
-    checkStarted();
-    Optional.ofNullable(tableRuntimeMap.get(tableIdentifier))
-        .orElseThrow(() -> new ObjectNotExistsException(tableIdentifier))
-        .tryUpdatingConfig(properties);
   }
 
   @Override
@@ -326,6 +319,40 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
+  @VisibleForTesting
+  void exploreExternalCatalog() {
+    for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
+      try {
+        Set<TableIdentity> tableIdentifiers = externalCatalog.listTables().stream()
+            .map(TableIdentity::new)
+            .collect(Collectors.toSet());
+        Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
+            getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
+                .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
+        Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
+            .forEach(tableIdentity -> {
+              try {
+                syncTable(externalCatalog, tableIdentity);
+              } catch (Exception e) {
+                LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
+              }
+            });
+        Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
+            .forEach(tableIdentity -> {
+              try {
+                disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
+              } catch (Exception e) {
+                LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
+              }
+            });
+      } catch (Exception e) {
+        LOG.error("TableExplorer run error", e);
+      }
+    }
+  }
+
   private void validateTableIdentifier(TableIdentifier tableIdentifier) {
     if (StringUtils.isBlank(tableIdentifier.getTableName())) {
       throw new IllegalMetadataException("table name is blank");
@@ -374,36 +401,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     @Override
     public void run() {
-      for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
-        try {
-          Set<TableIdentity> tableIdentifiers = externalCatalog.listTables().stream()
-              .map(TableIdentity::new)
-              .collect(Collectors.toSet());
-          Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
-              getAs(
-                  TableMetaMapper.class,
-                  mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
-                  .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
-          Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
-              .forEach(tableIdentity -> {
-                try {
-                  syncTable(externalCatalog, tableIdentity);
-                } catch (Exception e) {
-                  LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
-                }
-              });
-          Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
-              .forEach(tableIdentity -> {
-                try {
-                  disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
-                } catch (Exception e) {
-                  LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
-                }
-              });
-        } catch (Exception e) {
-          LOG.error("TableExplorer run error", e);
-        }
-      }
+      exploreExternalCatalog();
     }
   }
 

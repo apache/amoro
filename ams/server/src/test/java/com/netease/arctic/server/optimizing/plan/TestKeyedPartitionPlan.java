@@ -23,11 +23,17 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.data.Record;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +45,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
+public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
 
   public TestKeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper) {
@@ -95,9 +101,64 @@ public class TestKeyedPartitionPlan extends MixedTablePartitionPlanTestBase {
     testSegmentFilesBase();
   }
 
+  @Test
+  public void testOnlyOneFragmentFile() {
+    updateBaseHashBucket(1);
+    testOnlyOneFragmentFileBase();
+  }
+
+  @Test
+  public void testOnlyOneChangeFiles() {
+    updateChangeHashBucket(1);
+    closeFullOptimizing();
+    // write fragment file
+    List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    long transactionId = beginTransaction();
+    OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false));
+
+    List<TaskDescriptor> taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertEquals(1, taskDescriptors.size());
+    List<TableFileScanHelper.FileScanResult> actualFiles = scanFiles();
+    Assert.assertEquals(1, actualFiles.size());
+    List<IcebergDataFile> files = actualFiles.stream()
+        .map(TableFileScanHelper.FileScanResult::file)
+        .collect(Collectors.toList());
+    TaskDescriptor actual = taskDescriptors.get(0);
+    RewriteFilesInput rewriteFilesInput = new RewriteFilesInput(files.toArray(new IcebergDataFile[0]),
+        Collections.emptySet().toArray(new IcebergDataFile[0]),
+        Collections.emptySet().toArray(new IcebergContentFile[0]),
+        Collections.emptySet().toArray(new IcebergContentFile[0]), getArcticTable());
+
+    Map<String, String> properties = buildProperties();
+    TaskDescriptor expect = new TaskDescriptor(getPartition(), rewriteFilesInput, properties);
+    assertTask(expect, actual);
+  }
+
+  @Override
+  protected KeyedTable getArcticTable() {
+    return super.getArcticTable().asKeyedTable();
+  }
+
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
     return new KeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
         System.currentTimeMillis());
+  }
+
+  protected void updateChangeHashBucket(int bucket) {
+    getArcticTable().updateProperties().set(TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
+  }
+
+  protected void updateBaseHashBucket(int bucket) {
+    getArcticTable().updateProperties().set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
+  }
+
+  @Override
+  protected TableFileScanHelper getTableFileScanHelper() {
+    return new KeyedTableFileScanHelper(getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
   }
 }

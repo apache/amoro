@@ -76,12 +76,20 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
     if (!TableFormat.ICEBERG.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot get iceberg catalog for table format:" + tableFormat);
+      throw new UnsupportedOperationException("Cannot build iceberg catalog for table format:" + tableFormat);
     }
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
         catalogProperties, new Configuration());
+  }
+
+  @Override
+  public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
+    if (!TableFormat.MIXED_ICEBERG.equals(tableFormat)) {
+      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
+    }
+    return new MixedTables(catalogMeta);
   }
 
   @Override

@@ -20,6 +20,11 @@ public class MixedCatalogImpl extends InternalCatalog {
     this.tables = new MixedTables(metadata);
   }
 
+  protected MixedCatalogImpl(CatalogMeta metadata, MixedTables tables) {
+    super(metadata);
+    this.tables = tables;
+  }
+
   @Override
   public List<String> listDatabases() {
     return getAs(TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));
@@ -66,8 +71,7 @@ public class MixedCatalogImpl extends InternalCatalog {
         mapper.selectTableMetaById(tableIdentifier.getId())) != null;
   }
 
-  @Override
-  protected void createTableInternal(TableMetadata tableMetadata) {
-    doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata));
+  protected MixedTables tables() {
+    return tables;
   }
 }
