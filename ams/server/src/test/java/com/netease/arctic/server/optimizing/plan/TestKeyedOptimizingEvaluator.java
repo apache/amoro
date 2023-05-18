@@ -23,12 +23,10 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -45,7 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestKeyedOptimizingEvaluator extends TableTestBase {
+public class TestKeyedOptimizingEvaluator extends MixedTablePlanTestBase {
 
   public TestKeyedOptimizingEvaluator(CatalogTestHelper catalogTestHelper,
                                       TableTestHelper tableTestHelper) {
@@ -109,14 +107,9 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(buildTableRuntime(), getArcticTable(),
+    return new OptimizingEvaluator(getTableRuntime(), getArcticTable(),
         OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
   }
-
-  protected TableRuntime buildTableRuntime() {
-    return new TableRuntime(getArcticTable());
-  }
-
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {
     Assert.assertEquals(input.getPartitions().size(), 0);
@@ -196,6 +189,17 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
 
   protected void closeFullOptimizing() {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  }
+
+  @Override
+  protected AbstractPartitionPlan getPartitionPlan() {
+    return null;
+  }
+
+  @Override
+  protected TableFileScanHelper getTableFileScanHelper() {
+    return new KeyedTableFileScanHelper(getArcticTable(),
+        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
   }
 
 }

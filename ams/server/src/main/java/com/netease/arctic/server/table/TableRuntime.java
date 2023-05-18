@@ -116,24 +116,6 @@ public class TableRuntime extends PersistentBase {
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
   }
 
-  @VisibleForTesting
-  public TableRuntime(ArcticTable table) {
-    this.initializer = new TableRuntimeInitializer() {
-      @Override
-      public ArcticTable loadTable(ServerTableIdentifier tableIdentifier) {
-        return table;
-      }
-
-      @Override
-      public TableRuntimeHandler getHeadHandler() {
-        return null;
-      }
-    };
-    this.tableChangeHandler = null;
-    this.tableIdentifier = ServerTableIdentifier.of(table.id().buildTableIdentifier());
-    this.tableConfiguration = TableConfiguration.parseConfig(table.properties());
-  }
-
   protected void recover(OptimizingProcess optimizingProcess) {
     if (!optimizingStatus.isProcessing() || !Objects.equals(optimizingProcess.getProcessId(), processId)) {
       throw new IllegalStateException("Table runtime and processing are not matched!");

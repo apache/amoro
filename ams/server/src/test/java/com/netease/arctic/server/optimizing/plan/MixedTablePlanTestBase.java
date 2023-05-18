@@ -28,8 +28,11 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.ContentFile;
@@ -39,6 +42,8 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.junit.Assert;
+import org.junit.Before;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,10 +53,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
+  
+  protected TableRuntime tableRuntime;
 
   public MixedTablePlanTestBase(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
+  }
+
+  @Before
+  public void mock() {
+    tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.loadTable()).thenReturn(getArcticTable());
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id())));
+    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
   }
 
   public List<TaskDescriptor> testFragmentFilesBase() {
@@ -239,7 +255,11 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
   }
 
-  protected TableRuntime buildTableRuntime() {
-    return new TableRuntime(getArcticTable());
+  protected TableRuntime getTableRuntime() {
+    return tableRuntime;
+  }
+
+  private OptimizingConfig getConfig() {
+    return OptimizingConfig.parseOptimizingConfig(getArcticTable().properties());
   }
 }

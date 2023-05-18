@@ -88,7 +88,7 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new UnkeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(),
+    return new UnkeyedTablePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
         System.currentTimeMillis());
   }
 
