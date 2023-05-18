@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
-import org.apache.hadoop.hive.metastore.api.MetaException;
 
 import java.util.List;
 import java.util.Map;

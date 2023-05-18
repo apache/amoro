@@ -73,7 +73,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       return null;
     }
     return Arrays.stream(rewrittenDataFiles)
-        .map(s -> (DefaultKeyedFile)s.internalDataFile())
+        .map(s -> (DefaultKeyedFile) s.internalDataFile())
         .collect(Collectors.toList());
   }
 
@@ -82,14 +82,14 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       return null;
     }
     return Arrays.stream(rePosDeletedDataFiles)
-        .map(s -> (DefaultKeyedFile)s.internalDataFile())
+        .map(s -> (DefaultKeyedFile) s.internalDataFile())
         .collect(Collectors.toList());
   }
 
   public List<DeleteFile> positionDeleteForMixed() {
     return Arrays.stream(deleteFiles())
         .filter(s -> s instanceof DeleteFile)
-        .map(s -> (IcebergDeleteFile)s)
+        .map(s -> (IcebergDeleteFile) s)
         .map(IcebergDeleteFile::internalFile)
         .collect(Collectors.toList());
   }
@@ -98,7 +98,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     return Arrays.stream(deleteFiles())
         .filter(s -> s instanceof DataFile)
         .map(IcebergContentFile::internalFile)
-        .map(s -> (PrimaryKeyedFile)s)
+        .map(s -> (PrimaryKeyedFile) s)
         .collect(Collectors.toList());
   }
 

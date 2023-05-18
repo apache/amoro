@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.KeyedTable;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
 
 public class TestContinuousOptimizing extends TableTestBase {
   public TestContinuousOptimizing() {
@@ -58,7 +57,7 @@ public class TestContinuousOptimizing extends TableTestBase {
         .addChecker(dataConcurrencyChecker)
         .build();
     for (int i = 0; i < 20; i++) {
-      view.custom(new TableDataView.CustomData(){
+      view.custom(new TableDataView.CustomData() {
         @Override
         public List<TableDataView.PKWithAction> data() {
           List<TableDataView.PKWithAction> list = new ArrayList<>();
@@ -70,7 +69,6 @@ public class TestContinuousOptimizing extends TableTestBase {
         }
       });
       optimizingFlow.optimize();
-
 
       view.upsert(2500);
       optimizingFlow.optimize();
