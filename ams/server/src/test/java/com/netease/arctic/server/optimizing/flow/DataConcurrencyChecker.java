@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
@@ -26,11 +26,6 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -40,12 +35,31 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
-  private TableDataView view;
+  private final TableDataView view;
+
+  private int count;
 
   public DataConcurrencyChecker(TableDataView view) {
     this.view = view;
+  }
+
+  @Override
+  public boolean condition(ArcticTable table, List<TaskDescriptor> taskDescriptors) {
+    count++;
+    return true;
+  }
+
+  @Override
+  public boolean senseHasCheck() {
+    return count > 0;
   }
 
   @Override

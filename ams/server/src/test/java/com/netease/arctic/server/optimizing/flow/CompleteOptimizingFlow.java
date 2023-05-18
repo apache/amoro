@@ -16,29 +16,34 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.MixedIcebergCommit;
+import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import java.io.IOException;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.util.StructLikeMap;
+import org.jetbrains.annotations.NotNull;
+import org.mockito.Mockito;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,38 +51,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.data.IdentityPartitionConverters;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
-import org.apache.iceberg.util.StructLikeMap;
-import org.jetbrains.annotations.Nullable;
-import org.mockito.Mockito;
 
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
 public class CompleteOptimizingFlow {
 
-  private Executor executorPool;
+  private final Executor executorPool;
 
-  private int availableCore;
+  private final int availableCore;
 
-  private ArcticTable table;
+  private final ArcticTable table;
 
-  private List<Checker> checkers;
+  private final List<Checker> checkers;
 
   private CompleteOptimizingFlow(
       ArcticTable table,
@@ -130,25 +118,25 @@ public class CompleteOptimizingFlow {
   }
 
   private void asyncExecute(List<TaskRuntime> taskRuntimes) throws InterruptedException, ExecutionException {
-/*    CompletableFuture.allOf(
+    CompletableFuture.allOf(
         taskRuntimes.stream()
             .map(taskRuntime -> {
               OptimizingExecutor<RewriteFilesOutput> optimizingExecutor = optimizingExecutor(taskRuntime);
               return CompletableFuture.supplyAsync(optimizingExecutor::execute, executorPool)
                   .thenAccept(taskRuntime::setOutput);
             }).toArray(CompletableFuture[]::new)
-    ).get();*/
+    ).get();
   }
 
   private void check(List<TaskDescriptor> taskDescriptors) throws Exception {
-    for (Checker checker: checkers) {
+    for (Checker checker : checkers) {
       checker.check(table, taskDescriptors);
     }
   }
 
   private List<TaskRuntime> mockTaskRuntime(List<TaskDescriptor> taskDescriptors) {
-/*    List<TaskRuntime> list = new ArrayList<>();
-    for (TaskDescriptor taskDescriptor: taskDescriptors) {
+    List<TaskRuntime> list = new ArrayList<>();
+    for (TaskDescriptor taskDescriptor : taskDescriptors) {
       TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
       Mockito.when(taskRuntime.getPartition()).thenReturn(taskDescriptor.getPartition());
       Mockito.when(taskRuntime.getInput()).thenReturn(taskDescriptor.getInput());
@@ -156,12 +144,11 @@ public class CompleteOptimizingFlow {
       Mockito.doCallRealMethod().when(taskRuntime).getOutput();
       list.add(taskRuntime);
     }
-    return list;*/
-    return null;
+    return list;
   }
 
   private OptimizingPlanner planner() {
-/*    table.refresh();
+    table.refresh();
     TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenReturn(currentSnapshot());
@@ -174,8 +161,7 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(tableConfiguration.getOptimizingConfig());
     Mockito.doCallRealMethod().when(tableRuntime).getCurrentSnapshot(Mockito.any(), Mockito.anyBoolean());
     return new OptimizingPlanner(tableRuntime, table,
-        tableRuntime.getCurrentSnapshot(table, false), availableCore);*/
-    return null;
+        tableRuntime.getCurrentSnapshot(table, false), availableCore);
   }
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {
@@ -204,10 +190,10 @@ public class CompleteOptimizingFlow {
     }
   }
 
-  @Nullable
+  @NotNull
   private Long currentSnapshot() {
-    Long formSnapshotId = null;
-    Snapshot snapshot = null;
+    long formSnapshotId;
+    Snapshot snapshot;
     if (table.format() == TableFormat.ICEBERG) {
       table.asUnkeyedTable().refresh();
       snapshot = table.asUnkeyedTable().currentSnapshot();
@@ -238,18 +224,23 @@ public class CompleteOptimizingFlow {
   }
 
   public interface Checker {
+
+    boolean condition(ArcticTable table, List<TaskDescriptor> taskDescriptors);
+
+    boolean senseHasCheck();
+
     void check(ArcticTable table, List<TaskDescriptor> taskDescriptors) throws Exception;
   }
 
   public static final class Builder {
-    private ArcticTable table;
-    private int availableCore;
+    private final ArcticTable table;
+    private final int availableCore;
     private Long targetSize;
     private Integer fragmentRatio;
     private Double duplicateRatio;
     private Integer minorTriggerFileCount;
 
-    private List<Checker> checkers = new ArrayList<>();
+    private final List<Checker> checkers = new ArrayList<>();
 
     public Builder(
         ArcticTable table,

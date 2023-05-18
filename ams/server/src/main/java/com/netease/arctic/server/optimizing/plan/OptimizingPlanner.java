@@ -54,7 +54,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
     super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
-        partition -> true:
+        partition -> true :
         tableRuntime.getPendingInput().getPartitions()::contains;
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();

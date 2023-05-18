@@ -16,23 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing;
+package com.netease.arctic.server.optimizing.flow;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.ArcticTable;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
 
 public class TestContinuousOptimizing extends TableTestBase {
   public TestContinuousOptimizing() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true));
+    super(new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -40,28 +39,33 @@ public class TestContinuousOptimizing extends TableTestBase {
 
     int partitionCount = 2;
     int primaryUpperBound = 30000;
-    long targetFileSize = 1024 * 128; //128k
+    long selfTargetFileSize = 1024 * 128; //128k
+    long writeTargetFileSize = 1024 * 12; //12k
 
-    KeyedTable table = getArcticTable().asKeyedTable();
+    ArcticTable table = getArcticTable();
 
-    TableDataView view = new TableDataView(table, table.primaryKeySpec().getPkSchema(),
-        partitionCount, primaryUpperBound);
+    TableDataView view = new TableDataView(table, tableTestHelper().primaryKeySpec().getPkSchema(),
+        partitionCount, primaryUpperBound, writeTargetFileSize);
 
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
 
     CompleteOptimizingFlow optimizingFlow = CompleteOptimizingFlow
         .builder(table, 10)
-        .setTargetSize(targetFileSize)
+        .setTargetSize(selfTargetFileSize)
         .setFragmentRatio(null)
         .setDuplicateRatio(null)
         .setMinorTriggerFileCount(4)
         .addChecker(dataConcurrencyChecker)
         .build();
     for (int i = 0; i < 20; i++) {
-      view.custom(new TableDataView.CustomData(){
+      view.custom(new TableDataView.CustomData() {
         @Override
         public List<TableDataView.PKWithAction> data() {
           List<TableDataView.PKWithAction> list = new ArrayList<>();
+          for (int i = 0; i < 100; i++) {
+            list.add(new TableDataView.PKWithAction(i, ChangeAction.DELETE));
+            list.add(new TableDataView.PKWithAction(i, ChangeAction.INSERT));
+          }
           for (int i = 0; i < 100; i++) {
             list.add(new TableDataView.PKWithAction(i, ChangeAction.DELETE));
             list.add(new TableDataView.PKWithAction(i, ChangeAction.INSERT));
@@ -70,7 +74,6 @@ public class TestContinuousOptimizing extends TableTestBase {
         }
       });
       optimizingFlow.optimize();
-
 
       view.upsert(2500);
       optimizingFlow.optimize();
