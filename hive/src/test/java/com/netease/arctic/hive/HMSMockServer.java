@@ -290,7 +290,9 @@ public class HMSMockServer {
         executorQueue,
         r -> {
           Thread thread = new Thread(r);
-          thread.setName("HMS-pool-" + threadCount.incrementAndGet());
+          String threadName = "HMS-pool-" + threadCount.incrementAndGet();
+          thread.setName(threadName);
+          LOG.info("HMSMockServer create thread: " + threadName);
           return thread;
         }, new ThreadPoolExecutor.AbortPolicy());
 
