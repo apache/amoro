@@ -24,8 +24,12 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
@@ -43,8 +47,18 @@ public class TestKeyedOptimizingPlanner extends TestKeyedOptimizingEvaluator {
             new BasicTableTestHelper(true, false)}};
   }
 
+  @Test
   @Override
-  protected OptimizingEvaluator buildOptimizingEvaluator() {
+  public void testFragmentFiles() {
+    super.testFragmentFiles();
+    OptimizingPlanner optimizingEvaluator = buildOptimizingEvaluator();
+    Assert.assertTrue(optimizingEvaluator.isNecessary());
+    List<TaskDescriptor> taskDescriptors = optimizingEvaluator.planTasks();
+    Assert.assertEquals(1, taskDescriptors.size());
+  }
+
+  @Override
+  protected OptimizingPlanner buildOptimizingEvaluator() {
     return new OptimizingPlanner(buildTableRuntime(), getArcticTable(),
         OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()), 1);
   }
