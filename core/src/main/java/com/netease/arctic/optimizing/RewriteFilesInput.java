@@ -1,12 +1,18 @@
 package com.netease.arctic.optimizing;
 
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.data.IcebergDeleteFile;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 
 public class RewriteFilesInput extends BaseOptimizingInput {
   private final IcebergDataFile[] rewrittenDataFiles;
@@ -41,6 +47,48 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   }
 
   public IcebergContentFile<?>[] rewrittenDeleteFiles() {
+    return rewrittenDeleteFiles;
+  }
+
+  public List<PrimaryKeyedFile> rewrittenDataFilesForMixed() {
+    if (rewrittenDataFiles == null) {
+      return null;
+    }
+    return Arrays.stream(rewrittenDataFiles)
+        .map(s -> (DefaultKeyedFile)s.internalDataFile())
+        .collect(Collectors.toList());
+  }
+
+  public List<PrimaryKeyedFile> rePosDeletedDataFilesForMixed() {
+    if (rePosDeletedDataFiles == null) {
+      return null;
+    }
+    return Arrays.stream(rePosDeletedDataFiles)
+        .map(s -> (DefaultKeyedFile)s.internalDataFile())
+        .collect(Collectors.toList());
+  }
+
+  public List<DeleteFile> positionDeleteForMixed() {
+    return Arrays.stream(deleteFiles())
+        .filter(s -> s instanceof DeleteFile)
+        .map(s -> (IcebergDeleteFile)s)
+        .map(IcebergDeleteFile::internalFile)
+        .collect(Collectors.toList());
+  }
+
+  public List<PrimaryKeyedFile> equalityDeleteForMixed() {
+    return Arrays.stream(deleteFiles())
+        .filter(s -> s instanceof DataFile)
+        .map(IcebergContentFile::internalFile)
+        .map(s -> (PrimaryKeyedFile)s)
+        .collect(Collectors.toList());
+  }
+
+  public IcebergContentFile<?>[] readOnlyDeleteFilesForMixed() {
+    return readOnlyDeleteFiles;
+  }
+
+  public IcebergContentFile<?>[] rewrittenDeleteFilesForMixed() {
     return rewrittenDeleteFiles;
   }
 
