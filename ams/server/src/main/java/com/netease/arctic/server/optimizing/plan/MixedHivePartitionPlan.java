@@ -32,6 +32,7 @@ import java.util.List;
 public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private final String hiveLocation;
   private long maxSequence = 0;
+  private String customHiveSubdirectory;
 
   public MixedHivePartitionPlan(TableRuntime tableRuntime,
                                 ArcticTable table, String partition, String hiveLocation, long planTime) {
@@ -99,11 +100,14 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   private String constructCustomHiveSubdirectory() {
-    if (isKeyedTable()) {
-      return HiveTableUtil.newHiveSubdirectory(maxSequence);
-    } else {
-      return HiveTableUtil.newHiveSubdirectory();
+    if (customHiveSubdirectory == null) {
+      if (isKeyedTable()) {
+        return HiveTableUtil.newHiveSubdirectory(maxSequence);
+      } else {
+        return HiveTableUtil.newHiveSubdirectory();
+      }
     }
+    return customHiveSubdirectory;
   }
 
 }
