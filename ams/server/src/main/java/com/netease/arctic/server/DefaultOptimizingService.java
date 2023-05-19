@@ -34,11 +34,10 @@ import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.RuntimeHandlerChain;
-import com.netease.arctic.server.table.TableRuntimeHandler;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import org.slf4j.Logger;
@@ -143,14 +142,16 @@ public class DefaultOptimizingService extends DefaultResourceManager
    * @return OptimizeQueueItem
    */
   private OptimizingQueue getQueueByGroup(String optimizerGroup) {
-    Preconditions.checkArgument(optimizerGroup != null,
+    Preconditions.checkArgument(
+        optimizerGroup != null,
         "optimizerGroup can not be null");
     return Optional.ofNullable(optimizingQueueByGroup.get(optimizerGroup))
         .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
   }
 
   private OptimizingQueue getQueueByToken(String token) {
-    Preconditions.checkArgument(token != null,
+    Preconditions.checkArgument(
+        token != null,
         "optimizer token can not be null");
     return Optional.ofNullable(optimizingQueueByToken.get(token))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));

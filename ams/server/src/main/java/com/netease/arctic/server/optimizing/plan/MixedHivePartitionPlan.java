@@ -29,13 +29,13 @@ import com.netease.arctic.table.ArcticTable;
 
 import java.util.List;
 
-public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
-
+public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private final String hiveLocation;
   private long maxSequence = 0;
+  private String customHiveSubdirectory;
 
-  public HiveKeyedTablePartitionPlan(TableRuntime tableRuntime,
-                                     ArcticTable table, String partition, String hiveLocation, long planTime) {
+  public MixedHivePartitionPlan(TableRuntime tableRuntime,
+                                ArcticTable table, String partition, String hiveLocation, long planTime) {
     super(tableRuntime, table, partition, planTime);
     this.hiveLocation = hiveLocation;
   }
@@ -85,7 +85,7 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
   }
 
   private boolean moveFiles2CurrentHiveLocation() {
-    return evaluator.isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
+    return evaluator().isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
   }
 
   @Override
@@ -93,14 +93,21 @@ public class HiveKeyedTablePartitionPlan extends KeyedTablePartitionPlan {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
-    } else {
+    } else if (evaluator().isFullNecessary()){
       properties.setOutputDir(constructCustomHiveSubdirectory());
     }
     return properties;
   }
 
   private String constructCustomHiveSubdirectory() {
-    return HiveTableUtil.newHiveSubdirectory(maxSequence);
+    if (customHiveSubdirectory == null) {
+      if (isKeyedTable()) {
+        customHiveSubdirectory = HiveTableUtil.newHiveSubdirectory(maxSequence);
+      } else {
+        customHiveSubdirectory = HiveTableUtil.newHiveSubdirectory();
+      }
+    }
+    return customHiveSubdirectory;
   }
 
 }

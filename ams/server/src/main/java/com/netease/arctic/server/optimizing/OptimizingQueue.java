@@ -233,14 +233,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (LOG.isDebugEnabled()) {
         LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       }
-      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
-        LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
-        continue;
-      }
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
             getAvailableCore(tableRuntime));
+        if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+          LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+          continue;
+        }
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           if (LOG.isDebugEnabled()) {

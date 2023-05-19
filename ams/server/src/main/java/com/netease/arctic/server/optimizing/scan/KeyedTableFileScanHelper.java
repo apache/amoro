@@ -27,6 +27,7 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.server.ArcticServiceConstants;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
