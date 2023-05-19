@@ -70,7 +70,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     // insert some delete in change(delete change records)
     expects.addAll(changeInsert);
 
-    IntStream.range(0,2).boxed()
+    IntStream.range(0, 2).boxed()
         .forEach(i -> changeDelete.add(expects.pollLast()));
 
     // insert some delete in change(delete non exists records)

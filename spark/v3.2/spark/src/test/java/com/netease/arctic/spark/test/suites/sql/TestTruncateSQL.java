@@ -37,7 +37,7 @@ public class TestTruncateSQL extends SparkTableTestBase {
   public void testTruncateTable(TableFormat format, String primaryKeyDDL, String partitionDDL) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + partitionDDL;
+        provider(format) + partitionDDL;
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +

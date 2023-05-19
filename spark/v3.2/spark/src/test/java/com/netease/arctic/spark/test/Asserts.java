@@ -27,15 +27,11 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.hive.HiveSchemaUtil;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.catalyst.plans.QueryPlan;
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
-import scala.collection.JavaConverters;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,9 +84,9 @@ public class Asserts {
 
   public static <K, V> void assertHashMapContainExpect(Map<K, V> expect, Map<K, V> actual) {
     for (K key : expect.keySet()) {
-      V _expect = expect.get(key);
-      V _actual = actual.get(key);
-      Assertions.assertEquals(_expect, _actual);
+      V expectValue = expect.get(key);
+      V actualValue = actual.get(key);
+      Assertions.assertEquals(expectValue, actualValue);
     }
   }
 

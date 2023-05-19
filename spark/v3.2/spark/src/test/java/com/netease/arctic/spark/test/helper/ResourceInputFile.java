@@ -25,10 +25,10 @@ public class ResourceInputFile implements InputFile {
       Preconditions.checkNotNull(in);
 
       byte[] buff = new byte[1024];
-      int nRead = 0;
-      while ((nRead = in.read(buff)) > 0) {
-        size += nRead;
-        byte[] readerBytes = Arrays.copyOfRange(buff, 0, nRead);
+      int numRead = 0;
+      while ((numRead = in.read(buff)) > 0) {
+        size += numRead;
+        byte[] readerBytes = Arrays.copyOfRange(buff, 0, numRead);
         bf.add(ByteBuffer.wrap(readerBytes));
       }
     } catch (IOException e) {
@@ -41,7 +41,7 @@ public class ResourceInputFile implements InputFile {
   private final long length;
   private final String location;
 
-  protected ResourceInputFile(List<ByteBuffer> bf, int length, String location){
+  protected ResourceInputFile(List<ByteBuffer> bf, int length, String location) {
     this.length = length;
     this.bf = bf;
     this.location = location;

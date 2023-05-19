@@ -82,7 +82,8 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
   Comparator<Record> dataComparator = Comparator.comparing(r -> r.get(1, String.class));
 
-  Comparator<Record> changeActionComparator = Comparator.comparing(r -> (String) r.getField(MetadataColumns.CHANGE_ACTION_NAME));
+  Comparator<Record> changeActionComparator = Comparator.comparing(
+      r -> (String) r.getField(MetadataColumns.CHANGE_ACTION_NAME));
   Comparator<Record> comparator = pkComparator.thenComparing(dataComparator);
 
 

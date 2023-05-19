@@ -29,7 +29,7 @@ public class TestTables {
   static final Types.NestedField ts_long = Types.NestedField.optional(4, "ts_long", Types.LongType.get());
   static final Types.NestedField ts = Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone());
   static final Types.NestedField pt = Types.NestedField.optional(20, "pt", Types.StringType.get());
-  static Types.NestedField[] fields = new Types.NestedField[] {
+  static Types.NestedField[] fields = new Types.NestedField[]{
       id, data, d, ts_long, ts, pt
   };
 

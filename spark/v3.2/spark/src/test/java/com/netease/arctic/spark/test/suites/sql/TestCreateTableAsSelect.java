@@ -41,9 +41,11 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 
   public static Stream<Arguments> testTimestampZoneHandle() {
     return Stream.of(
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
+        Arguments.of(TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", false, Types.TimestampType.withZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
+        Arguments.of(TableFormat.MIXED_HIVE,
+            "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
         Arguments.of(TableFormat.MIXED_HIVE, "", false, Types.TimestampType.withoutZone())
     );
   }
@@ -53,12 +55,12 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   public void testTimestampZoneHandle(
       TableFormat format, String primaryKeyDDL, boolean timestampWithoutZone, Types.TimestampType expectType) {
     createViewSource(simpleSourceSchema, simpleSourceData);
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, timestampWithoutZone
+    );
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-        + "`=" + timestampWithoutZone);
-
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " AS SELECT * FROM " + source();
     sql(sqlText);
 
     ArcticTable table = loadTable();
@@ -126,11 +128,13 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true");
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT, true
+    );
 
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " " + partitionDDL
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " " + partitionDDL +
+        " AS SELECT * FROM " + source();
     sql(sqlText);
 
     Schema expectSchema = TestTableHelper.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
@@ -152,7 +156,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       Asserts.assertHivePartition(ptSpec, hiveTable.getPartitionKeys());
       // TODO: CreateTableAsSelect should write to hive location but currently it has a bug. ARCTIC-1403
       // TODO: Add this assert if bug is fixed.
-//      Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
+      //      Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
     }
 
 
@@ -187,9 +191,9 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   ) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
     createViewSource(simpleSourceSchema, sourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " "
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " " +
+        " AS SELECT * FROM " + source();
 
     boolean exceptionCatched = false;
     try {
@@ -204,7 +208,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 
   public static Stream<Arguments> testAdditionProperties() {
     String propertiesDDL = "TBLPROPERTIES('k1'='v1', 'k2'='v2')";
-    Map<String, String> expectProperties = CollectionHelper.asMap( "k1", "v1", "k2", "v2");
+    Map<String, String> expectProperties = CollectionHelper.asMap("k1", "v1", "k2", "v2");
     Map<String, String> emptyProperties = Collections.emptyMap();
     return Stream.of(
         Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "", emptyProperties),
@@ -214,7 +218,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "", emptyProperties),
         Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
         Arguments.of(TableFormat.MIXED_HIVE, "", propertiesDDL, expectProperties)
-        );
+    );
   }
 
 
@@ -224,10 +228,9 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       TableFormat format, String primaryKeyDDL, String propertiesDDL, Map<String, String> expectProperties
   ) {
     createViewSource(simpleSourceSchema, simpleSourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " PARTITIONED BY (pt) "
-        + propertiesDDL
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " PARTITIONED BY (pt) " + propertiesDDL +
+        " AS SELECT * FROM " + source();
     sql(sqlText);
     ArcticTable table = loadTable();
     Map<String, String> tableProperties = table.properties();

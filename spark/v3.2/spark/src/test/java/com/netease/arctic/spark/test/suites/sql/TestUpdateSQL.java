@@ -40,7 +40,7 @@ public class TestUpdateSQL extends SparkTableTestBase {
   public void testUpdate(TableFormat format, String primaryKeyDDL, String filter) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (day)";
+        provider(format) + " PARTITIONED BY (day)";
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +
@@ -75,7 +75,7 @@ public class TestUpdateSQL extends SparkTableTestBase {
   public void testUpdatePartitionField(TableFormat format, String primaryKeyDDL, String filter) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (day)";
+        provider(format) + " PARTITIONED BY (day)";
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +
@@ -103,14 +103,14 @@ public class TestUpdateSQL extends SparkTableTestBase {
   public void testUpdatePrimaryField(TableFormat format, String primaryKeyDDL, String filter) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (day)";
+        provider(format) + " PARTITIONED BY (day)";
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +
         " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
 
     Assert.assertThrows(UnsupportedOperationException.class, () ->
-    sql("update " + target().database + "." + target().table + " set id = 1" + filter));
+        sql("update " + target().database + "." + target().table + " set id = 1" + filter));
 
   }
 }

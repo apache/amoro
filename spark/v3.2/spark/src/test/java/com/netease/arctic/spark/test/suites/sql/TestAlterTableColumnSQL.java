@@ -32,31 +32,31 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
                 Types.NestedField.optional(3, "ts", Types.StringType.get()))),
         Arguments.of(TableFormat.MIXED_ICEBERG, "",
             Types.StructType.of(
-            Types.NestedField.optional(1, "id", Types.LongType.get()),
-            Types.NestedField.optional(2, "data", Types.StringType.get()),
-            Types.NestedField.optional(3, "ts", Types.StringType.get()),
-            Types.NestedField.optional(4, "point", Types.StructType.of(
-                Types.NestedField.required(5, "x", Types.DoubleType.get()),
-                Types.NestedField.required(6, "y", Types.DoubleType.get())
-            )))),
-        Arguments.of(TableFormat.MIXED_HIVE,  ", PRIMARY KEY(id)",
+                Types.NestedField.optional(1, "id", Types.LongType.get()),
+                Types.NestedField.optional(2, "data", Types.StringType.get()),
+                Types.NestedField.optional(3, "ts", Types.StringType.get()),
+                Types.NestedField.optional(4, "point", Types.StructType.of(
+                    Types.NestedField.required(5, "x", Types.DoubleType.get()),
+                    Types.NestedField.required(6, "y", Types.DoubleType.get())
+                )))),
+        Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)",
             Types.StructType.of(
-            Types.NestedField.required(1, "id", Types.LongType.get()),
-            Types.NestedField.optional(2, "data", Types.StringType.get()),
-            Types.NestedField.optional(4, "point", Types.StructType.of(
-                Types.NestedField.required(5, "x", Types.DoubleType.get()),
-                Types.NestedField.required(6, "y", Types.DoubleType.get())
-            )),
-            Types.NestedField.optional(3, "ts", Types.StringType.get()))),
+                Types.NestedField.required(1, "id", Types.LongType.get()),
+                Types.NestedField.optional(2, "data", Types.StringType.get()),
+                Types.NestedField.optional(4, "point", Types.StructType.of(
+                    Types.NestedField.required(5, "x", Types.DoubleType.get()),
+                    Types.NestedField.required(6, "y", Types.DoubleType.get())
+                )),
+                Types.NestedField.optional(3, "ts", Types.StringType.get()))),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)",
             Types.StructType.of(
-            Types.NestedField.required(1, "id", Types.LongType.get()),
-            Types.NestedField.optional(2, "data", Types.StringType.get()),
-            Types.NestedField.optional(3, "ts", Types.StringType.get()),
-            Types.NestedField.optional(4, "point", Types.StructType.of(
-                Types.NestedField.required(5, "x", Types.DoubleType.get()),
-                Types.NestedField.required(6, "y", Types.DoubleType.get())
-            ))))
+                Types.NestedField.required(1, "id", Types.LongType.get()),
+                Types.NestedField.optional(2, "data", Types.StringType.get()),
+                Types.NestedField.optional(3, "ts", Types.StringType.get()),
+                Types.NestedField.optional(4, "point", Types.StructType.of(
+                    Types.NestedField.required(5, "x", Types.DoubleType.get()),
+                    Types.NestedField.required(6, "y", Types.DoubleType.get())
+                ))))
     );
   }
 
@@ -65,12 +65,12 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @MethodSource()
   public void testAddColumn(TableFormat format, String primaryKeyDDL, Types.StructType expectedSchema) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id bigint, data string, ts string "+ primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (ts)";
+        "id bigint, data string, ts string " + primaryKeyDDL + " ) using " +
+        provider(format) + " PARTITIONED BY (ts)";
     sql(sqlText);
     sql("ALTER TABLE " +
-            target().database + "." + target().table +
-            " ADD COLUMN point struct<x: double NOT NULL, y: double NOT NULL>");
+        target().database + "." + target().table +
+        " ADD COLUMN point struct<x: double NOT NULL, y: double NOT NULL>");
 
     Assertions.assertEquals(expectedSchema, loadTable().schema().asStruct(), "Schema should match expected");
   }
@@ -95,7 +95,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
 
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (ts)";
+        provider(format) + " PARTITIONED BY (ts)";
     sql(sqlText);
     sql("ALTER TABLE " +
         target().database + "." + target().table +
@@ -112,7 +112,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
     return Stream.of(
         Arguments.of(" id COMMENT 'Record id'", "",
             Types.StructType.of(
-            Types.NestedField.optional(1, "id", Types.LongType.get(), "Record id"),
+                Types.NestedField.optional(1, "id", Types.LongType.get(), "Record id"),
                 Types.NestedField.optional(2, "data", Types.StringType.get()),
                 Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()),
                 Types.NestedField.optional(4, "count", Types.IntegerType.get()))),
@@ -128,7 +128,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
                 Types.NestedField.optional(2, "data", Types.StringType.get()),
                 Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()),
                 Types.NestedField.optional(4, "count", Types.IntegerType.get()))),
-        Arguments.of(" data SET NOT NULL", "",  null),
+        Arguments.of(" data SET NOT NULL", "", null),
         Arguments.of(" count AFTER id", "",
             Types.StructType.of(
                 Types.NestedField.optional(1, "id", Types.LongType.get()),
@@ -153,7 +153,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
                 Types.NestedField.optional(2, "data", Types.StringType.get()),
                 Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()),
                 Types.NestedField.optional(4, "count", Types.IntegerType.get()))),
-        Arguments.of(" data SET NOT NULL", ", PRIMARY KEY(id)",  null),
+        Arguments.of(" data SET NOT NULL", ", PRIMARY KEY(id)", null),
         Arguments.of(" count AFTER id", ", PRIMARY KEY(id)",
             Types.StructType.of(
                 Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -162,6 +162,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
                 Types.NestedField.optional(3, "ts", Types.TimestampType.withZone())))
     );
   }
+
   @DisplayName("Test `alter column`")
   @ParameterizedTest
   @MethodSource()
@@ -169,13 +170,14 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   public void testAlterColumn(String alterText, String primaryKeyDDL, Types.StructType expectedSchema) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts timestamp, count int " + primaryKeyDDL + " ) using " +
-        provider(TableFormat.MIXED_ICEBERG)  + " PARTITIONED BY (ts)";
+        provider(TableFormat.MIXED_ICEBERG) + " PARTITIONED BY (ts)";
     sql(sqlText);
     if (expectedSchema != null) {
       sql("ALTER TABLE " +
           target().database + "." + target().table +
           " ALTER COLUMN " + alterText);
-      Assertions.assertEquals(expectedSchema, loadTable().schema().asStruct(), "Schema should match expected");
+      Assertions.assertEquals(expectedSchema, loadTable().schema().asStruct(),
+          "Schema should match expected");
     } else {
       Assert.assertThrows(
           AnalysisException.class,
@@ -191,10 +193,14 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, "", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", " UNSET TBLPROPERTIES ('test.props')", null),
         Arguments.of(TableFormat.MIXED_HIVE, "", " UNSET TBLPROPERTIES ('test.props')", null),
-        Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
-        Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null),
-        Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null)
+        Arguments.of(TableFormat.MIXED_ICEBERG,
+            ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
+        Arguments.of(TableFormat.MIXED_HIVE,
+            ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
+        Arguments.of(TableFormat.MIXED_ICEBERG,
+            ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null),
+        Arguments.of(TableFormat.MIXED_HIVE,
+            ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null)
     );
   }
 
@@ -202,10 +208,11 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @DisplayName("Test `alter table properties`")
   @ParameterizedTest
   @MethodSource()
-  public void testAlterTableProperties(TableFormat format, String primaryKeyDDL, String alterText, String expectedProperties) {
+  public void testAlterTableProperties(
+      TableFormat format, String primaryKeyDDL, String alterText, String expectedProperties) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts string " + primaryKeyDDL + " ) using " +
-        provider(format)  + " PARTITIONED BY (ts)";
+        provider(format) + " PARTITIONED BY (ts)";
     sql(sqlText);
     sql("ALTER TABLE " +
         target().database + "." + target().table + alterText);

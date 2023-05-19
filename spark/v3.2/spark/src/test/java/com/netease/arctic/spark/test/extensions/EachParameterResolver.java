@@ -14,30 +14,30 @@ public class EachParameterResolver implements ParameterResolver {
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable())
-        && isParameterTypeSupported(parameterContext.getDeclaringExecutable());
+    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable()) &&
+        isParameterTypeSupported(parameterContext.getDeclaringExecutable());
   }
 
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     Class<?> type = parameterContext.getParameter().getType();
-    if (type.isAssignableFrom(ExtensionContext.class)){
+    if (type.isAssignableFrom(ExtensionContext.class)) {
       return extensionContext;
     }
     return null;
   }
 
   private boolean isBeforeOrAfterEachMethod(Executable executable) {
-    return executable.getAnnotation(BeforeEach.class) != null
-        || executable.getAnnotation(AfterEach.class) != null;
+    return executable.getAnnotation(BeforeEach.class) != null ||
+        executable.getAnnotation(AfterEach.class) != null;
   }
 
   private boolean isParameterTypeSupported(Executable executable) {
     Parameter[] parameters = executable.getParameters();
-    for (Parameter parameter: parameters){
+    for (Parameter parameter : parameters) {
       Class<?> type = parameter.getType();
-      if (!type.isAssignableFrom(ExtensionContext.class)){
+      if (!type.isAssignableFrom(ExtensionContext.class)) {
         return false;
       }
     }

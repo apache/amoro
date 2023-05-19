@@ -67,7 +67,6 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
   }
 
 
-
   static final Schema schema = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "data", Types.StringType.get()),
@@ -100,7 +99,7 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
   public void testCreateTableAsSelect(String provider, boolean pk, String pt, boolean duplicateCheck) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, duplicateCheck);
     createViewSource(schema, source);
-    String sqlText = "CREATE TABLE " +target() ;
+    String sqlText = "CREATE TABLE " + target();
     if (pk) {
       sqlText += " PRIMARY KEY (id, pt) ";
     }
@@ -114,7 +113,7 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
     if ("arctic".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
 
-      if (duplicateCheck && pk){
+      if (duplicateCheck && pk) {
         //LogicalPlan query = Asserts.lookupPlan(qe.optimizedPlan(), QueryWithConstraintCheckPlan.class);
         //TODO: duplicate query check
         //Assertions.assertNotNull(query);

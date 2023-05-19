@@ -43,9 +43,10 @@ public class TestCreateTableSQL extends SparkTableTestBase {
   @MethodSource
   public void testTimestampHandleInCreateTable(
       TableFormat format, boolean usingTimestampWithoutZone, Types.TimestampType expectType) {
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, usingTimestampWithoutZone
+    );
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-        + "`=" + usingTimestampWithoutZone);
     String sqlText = "CREATE TABLE " + target() + "(\n" +
         "id INT, \n" +
         "ts TIMESTAMP \n) using  " + provider(format);
@@ -162,8 +163,7 @@ public class TestCreateTableSQL extends SparkTableTestBase {
         "data string, " +
         "ts timestamp, " +
         "pt string, " +
-        " PRIMARY KEY(id) ) using  " + provider(format) + " "
-        + partitionDDL;
+        " PRIMARY KEY(id) ) using  " + provider(format) + " " + partitionDDL;
 
     sql(sqlText);
 
@@ -228,8 +228,9 @@ public class TestCreateTableSQL extends SparkTableTestBase {
       TableFormat format, String structDDL, String propertiesDDL,
       Schema expectSchema, Map<String, String> expectProperties
   ) {
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-        + "`= false ");
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, false
+    );
     String sqlText = "CREATE TABLE " + target() + "(" +
         structDDL + ") using  " + provider(format) + " " + propertiesDDL;
     sql(sqlText);

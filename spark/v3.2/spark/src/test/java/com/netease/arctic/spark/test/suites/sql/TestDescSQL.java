@@ -36,7 +36,7 @@ public class TestDescSQL extends SparkTableTestBase {
   public void testDescTable(TableFormat format, String primaryKeyDDL, String partitionDDL) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + partitionDDL;
+        provider(format) + partitionDDL;
     sql(sqlText);
     List<Row> rows = sql("desc " + target().database + "." + target().table).collectAsList();
     List<String> primaryKeys = new ArrayList<>();

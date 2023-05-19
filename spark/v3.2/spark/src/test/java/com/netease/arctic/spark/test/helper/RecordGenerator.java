@@ -71,6 +71,14 @@ public class RecordGenerator {
     return record;
   }
 
+  public static GenericRecord newRecord(Schema schema, Object... cols) {
+    GenericRecord record = GenericRecord.create(schema);
+    for (int i = 0; i < cols.length; i++) {
+      record.set(i, cols[i]);
+    }
+    return record;
+  }
+
   public List<Record> records(int size) {
     return IntStream.range(0, size).boxed()
         .map(x -> this.newRecord())
@@ -81,13 +89,6 @@ public class RecordGenerator {
     return new Builder(schema);
   }
 
-  public static GenericRecord newRecord(Schema schema, Object... cols) {
-    GenericRecord record = GenericRecord.create(schema);
-    for (int i = 0; i < cols.length; i++) {
-      record.set(i, cols[i]);
-    }
-    return record;
-  }
 
   public static class Builder {
     final Schema schema;
@@ -188,6 +189,7 @@ public class RecordGenerator {
       return super.get(type);
     }
   }
+
   static class RandomDateString extends RandomValueGenerator {
 
     public RandomDateString(long seed) {
@@ -201,15 +203,17 @@ public class RecordGenerator {
   }
 
 
-  static abstract class EnumValueGenerator implements ValueGenerator {
+  abstract static class EnumValueGenerator implements ValueGenerator {
     Object[] enums;
-    public EnumValueGenerator(Object[] enums){
+
+    public EnumValueGenerator(Object[] enums) {
       this.enums = enums;
     }
   }
 
   static class RoundRobinEnumValueGenerator extends EnumValueGenerator {
     AtomicInteger index = new AtomicInteger(0);
+
     public RoundRobinEnumValueGenerator(Object[] enums) {
       super(enums);
     }
@@ -223,6 +227,7 @@ public class RecordGenerator {
 
   static class RandomEnumValueGenerator extends EnumValueGenerator {
     private final Random random;
+
     public RandomEnumValueGenerator(long seed, Object[] enums) {
       super(enums);
       this.random = new Random(seed);

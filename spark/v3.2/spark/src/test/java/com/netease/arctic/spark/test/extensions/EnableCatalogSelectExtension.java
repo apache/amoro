@@ -26,8 +26,8 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
   @Override
   public void invokeBeforeEachMethod(ExtensionContext context, ExtensionRegistry registry) throws Throwable {
     Preconditions.condition(
-        context.getTestInstance().isPresent()
-            && context.getRequiredTestInstance() instanceof SparkTestBase,
+        context.getTestInstance().isPresent() &&
+            context.getRequiredTestInstance() instanceof SparkTestBase,
         () -> "This is not a SparkTest");
 
 
@@ -45,9 +45,9 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
     if (selector == null) {
       return "spark_catalog";
     }
-    if (StringUtils.isNotEmpty(selector.use())){
+    if (StringUtils.isNotEmpty(selector.use())) {
       return selector.use();
-    } else if (selector.byTableFormat()){
+    } else if (selector.byTableFormat()) {
       return selectCatalogByFormat(context, registry);
     } else {
       throw new IllegalArgumentException("can't determine the spark catalog");

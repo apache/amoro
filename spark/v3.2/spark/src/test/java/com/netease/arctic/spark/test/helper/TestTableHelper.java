@@ -124,8 +124,8 @@ public class TestTableHelper {
 
   public static TableFiles files(ArcticTable table) {
     if (table.isUnkeyedTable()) {
-      Pair<Set<DataFile>, Set<DeleteFile>> fStatistic = icebergFiles(table.asUnkeyedTable());
-      return new TableFiles(fStatistic.getLeft(), fStatistic.getRight());
+      Pair<Set<DataFile>, Set<DeleteFile>> fileStatistic = icebergFiles(table.asUnkeyedTable());
+      return new TableFiles(fileStatistic.getLeft(), fileStatistic.getRight());
     }
 
     return keyedFiles(table.asKeyedTable());
@@ -155,12 +155,12 @@ public class TestTableHelper {
     try (CloseableIterable<CombinedScanTask> it = table.newScan().planTasks()) {
       it.forEach(cst -> cst.tasks().forEach(
           t -> {
-            t.baseTasks().forEach(fTask -> {
-              baseDataFiles.add(fTask.file());
-              baseDeleteFiles.addAll(fTask.deletes());
+            t.baseTasks().forEach(fileTask -> {
+              baseDataFiles.add(fileTask.file());
+              baseDeleteFiles.addAll(fileTask.deletes());
             });
-            t.insertTasks().forEach(fTask -> insertFiles.add(fTask.file()));
-            t.arcticEquityDeletes().forEach(fTask -> deleteFiles.add(fTask.file()));
+            t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
+            t.arcticEquityDeletes().forEach(fileTask -> deleteFiles.add(fileTask.file()));
           }
       ));
       return new TableFiles(baseDataFiles, baseDeleteFiles, insertFiles, deleteFiles);
@@ -209,7 +209,8 @@ public class TestTableHelper {
         IdentityPartitionConverters::convertConstant, false
     );
     List<Record> result = Lists.newArrayList();
-    try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks = table.newScan().filter(expression).planTasks()) {
+    try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks
+             = table.newScan().filter(expression).planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
         try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
           while (records.hasNext()) {
