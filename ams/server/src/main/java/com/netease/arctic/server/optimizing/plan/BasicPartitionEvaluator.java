@@ -29,7 +29,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Set;
 
-public class BasicPartitionEvaluator extends PartitionEvaluator {
+public class BasicPartitionEvaluator implements PartitionEvaluator {
+  private final String partition;
   private final Set<String> deleteFileSet = Sets.newHashSet();
   private final OptimizingConfig config;
   private final TableRuntime tableRuntime;
@@ -57,11 +58,16 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   private long cost = -1;
 
   public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
-    super(partition);
+    this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
+  }
+
+  @Override
+  public String getPartition() {
+    return partition;
   }
 
   protected boolean isFragmentFile(IcebergDataFile dataFile) {

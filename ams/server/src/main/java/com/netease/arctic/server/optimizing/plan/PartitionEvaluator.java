@@ -24,40 +24,32 @@ import com.netease.arctic.server.optimizing.OptimizingType;
 
 import java.util.List;
 
-public abstract class PartitionEvaluator {
+public interface PartitionEvaluator {
 
-  protected final String partition;
+  String getPartition();
 
-  public PartitionEvaluator(String partition) {
-    this.partition = partition;
-  }
+  void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
 
-  public String getPartition() {
-    return partition;
-  }
+  boolean isNecessary();
 
-  public abstract void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+  long getCost();
 
-  public abstract boolean isNecessary();
+  OptimizingType getOptimizingType();
 
-  public abstract long getCost();
+  int getFragmentFileCount();
 
-  public abstract OptimizingType getOptimizingType();
+  long getFragmentFileSize();
 
-  public abstract int getFragmentFileCount();
+  int getSegmentFileCount();
 
-  public abstract long getFragmentFileSize();
+  long getSegmentFileSize();
 
-  public abstract int getSegmentFileCount();
+  int getEqualityDeleteFileCount();
 
-  public abstract long getSegmentFileSize();
+  long getEqualityDeleteFileSize();
 
-  public abstract int getEqualityDeleteFileCount();
+  int getPosDeleteFileCount();
 
-  public abstract long getEqualityDeleteFileSize();
-
-  public abstract int getPosDeleteFileCount();
-
-  public abstract long getPosDeleteFileSize();
+  long getPosDeleteFileSize();
 
 }

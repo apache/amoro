@@ -145,7 +145,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new KeyedTablePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
+    return new MixedIcebergPartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
         System.currentTimeMillis());
   }
 
