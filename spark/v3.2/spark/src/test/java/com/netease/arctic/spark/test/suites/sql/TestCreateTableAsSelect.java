@@ -129,7 +129,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     createViewSource(simpleSourceSchema, simpleSourceData);
 
     spark().conf().set(
-        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT, true
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true
     );
 
     String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +

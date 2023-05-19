@@ -124,8 +124,9 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true");
-
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true
+    );
     String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
         " USING " + provider(format) + " " + partitionDDL +
         " AS SELECT * FROM " + source();
