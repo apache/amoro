@@ -30,7 +30,8 @@ import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.persistence.StatedPersistentBase;
+import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.StatedPersistentProxy;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
@@ -40,24 +41,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime extends StatedPersistentBase {
-
+public class TaskRuntime extends PersistentBase {
+  private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
+  @StatedPersistentProxy.StateField
   private Status status = Status.PLANNED;
   private TaskStatusMachine statusMachine;
+  @StatedPersistentProxy.StateField
   private int retry = 0;
+  @StatedPersistentProxy.StateField
   private long startTime = ArcticServiceConstants.INVALID_TIME;
+  @StatedPersistentProxy.StateField
   private long endTime = ArcticServiceConstants.INVALID_TIME;
+  @StatedPersistentProxy.StateField
   private long costTime = 0;
+  @StatedPersistentProxy.StateField
   private OptimizingQueue.OptimizingThread optimizingThread;
+  @StatedPersistentProxy.StateField
   private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
+  @StatedPersistentProxy.StateField
   private RewriteFilesOutput output;
   private ByteBuffer outputBytes;
+  @StatedPersistentProxy.StateField
   private MetricsSummary summary;
-  private long tableId;
   private Map<String, String> properties;
 
   private TaskRuntime() {

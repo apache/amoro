@@ -33,8 +33,10 @@ public abstract class PersistentBase {
   }
 
   protected NestedSqlSession beginSession() {
-    return NestedSqlSession.openSession(() -> SqlSessionFactoryProvider.getInstance().get()
-        .openSession(TransactionIsolationLevel.READ_COMMITTED));
+    return NestedSqlSession.openSession(
+        () -> SqlSessionFactoryProvider
+            .getInstance().get()
+            .openSession(TransactionIsolationLevel.READ_COMMITTED));
   }
 
   protected <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
