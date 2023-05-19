@@ -79,7 +79,6 @@ public class TestOrphanFileClean extends ExecutorTestBase {
   public void mock() {
     orphanFilesCleaningExecutor = Mockito.mock(OrphanFilesCleaningExecutor.class);
     tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.loadTable()).thenReturn(getArcticTable());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id())));
     Mockito.doCallRealMethod().when(orphanFilesCleaningExecutor).execute(tableRuntime);

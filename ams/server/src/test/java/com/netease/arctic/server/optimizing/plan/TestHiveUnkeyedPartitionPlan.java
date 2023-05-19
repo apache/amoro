@@ -67,7 +67,7 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    return new HiveUnkeyedTablePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
+    return new MixedHivePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
         System.currentTimeMillis());
   }
 }

@@ -29,7 +29,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Set;
 
-public class BasicPartitionEvaluator extends PartitionEvaluator {
+public class BasicPartitionEvaluator implements PartitionEvaluator {
+  private final String partition;
   private final Set<String> deleteFileSet = Sets.newHashSet();
   private final OptimizingConfig config;
   private final TableRuntime tableRuntime;
@@ -57,11 +58,16 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   private long cost = -1;
 
   public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
-    super(partition);
+    this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
+  }
+
+  @Override
+  public String getPartition() {
+    return partition;
   }
 
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
@@ -140,9 +146,11 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // TODO check
-      cost = rewriteSegmentFileSize * 4 + fragmentFileSize * 4 +
+      cost = rewriteSegmentFileSize * 2 + fragmentFileSize * 2 +
           rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
+      int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
+          equalityDeleteFileCount;
+      cost += fileCnt * config.getOpenFileCost();
     }
     return cost;
   }
@@ -160,7 +168,7 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   public boolean isMinorNecessary() {
     int sourceFileCount = fragmentFileCount + equalityDeleteFileCount;
     return sourceFileCount >= config.getMinorLeastFileCount() ||
-        (sourceFileCount > 1 &&
+        (sourceFileCount > 1 && config.getMinorLeastInterval() > 0 &&
             planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
   }
 

@@ -26,6 +26,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -46,7 +47,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBase {
+public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public TestKeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
                                       TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);

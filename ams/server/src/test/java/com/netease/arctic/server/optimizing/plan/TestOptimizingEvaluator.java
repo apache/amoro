@@ -98,8 +98,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(getTableRuntime(), getArcticTable(),
-        OptimizingTestHelpers.getCurrentTableSnapshot(getArcticTable()));
+    return new OptimizingEvaluator(getTableRuntime(), getArcticTable());
   }
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {

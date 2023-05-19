@@ -31,9 +31,9 @@ import org.junit.Assert;
 
 import java.util.List;
 
-public abstract class MixedTableFileScanHelperTestBase extends TableTestBase {
-  public MixedTableFileScanHelperTestBase(CatalogTestHelper catalogTestHelper,
-                                          TableTestHelper tableTestHelper) {
+public abstract class TableFileScanHelperTestBase extends TableTestBase {
+  public TableFileScanHelperTestBase(CatalogTestHelper catalogTestHelper,
+                                     TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -54,7 +54,7 @@ public abstract class MixedTableFileScanHelperTestBase extends TableTestBase {
     Assert.assertEquals(size, result.size());
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
       IcebergDataFile file = fileScanResult.file();
-      Assert.assertTrue(file.internalFile() instanceof PrimaryKeyedFile);
+      assertDataFileClass(file);
       if (sequence != null) {
         Assert.assertEquals(sequence.longValue(), file.getSequenceNumber());
       }
@@ -71,6 +71,10 @@ public abstract class MixedTableFileScanHelperTestBase extends TableTestBase {
         }
       }
     }
+  }
+
+  protected void assertDataFileClass(IcebergDataFile file) {
+    Assert.assertTrue(file.internalFile() instanceof PrimaryKeyedFile);
   }
 
   protected String getPartition() {

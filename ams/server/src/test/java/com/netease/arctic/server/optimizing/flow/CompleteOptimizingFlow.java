@@ -29,19 +29,19 @@ import com.netease.arctic.server.optimizing.MixedIcebergCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.util.StructLikeMap;
-import org.jetbrains.annotations.NotNull;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -51,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
@@ -117,20 +118,27 @@ public class CompleteOptimizingFlow {
     check(taskDescriptors);
   }
 
+  public List<Checker> unTriggerChecker() {
+    return checkers.stream().filter(s -> !s.senseHasCheck())
+        .collect(Collectors.toList());
+  }
+
   private void asyncExecute(List<TaskRuntime> taskRuntimes) throws InterruptedException, ExecutionException {
     CompletableFuture.allOf(
         taskRuntimes.stream()
             .map(taskRuntime -> {
               OptimizingExecutor<RewriteFilesOutput> optimizingExecutor = optimizingExecutor(taskRuntime);
               return CompletableFuture.supplyAsync(optimizingExecutor::execute, executorPool)
-                  .thenAccept(taskRuntime::setOutput);
+                  .thenAccept(s -> Mockito.when(taskRuntime.getOutput()).thenReturn(s));
             }).toArray(CompletableFuture[]::new)
     ).get();
   }
 
   private void check(List<TaskDescriptor> taskDescriptors) throws Exception {
     for (Checker checker : checkers) {
-      checker.check(table, taskDescriptors);
+      if (checker.condition(table, taskDescriptors)) {
+        checker.check(table, taskDescriptors);
+      }
     }
   }
 
@@ -140,8 +148,6 @@ public class CompleteOptimizingFlow {
       TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
       Mockito.when(taskRuntime.getPartition()).thenReturn(taskDescriptor.getPartition());
       Mockito.when(taskRuntime.getInput()).thenReturn(taskDescriptor.getInput());
-      Mockito.doCallRealMethod().when(taskRuntime).setOutput(Mockito.any());
-      Mockito.doCallRealMethod().when(taskRuntime).getOutput();
       list.add(taskRuntime);
     }
     return list;
@@ -151,17 +157,16 @@ public class CompleteOptimizingFlow {
     table.refresh();
     TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenReturn(currentSnapshot());
+    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
     Mockito.when(tableRuntime.getNewestProcessId()).thenReturn(1L);
     Mockito.when(tableRuntime.getPendingInput()).thenReturn(null);
-    Mockito.when(tableRuntime.loadTable()).thenReturn(table);
     Mockito.when(tableRuntime.getLastMinorOptimizingTime()).thenReturn(Long.MAX_VALUE);
     Mockito.when(tableRuntime.getLastMajorOptimizingTime()).thenReturn(Long.MAX_VALUE);
     Mockito.when(tableRuntime.getLastFullOptimizingTime()).thenReturn(Long.MAX_VALUE);
     Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(tableConfiguration.getOptimizingConfig());
-    Mockito.doCallRealMethod().when(tableRuntime).getCurrentSnapshot(Mockito.any(), Mockito.anyBoolean());
-    return new OptimizingPlanner(tableRuntime, table,
-        tableRuntime.getCurrentSnapshot(table, false), availableCore);
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
+    return new OptimizingPlanner(tableRuntime, table, availableCore);
   }
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {
@@ -190,23 +195,20 @@ public class CompleteOptimizingFlow {
     }
   }
 
-  @NotNull
-  private Long currentSnapshot() {
-    long formSnapshotId;
-    Snapshot snapshot;
-    if (table.format() == TableFormat.ICEBERG) {
-      table.asUnkeyedTable().refresh();
-      snapshot = table.asUnkeyedTable().currentSnapshot();
+  private long getCurrentSnapshotId() {
+    if (table.isKeyedTable()) {
+      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
     } else {
-      table.asKeyedTable().baseTable().refresh();
-      snapshot = table.asKeyedTable().baseTable().currentSnapshot();
+      return IcebergTableUtils.getSnapshotId(table.asUnkeyedTable(), false);
     }
-    if (snapshot == null) {
-      formSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  }
+
+  private long getCurrentChangeSnapshotId() {
+    if (table.isKeyedTable()) {
+      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
     } else {
-      formSnapshotId = snapshot.snapshotId();
+      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }
-    return formSnapshotId;
   }
 
   private StructLikeMap<Long> getStructLike(Map<String, Long> partitionSequence) {

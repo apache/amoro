@@ -21,10 +21,10 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
+import com.netease.arctic.server.table.BasicTableSnapshot;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
@@ -38,10 +38,7 @@ import java.util.Set;
 
 public class IcebergTableUtils {
   public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
-    if (refresh) {
-      internalTable.refresh();
-    }
-    Snapshot currentSnapshot = internalTable.currentSnapshot();
+    Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
     if (currentSnapshot == null) {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {

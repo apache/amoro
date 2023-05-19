@@ -2,10 +2,10 @@ package com.netease.arctic.server.table.executor;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import org.slf4j.Logger;
