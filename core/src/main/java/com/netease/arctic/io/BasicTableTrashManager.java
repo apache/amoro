@@ -19,7 +19,7 @@
 package com.netease.arctic.io;
 
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
@@ -72,8 +72,8 @@ class BasicTableTrashManager implements TableTrashManager {
 
   @VisibleForTesting
   static String getRelativeFileLocation(String tableRootLocation, String fileLocation) {
-    tableRootLocation = TableFileUtils.getUriPath(tableRootLocation);
-    fileLocation = TableFileUtils.getUriPath(fileLocation);
+    tableRootLocation = TableFileUtil.getUriPath(tableRootLocation);
+    fileLocation = TableFileUtil.getUriPath(fileLocation);
     if (!tableRootLocation.endsWith("/")) {
       tableRootLocation = tableRootLocation + "/";
     }
@@ -107,7 +107,7 @@ class BasicTableTrashManager implements TableTrashManager {
           getRelativeFileLocation(this.tableRootLocation, path),
           this.trashLocation,
           System.currentTimeMillis());
-      String targetFileDir = TableFileUtils.getFileDir(targetFileLocation);
+      String targetFileDir = TableFileUtil.getFileDir(targetFileLocation);
       if (!arcticFileIO.exists(targetFileDir)) {
         arcticFileIO.makeDirectories(targetFileDir);
       }
@@ -150,7 +150,7 @@ class BasicTableTrashManager implements TableTrashManager {
     Iterable<FileInfo> datePaths = arcticFileIO.listPrefix(this.trashLocation);
 
     for (FileInfo datePath : datePaths) {
-      String dateName = TableFileUtils.getFileName(datePath.location());
+      String dateName = TableFileUtil.getFileName(datePath.location());
       LocalDate localDate;
       try {
         localDate = parseDate(dateName);

@@ -21,7 +21,7 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
 import org.junit.Before;

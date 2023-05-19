@@ -20,15 +20,11 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.file.FileNameGenerator;
-import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -38,6 +34,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Before;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class TableDataTestBase extends TableTestBase {
@@ -101,13 +98,13 @@ public abstract class TableDataTestBase extends TableTestBase {
     baseAppend.commit();
 
     // write position with transaction id:4, (id=4)
-    DefaultKeyedFile.FileMeta fileMeta = FileNameGenerator.parseBase(dataFileForPositionDelete.path().toString());
-    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withTransactionId(4L).buildBasePosDeleteWriter(fileMeta.node().getMask(), fileMeta.node().getIndex(),
-            dataFileForPositionDelete.partition());
-    writer.delete(dataFileForPositionDelete.path().toString(), 0);
-    DeleteFile posDeleteFiles = writer.complete().stream().findAny()
+    DeleteFile posDeleteFiles = DataTestHelpers.writeBaseStorePosDelete(getArcticTable(),
+            4L,
+            dataFileForPositionDelete,
+            Collections.singletonList(0L))
+        .stream().findAny()
         .orElseThrow(() -> new IllegalStateException("Cannot get delete file from writer"));
+
     this.deleteFileOfPositionDelete = posDeleteFiles;
     getArcticTable().asKeyedTable().baseTable().newRowDelta().addDeletes(posDeleteFiles).commit();
 

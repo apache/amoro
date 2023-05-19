@@ -77,8 +77,11 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
   public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
 
-  public static final String SELF_OPTIMIZING_RETRY_NUMBER = "self-optimizing.num-retries";
-  public static final int SELF_OPTIMIZING_RETRY_NUMBER_DEFAULT = 5;
+  public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER = "self-optimizing.execute.num-retries";
+  public static final int SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT = 5;
+
+  public static final String SELF_OPTIMIZING_COMMIT_RETRY_NUMBER = "self-optimizing.commit.num-retries";
+  public static final int SELF_OPTIMIZING_COMMIT_RETRY_NUMBER_DEFAULT = Integer.MAX_VALUE;
 
   public static final String SELF_OPTIMIZING_EXECUTE_TIMEOUT = "self-optimizing.execute.timeout";
   public static final long SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
@@ -99,7 +102,7 @@ public class TableProperties {
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL = "self-optimizing.minor.trigger.interval";
-  public static final long SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
+  public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
@@ -112,7 +115,10 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
 
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
-  public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+
+  public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
+  public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
 
   /**
@@ -167,13 +173,13 @@ public class TableProperties {
   public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
-  public static final String CHANGE_DATA_TTL_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
 
   public static final String CHANGE_SNAPSHOT_KEEP_MINUTES = "snapshot.change.keep.minutes";
-  public static final String CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 10080; // 7 Days
 
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
-  public static final String BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "720"; // 12 Hours
+  public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
@@ -181,7 +187,7 @@ public class TableProperties {
   public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
-  public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
+  public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
   public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
   public static final boolean ENABLE_TABLE_TRASH_DEFAULT = false;

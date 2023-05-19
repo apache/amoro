@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -68,6 +69,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   @Override
   public ArcticHadoopFileIO io() {
     return (ArcticHadoopFileIO) super.io();
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
   }
 
   @Override

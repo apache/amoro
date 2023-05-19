@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.OperationErrorException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -130,10 +129,5 @@ public class PooledAmsClient implements AmsClient {
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
     return getIface().getBlockers(tableIdentifier);
-  }
-
-  @Override
-  public void refreshTable(TableIdentifier tableIdentifier) throws OperationErrorException, TException {
-    getIface().refreshTable(tableIdentifier);
   }
 }

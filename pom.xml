@@ -40,7 +40,6 @@
     <modules>
         <module>core</module>
         <module>hive</module>
-        <module>optimizer</module>
         <module>flink</module>
         <module>spark</module>
         <module>trino</module>
