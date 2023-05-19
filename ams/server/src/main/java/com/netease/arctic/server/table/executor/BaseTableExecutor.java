@@ -2,10 +2,10 @@ package com.netease.arctic.server.table.executor;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableConfiguration;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeHandler;
-import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import org.slf4j.Logger;
@@ -16,23 +16,23 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public abstract class BaseTableExecutor extends TableRuntimeHandler {
+public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   private static final long START_DELAY = 10 * 1000L;
 
   private final ScheduledExecutorService executor;
-  private final TableRuntimeManager tableRuntimes;
+  private final TableManager tableManager;
 
-  protected BaseTableExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
-    this.tableRuntimes = tableRuntimes;
+  protected BaseTableExecutor(TableManager tableManager, int poolSize) {
+    this.tableManager = tableManager;
     this.executor = Executors.newScheduledThreadPool(
         poolSize,
         new ThreadFactoryBuilder()
             .setDaemon(false)
             .setNameFormat("ASYNC-" + getThreadName() + "-%d").build());
-    this.tableRuntimes.addHandler(this);
+    this.tableManager.addHandlerChain(this);
   }
 
   @Override
@@ -80,7 +80,7 @@ public abstract class BaseTableExecutor extends TableRuntimeHandler {
   }
 
   private boolean isExecutable(TableRuntime tableRuntime) {
-    return tableRuntimes.contains(tableRuntime.getTableIdentifier()) && enabled(tableRuntime);
+    return tableManager.contains(tableRuntime.getTableIdentifier()) && enabled(tableRuntime);
   }
 
   @Override
@@ -112,6 +112,6 @@ public abstract class BaseTableExecutor extends TableRuntimeHandler {
   }
 
   protected ArcticTable loadTable(TableRuntime tableRuntime) {
-    return tableRuntimes.loadTable(tableRuntime.getTableIdentifier());
+    return tableManager.loadTable(tableRuntime.getTableIdentifier());
   }
 }

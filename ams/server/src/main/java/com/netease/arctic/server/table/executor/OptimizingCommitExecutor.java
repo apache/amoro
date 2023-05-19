@@ -1,8 +1,8 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.Optional;
@@ -11,7 +11,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 
-  public OptimizingCommitExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
+  public OptimizingCommitExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
   }
 

@@ -26,7 +26,8 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -46,7 +47,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBase {
+public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public TestKeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
                                       TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -218,8 +219,8 @@ public class TestKeyedTableFileScanHelper extends MixedTableFileScanHelperTestBa
   }
 
   protected KeyedTableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable().baseTable(), true);
+    long changeSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable().changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =

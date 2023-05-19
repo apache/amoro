@@ -25,7 +25,8 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
@@ -39,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTestBase {
+public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public TestUnkeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
                                         TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -85,18 +86,18 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
     if (isPartitionedTable()) {
-      assertScanResult(scan, 4, 0L, 0);
+      assertScanResult(scan, 4, null, 0);
     } else {
-      assertScanResult(scan, 2, 0L, 0);
+      assertScanResult(scan, 2, null, 0);
     }
 
     // test partition filter
     scan = buildFileScanHelper().withPartitionFilter(
         partition -> getPartition().equals(partition)).scan();
     if (isPartitionedTable()) {
-      assertScanResult(scan, 2, 0L, 0);
+      assertScanResult(scan, 2, null, 0);
     } else {
-      assertScanResult(scan, 2, 0L, 0);
+      assertScanResult(scan, 2, null, 0);
     }
   }
 
@@ -120,12 +121,17 @@ public class TestUnkeyedTableFileScanHelper extends MixedTableFileScanHelperTest
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
 
-    assertScanResult(scan, 1, 0L, 1);
+    assertScanResult(scan, 1, null, 1);
   }
 
   @Override
-  protected UnkeyedTableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), true);
-    return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(), baseSnapshotId);
+  protected UnkeyedTable getArcticTable() {
+    return super.getArcticTable().asUnkeyedTable();
+  }
+
+  @Override
+  protected TableFileScanHelper buildFileScanHelper() {
+    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    return new UnkeyedTableFileScanHelper(getArcticTable(), baseSnapshotId);
   }
 }

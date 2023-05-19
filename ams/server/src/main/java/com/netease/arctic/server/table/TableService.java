@@ -27,7 +27,7 @@ import com.netease.arctic.server.catalog.CatalogService;
 import java.util.List;
 import java.util.Map;
 
-public interface TableService extends CatalogService, TableRuntimeManager {
+public interface TableService extends CatalogService, TableManager {
 
   void initialize();
 
@@ -128,7 +128,7 @@ public interface TableService extends CatalogService, TableRuntimeManager {
   long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
-   * get blockers of table
+   * getRuntime blockers of table
    *
    * @return block list
    */

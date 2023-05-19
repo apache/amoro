@@ -149,7 +149,7 @@ public class TerminalManager {
   }
 
   /**
-   * get execution status and logs
+   * getRuntime execution status and logs
    */
   public LogInfo getExecutionLog(String sessionId) {
     if (sessionId == null) {
@@ -166,7 +166,7 @@ public class TerminalManager {
   }
 
   /**
-   * get execution result.
+   * getRuntime execution result.
    */
   public List<SqlResult> getExecutionResults(String sessionId) {
     if (sessionId == null) {
@@ -206,7 +206,7 @@ public class TerminalManager {
   }
 
   /**
-   * get last execution info
+   * getRuntime last execution info
    *
    * @param terminalId - id of terminal window
    * @return last session info

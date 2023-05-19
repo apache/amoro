@@ -20,10 +20,10 @@ package com.netease.arctic.server.table.executor;
 
 import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.server.utils.HiveLocationUtil;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -59,7 +59,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   // 1 days
   private static final long INTERVAL = 24 * 60 * 60 * 1000L;
 
-  public OrphanFilesCleaningExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
+  public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
   }
 
@@ -77,7 +77,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
-      ArcticTable arcticTable = tableRuntime.loadTable();
+      ArcticTable arcticTable = loadTable(tableRuntime);
 
       boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(
           arcticTable.properties(),
@@ -97,7 +97,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       // clear data files
       cleanContentFiles(arcticTable, System.currentTimeMillis() - keepTime);
 
-      arcticTable = tableRuntime.loadTable();
+      arcticTable = loadTable(tableRuntime);
       // clear metadata files
       cleanMetadata(arcticTable, System.currentTimeMillis() - keepTime);
     } catch (Throwable t) {
@@ -106,7 +106,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   }
 
   public static void cleanContentFiles(ArcticTable arcticTable, long lastTime) {
-    // For clean data files, should get valid files in the base store and the change store, so acquire in advance
+    // For clean data files, should getRuntime valid files in the base store and the change store, so acquire in advance
     // to prevent repeated acquisition
     Set<String> validFiles = getValidContentFiles(arcticTable);
     if (arcticTable.isKeyedTable()) {
@@ -145,22 +145,22 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static Set<String> getValidContentFiles(ArcticTable arcticTable) {
     Set<String> validFiles = new HashSet<>();
     if (arcticTable.isKeyedTable()) {
-      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
-      LOG.info("{} get {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
-      Set<String> changeValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
-      LOG.info("{} get {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
+      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
+      LOG.info("{} getRuntime {} valid files in the base store", arcticTable.id(), baseValidFiles.size());
+      Set<String> changeValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
+      LOG.info("{} getRuntime {} valid files in the change store", arcticTable.id(), baseValidFiles.size());
       validFiles.addAll(baseValidFiles);
       validFiles.addAll(changeValidFiles);
     } else {
-      Set<String> baseValidFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
+      Set<String> baseValidFiles = IcebergTableUtils.getAllContentFilePath(arcticTable.asUnkeyedTable());
       validFiles.addAll(baseValidFiles);
     }
 
-    LOG.info("{} get {} valid files", arcticTable.id(), validFiles.size());
+    LOG.info("{} getRuntime {} valid files", arcticTable.id(), validFiles.size());
 
     // add hive location to exclude
     Set<String> hiveValidLocations = HiveLocationUtil.getHiveLocation(arcticTable);
-    LOG.info("{} get {} valid locations in the Hive", arcticTable.id(), hiveValidLocations.size());
+    LOG.info("{} getRuntime {} valid locations in the Hive", arcticTable.id(), hiveValidLocations.size());
     validFiles.addAll(hiveValidLocations);
 
     return validFiles;
@@ -229,9 +229,9 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
 
   private static int clearInternalTableMetadata(UnkeyedTable internalTable, long lastTime) {
     Set<String> validFiles = getValidMetadataFiles(internalTable);
-    LOG.info("{} table get {} valid files", internalTable.id(), validFiles.size());
+    LOG.info("{} table getRuntime {} valid files", internalTable.id(), validFiles.size());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(internalTable);
-    LOG.info("{} table get exclude file name pattern {}", internalTable.id(), excludeFileNameRegex);
+    LOG.info("{} table getRuntime exclude file name pattern {}", internalTable.id(), excludeFileNameRegex);
     int deleteFilesCnt = 0;
     String metadataLocation = internalTable.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
@@ -251,7 +251,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     Set<String> validFiles = new HashSet<>();
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
-    LOG.info("{} get {} snapshots to scan", tableIdentifier, size);
+    LOG.info("{} getRuntime {} snapshots to scan", tableIdentifier, size);
     int cnt = 0;
     for (Snapshot snapshot : snapshots) {
       cnt++;
@@ -266,8 +266,13 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
         validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
       }
 
-      LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
-          formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
+      LOG.info("{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
+          tableIdentifier,
+          snapshot.snapshotId(),
+          formatTime(snapshot.timestampMillis()),
+          validFiles.size() - before,
+          cnt,
+          size);
     }
     Stream.concat(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),

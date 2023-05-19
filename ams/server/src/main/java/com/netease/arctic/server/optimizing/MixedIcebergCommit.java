@@ -14,7 +14,7 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -150,9 +150,9 @@ public class MixedIcebergCommit extends IcebergCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} get no tasks to commit", table.id());
+      LOG.info("{} getRuntime no tasks to commit", table.id());
     }
-    LOG.info("{} get tasks to commit with from snapshot id = {}", table.id(),
+    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
         fromSnapshotId);
 
     prepareCommit();
@@ -316,7 +316,7 @@ public class MixedIcebergCommit extends IcebergCommit {
   }
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
-    long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
+    long currentSnapshotId = IcebergTableUtils.getSnapshotId(table, true);
     if (currentSnapshotId == INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }

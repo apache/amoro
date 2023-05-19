@@ -20,11 +20,12 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.TableSnapshot;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -41,14 +42,14 @@ public class OptimizingEvaluator {
   protected final ArcticTable arcticTable;
   protected final TableRuntime tableRuntime;
   protected final TableSnapshot currentSnapshot;
-  protected boolean isInitEvaluator = false;
+  protected boolean isInitialized = false;
 
-  protected Map<String, PartitionEvaluator> partitionEvaluatorMap = Maps.newHashMap();
+  protected Map<String, PartitionEvaluator> partitionPlanMap = Maps.newHashMap();
 
-  public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table, TableSnapshot currentSnapshot) {
+  public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table) {
     this.tableRuntime = tableRuntime;
     this.arcticTable = table;
-    this.currentSnapshot = currentSnapshot;
+    this.currentSnapshot = IcebergTableUtils.getSnapshot(table, tableRuntime);
   }
 
   public ArcticTable getArcticTable() {
@@ -74,7 +75,7 @@ public class OptimizingEvaluator {
     }
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
     initPartitionPlans(tableFileScanHelper);
-    isInitEvaluator = true;
+    isInitialized = true;
   }
 
   protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
@@ -86,10 +87,10 @@ public class OptimizingEvaluator {
     for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
       StructLike partition = fileScanResult.file().partition();
       String partitionPath = partitionSpec.partitionToPath(partition);
-      PartitionEvaluator evaluator = partitionEvaluatorMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
       evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-    partitionEvaluatorMap.values().removeIf(plan -> !plan.isNecessary());
+    partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
@@ -97,17 +98,17 @@ public class OptimizingEvaluator {
   }
 
   public boolean isNecessary() {
-    if (!isInitEvaluator) {
+    if (!isInitialized) {
       initEvaluator();
     }
-    return !partitionEvaluatorMap.isEmpty();
+    return !partitionPlanMap.isEmpty();
   }
 
   public PendingInput getPendingInput() {
-    if (!isInitEvaluator) {
+    if (!isInitialized) {
       initEvaluator();
     }
-    return new PendingInput(partitionEvaluatorMap.values());
+    return new PendingInput(partitionPlanMap.values());
   }
 
   public static class PendingInput {

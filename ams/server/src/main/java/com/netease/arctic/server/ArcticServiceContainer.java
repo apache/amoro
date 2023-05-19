@@ -52,10 +52,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -111,7 +112,20 @@ public class ArcticServiceContainer {
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
-    initInternalExecutors();
+
+    LOG.info("Setting up AMS table executors...");
+    AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
+    tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
+    tableService.initialize();
+    LOG.info("AMS table service have been initialized");
+
     initThriftService();
     startThriftService();
     startHttpService();
@@ -144,24 +158,18 @@ public class ArcticServiceContainer {
     return this.optimizingService;
   }
 
-  private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
+  private void initConfig() throws IllegalConfigurationException, IOException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
 
   private void startThriftService() {
-    tableService.initialize();
     Thread thread = new Thread(() -> {
       server.serve();
       LOG.info("Thrift services have been started");
     }, "Thrift-server-thread");
     thread.setDaemon(true);
     thread.start();
-  }
-
-  private void initInternalExecutors() {
-    LOG.info("Initializing AMS table executors...");
-    AsyncTableExecutors.getInstance().initialize(tableService, serviceConfig);
   }
 
   private void startHttpService() {
@@ -219,7 +227,7 @@ public class ArcticServiceContainer {
 
     private JSONObject yamlConfig;
 
-    public void init() throws IllegalConfigurationException, FileNotFoundException {
+    public void init() throws IllegalConfigurationException, IOException {
       initServiceConfig();
       initContainerConfig();
       initResourceGroupConfig();
@@ -248,10 +256,10 @@ public class ArcticServiceContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void initServiceConfig() throws FileNotFoundException {
+    private void initServiceConfig() throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getArcticHome() + SERVER_CONFIG_PATH;
-      yamlConfig = new JSONObject(new Yaml().loadAs(new FileInputStream(configPath), Map.class));
+      yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);

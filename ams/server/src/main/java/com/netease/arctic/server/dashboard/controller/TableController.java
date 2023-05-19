@@ -83,7 +83,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get table detail.
+   * getRuntime table detail.
    */
   public void getTableDetail(Context ctx) {
 
@@ -94,7 +94,7 @@ public class TableController extends RestBaseController {
     Preconditions.checkArgument(
         catalog != null && database != null && tableMame != null,
         "catalog.dabatase.tableName can not be null in any element");
-    // get table from catalog
+    // getRuntime table from catalog
     if (!tableService.catalogExist(catalog)) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "invalid catalog!", null));
       return;
@@ -155,14 +155,14 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get hive table detail.
+   * getRuntime hive table detail.
    */
   public void getHiveTableDetail(Context ctx) {
     // String catalog = ctx.pathParam("catalog");
     // String db = ctx.pathParam("db");
     // String table = ctx.pathParam("table");
     //
-    // // get table from catalog
+    // // getRuntime table from catalog
     // String thriftHost = serviceConfig.getString(ArcticManagementConf.THRIFT_BIND_HOST);
     // Integer thriftPort = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
     // ArcticHiveCatalog arcticHiveCatalog
@@ -179,8 +179,8 @@ public class TableController extends RestBaseController {
     //   hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
     //       new HashMap<>(), hiveTable.getCreateTime());
     // } catch (Exception e) {
-    //   LOG.error("Failed to get hive table info", e);
-    //   ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get hive table info", ""));
+    //   LOG.error("Failed to getRuntime hive table info", e);
+    //   ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime hive table info", ""));
     //   return;
     // }
     // ctx.json(OkResponse.of(hiveTableInfo));
@@ -250,7 +250,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get optimize info.
+   * getRuntime optimize info.
    */
   public void getOptimizeInfo(Context ctx) {
 
@@ -277,7 +277,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get list of transactions.
+   * getRuntime list of transactions.
    */
   public void getTableTransactions(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -300,7 +300,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get detail of transaction.
+   * getRuntime detail of transaction.
    */
   public void getTransactionDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -318,24 +318,24 @@ public class TableController extends RestBaseController {
           offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
-      LOG.error("Failed to get transactions detail", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get transactions detail", ""));
+      LOG.error("Failed to getRuntime transactions detail", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime transactions detail", ""));
     }
   }
 
   /**
-   * get partition list.
+   * getRuntime partition list.
    */
   public void getTablePartitions(Context ctx) {
   }
 
   /**
-   * get file list of some partition.
+   * getRuntime file list of some partition.
    */
   public void getPartitionFileListInfo(Context ctx) {
   }
 
-  /* get  operations of some table*/
+  /* getRuntime  operations of some table*/
   public void getTableOperations(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
@@ -353,7 +353,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get table list of catalog.db.
+   * getRuntime table list of catalog.db.
    */
   public void getTableList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -385,7 +385,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get databases of some catalog.
+   * getRuntime databases of some catalog.
    */
   public void getDatabaseList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -406,7 +406,7 @@ public class TableController extends RestBaseController {
   }
 
   /**
-   * get single page query token
+   * getRuntime single page query token
    */
   public void getTableDetailTabToken(Context ctx) {
     String catalog = ctx.pathParam("catalog");

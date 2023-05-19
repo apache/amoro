@@ -75,8 +75,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableRuntime() {
-    TableRuntime tableRuntime = tableService().get(serverTableIdentifier());
-    validateArcticTable(tableRuntime.loadTable());
+    validateArcticTable(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void validateArcticTable(ArcticTable arcticTable) {

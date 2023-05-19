@@ -54,7 +54,7 @@ public class SettingController extends RestBaseController {
   }
 
   /**
-   * get system settings.
+   * getRuntime system settings.
    */
   public void getSystemSetting(Context ctx) {
     Map<String, String> config = new HashMap<>();
@@ -91,7 +91,7 @@ public class SettingController extends RestBaseController {
   }
 
   /**
-   * get container settings.
+   * getRuntime container settings.
    */
   public void getContainerSetting(Context ctx) {
     List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();

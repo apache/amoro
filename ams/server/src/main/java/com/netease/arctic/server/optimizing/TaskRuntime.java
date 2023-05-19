@@ -30,7 +30,7 @@ import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime extends PersistentBase {
+public class TaskRuntime extends StatedPersistentBase {
 
   private String partition;
   private OptimizingTaskId taskId;
@@ -65,18 +65,18 @@ public class TaskRuntime extends PersistentBase {
 
   public TaskRuntime(
       OptimizingTaskId taskId,
-      TaskDescriptor taskDescriptor, long tableId,
+      TaskDescriptor taskDescriptor,
       Map<String, String> properties) {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
     this.statusMachine = new TaskStatusMachine();
     this.summary = new MetricsSummary(input);
-    this.tableId = tableId;
+    this.tableId = taskDescriptor.getTableId();
     this.properties = properties;
   }
 
-  public TaskRuntime claimOwership(TaskOwner owner) {
+  public TaskRuntime claimOwnership(TaskOwner owner) {
     this.owner = owner;
     return this;
   }
@@ -99,19 +99,6 @@ public class TaskRuntime extends PersistentBase {
     return output;
   }
 
-  public void setOutput(RewriteFilesOutput output) {
-    this.output = output;
-    this.outputBytes = SerializationUtil.simpleSerialize(output);
-  }
-
-  public ByteBuffer getOutputBytes() {
-    return outputBytes;
-  }
-
-  public void setOutputBytes(ByteBuffer outputBytes) {
-    this.outputBytes = outputBytes;
-  }
-
   public Map<String, String> getProperties() {
     return properties;
   }
@@ -129,7 +116,6 @@ public class TaskRuntime extends PersistentBase {
   }
 
   public OptimizingTask getOptimizingTask() {
-    //TODO fill input and properties
     OptimizingTask optimizingTask = new OptimizingTask(taskId);
     optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(input));
     optimizingTask.setProperties(properties);
@@ -186,36 +172,12 @@ public class TaskRuntime extends PersistentBase {
     return Math.max(0, lastingTime);
   }
 
-  public void setCostTime(long costTime) {
-    this.costTime = costTime;
-  }
-
   public void setStatus(Status status) {
     this.status = status;
   }
 
-  public TaskStatusMachine getStatusMachine() {
-    return statusMachine;
-  }
-
-  public void setStatusMachine(TaskStatusMachine statusMachine) {
-    this.statusMachine = statusMachine;
-  }
-
   public void addRetryCount() {
     retry++;
-  }
-
-  public void setStartTime(long startTime) {
-    this.startTime = startTime;
-  }
-
-  public void setEndTime(long endTime) {
-    this.endTime = endTime;
-  }
-
-  public void setFailReason(String failReason) {
-    this.failReason = failReason;
   }
 
   public MetricsSummary getSummary() {
@@ -228,10 +190,6 @@ public class TaskRuntime extends PersistentBase {
 
   public long getTableId() {
     return tableId;
-  }
-
-  public void setTableId(long tableId) {
-    this.tableId = tableId;
   }
 
   public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {
@@ -376,7 +334,7 @@ public class TaskRuntime extends PersistentBase {
       this.next = nextStatusMap.get(status);
     }
 
-    public synchronized void accept(Status targetStatus) {
+    public void accept(Status targetStatus) {
       if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
@@ -441,48 +399,21 @@ public class TaskRuntime extends PersistentBase {
       return taskId;
     }
 
-    public void setProcessId(long processId) {
-      this.processId = processId;
-    }
-
-    public void setTaskId(int taskId) {
-      this.taskId = taskId;
-    }
 
     public int getRetryNum() {
       return retryNum;
-    }
-
-    public void setRetryNum(int retryNum) {
-      this.retryNum = retryNum;
-    }
-
-    public void setStartTime(long startTime) {
-      this.startTime = startTime;
     }
 
     public long getEndTime() {
       return endTime;
     }
 
-    public void setEndTime(long endTime) {
-      this.endTime = endTime;
-    }
-
     public String getFailReason() {
       return failReason;
     }
 
-    public void setFailReason(String failReason) {
-      this.failReason = failReason;
-    }
-
     public long getTableId() {
       return tableId;
-    }
-
-    public void setTableId(long tableId) {
-      this.tableId = tableId;
     }
 
     public long getQuotaTime(long calculatingStartTime) {

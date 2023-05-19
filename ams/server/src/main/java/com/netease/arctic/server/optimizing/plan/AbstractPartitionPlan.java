@@ -36,13 +36,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class AbstractPartitionPlan extends PartitionEvaluator {
+public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   public static final int INVALID_SEQUENCE = -1;
 
+  private final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
   protected final long maxFragmentSize;
-  protected final BasicPartitionEvaluator evaluator;
+  private BasicPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
   protected ArcticTable tableObject;
@@ -58,33 +59,48 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   private List<SplitTask> splitTasks;
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
-                               ArcticTable table, String partition, long planTime, BasicPartitionEvaluator evaluator) {
-    super(partition);
+                               ArcticTable table, String partition, long planTime) {
+    this.partition = partition;
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
     this.maxFragmentSize = config.maxFragmentSize();
     this.planTime = planTime;
-    this.evaluator = evaluator;
+  }
+
+  @Override
+  public String getPartition() {
+    return partition;
+  }
+
+  protected BasicPartitionEvaluator evaluator() {
+    if (evaluator == null) {
+      evaluator = buildEvaluator();
+    }
+    return evaluator;
+  }
+
+  protected BasicPartitionEvaluator buildEvaluator() {
+    return new BasicPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override
   public boolean isNecessary() {
-    return evaluator.isNecessary();
+    return evaluator().isNecessary();
   }
 
   @Override
   public OptimizingType getOptimizingType() {
-    return evaluator.getOptimizingType();
+    return evaluator().getOptimizingType();
   }
 
   @Override
   public long getCost() {
-    return evaluator.getCost();
+    return evaluator().getCost();
   }
 
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    evaluator.addFile(dataFile, deletes);
+    evaluator().addFile(dataFile, deletes);
     if (isFragmentFile(dataFile)) {
       fragmentFiles.put(dataFile, deletes);
     } else {
@@ -128,7 +144,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
   protected abstract OptimizingInputProperties buildTaskProperties();
 
   protected boolean findAnyDelete() {
-    return evaluator.getEqualityDeleteFileCount() + evaluator.getPosDeleteFileCount() > 0;
+    return evaluator().getEqualityDeleteFileCount() + evaluator().getPosDeleteFileCount() > 0;
   }
 
   protected boolean isFragmentFile(IcebergDataFile file) {
@@ -171,42 +187,42 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
   @Override
   public int getFragmentFileCount() {
-    return evaluator.getFragmentFileCount();
+    return evaluator().getFragmentFileCount();
   }
 
   @Override
   public long getFragmentFileSize() {
-    return evaluator.getFragmentFileSize();
+    return evaluator().getFragmentFileSize();
   }
 
   @Override
   public int getSegmentFileCount() {
-    return evaluator.getSegmentFileCount();
+    return evaluator().getSegmentFileCount();
   }
 
   @Override
   public long getSegmentFileSize() {
-    return evaluator.getSegmentFileSize();
+    return evaluator().getSegmentFileSize();
   }
 
   @Override
   public int getEqualityDeleteFileCount() {
-    return evaluator.getEqualityDeleteFileCount();
+    return evaluator().getEqualityDeleteFileCount();
   }
 
   @Override
   public long getEqualityDeleteFileSize() {
-    return evaluator.getEqualityDeleteFileSize();
+    return evaluator().getEqualityDeleteFileSize();
   }
 
   @Override
   public int getPosDeleteFileCount() {
-    return evaluator.getPosDeleteFileCount();
+    return evaluator().getPosDeleteFileCount();
   }
 
   @Override
   public long getPosDeleteFileSize() {
-    return evaluator.getPosDeleteFileSize();
+    return evaluator().getPosDeleteFileSize();
   }
 
   protected class SplitTask {
@@ -216,7 +232,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
 
     public SplitTask(Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles,
                      Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles) {
-      if (evaluator.isFullNecessary()) {
+      if (evaluator().isFullNecessary()) {
         fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
           if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
             rewriteDataFiles.add(icebergFile);
@@ -239,7 +255,7 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
               getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
-          } else if (equalityDeleteFileMap.containsKey(icebergFile.path().toString())) {
+          } else if (deleteFileSet.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
             rewritePosDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
           } else {
@@ -295,7 +311,8 @@ public abstract class AbstractPartitionPlan extends PartitionEvaluator {
           readOnlyDeleteFiles.toArray(new IcebergContentFile[0]),
           rewriteDeleteFiles.toArray(new IcebergContentFile[0]),
           tableObject);
-      return new TaskDescriptor(partition, input, properties.getProperties());
+      return new TaskDescriptor(tableRuntime.getTableIdentifier().getId(),
+          partition, input, properties.getProperties());
     }
 
     private long getRecordCount(List<IcebergContentFile<?>> files) {

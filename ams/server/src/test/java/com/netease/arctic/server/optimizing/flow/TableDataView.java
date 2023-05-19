@@ -75,6 +75,8 @@ public class TableDataView {
 
   private final StructLikeMap<Record> view;
 
+  private final List<RecordWithAction> changeLog = new ArrayList();
+
   private final RandomRecordGenerator generator;
 
   public TableDataView(
@@ -138,6 +140,10 @@ public class TableDataView {
   public WriteResult custom(CustomData customData) throws IOException {
     customData.accept(view);
     List<PKWithAction> data = customData.data();
+    return custom(data);
+  }
+
+  public WriteResult custom(List<PKWithAction> data) throws IOException {
     List<RecordWithAction> records = new ArrayList<>();
     for (PKWithAction pkWithAction: data) {
       records.add(new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
@@ -159,6 +165,9 @@ public class TableDataView {
     StructLikeSet intersection = StructLikeSet.create(schema.asStruct());
     for (Record record : records) {
       Record viewRecord = view.get(record);
+      if (viewRecord == null) {
+        notInView.add(record);
+      }
       if (equRecord(viewRecord, record)) {
         if (intersection.contains(record)) {
           inViewButDuplicate.add(record);
@@ -232,6 +241,7 @@ public class TableDataView {
 
   private void writeView(List<RecordWithAction> records) {
     for (RecordWithAction record : records) {
+      changeLog.add(record);
       ChangeAction action = record.getAction();
       if (action == ChangeAction.DELETE || action == ChangeAction.UPDATE_BEFORE) {
         view.remove(record);
@@ -307,7 +317,7 @@ public class TableDataView {
       this.view = view;
     }
 
-    protected boolean alreadyExists(Record record) {
+    protected final boolean alreadyExists(Record record) {
       return view.containsKey(record);
     }
 

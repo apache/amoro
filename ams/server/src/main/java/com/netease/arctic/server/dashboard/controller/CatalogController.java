@@ -378,8 +378,8 @@ public class CatalogController extends RestBaseController {
   }
 
   /**
-   * get file content of authconfig/storageconfig config file
-   * get("/catalogs/{catalogName}/config/{type}/{key}
+   * getRuntime file content of authconfig/storageconfig config file
+   * getRuntime("/catalogs/{catalogName}/config/{type}/{key}
    */
   public void getCatalogConfFileContent(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
@@ -389,7 +389,7 @@ public class CatalogController extends RestBaseController {
         StringUtils.isNotEmpty(catalogName) && StringUtils.isNotEmpty(confType) && StringUtils.isNotEmpty(configKey),
         "Catalog name or auth type or config key is null!");
 
-    // get file content from catlaog.
+    // getRuntime file content from catlaog.
     CatalogMeta catalogMeta = tableService.getCatalogMeta(catalogName);
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();

@@ -27,8 +27,8 @@ import java.util.Collections;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
-  protected IcebergPartitionPlan(TableRuntime tableRuntime, String partition, ArcticTable table, long planTime) {
-    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition, planTime));
+  protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+    super(tableRuntime, table, partition, planTime);
   }
 
   @Override

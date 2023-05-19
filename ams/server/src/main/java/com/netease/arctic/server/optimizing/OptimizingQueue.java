@@ -18,12 +18,12 @@ import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
@@ -59,11 +59,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final Map<OptimizingTaskId, TaskRuntime> taskMap = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
 
-  public OptimizingQueue(ResourceGroup optimizerGroup, List<TableRuntimeMeta> tableRuntimeMetaList) {
-    if (optimizerGroup == null) {
-      throw new IllegalStateException("optimizer can not be null");
-    }
+  private final TableManager tableManager;
+
+  public OptimizingQueue(TableManager tableManager, ResourceGroup optimizerGroup,
+                         List<TableRuntimeMeta> tableRuntimeMetaList) {
+    Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerGroup = optimizerGroup;
+    this.tableManager = tableManager;
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -231,15 +233,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (LOG.isDebugEnabled()) {
         LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       }
-      ArcticTable arcticTable = tableRuntime.loadTable();
-      TableSnapshot currentSnapshot = tableRuntime.getCurrentSnapshot(arcticTable, true);
-      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
-        LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
-        continue;
-      }
       try {
-        OptimizingPlanner planner =
-            new OptimizingPlanner(tableRuntime, arcticTable, currentSnapshot, getAvailableCore(tableRuntime));
+        ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
+            getAvailableCore(tableRuntime));
+        if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+          LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+          continue;
+        }
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           if (LOG.isDebugEnabled()) {
@@ -248,7 +249,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           }
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
         } else {
-          tableRuntime.initStatus();
+          tableRuntime.cleanPendingInput();
         }
       } catch (Throwable e) {
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
@@ -443,7 +444,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private IcebergCommit buildCommit() {
-      ArcticTable table = tableRuntime.loadTable();
+      ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       switch (table.format()) {
         case ICEBERG:
           return new IcebergCommit(targetSnapshotId, table, taskMap.values());
@@ -508,7 +509,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       RewriteFilesInput inputs = TaskFilesPersistence.loadTaskInputs(processId);
       taskRuntimes.forEach(taskRuntime -> {
-        taskRuntime.claimOwership(this);
+        taskRuntime.claimOwnership(this);
         taskRuntime.setInput(inputs);
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
       });
@@ -517,11 +518,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
       int taskId = 1;
       for (TaskDescriptor taskDescriptor : taskDescriptors) {
-        OptimizingTaskId id = new OptimizingTaskId(processId, taskId++);
-
-        TaskRuntime taskRuntime = new TaskRuntime(id, taskDescriptor,
-            tableRuntime.getTableIdentifier().getId(), taskDescriptor.properties());
-        taskMap.put(id, taskRuntime.claimOwership(this));
+        TaskRuntime taskRuntime = new TaskRuntime(new OptimizingTaskId(processId, taskId++),
+            taskDescriptor, taskDescriptor.properties());
+        taskMap.put(taskRuntime.getTaskId(), taskRuntime.claimOwnership(this));
       }
     }
   }
