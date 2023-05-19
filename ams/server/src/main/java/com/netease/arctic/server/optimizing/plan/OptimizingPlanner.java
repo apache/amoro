@@ -46,7 +46,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   protected long processId;
   private final double availableCore;
   private final long planTime;
-  private OptimizingType optimizingType = OptimizingType.MINOR;
+  private OptimizingType optimizingType;
   private final PartitionPlannerFactory partitionPlannerFactory;
   private List<TaskDescriptor> tasks;
 
@@ -127,8 +127,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     for (PartitionEvaluator evaluator : inputPartitions) {
       tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
     }
-    if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
-      optimizingType = OptimizingType.MAJOR;
+    if (!tasks.isEmpty()) {
+      if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL_MAJOR)) {
+        optimizingType = OptimizingType.FULL_MAJOR;
+      } else if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
+        optimizingType = OptimizingType.MAJOR;
+      } else {
+        optimizingType = OptimizingType.MINOR;
+      }
     }
     long endTime = System.nanoTime();
     if (LOG.isDebugEnabled()) {
