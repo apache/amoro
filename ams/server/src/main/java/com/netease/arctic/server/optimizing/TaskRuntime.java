@@ -55,7 +55,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private TaskOwner owner;
   private RewriteFilesInput input;
   private RewriteFilesOutput output;
-  private ByteBuffer outputBytes;
+  private byte[] outputBytes;
   private MetricsSummary summary;
   private long tableId;
   private Map<String, String> properties;
@@ -76,6 +76,22 @@ public class TaskRuntime extends StatedPersistentBase {
     this.properties = properties;
   }
 
+  public TaskRuntime(TaskRuntimeMeta meta) {
+    this.statusMachine = new TaskStatusMachine();
+    this.partition = meta.getPartition();
+    this.taskId = meta.getTaskId();
+    this.status = meta.getStatus();
+    this.retry = meta.getRetry();
+    this.startTime = meta.getStartTime();
+    this.endTime = meta.getEndTime();
+    this.optimizingThread = meta.getOptimizingThread();
+    this.failReason = meta.getFailReason();
+    this.outputBytes = (byte[]) meta.getOutputBytes();
+    this.summary = meta.getSummary();
+    this.tableId = meta.getTableId();
+    this.properties = meta.getProperties();
+  }
+
   public TaskRuntime claimOwnership(TaskOwner owner) {
     this.owner = owner;
     return this;
@@ -94,7 +110,7 @@ public class TaskRuntime extends StatedPersistentBase {
 
   public RewriteFilesOutput getOutput() {
     if (output == null && outputBytes != null) {
-      return SerializationUtil.simpleDeserialize(outputBytes);
+      this.output = SerializationUtil.simpleDeserialize(outputBytes);
     }
     return output;
   }
@@ -216,7 +232,7 @@ public class TaskRuntime extends StatedPersistentBase {
     summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
     summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
     output = filesOutput;
-    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
+    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput).array();
     persistTaskRuntime(this);
   }
 
@@ -227,7 +243,7 @@ public class TaskRuntime extends StatedPersistentBase {
     endTime = System.currentTimeMillis();
     costTime += endTime - startTime;
     output = filesOutput;
-    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
+    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput).array();
     persistTaskRuntime(this);
   }
 

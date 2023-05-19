@@ -158,6 +158,7 @@ CREATE TABLE `task_runtime`
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
+    `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';

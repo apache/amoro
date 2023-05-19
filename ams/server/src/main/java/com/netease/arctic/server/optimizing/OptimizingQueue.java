@@ -284,8 +284,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
       targetSnapshotId = planner.getTargetSnapshotId();
-      metricsSummary = new MetricsSummary(taskMap.values());
       loadTaskRuntimes(planner.planTasks());
+      metricsSummary = new MetricsSummary(taskMap.values());
       fromSequence = planner.getFromSequence();
       toSequence = planner.getToSequence();
       beginAndPersistProcess();
@@ -338,6 +338,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         }
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS && allTasksPrepared()) {
           tableRuntime.beginCommitting();
+          this.metricsSummary.addNewFileCnt(taskRuntime.getSummary().getNewFileCnt());
+          this.metricsSummary.addNewFileSize(taskRuntime.getSummary().getNewFileSize());
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
             retryTask(taskRuntime);
@@ -479,7 +481,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                   getToSequence())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
-          () -> TaskFilesPersistence.persistTaskInputs(tableRuntime, processId, taskMap.values()),
+          () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
           () -> tableRuntime.beginProcess(this)
       );
     }
@@ -490,27 +492,28 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
             () -> doAs(OptimizingMapper.class, mapper ->
                 mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    new MetricsSummary(taskMap.values()))),
+                    getSummary())),
             () -> tableRuntime.completeProcess(true)
         );
       } else {
         doAsTransaction(
             () -> doAs(OptimizingMapper.class, mapper ->
                 mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    new MetricsSummary(taskMap.values()))),
+                    getSummary())),
             () -> tableRuntime.completeProcess(true)
         );
       }
     }
 
     private void loadTaskRuntimes() {
-      List<TaskRuntime> taskRuntimes = getAs(
+      List<TaskRuntimeMeta> taskRuntimeMetas = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
-      RewriteFilesInput inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      taskRuntimes.forEach(taskRuntime -> {
+      Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+      taskRuntimeMetas.forEach(meta -> {
+        TaskRuntime taskRuntime = meta.constructTaskRuntime();
         taskRuntime.claimOwnership(this);
-        taskRuntime.setInput(inputs);
+        taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
       });
     }

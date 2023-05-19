@@ -8,6 +8,7 @@ import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.optimizing.TaskRuntimeMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -168,6 +169,7 @@ public class ServerTableDescriptor extends PersistentBase {
       List<TaskRuntime> taskRuntimes = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(e.getTableId(), e.getProcessId())).stream()
+          .map(TaskRuntimeMeta::constructTaskRuntime)
           .filter(taskRuntime -> TaskRuntime.Status.SUCCESS.equals(taskRuntime.getStatus()))
           .collect(Collectors.toList());
       MetricsSummary metricsSummary = new MetricsSummary(taskRuntimes);

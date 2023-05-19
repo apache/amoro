@@ -58,19 +58,6 @@ public class SettingController extends RestBaseController {
    */
   public void getSystemSetting(Context ctx) {
     Map<String, String> config = new HashMap<>();
-    //Show core configuration first
-    putSetting(config, ArcticManagementConf.SERVER_EXPOSE_HOST.key(),
-        serviceConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST));
-    putSetting(config, ArcticManagementConf.THRIFT_BIND_PORT.key(),
-        serviceConfig.get(ArcticManagementConf.THRIFT_BIND_PORT));
-    putSetting(config, ArcticManagementConf.HTTP_SERVER_PORT.key(),
-        serviceConfig.get(ArcticManagementConf.HTTP_SERVER_PORT));
-    putSetting(config, ArcticManagementConf.DB_TYPE.key(), serviceConfig.get(ArcticManagementConf.DB_TYPE));
-    putSetting(config, ArcticManagementConf.DB_CONNECTION_URL.key(),
-        serviceConfig.get(ArcticManagementConf.DB_CONNECTION_URL));
-    putSetting(config, ArcticManagementConf.DB_CONNECTION_URL.key(),
-        serviceConfig.get(ArcticManagementConf.DB_CONNECTION_URL));
-
     serviceConfig.toMap().forEach((k, v) -> {
       if (!config.containsKey(k)) {
         putSetting(config, k, v);

@@ -78,6 +78,13 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
+  public ServerCatalog getServerCatalog(String catalogName) {
+    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
+        .orElse(externalCatalogMap.get(catalogName));
+    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+  }
+
+  @Override
   public void createCatalog(CatalogMeta catalogMeta) {
     checkStarted();
     if (catalogExist(catalogMeta.getCatalogName())) {
@@ -239,12 +246,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     checkStarted();
     return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
         .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
-  }
-
-  private ServerCatalog getServerCatalog(String catalogName) {
-    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
-        .orElse(externalCatalogMap.get(catalogName));
-    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   private InternalCatalog getInternalCatalog(String catalogName) {
