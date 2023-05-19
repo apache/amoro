@@ -102,9 +102,9 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private String constructCustomHiveSubdirectory() {
     if (customHiveSubdirectory == null) {
       if (isKeyedTable()) {
-        return HiveTableUtil.newHiveSubdirectory(maxSequence);
+        customHiveSubdirectory = HiveTableUtil.newHiveSubdirectory(maxSequence);
       } else {
-        return HiveTableUtil.newHiveSubdirectory();
+        customHiveSubdirectory = HiveTableUtil.newHiveSubdirectory();
       }
     }
     return customHiveSubdirectory;
