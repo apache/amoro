@@ -93,7 +93,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
-    } else {
+    } else if (evaluator().isFullNecessary()){
       properties.setOutputDir(constructCustomHiveSubdirectory());
     }
     return properties;
