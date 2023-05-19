@@ -10,7 +10,6 @@ import com.netease.arctic.spark.test.helper.RecordGenerator;
 import com.netease.arctic.spark.test.helper.TestTable;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.spark.test.helper.TestTables;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;

@@ -7,7 +7,6 @@ import org.junit.Assert;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -25,8 +24,6 @@ public class DataComparator {
 
     this.fieldValueTrans = x -> {
       if (x instanceof LocalDateTime) {
-        long mills = ((LocalDateTime) x).toInstant(ZoneOffset.UTC).toEpochMilli();
-//        return LocalDateTime.ofInstant(Instant.ofEpochMilli(mills), ZoneOffset.UTC);
         // TODO: there are something wrong in timestamp handle for mixed-iceberg.
         return 0;
       } else if (x instanceof OffsetDateTime) {
@@ -42,12 +39,11 @@ public class DataComparator {
   }
 
   public DataComparator ignoreOrder(String... sortFields) {
-//    this.comparator = Comparator.comparing(r -> (Integer)r.getField(primaryKeyField));
     for (String f : sortFields) {
-      Comparator<Record> cmp = Comparator.comparing(r -> (Comparable)r.getField(f));
-      if (comparator == null){
+      Comparator<Record> cmp = Comparator.comparing(r -> (Comparable) r.getField(f));
+      if (comparator == null) {
         this.comparator = cmp;
-      }else {
+      } else {
         this.comparator = comparator.thenComparing(cmp);
       }
     }

@@ -93,15 +93,6 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   );
 
 
-  public static Stream<Arguments> testDynamic() {
-    return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey)
-    );
-  }
-
 
   private ArcticTable table;
   private List<Record> target;
@@ -141,9 +132,17 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   void cleanVars() {
     this.table = null;
     this.target = Lists.newArrayList();
-    ;
     this.initFiles = Lists.newArrayList();
-    ;
+  }
+
+
+  public static Stream<Arguments> testDynamic() {
+    return Stream.of(
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey)
+    );
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE dynamic mode")

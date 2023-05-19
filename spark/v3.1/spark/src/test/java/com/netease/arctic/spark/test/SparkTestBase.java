@@ -3,7 +3,6 @@ package com.netease.arctic.spark.test;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
-import com.netease.arctic.spark.test.extensions.EachParameterResolver;
 import com.netease.arctic.utils.CollectionHelper;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -12,8 +11,6 @@ import org.apache.spark.sql.execution.QueryExecution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,13 +19,10 @@ import java.util.Map;
 
 public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
-  public final static SparkTestContext context = new SparkTestContext();
+  public static final SparkTestContext context = new SparkTestContext();
   public static final String SESSION_CATALOG = "spark_catalog";
   public static final String INTERNAL_CATALOG = "arctic_catalog";
   public static final String HIVE_CATALOG = "hive_catalog";
-
-//  @RegisterExtension
-//  private final EachParameterResolver eachParameterResolver = new EachParameterResolver();
 
   @BeforeAll
   public static void setupContext() throws Exception {
@@ -41,7 +35,7 @@ public class SparkTestBase {
   }
 
   private SparkSession spark;
-  private ArcticCatalog _catalog;
+  private ArcticCatalog catalog;
   protected String currentCatalog = SESSION_CATALOG;
   protected QueryExecution qe;
 
@@ -54,32 +48,29 @@ public class SparkTestBase {
   }
 
 
-
-
-
   @AfterEach
   public void tearDownTestSession() {
     spark = null;
-    _catalog = null;
+    catalog = null;
   }
 
   public void setCurrentCatalog(String catalog) {
     this.currentCatalog = catalog;
     sql("USE " + this.currentCatalog);
-    this._catalog = null;
+    this.catalog = null;
   }
 
   protected ArcticCatalog catalog() {
-    if (_catalog == null) {
+    if (catalog == null) {
       String catalogUrl = spark().sessionState().conf().getConfString(
           "spark.sql.catalog." + currentCatalog + ".url");
-      _catalog = CatalogLoader.load(catalogUrl);
+      catalog = CatalogLoader.load(catalogUrl);
     }
-    return _catalog;
+    return catalog;
   }
 
   protected SparkSession spark() {
-    if (this.spark == null){
+    if (this.spark == null) {
       Map<String, String> conf = sparkSessionConfig();
       this.spark = context.getSparkSession(conf);
     }

@@ -19,15 +19,7 @@
 package com.netease.arctic.spark.test.helper;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 public class TestTables {
   static final Types.NestedField id = Types.NestedField.optional(1, "id", Types.IntegerType.get());
@@ -37,7 +29,7 @@ public class TestTables {
   static final Types.NestedField ts_long = Types.NestedField.optional(4, "ts_long", Types.LongType.get());
   static final Types.NestedField ts = Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone());
   static final Types.NestedField pt = Types.NestedField.optional(20, "pt", Types.StringType.get());
-  static Types.NestedField[] fields = new Types.NestedField[] {
+  static Types.NestedField[] fields = new Types.NestedField[]{
       id, data, d, ts_long, ts, pt
   };
 

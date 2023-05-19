@@ -14,7 +14,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -107,7 +106,8 @@ public class ExpectResultHelper {
   }
 
 
-  public static MergeResult expectMergeResult(List<Record> target, List<Record> source, Function<Record, Object> keyExtractor) {
+  public static MergeResult expectMergeResult(
+      List<Record> target, List<Record> source, Function<Record, Object> keyExtractor) {
     return new MergeResult(target, source, keyExtractor);
   }
 
@@ -133,7 +133,7 @@ public class ExpectResultHelper {
      * if condition(target, source) test for true. then apply action(target, source) to target records.
      *
      * @param condition - condition(target, source): bool
-     * @param action -> action(target, source): Record if return null, target will be deleted.
+     * @param action    -> action(target, source): Record if return null, target will be deleted.
      * @return this.
      */
     public MergeResult whenMatched(
@@ -145,8 +145,9 @@ public class ExpectResultHelper {
 
     /**
      * if condition(source) test for true, then action(source) will be added to target records
+     *
      * @param condition condition(source): bool
-     * @param action action(source) for insert, result is not-null
+     * @param action    action(source) for insert, result is not-null
      * @return this
      */
     public MergeResult whenNotMatched(Predicate<Record> condition, Function<Record, Record> action) {

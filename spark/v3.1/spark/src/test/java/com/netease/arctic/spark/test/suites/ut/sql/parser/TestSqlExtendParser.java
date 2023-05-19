@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 public class TestSqlExtendParser {
 
 
-  private ArcticSqlExtensionsParser parser = new ArcticSqlExtensionsParser(new AbstractSqlParser(){
+  private ArcticSqlExtensionsParser parser = new ArcticSqlExtensionsParser(new AbstractSqlParser() {
     @Override
     public AstBuilder astBuilder() {
       return null;
@@ -34,9 +34,6 @@ public class TestSqlExtendParser {
 
 
   private SparkSqlParser sparkSqlParser = new SparkSqlParser();
-
-
-
 
 
   @ParameterizedTest
@@ -87,8 +84,6 @@ public class TestSqlExtendParser {
   }
 
 
-
-
   public static Stream<Arguments> testCreateTableAsSelect() {
     String header = "CREATE TABLE mydb.t1 PRIMARY KEY(id) ";
     List<String> queries = Lists.newArrayList(
@@ -129,8 +124,6 @@ public class TestSqlExtendParser {
         "select a from db.c where x is true ",
         "select a from db.c where x is false ",
         "select a from db.c where x is unknown ",
-
-
 
 
         "from a select b, c "

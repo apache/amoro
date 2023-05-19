@@ -1,12 +1,9 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
-import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.TableFiles;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +12,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 @EnableCatalogSelect
@@ -41,7 +37,7 @@ public class TestTruncateSQL extends SparkTableTestBase {
   public void testTruncateTable(TableFormat format, String primaryKeyDDL, String partitionDDL) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format)  + partitionDDL;
+        provider(format) + partitionDDL;
     sql(sqlText);
     sql("insert into " +
         target().database + "." + target().table +

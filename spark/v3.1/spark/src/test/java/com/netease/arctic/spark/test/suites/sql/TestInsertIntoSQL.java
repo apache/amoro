@@ -18,7 +18,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.SparkException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,7 +82,9 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
   Comparator<Record> dataComparator = Comparator.comparing(r -> r.get(1, String.class));
 
-  Comparator<Record> changeActionComparator = Comparator.comparing(r -> (String) r.getField(MetadataColumns.CHANGE_ACTION_NAME));
+  Comparator<Record> changeActionComparator = Comparator.comparing(
+      r -> (String) r.getField(MetadataColumns.CHANGE_ACTION_NAME));
+
   Comparator<Record> comparator = pkComparator.thenComparing(dataComparator);
 
 

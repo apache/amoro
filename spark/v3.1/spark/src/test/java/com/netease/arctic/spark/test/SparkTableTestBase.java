@@ -42,7 +42,6 @@ public class SparkTableTestBase extends SparkTestBase {
   protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
 
 
-
   private String database = "spark_test_database";
   private String table = "test_table";
   private String sourceTable = "test_source_table";
@@ -92,7 +91,7 @@ public class SparkTableTestBase extends SparkTestBase {
   public void before() {
     try {
       LOG.debug("prepare database for table test: " + database);
-      if (!catalog().listDatabases().contains(database)){
+      if (!catalog().listDatabases().contains(database)) {
         catalog().createDatabase(database);
       }
     } catch (AlreadyExistsException e) {
@@ -108,7 +107,7 @@ public class SparkTableTestBase extends SparkTestBase {
     if (SESSION_CATALOG.equals(currentCatalog)) {
       try {
         context.getHiveClient().dropTable(database, table);
-      }catch (Exception e){
+      } catch (Exception e) {
         //pass
       }
     }

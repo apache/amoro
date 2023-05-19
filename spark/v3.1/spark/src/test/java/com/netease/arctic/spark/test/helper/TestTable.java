@@ -25,16 +25,9 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -154,7 +147,7 @@ public class TestTable {
         hivePartition = HiveSchemaUtil.hivePartitionFields(this.schema, this.ptSpec);
       }
 
-      RecordGenerator.Builder builder =  RecordGenerator.buildFor(this.schema)
+      RecordGenerator.Builder builder = RecordGenerator.buildFor(this.schema)
           .withSequencePrimaryKey(keySpec);
       return new TestTable(
           format, this.schema, this.keySpec, this.ptSpec,
@@ -162,8 +155,6 @@ public class TestTable {
       );
     }
   }
-
-
 
 
 }

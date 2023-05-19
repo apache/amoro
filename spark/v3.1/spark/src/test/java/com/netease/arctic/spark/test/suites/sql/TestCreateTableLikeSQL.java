@@ -3,12 +3,11 @@ package com.netease.arctic.spark.test.suites.sql;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
-import com.netease.arctic.spark.test.helper.TestTable;
-import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.helper.TestTable;
+import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
@@ -48,8 +47,10 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
     );
     createArcticSource(schema, x -> {});
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
-        + newTableTimestampWithoutZone);
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+        newTableTimestampWithoutZone);
+
     sql("CREATE TABLE " + target() + " LIKE " +
         source() + " USING " + provider(format));
 
@@ -95,7 +96,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
         TestTables.MixedIceberg.PK_PT,
         TestTables.MixedIceberg.NoPK_PT
     );
-    return tables.stream().map( t -> Arguments.of(t.format, t));
+    return tables.stream().map(t -> Arguments.of(t.format, t));
   }
 
   @DisplayName("Test SQL: CREATE TABLE LIKE data-lake table")
@@ -110,8 +111,8 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
             .withProperty("k1", "v1")
     );
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
-        + true);
+    spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
+
     String sqlText = "CREATE TABLE " + target() +
         " LIKE " + source() + " USING " + provider(format);
     sql(sqlText);
@@ -122,7 +123,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
     Assertions.assertEquals(expect.isKeyedTable(), table.isKeyedTable());
     // CREATE TABLE LIKE do not copy properties.
     Assertions.assertFalse(table.properties().containsKey("k1"));
-    if (expect.isKeyedTable()){
+    if (expect.isKeyedTable()) {
       Asserts.assertPrimaryKey(expect.asKeyedTable().primaryKeySpec(), table.asKeyedTable().primaryKeySpec());
     }
   }
@@ -151,7 +152,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
     sql("CREATE TABLE " + target() + " LIKE " +
         source() + " " + provider);
     Assertions.assertEquals(expectCreate, tableExists());
-    if (!expectCreate){
+    if (!expectCreate) {
       // not an arctic table.
       Identifier target = target();
       context.dropHiveTable(target.database, target.table);

@@ -12,8 +12,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+
 public class HiveCatalogMetaTestUtil {
-  public static CatalogMeta createArcticCatalog(File arcticBaseDir ,HiveConf entries) throws IOException {
+  public static CatalogMeta createArcticCatalog(File arcticBaseDir, HiveConf entries) throws IOException {
     CatalogMeta meta = new CatalogMeta();
     meta.setCatalogName("arctic_hive");
     meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HIVE);

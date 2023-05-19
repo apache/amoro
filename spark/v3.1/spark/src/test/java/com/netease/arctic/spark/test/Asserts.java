@@ -84,9 +84,9 @@ public class Asserts {
 
   public static <K, V> void assertHashMapContainExpect(Map<K, V> expect, Map<K, V> actual) {
     for (K key : expect.keySet()) {
-      V _expect = expect.get(key);
-      V _actual = actual.get(key);
-      Assertions.assertEquals(_expect, _actual);
+      V expectValue = expect.get(key);
+      V actualValue = actual.get(key);
+      Assertions.assertEquals(expectValue, actualValue);
     }
   }
 

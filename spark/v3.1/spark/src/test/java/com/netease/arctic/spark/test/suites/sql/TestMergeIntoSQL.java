@@ -120,7 +120,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     List<Record> expects = ExpectResultHelper.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> {
-          t.setField("data","ccc");
+          t.setField("data", "ccc");
           return t;
         })
         .results();
@@ -186,7 +186,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     setupTest(keySpec);
     createViewSource(schema, source);
     sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED THEN DELETE " );
+        "WHEN MATCHED THEN DELETE ");
 
     List<Record> expects = ExpectResultHelper.expectMergeResult(
             target, source, r -> r.getField("id")
