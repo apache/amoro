@@ -45,6 +45,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -107,15 +108,6 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
       RecordGenerator.newRecord(schema, 14, "xxx", "EEE")
   );
 
-  public static Stream<Arguments> testDynamic() {
-    return Stream.of(
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
-        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey)
-    );
-  }
-
   private ArcticTable table;
   private List<Record> target;
   private List<DataFile> initFiles;
@@ -153,9 +145,16 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   void cleanVars() {
     this.table = null;
     this.target = Lists.newArrayList();
-    ;
     this.initFiles = Lists.newArrayList();
-    ;
+  }
+
+  public static Stream<Arguments> testDynamic() {
+    return Stream.of(
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
+        Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec),
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey)
+    );
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE dynamic mode")
@@ -297,15 +296,19 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().month("ts").build()),
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().day("ts").build()),
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().hour("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().bucket("id", 8).build()),
-        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptBuilder().truncate("id", 10).build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec,
+            ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec,
+            ptBuilder().truncate("id", 10).build()),
 
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().year("ts").build()),
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().month("ts").build()),
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().day("ts").build()),
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().hour("ts").build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().bucket("id", 8).build()),
-        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptBuilder().truncate("id", 10).build())
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey,
+            ptBuilder().bucket("id", 8).build()),
+        Arguments.arguments(MIXED_ICEBERG, noPrimaryKey,
+            ptBuilder().truncate("id", 10).build())
     );
   }
 
@@ -397,7 +400,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   }
 
   public static Arguments[] testSourceDuplicateCheck() {
-    return new Arguments[] {
+    return new Arguments[]{
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, STATIC, true, true),
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey, ptSpec, STATIC, true, false),
         Arguments.arguments(MIXED_ICEBERG, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
@@ -409,7 +412,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
         Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, true, true),
         Arguments.arguments(MIXED_HIVE, noPrimaryKey, ptSpec, DYNAMIC, true, false),
         Arguments.arguments(MIXED_HIVE, idPrimaryKeySpec, ptSpec, DYNAMIC, false, false),
-        };
+    };
   }
 
   @DisplayName("TestSQL: INSERT OVERWRITE duplicate check source")

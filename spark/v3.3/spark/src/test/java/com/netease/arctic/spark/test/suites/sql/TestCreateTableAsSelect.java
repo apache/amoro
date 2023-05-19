@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -68,11 +69,12 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       TableFormat format, String primaryKeyDDL, boolean timestampWithoutZone, Types.TimestampType expectType) {
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES
-        + "`=" + timestampWithoutZone);
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, timestampWithoutZone
+    );
 
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " AS SELECT * FROM " + source();
     sql(sqlText);
 
     ArcticTable table = loadTable();
@@ -137,11 +139,11 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`=true");
+    spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
 
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " " + partitionDDL
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " " + partitionDDL +
+        " AS SELECT * FROM " + source();
     sql(sqlText);
 
     Schema expectSchema = TestTableHelper.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
@@ -196,9 +198,9 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   ) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
     createViewSource(simpleSourceSchema, sourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " "
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " " +
+        " AS SELECT * FROM " + source();
 
     boolean exceptionCatched = false;
     try {
@@ -231,10 +233,9 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       TableFormat format, String primaryKeyDDL, String propertiesDDL, Map<String, String> expectProperties
   ) {
     createViewSource(simpleSourceSchema, simpleSourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL
-        + " USING " + provider(format) + " PARTITIONED BY (pt) "
-        + propertiesDDL
-        + " AS SELECT * FROM " + source();
+    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
+        " USING " + provider(format) + " PARTITIONED BY (pt) " + propertiesDDL +
+        " AS SELECT * FROM " + source();
     sql(sqlText);
     ArcticTable table = loadTable();
     Map<String, String> tableProperties = table.properties();

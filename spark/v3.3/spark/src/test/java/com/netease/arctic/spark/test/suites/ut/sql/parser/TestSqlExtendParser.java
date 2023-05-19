@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import scala.collection.Seq;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -75,7 +76,7 @@ public class TestSqlExtendParser {
   }
 
   public static Arguments[] testCreateTableWithPrimaryKey() {
-    return new Arguments[] {
+    return new Arguments[]{
         Arguments.arguments(
             "CREATE TABLE mydb.t1 (id int, PRIMARY KEY(id)) ",
             Lists.newArrayList("mydb", "t1"),

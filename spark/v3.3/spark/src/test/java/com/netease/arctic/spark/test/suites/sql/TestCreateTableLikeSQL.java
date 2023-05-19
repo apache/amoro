@@ -35,6 +35,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -61,10 +62,12 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "ts", Types.TimestampType.withZone())
     );
-    createArcticSource(schema, x -> {});
+    createArcticSource(schema, x -> {
+    });
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
-        + newTableTimestampWithoutZone);
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, newTableTimestampWithoutZone
+    );
     sql("CREATE TABLE " + target() + " LIKE " +
         source() + " USING " + provider(format));
 
@@ -124,8 +127,9 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
             .withProperty("k1", "v1")
     );
 
-    sql("SET `" + SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES + "`="
-        + true);
+    spark().conf().set(
+        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true
+    );
     String sqlText = "CREATE TABLE " + target() +
         " LIKE " + source() + " USING " + provider(format);
     sql(sqlText);

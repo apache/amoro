@@ -37,6 +37,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -46,33 +47,33 @@ public class SparkTestContext {
   public static final String INTERNAL_CATALOG_NAME = "arctic_catalog";
   public static final String EXTERNAL_HIVE_CATALOG_NAME = "hive_catalog";
 
-  final TestAms AMS = new TestAms();
+  final TestAms ams = new TestAms();
 
-  final TestHMS HMS = new TestHMS();
+  final TestHMS hms = new TestHMS();
 
   private boolean catalogSet = false;
-  private SparkSession _spark;
-  private Map<String, String> _sparkConf;
+  private SparkSession spark;
+  private Map<String, String> sparkConf;
 
   public void initialize() throws Exception {
-    AMS.before();
-    HMS.before();
+    ams.before();
+    hms.before();
     warehouse.create();
     setupCatalogs();
   }
 
   public void close() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
-      AMS.getAmsHandler().cleanUp();
+      ams.getAmsHandler().cleanUp();
       catalogSet = false;
     }
-    AMS.after();
-    HMS.after();
+    ams.after();
+    hms.after();
   }
 
   public Table loadHiveTable(String database, String table) {
     try {
-      return HMS.getHiveClient().getTable(database, table);
+      return hms.getHiveClient().getTable(database, table);
     } catch (NoSuchObjectException e) {
       throw new NoSuchTableException(e, database + "." + table);
     } catch (TException e) {
@@ -82,14 +83,14 @@ public class SparkTestContext {
 
   public void dropHiveTable(String database, String table) {
     try {
-      HMS.getHiveClient().dropTable(database, table, true, true);
+      hms.getHiveClient().dropTable(database, table, true, true);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   public HiveMetaStoreClient getHiveClient() {
-    return HMS.getHiveClient();
+    return hms.getHiveClient();
   }
 
   private void setupCatalogs() throws IOException {
@@ -100,12 +101,12 @@ public class SparkTestContext {
     }
     CatalogMeta arcticCatalogMeta = CatalogMetaTestUtil.createArcticCatalog(warehouse.getRoot());
     arcticCatalogMeta.setCatalogName(amsCatalogName("ARCTIC"));
-    AMS.getAmsHandler().createCatalog(arcticCatalogMeta);
+    ams.getAmsHandler().createCatalog(arcticCatalogMeta);
 
-    HiveConf hiveConf = HMS.getHiveConf();
+    HiveConf hiveConf = hms.getHiveConf();
     CatalogMeta hiveCatalogMeta = HiveCatalogMetaTestUtil.createArcticCatalog(warehouse.getRoot(), hiveConf);
     hiveCatalogMeta.setCatalogName(amsCatalogName("HIVE"));
-    AMS.getAmsHandler().createCatalog(hiveCatalogMeta);
+    ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     catalogSet = true;
   }
 
@@ -120,7 +121,7 @@ public class SparkTestContext {
   }
 
   public String catalogUrl(String arcticCatalogName) {
-    return this.AMS.getServerUrl() + "/" + arcticCatalogName;
+    return this.ams.getServerUrl() + "/" + arcticCatalogName;
   }
 
   private String hiveVersion() {
@@ -135,7 +136,7 @@ public class SparkTestContext {
   }
 
   private String hiveMetastoreUri() {
-    return "thrift://127.0.0.1:" + HMS.getMetastorePort();
+    return "thrift://127.0.0.1:" + hms.getMetastorePort();
   }
 
   private String warehouseDir() {
@@ -145,11 +146,11 @@ public class SparkTestContext {
   public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
     configs.put("spark.sql.catalog." + amsCatalogName("arctic"), ArcticSparkCatalog.class.getName());
-    configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url"
-        , this.AMS.getServerUrl() + "/" + amsCatalogName("arctic"));
+    configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url",
+        this.ams.getServerUrl() + "/" + amsCatalogName("arctic"));
     configs.put("spark.sql.catalog." + amsCatalogName("hive"), ArcticSparkCatalog.class.getName());
-    configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url"
-        , this.AMS.getServerUrl() + "/" + amsCatalogName("hive"));
+    configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url",
+        this.ams.getServerUrl() + "/" + amsCatalogName("hive"));
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");
@@ -171,20 +172,20 @@ public class SparkTestContext {
     }
 
     initializeSparkSession(configs);
-    return this._spark.cloneSession();
+    return this.spark.cloneSession();
   }
 
   private boolean isSameSparkConf(Map<String, String> sparkConf) {
-    if (_sparkConf == null) {
+    if (this.sparkConf == null) {
       return false;
     }
-    if (_sparkConf.size() != sparkConf.size()) {
+    if (this.sparkConf.size() != sparkConf.size()) {
       return false;
     }
     for (String key : sparkConf.keySet()) {
-      String value = sparkConf.get(key);
-      String _value = _sparkConf.get(key);
-      if (!StringUtils.equals(value, _value)) {
+      String newValue = sparkConf.get(key);
+      String oldValue = this.sparkConf.get(key);
+      if (!StringUtils.equals(newValue, oldValue)) {
         return false;
       }
     }
@@ -192,14 +193,14 @@ public class SparkTestContext {
   }
 
   private void cleanLocalSparkContext() {
-    if (_spark != null) {
-      _spark.close();
-      _spark = null;
+    if (spark != null) {
+      spark.close();
+      spark = null;
     }
   }
 
   private void initializeSparkSession(Map<String, String> sparkConf) {
-    boolean create = _spark == null;
+    boolean create = spark == null;
     if (!isSameSparkConf(sparkConf)) {
       create = true;
     }
@@ -210,12 +211,12 @@ public class SparkTestContext {
           .setAppName("arctic-spark-unit-tests")
           .setMaster("local[*]");
       sparkConf.forEach(sparkconf::set);
-      _spark = SparkSession
+      spark = SparkSession
           .builder()
           .config(sparkconf)
           .getOrCreate();
-      _spark.sparkContext().setLogLevel("WARN");
-      _sparkConf = sparkConf;
+      spark.sparkContext().setLogLevel("WARN");
+      this.sparkConf = sparkConf;
     }
   }
 }

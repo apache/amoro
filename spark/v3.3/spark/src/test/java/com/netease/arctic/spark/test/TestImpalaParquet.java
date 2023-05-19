@@ -22,7 +22,6 @@ import com.google.common.collect.Iterators;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import com.netease.arctic.spark.test.helper.ResourceInputFile;
-import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterator;
@@ -35,6 +34,7 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.util.HashMap;
 
 public class TestImpalaParquet {
@@ -59,7 +59,7 @@ public class TestImpalaParquet {
         .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
     while (iterator.hasNext()) {
-      InternalRow next = (InternalRow)iterator.next();
+      InternalRow next = (InternalRow) iterator.next();
       Assertions.assertEquals("hello parquet", next.getString(0));
     }
   }

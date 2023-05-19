@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.stream.Stream;
 
 @EnableCatalogSelect
@@ -208,11 +209,14 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, "", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", " UNSET TBLPROPERTIES ('test.props')", null),
         Arguments.of(TableFormat.MIXED_HIVE, "", " UNSET TBLPROPERTIES ('test.props')", null),
-        Arguments.of(
-            TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
-        Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null),
-        Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null)
+        Arguments.of(TableFormat.MIXED_ICEBERG,
+            ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
+        Arguments.of(TableFormat.MIXED_HIVE,
+            ", PRIMARY KEY(id)", " SET TBLPROPERTIES ('test.props' = 'val')", "val"),
+        Arguments.of(TableFormat.MIXED_ICEBERG,
+            ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null),
+        Arguments.of(TableFormat.MIXED_HIVE,
+            ", PRIMARY KEY(id)", " UNSET TBLPROPERTIES ('test.props')", null)
     );
   }
 

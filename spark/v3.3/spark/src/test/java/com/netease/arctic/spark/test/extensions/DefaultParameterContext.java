@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.Preconditions;
 import org.junit.platform.commons.util.ToStringBuilder;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
 import java.util.List;
@@ -72,12 +73,10 @@ public class DefaultParameterContext implements ParameterContext {
 
   @Override
   public String toString() {
-    // @formatter:off
-        return new ToStringBuilder(this)
-                .append("parameter", this.parameter)
-                .append("index", this.index)
-                .append("target", this.target)
-                .toString();
-        // @formatter:on
+    return new ToStringBuilder(this)
+        .append("parameter", this.parameter)
+        .append("index", this.index)
+        .append("target", this.target)
+        .toString();
   }
 }

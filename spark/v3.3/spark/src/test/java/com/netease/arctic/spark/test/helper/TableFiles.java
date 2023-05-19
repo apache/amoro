@@ -22,6 +22,7 @@ import com.netease.arctic.utils.StructLikeSet;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;

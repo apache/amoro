@@ -28,6 +28,7 @@ import org.junit.jupiter.engine.extension.ExtensionRegistry;
 import org.junit.platform.commons.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -42,8 +43,8 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
   @Override
   public void invokeBeforeEachMethod(ExtensionContext context, ExtensionRegistry registry) throws Throwable {
     Preconditions.condition(
-        context.getTestInstance().isPresent()
-            && context.getRequiredTestInstance() instanceof SparkTestBase,
+        context.getTestInstance().isPresent() &&
+            context.getRequiredTestInstance() instanceof SparkTestBase,
         () -> "This is not a SparkTest");
 
     String sparkCatalog = selectSparkCatalog(context, registry);

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
@@ -31,8 +32,8 @@ public class EachParameterResolver implements ParameterResolver {
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable())
-        && isParameterTypeSupported(parameterContext.getDeclaringExecutable());
+    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable()) &&
+        isParameterTypeSupported(parameterContext.getDeclaringExecutable());
   }
 
   @Override
@@ -46,8 +47,8 @@ public class EachParameterResolver implements ParameterResolver {
   }
 
   private boolean isBeforeOrAfterEachMethod(Executable executable) {
-    return executable.getAnnotation(BeforeEach.class) != null
-        || executable.getAnnotation(AfterEach.class) != null;
+    return executable.getAnnotation(BeforeEach.class) != null ||
+        executable.getAnnotation(AfterEach.class) != null;
   }
 
   private boolean isParameterTypeSupported(Executable executable) {
