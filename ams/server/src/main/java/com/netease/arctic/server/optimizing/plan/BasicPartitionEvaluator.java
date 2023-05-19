@@ -166,7 +166,7 @@ public class BasicPartitionEvaluator implements PartitionEvaluator {
   public boolean isMinorNecessary() {
     int sourceFileCount = fragmentFileCount + equalityDeleteFileCount;
     return sourceFileCount >= config.getMinorLeastFileCount() ||
-        (sourceFileCount > 1 &&
+        (sourceFileCount > 1 && config.getMinorLeastInterval() > 0 &&
             planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
   }
 
