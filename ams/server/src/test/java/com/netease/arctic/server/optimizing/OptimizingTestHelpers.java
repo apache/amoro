@@ -19,9 +19,9 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.server.optimizing.scan.BasicTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
+import com.netease.arctic.server.table.BasicTableSnapshot;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;

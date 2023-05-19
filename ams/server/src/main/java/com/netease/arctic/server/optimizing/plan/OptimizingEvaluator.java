@@ -20,11 +20,11 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.KeyedTableSnapshot;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
