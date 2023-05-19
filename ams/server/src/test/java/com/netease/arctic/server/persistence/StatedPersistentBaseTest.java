@@ -1,77 +1,88 @@
 package com.netease.arctic.server.persistence;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class StatedPersistentBaseTest {
+class StatedPersistentProxyTest {
 
-  @Test
-  public void testModifyStateFailed() {
-    ChildStatedPersistentBase objectUnderTest = new ChildStatedPersistentBase();
-    AtomicInteger state = new AtomicInteger(0);
+  private MyPersistent myPersistent;
+  private MyPersistent myPersistentProxy;
 
-    // Modify the state of the object safely
-    objectUnderTest.modifyStateSafely(() -> {
-      state.incrementAndGet();
-      assertEquals(1, state.get(), "State should be modified safely within the lock");
-      objectUnderTest.setIntField(42);
-      objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(), "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(), "String field should be modified safely within the lock");
-      throw new RuntimeException("Test exception");
-    });
-
-    // Verify that the state of the object was restored after the exception
-    assertEquals(1, state.get(), "State should be restored after an exception");
-    assertEquals(0, objectUnderTest.getIntField(), "Int field should be restored after an exception");
-    assertEquals("initial", objectUnderTest.getStringField(), "String field should be restored after an exception");
+  @BeforeEach
+  void setUp() {
+    myPersistent = new MyPersistent();
+    myPersistentProxy = StatedPersistentProxy.get(MyPersistent.class, myPersistent);
   }
 
   @Test
-  public void testModifyStateSuccess() {
-    ChildStatedPersistentBase objectUnderTest = new ChildStatedPersistentBase();
-    AtomicInteger state = new AtomicInteger(0);
-
-    // Modify the state of the object safely
-    objectUnderTest.modifyStateSafely(() -> {
-      state.incrementAndGet();
-      assertEquals(1, state.get(), "State should be modified safely within the lock");
-      objectUnderTest.setIntField(42);
-      objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(), "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(), "String field should be modified safely within the lock");
-      throw new RuntimeException("Test exception");
-    });
-
-    // Verify that the state of the object was restored after the exception
-    assertEquals(1, state.get(), "State should be restored after an exception");
-    assertEquals(0, objectUnderTest.getIntField(), "Int field should be restored after an exception");
-    assertEquals("initial", objectUnderTest.getStringField(), "String field should be restored after an exception");
+  void testInvokeWithoutStateConsistency() {
+    myPersistentProxy.setCounter(1);
+    assertEquals(1, myPersistentProxy.getCounter());
   }
 
-  static class ChildStatedPersistentBase extends StatedPersistentBase {
-    private int intField = 0;
-    private String stringField = "initial";
+  @Test
+  void testInvokeWithStateConsistency() {
+    myPersistentProxy.setCounter(1);
+    assertThrows(RuntimeException.class, () -> myPersistentProxy.incrementAndThrow());
+    assertEquals(1, myPersistentProxy.getCounter());
+  }
 
-    public int getIntField() {
-      return intField;
+  @Test
+  void testInvokeWithStateConsistencyAndDifferentFieldTypes() {
+    myPersistentProxy.setCounter(1);
+    myPersistentProxy.setStateFieldString("Initial");
+    myPersistentProxy.setNonStateFieldString("Initial");
+
+    assertThrows(RuntimeException.class, () -> myPersistentProxy.incrementAndThrow());
+
+    assertEquals(1, myPersistentProxy.getCounter());
+    assertEquals("Initial", myPersistentProxy.getStateFieldString());
+    assertEquals("Changed", myPersistentProxy.getNonStateFieldString());
+  }
+
+  static class MyPersistent extends PersistentBase {
+
+    @StatedPersistentProxy.StateField
+    private int counter;
+
+    @StatedPersistentProxy.StateField
+    private String stateFieldString;
+
+    private String nonStateFieldString;
+
+    public int getCounter() {
+      return counter;
     }
 
-    public void setIntField(int intField) {
-      this.intField = intField;
+    public void setCounter(int counter) {
+      this.counter = counter;
     }
 
-    public String getStringField() {
-      return stringField;
+    public String getStateFieldString() {
+      return stateFieldString;
     }
 
-    public void setStringField(String stringField) {
-      this.stringField = stringField;
+    public void setStateFieldString(String stateFieldString) {
+      this.stateFieldString = stateFieldString;
     }
 
-    public void modifyState() {
+    public String getNonStateFieldString() {
+      return nonStateFieldString;
+    }
 
+    public void setNonStateFieldString(String nonStateFieldString) {
+      this.nonStateFieldString = nonStateFieldString;
+    }
+
+    @StatedPersistentProxy.StateConsistency
+    public void incrementAndThrow() {
+      counter++;
+      stateFieldString = "Changed";
+      nonStateFieldString = "Changed";
+      throw new RuntimeException("Exception occurred");
     }
   }
 }
