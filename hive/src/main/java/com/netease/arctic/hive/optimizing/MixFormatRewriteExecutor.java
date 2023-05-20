@@ -26,11 +26,15 @@ import java.util.List;
 
 public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
+  private String outputDir;
+
   public MixFormatRewriteExecutor(
       RewriteFilesInput input,
       ArcticTable table,
-      StructLikeCollections structLikeCollections) {
+      StructLikeCollections structLikeCollections,
+      String outputDir) {
     super(input, table, structLikeCollections);
+    this.outputDir = outputDir;
   }
 
   @Override
@@ -48,8 +52,6 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected FileWriter<Record, DataWriteResult> dataWriter() {
-    String outputDir = OptimizingInputProperties.parse(input.getOptions()).getOutputDir();
-
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(getTransactionId(input.rewrittenDataFilesForMixed()))
         .withTaskId(0)

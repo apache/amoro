@@ -25,11 +25,17 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.optimizing.flow.checker.DataConcurrencyChecker;
+import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingChecker;
 import com.netease.arctic.server.optimizing.flow.checker.OptimizingCountChecker;
 import com.netease.arctic.table.ArcticTable;
+import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -37,8 +43,13 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
+
 @RunWith(Parameterized.class)
 public class TestContinuousOptimizing extends TableTestBase {
+
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
 
   public TestContinuousOptimizing(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -47,10 +58,10 @@ public class TestContinuousOptimizing extends TableTestBase {
   @Parameterized.Parameters(name = "{1}.{2}")
   public static Object[] parameters() {
     return new Object[][] {
-        {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)
-        }
+        // {
+        //     new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        //     new BasicTableTestHelper(true, true)
+        // }
         // ,
         // {
         //    new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -64,6 +75,15 @@ public class TestContinuousOptimizing extends TableTestBase {
         // ,
         // {
         //     new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        //     new BasicTableTestHelper(true, false)
+        // }
+        {
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true)
+        }
+        // ,
+        // {
+        //     new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         //     new BasicTableTestHelper(true, false)
         // }
     };
@@ -80,7 +100,7 @@ public class TestContinuousOptimizing extends TableTestBase {
     int minorTriggerCount = 4;
     int availableCore = 10;
 
-    int cycle = 20;
+    int cycle = 5;
     int recordCountOnceWrite = 2500;
 
     ArcticTable table = getArcticTable();
@@ -91,6 +111,7 @@ public class TestContinuousOptimizing extends TableTestBase {
     //init checker
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
     OptimizingCountChecker optimizingCountChecker = new OptimizingCountChecker(0);
+    FullOptimizingChecker fullOptimizingChecker = new FullOptimizingChecker();
 
     CompleteOptimizingFlow optimizingFlow = CompleteOptimizingFlow
         .builder(table, availableCore)
@@ -100,25 +121,32 @@ public class TestContinuousOptimizing extends TableTestBase {
         .setMinorTriggerFileCount(minorTriggerCount)
         .addChecker(dataConcurrencyChecker)
         .addChecker(optimizingCountChecker)
+        .addChecker(fullOptimizingChecker)
         .build();
 
     while (cycle-- > 0) {
-      // view.onlyDelete(recordCountOnceWrite);
-      // optimizingFlow.optimize();
-      //
-      // view.custom(simpleUpsert());
-      // optimizingFlow.optimize();
-      //
-      // view.cdc(recordCountOnceWrite);
-      // optimizingFlow.optimize();
-
-      view.upsert(recordCountOnceWrite);
+      view.onlyDelete(recordCountOnceWrite);
       optimizingFlow.optimize();
+
+      view.custom(simpleUpsert());
+      optimizingFlow.optimize();
+
+      view.cdc(recordCountOnceWrite);
+      optimizingFlow.optimize();
+
+      if (cycle == 3) {
+        mustFullCycle(table, () -> {
+          view.upsert(recordCountOnceWrite);
+          optimizingFlow.optimize();
+          return null;
+        });
+      }
     }
 
     List<CompleteOptimizingFlow.Checker> checkers = optimizingFlow.unTriggerChecker();
-    Assert.assertEquals("These Checker have not Trigger. Please enrich your test scenarios",
-        0, checkers.size());
+    if (checkers.size() != 0) {
+      throw new IllegalStateException("Some checkers are not triggered:" + checkers);
+    }
   }
 
   @NotNull
@@ -134,5 +162,11 @@ public class TestContinuousOptimizing extends TableTestBase {
         return list;
       }
     };
+  }
+
+  private static void mustFullCycle(ArcticTable table, Callable runnable) throws Exception {
+    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1").commit();
+    runnable.call();
+    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
   }
 }

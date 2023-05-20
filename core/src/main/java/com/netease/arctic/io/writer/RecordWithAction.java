@@ -102,4 +102,13 @@ public class RecordWithAction implements Record {
   public <T> void set(int pos, T value) {
     record.set(pos, value);
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("RecordWithAction{");
+    sb.append("record=").append(record);
+    sb.append(", action=").append(action);
+    sb.append('}');
+    return sb.toString();
+  }
 }

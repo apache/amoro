@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -149,6 +151,9 @@ public class RandomRecordGenerator {
         } else {
           return LocalDateTime.now().minusDays(random.nextInt(10000));
         }
+      case DECIMAL:
+        Types.DecimalType decimalType = (Types.DecimalType) type;
+        return BigDecimal.valueOf(Double.valueOf(random.nextDouble()).longValue(), decimalType.scale());
       default:
         throw new RuntimeException("Unsupported type you can add them in code");
     }

@@ -22,12 +22,15 @@ import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.server.optimizing.IcebergCommit;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
 import com.netease.arctic.server.optimizing.flow.TableDataView;
+import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
+import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -54,19 +57,28 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
   }
 
   @Override
-  public boolean condition(ArcticTable table, List<TaskDescriptor> taskDescriptors) {
+  public boolean condition(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable IcebergCommit latestCommit) {
     count++;
     return true;
   }
 
   @Override
-  public boolean senseHasCheck() {
+  public boolean senseHasChecked() {
     return count > 0;
   }
 
   @Override
-  public void check(ArcticTable table, List<TaskDescriptor> taskDescriptors) throws Exception {
-    if (CollectionUtils.isEmpty(taskDescriptors)) {
+  public void check(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable IcebergCommit latestCommit
+  ) throws Exception {
+    if (CollectionUtils.isEmpty(latestTaskDescriptors)) {
       return;
     }
 
