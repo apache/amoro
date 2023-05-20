@@ -18,25 +18,24 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
+import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.hadoop.hive.metastore.api.Partition;
 
-import java.util.List;
-
-public class OptimizingCountChecker implements CompleteOptimizingFlow.Checker {
+public class FullOptimizingChecker implements CompleteOptimizingFlow.Checker {
 
   private int count;
-
-  private int except;
-
-  public OptimizingCountChecker(int except) {
-    this.except = except;
-  }
 
   @Override
   public boolean condition(
@@ -45,7 +44,8 @@ public class OptimizingCountChecker implements CompleteOptimizingFlow.Checker {
       OptimizingPlanner latestPlanner,
       @Nullable IcebergCommit latestCommit
   ) {
-    if (CollectionUtils.isNotEmpty(latestTaskDescriptors)) {
+    if (CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
+        OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties()).getOutputDir() != null) {
       count++;
       return true;
     }
@@ -54,7 +54,7 @@ public class OptimizingCountChecker implements CompleteOptimizingFlow.Checker {
 
   @Override
   public boolean senseHasChecked() {
-    return count >= except;
+    return count > 0;
   }
 
   @Override
@@ -64,5 +64,10 @@ public class OptimizingCountChecker implements CompleteOptimizingFlow.Checker {
       OptimizingPlanner latestPlanner,
       @Nullable IcebergCommit latestCommit
   ) throws Exception {
+    SupportHive supportHive = (SupportHive) table;
+    String hiveLocation = supportHive.hiveLocation();
+
+    HMSClientPool hmsClient = supportHive.getHMSClient();
+    List<Partition> list = hmsClient.run(c -> c.listPartitions(table.id().getDatabase(), table.id().getTableName(), (short) 100));
   }
 }

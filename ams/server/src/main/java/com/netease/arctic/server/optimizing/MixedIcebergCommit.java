@@ -302,7 +302,7 @@ public class MixedIcebergCommit extends IcebergCommit {
 
   private boolean needMoveFile2Hive() {
     return OptimizingInputProperties.parse(
-        tasks.stream().findAny().get().getInput().getOptions()).getMoveFile2HiveLocation();
+        tasks.stream().findAny().get().getProperties()).getMoveFile2HiveLocation();
   }
 
   private boolean fileInPartitionNeedSkip(

@@ -22,10 +22,12 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutor;
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.IcebergCommit;
 import com.netease.arctic.server.optimizing.MixedIcebergCommit;
+import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
@@ -37,6 +39,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -105,7 +108,7 @@ public class CompleteOptimizingFlow {
     OptimizingPlanner planner = planner();
     List<TaskDescriptor> taskDescriptors = planner.planTasks();
     if (CollectionUtils.isEmpty(taskDescriptors)) {
-      check(taskDescriptors);
+      check(taskDescriptors, planner, null);
       return;
     }
     List<TaskRuntime> taskRuntimes = mockTaskRuntime(taskDescriptors);
@@ -115,11 +118,11 @@ public class CompleteOptimizingFlow {
     IcebergCommit committer = committer(taskRuntimes, planner.getFromSequence(),
         planner.getToSequence(), planner.getTargetSnapshotId());
     committer.commit();
-    check(taskDescriptors);
+    check(taskDescriptors, planner, null);
   }
 
   public List<Checker> unTriggerChecker() {
-    return checkers.stream().filter(s -> !s.senseHasCheck())
+    return checkers.stream().filter(s -> !s.senseHasChecked())
         .collect(Collectors.toList());
   }
 
@@ -134,10 +137,10 @@ public class CompleteOptimizingFlow {
     ).get();
   }
 
-  private void check(List<TaskDescriptor> taskDescriptors) throws Exception {
+  private void check(List<TaskDescriptor> taskDescriptors, OptimizingPlanner planner, IcebergCommit commit) throws Exception {
     for (Checker checker : checkers) {
-      if (checker.condition(table, taskDescriptors)) {
-        checker.check(table, taskDescriptors);
+      if (checker.condition(table, taskDescriptors, planner, commit)) {
+        checker.check(table, taskDescriptors, planner, commit);
       }
     }
   }
@@ -148,6 +151,7 @@ public class CompleteOptimizingFlow {
       TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
       Mockito.when(taskRuntime.getPartition()).thenReturn(taskDescriptor.getPartition());
       Mockito.when(taskRuntime.getInput()).thenReturn(taskDescriptor.getInput());
+      Mockito.when(taskRuntime.getProperties()).thenReturn(taskDescriptor.properties());
       list.add(taskRuntime);
     }
     return list;
@@ -155,7 +159,6 @@ public class CompleteOptimizingFlow {
 
   private OptimizingPlanner planner() {
     table.refresh();
-    TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
     Mockito.when(tableRuntime.getNewestProcessId()).thenReturn(1L);
@@ -163,17 +166,23 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getLastMinorOptimizingTime()).thenReturn(Long.MAX_VALUE);
     Mockito.when(tableRuntime.getLastMajorOptimizingTime()).thenReturn(Long.MAX_VALUE);
     Mockito.when(tableRuntime.getLastFullOptimizingTime()).thenReturn(Long.MAX_VALUE);
-    Mockito.when(tableRuntime.getOptimizingConfig()).thenReturn(tableConfiguration.getOptimizingConfig());
+    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
     return new OptimizingPlanner(tableRuntime, table, availableCore);
+  }
+
+  private OptimizingConfig optimizingConfig() {
+    TableConfiguration tableConfiguration = TableConfiguration.parseConfig(table.properties());
+    return tableConfiguration.getOptimizingConfig();
   }
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {
     if (table.format() == TableFormat.ICEBERG) {
       return new IcebergRewriteExecutor(taskRuntime.getInput(), table, StructLikeCollections.DEFAULT);
     } else {
-      return new MixFormatRewriteExecutor(taskRuntime.getInput(), table, StructLikeCollections.DEFAULT);
+      return new MixFormatRewriteExecutor(taskRuntime.getInput(), table, StructLikeCollections.DEFAULT,
+          OptimizingInputProperties.parse(taskRuntime.getProperties()).getOutputDir());
     }
   }
 
@@ -227,11 +236,19 @@ public class CompleteOptimizingFlow {
 
   public interface Checker {
 
-    boolean condition(ArcticTable table, List<TaskDescriptor> taskDescriptors);
+    boolean condition(
+        ArcticTable table,
+        @Nullable List<TaskDescriptor> latestTaskDescriptors,
+        OptimizingPlanner latestPlanner,
+        @Nullable IcebergCommit latestCommit);
 
-    boolean senseHasCheck();
+    boolean senseHasChecked();
 
-    void check(ArcticTable table, List<TaskDescriptor> taskDescriptors) throws Exception;
+    void check(
+        ArcticTable table,
+        @Nullable List<TaskDescriptor> LatestTaskDescriptors,
+        OptimizingPlanner latestPlanner,
+        @Nullable IcebergCommit latestCommit) throws Exception;
   }
 
   public static final class Builder {

@@ -26,6 +26,7 @@ import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.ArcticTable;
+import java.time.OffsetDateTime;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -212,7 +213,14 @@ public class TableDataView {
       return false;
     }
     for (int i = 0; i < schemaSize; i++) {
-      boolean equals = r1.get(i).equals(r2.get(i));
+      Object o1 = r1.get(i);
+      Object o2 = r2.get(i);
+      boolean equals;
+      if (o1 instanceof OffsetDateTime) {
+        equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime)o2);
+      } else {
+        equals = o1.equals(o2);
+      }
       if (!equals) {
         return false;
       }
