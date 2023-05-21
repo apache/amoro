@@ -30,42 +30,40 @@ import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.persistence.StatedPersistentProxy;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TaskRuntime extends PersistentBase {
+public class TaskRuntime extends StatedPersistentBase {
   private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private Status status = Status.PLANNED;
   private TaskStatusMachine statusMachine;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private int retry = 0;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private long startTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private long costTime = 0;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private OptimizingQueue.OptimizingThread optimizingThread;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private RewriteFilesOutput output;
-  private ByteBuffer outputBytes;
-  @StatedPersistentProxy.StateField
+  @StatedPersistentBase.StateField
   private MetricsSummary summary;
   private Map<String, String> properties;
 
@@ -85,6 +83,97 @@ public class TaskRuntime extends PersistentBase {
     this.properties = properties;
   }
 
+  public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {
+    invokeConsisitency(() -> {
+      validThread(thread);
+      if (result.getErrorMessage() != null) {
+        fail(result.getErrorMessage());
+      } else {
+        finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
+      }
+      owner.acceptResult(this);
+      optimizingThread = null;
+    });
+  }
+
+  /**
+   * Mix-Hive table need move file to hive location in Commit stage. so need to update output.
+   *
+   * @param filesOutput
+   */
+  public void updateOutput(RewriteFilesOutput filesOutput) {
+    invokeConsisitency(() -> {
+      Preconditions.checkArgument(filesOutput != null, "Old output must not be null");
+      statusMachine.accept(Status.SUCCESS);
+      summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+      summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+      output = filesOutput;
+      persistTaskRuntime(this);
+    });
+  }
+
+  private void finish(RewriteFilesOutput filesOutput) {
+    invokeConsisitency(() -> {
+      statusMachine.accept(Status.SUCCESS);
+      summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+      summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+      endTime = System.currentTimeMillis();
+      costTime += endTime - startTime;
+      output = filesOutput;
+      persistTaskRuntime(this);
+    });
+  }
+
+  void fail(String errorMessage) {
+    invokeConsisitency(() -> {
+      statusMachine.accept(Status.FAILED);
+      failReason = errorMessage;
+      endTime = System.currentTimeMillis();
+      costTime += endTime - startTime;
+      persistTaskRuntime(this);
+    });
+  }
+
+  void reset(boolean incRetryCount) {
+    invokeConsisitency(() -> {
+      if (incRetryCount) {
+        retry++;
+      }
+      statusMachine.accept(Status.PLANNED);
+      doAs(OptimizingMapper.class, mapper ->
+          mapper.updateTaskStatus(this, Status.PLANNED));
+    });
+  }
+
+  void schedule(OptimizingQueue.OptimizingThread thread) {
+    invokeConsisitency(() -> {
+      statusMachine.accept(Status.SCHEDULED);
+      optimizingThread = thread;
+      startTime = System.currentTimeMillis();
+      persistTaskRuntime(this);
+    });
+  }
+
+  void ack(OptimizingQueue.OptimizingThread thread) {
+    invokeConsisitency(() -> {
+      validThread(thread);
+      statusMachine.accept(Status.ACKED);
+      startTime = System.currentTimeMillis();
+      endTime = ArcticServiceConstants.INVALID_TIME;
+      persistTaskRuntime(this);
+    });
+  }
+
+  void tryCanceling() {
+    invokeConsisitency(() -> {
+      if (statusMachine.tryAccepting(Status.CANCELED)) {
+        costTime = System.currentTimeMillis() - startTime;
+        persistTaskRuntime(this);
+      }
+    });
+  }
+
+
   public TaskRuntime claimOwnership(TaskOwner owner) {
     this.owner = owner;
     return this;
@@ -102,9 +191,6 @@ public class TaskRuntime extends PersistentBase {
   }
 
   public RewriteFilesOutput getOutput() {
-    if (output == null && outputBytes != null) {
-      return SerializationUtil.simpleDeserialize(outputBytes);
-    }
     return output;
   }
 
@@ -185,10 +271,6 @@ public class TaskRuntime extends PersistentBase {
     this.status = status;
   }
 
-  public void addRetryCount() {
-    retry++;
-  }
-
   public MetricsSummary getSummary() {
     return summary;
   }
@@ -199,80 +281,6 @@ public class TaskRuntime extends PersistentBase {
 
   public long getTableId() {
     return tableId;
-  }
-
-  public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {
-    validThread(thread);
-    if (result.getErrorMessage() != null) {
-      fail(result.getErrorMessage());
-    } else {
-      finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
-    }
-    owner.acceptResult(this);
-    optimizingThread = null;
-  }
-
-  /**
-   * Mix-Hive table need move file to hive location in Commit stage. so need to update output.
-   *
-   * @param filesOutput
-   */
-  public void updateOutput(RewriteFilesOutput filesOutput) {
-    if (this.output == null) {
-      throw new IllegalStateException("Old output must not be null");
-    }
-    statusMachine.accept(Status.SUCCESS);
-    summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-    summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-    output = filesOutput;
-    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
-    persistTaskRuntime(this);
-  }
-
-  private void finish(RewriteFilesOutput filesOutput) {
-    statusMachine.accept(Status.SUCCESS);
-    summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-    summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-    endTime = System.currentTimeMillis();
-    costTime += endTime - startTime;
-    output = filesOutput;
-    this.outputBytes = SerializationUtil.simpleSerialize(filesOutput);
-    persistTaskRuntime(this);
-  }
-
-  void fail(String errorMessage) {
-    statusMachine.accept(Status.FAILED);
-    failReason = errorMessage;
-    endTime = System.currentTimeMillis();
-    costTime += endTime - startTime;
-    persistTaskRuntime(this);
-  }
-
-  void reset() {
-    statusMachine.accept(Status.PLANNED);
-    doAs(OptimizingMapper.class, mapper -> mapper.updateTaskStatus(this, Status.PLANNED));
-  }
-
-  void schedule(OptimizingQueue.OptimizingThread thread) {
-    statusMachine.accept(Status.SCHEDULED);
-    optimizingThread = thread;
-    startTime = System.currentTimeMillis();
-    persistTaskRuntime(this);
-  }
-
-  void ack(OptimizingQueue.OptimizingThread thread) {
-    validThread(thread);
-    statusMachine.accept(Status.ACKED);
-    startTime = System.currentTimeMillis();
-    endTime = ArcticServiceConstants.INVALID_TIME;
-    persistTaskRuntime(this);
-  }
-
-  void tryCanceling() {
-    if (statusMachine.tryAccepting(Status.CANCELED)) {
-      costTime = System.currentTimeMillis() - startTime;
-      persistTaskRuntime(this);
-    }
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {

@@ -18,9 +18,11 @@
 
 package com.netease.arctic.server.persistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,6 +34,7 @@ public abstract class PersistentBase {
   protected PersistentBase() {
   }
 
+  @VisibleForTesting
   protected NestedSqlSession beginSession() {
     return NestedSqlSession.openSession(
         () -> SqlSessionFactoryProvider
@@ -39,73 +42,65 @@ public abstract class PersistentBase {
             .openSession(TransactionIsolationLevel.READ_COMMITTED));
   }
 
-  protected <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
+  protected final <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
     try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
         consumer.accept(mapper);
-        session.commit();
+        session.commit(true);
       } catch (Throwable t) {
-        session.rollback();
+        session.rollback(true);
         throw new PersistenceException(t);
       }
     }
   }
 
-  protected void doAsTransaction(Runnable... operations) {
+  protected final void doAsTransaction(Runnable... operations) {
     try (NestedSqlSession session = beginSession()) {
       try {
         for (Runnable runnable : operations) {
           runnable.run();
         }
-        session.commit();
+        session.commit(true);
       } catch (Throwable t) {
-        session.rollback();
+        session.rollback(true);
         throw t;
       }
     }
   }
 
-  protected <T> void doAsExisted(
-      Class<T> mapperClz, Function<T, Integer> func,
-      Supplier<? extends ArcticRuntimeException> errorSupplier) {
-    getAs(mapperClz, func, rows -> rows > 0, errorSupplier);
-  }
-
-  protected <T, R> R getAs(Class<T> mapperClz, Function<T, R> func) {
+  protected final <T, R> R getAs(Class<T> mapperClz, Function<T, R> func) {
     try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
         R result = func.apply(mapper);
-        session.commit();
+        session.commit(false);
         return result;
       } catch (Throwable t) {
-        session.rollback();
+        session.rollback(false);
         throw t;
       }
     }
   }
 
-  protected <T, R> R getAs(
-      Class<T> mapperClz, Function<T, R> func, Predicate<R> predicate,
+  protected final <T> void doAsExisted(Class<T> mapperClz, Function<T, Integer> func,
       Supplier<? extends ArcticRuntimeException> errorSupplier) {
     try (NestedSqlSession session = beginSession()) {
-      R result;
       try {
-        result = func.apply(getMapper(session, mapperClz));
-        session.commit();
+        int result = func.apply(getMapper(session, mapperClz));
+        if (result == 0) {
+          throw errorSupplier.get();
+        }
+        session.commit(true);
       } catch (Throwable t) {
-        session.rollback();
+        session.rollback(true);
         throw new PersistenceException(t);
       }
-      if (!predicate.test(result)) {
-        throw errorSupplier.get();
-      }
-      return result;
     }
   }
 
   protected static <T> T getMapper(NestedSqlSession sqlSession, Class<T> type) {
+    Preconditions.checkNotNull(sqlSession);
     return sqlSession.getSqlSession().getMapper(type);
   }
 }
