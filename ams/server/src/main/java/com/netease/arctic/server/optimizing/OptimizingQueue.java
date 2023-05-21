@@ -93,7 +93,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   public void refreshTable(TableRuntime tableRuntime) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info("Bind queue {} success with table {}", optimizerGroup.getName(), tableRuntime.getTableIdentifier());
-      //TODO: load task quotas
       tableRuntime.resetTaskQuotas(System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
       schedulingPolicy.addTable(tableRuntime);
     }
@@ -152,14 +151,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     try {
       task.schedule(thread);
     } catch (Throwable throwable) {
-      retryTask(task);
+      retryTask(task, false);
       throw throwable;
     }
   }
 
-  private void retryTask(TaskRuntime taskRuntime) {
-    taskRuntime.addRetryCount();
-    taskRuntime.reset();
+  private void retryTask(TaskRuntime taskRuntime, boolean incRetryCount) {
+    taskRuntime.reset(incRetryCount);
     retryQueue.offer(taskRuntime);
   }
 
@@ -207,7 +205,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
       taskMap.remove(task.getTaskId());
-      retryTask(task);
+      //optimizing task of suspending optimizer would not be counted for retrying
+      retryTask(task, false);
     });
   }
 
@@ -340,12 +339,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.beginCommitting();
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
-            retryTask(taskRuntime);
+            retryTask(taskRuntime, true);
           } else {
             clearTasks(this);
             this.failedReason = taskRuntime.getFailReason();
             this.status = OptimizingProcess.Status.FAILED;
-            this.endTime = System.currentTimeMillis();
+            this.endTime = taskRuntime.getEndTime();
             persistProcessCompleted(false);
           }
         }
