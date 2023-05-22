@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
@@ -94,7 +95,18 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    return new BasicPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
+    if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+      return new BasicPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
+    } else {
+      if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
+        String hiveLocation = (((SupportHive) arcticTable).hiveLocation());
+        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(tableRuntime, partitionPath, hiveLocation,
+            System.currentTimeMillis(), arcticTable.isKeyedTable());
+      } else {
+        return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(tableRuntime, partitionPath,
+            System.currentTimeMillis(), arcticTable.isKeyedTable());
+      }
+    }
   }
 
   public boolean isNecessary() {
