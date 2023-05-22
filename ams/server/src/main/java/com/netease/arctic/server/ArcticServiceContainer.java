@@ -117,13 +117,6 @@ public class ArcticServiceContainer {
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
 
@@ -133,10 +126,16 @@ public class ArcticServiceContainer {
   }
 
   public void dispose() {
-    server.stop();
-    dashboardServer.stopRestServer();
-    tableService.dispose();
-    tableService = null;
+    if (server != null) {
+      server.stop();
+    }
+    if (dashboardServer != null) {
+      dashboardServer.stopRestServer();
+    }
+    if (tableService != null) {
+      tableService.dispose();
+      tableService = null;
+    }
     optimizingService = null;
   }
 

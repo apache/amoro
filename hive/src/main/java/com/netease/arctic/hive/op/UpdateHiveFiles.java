@@ -360,7 +360,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
       try {
         Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, entry.getValue().getValues()));
-        String locationInHive = partitionInHive.getSd().getLocatTestTableRuntimeManagerion();
+        String locationInHive = partitionInHive.getSd().getLocation();
         if (isPathEquals(location, locationInHive)) {
           partitionToAlter.put(entry.getKey(), entry.getValue());
           continue;

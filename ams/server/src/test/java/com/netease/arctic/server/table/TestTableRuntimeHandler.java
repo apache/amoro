@@ -63,7 +63,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
   public void testInitialize() {
     tableService = new DefaultTableService(new Configurations());
     TestHandler handler = new TestHandler();
-    tableService.addHandler(handler);
+    tableService.addHandlerChain(handler);
     tableService.initialize();
     createDatabase();
     createTable();
@@ -77,7 +77,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     // initialize with a history table
     tableService = new DefaultTableService(new Configurations());
     handler = new TestHandler();
-    tableService.addHandler(handler);
+    tableService.addHandlerChain(handler);
     tableService.initialize();
     Assert.assertEquals(1, handler.getInitTables().size());
     Assert.assertEquals(createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
@@ -85,7 +85,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     // test change properties
     tableService().loadTable(createTableId).updateProperties()
         .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
-    tableService().get(createTableId).refresh();
+    tableService().getRuntime(createTableId).refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
     validateTableRuntime(handler.getConfigChangedTables().get(0).first());
     Assert.assertTrue(handler.getConfigChangedTables().get(0).first().getTableConfiguration().isCleanOrphanEnabled());
@@ -108,7 +108,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
   }
 
-  static class TestHandler extends TableRuntimeHandler {
+  static class TestHandler extends RuntimeHandlerChain {
 
     private final List<TableRuntimeMeta> initTables = Lists.newArrayList();
     private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables = Lists.newArrayList();
