@@ -23,6 +23,7 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
@@ -104,37 +105,46 @@ public class BasicPartitionEvaluator implements PartitionEvaluator {
     segmentFileSize += dataFile.fileSizeInBytes();
     segmentFileCount += 1;
 
-    long deleteRecord = 0;
-    boolean equalityDeleteExist = false;
-    int posDeleteCount = 0;
-    for (IcebergContentFile<?> delete : deletes) {
-      addDelete(delete);
-      deleteRecord += delete.recordCount();
-      if (delete.content() == FileContent.POSITION_DELETES) {
-        posDeleteCount++;
-      } else {
-        equalityDeleteExist = true;
-      }
-    }
-    if (deleteRecord >= dataFile.recordCount() * config.getMajorDuplicateRatio()) {
+    if (shouldRewriteSegmentFile(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount += 1;
-    } else if (equalityDeleteExist || posDeleteCount > 1) {
+    } else if (shouldRewritePosForSegmentFile(dataFile, deletes)) {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount += 1;
     }
+    for (IcebergContentFile<?> delete : deletes) {
+      addDelete(delete);
+    }
+  }
+
+  public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    return getRecordCount(deletes) >= dataFile.recordCount() * config.getMajorDuplicateRatio();
+  }
+
+  public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (deletes.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
+      return true;
+    } else if (deletes.stream().filter(file -> file.content() == FileContent.POSITION_DELETES).count() > 1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private long getRecordCount(List<IcebergContentFile<?>> files) {
+    return files.stream().mapToLong(ContentFile::recordCount).sum();
   }
 
   private void addDelete(IcebergContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
-    if (delete.content() == FileContent.DATA || delete.content() == FileContent.EQUALITY_DELETES) {
-      equalityDeleteFileCount += 1;
-      equalityDeleteFileSize += delete.fileSizeInBytes();
-    } else {
+    if (delete.content() == FileContent.POSITION_DELETES) {
       posDeleteFileCount += 1;
       posDeleteFileSize += delete.fileSizeInBytes();
+    } else {
+      equalityDeleteFileCount += 1;
+      equalityDeleteFileSize += delete.fileSizeInBytes();
     }
   }
 

@@ -1,8 +1,8 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.Map;
 
@@ -52,6 +52,9 @@ public class OptimizingConfig {
 
   //self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
+
+  //base.file-index.hash-bucket
+  private int baseHashBucket;
 
   public OptimizingConfig() {
   }
@@ -199,6 +202,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public int getBaseHashBucket() {
+    return baseHashBucket;
+  }
+
+  public OptimizingConfig setBaseHashBucket(int baseHashBucket) {
+    this.baseHashBucket = baseHashBucket;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -211,6 +223,7 @@ public class OptimizingConfig {
         minorLeastInterval == that.minorLeastInterval && majorLeastFileCount == that.majorLeastFileCount &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
         fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
+        baseHashBucket == that.baseHashBucket &&
         Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
@@ -218,7 +231,7 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
         maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorLeastFileCount,
-        majorDuplicateRatio, fullTriggerInterval, fullRewriteAllFiles);
+        majorDuplicateRatio, fullTriggerInterval, fullRewriteAllFiles, baseHashBucket);
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
@@ -281,6 +294,10 @@ public class OptimizingConfig {
         .setFullRewriteAllFiles(CompatiblePropertyUtil.propertyAsBoolean(
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
-            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT));
+            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
+            properties,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT));
   }
 }

@@ -27,12 +27,10 @@ import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.BinPacking;
-import org.apache.iceberg.util.PropertyUtil;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -49,7 +47,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
-    if (isChangeFile(dataFile)) {
+    if (evaluator().isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
@@ -59,12 +57,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  protected boolean isChangeFile(IcebergDataFile dataFile) {
-    if (!isKeyedTable()) {
-      return false;
-    }
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
+  @Override
+  protected MixedIcebergPartitionEvaluator evaluator() {
+    return ((MixedIcebergPartitionEvaluator) super.evaluator());
   }
 
   @Override
@@ -72,7 +67,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     if (super.taskNeedExecute(task)) {
       return true;
     } else {
-      return task.getRewriteDataFiles().stream().anyMatch(this::isChangeFile);
+      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
     }
   }
 
@@ -98,14 +93,17 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected BasicPartitionEvaluator buildEvaluator() {
-    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime);
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
   }
 
-  protected class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+  protected static class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+    protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
 
-    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
+                                          boolean keyedTable) {
       super(tableRuntime, partition, planTime);
+      this.keyedTable = keyedTable;
     }
 
     @Override
@@ -114,6 +112,14 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       if (!hasChangeFiles && isChangeFile(dataFile)) {
         hasChangeFiles = true;
       }
+    }
+
+    protected boolean isChangeFile(IcebergDataFile dataFile) {
+      if (!keyedTable) {
+        return false;
+      }
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
     }
 
     @Override
@@ -131,24 +137,24 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
     @Override
     public boolean isMinorNecessary() {
-      if (isKeyedTable()) {
+      if (keyedTable) {
         int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
         int baseSplitCount = getBaseSplitCount();
         if (smallFileCount >= Math.max(baseSplitCount, config.getMinorLeastFileCount())) {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
+        } else {
+          return false;
         }
-        return false;
       } else {
         return super.isMinorNecessary();
       }
     }
 
     protected int getBaseSplitCount() {
-      if (isKeyedTable()) {
-        return PropertyUtil.propertyAsInt(tableObject.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+      if (keyedTable) {
+        return config.getBaseHashBucket();
       } else {
         return 1;
       }
