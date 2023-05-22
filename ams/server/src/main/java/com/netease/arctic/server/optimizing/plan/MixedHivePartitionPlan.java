@@ -71,16 +71,22 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   private boolean moveFiles2CurrentHiveLocation() {
-    return evaluator().isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
+    return evaluator().isFullNecessary() && !config.isFullRewriteAllFiles() && !evaluator().anyDeleteExist();
   }
 
   @Override
   protected BasicPartitionEvaluator buildEvaluator() {
-    return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime);
+    return new MixedHivePartitionEvaluator(tableRuntime, partition, planTime);
   }
 
-  protected boolean findAnyDelete() {
-    return evaluator().getEqualityDeleteFileCount() > 0 || evaluator().getPosDeleteFileCount() > 0;
+  @Override
+  protected boolean taskNeedExecute(SplitTask task) {
+    if (evaluator().isFullNecessary()) {
+      // if is full optimizing for hive, task should execute if there are any data files
+      return task.getRewriteDataFiles().size() > 0;
+    } else {
+      return super.taskNeedExecute(task);
+    }
   }
 
   @Override
@@ -88,7 +94,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
-    } else if (evaluator().isFullNecessary()){
+    } else if (evaluator().isFullNecessary()) {
       properties.setOutputDir(constructCustomHiveSubdirectory());
     }
     return properties;
@@ -106,20 +112,18 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   public class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
-    private final String hiveLocation;
-    private int notInHiveLocationFileCnt;
+    private boolean hasNotInHiveLocationFile = false;
 
-    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
+    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition,
                                        long planTime) {
       super(tableRuntime, partition, planTime);
-      this.hiveLocation = hiveLocation;
     }
 
     @Override
     public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
       super.addFile(dataFile, deletes);
-      if (notInHiveLocation(dataFile.path().toString())) {
-        notInHiveLocationFileCnt++;
+      if (!hasNotInHiveLocationFile && notInHiveLocation(dataFile.path().toString())) {
+        hasNotInHiveLocationFile = true;
       }
     }
 
@@ -137,6 +141,13 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       }
     }
 
+    @Override
+    public boolean isFullNecessary() {
+      if (!reachFullInterval()) {
+        return false;
+      }
+      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles || hasNotInHiveLocationFile;
+    }
   }
 
 }

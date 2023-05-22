@@ -166,15 +166,29 @@ public class BasicPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean isMinorNecessary() {
-    int sourceFileCount = fragmentFileCount + equalityDeleteFileCount;
-    return sourceFileCount >= config.getMinorLeastFileCount() ||
-        (sourceFileCount > 1 && config.getMinorLeastInterval() > 0 &&
-            planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
+    int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+    return smallFileCount >= config.getMinorLeastFileCount() || (smallFileCount > 1 && reachMinorInterval());
+  }
+
+  protected boolean reachMinorInterval() {
+    return config.getMinorLeastInterval() >= 0 &&
+        planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
+  }
+
+  protected boolean reachFullInterval() {
+    return config.getFullTriggerInterval() >= 0 &&
+        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   public boolean isFullNecessary() {
-    return config.getFullTriggerInterval() > 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    if (!reachFullInterval()) {
+      return false;
+    }
+    return anyDeleteExist() || fragmentFileCount >= 2;
+  }
+
+  public boolean anyDeleteExist() {
+    return equalityDeleteFileCount > 0 || posDeleteFileCount > 0;
   }
 
   @Override
