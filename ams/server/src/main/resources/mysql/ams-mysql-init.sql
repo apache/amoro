@@ -147,7 +147,7 @@ CREATE TABLE `task_runtime`
     `task_id`                   int(11) NOT NULL,
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
-    `partition_data`                 varchar(128)  DEFAULT NULL COMMENT 'Partition data',
+    `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',

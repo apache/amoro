@@ -298,7 +298,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       planTime = tableRuntimeMeta.getPlanTime();
       loadTaskRuntimes();
       metricsSummary = new MetricsSummary(taskMap.values());
-      tableRuntimeMeta.constructTableRuntime(this);
+      tableRuntimeMeta.getTableRuntime().recover(this);
     }
 
     public long getProcessId() {
