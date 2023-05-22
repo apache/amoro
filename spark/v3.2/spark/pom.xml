@@ -240,6 +240,35 @@
         </dependency>
 
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-api</artifactId>
+            <version>${iceberg.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-ams-api</artifactId>
             <version>${project.version}</version>
@@ -324,10 +353,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/MavenTestSuites.java</include>
-                    </includes>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
             </plugin>
             <plugin>
@@ -344,6 +375,20 @@
             <plugin>
                 <groupId>org.scalastyle</groupId>
                 <artifactId>scalastyle-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- auto generated antlr codes -->
+                        <exclude>**/com/netease/arctic/spark/sql/parser/**.class</exclude>
+                        <exclude>**/org/apache/spark/sql/arctic/parser/**.class</exclude>
+                        <exclude>**/org/apache/iceberg/spark/data/**.class</exclude>
+                        <exclude>**/com/netease/arctic/spark/MultiDelegateSessionCatalog*</exclude>
+                        <exclude>**/com/netease/arctic/spark/reader/SparkParquetReaders*</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

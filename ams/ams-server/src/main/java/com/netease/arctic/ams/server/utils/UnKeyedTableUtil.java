@@ -26,9 +26,11 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.io.CloseableIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -55,12 +57,16 @@ public class UnKeyedTableUtil {
 
   public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
-
-    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
+    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
-        .allEntries().build();
-    for (IcebergFileEntry entry : manifestReader.entries()) {
-      validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
+        .allEntries()
+        .build();
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
+      }
+    } catch (IOException e) {
+      LOG.error("close manifest file error", e);
     }
 
     return validFilesPath;

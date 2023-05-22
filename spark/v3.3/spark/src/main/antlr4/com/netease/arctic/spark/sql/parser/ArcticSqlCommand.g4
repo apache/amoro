@@ -17,7 +17,6 @@
  */
 
 grammar ArcticSqlCommand;
-import SqlBaseParser;
 
 arcticCommand
     : arcticStatement
@@ -27,7 +26,106 @@ arcticStatement
     : MIGRATE source=multipartIdentifier TO ARCTIC target=multipartIdentifier   #migrateStatement
     ;
 
+multipartIdentifier
+    : parts+=errorCapturingIdentifier ('.' parts+=errorCapturingIdentifier)*
+    ;
 
-KEY: 'KEY';
+// this rule is used for explicitly capturing wrong identifiers such as test-table, which should actually be `test-table`
+// replace identifier with errorCapturingIdentifier where the immediate follow symbol is not an expression, otherwise
+// valid expressions such as "a-b" can be recognized as an identifier
+errorCapturingIdentifier
+    : identifier errorCapturingIdentifierExtra
+    ;
+
+// extra left-factoring grammar
+errorCapturingIdentifierExtra
+    : (MINUS identifier)+    #errorIdent
+    |                        #realIdent
+    ;
+
+identifier
+    : strictIdentifier
+    ;
+
+strictIdentifier
+    : IDENTIFIER              #unquotedIdentifier
+    | quotedIdentifier        #quotedIdentifierAlternative
+    ;
+
+quotedIdentifier
+    : BACKQUOTED_IDENTIFIER
+    ;
+
+// NOTE: If you add a new token in the list below, you should update the list of keywords
+// and reserved tag in `docs/sql-ref-ansi-compliance.md#sql-keywords`.
+
+//============================
+// Start of the keywords list
+//============================
+//--SPARK-KEYWORD-LIST-START
 MIGRATE: 'MIGRATE';
 ARCTIC: 'ARCTIC' ;
+TO: 'TO' ;
+
+
+EQ  : '=' | '==';
+NSEQ: '<=>';
+NEQ : '<>';
+NEQJ: '!=';
+LT  : '<';
+LTE : '<=' | '!>';
+GT  : '>';
+GTE : '>=' | '!<';
+
+PLUS: '+';
+MINUS: '-';
+ASTERISK: '*';
+SLASH: '/';
+PERCENT: '%';
+TILDE: '~';
+AMPERSAND: '&';
+PIPE: '|';
+CONCAT_PIPE: '||';
+HAT: '^';
+
+STRING
+    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
+    | '"' ( ~('"'|'\\') | ('\\' .) )* '"'
+    ;
+
+IDENTIFIER
+    : (LETTER | DIGIT | '_')+
+    ;
+
+BACKQUOTED_IDENTIFIER
+    : '`' ( ~'`' | '``' )* '`'
+    ;
+
+fragment DECIMAL_DIGITS
+    : DIGIT+ '.' DIGIT*
+    | '.' DIGIT+
+    ;
+
+fragment EXPONENT
+    : 'E' [+-]? DIGIT+
+    ;
+
+fragment DIGIT
+    : [0-9]
+    ;
+
+fragment LETTER
+    : [A-Z]
+    ;
+
+
+
+// Catch-all for anything we can't recognize.
+// We use this to be able to ignore and recover all the text
+// when splitting statements with DelimiterLexer
+UNRECOGNIZED
+    : .
+    ;
+
+
+
