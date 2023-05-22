@@ -23,15 +23,14 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.RecoverableHadoopFileIO;
-import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.util.PropertyUtil;
@@ -205,7 +204,8 @@ public class TestMixedCatalog extends CatalogTestBase {
     Assert.assertTrue(arcticTable.io() instanceof RecoverableHadoopFileIO);
     RecoverableHadoopFileIO io = (RecoverableHadoopFileIO) arcticTable.io();
 
-    String trashLocation = TableTrashManagers.getTrashLocation(arcticTable.id(), arcticTable.location(),
+    String tableRootLocation = ArcticTableUtil.tableRootLocation(arcticTable);
+    String trashLocation = TableTrashManagers.getTrashLocation(arcticTable.id(), tableRootLocation,
         arcticTable.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION));
     Assert.assertEquals(trashLocation, io.getTrashManager().getTrashLocation());
     Assert.assertEquals(arcticTable.id(), io.getTrashManager().tableId());
