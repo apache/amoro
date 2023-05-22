@@ -92,11 +92,11 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected BasicPartitionEvaluator buildEvaluator() {
+  protected CommonPartitionEvaluator buildEvaluator() {
     return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
   }
 
-  protected static class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+  protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
 

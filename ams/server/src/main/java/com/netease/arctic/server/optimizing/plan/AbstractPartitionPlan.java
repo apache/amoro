@@ -41,7 +41,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
-  private BasicPartitionEvaluator evaluator;
+  private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
   protected ArcticTable tableObject;
@@ -70,15 +70,15 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return partition;
   }
 
-  protected BasicPartitionEvaluator evaluator() {
+  protected CommonPartitionEvaluator evaluator() {
     if (evaluator == null) {
       evaluator = buildEvaluator();
     }
     return evaluator;
   }
 
-  protected BasicPartitionEvaluator buildEvaluator() {
-    return new BasicPartitionEvaluator(tableRuntime, partition, planTime);
+  protected CommonPartitionEvaluator buildEvaluator() {
+    return new CommonPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override
