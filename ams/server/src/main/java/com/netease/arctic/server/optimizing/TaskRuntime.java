@@ -83,6 +83,23 @@ public class TaskRuntime extends StatedPersistentBase {
     this.properties = properties;
   }
 
+  public TaskRuntime(TaskRuntimeMeta meta) {
+    this.tableId = meta.getTableId();
+    this.partition = meta.getPartition();
+    this.taskId = meta.getTaskId();
+    this.status = meta.getStatus();
+    this.statusMachine = new TaskStatusMachine();
+    this.retry = meta.getRetry();
+    this.startTime = meta.getStartTime();
+    this.endTime = meta.getEndTime();
+    this.costTime = meta.getCostTime();
+    this.optimizingThread = meta.getOptimizingThread();
+    this.failReason = meta.getFailReason();
+    this.output = meta.getOutput();
+    this.summary = meta.getSummary();
+    this.properties = meta.getProperties();
+  }
+
   public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {
     invokeConsisitency(() -> {
       validThread(thread);

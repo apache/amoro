@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -159,14 +160,19 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public List<OptimizerInstance> listOptimizers() {
-    return optimizingQueueByGroup.values().stream()
+    return optimizingQueueByGroup.values()
+        .stream()
         .flatMap(queue -> queue.getOptimizers().stream())
+        .sorted(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed())
         .collect(Collectors.toList());
   }
 
   @Override
   public List<OptimizerInstance> listOptimizers(String group) {
-    return getQueueByGroup(group).getOptimizers();
+    return getQueueByGroup(group).getOptimizers()
+        .stream()
+        .sorted(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed())
+        .collect(Collectors.toList());
   }
 
   @Override

@@ -3,17 +3,19 @@ package com.netease.arctic.server;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
+import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
 import com.netease.arctic.server.resource.ResourceContainers;
+import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.shaded.com.google.common.io.MoreFiles;
 import org.apache.curator.shaded.com.google.common.io.RecursiveDeleteOption;
+import org.apache.iceberg.common.DynFields;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;
 import org.kohsuke.args4j.CmdLineException;
@@ -74,6 +76,17 @@ public class AmsEnvironment {
 
   public void start() throws Exception {
     startAms();
+    DynFields.UnboundField<Boolean> field =
+        DynFields.builder().hiddenImpl(DefaultTableService.class, "started").build();
+    boolean tableServiceIsStart = field.bind(arcticService.getTableService()).get();
+    long startTime = System.currentTimeMillis();
+    while (!tableServiceIsStart) {
+      if (System.currentTimeMillis() - startTime > 10000) {
+        throw new RuntimeException("table service not start yet after 10s");
+      }
+      Thread.sleep(1000);
+      tableServiceIsStart = field.bind(arcticService.getTableService()).get();
+    }
     initCatalog();
   }
 

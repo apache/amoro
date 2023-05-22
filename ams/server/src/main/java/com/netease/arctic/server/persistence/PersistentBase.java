@@ -26,7 +26,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {

@@ -1,5 +1,6 @@
 package com.netease.arctic.server.persistence.mapper;
 
+import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
@@ -9,6 +10,7 @@ import com.netease.arctic.server.optimizing.TaskRuntimeMeta;
 import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
+import com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -117,8 +119,8 @@ public interface OptimizingMapper {
           " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
           "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR}," +
           " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
-          "jdbcType=INTEGER}, #{taskRuntime.outputBytes, jdbcType=BLOB, " +
-          " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+          "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
+          " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
           " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})",
       "</foreach>",
       "</script>"
@@ -140,7 +142,7 @@ public interface OptimizingMapper {
       @Result(property = "failReason", column = "fail_reason"),
       @Result(property = "optimizingThread.token", column = "optimizer_token"),
       @Result(property = "optimizingThread.threadId", column = "thread_id"),
-      @Result(property = "outputBytes", column = "rewrite_output"),
+      @Result(property = "output", column = "rewrite_output", typeHandler = Object2ByteArrayConvert.class),
       @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
@@ -153,9 +155,10 @@ public interface OptimizingMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}," +
       " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR}," +
-      " rewrite_output = #{taskRuntime.outputBytes, jdbcType=BLOB}, metrics_summary = " +
-      "#{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter} " +
-      " WHERE process_id = #{taskRuntime.taskId.processId} AND task_id = #{taskRuntime.taskId.taskId}")
+      " rewrite_output = #{taskRuntime.output, jdbcType=BLOB, typeHandler=com.netease.arctic.server.persistence" +
+      ".converter.Object2ByteArrayConvert}, metrics_summary = #{taskRuntime.summary, typeHandler=com.netease.arctic" +
+      ".server.persistence.converter.JsonSummaryConverter} WHERE process_id = #{taskRuntime.taskId.processId} AND " +
+      "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
   @Update("UPDATE task_runtime SET status = #{status} WHERE process_id = #{taskRuntime.taskId.processId} AND " +
@@ -168,13 +171,15 @@ public interface OptimizingMapper {
   /**
    * Optimizing rewrite input and output operations below
    */
-  @Update("UPDATE table_optimizing_process SET rewrite_input = #{fileSerialization} WHERE process_id = #{processId}")
+  @Update("UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB, typeHandler=com.netease.arctic" +
+      ".server.persistence.converter.Object2ByteArrayConvert} WHERE process_id = #{processId}")
   void updateProcessInputFiles(
       @Param("processId") long processId,
-      @Param("fileSerialization") byte[] content);
+      @Param("input") Map<Integer, RewriteFilesInput> input);
 
   @Select("SELECT rewrite_input FROM table_optimizing_process WHERE process_id = #{processId}")
-  byte[] selectProcessInputFiles(@Param("processId") long processId);
+  @Result(property = "input", column = "rewrite_input", typeHandler = Object2ByteArrayConvert.class)
+  Map<Integer, RewriteFilesInput> selectProcessInputFiles(@Param("processId") long processId);
 
   /**
    * Optimizing task quota operations below

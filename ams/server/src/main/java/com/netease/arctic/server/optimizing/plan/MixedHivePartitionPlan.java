@@ -34,8 +34,9 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private long maxSequence = 0;
   private String customHiveSubdirectory;
 
-  public MixedHivePartitionPlan(TableRuntime tableRuntime,
-                                ArcticTable table, String partition, String hiveLocation, long planTime) {
+  public MixedHivePartitionPlan(
+      TableRuntime tableRuntime,
+      ArcticTable table, String partition, String hiveLocation, long planTime) {
     super(tableRuntime, table, partition, planTime);
     this.hiveLocation = hiveLocation;
   }
@@ -93,7 +94,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
-    } else if (evaluator().isFullNecessary()){
+    } else if (evaluator().isFullNecessary()) {
       properties.setOutputDir(constructCustomHiveSubdirectory());
     }
     return properties;
@@ -109,5 +110,4 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
     return customHiveSubdirectory;
   }
-
 }

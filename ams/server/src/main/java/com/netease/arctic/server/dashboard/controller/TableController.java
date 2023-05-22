@@ -24,10 +24,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
-import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.IcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
@@ -67,10 +65,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -83,11 +77,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -422,11 +419,13 @@ public class TableController extends RestBaseController {
           TableMeta.TableType.ICEBERG.toString())));
     } else if (serverCatalog instanceof MixedHiveCatalogImpl) {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
-      List<String> hiveTables = HiveTableUtil.getAllHiveTables(((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
-      db);
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(
+          ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
+          db);
       Set<String> arcticTables =
           tableIdentifiers.stream().map(ServerTableIdentifier::getTableName).collect(Collectors.toSet());
-      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(e,
+      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
+          e,
           TableMeta.TableType.HIVE.toString())));
     } else {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));

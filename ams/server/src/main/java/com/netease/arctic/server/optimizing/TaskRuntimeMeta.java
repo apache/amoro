@@ -1,6 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.ams.api.OptimizingTaskId;
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 
 import java.util.Map;
@@ -15,7 +16,7 @@ public class TaskRuntimeMeta {
   private long costTime = 0;
   private OptimizingQueue.OptimizingThread optimizingThread;
   private String failReason;
-  private Object outputBytes;
+  private RewriteFilesOutput output;
   private MetricsSummary summary;
   private long tableId;
   private Map<String, String> properties;
@@ -96,12 +97,12 @@ public class TaskRuntimeMeta {
     this.failReason = failReason;
   }
 
-  public Object getOutputBytes() {
-    return outputBytes;
+  public RewriteFilesOutput getOutput() {
+    return output;
   }
 
-  public void setOutputBytes(Object outputBytes) {
-    this.outputBytes = outputBytes;
+  public void setOutput(RewriteFilesOutput output) {
+    this.output = output;
   }
 
   public MetricsSummary getSummary() {
