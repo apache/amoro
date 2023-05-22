@@ -14,6 +14,7 @@ public final class NestedSqlSession implements Closeable {
   protected static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
 
   private int nestCount = 0;
+  private boolean isRollingback = false;
   private SqlSession sqlSession;
 
 
@@ -21,8 +22,10 @@ public final class NestedSqlSession implements Closeable {
     NestedSqlSession session = sessions.get();
     if (session == null) {
       sessions.set(new NestedSqlSession(sessionSupplier.get()));
+      return sessions.get();
+    } else {
+      return session.openNestedSession();
     }
-    return sessions.get().beginTransaction();
   }
 
   protected SqlSession getSqlSession() {
@@ -34,39 +37,42 @@ public final class NestedSqlSession implements Closeable {
     this.sqlSession = sqlSession;
   }
 
-  NestedSqlSession beginTransaction() {
-    Preconditions.checkState(sqlSession != null, "session already closed");
-    Preconditions.checkState(++nestCount < MAX_NEST_BEGIN_COUNT, "beginTransaction() has not " +
-        "been properly called for nest count is " + nestCount);
+  NestedSqlSession openNestedSession() {
+    checkState(true);
+    Preconditions.checkState(nestCount < MAX_NEST_BEGIN_COUNT && nestCount >= 0,
+        "openNestedSession() has not been properly called for nest count is " + nestCount);
+    nestCount++;
     return this;
   }
 
-  public void commit(boolean hasOperation) {
-    Preconditions.checkState(sqlSession != null, "session already closed");
-    try {
-      if (nestCount > 0) {
-        if (--nestCount == 0 && hasOperation) {
-          sqlSession.commit(true);
-        }
-      }
-    } catch (Exception e) {
-      nestCount = 0;
-      throw e;
+  public void commit() {
+    checkState(true);
+    if (nestCount == 0) {
+      sqlSession.commit(true);
     }
   }
 
-  public void rollback(boolean hasOperation) {
-    if (nestCount > 0) {
-      Preconditions.checkState(sqlSession != null, "session already closed");
-      nestCount = 0;
-      if (hasOperation) {
-        sqlSession.rollback(true);
-      }
+  public void rollback() {
+    checkState(false);
+    isRollingback = true;
+    if (nestCount == 0) {
+      sqlSession.rollback(true);
+      isRollingback = false;
+    }
+  }
+
+  private void checkState(boolean checkRollingback) {
+    Preconditions.checkState(sqlSession != null, "session already closed");
+    if (checkRollingback) {
+      Preconditions.checkState(!isRollingback,
+          "session is rolling back, can not execute operation");
     }
   }
 
   public void close() {
-    if ((nestCount == 0 || nestCount == 1) && sqlSession != null) {
+    if (nestCount > 0) {
+      nestCount--;
+    } else if (nestCount == 0 && sqlSession != null) {
       sqlSession.close();
       sqlSession = null;
       sessions.set(null);
