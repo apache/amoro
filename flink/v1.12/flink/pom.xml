@@ -582,6 +582,13 @@
                     </properties>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${jacoco.flink.skip}</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
