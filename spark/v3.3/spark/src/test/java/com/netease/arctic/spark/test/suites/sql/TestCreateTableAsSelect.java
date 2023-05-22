@@ -29,11 +29,11 @@ import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.CollectionUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
@@ -214,7 +214,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
 
   public static Stream<Arguments> testAdditionProperties() {
     String propertiesDDL = "TBLPROPERTIES('k1'='v1', 'k2'='v2')";
-    Map<String, String> expectProperties = CollectionUtil.asMap("k1", "v1", "k2", "v2");
+    Map<String, String> expectProperties = ImmutableMap.of("k1", "v1", "k2", "v2");
     Map<String, String> emptyProperties = Collections.emptyMap();
     return Stream.of(
         Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "", emptyProperties),

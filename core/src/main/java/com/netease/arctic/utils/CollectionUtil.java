@@ -19,13 +19,10 @@
 package com.netease.arctic.utils;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class CollectionUtil {
 
@@ -44,14 +41,5 @@ public class CollectionUtil {
       }
     }
     return zipResult;
-  }
-
-  public static Map<String, String> asMap(String... kv) {
-    Preconditions.checkArgument(kv.length % 2 == 0, "number of key value pairs must even");
-    Map<String, String> map = Maps.newHashMap();
-    for (int i = 0; i < kv.length; i = i + 2) {
-      map.put(kv[i], kv[i + 1]);
-    }
-    return map;
   }
 }

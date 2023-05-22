@@ -25,7 +25,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.CollectionUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -37,6 +36,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
@@ -128,9 +128,13 @@ public class SparkTableTestBase extends SparkTestBase {
     }
   }
 
-  protected void createHiveSource(List<FieldSchema> cols, List<FieldSchema> partitions, String... properties) {
+  protected void createHiveSource(List<FieldSchema> cols, List<FieldSchema> partitions) {
+    this.createHiveSource(cols, partitions, ImmutableMap.of());
+  }
+
+  protected void createHiveSource(
+      List<FieldSchema> cols, List<FieldSchema> partitions, Map<String, String> properties) {
     long currentTimeMillis = System.currentTimeMillis();
-    Map<String, String> props = CollectionUtil.asMap(properties);
     Table source = new Table(
         sourceTable,
         database,
@@ -152,7 +156,7 @@ public class SparkTableTestBase extends SparkTestBase {
     serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
     storageDescriptor.setSerdeInfo(serDeInfo);
     source.setSd(storageDescriptor);
-    source.setParameters(props);
+    source.setParameters(properties);
     try {
       context.getHiveClient().createTable(source);
       this.source = new Identifier(null, database, sourceTable, Identifier.SOURCE_TYPE_HIVE);

@@ -28,6 +28,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -38,7 +39,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Map;
 import java.util.stream.Stream;
-import static com.netease.arctic.utils.CollectionUtil.asMap;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
@@ -211,23 +211,23 @@ public class TestCreateTableSQL extends SparkTableTestBase {
             TableFormat.MIXED_ICEBERG, structDDL,
             "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
             new Schema(Lists.newArrayList(id, data, point, map, array, pt)),
-            asMap("key", "value1", "catalog", "INTERNAL")),
+            ImmutableMap.of("key", "value1", "catalog", "INTERNAL")),
         Arguments.of(
             TableFormat.MIXED_ICEBERG, structDDL + ", PRIMARY KEY(id)",
             "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
             new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, pt)),
-            asMap("key", "value1", "catalog", "INTERNAL")),
+            ImmutableMap.of("key", "value1", "catalog", "INTERNAL")),
 
         Arguments.of(
             TableFormat.MIXED_HIVE, structDDL,
             "tblproperties('key'='value1', 'catalog'='hive')",
             new Schema(Lists.newArrayList(id, data, point, map, array, pt)),
-            asMap("key", "value1", "catalog", "hive")),
+            ImmutableMap.of("key", "value1", "catalog", "hive")),
         Arguments.of(
             TableFormat.MIXED_HIVE, structDDL + ", PRIMARY KEY(id)",
             "tblproperties('key'='value1', 'catalog'='hive')",
             new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, pt)),
-            asMap("key", "value1", "catalog", "hive"))
+            ImmutableMap.of("key", "value1", "catalog", "hive"))
     );
   }
 

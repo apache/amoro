@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
 public class CollectionUtilTest {
 
@@ -52,18 +51,5 @@ public class CollectionUtilTest {
       Assert.assertEquals(varA, varZip.getLeft());
       Assert.assertEquals(varB, varZip.getRight());
     }
-  }
-
-
-  @Test
-  public void asMapTest() {
-    Map<String, String> map = CollectionUtil.asMap("k1", "v1", "k2", "v2");
-    Assert.assertEquals(2, map.size());
-    Assert.assertEquals("v1", map.get("k1"));
-    Assert.assertEquals("v2", map.get("k2"));
-
-    Assert.assertThrows(IllegalArgumentException.class, () -> {
-      CollectionUtil.asMap("k1", "v1", "k2");
-    });
   }
 }

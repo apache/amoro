@@ -9,6 +9,7 @@ import com.netease.arctic.spark.test.helper.TestTable;
 import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -72,7 +73,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   @MethodSource
   @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
   public void testCreateTableLikeHiveTable(TestTable source) {
-    createHiveSource(source.hiveSchema, source.hivePartitions, "k1", "v1");
+    createHiveSource(source.hiveSchema, source.hivePartitions, ImmutableMap.of("k1", "v1"));
 
     String sqlText = "CREATE TABLE " + target() +
         " LIKE " + source() + " USING arctic";
