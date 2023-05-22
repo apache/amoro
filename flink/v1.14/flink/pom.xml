@@ -41,6 +41,12 @@
         <!--arctic-->
         <dependency>
             <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.14-iceberg-bridge</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -380,6 +386,18 @@
         </dependency>
 
         <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
             <version>2.4.1</version>
@@ -409,6 +427,13 @@
                             <value>com.netease.arctic.listener.ArcticRunListener</value>
                         </property>
                     </properties>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${jacoco.flink.skip}</skip>
                 </configuration>
             </plugin>
         </plugins>

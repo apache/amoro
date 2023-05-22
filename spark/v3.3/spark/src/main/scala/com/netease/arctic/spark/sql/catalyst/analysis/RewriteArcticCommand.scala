@@ -18,11 +18,14 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.buildCatalogAndIdentifier
 import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -33,6 +36,25 @@ import org.apache.spark.sql.execution.command.CreateTableLikeCommand
  * @param sparkSession
  */
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+  def isCreateArcticTableLikeCommand(
+      targetTable: TableIdentifier,
+      provider: Option[String]): Boolean = {
+    val (targetCatalog, _) = buildCatalogAndIdentifier(sparkSession, targetTable)
+    targetCatalog match {
+      case _: ArcticSparkCatalog =>
+        if (provider.isEmpty || provider.get.equalsIgnoreCase("arctic")) {
+          true
+        } else {
+          throw new UnsupportedOperationException(s"Provider must be arctic or null when using " +
+            s"${classOf[ArcticSparkCatalog].getName}.")
+        }
+      case _: ArcticSparkSessionCatalog[_] =>
+        provider.isDefined && provider.get.equalsIgnoreCase("arctic")
+      case _ =>
+        false
+    }
+  }
+
   override def apply(plan: LogicalPlan): LogicalPlan = {
     import com.netease.arctic.spark.sql.ArcticExtensionUtils._
     plan match {
@@ -57,7 +79,7 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         val newTableSpec = tableSpec.copy(properties = propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
       case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists)
-          if provider.get != null && provider.get.equals("arctic") =>
+          if isCreateArcticTableLikeCommand(targetTable, provider) =>
         val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)
