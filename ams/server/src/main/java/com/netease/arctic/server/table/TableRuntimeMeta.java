@@ -40,13 +40,6 @@ public class TableRuntimeMeta {
     return tableRuntime;
   }
 
-  public void constructTableRuntime(OptimizingProcess process) {
-    if (tableRuntime == null) {
-      throw new IllegalStateException("TableRuntime is not constructed yet.");
-    }
-    tableRuntime.recover(process);
-  }
-
   public TableRuntime getTableRuntime() {
     if (tableRuntime == null) {
       throw new IllegalStateException("TableRuntime is not constructed yet.");

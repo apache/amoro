@@ -1,85 +1,115 @@
 package com.netease.arctic.server.persistence;
 
 import org.apache.ibatis.session.SqlSession;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 
 public class NestedSqlSessionTest {
 
+  @Mock
+  private SqlSession sqlSession;
+  private NestedSqlSession nestedSession;
+
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+    nestedSession = new NestedSqlSession(sqlSession);
+  }
+
+  @AfterEach
+  void tearDown() {
+    nestedSession.close();
+  }
+
   @Test
-  public void testNestedTransactions() {
-    SqlSession sqlSession = mock(SqlSession.class);
-    Supplier<SqlSession> sessionSupplier = () -> sqlSession;
-
-    NestedSqlSession session = NestedSqlSession.openSession(sessionSupplier);
-    verify(session, times(1)).beginTransaction();
-    verifyNoMoreInteractions(sqlSession);
-
-    // Test commit with nested transaction
-    session.beginTransaction();
-    session.beginTransaction();
-    session.commit();
-    verifyNoMoreInteractions(sqlSession);
-    session.commit();
-    verify(sqlSession, times(1)).commit();
-    verifyNoMoreInteractions(sqlSession);
-
-    // Test rollback with nested transaction
-    session.beginTransaction();
-    session.beginTransaction();
-    session.rollback();
-    verify(sqlSession, times(1)).rollback(true);
-    verifyNoMoreInteractions(sqlSession);
-    session.rollback();
-    verifyNoMoreInteractions(sqlSession);
+  void testGetSqlSession() {
+    assertSame(sqlSession, nestedSession.getSqlSession());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testRollbackWithNoTransaction() {
-    SqlSession sqlSession = mock(SqlSession.class);
-    Supplier<SqlSession> sessionSupplier = () -> sqlSession;
+  @Test
+  void testOpenSession() throws Exception {
+    nestedSession.close();
+    Supplier<SqlSession> supplier = mock(Supplier.class);
+    when(supplier.get()).thenReturn(sqlSession);
 
-    NestedSqlSession session = NestedSqlSession.openSession(sessionSupplier);
-    //    verify(sqlSession, times(1)).beginTransaction();
-    verifyNoMoreInteractions(sqlSession);
-
-    session.rollback();
-    verify(sqlSession, times(1)).rollback(true);
+    NestedSqlSession session = NestedSqlSession.openSession(supplier);
+    assertNotNull(session);
+    verify(supplier).get();
+    assertEquals(1, getNestCount(session));
+    verifyNoMoreInteractions(supplier);
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testBeginTransactionAfterClose() {
-    SqlSession sqlSession = mock(SqlSession.class);
-    Supplier<SqlSession> sessionSupplier = () -> sqlSession;
-
-    NestedSqlSession session = NestedSqlSession.openSession(sessionSupplier);
-    verify(session, times(1)).beginTransaction();
-    verifyNoMoreInteractions(sqlSession);
-
-    session.close();
-    session.beginTransaction();
+  @Test
+  void testClose() {
+    nestedSession.close();
+    verify(sqlSession).close();
+    assertNull(nestedSession.getSqlSession());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testMaxNestedTransaction() {
-    SqlSession sqlSession = mock(SqlSession.class);
-    Supplier<SqlSession> sessionSupplier = () -> sqlSession;
+  @Test
+  void testCommitWithNestCountGreaterThanZero() {
+    nestedSession.beginTransaction();
+    nestedSession.beginTransaction();
+    nestedSession.commit(true);
+    verifyZeroInteractions(sqlSession);
 
-    NestedSqlSession session = NestedSqlSession.openSession(sessionSupplier);
-    verify(session, times(1)).beginTransaction();
-    verifyNoMoreInteractions(sqlSession);
+    nestedSession.commit(true);
+    verify(sqlSession).commit(true);
+  }
 
-    for (int i = 0; i < NestedSqlSession.MAX_NEST_BEGIN_COUNT; i++) {
-      session.beginTransaction();
-    }
-    verifyNoMoreInteractions(sqlSession);
+  @Test
+  void testCommitWithNestCountEqualToZero() {
+    nestedSession.commit(true);
+    verifyZeroInteractions(sqlSession);
+  }
 
-    session.beginTransaction();
+  @Test
+  void testRollbackWithNestCountGreaterThanZero() {
+    nestedSession.beginTransaction();
+    nestedSession.beginTransaction();
+    nestedSession.rollback(true);
+    verify(sqlSession).rollback(true);
+
+    nestedSession.rollback(true);
+    verifyZeroInteractions(sqlSession);
+  }
+
+  @Test
+  void testRollbackWithNestCountEqualToZero() {
+    nestedSession.rollback(true);
+    verifyZeroInteractions(sqlSession);
+  }
+
+  @Test
+  void testBeginTransaction() throws Exception {
+    assertSame(nestedSession, nestedSession.beginTransaction());
+    assertEquals(1, getNestCount(nestedSession));
+
+    nestedSession.beginTransaction();
+    assertEquals(2, getNestCount(nestedSession));
+
+    nestedSession.beginTransaction();
+    assertEquals(3, getNestCount(nestedSession));
+
+    nestedSession.beginTransaction();
+    assertEquals(4, getNestCount(nestedSession));
+
+    assertThrows(IllegalStateException.class, nestedSession::beginTransaction);
+  }
+
+  private int getNestCount(NestedSqlSession nestedSession) throws Exception {
+    Field field = NestedSqlSession.class.getDeclaredField("nestCount");
+    field.setAccessible(true);
+    return (int) field.get(nestedSession);
   }
 }

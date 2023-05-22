@@ -146,9 +146,11 @@ public class BasicPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // TODO check
-      cost = rewriteSegmentFileSize * 4 + fragmentFileSize * 4 +
+      cost = rewriteSegmentFileSize * 2 + fragmentFileSize * 2 +
           rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
+      int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
+          equalityDeleteFileCount;
+      cost += fileCnt * config.getOpenFileCost();
     }
     return cost;
   }
