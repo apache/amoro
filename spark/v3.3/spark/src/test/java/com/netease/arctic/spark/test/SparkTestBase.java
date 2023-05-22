@@ -21,7 +21,7 @@ package com.netease.arctic.spark.test;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
-import com.netease.arctic.utils.CollectionHelper;
+import com.netease.arctic.utils.CollectionUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -57,7 +57,7 @@ public class SparkTestBase {
   protected QueryExecution qe;
 
   protected Map<String, String> sparkSessionConfig() {
-    return CollectionHelper.asMap(
+    return CollectionUtil.asMap(
         "spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName(),
         "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME)
     );

@@ -38,7 +38,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Map;
 import java.util.stream.Stream;
-import static com.netease.arctic.utils.CollectionHelper.asMap;
+import static com.netease.arctic.utils.CollectionUtil.asMap;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)

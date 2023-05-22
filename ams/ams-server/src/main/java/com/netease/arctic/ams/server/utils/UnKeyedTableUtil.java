@@ -57,17 +57,9 @@ public class UnKeyedTableUtil {
 
   public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
-
-    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
-        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
-        .allEntries().build();
-    for (IcebergFileEntry entry : manifestReader.entries()) {
-      validFilesPath.add(TableFileUtils.getUriPath(entry.getFile().path().toString()));
-    }
-
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
-        .withAliveEntry(true)
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+        .allEntries()
         .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {

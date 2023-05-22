@@ -25,7 +25,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.utils.CollectionHelper;
+import com.netease.arctic.utils.CollectionUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -130,7 +130,7 @@ public class SparkTableTestBase extends SparkTestBase {
 
   protected void createHiveSource(List<FieldSchema> cols, List<FieldSchema> partitions, String... properties) {
     long currentTimeMillis = System.currentTimeMillis();
-    Map<String, String> props = CollectionHelper.asMap(properties);
+    Map<String, String> props = CollectionUtil.asMap(properties);
     Table source = new Table(
         sourceTable,
         database,

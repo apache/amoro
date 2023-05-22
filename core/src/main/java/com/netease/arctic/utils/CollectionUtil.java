@@ -19,37 +19,39 @@
 package com.netease.arctic.utils;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.junit.Assert;
-import org.junit.Test;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-public class CollectionHelperTest {
+public class CollectionUtil {
 
-  @Test
-  public void zipTests() {
-    List<Integer> a = Lists.newArrayList(1, 2, 3);
-    List<Integer> b = Lists.newArrayList(4, 5, 6);
-    zipAssert(CollectionHelper.zip(a, b), a, b);
+  public static <A, B> List<Pair<A, B>> zip(Iterable<A> as, Iterable<B> bs) {
+    Iterator<A> itA = as.iterator();
+    Iterator<B> itB = bs.iterator();
 
-    a = Lists.newArrayList(1, 2);
-    b = Lists.newArrayList(4, 5, 6);
-    zipAssert(CollectionHelper.zip(a, b), a, b);
-
-    a = Lists.newArrayList(1, 2, 3);
-    b = Lists.newArrayList(4, 5);
-    zipAssert(CollectionHelper.zip(a, b), a, b);
+    List<Pair<A, B>> zipResult = Lists.newArrayList();
+    while (itA.hasNext()) {
+      A a = itA.next();
+      if (itB.hasNext()) {
+        B b = itB.next();
+        zipResult.add(Pair.of(a, b));
+      } else {
+        break;
+      }
+    }
+    return zipResult;
   }
 
-  private <A, B> void zipAssert(List<Pair<A, B>> zipResult, List<A> inputA, List<B> inputB) {
-    Assert.assertEquals(zipResult.size(), Math.min(inputA.size(), inputB.size()));
-    for (int i = 0; i < zipResult.size(); i++) {
-      Pair<A, B> varZip = zipResult.get(i);
-      A varA = inputA.get(i);
-      B varB = inputB.get(i);
-      Assert.assertEquals(varA, varZip.getLeft());
-      Assert.assertEquals(varB, varZip.getRight());
+  public static Map<String, String> asMap(String... kv) {
+    Preconditions.checkArgument(kv.length % 2 == 0, "number of key value pairs must even");
+    Map<String, String> map = Maps.newHashMap();
+    for (int i = 0; i < kv.length; i = i + 2) {
+      map.put(kv[i], kv[i + 1]);
     }
+    return map;
   }
 }

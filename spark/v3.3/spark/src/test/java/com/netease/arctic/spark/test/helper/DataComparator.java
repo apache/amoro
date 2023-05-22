@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test.helper;
 
-import com.netease.arctic.utils.CollectionHelper;
+import com.netease.arctic.utils.CollectionUtil;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -74,7 +74,7 @@ public class DataComparator {
       expectRecords.sort(comparator);
       actualRecords.sort(comparator);
     }
-    CollectionHelper.zip(expectRecords, actualRecords)
+    CollectionUtil.zip(expectRecords, actualRecords)
         .forEach(r -> assertRecord(r.getLeft(), r.getRight()));
   }
 
