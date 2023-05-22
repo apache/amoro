@@ -1,83 +1,101 @@
 package com.netease.arctic.server.persistence;
 
-import org.junit.jupiter.api.Test;
-import java.util.concurrent.atomic.AtomicInteger;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Test;
+
+import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 public class StatedPersistentBaseTest {
 
-  @Test
-  public void testModifyStateFailed() {
-    ChildStatedPersistentBase objectUnderTest = new ChildStatedPersistentBase();
-    AtomicInteger state = new AtomicInteger(0);
+  private static class ExtendedPersistency extends StatedPersistentBase {
+    @StatedPersistentBase.StateField
+    private String stringState = "";
+    @StatedPersistentBase.StateField
+    private int intState = 0;
+    private boolean booleanField = false;
+    private long longField = 0L;
+  }
 
-    // Modify the state of the object safely
-    objectUnderTest.modifyStateSafely(() -> {
-      state.incrementAndGet();
-      assertEquals(1, state.get(), "State should be modified safely within the lock");
-      objectUnderTest.setIntField(42);
-      objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(),
-          "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(),
-          "String field should be modified safely within the lock");
-      throw new RuntimeException("Test exception");
-    });
-
-    // Verify that the state of the object was restored after the exception
-    assertEquals(1, state.get(), "State should be restored after an exception");
-    assertEquals(0, objectUnderTest.getIntField(),
-        "Int field should be restored after an exception");
-    assertEquals("initial", objectUnderTest.getStringField(),
-        "String field should be restored after an exception");
+  private static class NormalClass {
+    @StatedPersistentBase.StateField
+    private String stringState = "";
+    @StatedPersistentBase.StateField
+    private int intState = 0;
+    private boolean booleanField = false;
+    private long longField = 0L;
   }
 
   @Test
-  public void testModifyStateSuccess() {
-    ChildStatedPersistentBase objectUnderTest = new ChildStatedPersistentBase();
-    AtomicInteger state = new AtomicInteger(0);
-
-    // Modify the state of the object safely
-    objectUnderTest.modifyStateSafely(() -> {
-      state.incrementAndGet();
-      assertEquals(1, state.get(), "State should be modified safely within the lock");
-      objectUnderTest.setIntField(42);
-      objectUnderTest.setStringField("modified");
-      assertEquals(42, objectUnderTest.getIntField(),
-          "Int field should be modified safely within the lock");
-      assertEquals("modified", objectUnderTest.getStringField(),
-          "String field should be modified safely within the lock");
-      throw new RuntimeException("Test exception");
-    });
-
-    // Verify that the state of the object was restored after the exception
-    assertEquals(1, state.get(), "State should be restored after an exception");
-    assertEquals(0, objectUnderTest.getIntField(), "Int field should be restored after an exception");
-    assertEquals("initial", objectUnderTest.getStringField(), "String field should be restored after an exception");
+  public void testStateField() throws Throwable {
+    ExtendedPersistency proxy = new ExtendedPersistency();
+    try {
+      proxy.invokeConsisitency(() -> {
+        proxy.stringState = "test";
+        proxy.intState = 42;
+        // simulate an exception being thrown
+        throw new RuntimeException();
+      });
+    } catch (Throwable throwable) {
+      // ignore
+    }
+    assertEquals("", proxy.stringState);
+    assertEquals(0, proxy.intState);
   }
 
-  static class ChildStatedPersistentBase extends StatedPersistentBase {
-    private int intField = 0;
-    private String stringField = "initial";
+  @Test
+  public void testNormalField() throws Throwable {
+    ExtendedPersistency proxy = new ExtendedPersistency();
+    try {
+      proxy.invokeConsisitency(() -> {
+        proxy.booleanField = true;
+        proxy.longField = 123456789L;
+        // simulate an exception being thrown
+        throw new RuntimeException();
+      });
+    } catch (Throwable throwable) {
+      // ignore
+    }
+    assertEquals(123456789L, proxy.longField);
+    assertTrue(proxy.booleanField);
+  }
 
-    public int getIntField() {
-      return intField;
+  private void testNormalClass() {
+    NormalClass obj = new NormalClass();
+    obj.stringState = "test";
+    obj.intState = 42;
+    for (int i = 0; i < 10; i++) {
+      obj.stringState = UUID.randomUUID().toString();
+      obj.intState++;
+    }
+  }
+
+  private void testStatedClass() {
+    ExtendedPersistency obj = new ExtendedPersistency();
+    obj.stringState = "test";
+    obj.intState = 42;
+    for (int i = 0; i < 10; i++) {
+      obj.stringState = UUID.randomUUID().toString();
+      obj.intState++;
+    }
+  }
+
+  public static void main(String[] args) {
+    for (int i = 0; i < 10; i++) {
+      new StatedPersistentBaseTest().testNormalClass();
+      new StatedPersistentBaseTest().testStatedClass();
     }
 
-    public void setIntField(int intField) {
-      this.intField = intField;
+    long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000; i++) {
+      new StatedPersistentBaseTest().testNormalClass();
     }
+    System.out.println("Normal class: " + (System.currentTimeMillis() - start));
 
-    public String getStringField() {
-      return stringField;
+    start = System.currentTimeMillis();
+    for (int i = 0; i < 100000; i++) {
+      new StatedPersistentBaseTest().testStatedClass();
     }
-
-    public void setStringField(String stringField) {
-      this.stringField = stringField;
-    }
-
-    public void modifyState() {
-
-    }
+    System.out.println("Stated class: " + (System.currentTimeMillis() - start));
   }
 }

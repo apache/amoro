@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.Catalog;
@@ -33,6 +34,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.thrift.TException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -54,7 +56,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private CatalogMeta catalogMeta;
   private TableMeta tableMeta;
 
-  private boolean autoInitTable;
+  private final boolean autoInitTable;
   private ServerTableIdentifier serverTableIdentifier;
 
   public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -168,5 +170,17 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected ServerTableIdentifier serverTableIdentifier() {
     return serverTableIdentifier;
+  }
+
+  protected void validateArcticTable(ArcticTable arcticTable) {
+    Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
+    Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
+    Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());
+    Assert.assertEquals(tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
+  }
+
+  protected void validateTableRuntime(TableRuntime tableRuntime) {
+    Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
 }

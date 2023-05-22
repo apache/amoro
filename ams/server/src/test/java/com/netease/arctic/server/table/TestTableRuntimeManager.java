@@ -75,15 +75,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableRuntime() {
-    validateArcticTable(tableService().loadTable(serverTableIdentifier()));
+    TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier());
+    validateTableRuntime(tableRuntime);
   }
-
-  private void validateArcticTable(ArcticTable arcticTable) {
-    Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
-    Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
-    Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());
-    Assert.assertEquals(tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
-  }
-
 }
