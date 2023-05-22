@@ -27,10 +27,12 @@ import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.BinPacking;
+import org.apache.iceberg.util.PropertyUtil;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -58,6 +60,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   protected boolean isChangeFile(IcebergDataFile dataFile) {
+    if (!isKeyedTable()) {
+      return false;
+    }
     PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
     return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
   }
@@ -96,10 +101,19 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
-  protected static class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+  protected class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+    protected boolean hasChangeFiles = false;
 
     public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
       super(tableRuntime, partition, planTime);
+    }
+
+    @Override
+    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      super.addFile(dataFile, deletes);
+      if (!hasChangeFiles && isChangeFile(dataFile)) {
+        hasChangeFiles = true;
+      }
     }
 
     @Override
@@ -113,6 +127,35 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       } else {
         throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
       }
+    }
+
+    @Override
+    public boolean isMinorNecessary() {
+      if (isKeyedTable()) {
+        int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+        int baseSplitCount = getBaseSplitCount();
+        if (smallFileCount >= Math.max(baseSplitCount, config.getMinorLeastFileCount())) {
+          return true;
+        } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
+          return true;
+        }
+        return false;
+      } else {
+        return super.isMinorNecessary();
+      }
+    }
+
+    protected int getBaseSplitCount() {
+      return PropertyUtil.propertyAsInt(tableObject.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+          TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+    }
+
+    @Override
+    public boolean isFullNecessary() {
+      if (!reachFullInterval()) {
+        return false;
+      }
+      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles;
     }
   }
 
