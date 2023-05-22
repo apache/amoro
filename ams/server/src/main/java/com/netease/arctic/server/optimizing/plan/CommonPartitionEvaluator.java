@@ -30,7 +30,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Set;
 
-public class BasicPartitionEvaluator implements PartitionEvaluator {
+public class CommonPartitionEvaluator implements PartitionEvaluator {
   private final String partition;
   private final Set<String> deleteFileSet = Sets.newHashSet();
   protected final OptimizingConfig config;
@@ -58,7 +58,7 @@ public class BasicPartitionEvaluator implements PartitionEvaluator {
 
   private long cost = -1;
 
-  public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();

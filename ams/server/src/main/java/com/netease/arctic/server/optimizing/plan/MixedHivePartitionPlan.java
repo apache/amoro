@@ -70,7 +70,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected BasicPartitionEvaluator buildEvaluator() {
+  protected CommonPartitionEvaluator buildEvaluator() {
     return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
   }
 
