@@ -33,7 +33,6 @@ import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
- * @param sparkSession
  */
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 

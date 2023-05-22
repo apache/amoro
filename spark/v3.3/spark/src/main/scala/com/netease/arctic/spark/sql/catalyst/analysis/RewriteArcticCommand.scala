@@ -29,29 +29,26 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{ResolvedDBObjectName, ResolvedTable}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 
 /**
  * Rule for rewrite some spark commands to arctic's implementation.
- * @param sparkSession
  */
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
-  def isCreateArcticTableLikeCommand(
-      targetTable: TableIdentifier,
-      provider: Option[String]): Boolean = {
+  private def isCreateArcticTableLikeCommand(
+                                              targetTable: TableIdentifier,
+                                              provider: Option[String]): Boolean = {
     val (targetCatalog, _) = buildCatalogAndIdentifier(sparkSession, targetTable)
-    targetCatalog match {
-      case _: ArcticSparkCatalog =>
-        if (provider.isEmpty || provider.get.equalsIgnoreCase("arctic")) {
-          true
-        } else {
-          throw new UnsupportedOperationException(s"Provider must be arctic or null when using " +
-            s"${classOf[ArcticSparkCatalog].getName}.")
-        }
+    isCreateArcticTable(targetCatalog, provider)
+  }
+
+  private def isCreateArcticTable(catalog: TableCatalog, provider: Option[String]): Boolean = {
+    catalog match {
+      case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] =>
         provider.isDefined && provider.get.equalsIgnoreCase("arctic")
-      case _ =>
-        false
+      case _ => false
     }
   }
 
@@ -66,16 +63,14 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)
 
-      case c @ CreateTableAsSelect(ResolvedDBObjectName(catalog, _), _, _, tableSpec, options, _)
-          if isArcticCatalog(catalog) =>
+      case c @ CreateTableAsSelect(ResolvedDBObjectName(catalog: TableCatalog, _), _, _, tableSpec, options, _)
+        if isCreateArcticTable(catalog, tableSpec.provider) =>
         var propertiesMap: Map[String, String] = tableSpec.properties
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
           propertiesMap += ("primary.keys" -> options("primary.keys"))
         }
-        if (propertiesMap.contains("primary.keys")) {
-          optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
-        }
+        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
         val newTableSpec = tableSpec.copy(properties = propertiesMap)
         c.copy(tableSpec = newTableSpec, writeOptions = optionsMap)
       case CreateTableLikeCommand(targetTable, sourceTable, _, provider, properties, ifNotExists)
