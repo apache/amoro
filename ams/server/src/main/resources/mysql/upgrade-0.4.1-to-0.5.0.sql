@@ -53,7 +53,6 @@ INSERT INTO `table_identifier` (`catalog_name`, `db_name`, `table_name`) SELECT 
 -- table_metadata
 ALTER TABLE `table_metadata` ADD `table_id` bigint(20) NOT NULL COMMENT 'table id' FIRST;
 ALTER TABLE `table_metadata` drop PRIMARY KEY;
-ALTER TABLE `table_metadata` ADD PRIMARY KEY (`table_id`);
 ALTER TABLE `table_metadata` CHANGE `delta_location` `change_location` varchar(256) DEFAULT NULL;
 ALTER TABLE `table_metadata` CHANGE `cur_schema_id` `current_schema_id` int(11) NOT NULL DEFAULT 0;
 ALTER TABLE `table_metadata` DROP COLUMN `hbase_site`;
@@ -62,6 +61,7 @@ UPDATE `table_metadata` JOIN `table_identifier`
 ON `table_metadata`.`catalog_name` = `table_identifier`.`catalog_name`
 AND `table_metadata`.`db_name` = `table_identifier`.`db_name`
 AND `table_metadata`.`table_name` = `table_identifier`.`table_name` SET `table_metadata`.`table_id` = `table_identifier`.`table_id`;
+ALTER TABLE `table_metadata` ADD PRIMARY KEY (`table_id`);
 
 -- platform_file
 RENAME TABLE `platform_file_info` to `platform_file`;
