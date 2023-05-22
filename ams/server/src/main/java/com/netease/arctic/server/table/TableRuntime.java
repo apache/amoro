@@ -105,7 +105,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
   }
 
-  protected void recover(OptimizingProcess optimizingProcess) {
+  public void recover(OptimizingProcess optimizingProcess) {
     if (!optimizingStatus.isProcessing() || !Objects.equals(optimizingProcess.getProcessId(), processId)) {
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
