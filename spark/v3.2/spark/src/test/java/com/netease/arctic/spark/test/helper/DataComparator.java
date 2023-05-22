@@ -1,7 +1,8 @@
 package com.netease.arctic.spark.test.helper;
 
-import com.netease.arctic.utils.CollectionUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 
@@ -56,7 +57,7 @@ public class DataComparator {
       expectRecords.sort(comparator);
       actualRecords.sort(comparator);
     }
-    CollectionUtil.zip(expectRecords, actualRecords)
+    Streams.zip(expectRecords.stream(), actualRecords.stream(), Pair::of)
         .forEach(r -> assertRecord(r.getLeft(), r.getRight()));
   }
 

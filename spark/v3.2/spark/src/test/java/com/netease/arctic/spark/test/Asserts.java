@@ -20,11 +20,12 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.spark.test.helper.TableFiles;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.CollectionUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.hive.HiveSchemaUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -49,7 +50,7 @@ public class Asserts {
       List<Types.NestedField> actualFields = actual.asNestedType().fields();
       Assert.assertEquals(expectFields.size(), actualFields.size());
 
-      CollectionUtil.zip(expectFields, actualFields)
+      Streams.zip(expectFields.stream(), actualFields.stream(), Pair::of)
           .forEach(x -> {
             Assert.assertEquals(x.getLeft().name(), x.getRight().name());
             Assert.assertEquals("The fields' nullable constraint are different",
@@ -64,7 +65,8 @@ public class Asserts {
     Schema expectSchema = expectSpec.schema();
     Schema actualSchema = actualSpec.schema();
     Assertions.assertEquals(expectSpec.fields().size(), actualSpec.fields().size());
-    CollectionUtil.zip(expectSpec.fields(), actualSpec.fields())
+
+    Streams.zip(expectSpec.fields().stream(), actualSpec.fields().stream(), Pair::of)
         .forEach(x -> {
           Assertions.assertEquals(x.getLeft().transform(), x.getRight().transform());
           Assertions.assertEquals(
@@ -76,7 +78,7 @@ public class Asserts {
   public static void assertPrimaryKey(PrimaryKeySpec expect, PrimaryKeySpec actual) {
     Assertions.assertEquals(expect.fields().size(), actual.fields().size());
 
-    CollectionUtil.zip(expect.fields(), actual.fields())
+    Streams.zip(expect.fields().stream(), actual.fields().stream(), Pair::of)
         .forEach(x -> {
           Assertions.assertEquals(x.getLeft().fieldName(), x.getRight().fieldName());
         });
@@ -95,7 +97,7 @@ public class Asserts {
     Schema schema = com.netease.arctic.hive.utils.HiveSchemaUtil.hiveTableSchema(expectSchema, spec);
     Assert.assertEquals(schema.columns().size(), hiveColumns.size());
 
-    CollectionUtil.zip(hiveColumns, schema.columns())
+    Streams.zip(hiveColumns.stream(), schema.columns().stream(), Pair::of)
         .forEach(x -> {
           Assert.assertEquals(x.getLeft().getName(), x.getRight().name());
           String expectTypeInfoString = HiveSchemaUtil.convert(x.getRight().type()).toString();
@@ -107,7 +109,7 @@ public class Asserts {
     assertEquals(expectSpec.fields().size(), hivePartitions.size());
     Schema expectSpecSchema = expectSpec.schema();
 
-    CollectionUtil.zip(expectSpec.fields(), hivePartitions)
+    Streams.zip(expectSpec.fields().stream(), hivePartitions.stream(), Pair::of)
         .forEach(x -> {
           assertTrue(x.getLeft().transform().isIdentity());
           String expectFieldName = expectSpecSchema.findColumnName(x.getLeft().sourceId());
@@ -137,4 +139,5 @@ public class Asserts {
     });
 
   }
+
 }
