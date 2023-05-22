@@ -39,9 +39,9 @@ public class PersistentBaseTest {
 
     // verify mapper method was called and session was committed
     Mockito.verify(mapper, Mockito.times(1)).testMethod();
-    Mockito.verify(session, Mockito.times(1)).commit(true);
+    Mockito.verify(session, Mockito.times(1)).commit();
     Mockito.verify(session, Mockito.times(1)).close();
-    Mockito.verify(session, never()).rollback(true);
+    Mockito.verify(session, never()).rollback();
   }
 
   @Test
@@ -56,9 +56,9 @@ public class PersistentBaseTest {
     // verify operations were executed and session was committed
     Mockito.verify(operation1, Mockito.times(1)).run();
     Mockito.verify(operation2, Mockito.times(1)).run();
-    Mockito.verify(session, Mockito.times(1)).commit(true);
+    Mockito.verify(session, Mockito.times(1)).commit();
     Mockito.verify(session, Mockito.times(1)).close();
-    Mockito.verify(session, never()).rollback(true);
+    Mockito.verify(session, never()).rollback();
   }
 
   @Test
@@ -71,8 +71,8 @@ public class PersistentBaseTest {
 
     // verify mapper method was called, session was committed, and no exception was thrown
     Mockito.verify(mapper, Mockito.times(1)).testMethod2();
-    Mockito.verify(session, Mockito.times(1)).commit(true);
-    Mockito.verify(session, never()).rollback(true);
+    Mockito.verify(session, Mockito.times(1)).commit();
+    Mockito.verify(session, never()).rollback();
   }
 
   @Test
@@ -84,8 +84,8 @@ public class PersistentBaseTest {
       testObject.doAsExisted(TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
     } catch (PersistenceException e) {
       Mockito.verify(mapper, Mockito.times(1)).testMethod2();
-      Mockito.verify(session, Mockito.times(1)).rollback(true);
-      Mockito.verify(session, never()).commit(true);
+      Mockito.verify(session, Mockito.times(1)).rollback();
+      Mockito.verify(session, never()).commit();
       Assertions.assertEquals("error", e.getCause().getMessage());
       return;
     }
@@ -99,8 +99,8 @@ public class PersistentBaseTest {
 
     // verify mapper method was called, session was committed, and correct result was returned
     Mockito.verify(mapper, Mockito.times(1)).testMethod();
-    Mockito.verify(session, Mockito.times(1)).commit(false);
-    Mockito.verify(session, never()).rollback(false);
+    Mockito.verify(session, never()).rollback();
+    Mockito.verify(session, never()).commit();
     Assertions.assertEquals("result", result);
   }
 

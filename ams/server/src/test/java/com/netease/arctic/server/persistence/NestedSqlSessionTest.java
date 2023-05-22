@@ -52,66 +52,126 @@ public class NestedSqlSessionTest {
     NestedSqlSession session = NestedSqlSession.openSession(supplier);
     assertNotNull(session);
     verify(supplier).get();
-    assertEquals(1, getNestCount(session));
+    assertEquals(0, getNestCount(session));
     verifyNoMoreInteractions(supplier);
   }
 
   @Test
-  void testClose() {
+  void testClose() throws Exception {
+    assertSame(nestedSession, nestedSession.openNestedSession());
+    nestedSession.openNestedSession();
+    nestedSession.openNestedSession();
+    nestedSession.openNestedSession();
+    nestedSession.openNestedSession();
+
     nestedSession.close();
+    assertEquals(4, getNestCount(nestedSession));
+    nestedSession.close();
+    assertEquals(3, getNestCount(nestedSession));
+    nestedSession.close();
+    assertEquals(2, getNestCount(nestedSession));
+    nestedSession.close();
+    assertEquals(1, getNestCount(nestedSession));
+    nestedSession.close();
+    assertEquals(0, getNestCount(nestedSession));
+    nestedSession.close();
+    assertEquals(-1, getNestCount(nestedSession));
     verify(sqlSession).close();
     assertNull(nestedSession.getSqlSession());
   }
 
   @Test
   void testCommitWithNestCountGreaterThanZero() {
-    nestedSession.beginTransaction();
-    nestedSession.beginTransaction();
-    nestedSession.commit(true);
+    nestedSession.openNestedSession();
+    nestedSession.commit();
     verifyZeroInteractions(sqlSession);
+    nestedSession.close();
 
-    nestedSession.commit(true);
+    nestedSession.commit();
     verify(sqlSession).commit(true);
   }
 
   @Test
   void testCommitWithNestCountEqualToZero() {
-    nestedSession.commit(true);
+    nestedSession.commit();
+    verify(sqlSession).commit(true);
+    verifyNoMoreInteractions(sqlSession);
+  }
+
+  @Test
+  void testCloseAndCommit() {
+    nestedSession.openNestedSession();
+    nestedSession.openNestedSession();
+    nestedSession.commit();
+    nestedSession.close();
     verifyZeroInteractions(sqlSession);
+
+    nestedSession.commit();
+    verifyZeroInteractions(sqlSession);
+    nestedSession.close();
+    verifyZeroInteractions(sqlSession);
+
+    nestedSession.commit();
+    nestedSession.close();
+    verify(sqlSession).commit(true);
+    verify(sqlSession).close();
+    assertNull(nestedSession.getSqlSession());
   }
 
   @Test
   void testRollbackWithNestCountGreaterThanZero() {
-    nestedSession.beginTransaction();
-    nestedSession.beginTransaction();
-    nestedSession.rollback(true);
-    verify(sqlSession).rollback(true);
-
-    nestedSession.rollback(true);
+    nestedSession.openNestedSession();
+    nestedSession.rollback();
     verifyZeroInteractions(sqlSession);
+    nestedSession.close();
+
+    nestedSession.rollback();
+    verify(sqlSession).rollback(true);
   }
 
   @Test
   void testRollbackWithNestCountEqualToZero() {
-    nestedSession.rollback(true);
+    nestedSession.rollback();
+    verify(sqlSession).rollback(true);
+    verifyNoMoreInteractions(sqlSession);
+  }
+
+  @Test
+  void testCloseAndRollback() {
+    nestedSession.openNestedSession();
+    nestedSession.openNestedSession();
+    nestedSession.commit();
+    nestedSession.close();
     verifyZeroInteractions(sqlSession);
+
+    nestedSession.rollback();
+    verifyZeroInteractions(sqlSession);
+    nestedSession.close();
+    verifyZeroInteractions(sqlSession);
+
+    nestedSession.rollback();
+    verify(sqlSession).rollback(true);
+    nestedSession.close();
+    verify(sqlSession).close();
+    assertNull(nestedSession.getSqlSession());
   }
 
   @Test
   void testBeginTransaction() throws Exception {
-    assertSame(nestedSession, nestedSession.beginTransaction());
+    assertSame(nestedSession, nestedSession.openNestedSession());
     assertEquals(1, getNestCount(nestedSession));
 
-    nestedSession.beginTransaction();
+    nestedSession.openNestedSession();
     assertEquals(2, getNestCount(nestedSession));
 
-    nestedSession.beginTransaction();
+    nestedSession.openNestedSession();
     assertEquals(3, getNestCount(nestedSession));
 
-    nestedSession.beginTransaction();
+    nestedSession.openNestedSession();
     assertEquals(4, getNestCount(nestedSession));
 
-    assertThrows(IllegalStateException.class, nestedSession::beginTransaction);
+    nestedSession.openNestedSession();
+    assertThrows(IllegalStateException.class, nestedSession::openNestedSession);
   }
 
   private int getNestCount(NestedSqlSession nestedSession) throws Exception {

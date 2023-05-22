@@ -14,13 +14,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class StatedPersistentBase extends PersistentBase {
+public abstract class StatedPersistentBase extends PersistentBase {
 
   private static final Map<Class<? extends PersistentBase>, List<State>> stateMetaCache = Maps.newConcurrentMap();
   private Lock stateLock = new ReentrantLock();
   private List<State> states = Lists.newArrayList();
 
-  public StatedPersistentBase() {
+  protected StatedPersistentBase() {
     initStateFields();
   }
 
