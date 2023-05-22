@@ -2,14 +2,19 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class RuntimeHandlerChain {
 
   private RuntimeHandlerChain next;
 
   protected void appendNext(RuntimeHandlerChain handler) {
+    Preconditions.checkNotNull(handler);
+    Preconditions.checkArgument(!Objects.equals(handler, this),
+        "Cannot add the same runtime handler:{} twice", handler.getClass().getSimpleName());
     if (next == null) {
       next = handler;
     } else {
