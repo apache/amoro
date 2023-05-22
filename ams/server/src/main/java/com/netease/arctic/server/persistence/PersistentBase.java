@@ -47,9 +47,9 @@ public abstract class PersistentBase {
       try {
         T mapper = getMapper(session, mapperClz);
         consumer.accept(mapper);
-        session.commit(true);
+        session.commit();
       } catch (Throwable t) {
-        session.rollback(true);
+        session.rollback();
         throw new PersistenceException(t);
       }
     }
@@ -61,9 +61,9 @@ public abstract class PersistentBase {
         for (Runnable runnable : operations) {
           runnable.run();
         }
-        session.commit(true);
+        session.commit();
       } catch (Throwable t) {
-        session.rollback(true);
+        session.rollback();
         throw t;
       }
     }
@@ -74,10 +74,8 @@ public abstract class PersistentBase {
       try {
         T mapper = getMapper(session, mapperClz);
         R result = func.apply(mapper);
-        session.commit(false);
         return result;
       } catch (Throwable t) {
-        session.rollback(false);
         throw t;
       }
     }
@@ -91,9 +89,9 @@ public abstract class PersistentBase {
         if (result == 0) {
           throw errorSupplier.get();
         }
-        session.commit(true);
+        session.commit();
       } catch (Throwable t) {
-        session.rollback(true);
+        session.rollback();
         throw new PersistenceException(t);
       }
     }
