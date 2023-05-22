@@ -146,8 +146,12 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     protected int getBaseSplitCount() {
-      return PropertyUtil.propertyAsInt(tableObject.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-          TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+      if (isKeyedTable()) {
+        return PropertyUtil.propertyAsInt(tableObject.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+      } else {
+        return 1;
+      }
     }
 
     @Override
