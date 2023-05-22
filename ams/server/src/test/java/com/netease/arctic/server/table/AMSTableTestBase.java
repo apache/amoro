@@ -181,6 +181,6 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void validateTableRuntime(TableRuntime tableRuntime) {
-    validateArcticTable(tableRuntime.loadTable());
+    Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
 }
