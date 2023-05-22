@@ -63,19 +63,6 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      return dataFile.fileSizeInBytes() <= maxFragmentSize;
-    } else if (file.type() == DataFileType.INSERT_FILE) {
-      // for keyed table, we treat all insert files as fragment files
-      return true;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
-  }
-
-  @Override
   protected boolean taskNeedExecute(SplitTask task) {
     if (super.taskNeedExecute(task)) {
       return true;
@@ -101,6 +88,31 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       return new TreeNodeTaskSplitter();
     } else {
       return new BinPackingTaskSplitter();
+    }
+  }
+
+  @Override
+  protected BasicPartitionEvaluator buildEvaluator() {
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime);
+  }
+
+  protected static class MixedIcebergPartitionEvaluator extends BasicPartitionEvaluator {
+
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+      super(tableRuntime, partition, planTime);
+    }
+
+    @Override
+    protected boolean isFragmentFile(IcebergDataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      if (file.type() == DataFileType.BASE_FILE) {
+        return dataFile.fileSizeInBytes() <= fragmentSize;
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // for keyed table, we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
     }
   }
 

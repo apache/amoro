@@ -39,10 +39,9 @@ import java.util.stream.Collectors;
 public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   public static final int INVALID_SEQUENCE = -1;
 
-  private final String partition;
+  protected final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
-  protected final long maxFragmentSize;
   private BasicPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
@@ -64,7 +63,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
-    this.maxFragmentSize = config.maxFragmentSize();
     this.planTime = planTime;
   }
 
@@ -99,9 +97,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return evaluator().getCost();
   }
 
+  @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     evaluator().addFile(dataFile, deletes);
-    if (isFragmentFile(dataFile)) {
+    if (evaluator().isFragmentFile(dataFile)) {
       fragmentFiles.put(dataFile, deletes);
     } else {
       segmentFiles.put(dataFile, deletes);
@@ -142,14 +141,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected abstract TaskSplitter buildTaskSplitter();
 
   protected abstract OptimizingInputProperties buildTaskProperties();
-
-  protected boolean findAnyDelete() {
-    return evaluator().getEqualityDeleteFileCount() + evaluator().getPosDeleteFileCount() > 0;
-  }
-
-  protected boolean isFragmentFile(IcebergDataFile file) {
-    return file.fileSizeInBytes() <= maxFragmentSize;
-  }
 
   protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
     if (config.isFullRewriteAllFiles()) {

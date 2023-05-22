@@ -49,20 +49,6 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
   }
 
-  @Override
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      // we treat all files in hive location as segment files
-      return dataFile.fileSizeInBytes() <= maxFragmentSize && notInHiveLocation(dataFile.path().toString());
-    } else if (file.type() == DataFileType.INSERT_FILE) {
-      // we treat all insert files as fragment files
-      return true;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
-  }
-
   private boolean notInHiveLocation(String filePath) {
     return !filePath.contains(hiveLocation);
   }
@@ -89,6 +75,15 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
+  protected BasicPartitionEvaluator buildEvaluator() {
+    return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime);
+  }
+
+  protected boolean findAnyDelete() {
+    return evaluator().getEqualityDeleteFileCount() > 0 || evaluator().getPosDeleteFileCount() > 0;
+  }
+
+  @Override
   protected OptimizingInputProperties buildTaskProperties() {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
@@ -108,6 +103,40 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       }
     }
     return customHiveSubdirectory;
+  }
+
+  public class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
+    private final String hiveLocation;
+    private int notInHiveLocationFileCnt;
+
+    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
+                                       long planTime) {
+      super(tableRuntime, partition, planTime);
+      this.hiveLocation = hiveLocation;
+    }
+
+    @Override
+    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      super.addFile(dataFile, deletes);
+      if (notInHiveLocation(dataFile.path().toString())) {
+        notInHiveLocationFileCnt++;
+      }
+    }
+
+    @Override
+    protected boolean isFragmentFile(IcebergDataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      if (file.type() == DataFileType.BASE_FILE) {
+        // we treat all files in hive location as segment files
+        return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile.path().toString());
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
   }
 
 }
