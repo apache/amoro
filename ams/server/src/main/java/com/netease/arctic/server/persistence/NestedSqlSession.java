@@ -1,5 +1,6 @@
 package com.netease.arctic.server.persistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -7,10 +8,14 @@ import java.io.Closeable;
 import java.util.function.Supplier;
 
 public final class NestedSqlSession implements Closeable {
+  @VisibleForTesting
   protected static final int MAX_NEST_BEGIN_COUNT = 5;
-  private static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
+  @VisibleForTesting
+  protected static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
+
   private int nestCount = 0;
   private SqlSession sqlSession;
+
 
   public static NestedSqlSession openSession(Supplier<SqlSession> sessionSupplier) {
     NestedSqlSession session = sessions.get();
@@ -24,7 +29,8 @@ public final class NestedSqlSession implements Closeable {
     return sqlSession;
   }
 
-  private NestedSqlSession(SqlSession sqlSession) {
+  @VisibleForTesting
+  protected NestedSqlSession(SqlSession sqlSession) {
     this.sqlSession = sqlSession;
   }
 
@@ -35,11 +41,11 @@ public final class NestedSqlSession implements Closeable {
     return this;
   }
 
-  public void commit() {
+  public void commit(boolean hasOperation) {
     Preconditions.checkState(sqlSession != null, "session already closed");
     try {
       if (nestCount > 0) {
-        if (--nestCount == 0) {
+        if (--nestCount == 0 && hasOperation) {
           sqlSession.commit(true);
         }
       }
@@ -49,16 +55,18 @@ public final class NestedSqlSession implements Closeable {
     }
   }
 
-  public void rollback() {
+  public void rollback(boolean hasOperation) {
     if (nestCount > 0) {
       Preconditions.checkState(sqlSession != null, "session already closed");
       nestCount = 0;
-      sqlSession.rollback(true);
+      if (hasOperation) {
+        sqlSession.rollback(true);
+      }
     }
   }
 
   public void close() {
-    if (nestCount == 0 && sqlSession != null) {
+    if ((nestCount == 0 || nestCount == 1) && sqlSession != null) {
       sqlSession.close();
       sqlSession = null;
       sessions.set(null);
