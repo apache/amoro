@@ -32,10 +32,10 @@ import java.util.Set;
 public class BasicPartitionEvaluator implements PartitionEvaluator {
   private final String partition;
   private final Set<String> deleteFileSet = Sets.newHashSet();
-  private final OptimizingConfig config;
-  private final TableRuntime tableRuntime;
-  private final long fragmentSize;
-  private final long planTime;
+  protected final OptimizingConfig config;
+  protected final TableRuntime tableRuntime;
+  protected final long fragmentSize;
+  protected final long planTime;
 
   // fragment files
   protected int fragmentFileCount = 0;
