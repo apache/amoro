@@ -114,8 +114,8 @@ public interface OptimizingMapper {
           "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary) VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
       "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}," +
-          " #{taskRuntime.tableId}, #{taskRuntime.partition}, #{taskRuntime.startTime, typeHandler=com.netease.arctic" +
-          ".server.persistence.converter.Long2TsConverter}," +
+          " #{taskRuntime.tableId}, #{taskRuntime.partition}, " +
+          "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
           " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
           "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR}," +
           " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
@@ -155,9 +155,11 @@ public interface OptimizingMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}," +
       " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR}," +
-      " rewrite_output = #{taskRuntime.output, jdbcType=BLOB, typeHandler=com.netease.arctic.server.persistence" +
-      ".converter.Object2ByteArrayConvert}, metrics_summary = #{taskRuntime.summary, typeHandler=com.netease.arctic" +
-      ".server.persistence.converter.JsonSummaryConverter} WHERE process_id = #{taskRuntime.taskId.processId} AND " +
+      " rewrite_output = #{taskRuntime.output, jdbcType=BLOB," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
+      " metrics_summary = #{taskRuntime.summary," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " WHERE process_id = #{taskRuntime.taskId.processId} AND " +
       "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
@@ -171,8 +173,9 @@ public interface OptimizingMapper {
   /**
    * Optimizing rewrite input and output operations below
    */
-  @Update("UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB, typeHandler=com.netease.arctic" +
-      ".server.persistence.converter.Object2ByteArrayConvert} WHERE process_id = #{processId}")
+  @Update("UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}" +
+      " WHERE process_id = #{processId}")
   void updateProcessInputFiles(
       @Param("processId") long processId,
       @Param("input") Map<Integer, RewriteFilesInput> input);

@@ -163,16 +163,12 @@ public class DefaultOptimizingService extends DefaultResourceManager
     return optimizingQueueByGroup.values()
         .stream()
         .flatMap(queue -> queue.getOptimizers().stream())
-        .sorted(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed())
         .collect(Collectors.toList());
   }
 
   @Override
   public List<OptimizerInstance> listOptimizers(String group) {
-    return getQueueByGroup(group).getOptimizers()
-        .stream()
-        .sorted(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed())
-        .collect(Collectors.toList());
+    return getQueueByGroup(group).getOptimizers();
   }
 
   @Override

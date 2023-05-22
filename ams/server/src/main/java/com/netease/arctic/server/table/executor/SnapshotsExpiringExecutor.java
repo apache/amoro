@@ -96,7 +96,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         return;
       }
 
-      // expireArcticTable(arcticTable, tableRuntime);
+      expireArcticTable(arcticTable, tableRuntime);
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     }

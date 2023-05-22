@@ -123,7 +123,7 @@ public class TableController extends RestBaseController {
     String tableMame = ctx.pathParam("table");
 
     Preconditions.checkArgument(
-        !catalog.isEmpty() && !database.isEmpty() && !tableMame.isEmpty(),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableMame),
         "catalog.database.tableName can not be empty in any element");
     if (!tableService.catalogExist(catalog)) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "invalid catalog!", null));
@@ -192,7 +192,7 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     Preconditions.checkArgument(
-        !catalog.isEmpty() && !db.isEmpty() && !table.isEmpty(),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db) && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
     Preconditions.checkArgument(
         tableService.getServerCatalog(catalog) instanceof MixedHiveCatalogImpl,
@@ -215,7 +215,6 @@ public class TableController extends RestBaseController {
       return;
     }
     ctx.json(OkResponse.of(hiveTableInfo));
-    ctx.json(OkResponse.ok());
   }
 
   /**
@@ -226,7 +225,7 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     Preconditions.checkArgument(
-        !catalog.isEmpty() && !db.isEmpty() && !table.isEmpty(),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db) && StringUtils.isNotBlank(table),
         "catalog.database.tableName can not be empty in any element");
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
@@ -259,7 +258,6 @@ public class TableController extends RestBaseController {
       LOG.error("upgrade hive table error:", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upgrade hive table", ""));
     }
-    ctx.json(OkResponse.ok());
   }
 
   public void getUpgradeStatus(Context ctx) {
@@ -267,7 +265,6 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     ctx.json(OkResponse.of(upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table))));
-    ctx.json(OkResponse.ok());
   }
 
   /**
@@ -406,7 +403,7 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String keywords = ctx.queryParam("keywords");
     Preconditions.checkArgument(
-        !catalog.isEmpty() && !db.isEmpty(),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
     List<ServerTableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
@@ -430,7 +427,7 @@ public class TableController extends RestBaseController {
     } else {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
     }
-    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isEmpty(keywords) ||
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isNotBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
@@ -442,7 +439,7 @@ public class TableController extends RestBaseController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList = tableService.listDatabases(catalog).stream()
-        .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
+        .filter(item -> StringUtils.isNotBlank(keywords) || item.contains(keywords))
         .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
   }

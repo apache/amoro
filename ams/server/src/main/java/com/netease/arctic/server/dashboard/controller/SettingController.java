@@ -57,16 +57,12 @@ public class SettingController extends RestBaseController {
    * getRuntime system settings.
    */
   public void getSystemSetting(Context ctx) {
-    Map<String, String> config = new HashMap<>();
-    serviceConfig.toMap().forEach((k, v) -> {
-      if (!config.containsKey(k)) {
-        putSetting(config, k, v);
-      }
-    });
-
     LinkedHashMap<String, String> result = new LinkedHashMap<>();
-    config.entrySet().stream()
-        .sorted(Map.Entry.comparingByKey()).forEachOrdered(entry -> result.put(entry.getKey(), entry.getValue()));
+    serviceConfig.toMap()
+        .entrySet()
+        .stream()
+        .sorted(Map.Entry.comparingByKey())
+        .forEachOrdered(entry -> putSetting(result, entry.getKey(), entry.getValue()));
     ctx.json(OkResponse.of(result));
   }
 
