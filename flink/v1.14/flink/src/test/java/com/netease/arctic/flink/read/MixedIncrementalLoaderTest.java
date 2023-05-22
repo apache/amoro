@@ -18,7 +18,9 @@
 
 package com.netease.arctic.flink.read;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
@@ -55,7 +57,9 @@ import java.util.List;
 public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTaskWriterBaseTest {
 
   public MixedIncrementalLoaderTest(boolean partitionedTable) {
-    super(TableFormat.MIXED_ICEBERG, true, partitionedTable);
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, partitionedTable));
   }
 
   @Parameterized.Parameters(name = "partitionedTable = {0}")
