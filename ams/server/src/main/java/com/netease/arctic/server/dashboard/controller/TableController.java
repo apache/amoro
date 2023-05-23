@@ -39,6 +39,8 @@ import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
+import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
+import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableMeta;
@@ -92,7 +94,7 @@ import java.util.stream.Collectors;
  */
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
-  private static final long UPGRADE_INGO_EXPIRE_INTERVAL = 60 * 60 * 1000;
+  private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
@@ -250,7 +252,7 @@ public class TableController extends RestBaseController {
         } finally {
           tableUpgradeExecutor.schedule(
               () -> upgradeRunningInfo.remove(tableIdentifier),
-              UPGRADE_INGO_EXPIRE_INTERVAL,
+              UPGRADE_INFO_EXPIRE_INTERVAL,
               TimeUnit.MILLISECONDS);
         }
       });
@@ -371,12 +373,38 @@ public class TableController extends RestBaseController {
    * getRuntime partition list.
    */
   public void getTablePartitions(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+
+    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
+    List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(arcticTable);
+    int offset = (page - 1) * pageSize;
+    PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
    * getRuntime file list of some partition.
    */
   public void getPartitionFileListInfo(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String partition = ctx.pathParam("partition");
+
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
+    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition,
+        page * pageSize);
+    int offset = (page - 1) * pageSize;
+    PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /* getRuntime  operations of some table*/

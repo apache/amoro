@@ -18,11 +18,12 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 public class PartitionFileBaseInfo {
-  private String commitId;
-  private String fileType;
+  private long commitId;
+  private DataFileType fileType;
   private Long commitTime;
   private String size;
   private String partitionName;
@@ -33,7 +34,7 @@ public class PartitionFileBaseInfo {
   public PartitionFileBaseInfo() {
   }
 
-  public PartitionFileBaseInfo(String commitId, String fileType, Long commitTime,
+  public PartitionFileBaseInfo(long commitId, DataFileType fileType, Long commitTime,
                                String partitionName, String path, long fileSize) {
     this.commitId = commitId;
     this.fileType = fileType;
@@ -44,19 +45,19 @@ public class PartitionFileBaseInfo {
     this.fileSize = fileSize;
   }
 
-  public String getCommitId() {
+  public long getCommitId() {
     return commitId;
   }
 
-  public void setCommitId(String commitId) {
+  public void setCommitId(long commitId) {
     this.commitId = commitId;
   }
 
-  public String getFileType() {
+  public DataFileType getFileType() {
     return fileType;
   }
 
-  public void setFileType(String fileType) {
+  public void setFileType(DataFileType fileType) {
     this.fileType = fileType;
   }
 
