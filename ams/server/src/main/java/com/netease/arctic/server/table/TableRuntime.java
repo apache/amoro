@@ -151,7 +151,8 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
-        optimizingStatus = OptimizingStatus.PENDING;
+        this.currentChangeSnapshotId = System.currentTimeMillis();
+        this.optimizingStatus = OptimizingStatus.PENDING;
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
       }
@@ -175,7 +176,8 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       pendingInput = null;
       if (optimizingStatus == OptimizingStatus.PENDING) {
-        optimizingStatus = OptimizingStatus.IDLE;
+        this.currentStatusStartTime = System.currentTimeMillis();
+        this.optimizingStatus = OptimizingStatus.IDLE;
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
       }
