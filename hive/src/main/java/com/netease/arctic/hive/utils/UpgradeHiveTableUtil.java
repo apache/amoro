@@ -103,9 +103,9 @@ public class UpgradeHiveTableUtil {
     if (hiveTable.getPartitionKeys().isEmpty()) {
       newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
       io.makeDirectories(newPath);
-      io.listPrefix(hiveTable.getSd().getLocation()).forEach(f -> {
-        if (!io.isDirectory(f.location())) {
-          io.asFileSystemIO().rename(f.location(), newPath);
+      io.listDirectory(hiveTable.getSd().getLocation()).forEach(p -> {
+        if (!p.isDirectory()) {
+          io.asFileSystemIO().rename(p.location(), newPath);
         }
       });
 
@@ -127,9 +127,9 @@ public class UpgradeHiveTableUtil {
         String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubdirectory(DEFAULT_TXID);
         io.makeDirectories(newLocation);
 
-        io.listPrefix(oldLocation).forEach(f -> {
-          if (!io.isDirectory(f.location())){
-            arcticTable.io().asFileSystemIO().rename(f.location(), newLocation);
+        io.listDirectory(oldLocation).forEach(p -> {
+          if (!p.isDirectory()){
+            io.asFileSystemIO().rename(p.location(), newLocation);
           }
         });
         HivePartitionUtil.alterPartition(arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);

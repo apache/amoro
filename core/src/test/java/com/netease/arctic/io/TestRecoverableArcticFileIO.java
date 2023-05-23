@@ -26,6 +26,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,8 +93,8 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
     createFile(file1);
     createFile(file2);
     createFile(file3);
-    List<FileStatus> list = recoverableArcticFileIO.list(getArcticTable().location() + "/base/test");
-    Assert.assertEquals(3, list.size());
+    Iterable<PathInfo> items = recoverableArcticFileIO.listDirectory(getArcticTable().location() + "/base/test");
+    Assert.assertEquals(3L, Streams.stream(items).count());
   }
 
   @Test

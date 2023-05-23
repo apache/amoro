@@ -255,7 +255,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     String partitionLocation = partition.getSd().getLocation();
 
     try (ArcticHadoopFileIO io = table.io()) {
-      io.listPrefix(partitionLocation)
+      io.listDirectory(partitionLocation)
           .forEach(f -> {
             if (!deleteFiles.contains(f.location())) {
               throw new CannotAlterHiveLocationException(

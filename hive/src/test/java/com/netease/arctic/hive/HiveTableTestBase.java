@@ -220,26 +220,6 @@ public class HiveTableTestBase extends TableTestBase {
     }
   }
 
-  public static void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
-    TableIdentifier identifier = table.id();
-    final String database = identifier.getDatabase();
-    final String tableName = identifier.getTableName();
-
-    List<Partition> partitions = hms.getClient().listPartitions(
-        database,
-        tableName,
-        (short) -1);
-
-    List<String> fileNameList = new ArrayList<>();
-    try(ArcticFileIO io = table.io()) {
-      for (Partition p : partitions) {
-        io.asPrefixFileIO().listPrefix(p.getSd().getLocation())
-            .forEach(f -> fileNameList.add(f.location()));
-      }
-    }
-
-    Assert.assertEquals(exceptedFiles, fileNameList);
-  }
 
   @Before
   public void setupTables() throws Exception {

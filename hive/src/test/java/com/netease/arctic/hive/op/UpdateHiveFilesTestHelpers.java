@@ -35,6 +35,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -87,7 +88,7 @@ public class UpdateHiveFilesTestHelpers {
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
       Assert.assertEquals(
-          StreamSupport.stream(table.io().asPrefixFileIO().listPrefix(valuePath).spliterator(), false)
+              Streams.stream(table.io().asFileSystemIO().listDirectory(valuePath))
               .map(FileInfo::location)
               .collect(Collectors.toSet()),
 
