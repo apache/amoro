@@ -43,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -386,7 +388,10 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public double calculateQuotaOccupy() {
-    return getQuotaTime() / tableConfiguration.getOptimizingConfig().getTargetQuota();
+    return new BigDecimal((double) getQuotaTime() /
+        ArcticServiceConstants.QUOTA_LOOK_BACK_TIME /
+        tableConfiguration.getOptimizingConfig().getTargetQuota())
+        .setScale(4, RoundingMode.HALF_UP).doubleValue();
   }
 
   /**

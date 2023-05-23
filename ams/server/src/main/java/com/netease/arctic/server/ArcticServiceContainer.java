@@ -59,6 +59,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -277,7 +278,7 @@ public class ArcticServiceContainer {
           (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
-      //mysql config
+      // mysql config
       if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
           .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
         if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key()) ||
@@ -286,7 +287,7 @@ public class ArcticServiceContainer {
         }
       }
 
-      //HA config
+      // HA config
       if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key()) &&
           ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key())) {
@@ -294,6 +295,13 @@ public class ArcticServiceContainer {
               ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key() + " must be configured when you enable " +
                   "the ams high availability");
         }
+      }
+      // terminal config
+      String terminalBackend = systemConfig.getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
+          .toString().toLowerCase();
+      if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
+        throw new RuntimeException(
+            String.format("Illegal terminal implement: %s, local, kyuubi, custom is available", terminalBackend));
       }
     }
 
