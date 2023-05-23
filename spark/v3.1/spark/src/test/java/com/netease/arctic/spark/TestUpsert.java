@@ -186,8 +186,10 @@ public class TestUpsert extends SparkTestBase {
   public void testKeyedTableUpsert() {
     sql("set `spark.sql.arctic.check-source-data-uniqueness.enabled`=" + this.checkSourceUniqueness);
     sql("set `spark.sql.arctic.optimize-write-enabled`=`true`");
-
+    sql("SELECT * FROM " + initView + " ORDER BY order_key ");
+    sql("SELECT * FROM " + sourceView + " ORDER BY order_key ");
     sql("INSERT OVERWRITE " + database + "." + table + " SELECT * FROM " + initView);
+    sql("SELECT * FROM " + database + "." + table + " ORDER BY order_key ");
     sql("insert into table " + database + '.' + table + " SELECT * FROM " + sourceView);
 
     rows = sql("SELECT * FROM " + database + "." + table + " ORDER BY order_key ");

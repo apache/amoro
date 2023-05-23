@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql
 
-import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsRowLevelOperator}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.spark.sql.SparkSession
@@ -42,9 +42,9 @@ object ArcticExtensionUtils {
       }
     }
 
-    def asUpsertWrite: SupportsUpsert = {
+    def asUpsertWrite: SupportsRowLevelOperator = {
       table match {
-        case arcticTable: SupportsUpsert => arcticTable
+        case arcticTable: SupportsRowLevelOperator => arcticTable
         case _ => throw new IllegalArgumentException(s"$table is not an upsert-able table")
       }
     }
@@ -144,6 +144,27 @@ object ArcticExtensionUtils {
       case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
       case _ => false
     }
+  }
+
+  def isArcticKeyedRelation(plan: LogicalPlan): Boolean = {
+    def isArcticKeyedTable(relation: DataSourceV2Relation): Boolean = relation.table match {
+      case a: ArcticSparkTable =>
+        a.table().isKeyedTable
+      case _ => false
+    }
+
+    plan.collectLeaves().exists {
+      case p: DataSourceV2Relation => isArcticKeyedTable(p)
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
+          isArcticKeyedTable(p)
+        }
+      case _ => false
+    }
+  }
+
+  def isUpsert(relation: DataSourceV2Relation): Boolean = {
+    val upsertWrite = relation.table.asUpsertWrite
+    upsertWrite.appendAsUpsert()
   }
 
   def isArcticIcebergRelation(plan: LogicalPlan): Boolean = {
