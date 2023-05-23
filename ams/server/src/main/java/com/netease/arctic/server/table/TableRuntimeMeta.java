@@ -11,6 +11,7 @@ public class TableRuntimeMeta {
   private String tableName;
   private long currentSnapshotId;
   private long lastOptimizedSnapshotId;
+  private long lastOptimizedChangeSnapshotId;
   private long currentChangeSnapshotId;
   private long lastMajorOptimizingTime;
   private long lastMinorOptimizingTime;
@@ -23,6 +24,7 @@ public class TableRuntimeMeta {
   private OptimizingProcess.Status processStatus;
   private OptimizingType optimizingType;
   private long targetSnapshotId;
+  private long targetChangeSnapshotId;
   private long planTime;
   private long endTime;
   private String failReason;
@@ -57,6 +59,14 @@ public class TableRuntimeMeta {
 
   public long getLastOptimizedSnapshotId() {
     return lastOptimizedSnapshotId;
+  }
+
+  public long getLastOptimizedChangeSnapshotId() {
+    return lastOptimizedChangeSnapshotId;
+  }
+
+  public long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
   }
 
   public long getTableId() {
@@ -157,6 +167,14 @@ public class TableRuntimeMeta {
 
   public void setLastOptimizedSnapshotId(long lastOptimizedSnapshotId) {
     this.lastOptimizedSnapshotId = lastOptimizedSnapshotId;
+  }
+
+  public void setLastOptimizedChangeSnapshotId(long lastOptimizedChangeSnapshotId) {
+    this.lastOptimizedChangeSnapshotId = lastOptimizedChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
   }
 
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {

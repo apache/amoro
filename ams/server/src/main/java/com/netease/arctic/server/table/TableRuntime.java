@@ -63,6 +63,7 @@ public class TableRuntime extends StatedPersistentBase {
   // for unKeyedTable or base table
   private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   // for change table
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
@@ -95,6 +96,7 @@ public class TableRuntime extends StatedPersistentBase {
         tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
     this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
+    this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();
     this.currentChangeSnapshotId = tableRuntimeMeta.getCurrentChangeSnapshotId();
     this.currentStatusStartTime = tableRuntimeMeta.getCurrentStatusStartTime();
     this.lastMinorOptimizingTime = tableRuntimeMeta.getLastMinorOptimizingTime();
@@ -199,6 +201,7 @@ public class TableRuntime extends StatedPersistentBase {
       currentStatusStartTime = System.currentTimeMillis();
       if (success) {
         lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
+        lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
         if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
@@ -299,6 +302,10 @@ public class TableRuntime extends StatedPersistentBase {
     return lastOptimizedSnapshotId;
   }
 
+  public long getLastOptimizedChangeSnapshotId() {
+    return lastOptimizedChangeSnapshotId;
+  }
+
   public long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
   }
@@ -365,6 +372,7 @@ public class TableRuntime extends StatedPersistentBase {
         .add("tableIdentifier", tableIdentifier)
         .add("currentSnapshotId", currentSnapshotId)
         .add("lastOptimizedSnapshotId", lastOptimizedSnapshotId)
+        .add("lastOptimizedChangeSnapshotId", lastOptimizedChangeSnapshotId)
         .add("optimizingStatus", optimizingStatus)
         .add("currentStatusStartTime", currentStatusStartTime)
         .add("lastMajorOptimizingTime", lastMajorOptimizingTime)

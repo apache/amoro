@@ -11,6 +11,7 @@ public class TableOptimizingProcess {
   private String dbName;
   private String tableName;
   private Long targetSnapshotId;
+  private Long targetChangeSnapshotId;
   private String status;
   private OptimizingType optimizingType;
   private long planTime;
@@ -115,5 +116,13 @@ public class TableOptimizingProcess {
 
   public void setSummary(MetricsSummary summary) {
     this.summary = summary;
+  }
+
+  public Long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(Long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
   }
 }
