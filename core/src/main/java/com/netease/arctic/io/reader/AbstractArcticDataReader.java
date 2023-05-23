@@ -114,9 +114,11 @@ public abstract class AbstractArcticDataReader<T> {
             sourceNodes, structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
+    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
+        fileScanTask -> newParquetIterable(
+            fileScanTask,
+            newProjectedSchema,
             DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
     return dataIterable.iterator();
   }
@@ -133,10 +135,12 @@ public abstract class AbstractArcticDataReader<T> {
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
+      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(CloseableIterable.concat(CloseableIterable.transform(
           CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
+          fileScanTask ->
+              newParquetIterable(
+                  fileScanTask,
+                  newProjectedSchema,
                   DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
       return dataIterable.iterator();
     } else {
