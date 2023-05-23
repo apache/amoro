@@ -38,6 +38,8 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Collections;
+import java.util.Comparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +127,7 @@ public class OptimizerController extends RestBaseController {
       } else {
         optimizers = optimizerManager.listOptimizers(optimizerGroup);
       }
+      optimizers.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
       List<JSONObject> result = optimizers.stream().map(e -> {
         JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
         jsonObject.put("jobId", e.getResourceId());

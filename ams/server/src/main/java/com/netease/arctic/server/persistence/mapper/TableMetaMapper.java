@@ -291,8 +291,8 @@ public interface TableMetaMapper {
   @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a" +
       ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_major_optimizing_time, a" +
       ".last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status, a.optimizing_status_start_time," +
-      " a.optimizing_process_id, a.optimizer_group, a.table_config, b.optimizing_type " +
-      " FROM table_runtime a LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
+      " a.optimizing_process_id, a.optimizer_group, a.table_config, b.optimizing_type, b.target_snapshot_id, b" +
+      ".plan_time FROM table_runtime a LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
       @Result(property = "tableId", column = "table_id"),
       @Result(property = "catalogName", column = "catalog_name"),
