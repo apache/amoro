@@ -46,7 +46,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private OptimizingTaskId taskId;
   @StatedPersistentBase.StateField
   private Status status = Status.PLANNED;
-  private TaskStatusMachine statusMachine;
+  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StatedPersistentBase.StateField
   private int retry = 0;
   @StatedPersistentBase.StateField
@@ -77,27 +77,9 @@ public class TaskRuntime extends StatedPersistentBase {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
-    this.statusMachine = new TaskStatusMachine();
     this.summary = new MetricsSummary(input);
     this.tableId = taskDescriptor.getTableId();
     this.properties = properties;
-  }
-
-  public TaskRuntime(TaskRuntimeMeta meta) {
-    this.tableId = meta.getTableId();
-    this.partition = meta.getPartition();
-    this.taskId = meta.getTaskId();
-    this.status = meta.getStatus();
-    this.statusMachine = new TaskStatusMachine();
-    this.retry = meta.getRetry();
-    this.startTime = meta.getStartTime();
-    this.endTime = meta.getEndTime();
-    this.costTime = meta.getCostTime();
-    this.optimizingThread = meta.getOptimizingThread();
-    this.failReason = meta.getFailReason();
-    this.output = meta.getOutput();
-    this.summary = meta.getSummary();
-    this.properties = meta.getProperties();
   }
 
   public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {

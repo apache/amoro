@@ -97,7 +97,7 @@ public class TableController extends RestBaseController {
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
   private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo = new ConcurrentHashMap<>(10);
-  private final ScheduledExecutorService executor;
+  private final ScheduledExecutorService tableUpgradeExecutor;
 
   public TableController(
       TableService tableService,
@@ -106,11 +106,11 @@ public class TableController extends RestBaseController {
     this.tableService = tableService;
     this.tableDescriptor = tableDescriptor;
     this.serviceConfig = serviceConfig;
-    this.executor = Executors.newScheduledThreadPool(
+    this.tableUpgradeExecutor = Executors.newScheduledThreadPool(
         0,
         new ThreadFactoryBuilder()
             .setDaemon(false)
-            .setNameFormat("ASYNC-" + getClass().getSimpleName() + "-%d").build());
+            .setNameFormat("ASYNC-HIVE-TABLE-UPGRADE-%d").build());
   }
 
   /**
@@ -232,7 +232,7 @@ public class TableController extends RestBaseController {
     ArcticHiveCatalog arcticHiveCatalog
         = (ArcticHiveCatalog) CatalogLoader.load(String.join("/", AmsUtil.getAMSThriftAddress(serviceConfig), catalog));
     try {
-      new Thread(() -> {
+      tableUpgradeExecutor.execute(() -> {
         TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
         upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
         try {
@@ -247,7 +247,7 @@ public class TableController extends RestBaseController {
           upgradeRunningInfo.get(tableIdentifier).setErrorMessage(AmsUtil.getStackTrace(t));
           upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
         } finally {
-          executor.schedule(
+          tableUpgradeExecutor.schedule(
               () -> upgradeRunningInfo.remove(tableIdentifier),
               60 * 60 * 1000,
               TimeUnit.MILLISECONDS);

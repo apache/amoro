@@ -505,12 +505,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private void loadTaskRuntimes() {
-      List<TaskRuntimeMeta> taskRuntimeMetas = getAs(
+      List<TaskRuntime> taskRuntimes = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      taskRuntimeMetas.forEach(meta -> {
-        TaskRuntime taskRuntime = meta.constructTaskRuntime();
+      taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwnership(this);
         taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);

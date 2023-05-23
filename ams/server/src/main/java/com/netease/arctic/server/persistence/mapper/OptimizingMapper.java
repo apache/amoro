@@ -6,7 +6,6 @@ import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
-import com.netease.arctic.server.optimizing.TaskRuntimeMeta;
 import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
@@ -146,7 +145,7 @@ public interface OptimizingMapper {
       @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
-  List<TaskRuntimeMeta> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
+  List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Update("UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, " +
       "start_time = #{taskRuntime.startTime," +
