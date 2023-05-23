@@ -23,6 +23,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.RecoverableArcticFileIO;
 import com.netease.arctic.io.TableTrashManager;
 import com.netease.arctic.io.TableTrashManagers;
@@ -198,6 +199,9 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   private void assertRecoverableFileIO(ArcticTable arcticTable) {
+    if (ArcticFileIOs.CLOSE_TRASH) {
+      return;
+    }
     Assert.assertTrue(arcticTable.io() instanceof RecoverableArcticFileIO);
     RecoverableArcticFileIO io = (RecoverableArcticFileIO) arcticTable.io();
     TableTrashManager expected = TableTrashManagers.build(arcticTable);
