@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.data.IcebergContentFile;
@@ -5,18 +23,20 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Set;
 
-public class BasicPartitionEvaluator extends PartitionEvaluator {
+public class CommonPartitionEvaluator implements PartitionEvaluator {
+  private final String partition;
   private final Set<String> deleteFileSet = Sets.newHashSet();
-  private final OptimizingConfig config;
-  private final TableRuntime tableRuntime;
-  private final long fragmentSize;
-  private final long planTime;
+  protected final OptimizingConfig config;
+  protected final TableRuntime tableRuntime;
+  protected final long fragmentSize;
+  protected final long planTime;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -38,12 +58,17 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
 
   private long cost = -1;
 
-  public BasicPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
-    super(partition);
+  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+    this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
+  }
+
+  @Override
+  public String getPartition() {
+    return partition;
   }
 
   protected boolean isFragmentFile(IcebergDataFile dataFile) {
@@ -80,37 +105,46 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
     segmentFileSize += dataFile.fileSizeInBytes();
     segmentFileCount += 1;
 
-    long deleteRecord = 0;
-    boolean equalityDeleteExist = false;
-    int posDeleteCount = 0;
-    for (IcebergContentFile<?> delete : deletes) {
-      addDelete(delete);
-      deleteRecord += delete.recordCount();
-      if (delete.content() == FileContent.POSITION_DELETES) {
-        posDeleteCount++;
-      } else {
-        equalityDeleteExist = true;
-      }
-    }
-    if (deleteRecord >= dataFile.recordCount() * config.getMajorDuplicateRatio()) {
+    if (shouldRewriteSegmentFile(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount += 1;
-    } else if (equalityDeleteExist || posDeleteCount > 1) {
+    } else if (shouldRewritePosForSegmentFile(dataFile, deletes)) {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount += 1;
     }
+    for (IcebergContentFile<?> delete : deletes) {
+      addDelete(delete);
+    }
+  }
+
+  public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    return getRecordCount(deletes) >= dataFile.recordCount() * config.getMajorDuplicateRatio();
+  }
+
+  public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (deletes.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
+      return true;
+    } else if (deletes.stream().filter(file -> file.content() == FileContent.POSITION_DELETES).count() > 1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private long getRecordCount(List<IcebergContentFile<?>> files) {
+    return files.stream().mapToLong(ContentFile::recordCount).sum();
   }
 
   private void addDelete(IcebergContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
-    if (delete.content() == FileContent.DATA || delete.content() == FileContent.EQUALITY_DELETES) {
-      equalityDeleteFileCount += 1;
-      equalityDeleteFileSize += delete.fileSizeInBytes();
-    } else {
+    if (delete.content() == FileContent.POSITION_DELETES) {
       posDeleteFileCount += 1;
       posDeleteFileSize += delete.fileSizeInBytes();
+    } else {
+      equalityDeleteFileCount += 1;
+      equalityDeleteFileSize += delete.fileSizeInBytes();
     }
   }
 
@@ -122,9 +156,11 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // TODO check
-      cost = rewriteSegmentFileSize * 4 + fragmentFileSize * 4 +
+      cost = rewriteSegmentFileSize * 2 + fragmentFileSize * 2 +
           rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
+      int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
+          equalityDeleteFileCount;
+      cost += fileCnt * config.getOpenFileCost();
     }
     return cost;
   }
@@ -140,29 +176,47 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
   }
 
   public boolean isMinorNecessary() {
-    int sourceFileCount = fragmentFileCount + equalityDeleteFileCount;
-    return sourceFileCount >= config.getMinorLeastFileCount() ||
-        (sourceFileCount > 1 &&
-            planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval());
+    int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+    return smallFileCount >= config.getMinorLeastFileCount() || (smallFileCount > 1 && reachMinorInterval());
   }
 
-  public boolean isFullNecessary() {
-    return config.getFullTriggerInterval() > 0 &&
+  protected boolean reachMinorInterval() {
+    return config.getMinorLeastInterval() >= 0 &&
+        planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
+  }
+
+  protected boolean reachFullInterval() {
+    return config.getFullTriggerInterval() >= 0 &&
         planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
+  public boolean isFullNecessary() {
+    if (!reachFullInterval()) {
+      return false;
+    }
+    return anyDeleteExist() || fragmentFileCount >= 2;
+  }
+
+  public boolean anyDeleteExist() {
+    return equalityDeleteFileCount > 0 || posDeleteFileCount > 0;
+  }
+
+  @Override
   public int getFragmentFileCount() {
     return fragmentFileCount;
   }
 
+  @Override
   public long getFragmentFileSize() {
     return fragmentFileSize;
   }
 
+  @Override
   public int getSegmentFileCount() {
     return segmentFileCount;
   }
 
+  @Override
   public long getSegmentFileSize() {
     return segmentFileSize;
   }
@@ -183,18 +237,22 @@ public class BasicPartitionEvaluator extends PartitionEvaluator {
     return rewritePosSegmentFileSize;
   }
 
+  @Override
   public int getEqualityDeleteFileCount() {
     return equalityDeleteFileCount;
   }
 
+  @Override
   public long getEqualityDeleteFileSize() {
     return equalityDeleteFileSize;
   }
 
+  @Override
   public int getPosDeleteFileCount() {
     return posDeleteFileCount;
   }
 
+  @Override
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
   }

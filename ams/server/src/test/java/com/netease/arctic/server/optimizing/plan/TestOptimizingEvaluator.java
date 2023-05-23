@@ -23,17 +23,14 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,13 +39,12 @@ import org.junit.runners.Parameterized;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class TestKeyedOptimizingEvaluator extends TableTestBase {
+public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
-  public TestKeyedOptimizingEvaluator(CatalogTestHelper catalogTestHelper,
-                                      TableTestHelper tableTestHelper) {
+  public TestOptimizingEvaluator(CatalogTestHelper catalogTestHelper,
+                                 TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -58,7 +54,11 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)}};
+            new BasicTableTestHelper(true, false)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, true)},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(false, false)}};
   }
 
   @Test
@@ -72,12 +72,12 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
   @Test
   public void testFragmentFiles() {
     closeFullOptimizing();
-    updateChangeHashBucket(1);
+    updateBaseHashBucket(1);
+    List<DataFile> dataFiles = Lists.newArrayList();
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
-    long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendChange(getArcticTable(),
-        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-            newRecords, false));
+    long transactionId = beginTransaction();
+    dataFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
     OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
@@ -86,37 +86,20 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
 
     // add more files
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
-    transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendChange(getArcticTable(),
-        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-            newRecords, false));
+    transactionId = beginTransaction();
+    dataFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
+        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
     pendingInput = optimizingEvaluator.getPendingInput();
 
-    KeyedTableFileScanHelper scan = new KeyedTableFileScanHelper(getArcticTable(),
-        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
-    List<DataFile> dataFiles =
-        scan.scan().stream().map(TableFileScanHelper.FileScanResult::file).collect(Collectors.toList());
-
     assertInput(pendingInput, FileInfo.buildFileInfo(getArcticTable().spec(), dataFiles));
   }
 
-  @Override
-  protected KeyedTable getArcticTable() {
-    return super.getArcticTable().asKeyedTable();
-  }
-
   protected OptimizingEvaluator buildOptimizingEvaluator() {
-    return new OptimizingEvaluator(buildTableRuntime(), getArcticTable(),
-        OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable()));
+    return new OptimizingEvaluator(getTableRuntime(), getArcticTable());
   }
-
-  protected TableRuntime buildTableRuntime() {
-    return new TableRuntime(getArcticTable());
-  }
-
 
   protected void assertEmptyInput(OptimizingEvaluator.PendingInput input) {
     Assert.assertEquals(input.getPartitions().size(), 0);
@@ -186,16 +169,20 @@ public class TestKeyedOptimizingEvaluator extends TableTestBase {
     }
   }
 
-  protected void updateChangeHashBucket(int bucket) {
-    getArcticTable().updateProperties().set(TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
+  @Override
+  protected AbstractPartitionPlan getPartitionPlan() {
+    return null;
   }
 
-  protected void updateBaseHashBucket(int bucket) {
-    getArcticTable().updateProperties().set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, bucket + "").commit();
-  }
-
-  protected void closeFullOptimizing() {
-    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  @Override
+  protected TableFileScanHelper getTableFileScanHelper() {
+    if (getArcticTable().isKeyedTable()) {
+      return new KeyedTableFileScanHelper(getArcticTable().asKeyedTable(),
+          OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable().asKeyedTable()));
+    } else {
+      return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(),
+          OptimizingTestHelpers.getCurrentTableSnapshot(getArcticTable()).snapshotId());
+    }
   }
 
 }

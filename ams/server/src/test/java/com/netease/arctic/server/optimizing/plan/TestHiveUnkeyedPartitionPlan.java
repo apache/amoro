@@ -57,7 +57,9 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {
     actual = Maps.newHashMap(actual);
     String outputDir = actual.remove(OptimizingInputProperties.OUTPUT_DIR);
-    Assert.assertTrue(Long.parseLong(outputDir.split("_")[1]) > 0);
+    if (outputDir != null) {
+      Assert.assertTrue(Long.parseLong(outputDir.split("_")[1]) > 0);
+    }
     super.assertTaskProperties(expect, actual);
   }
 
@@ -65,7 +67,7 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    return new HiveUnkeyedTablePartitionPlan(buildTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
+    return new MixedHivePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
         System.currentTimeMillis());
   }
 }

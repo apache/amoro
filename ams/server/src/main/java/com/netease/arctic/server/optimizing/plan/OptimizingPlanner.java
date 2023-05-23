@@ -22,7 +22,6 @@ import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.TableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -32,10 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OptimizingPlanner extends OptimizingEvaluator {
@@ -49,21 +46,18 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   protected long processId;
   private final double availableCore;
   private final long planTime;
-  private OptimizingType optimizingType = OptimizingType.MINOR;
+  private OptimizingType optimizingType;
   private final PartitionPlannerFactory partitionPlannerFactory;
   private List<TaskDescriptor> tasks;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TableSnapshot tableSnapshot,
-                           double availableCore) {
-    super(tableRuntime, table, tableSnapshot);
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
+    super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
-        partition -> true:
-        tableRuntime.getPendingInput().getPartitions()::contains;
-
+        null : tableRuntime.getPendingInput().getPartitions()::contains;
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();
-    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, this.planTime);
-    this.partitionPlannerFactory = new PartitionPlannerFactory(this.arcticTable, this.tableRuntime, this.planTime);
+    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
+    this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
   }
 
   @Override
@@ -72,12 +66,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public Map<String, Long> getFromSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
+    return partitionPlanMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
   }
 
   public Map<String, Long> getToSequence() {
-    return partitionEvaluatorMap.entrySet().stream()
+    return partitionPlanMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
   }
 
@@ -104,7 +98,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
     long startTime = System.nanoTime();
 
-    if (!isInitEvaluator) {
+    if (!isInitialized) {
       initEvaluator();
     }
     if (!super.isNecessary()) {
@@ -114,7 +108,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionEvaluatorMap.values());
+    List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
     Collections.sort(evaluators, Comparator.comparing(evaluator -> evaluator.getCost() * -1));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
@@ -133,8 +127,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     for (PartitionEvaluator evaluator : inputPartitions) {
       tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
     }
-    if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
-      optimizingType = OptimizingType.MAJOR;
+    if (!tasks.isEmpty()) {
+      if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL_MAJOR)) {
+        optimizingType = OptimizingType.FULL_MAJOR;
+      } else if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
+        optimizingType = OptimizingType.MAJOR;
+      } else {
+        optimizingType = OptimizingType.MINOR;
+      }
     }
     long endTime = System.nanoTime();
     if (LOG.isDebugEnabled()) {
@@ -181,20 +181,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
     public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
       if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-        return new IcebergPartitionPlan(tableRuntime, partitionPath, arcticTable, planTime);
+        return new IcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
-          if (arcticTable.isKeyedTable()) {
-            return new HiveKeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
-          } else {
-            return new HiveUnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
-          }
+          return new MixedHivePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
         } else {
-          if (arcticTable.isKeyedTable()) {
-            return new KeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
-          } else {
-            return new UnkeyedTablePartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
-          }
+          return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
         }
       }
     }

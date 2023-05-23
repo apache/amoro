@@ -18,14 +18,14 @@ public class PlatformFileManager extends PersistentBase {
   }
 
   /**
-   * get file content
+   * getRuntime file content
    */
   public String getFileContentB64ById(Integer fileId) {
     return getAs(PlatformFileMapper.class, e -> e.getFileById(fileId));
   }
 
   /**
-   * get file content
+   * getRuntime file content
    */
   public String getFileContentById(Integer fileId) {
     String fileContent = getAs(PlatformFileMapper.class, e -> e.getFileById(fileId));

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.scan;
+package com.netease.arctic.server.table;
 
 import org.apache.iceberg.util.StructLikeMap;
 

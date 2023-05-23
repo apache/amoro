@@ -30,23 +30,24 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.BinPacking;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
+public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
-  public KeyedTablePartitionPlan(TableRuntime tableRuntime,
-                                 ArcticTable table, String partition, long planTime) {
-    super(tableRuntime, table, partition, planTime, new BasicPartitionEvaluator(tableRuntime, partition, planTime));
+  public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
+                                   ArcticTable table, String partition, long planTime) {
+    super(tableRuntime, table, partition, planTime);
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
-    if (isChangeFile(dataFile)) {
+    if (evaluator().isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
@@ -57,16 +58,8 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      return dataFile.fileSizeInBytes() <= maxFragmentSize;
-    } else if (file.type() == DataFileType.INSERT_FILE) {
-      // for keyed table, we treat all insert files as fragment files
-      return true;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
+  protected MixedIcebergPartitionEvaluator evaluator() {
+    return ((MixedIcebergPartitionEvaluator) super.evaluator());
   }
 
   @Override
@@ -74,18 +67,8 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     if (super.taskNeedExecute(task)) {
       return true;
     } else {
-      return task.getRewriteDataFiles().stream().anyMatch(this::isChangeFile);
+      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
     }
-  }
-
-  protected boolean isChangeFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
-  }
-
-  @Override
-  protected AbstractPartitionPlan.TaskSplitter buildTaskSplitter() {
-    return new TaskSplitter();
   }
 
   @Override
@@ -94,12 +77,168 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
     return properties;
   }
+  
+  protected boolean isKeyedTable() {
+    return tableObject.isKeyedTable();
+  }
+
+  @Override
+  protected TaskSplitter buildTaskSplitter() {
+    if (isKeyedTable()) {
+      return new TreeNodeTaskSplitter();
+    } else {
+      return new BinPackingTaskSplitter();
+    }
+  }
+
+  @Override
+  protected CommonPartitionEvaluator buildEvaluator() {
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
+  }
+
+  protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
+    protected final boolean keyedTable;
+    protected boolean hasChangeFiles = false;
+
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
+                                          boolean keyedTable) {
+      super(tableRuntime, partition, planTime);
+      this.keyedTable = keyedTable;
+    }
+
+    @Override
+    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      super.addFile(dataFile, deletes);
+      if (!hasChangeFiles && isChangeFile(dataFile)) {
+        hasChangeFiles = true;
+      }
+    }
+
+    protected boolean isChangeFile(IcebergDataFile dataFile) {
+      if (!keyedTable) {
+        return false;
+      }
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
+    }
+
+    @Override
+    protected boolean isFragmentFile(IcebergDataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      if (file.type() == DataFileType.BASE_FILE) {
+        return dataFile.fileSizeInBytes() <= fragmentSize;
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // for keyed table, we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
+    @Override
+    public boolean isMinorNecessary() {
+      if (keyedTable) {
+        int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+        int baseSplitCount = getBaseSplitCount();
+        if (smallFileCount >= Math.max(baseSplitCount, config.getMinorLeastFileCount())) {
+          return true;
+        } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return super.isMinorNecessary();
+      }
+    }
+
+    protected int getBaseSplitCount() {
+      if (keyedTable) {
+        return config.getBaseHashBucket();
+      } else {
+        return 1;
+      }
+    }
+
+    @Override
+    public boolean isFullNecessary() {
+      if (!reachFullInterval()) {
+        return false;
+      }
+      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles;
+    }
+  }
+
+  /**
+   * split task with bin-packing
+   */
+  private class BinPackingTaskSplitter implements TaskSplitter {
+
+    @Override
+    public List<SplitTask> splitTasks(int targetTaskCount) {
+      // bin-packing
+      List<FileTask> allDataFiles = Lists.newArrayList();
+      segmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
+      fragmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+
+      long taskSize = config.getTargetSize();
+      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
+      int taskCnt = (int) (sum / taskSize) + 1;
+      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
+          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
+
+      // collect
+      List<SplitTask> results = Lists.newArrayList();
+      for (List<FileTask> fileTasks : packed) {
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = com.google.common.collect.Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = com.google.common.collect.Maps.newHashMap();
+        fileTasks.stream().filter(FileTask::isFragment)
+            .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        fileTasks.stream().filter(FileTask::isSegment)
+            .forEach(f -> segmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        results.add(new SplitTask(fragmentFiles, segmentFiles));
+      }
+      return results;
+    }
+  }
+
+  /**
+   * util class for bin-pack
+   */
+  private static class FileTask {
+    private final IcebergDataFile file;
+    private final List<IcebergContentFile<?>> deleteFiles;
+    private final boolean isFragment;
+
+    public FileTask(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles, boolean isFragment) {
+      this.file = file;
+      this.deleteFiles = deleteFiles;
+      this.isFragment = isFragment;
+    }
+
+    public IcebergDataFile getFile() {
+      return file;
+    }
+
+    public List<IcebergContentFile<?>> getDeleteFiles() {
+      return deleteFiles;
+    }
+
+    public boolean isFragment() {
+      return isFragment;
+    }
+
+    public boolean isSegment() {
+      return !isFragment;
+    }
+  }
 
   /**
    * split task with {@link DataTreeNode}
    */
-  private class TaskSplitter implements AbstractPartitionPlan.TaskSplitter {
-
+  private class TreeNodeTaskSplitter implements TaskSplitter {
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
@@ -120,26 +259,8 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  private static class SplitIfNoFileExists implements Predicate<FileTree> {
-
-    public SplitIfNoFileExists() {
-    }
-
-    /**
-     * file tree can split if:
-     * - root node isn't leaf node
-     * - and no file exists in the root node
-     *
-     * @param fileTree - file tree to split
-     * @return true if this fileTree need split
-     */
-    @Override
-    public boolean test(FileTree fileTree) {
-      return !fileTree.isLeaf() && fileTree.isRootEmpty();
-    }
-  }
-
   private static class FileTree {
+
     private final DataTreeNode node;
     private final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
     private final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
@@ -272,6 +393,24 @@ public class KeyedTablePartitionPlan extends AbstractPartitionPlan {
     private boolean fileExist() {
       return !segmentFiles.isEmpty() || !fragmentFiles.isEmpty();
     }
+  }
 
+  private static class SplitIfNoFileExists implements Predicate<FileTree> {
+
+    public SplitIfNoFileExists() {
+    }
+
+    /**
+     * file tree can split if:
+     * - root node isn't leaf node
+     * - and no file exists in the root node
+     *
+     * @param fileTree - file tree to split
+     * @return true if this fileTree need split
+     */
+    @Override
+    public boolean test(FileTree fileTree) {
+      return !fileTree.isLeaf() && fileTree.isRootEmpty();
+    }
   }
 }

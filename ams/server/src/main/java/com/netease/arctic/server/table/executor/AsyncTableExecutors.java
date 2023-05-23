@@ -1,7 +1,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.table.TableRuntimeManager;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.utils.Configurations;
 
 public class AsyncTableExecutors {
@@ -19,19 +19,47 @@ public class AsyncTableExecutors {
     return instance;
   }
 
-  public void initialize(TableRuntimeManager tableRuntimes, Configurations conf) {
-    this.snapshotsExpiringExecutor = new SnapshotsExpiringExecutor(tableRuntimes,
+  public void setup(TableManager tableManager, Configurations conf) {
+    this.snapshotsExpiringExecutor = new SnapshotsExpiringExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.EXPIRE_THREAD_POOL_SIZE));
-    this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableRuntimes,
+    this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.ORPHAN_CLEAN_THREAD_POOL_SIZE));
-    this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableRuntimes,
+    this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_POOL_SIZE));
-    this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableRuntimes);
-    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableRuntimes);
-    this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableRuntimes,
+    this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableManager);
+    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
+    this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE));
-    this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableRuntimes,
+    this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.SNAPSHOTS_REFRESHING_THREAD_POOL_SIZE),
         conf.getLong(ArcticManagementConf.SNAPSHOTS_REFRESHING_INTERVAL));
+  }
+
+  public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
+    return snapshotsExpiringExecutor;
+  }
+
+  public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
+    return tableRefreshingExecutor;
+  }
+
+  public OrphanFilesCleaningExecutor getOrphanFilesCleaningExecutor() {
+    return orphanFilesCleaningExecutor;
+  }
+
+  public BlockerExpiringExecutor getBlockerExpiringExecutor() {
+    return blockerExpiringExecutor;
+  }
+
+  public OptimizingCommitExecutor getOptimizingCommitExecutor() {
+    return optimizingCommitExecutor;
+  }
+
+  public OptimizingExpiringExecutor getOptimizingExpiringExecutor() {
+    return optimizingExpiringExecutor;
+  }
+
+  public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
+    return hiveCommitSyncExecutor;
   }
 }

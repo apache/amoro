@@ -43,7 +43,7 @@ public class LoginController {
   }
 
   /**
-   * get current user.
+   * getRuntime current user.
    */
   public void getCurrent(Context ctx) {
     SessionInfo user = ctx.sessionAttribute("user");

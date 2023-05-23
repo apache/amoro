@@ -136,7 +136,7 @@ CREATE TABLE `table_optimizing_process`
     `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
-    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition'
+    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -147,7 +147,7 @@ CREATE TABLE `task_runtime`
     `task_id`                   int(11) NOT NULL,
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
-    `partition_data`                 varchar(128)  DEFAULT NULL COMMENT 'Partition data',
+    `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',
@@ -158,6 +158,7 @@ CREATE TABLE `task_runtime`
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
+    `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';

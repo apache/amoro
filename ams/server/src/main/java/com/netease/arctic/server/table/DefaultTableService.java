@@ -15,6 +15,7 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -45,7 +46,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
   private volatile boolean started = false;
-  private TableRuntimeHandler headHandler;
+  private RuntimeHandlerChain headHandler;
   private Timer tableExplorerTimer;
 
   public DefaultTableService(Configurations configuration) {
@@ -74,6 +75,13 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public boolean catalogExist(String catalogName) {
     checkStarted();
     return internalCatalogMap.containsKey(catalogName) || externalCatalogMap.containsKey(catalogName);
+  }
+
+  @Override
+  public ServerCatalog getServerCatalog(String catalogName) {
+    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
+        .orElse(externalCatalogMap.get(catalogName));
+    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   @Override
@@ -141,10 +149,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
     ServerTableIdentifier tableIdentifier = catalog.createTable(tableMeta);
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
+    ArcticTable table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
-      headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+      headHandler.fireTableAdded(table, tableRuntime);
     }
   }
 
@@ -185,11 +194,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
-  @Override
-  public TableRuntimeHandler getHeadHandler() {
-    return headHandler;
-  }
-
   @Deprecated
   @Override
   public List<TableMetadata> listTableMetas() {
@@ -224,7 +228,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
     checkStarted();
-    TableRuntime tableRuntime = get(ServerTableIdentifier.of(tableIdentifier));
+    TableRuntime tableRuntime = getRuntime(ServerTableIdentifier.of(tableIdentifier));
     if (tableRuntime != null) {
       tableRuntime.release(blockerId);
     }
@@ -244,24 +248,32 @@ public class DefaultTableService extends PersistentBase implements TableService 
         .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
   }
 
-  private ServerCatalog getServerCatalog(String catalogName) {
-    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
-        .orElse(externalCatalogMap.get(catalogName));
-    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
-  }
-
   private InternalCatalog getInternalCatalog(String catalogName) {
     return Optional.ofNullable(internalCatalogMap.get(catalogName)).orElseThrow(() ->
         new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   @Override
-  public void addHandler(TableRuntimeHandler handler) {
+  public void addHandlerChain(RuntimeHandlerChain handler) {
     checkNotStarted();
     if (headHandler == null) {
       headHandler = handler;
     } else {
       headHandler.appendNext(handler);
+    }
+  }
+
+  @Override
+  public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    if (headHandler != null) {
+      headHandler.fireStatusChanged(tableRuntime, originalStatus);
+    }
+  }
+
+  @Override
+  public void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    if (headHandler != null) {
+      headHandler.fireConfigChanged(tableRuntime, originalConfig);
     }
   }
 
@@ -291,7 +303,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
-    TableRuntime tableRuntime = get(tableIdentifier);
+    TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
@@ -299,7 +311,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
-  public TableRuntime get(ServerTableIdentifier tableIdentifier) {
+  public TableRuntime getRuntime(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.get(tableIdentifier);
   }
@@ -409,10 +421,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     ServerTableIdentifier tableIdentifier =
         externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
     try {
-      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this);
+      ArcticTable table = externalCatalog.loadTable(tableIdentifier.getDatabase(),
+          tableIdentifier.getTableName());
+      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
       tableRuntimeMap.put(tableIdentifier, tableRuntime);
       if (headHandler != null) {
-        headHandler.fireTableAdded(tableRuntime.loadTable(), tableRuntime);
+        headHandler.fireTableAdded(table, tableRuntime);
       }
     } catch (Exception e) {
       disposeTable(externalCatalog, tableIdentifier);

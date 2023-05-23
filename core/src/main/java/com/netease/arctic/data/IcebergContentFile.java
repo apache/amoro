@@ -25,6 +25,7 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Interface can get iceberg sequenceNumber
@@ -77,5 +78,21 @@ public abstract class IcebergContentFile<F> implements ContentFile<F>, Serializa
       throw new IllegalArgumentException("Only support DataFile or DeleteFile, can not support: " +
           contentFile.getClass().getSimpleName());
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    return Objects.equals(path(), ((IcebergContentFile<?>) o).path());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(path());
   }
 }

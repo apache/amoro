@@ -33,18 +33,11 @@ public class TableRuntimeMeta {
   public TableRuntimeMeta() {
   }
 
-  public TableRuntime constructTableRuntime(TableRuntimeInitializer initializer) {
+  public TableRuntime constructTableRuntime(TableManager initializer) {
     if (tableRuntime == null) {
       tableRuntime = new TableRuntime(this, initializer);
     }
     return tableRuntime;
-  }
-
-  public void constructTableRuntime(OptimizingProcess process) {
-    if (tableRuntime == null) {
-      throw new IllegalStateException("TableRuntime is not constructed yet.");
-    }
-    tableRuntime.recover(process);
   }
 
   public TableRuntime getTableRuntime() {

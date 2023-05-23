@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server;
+package com.netease.arctic.server.utils;
 
+import com.netease.arctic.server.TableManagementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,8 @@ public class ThriftServiceProxy<S> implements InvocationHandler {
   }
 
   @SuppressWarnings("unchecked")
-  public static <S> S createProxy(Class<S> serviceClazz, S service, Function<Throwable, Throwable> exceptionTransfer) {
+  public static <S> S createProxy(Class<S> serviceClazz, S service,
+                                  Function<Throwable, Throwable> exceptionTransfer) {
     return (S) Proxy.newProxyInstance(ThriftServiceProxy.class.getClassLoader(),
         new Class<?>[]{serviceClazz}, new ThriftServiceProxy<>(service, exceptionTransfer));
   }

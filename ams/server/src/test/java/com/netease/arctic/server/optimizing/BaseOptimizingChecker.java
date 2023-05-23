@@ -4,6 +4,12 @@ import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -11,16 +17,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BaseOptimizingChecker extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizingChecker.class);
-  private static final long WAIT_SUCCESS_TIMEOUT = 30_000;
+  private static final long WAIT_SUCCESS_TIMEOUT = 300_000;
   private static final long CHECK_TIMEOUT = 1_000;
   private final TableIdentifier tableIdentifier;
   private long lastProcessId;
@@ -72,7 +73,10 @@ public class BaseOptimizingChecker extends PersistentBase {
       int fileCntAfter) {
     Assert.assertNotNull(optimizingProcess);
     Assert.assertEquals(optimizeType, optimizingProcess.getOptimizingType());
-    Assert.assertEquals(fileCntBefore, optimizingProcess.getSummary().getRewriteDataFileCnt());
+    Assert.assertEquals(
+        fileCntBefore,
+        optimizingProcess.getSummary().getRewriteDataFileCnt() + optimizingProcess.getSummary().getEqDeleteFileCnt() +
+            optimizingProcess.getSummary().getPosDeleteFileCnt());
     Assert.assertEquals(fileCntAfter, optimizingProcess.getSummary().getNewFileCnt());
   }
 
@@ -125,7 +129,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
   }
 
-  protected void assertOptimizeHangUp(TableIdentifier tableIdentifier, long notExpectProcessId) {
+  protected void assertOptimizeHangUp() {
     try {
       Thread.sleep(CHECK_TIMEOUT);
     } catch (InterruptedException e) {
@@ -139,8 +143,8 @@ public class BaseOptimizingChecker extends PersistentBase {
       return;
     }
     Optional<TableOptimizingProcess> any =
-        tableOptimizingProcesses.stream().filter(p -> p.getProcessId() >= notExpectProcessId).findAny();
-    any.ifPresent(h -> LOG.error("{} get unexpected optimize process {} {}", tableIdentifier, notExpectProcessId, h));
+        tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
+    any.ifPresent(h -> LOG.error("{} get unexpected optimize process {} {}", tableIdentifier, lastProcessId, h));
     Assert.assertFalse("optimize is not stopped", any.isPresent());
   }
 

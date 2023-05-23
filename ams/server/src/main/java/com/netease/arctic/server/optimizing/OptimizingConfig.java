@@ -1,8 +1,8 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Objects;
 
 import java.util.Map;
 
@@ -29,6 +29,9 @@ public class OptimizingConfig {
   //self-optimizing.max-file-count
   private int maxFileCount;
 
+  //read.split.open-file-cost
+  private long openFileCost;
+
   //self-optimizing.fragment-ratio
   private int fragmentRatio;
 
@@ -46,10 +49,12 @@ public class OptimizingConfig {
 
   //self-optimizing.full.trigger.interval
   private int fullTriggerInterval;
-  private long maxFragmentSize;
-  private long maxDuplicateSize;
-  
+
+  //self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
+
+  //base.file-index.hash-bucket
+  private int baseHashBucket;
 
   public OptimizingConfig() {
   }
@@ -114,6 +119,15 @@ public class OptimizingConfig {
 
   public OptimizingConfig setMaxFileCount(int maxFileCount) {
     this.maxFileCount = maxFileCount;
+    return this;
+  }
+
+  public long getOpenFileCost() {
+    return openFileCost;
+  }
+
+  public OptimizingConfig setOpenFileCost(long openFileCost) {
+    this.openFileCost = openFileCost;
     return this;
   }
 
@@ -188,6 +202,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public int getBaseHashBucket() {
+    return baseHashBucket;
+  }
+
+  public OptimizingConfig setBaseHashBucket(int baseHashBucket) {
+    this.baseHashBucket = baseHashBucket;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -195,20 +218,20 @@ public class OptimizingConfig {
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
         maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
-        targetSize == that.targetSize && maxFileCount == that.maxFileCount && fragmentRatio == that.fragmentRatio &&
-        minorLeastFileCount == that.minorLeastFileCount && minorLeastInterval == that.minorLeastInterval &&
-        majorLeastFileCount == that.majorLeastFileCount &&
+        targetSize == that.targetSize && maxFileCount == that.maxFileCount && openFileCost == that.openFileCost &&
+        fragmentRatio == that.fragmentRatio && minorLeastFileCount == that.minorLeastFileCount &&
+        minorLeastInterval == that.minorLeastInterval && majorLeastFileCount == that.majorLeastFileCount &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
-        fullTriggerInterval == that.fullTriggerInterval && maxFragmentSize == that.maxFragmentSize &&
-        maxDuplicateSize == that.maxDuplicateSize && fullRewriteAllFiles == that.fullRewriteAllFiles &&
+        fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
+        baseHashBucket == that.baseHashBucket &&
         Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
-        maxFileCount, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorLeastFileCount, majorDuplicateRatio,
-        fullTriggerInterval, maxFragmentSize, maxDuplicateSize, fullRewriteAllFiles);
+        maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorLeastFileCount,
+        majorDuplicateRatio, fullTriggerInterval, fullRewriteAllFiles, baseHashBucket);
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
@@ -236,6 +259,10 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
             TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT))
+        .setOpenFileCost(CompatiblePropertyUtil.propertyAsLong(
+            properties,
+            TableProperties.SPLIT_OPEN_FILE_COST,
+            TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT))
         .setTargetSize(CompatiblePropertyUtil.propertyAsLong(
             properties,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
@@ -267,6 +294,10 @@ public class OptimizingConfig {
         .setFullRewriteAllFiles(CompatiblePropertyUtil.propertyAsBoolean(
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
-            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT));
+            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
+            properties,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT));
   }
 }

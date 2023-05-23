@@ -88,7 +88,7 @@ public class DashboardServer {
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
-    this.tableController = new TableController(tableService, tableDescriptor);
+    this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
@@ -305,7 +305,7 @@ public class DashboardServer {
             ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
           }
         } catch (Exception fe) {
-          LOG.error("Failed to get index.html {}", fe.getMessage(), fe);
+          LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
         }
       } else if (e instanceof SignatureCheckException) {
         ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
@@ -381,7 +381,7 @@ public class DashboardServer {
     long receive = System.currentTimeMillis();
     APITokenManager apiTokenService = new APITokenManager();
     try {
-      //get secret
+      //getRuntime secret
       String secrete = apiTokenService.getSecretByKey(apiKey);
 
       if (secrete == null) {

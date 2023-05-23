@@ -38,6 +38,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.server.utils.ThriftServiceProxy;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -52,10 +53,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -111,17 +113,29 @@ public class ArcticServiceContainer {
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
     optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
-    initInternalExecutors();
+
+    LOG.info("Setting up AMS table executors...");
+    AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
+    tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
+    tableService.initialize();
+    LOG.info("AMS table service have been initialized");
+
     initThriftService();
     startThriftService();
     startHttpService();
   }
 
   public void dispose() {
-    server.stop();
-    dashboardServer.stopRestServer();
-    tableService.dispose();
-    tableService = null;
+    if (server != null) {
+      server.stop();
+    }
+    if (dashboardServer != null) {
+      dashboardServer.stopRestServer();
+    }
+    if (tableService != null) {
+      tableService.dispose();
+      tableService = null;
+    }
     optimizingService = null;
   }
 
@@ -144,24 +158,18 @@ public class ArcticServiceContainer {
     return this.optimizingService;
   }
 
-  private void initConfig() throws IllegalConfigurationException, FileNotFoundException {
+  private void initConfig() throws IllegalConfigurationException, IOException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
 
   private void startThriftService() {
-    tableService.initialize();
     Thread thread = new Thread(() -> {
       server.serve();
       LOG.info("Thrift services have been started");
     }, "Thrift-server-thread");
     thread.setDaemon(true);
     thread.start();
-  }
-
-  private void initInternalExecutors() {
-    LOG.info("Initializing AMS table executors...");
-    AsyncTableExecutors.getInstance().initialize(tableService, serviceConfig);
   }
 
   private void startHttpService() {
@@ -219,7 +227,7 @@ public class ArcticServiceContainer {
 
     private JSONObject yamlConfig;
 
-    public void init() throws IllegalConfigurationException, FileNotFoundException {
+    public void init() throws IllegalConfigurationException, IOException {
       initServiceConfig();
       initContainerConfig();
       initResourceGroupConfig();
@@ -248,10 +256,10 @@ public class ArcticServiceContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void initServiceConfig() throws FileNotFoundException {
+    private void initServiceConfig() throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getArcticHome() + SERVER_CONFIG_PATH;
-      yamlConfig = new JSONObject(new Yaml().loadAs(new FileInputStream(configPath), Map.class));
+      yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);

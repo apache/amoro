@@ -1,64 +1,60 @@
 package com.netease.arctic.server;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.ams.api.resource.ResourceType;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
+import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
-import com.netease.arctic.server.catalog.CatalogBuilder;
-import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.ResourceContainers;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.shaded.com.google.common.io.MoreFiles;
 import org.apache.curator.shaded.com.google.common.io.RecursiveDeleteOption;
+import org.apache.iceberg.common.DynFields;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;
-import org.junit.jupiter.api.BeforeAll;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class AmsEnvironment {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsEnvironment.class);
-  private LocalOptimizer optimizer;
   private final String rootPath;
   private static final String DEFAULT_ROOT_PATH = "/tmp/arctic_integration";
   private static final String OPTIMIZE_GROUP = "default";
   private ArcticServiceContainer arcticService;
   private AtomicBoolean amsExit;
   private int thriftBindPort;
+  private final TestHMS testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
-
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
-  private static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
+  public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
+  public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
+  public static String MIXED_ICEBERG_CATALOG_DIR = "/mixed_iceberg/warehouse";
+  public static final String MIXED_HIVE_CATALOG = "mixed_hive_catalog";
 
   public static void main(String[] args) throws Exception {
     AmsEnvironment amsEnvironment = new AmsEnvironment();
     amsEnvironment.start();
     amsEnvironment.startOptimizer();
-    Thread.sleep(2*60*1000);
+    Thread.sleep(2 * 60 * 1000);
     amsEnvironment.stopOptimizer();
   }
 
@@ -67,7 +63,6 @@ public class AmsEnvironment {
   }
 
   public AmsEnvironment(String rootPath) throws Exception {
-    MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
     this.rootPath = rootPath;
     LOG.info("ams environment root path: " + rootPath);
     String path = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
@@ -76,18 +71,30 @@ public class AmsEnvironment {
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     amsExit = new AtomicBoolean(false);
     arcticService = new ArcticServiceContainer();
+    testHMS = new TestHMS();
   }
 
   public void start() throws Exception {
     startAms();
+    DynFields.UnboundField<Boolean> field =
+        DynFields.builder().hiddenImpl(DefaultTableService.class, "started").build();
+    boolean tableServiceIsStart = field.bind(arcticService.getTableService()).get();
+    long startTime = System.currentTimeMillis();
+    while (!tableServiceIsStart) {
+      if (System.currentTimeMillis() - startTime > 10000) {
+        throw new RuntimeException("table service not start yet after 10s");
+      }
+      Thread.sleep(1000);
+      tableServiceIsStart = field.bind(arcticService.getTableService()).get();
+    }
     initCatalog();
   }
 
   public void stop() throws IOException {
+    stopOptimizer();
     if (this.arcticService != null) {
       this.arcticService.dispose();
     }
-    stopOptimizer();
     MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
   }
 
@@ -95,27 +102,48 @@ public class AmsEnvironment {
     return catalogs.get(name);
   }
 
+  public boolean tableExist(TableIdentifier tableIdentifier) {
+    return arcticService.getTableService().tableExist(tableIdentifier.buildTableIdentifier());
+  }
+
+  public TestHMS getTestHMS() {
+    return testHMS;
+  }
+
   private void initCatalog() {
     createIcebergCatalog();
+    createMixIcebergCatalog();
+    createMixHiveCatalog();
   }
 
   private void createIcebergCatalog() {
     String warehouseDir = rootPath + ICEBERG_CATALOG_DIR;
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
-    properties.put("warehouse", warehouseDir);
+    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
     CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.ICEBERG);
     arcticService.getTableService().createCatalog(catalogMeta);
     catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + ICEBERG_CATALOG));
   }
 
-  public void createMixIcebergCatalog() {
-
+  private void createMixIcebergCatalog() {
+    String warehouseDir = rootPath + MIXED_ICEBERG_CATALOG_DIR;
+    Map<String, String> properties = Maps.newHashMap();
+    createDirIfNotExist(warehouseDir);
+    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
+    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(MIXED_ICEBERG_CATALOG,
+        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
+    arcticService.getTableService().createCatalog(catalogMeta);
+    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_ICEBERG_CATALOG));
   }
 
-  public void createMixHiveCatalog() {
-
+  private void createMixHiveCatalog() {
+    Map<String, String> properties = Maps.newHashMap();
+    CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(MIXED_HIVE_CATALOG,
+        properties, testHMS.getHiveConf(), TableFormat.MIXED_HIVE);
+    arcticService.getTableService().createCatalog(catalogMeta);
+    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_HIVE_CATALOG));
   }
 
   private void createDirIfNotExist(String warehouseDir) {
@@ -129,7 +157,7 @@ public class AmsEnvironment {
 
   public void startOptimizer() {
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024","-a", getAmsUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {
@@ -142,7 +170,6 @@ public class AmsEnvironment {
     arcticService.getOptimizingService().listOptimizers()
         .forEach(resource -> {
           ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
-          arcticService.getOptimizingService().deleteResource(resource.getResourceId());
         });
   }
 
@@ -159,6 +186,7 @@ public class AmsEnvironment {
             LOG.info("start ams");
             genThriftBindPort();
             arcticService.setConfig(ArcticManagementConf.THRIFT_BIND_PORT, thriftBindPort);
+            arcticService.setConfig(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL, 5 * 1000L);
             // when AMS is successfully running, this thread will wait here
             arcticService.startService();
             break;
@@ -239,7 +267,7 @@ public class AmsEnvironment {
         "  database:\n" +
         "    type: \"derby\"\n" +
         "    jdbc-driver-class: \"org.apache.derby.jdbc.EmbeddedDriver\"\n" +
-        "    url: \"jdbc:derby:" + rootPath + "/derby;create=true\"\n" +
+        "    url: \"jdbc:derby:" + rootPath.replace("\\", "\\\\") + "/derby;create=true\"\n" +
         "\n" +
         "  terminal:\n" +
         "    backend: local\n" +

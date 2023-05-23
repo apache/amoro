@@ -138,6 +138,7 @@ CREATE TABLE task_runtime (
     thread_id       INT,
     rewrite_output  BLOB,
     metrics_summary CLOB,
+    properties      CLOB,
     CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id)
 );
 

@@ -34,15 +34,17 @@ import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableConfiguration;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeHandler;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,12 +68,18 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
-
+  private final TableManager tableManager;
+  private RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
-    tableService.addHandler(new TableRuntimeHandlerImpl());
+    this.tableManager = tableService;
+    this.tableHandlerChain = new TableRuntimeHandlerImpl();
+  }
+
+  public RuntimeHandlerChain getTableRuntimeHandler() {
+    return tableHandlerChain;
   }
 
   //TODO optimizing code
@@ -82,7 +90,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     optimizerGroups.forEach(group -> {
       String groupName = group.getName();
       List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
-      optimizingQueueByGroup.put(groupName, new OptimizingQueue(group,
+      optimizingQueueByGroup.put(groupName, new OptimizingQueue(tableManager, group,
           Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new)));
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
@@ -135,14 +143,16 @@ public class DefaultOptimizingService extends DefaultResourceManager
    * @return OptimizeQueueItem
    */
   private OptimizingQueue getQueueByGroup(String optimizerGroup) {
-    Preconditions.checkArgument(optimizerGroup != null,
+    Preconditions.checkArgument(
+        optimizerGroup != null,
         "optimizerGroup can not be null");
     return Optional.ofNullable(optimizingQueueByGroup.get(optimizerGroup))
         .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
   }
 
   private OptimizingQueue getQueueByToken(String token) {
-    Preconditions.checkArgument(token != null,
+    Preconditions.checkArgument(
+        token != null,
         "optimizer token can not be null");
     return Optional.ofNullable(optimizingQueueByToken.get(token))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
@@ -150,7 +160,8 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public List<OptimizerInstance> listOptimizers() {
-    return optimizingQueueByGroup.values().stream()
+    return optimizingQueueByGroup.values()
+        .stream()
         .flatMap(queue -> queue.getOptimizers().stream())
         .collect(Collectors.toList());
   }
@@ -165,7 +176,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     getQueueByGroup(group).removeOptimizer(resourceId);
   }
 
-  private class TableRuntimeHandlerImpl extends TableRuntimeHandler {
+  private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
 
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {

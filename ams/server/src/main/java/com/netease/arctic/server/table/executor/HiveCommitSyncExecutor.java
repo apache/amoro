@@ -6,8 +6,8 @@ import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeManager;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -39,7 +39,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   // 10 minutes
   private static final long INTERVAL = 10 * 60 * 1000L;
 
-  public HiveCommitSyncExecutor(TableRuntimeManager tableRuntimes, int poolSize) {
+  public HiveCommitSyncExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);
   }
 
@@ -59,7 +59,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {
       LOG.info("{} start hive sync", tableIdentifier);
-      ArcticTable arcticTable = tableRuntime.loadTable();
+      ArcticTable arcticTable = loadTable(tableRuntime);
       if (!TableTypeUtil.isHive(arcticTable)) {
         LOG.debug("{} is not a support hive table", tableIdentifier);
         return;
@@ -87,7 +87,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   }
 
   /**
-   * once get location from iceberg property, should update hive table location,
+   * once getRuntime location from iceberg property, should update hive table location,
    * because only arctic update hive table location for unPartitioned table.
    */
   private static void syncNoPartitionTable(
@@ -107,7 +107,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
         return hiveTable.getSd().getLocation();
       });
     } catch (Exception e) {
-      LOG.error("{} get hive location failed", arcticTable.id(), e);
+      LOG.error("{} getRuntime hive location failed", arcticTable.id(), e);
       return;
     }
 

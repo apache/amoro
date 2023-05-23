@@ -38,6 +38,8 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Collections;
+import java.util.Comparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,8 @@ import java.util.stream.Collectors;
  * optimize controller.
  *
  * @Description: optimizer is a task to compact small files in arctic table.
- * OptimizerController is the optimizer interface's controller, through this interface, you can get the optimized table,
+ * OptimizerController is the optimizer interface's controller,
+ * through this interface, you can getRuntime the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
  */
 public class OptimizerController extends RestBaseController {
@@ -66,7 +69,7 @@ public class OptimizerController extends RestBaseController {
   }
 
   /**
-   * get optimize tables.
+   * getRuntime optimize tables.
    * * @return List of {@link TableOptimizingInfo}
    */
   public void getOptimizerTables(Context ctx) {
@@ -79,7 +82,7 @@ public class OptimizerController extends RestBaseController {
       List<TableRuntime> tableRuntimes = new ArrayList<>();
       List<ServerTableIdentifier> tables = tableService.listTables();
       for (ServerTableIdentifier identifier : tables) {
-        TableRuntime tableRuntime = tableService.get(identifier);
+        TableRuntime tableRuntime = tableService.getRuntime(identifier);
         if (tableRuntime == null) {
           continue;
         }
@@ -102,13 +105,13 @@ public class OptimizerController extends RestBaseController {
           offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
-      LOG.error("Failed to get optimizerGroup tables", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get optimizerGroup tables", ""));
+      LOG.error("Failed to getRuntime optimizerGroup tables", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime optimizerGroup tables", ""));
     }
   }
 
   /**
-   * get optimizers.
+   * getRuntime optimizers.
    */
   public void getOptimizers(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
@@ -124,6 +127,7 @@ public class OptimizerController extends RestBaseController {
       } else {
         optimizers = optimizerManager.listOptimizers(optimizerGroup);
       }
+      optimizers.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
       List<JSONObject> result = optimizers.stream().map(e -> {
         JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
         jsonObject.put("jobId", e.getResourceId());
@@ -139,14 +143,14 @@ public class OptimizerController extends RestBaseController {
           offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
-      LOG.error("Failed to get optimizer", e);
+      LOG.error("Failed to getRuntime optimizer", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-          "Failed to get optimizer", ""));
+          "Failed to getRuntime optimizer", ""));
     }
   }
 
   /**
-   * get optimizerGroup: optimizerGroupId, optimizerGroupName
+   * getRuntime optimizerGroup: optimizerGroupId, optimizerGroupName
    * url = /optimizerGroups.
    */
   public void getOptimizerGroups(Context ctx) {
@@ -160,14 +164,14 @@ public class OptimizerController extends RestBaseController {
           }).collect(Collectors.toList());
       ctx.json(OkResponse.of(result));
     } catch (Exception e) {
-      LOG.error("Failed to get optimizerGroups", e);
+      LOG.error("Failed to getRuntime optimizerGroups", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-          "Failed to get optimizerGroups", ""));
+          "Failed to getRuntime optimizerGroups", ""));
     }
   }
 
   /**
-   * get optimizer info: occupationCore, occupationMemory
+   * getRuntime optimizer info: occupationCore, occupationMemory
    */
   public void getOptimizerGroupInfo(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
@@ -185,8 +189,8 @@ public class OptimizerController extends RestBaseController {
       });
       ctx.json(OkResponse.of(optimizerResourceInfo));
     } catch (Exception e) {
-      LOG.error("Failed to get optimizerGroup info", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get optimizerGroup info", ""));
+      LOG.error("Failed to getRuntime optimizerGroup info", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime optimizerGroup info", ""));
     }
   }
 
