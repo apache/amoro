@@ -118,7 +118,7 @@ CREATE TABLE `task_runtime`
     `task_id`                   int(11) NOT NULL,
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
-    `partition_data`                 varchar(128)  DEFAULT NULL COMMENT 'Partition data',
+    `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',
@@ -129,6 +129,7 @@ CREATE TABLE `task_runtime`
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
+    `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
@@ -180,7 +181,13 @@ select t.table_id,s.catalog_name,s.db_name,s.table_name,s.current_snapshot_id,s.
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_major_optimize_time, '$.""')/1000) last_major_optimizing_time,
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_minor_optimize_time, '$.""')/1000) last_minor_optimizing_time,
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_full_optimize_time,'$.""')/1000) last_full_optimizing_time,
-s.optimize_status,
+CASE
+	WHEN s.optimize_status= "Pending" THEN "PENDING"
+	WHEN s.optimize_status= "Idle" THEN "IDLE"
+	WHEN s.optimize_status= "MinorOptimizing" THEN "MINOR_OPTIMIZING"
+	WHEN s.optimize_status= "MajorOptimizing" THEN "MAJOR_OPTIMIZING"
+	ELSE "IDLE"
+	END AS optimizing_status,
 CASE
 	WHEN s.optimize_status_start_time < "1970-01-01 08:00:00.000" THEN "1970-01-01 08:00:01.000"
 	ELSE s.optimize_status_start_time
@@ -190,6 +197,8 @@ CASE
 ON s.`catalog_name` = t.`catalog_name`
 AND s.`db_name`= t.`db_name`
 AND s.`table_name` = t.`table_name`;
+
+UPDATE table_runtime set table_config = '{"expireSnapshotEnabled":true,"snapshotTTLMinutes":720,"changeSnapshotTTLMinutes":10080,"changeDataTTLMinutes":10080,"cleanOrphanEnabled":false,"orphanExistingMinutes":2880,"optimizingConfig":{"enabled":true,"targetQuota":0.1,"optimizerGroup":"default","maxExecuteRetryCount":5,"maxCommitRetryCount":2147483647,"targetSize":134217728,"maxFileCount":10000,"openFileCost":4194304,"fragmentRatio":8,"minorLeastFileCount":12,"minorLeastInterval":3600000,"majorLeastFileCount":12,"majorDuplicateRatio":0.5,"fullTriggerInterval":-1,"fullRewriteAllFiles":true,"baseHashBucket":4}}';
 
 
 
