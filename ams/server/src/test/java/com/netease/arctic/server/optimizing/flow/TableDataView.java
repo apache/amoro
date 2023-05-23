@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing.flow;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
@@ -50,6 +51,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -100,6 +102,21 @@ public class TableDataView {
     this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(), primary, partitionCount);
   }
 
+  public WriteResult append(int count) throws IOException {
+    Preconditions.checkArgument(count <= primaryUpperBound - view.size());
+    List<RecordWithAction> records = new ArrayList<>();
+    for (int i = 0; i < primaryUpperBound; i++) {
+      Record record = generator.randomRecord(i);
+      if (!view.containsKey(record)) {
+        records.add(new RecordWithAction(record, ChangeAction.INSERT));
+      }
+      if (records.size() == count) {
+        break;
+      }
+    }
+    return doWrite(records);
+  }
+
   public WriteResult upsert(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
     List<RecordWithAction> upsert = new ArrayList<>();
@@ -145,7 +162,7 @@ public class TableDataView {
 
   public WriteResult custom(List<PKWithAction> data) throws IOException {
     List<RecordWithAction> records = new ArrayList<>();
-    for (PKWithAction pkWithAction: data) {
+    for (PKWithAction pkWithAction : data) {
       records.add(new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
     }
     return doWrite(records);
@@ -212,7 +229,14 @@ public class TableDataView {
       return false;
     }
     for (int i = 0; i < schemaSize; i++) {
-      boolean equals = r1.get(i).equals(r2.get(i));
+      Object o1 = r1.get(i);
+      Object o2 = r2.get(i);
+      boolean equals;
+      if (o1 instanceof OffsetDateTime) {
+        equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+      } else {
+        equals = o1.equals(o2);
+      }
       if (!equals) {
         return false;
       }
@@ -229,10 +253,10 @@ public class TableDataView {
       appendFiles.commit();
     } else {
       RowDelta rowDelta = arcticTable.asUnkeyedTable().newRowDelta();
-      for (DataFile dataFile: writeResult.dataFiles()) {
+      for (DataFile dataFile : writeResult.dataFiles()) {
         rowDelta.addRows(dataFile);
       }
-      for (DeleteFile deleteFile: writeResult.deleteFiles()) {
+      for (DeleteFile deleteFile : writeResult.deleteFiles()) {
         rowDelta.addDeletes(deleteFile);
       }
       rowDelta.commit();
@@ -282,11 +306,12 @@ public class TableDataView {
         schema,
         arcticTable.asUnkeyedTable(),
         FileFormat.PARQUET,
-        OutputFileFactory.builderFor(arcticTable.asUnkeyedTable(),
+        OutputFileFactory.builderFor(
+            arcticTable.asUnkeyedTable(),
             1,
             1).format(FileFormat.PARQUET).build()
     );
-    for (RecordWithAction record: records) {
+    for (RecordWithAction record : records) {
       if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
         deltaWriter.delete(record);
       } else {
@@ -311,7 +336,7 @@ public class TableDataView {
 
     private StructLikeMap<Record> view;
 
-    public abstract  List<PKWithAction> data();
+    public abstract List<PKWithAction> data();
 
     private void accept(StructLikeMap<Record> view) {
       this.view = view;
@@ -320,7 +345,6 @@ public class TableDataView {
     protected final boolean alreadyExists(Record record) {
       return view.containsKey(record);
     }
-
   }
 
   public static class MatchResult {

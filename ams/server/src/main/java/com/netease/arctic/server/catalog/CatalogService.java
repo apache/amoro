@@ -11,6 +11,8 @@ public interface CatalogService {
 
   boolean catalogExist(String catalogName);
 
+  ServerCatalog getServerCatalog(String catalogName);
+
   void createCatalog(CatalogMeta catalogMeta);
 
   void dropCatalog(String catalogName);

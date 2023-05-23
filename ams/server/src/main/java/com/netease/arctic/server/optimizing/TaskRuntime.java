@@ -46,7 +46,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private OptimizingTaskId taskId;
   @StatedPersistentBase.StateField
   private Status status = Status.PLANNED;
-  private TaskStatusMachine statusMachine;
+  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StatedPersistentBase.StateField
   private int retry = 0;
   @StatedPersistentBase.StateField
@@ -77,7 +77,6 @@ public class TaskRuntime extends StatedPersistentBase {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
-    this.statusMachine = new TaskStatusMachine();
     this.summary = new MetricsSummary(input);
     this.tableId = taskDescriptor.getTableId();
     this.properties = properties;

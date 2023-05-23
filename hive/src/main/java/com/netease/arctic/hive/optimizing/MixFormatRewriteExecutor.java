@@ -5,7 +5,6 @@ import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
 import com.netease.arctic.optimizing.OptimizingDataReader;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.WriteOperationKind;
@@ -26,11 +25,15 @@ import java.util.List;
 
 public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
+  private String outputDir;
+
   public MixFormatRewriteExecutor(
       RewriteFilesInput input,
       ArcticTable table,
-      StructLikeCollections structLikeCollections) {
+      StructLikeCollections structLikeCollections,
+      String outputDir) {
     super(input, table, structLikeCollections);
+    this.outputDir = outputDir;
   }
 
   @Override
@@ -48,8 +51,6 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected FileWriter<Record, DataWriteResult> dataWriter() {
-    String outputDir = OptimizingInputProperties.parse(input.getOptions()).getOutputDir();
-
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(getTransactionId(input.rewrittenDataFilesForMixed()))
         .withTaskId(0)

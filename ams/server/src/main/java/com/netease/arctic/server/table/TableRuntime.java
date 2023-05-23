@@ -77,8 +77,9 @@ public class TableRuntime extends StatedPersistentBase {
   private volatile OptimizingEvaluator.PendingInput pendingInput;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
-  protected TableRuntime(ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
-                         Map<String, String> properties) {
+  protected TableRuntime(
+      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
+      Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
@@ -181,13 +182,14 @@ public class TableRuntime extends StatedPersistentBase {
 
   /**
    * TODO: this is not final solution
+   *
    * @param startTimeMills
    */
   public void resetTaskQuotas(long startTimeMills) {
     invokeInStateLock(() -> {
       taskQuotas.clear();
       taskQuotas.addAll(getAs(OptimizingMapper.class, mapper ->
-        mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
+          mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
     });
   }
 
@@ -395,7 +397,8 @@ public class TableRuntime extends StatedPersistentBase {
   public List<TableBlocker> getBlockers() {
     blockerLock.lock();
     try {
-      return getAs(TableBlockerMapper.class,
+      return getAs(
+          TableBlockerMapper.class,
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
     } finally {
       blockerLock.unlock();
@@ -410,8 +413,9 @@ public class TableRuntime extends StatedPersistentBase {
    * @param blockerTimeout -
    * @return TableBlocker if success
    */
-  public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
-                            long blockerTimeout) {
+  public TableBlocker block(
+      List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
+      long blockerTimeout) {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
     Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
@@ -448,7 +452,8 @@ public class TableRuntime extends StatedPersistentBase {
         throw new ObjectNotExistsException("Blocker " + blockerId);
       }
       long expirationTime = now + blockerTimeout;
-      doAs(TableBlockerMapper.class,
+      doAs(
+          TableBlockerMapper.class,
           mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
       return expirationTime;
     } finally {
@@ -497,8 +502,9 @@ public class TableRuntime extends StatedPersistentBase {
         .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
   }
 
-  private TableBlocker buildTableBlocker(ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                                         Map<String, String> properties, long now, long blockerTimeout) {
+  private TableBlocker buildTableBlocker(
+      ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
+      Map<String, String> properties, long now, long blockerTimeout) {
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setTableIdentifier(tableIdentifier);
     tableBlocker.setCreateTime(now);

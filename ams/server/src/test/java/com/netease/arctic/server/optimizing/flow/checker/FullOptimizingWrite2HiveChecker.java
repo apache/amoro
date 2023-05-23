@@ -18,7 +18,10 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
+import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.flow.TableDataView;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
@@ -27,10 +30,10 @@ import org.apache.commons.collections.CollectionUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class OptimizingCountChecker extends AbstractSceneCountChecker {
+public class FullOptimizingWrite2HiveChecker extends AbstractHiveChecker {
 
-  public OptimizingCountChecker(int except) {
-    super(except);
+  public FullOptimizingWrite2HiveChecker(TableDataView view) {
+    super(view);
   }
 
   @Override
@@ -39,6 +42,9 @@ public class OptimizingCountChecker extends AbstractSceneCountChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable IcebergCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors);
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
+        latestPlanner.getOptimizingType() == OptimizingType.FULL_MAJOR &&
+        OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties()).getOutputDir() !=
+            null;
   }
 }

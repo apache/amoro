@@ -78,6 +78,13 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
+  public ServerCatalog getServerCatalog(String catalogName) {
+    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
+        .orElse(externalCatalogMap.get(catalogName));
+    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
+  }
+
+  @Override
   public void createCatalog(CatalogMeta catalogMeta) {
     checkStarted();
     if (catalogExist(catalogMeta.getCatalogName())) {
@@ -213,7 +220,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
                        Map<String, String> properties) {
     checkStarted();
-    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+    return getAndCheckExist(getServerTableIdentifier(tableIdentifier))
         .block(operations, properties, blockerTimeout)
         .buildBlocker();
   }
@@ -221,7 +228,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
     checkStarted();
-    TableRuntime tableRuntime = getRuntime(ServerTableIdentifier.of(tableIdentifier));
+    TableRuntime tableRuntime = getRuntime(getServerTableIdentifier(tableIdentifier));
     if (tableRuntime != null) {
       tableRuntime.release(blockerId);
     }
@@ -230,21 +237,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
     checkStarted();
-    TableRuntime tableRuntime = getAndCheckExist(ServerTableIdentifier.of(tableIdentifier));
+    TableRuntime tableRuntime = getAndCheckExist(getServerTableIdentifier(tableIdentifier));
     return tableRuntime.renew(blockerId, blockerTimeout);
   }
 
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
     checkStarted();
-    return getAndCheckExist(ServerTableIdentifier.of(tableIdentifier))
+    return getAndCheckExist(getServerTableIdentifier(tableIdentifier))
         .getBlockers().stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
-  }
-
-  private ServerCatalog getServerCatalog(String catalogName) {
-    ServerCatalog catalog = Optional.ofNullable((ServerCatalog) internalCatalogMap.get(catalogName))
-        .orElse(externalCatalogMap.get(catalogName));
-    return Optional.ofNullable(catalog).orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));
   }
 
   private InternalCatalog getInternalCatalog(String catalogName) {
@@ -302,11 +303,19 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+    if (tableIdentifier == null) {
+      throw new ObjectNotExistsException(tableIdentifier);
+    }
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
     return tableRuntime;
+  }
+
+  private ServerTableIdentifier getServerTableIdentifier(TableIdentifier id) {
+    return getAs(TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
   }
 
   @Override

@@ -27,6 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -149,6 +150,9 @@ public class RandomRecordGenerator {
         } else {
           return LocalDateTime.now().minusDays(random.nextInt(10000));
         }
+      case DECIMAL:
+        Types.DecimalType decimalType = (Types.DecimalType) type;
+        return BigDecimal.valueOf(Double.valueOf(random.nextDouble()).longValue(), decimalType.scale());
       default:
         throw new RuntimeException("Unsupported type you can add them in code");
     }
