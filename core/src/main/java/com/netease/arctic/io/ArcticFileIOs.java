@@ -27,13 +27,15 @@ import org.apache.iceberg.util.PropertyUtil;
 import java.util.Map;
 
 public class ArcticFileIOs {
+  
+  public static final boolean CLOSE_TRASH = true;
 
   public static ArcticHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier, String tableLocation,
       Map<String, String> tableProperties, TableMetaStore tableMetaStore,
       Map<String, String> catalogProperties) {
     tableProperties = CatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
-    if (PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
+    if (!CLOSE_TRASH && PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
         TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
       ArcticHadoopFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       TableTrashManager trashManager =

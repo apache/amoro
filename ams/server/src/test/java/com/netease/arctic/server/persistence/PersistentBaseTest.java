@@ -1,6 +1,5 @@
 package com.netease.arctic.server.persistence;
 
-import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.PersistenceException;
 import com.netease.arctic.server.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
@@ -10,15 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 public class PersistentBaseTest {
 

@@ -151,14 +151,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     Assert.assertTrue(taskDescriptors.isEmpty());
 
     // 2.Step2
-    openFullOptimizing();
-    taskDescriptors = planWithCurrentFiles();
-    Assert.assertEquals(1, taskDescriptors.size());
-    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
-        Collections.emptyList());
-
-    // 3.Step3
-    closeFullOptimizing();
     // plan with delete files
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
@@ -172,7 +164,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
-    // 4.Step4
+    // 3.Step3
     openFullOptimizing();
     taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());

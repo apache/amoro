@@ -91,6 +91,7 @@ CREATE TABLE table_runtime (
     current_snapshot_id         BIGINT NOT NULL DEFAULT -1,
     current_change_snapshotId   BIGINT,
     last_optimized_snapshotId   BIGINT NOT NULL DEFAULT -1,
+    last_optimized_change_snapshotId   BIGINT NOT NULL DEFAULT -1,
     last_major_optimizing_time  TIMESTAMP,
     last_minor_optimizing_time  TIMESTAMP,
     last_full_optimizing_time   TIMESTAMP,
@@ -110,6 +111,7 @@ CREATE TABLE table_optimizing_process (
     db_name             VARCHAR(128) NOT NULL,
     table_name          VARCHAR(128) NOT NULL,
     target_snapshot_id  BIGINT NOT NULL,
+    target_change_snapshot_id  BIGINT NOT NULL,
     status              VARCHAR(10) NOT NULL,
     optimizing_type     VARCHAR(10) NOT NULL,
     plan_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -138,6 +140,7 @@ CREATE TABLE task_runtime (
     thread_id       INT,
     rewrite_output  BLOB,
     metrics_summary CLOB,
+    properties      CLOB,
     CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id)
 );
 

@@ -19,26 +19,53 @@
 package com.netease.arctic.server.optimizing.flow.checker;
 
 import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.commons.collections.CollectionUtils;
-
 import javax.annotation.Nullable;
+
 import java.util.List;
 
-public class OptimizingCountChecker extends AbstractSceneCountChecker {
+public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlow.Checker {
 
-  public OptimizingCountChecker(int except) {
-    super(except);
+  private int except;
+
+  private int count;
+
+  public AbstractSceneCountChecker(int except) {
+    this.except = except;
   }
 
   @Override
-  protected boolean internalCondition(
+  public boolean condition(
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable IcebergCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors);
+    if (internalCondition(table, latestTaskDescriptors, latestPlanner, latestCommit)) {
+      count++;
+      return true;
+    }
+    return false;
+  }
+
+  protected abstract boolean internalCondition(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable IcebergCommit latestCommit);
+
+  @Override
+  public boolean senseHasChecked() {
+    return count >= except;
+  }
+
+  @Override
+  public void check(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable IcebergCommit latestCommit) throws Exception {
   }
 }

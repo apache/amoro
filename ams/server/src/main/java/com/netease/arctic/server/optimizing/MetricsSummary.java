@@ -44,7 +44,7 @@ public class MetricsSummary {
   }
 
   public MetricsSummary(Collection<TaskRuntime> taskRuntimes) {
-    taskRuntimes.stream().map(taskRuntime -> taskRuntime.getMetricsSummary()).forEach(metrics -> {
+    taskRuntimes.stream().map(TaskRuntime::getMetricsSummary).forEach(metrics -> {
       rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
       reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
       rewriteDataSize += metrics.getRewriteDataSize();
@@ -53,6 +53,8 @@ public class MetricsSummary {
       positionalDeleteSize += metrics.getPositionalDeleteSize();
       eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
       equalityDeleteSize += metrics.getEqualityDeleteSize();
+      newFileCnt += metrics.getNewFileCnt();
+      newFileSize += metrics.getNewFileSize();
     });
   }
 

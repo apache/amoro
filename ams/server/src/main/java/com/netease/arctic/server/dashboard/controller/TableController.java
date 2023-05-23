@@ -18,9 +18,17 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
+import com.netease.arctic.server.catalog.IcebergCatalogImpl;
+import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
+import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -30,12 +38,16 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.HiveTableInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
+import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
+import com.netease.arctic.server.dashboard.model.UpgradeStatus;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
@@ -44,14 +56,18 @@ import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
@@ -61,11 +77,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -73,13 +92,26 @@ import java.util.stream.Collectors;
  */
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
+  private static final long UPGRADE_INGO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
+  private final Configurations serviceConfig;
+  private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo = new ConcurrentHashMap<>(10);
+  private final ScheduledExecutorService tableUpgradeExecutor;
 
-  public TableController(TableService tableService, ServerTableDescriptor tableDescriptor) {
+  public TableController(
+      TableService tableService,
+      ServerTableDescriptor tableDescriptor,
+      Configurations serviceConfig) {
     this.tableService = tableService;
     this.tableDescriptor = tableDescriptor;
+    this.serviceConfig = serviceConfig;
+    this.tableUpgradeExecutor = Executors.newScheduledThreadPool(
+        0,
+        new ThreadFactoryBuilder()
+            .setDaemon(false)
+            .setNameFormat("ASYNC-HIVE-TABLE-UPGRADE-%d").build());
   }
 
   /**
@@ -92,9 +124,8 @@ public class TableController extends RestBaseController {
     String tableMame = ctx.pathParam("table");
 
     Preconditions.checkArgument(
-        catalog != null && database != null && tableMame != null,
-        "catalog.dabatase.tableName can not be null in any element");
-    // getRuntime table from catalog
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableMame),
+        "catalog.database.tableName can not be empty in any element");
     if (!tableService.catalogExist(catalog)) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "invalid catalog!", null));
       return;
@@ -158,70 +189,83 @@ public class TableController extends RestBaseController {
    * getRuntime hive table detail.
    */
   public void getHiveTableDetail(Context ctx) {
-    // String catalog = ctx.pathParam("catalog");
-    // String db = ctx.pathParam("db");
-    // String table = ctx.pathParam("table");
-    //
-    // // getRuntime table from catalog
-    // String thriftHost = serviceConfig.getString(ArcticManagementConf.THRIFT_BIND_HOST);
-    // Integer thriftPort = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
-    // ArcticHiveCatalog arcticHiveCatalog
-    //     = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
-    //
-    // TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    // HiveTableInfo hiveTableInfo;
-    // try {
-    //   Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
-    //   List<AMSColumnInfo> schema =
-    //       AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getSd().getCols());
-    //   List<AMSColumnInfo> partitionColumnInfos =
-    //       AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getPartitionKeys());
-    //   hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
-    //       new HashMap<>(), hiveTable.getCreateTime());
-    // } catch (Exception e) {
-    //   LOG.error("Failed to getRuntime hive table info", e);
-    //   ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime hive table info", ""));
-    //   return;
-    // }
-    // ctx.json(OkResponse.of(hiveTableInfo));
-    ctx.json(OkResponse.ok());
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db) && StringUtils.isNotBlank(table),
+        "catalog.database.tableName can not be empty in any element");
+    Preconditions.checkArgument(
+        tableService.getServerCatalog(catalog) instanceof MixedHiveCatalogImpl,
+        "catalog {} is not a mixed hive catalog, so not support load hive tables", catalog);
+
+    // getRuntime table from catalog
+    MixedHiveCatalogImpl arcticHiveCatalog = (MixedHiveCatalogImpl) tableService.getServerCatalog(catalog);
+
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    HiveTableInfo hiveTableInfo;
+    try {
+      Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHiveClient(), tableIdentifier);
+      List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
+      List<AMSColumnInfo> partitionColumnInfos = transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
+      hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
+          new HashMap<>(), hiveTable.getCreateTime());
+    } catch (Exception e) {
+      LOG.error("Failed to getRuntime hive table info", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime hive table info", ""));
+      return;
+    }
+    ctx.json(OkResponse.of(hiveTableInfo));
   }
 
   /**
    * upgrade hive table to arctic.
    */
   public void upgradeHiveTable(Context ctx) {
-    // String catalog = ctx.pathParam("catalog");
-    // String db = ctx.pathParam("db");
-    // String table = ctx.pathParam("table");
-    // UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
-    //
-    // ServerCatalog serverCatalog = CatalogBuilder.buildServerCatalog(tableService.getCatalogMeta(catalog));
-    //
-    // String thriftHost = serviceConfig.getString(ArcticManagementConf.THRIFT_BIND_HOST);
-    // Integer thriftPort = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
-    // ArcticHiveCatalog arcticHiveCatalog
-    //     = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
-    // try {
-    //   UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
-    //       upgradeHiveMeta.getPkList()
-    //           .stream()
-    //           .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)
-    //           .collect(Collectors.toList()), upgradeHiveMeta.getProperties());
-    //   ctx.json(OkResponse.ok());
-    // } catch (Exception e) {
-    //   LOG.error("upgrade hive table error:", e);
-    //   ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upgrade hive table", ""));
-    // }
-    ctx.json(OkResponse.ok());
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db) && StringUtils.isNotBlank(table),
+        "catalog.database.tableName can not be empty in any element");
+    UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
+
+    ArcticHiveCatalog arcticHiveCatalog
+        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/", AmsUtil.getAMSThriftAddress(serviceConfig), catalog));
+    try {
+      tableUpgradeExecutor.execute(() -> {
+        TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+        upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
+        try {
+          UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
+              upgradeHiveMeta.getPkList()
+                  .stream()
+                  .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)
+                  .collect(Collectors.toList()), upgradeHiveMeta.getProperties());
+          upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
+        } catch (Throwable t) {
+          LOG.error("Failed to upgrade hive table to arctic ", t);
+          upgradeRunningInfo.get(tableIdentifier).setErrorMessage(AmsUtil.getStackTrace(t));
+          upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
+        } finally {
+          tableUpgradeExecutor.schedule(
+              () -> upgradeRunningInfo.remove(tableIdentifier),
+              UPGRADE_INGO_EXPIRE_INTERVAL,
+              TimeUnit.MILLISECONDS);
+        }
+      });
+      ctx.json(OkResponse.ok());
+    } catch (Exception e) {
+      LOG.error("upgrade hive table error:", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upgrade hive table", ""));
+    }
   }
 
   public void getUpgradeStatus(Context ctx) {
-    // String catalog = ctx.pathParam("catalog");
-    // String db = ctx.pathParam("db");
-    // String table = ctx.pathParam("table");
-    // ctx.json(OkResponse.of(adaptHiveService.getUpgradeRunningInfo(TableIdentifier.of(catalog, db, table))));
-    ctx.json(OkResponse.ok());
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    ctx.json(OkResponse.of(upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table))));
   }
 
   /**
@@ -359,28 +403,32 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String keywords = ctx.queryParam("keywords");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
+        "catalog.database can not be empty in any element");
+
     List<ServerTableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
-    LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     List<TableMeta> tables = new ArrayList<>();
-    for (ServerTableIdentifier tableIdentifier : tableIdentifiers) {
-      tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
+
+    if (serverCatalog instanceof IcebergCatalogImpl) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(
+          e.getTableName(),
+          TableMeta.TableType.ICEBERG.toString())));
+    } else if (serverCatalog instanceof MixedHiveCatalogImpl) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(
+          ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
+          db);
+      Set<String> arcticTables =
+          tableIdentifiers.stream().map(ServerTableIdentifier::getTableName).collect(Collectors.toSet());
+      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
+          e,
+          TableMeta.TableType.HIVE.toString())));
+    } else {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
     }
-    // else if (CatalogUtil.isHiveCatalog(catalog)) {
-    //   ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog) ac;
-    //   List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
-    //   for (String hiveTable : hiveTables) {
-    //     tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));
-    //   }
-    //   for (com.netease.arctic.ams.api.TableIdentifier tableIdentifier : tableIdentifiers) {
-    //     TableMeta tableMeta = new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.toString());
-    //     if (tempTables.contains(tableMeta)) {
-    //       tables.add(tableMeta);
-    //       tempTables.remove(tableMeta);
-    //     }
-    //   }
-    //   tables.addAll(tempTables);
-    // }
-    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isEmpty(keywords) ||
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isNotBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
@@ -392,7 +440,7 @@ public class TableController extends RestBaseController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList = tableService.listDatabases(catalog).stream()
-        .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
+        .filter(item -> StringUtils.isNotBlank(keywords) || item.contains(keywords))
         .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
   }
@@ -517,5 +565,16 @@ public class TableController extends RestBaseController {
 
     TableProperties.READ_PROTECTED_PROPERTIES.forEach(properties::remove);
     serverTableMeta.setProperties(properties);
+  }
+
+  private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
+    return fields.stream()
+        .map(f -> {
+          AMSColumnInfo columnInfo = new AMSColumnInfo();
+          columnInfo.setField(f.getName());
+          columnInfo.setType(f.getType());
+          columnInfo.setComment(f.getComment());
+          return columnInfo;
+        }).collect(Collectors.toList());
   }
 }

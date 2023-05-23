@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -125,6 +126,7 @@ public class OptimizerController extends RestBaseController {
       } else {
         optimizers = optimizerManager.listOptimizers(optimizerGroup);
       }
+      optimizers.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
       List<JSONObject> result = optimizers.stream().map(e -> {
         JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
         jsonObject.put("jobId", e.getResourceId());
