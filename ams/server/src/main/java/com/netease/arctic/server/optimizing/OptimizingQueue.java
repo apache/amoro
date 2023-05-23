@@ -300,6 +300,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       targetChangeSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
+      if (tableRuntimeMeta.getFromSequence() != null) {
+        fromSequence = tableRuntimeMeta.getFromSequence();
+      }
+      if (tableRuntimeMeta.getToSequence() != null) {
+        toSequence = tableRuntimeMeta.getToSequence();
+      }
       loadTaskRuntimes();
       metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.getTableRuntime().recover(this);
