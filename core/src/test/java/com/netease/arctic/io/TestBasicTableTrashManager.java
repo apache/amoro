@@ -157,7 +157,6 @@ public class TestBasicTableTrashManager extends TableTestBase {
     String relativeFilePath = "base/test/test1.parquet";
     String path = createFile(getArcticTable().io(), fullLocation(tableRootLocation, relativeFilePath));
 
-    String directory = TableFileUtil.getFileDir(path);
     long now = System.currentTimeMillis();
     tableTrashManager.moveFileToTrash(path);
     String fileLocationInTrash =
@@ -165,16 +164,6 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
-
-    IllegalArgumentException illegalArgumentException =
-        Assert.assertThrows("should not successfully check a directory in trash",
-            IllegalArgumentException.class, () -> tableTrashManager.fileExistInTrash(directory));
-    Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
-
-    illegalArgumentException =
-        Assert.assertThrows("should not successfully restore a directory in trash",
-            IllegalArgumentException.class, () -> tableTrashManager.restoreFileFromTrash(directory));
-    Assert.assertTrue(illegalArgumentException.getMessage().contains("directory"));
 
     Assert.assertFalse(getArcticTable().io().exists(path));
     Assert.assertTrue(getArcticTable().io().exists(fileLocationInTrash));
@@ -242,7 +231,8 @@ public class TestBasicTableTrashManager extends TableTestBase {
   @Test
   public void testDeleteTrashLocation() throws IOException {
     String tableRootLocation = getTableRootLocation(getArcticTable());
-    String customTrashLocation = tempTrashLocation.newFolder().getPath();
+    String customTrashLocation = tempTrashLocation.newFolder().getPath().replace('\\', '/');
+
     getArcticTable().updateProperties()
         .set(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION, customTrashLocation)
         .commit();

@@ -56,7 +56,7 @@ public interface ArcticFileIO extends FileIO {
   /**
    * Returns true if this tableIo is an {@link SupportsPrefixOperations}
    */
-  default boolean supportPrefixOperation() {
+  default boolean supportPrefixOperations() {
     return false;
   }
 
@@ -64,7 +64,7 @@ public interface ArcticFileIO extends FileIO {
    * Return this cast to {@link SupportsPrefixOperations} if it is.
    */
   default SupportsPrefixOperations asPrefixFileIO() {
-    if (supportPrefixOperation()) {
+    if (supportPrefixOperations()) {
       return (SupportsPrefixOperations) this;
     } else {
       throw new IllegalStateException("Doesn't support prefix operations");
@@ -72,18 +72,18 @@ public interface ArcticFileIO extends FileIO {
   }
 
   /**
-   * Returns true if this tableIo is an {@link SupportsDirectoryOperations}
+   * Returns true if this tableIo is an {@link SupportsFileSystemOperations}
    */
-  default boolean supportDirectoryOperation() {
+  default boolean supportFileSystemOperations() {
     return false;
   }
 
   /**
-   * Return this cast to {@link SupportsDirectoryOperations} if it is.
+   * Return this cast to {@link SupportsFileSystemOperations} if it is.
    */
-  default SupportsDirectoryOperations asDirectoryFileIO() {
-    if (supportDirectoryOperation()) {
-      return (SupportsDirectoryOperations) this;
+  default SupportsFileSystemOperations asFileSystemIO() {
+    if (supportFileSystemOperations()) {
+      return (SupportsFileSystemOperations) this;
     }
     throw new IllegalStateException("Doesn't support directory operations");
   }

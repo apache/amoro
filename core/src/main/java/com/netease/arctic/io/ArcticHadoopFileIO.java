@@ -36,14 +36,16 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO
-    implements ArcticFileIO, SupportsPrefixOperations, SupportsDirectoryOperations {
+    implements ArcticFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
 
   private final TableMetaStore tableMetaStore;
   private boolean fileRecycleEnabled;
@@ -83,6 +85,27 @@ public class ArcticHadoopFileIO extends HadoopFileIO
     });
   }
 
+  @Override
+  public Iterable<PathInfo> listDirectory(String location) {
+    return tableMetaStore.doAs(() -> {
+      Path path = new Path(location);
+      FileSystem fs = getFs(path);
+      try {
+        FileStatus[] fileStatuses = fs.listStatus(path);
+        Iterator<PathInfo> it = Stream.of(fileStatuses)
+            .map(status -> new PathInfo(
+                status.getPath().toString(),
+                status.getLen(),
+                status.getAccessTime(),
+                status.isDirectory())
+            )
+            .iterator();
+        return () -> it;
+      } catch (IOException e) {
+        throw new UncheckedIOException("Fail to list files in " + location, e);
+      }
+    });
+  }
 
   @Override
   public List<FileStatus> list(String location) {
@@ -216,12 +239,12 @@ public class ArcticHadoopFileIO extends HadoopFileIO
   }
 
   @Override
-  public boolean supportPrefixOperation() {
+  public boolean supportPrefixOperations() {
     return true;
   }
 
   @Override
-  public boolean supportDirectoryOperation() {
+  public boolean supportFileSystemOperations() {
     return true;
   }
 

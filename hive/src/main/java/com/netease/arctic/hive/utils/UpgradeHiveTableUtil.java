@@ -26,7 +26,6 @@ import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
@@ -106,7 +105,7 @@ public class UpgradeHiveTableUtil {
       io.makeDirectories(newPath);
       io.listPrefix(hiveTable.getSd().getLocation()).forEach(f -> {
         if (!io.isDirectory(f.location())) {
-          io.asDirectoryFileIO().rename(f.location(), newPath);
+          io.asFileSystemIO().rename(f.location(), newPath);
         }
       });
 
@@ -130,7 +129,7 @@ public class UpgradeHiveTableUtil {
 
         io.listPrefix(oldLocation).forEach(f -> {
           if (!io.isDirectory(f.location())){
-            arcticTable.io().asDirectoryFileIO().rename(f.location(), newLocation);
+            arcticTable.io().asFileSystemIO().rename(f.location(), newLocation);
           }
         });
         HivePartitionUtil.alterPartition(arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);

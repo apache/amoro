@@ -20,7 +20,7 @@ package com.netease.arctic.io;
 
 import org.apache.iceberg.io.SupportsPrefixOperations;
 
-public interface SupportsDirectoryOperations extends ArcticFileIO, SupportsPrefixOperations {
+public interface SupportsFileSystemOperations extends ArcticFileIO, SupportsPrefixOperations {
 
   /**
    * Create a new directory and all non-existent parents directories.
@@ -53,13 +53,16 @@ public interface SupportsDirectoryOperations extends ArcticFileIO, SupportsPrefi
    */
   void rename(String oldPath, String newPath);
 
+
+  Iterable<PathInfo> listDirectory(String location) ;
+
   @Override
-  default SupportsDirectoryOperations asDirectoryFileIO() {
+  default SupportsFileSystemOperations asFileSystemIO() {
     return this;
   }
 
   @Override
-  default boolean supportDirectoryOperation() {
+  default boolean supportFileSystemOperations() {
     return true;
   }
 
@@ -69,7 +72,7 @@ public interface SupportsDirectoryOperations extends ArcticFileIO, SupportsPrefi
   }
 
   @Override
-  default boolean supportPrefixOperation() {
+  default boolean supportPrefixOperations() {
     return true;
   }
 }

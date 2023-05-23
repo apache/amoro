@@ -20,10 +20,11 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.TableFileUtil;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +33,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.StreamSupport;
+import java.util.Optional;
 
 /**
  * Basic implementation of {@link TableTrashManager}.
@@ -101,7 +103,7 @@ class BasicTableTrashManager implements TableTrashManager {
   public void moveFileToTrash(String path) {
     try {
       Preconditions.checkArgument(
-          !arcticFileIO.supportDirectoryOperation() || !arcticFileIO.asDirectoryFileIO().isDirectory(path),
+          !arcticFileIO.supportFileSystemOperations() || !arcticFileIO.asFileSystemIO().isDirectory(path),
           "should not move a directory to trash " + path);
       String targetFileLocation = generateFileLocationInTrash(
           getRelativeFileLocation(this.tableRootLocation, path),
@@ -123,17 +125,17 @@ class BasicTableTrashManager implements TableTrashManager {
 
   @Override
   public boolean fileExistInTrash(String path) {
-    return findFileFromTrash(path) != null;
+    return findFileFromTrash(path).isPresent();
   }
 
   @Override
   public boolean restoreFileFromTrash(String path) {
-    String fileFromTrash = findFileFromTrash(path);
-    if (fileFromTrash == null) {
+    Optional<String> fileFromTrash = findFileFromTrash(path);
+    if (!fileFromTrash.isPresent()) {
       return false;
     }
     try {
-      arcticFileIO.rename(fileFromTrash, path);
+      arcticFileIO.rename(fileFromTrash.get(), path);
       return true;
     } catch (Exception e) {
       LOG.info("{} failed to restore file, {}", tableIdentifier, path, e);
@@ -147,7 +149,7 @@ class BasicTableTrashManager implements TableTrashManager {
     if (!arcticFileIO.exists(this.trashLocation)) {
       return;
     }
-    Iterable<FileInfo> datePaths = arcticFileIO.listPrefix(this.trashLocation);
+    Iterable<PathInfo> datePaths = arcticFileIO.listDirectory(this.trashLocation);
 
     for (FileInfo datePath : datePaths) {
       String dateName = TableFileUtil.getFileName(datePath.location());
@@ -169,22 +171,26 @@ class BasicTableTrashManager implements TableTrashManager {
     }
   }
 
-  private String findFileFromTrash(String path) {
+  private Optional<String> findFileFromTrash(String path) {
     if (!arcticFileIO.exists(this.trashLocation)) {
-      return null;
+      return Optional.empty();
     }
-    String relativeLocation = getRelativeFileLocation(this.tableRootLocation, path);
+    String targetRelationLocationInTable = getRelativeFileLocation(this.tableRootLocation, path);
 
-    for (FileInfo f: arcticFileIO.listPrefix(trashLocation)){
-      String fullLocation = f.location() + "/" + relativeLocation;
-      if (arcticFileIO.exists(fullLocation)) {
-        if (arcticFileIO.isDirectory(fullLocation)) {
-          throw new IllegalArgumentException("can't restore a directory from trash " + fullLocation);
+    Iterable<PathInfo> paths = arcticFileIO.listDirectory(this.trashLocation);
+
+    List<String> targetLocationsInTrash = Lists.newArrayList();
+    for (PathInfo p : paths) {
+      String fullLocation = p.location() + "/" + targetRelationLocationInTable;
+      if (arcticFileIO.exists(fullLocation)){
+        if (!arcticFileIO.isDirectory(fullLocation)) {
+          targetLocationsInTrash.add(fullLocation);
         }
-        return fullLocation;
       }
     }
-    return null;
+
+    return targetLocationsInTrash.stream()
+        .max(Comparator.naturalOrder());
   }
 
   @Override

@@ -37,6 +37,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,9 +54,17 @@ public class TestMixedCatalog extends CatalogTestBase {
     return new Object[] {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
   }
 
+
+  @Before
+  public void before() {
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    }
+  }
+
   @Test
   public void testCreateUnkeyedTable() {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
@@ -74,7 +83,6 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testCreateKeyedTable() {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
@@ -109,7 +117,6 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testCreateTableWithNewCatalogProperties() throws TException {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
@@ -136,7 +143,6 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testUnkeyedRecoverableFileIO() throws TException {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
@@ -165,7 +171,6 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testKeyedRecoverableFileIO() throws TException {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
@@ -214,7 +219,6 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testGetTableBlockerManager() {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)

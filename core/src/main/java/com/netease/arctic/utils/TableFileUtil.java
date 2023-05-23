@@ -67,11 +67,11 @@ public class TableFileUtil {
    */
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath, Set<String> exclude) {
     Preconditions.checkArgument(
-        io.supportDirectoryOperation(),
+        io.supportFileSystemOperations(),
         "The fileIo doesn't support directory operation");
     Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
     Preconditions.checkArgument(
-        io.asDirectoryFileIO().isDirectory(directoryPath),
+        io.asFileSystemIO().isDirectory(directoryPath),
         "The target path is not directory");
 
     String parent = new Path(directoryPath).getParent().toString();
@@ -80,8 +80,8 @@ public class TableFileUtil {
     }
 
     LOG.debug("current path {} and parent path {} not in exclude.", directoryPath, parent);
-    if (io.asDirectoryFileIO().isEmptyDirectory(directoryPath)) {
-      io.asDirectoryFileIO().deletePrefix(directoryPath);
+    if (io.asFileSystemIO().isEmptyDirectory(directoryPath)) {
+      io.asFileSystemIO().deletePrefix(directoryPath);
       LOG.debug("success delete empty directory {}", directoryPath);
       deleteEmptyDirectory(io, parent, exclude);
     }
