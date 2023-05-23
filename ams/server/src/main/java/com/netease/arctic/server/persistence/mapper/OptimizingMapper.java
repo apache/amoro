@@ -116,7 +116,8 @@ public interface OptimizingMapper {
   @Insert({
       "<script>",
       "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, partition_data, start_time, " +
-          "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary) VALUES ",
+          "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties) " +
+          "VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
       "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}," +
           " #{taskRuntime.tableId}, #{taskRuntime.partition}, " +
@@ -126,14 +127,15 @@ public interface OptimizingMapper {
           " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
           "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
           " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
-          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})",
+          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+          "#{taskRuntime.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})",
       "</foreach>",
       "</script>"
   })
   void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
 
   @Select("SELECT process_id, task_id, retry_num, table_id, partition_data,  create_time, start_time, end_time," +
-      " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary FROM " +
+      " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties FROM " +
       "task_runtime WHERE table_id = #{table_id} AND process_id = #{process_id}")
   @Results({
       @Result(property = "taskId.processId", column = "process_id"),
@@ -148,7 +150,8 @@ public interface OptimizingMapper {
       @Result(property = "optimizingThread.token", column = "optimizer_token"),
       @Result(property = "optimizingThread.threadId", column = "thread_id"),
       @Result(property = "output", column = "rewrite_output", typeHandler = Object2ByteArrayConvert.class),
-      @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class)
+      @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
 
@@ -162,7 +165,9 @@ public interface OptimizingMapper {
       " rewrite_output = #{taskRuntime.output, jdbcType=BLOB," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
       " metrics_summary = #{taskRuntime.summary," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " properties = #{taskRuntime.properties," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
       " WHERE process_id = #{taskRuntime.taskId.processId} AND " +
       "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
