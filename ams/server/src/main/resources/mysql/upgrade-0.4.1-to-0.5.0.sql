@@ -141,6 +141,7 @@ CREATE TABLE `table_optimizing_process`
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
     `target_snapshot_id`            bigint(20) NOT NULL,
+    `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
@@ -168,10 +169,13 @@ CREATE TABLE `optimizing_task_quota`
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
+-- init table_runtime
 insert into table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,
-last_optimized_snapshotId, last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time,optimizing_status,
+last_optimized_snapshotId, last_optimized_change_snapshotId,
+last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time,optimizing_status,
 optimizing_status_start_time, optimizing_process_id, optimizer_group)
 select t.table_id,s.catalog_name,s.db_name,s.table_name,s.current_snapshot_id,s.current_change_snapshotId,-1 last_optimized_snapshotId,
+-1 last_optimized_change_snapshotId,
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_major_optimize_time, '$.""')/1000) last_major_optimizing_time,
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_minor_optimize_time, '$.""')/1000) last_minor_optimizing_time,
 FROM_UNIXTIME(JSON_EXTRACT(s.latest_full_optimize_time,'$.""')/1000) last_full_optimizing_time,
