@@ -15,6 +15,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
@@ -54,6 +55,9 @@ public class ServerTableDescriptor extends PersistentBase {
     }
     tables.forEach(table -> table.snapshots().forEach(snapshot -> {
       if (snapshot.operation().equals(DataOperations.REPLACE)) {
+        return;
+      }
+      if (snapshot.summary().containsKey(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
         return;
       }
       TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
