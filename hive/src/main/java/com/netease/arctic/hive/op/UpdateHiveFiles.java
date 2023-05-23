@@ -6,6 +6,7 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -24,6 +25,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -37,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -243,15 +244,20 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   private void checkPartitionDelete(Set<Path> deleteFiles, Partition partition) {
     String partitionLocation = partition.getSd().getLocation();
-    List<FileStatus> files = table.io().list(partitionLocation);
-    for (FileStatus f : files) {
-      Path filePath = f.getPath();
-      if (!deleteFiles.contains(filePath)) {
-        throw new CannotAlterHiveLocationException(
-            "can't delete hive partition: " + partitionToString(partition) + ", file under partition is not deleted: " +
-                filePath.toString());
+
+    try (ArcticFileIO io = table.io()) {
+      List<FileStatus> files = io.list(partitionLocation);
+      for (FileStatus f : files) {
+        Path filePath = f.getPath();
+        if (!deleteFiles.contains(filePath)) {
+          throw new CannotAlterHiveLocationException(
+              "can't delete hive partition: " + partitionToString(partition) +
+                  ", file under partition is not deleted: " +
+                  filePath.toString());
+        }
       }
     }
+
   }
 
   /**
@@ -275,24 +281,27 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
    * check files in the partition, and delete orphan files
    */
   private void checkPartitionedOrphanFilesAndDelete(boolean isUnPartitioned) {
-    List<String> partitionsToCheck = new ArrayList<>();
+    List<String> partitionsToCheck = Lists.newArrayList();
     if (isUnPartitioned) {
       partitionsToCheck.add(this.unpartitionTableLocation);
     } else {
       partitionsToCheck = this.partitionToCreate.values()
           .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
     }
+    Set<String> addFilesPathCollect = addFiles.stream()
+        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toSet());
+    Set<String> deleteFilesPathCollect = deleteFiles.stream()
+        .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toSet());
+
     for (String partitionLocation: partitionsToCheck) {
-      List<String> addFilesPathCollect = addFiles.stream()
-          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-      List<String> deleteFilesPathCollect = deleteFiles.stream()
-          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
-      List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
-      for (FileStatus filePath: exisitedFiles) {
-        if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
-            !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
-          table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
-          LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
+      try (ArcticFileIO io = table.io()) {
+        List<FileStatus> existedFiles = io.list(partitionLocation);
+        for (FileStatus filePath: existedFiles) {
+          if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
+              !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
+            io.deleteFile(String.valueOf(filePath.getPath().toString()));
+            LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
+          }
         }
       }
     }
@@ -433,11 +442,13 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     String newLocation;
     newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
         txId != null ? HiveTableUtil.newHiveSubdirectory(txId) : HiveTableUtil.newHiveSubdirectory());
-    OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
-    try {
-      file.createOrOverwrite().close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    try (FileIO io = table.io()) {
+      OutputFile file = io.newOutputFile(newLocation + "/.keep");
+      try {
+        file.createOrOverwrite().close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
     return newLocation;
   }
