@@ -114,12 +114,14 @@ public abstract class AbstractArcticDataReader<T> {
             sourceNodes, structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> newParquetIterable(
-            fileScanTask,
-            newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                fileScanTask -> newParquetIterable(
+                    fileScanTask,
+                    newProjectedSchema,
+                    DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
     return dataIterable.iterator();
   }
 
@@ -135,13 +137,15 @@ public abstract class AbstractArcticDataReader<T> {
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask ->
-              newParquetIterable(
-                  fileScanTask,
-                  newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(
+          CloseableIterable.concat(
+              CloseableIterable.transform(
+                  CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                  fileScanTask ->
+                      newParquetIterable(
+                          fileScanTask,
+                          newProjectedSchema,
+                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
