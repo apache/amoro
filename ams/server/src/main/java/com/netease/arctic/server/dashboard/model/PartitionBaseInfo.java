@@ -20,18 +20,20 @@ package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
-import java.sql.Timestamp;
-
 public class PartitionBaseInfo {
   String partition;
-  int fileCount;
-  long fileSize;
-  Timestamp lastCommitTime;
+  long fileCount = 0;
+  long fileSize = 0;
+  long lastCommitTime = 0;
 
   // parameters needed for front-end only
   String size;
 
-  public PartitionBaseInfo(String partition, int fileCount, long fileSize, Timestamp lastCommitTime) {
+  public PartitionBaseInfo() {
+
+  }
+
+  public PartitionBaseInfo(String partition, long fileCount, long fileSize, long lastCommitTime) {
     this.partition = partition;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
@@ -47,11 +49,11 @@ public class PartitionBaseInfo {
     this.partition = partition;
   }
 
-  public int getFileCount() {
+  public long getFileCount() {
     return fileCount;
   }
 
-  public void setFileCount(int fileCount) {
+  public void setFileCount(long fileCount) {
     this.fileCount = fileCount;
   }
 
@@ -66,10 +68,10 @@ public class PartitionBaseInfo {
   }
 
   public long getLastCommitTime() {
-    return lastCommitTime.getTime();
+    return lastCommitTime;
   }
 
-  public void setLastCommitTime(Timestamp lastCommitTime) {
+  public void setLastCommitTime(long lastCommitTime) {
     this.lastCommitTime = lastCommitTime;
   }
 
