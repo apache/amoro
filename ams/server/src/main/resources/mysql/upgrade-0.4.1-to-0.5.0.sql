@@ -96,6 +96,7 @@ CREATE TABLE `table_runtime`
     `current_snapshot_id`           bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
+    `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
     `last_major_optimizing_time`    timestamp COMMENT 'Latest Major Optimize time for all partitions',
     `last_minor_optimizing_time`    timestamp COMMENT 'Latest Minor Optimize time for all partitions',
     `last_full_optimizing_time`     timestamp COMMENT 'Latest Full Optimize time for all partitions',
