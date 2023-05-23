@@ -79,7 +79,7 @@ public class MixedIcebergCommit extends IcebergCommit {
   /**
    * Resolve Hive Adapt.
    */
-  private List<DataFile> prepareCommit() {
+  private List<DataFile> moveFile2HiveIfNeed() {
     if (!needMoveFile2Hive()) {
       return null;
     }
@@ -150,7 +150,7 @@ public class MixedIcebergCommit extends IcebergCommit {
         fromSnapshotId);
 
     //In the scene of moving files to hive, the files will be renamed
-    List<DataFile> hiveNewDataFiles = prepareCommit();
+    List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
 
     Set<DataFile> addedDataFiles = Sets.newHashSet();
     Set<DataFile> removedDataFiles = Sets.newHashSet();

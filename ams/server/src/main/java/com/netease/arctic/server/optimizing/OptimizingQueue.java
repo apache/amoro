@@ -55,7 +55,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final ResourceGroup optimizerGroup;
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryQueue = new LinkedTransferQueue<>();
-  private final SchedulingPolicy schedulingPolicy = new SchedulingPolicy();
+  private final SchedulingPolicy schedulingPolicy;
   private final Map<OptimizingTaskId, TaskRuntime> taskMap = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
 
@@ -65,6 +65,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                          List<TableRuntimeMeta> tableRuntimeMetaList) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerGroup = optimizerGroup;
+    this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
