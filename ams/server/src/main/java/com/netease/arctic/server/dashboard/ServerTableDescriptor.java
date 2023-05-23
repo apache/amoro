@@ -124,8 +124,12 @@ public class ServerTableDescriptor extends PersistentBase {
   public List<DDLInfo> getTableOperations(ServerTableIdentifier tableIdentifier) {
     List<DDLInfo> result = new ArrayList<>();
     ArcticTable arcticTable = tableService.loadTable(tableIdentifier);
-    ;
-    Table table = arcticTable.asUnkeyedTable();
+    Table table;
+    if (arcticTable.isKeyedTable()) {
+      table = arcticTable.asKeyedTable().baseTable();
+    } else {
+      table = arcticTable.asUnkeyedTable();
+    }
     List<HistoryEntry> snapshotLog = ((HasTableOperations) table).operations().current().snapshotLog();
     List<org.apache.iceberg.TableMetadata.MetadataLogEntry> metadataLogEntries =
         ((HasTableOperations) table).operations().current().previousFiles();

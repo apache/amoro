@@ -38,6 +38,7 @@ public class MixFormatRewriteExecutorFactory implements OptimizingExecutorFactor
   @Override
   public OptimizingExecutor createExecutor(RewriteFilesInput input) {
     OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new MixFormatRewriteExecutor(input, input.getTable(), optimizingConfig.getStructLikeCollections());
+    return new MixFormatRewriteExecutor(input, input.getTable(), optimizingConfig.getStructLikeCollections(),
+        optimizingConfig.getOutputDir());
   }
 }
