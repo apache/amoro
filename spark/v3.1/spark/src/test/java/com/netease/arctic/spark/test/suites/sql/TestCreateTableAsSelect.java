@@ -149,9 +149,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       Table hiveTable = loadHiveTable();
       Asserts.assertHiveColumns(expectSchema, ptSpec, hiveTable.getSd().getCols());
       Asserts.assertHivePartition(ptSpec, hiveTable.getPartitionKeys());
-      // TODO: CreateTableAsSelect should write to hive location but currently it has a bug. ARCTIC-1403
-      // TODO: Add this assert if bug is fixed.
-      //      Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
+      Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
     }
 
 
