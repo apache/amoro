@@ -3,6 +3,7 @@ package com.netease.arctic.server.persistence.mapper;
 import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
+import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableRuntime;
@@ -296,7 +297,7 @@ public interface TableMetaMapper {
       " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status," +
       " a.optimizing_status_start_time," +
       " a.optimizing_process_id, a.optimizer_group, a.table_config, b.optimizing_type, b.target_snapshot_id," +
-      " b.target_change_snapshot_id, b.plan_time FROM table_runtime a" +
+      " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a" +
       " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
       @Result(property = "tableId", column = "table_id"),
@@ -322,7 +323,9 @@ public interface TableMetaMapper {
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
       @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
-      @Result(property = "planTime", column = "plan_time",  typeHandler = Long2TsConverter.class)
+      @Result(property = "planTime", column = "plan_time",  typeHandler = Long2TsConverter.class),
+      @Result(property = "fromSequence", column = "from_sequence",  typeHandler = MapLong2StringConverter.class),
+      @Result(property = "toSequence", column = "to_sequence",  typeHandler = MapLong2StringConverter.class)
   })
   List<TableRuntimeMeta> selectTableRuntimeMetas();
 }

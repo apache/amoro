@@ -4,6 +4,8 @@ import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
+import java.util.Map;
+
 public class TableRuntimeMeta {
   private long tableId;
   private String catalogName;
@@ -29,6 +31,8 @@ public class TableRuntimeMeta {
   private long endTime;
   private String failReason;
   private String summary;
+  private Map<String, Long> fromSequence;
+  private Map<String, Long> toSequence;
 
   private TableRuntime tableRuntime;
 
@@ -191,6 +195,22 @@ public class TableRuntimeMeta {
 
   public void setLastFullOptimizingTime(long lastFullOptimizingTime) {
     this.lastFullOptimizingTime = lastFullOptimizingTime;
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return fromSequence;
+  }
+
+  public void setFromSequence(Map<String, Long> fromSequence) {
+    this.fromSequence = fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
+  }
+
+  public void setToSequence(Map<String, Long> toSequence) {
+    this.toSequence = toSequence;
   }
 
   public void setTableStatus(OptimizingStatus tableStatus) {
