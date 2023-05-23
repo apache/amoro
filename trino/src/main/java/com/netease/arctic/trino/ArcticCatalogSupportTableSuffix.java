@@ -149,6 +149,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
+    return arcticCatalog.newTableBuilder(identifier, schema, format);
+  }
+
+  @Override
   public void refresh() {
     arcticCatalog.refresh();
   }
@@ -186,13 +191,13 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public TableIdentifier id() {
-      return table.id();
+    public TableFormat format() {
+      return table.format();
     }
 
     @Override
-    public TableFormat format() {
-      throw new UnsupportedOperationException();
+    public TableIdentifier id() {
+      return table.id();
     }
 
     @Override

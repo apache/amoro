@@ -20,6 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -78,6 +79,11 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   }
 
   @Override
+  public boolean tableExists(TableIdentifier tableIdentifier) {
+    return catalogWrapper.tableExists(tableIdentifier);
+  }
+
+  @Override
   public void renameTable(TableIdentifier from, String newTableName) {
     catalogWrapper.renameTable(from, newTableName);
   }
@@ -91,6 +97,11 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
     return catalogWrapper.newTableBuilder(identifier, schema);
+  }
+
+  @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
+    return catalogWrapper.newTableBuilder(identifier, schema, format);
   }
 
   @Override

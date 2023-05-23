@@ -21,6 +21,7 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
@@ -123,12 +124,22 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return hiveClient;
   }
 
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
+  }
+
   public static class HiveChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
     }
 
     @Override
@@ -151,6 +162,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
         boolean syncHiveChange) {
       super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
           syncHiveChange);
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
     }
   }
 }

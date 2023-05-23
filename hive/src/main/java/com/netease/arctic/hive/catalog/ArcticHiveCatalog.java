@@ -21,6 +21,7 @@ package com.netease.arctic.hive.catalog;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
@@ -126,6 +127,11 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
+    return this.newTableBuilder(identifier, schema, TableFormat.MIXED_HIVE);
+  }
+
+  @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
     return new ArcticHiveTableBuilder(identifier, schema);
   }
 

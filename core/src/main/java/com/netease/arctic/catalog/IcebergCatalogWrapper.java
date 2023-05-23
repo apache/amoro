@@ -200,6 +200,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   }
 
   @Override
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
+    return null;
+  }
+
+  @Override
   public void refresh() {
   }
 

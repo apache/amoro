@@ -85,14 +85,15 @@ public class BasicKeyedTable implements KeyedTable {
   }
 
   @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_ICEBERG;
+  }
+
+  @Override
   public TableIdentifier id() {
     return TableIdentifier.of(tableMeta.getTableIdentifier());
   }
 
-  @Override
-  public TableFormat format() {
-    return TableFormat.MIXED_ICEBERG;
-  }
 
   @Override
   public PrimaryKeySpec primaryKeySpec() {
