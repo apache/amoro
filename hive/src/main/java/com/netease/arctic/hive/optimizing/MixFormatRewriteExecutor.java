@@ -5,7 +5,6 @@ import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.ArcticTreeNodePosDeleteWriter;
 import com.netease.arctic.optimizing.AbstractRewriteFilesExecutor;
 import com.netease.arctic.optimizing.OptimizingDataReader;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.WriteOperationKind;

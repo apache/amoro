@@ -79,9 +79,9 @@ public class MixedIcebergCommit extends IcebergCommit {
   /**
    * Resolve Hive Adapt.
    */
-  private void prepareCommit() {
+  private List<DataFile> prepareCommit() {
     if (!needMoveFile2Hive()) {
-      return;
+      return null;
     }
 
     HMSClientPool hiveClient = ((SupportHive) table).getHMSClient();
@@ -90,6 +90,7 @@ public class MixedIcebergCommit extends IcebergCommit {
         table.asUnkeyedTable().spec().partitionType() :
         table.asKeyedTable().baseTable().spec().partitionType();
 
+    List<DataFile> newTargetFiles = new ArrayList<>();
     for (TaskRuntime taskRuntime : tasks) {
       RewriteFilesOutput output = taskRuntime.getOutput();
       DataFile[] dataFiles = output.getDataFiles();
@@ -104,7 +105,6 @@ public class MixedIcebergCommit extends IcebergCommit {
           .max()
           .orElse(0L);
 
-      List<DataFile> newTargetFiles = new ArrayList<>(targetFiles.size());
       for (DataFile targetFile : targetFiles) {
         if (partitionPathMap.get(taskRuntime.getPartition()) == null) {
           List<String> partitionValues =
@@ -123,12 +123,12 @@ public class MixedIcebergCommit extends IcebergCommit {
             String hiveSubdirectory = table.isKeyedTable() ?
                 HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
 
-            Partition p = HivePartitionUtil.getPartition(hiveClient, table, partitionValues);
-            if (p == null) {
+            Partition partition = HivePartitionUtil.getPartition(hiveClient, table, partitionValues);
+            if (partition == null) {
               partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
                   table.spec(), targetFile.partition(), hiveSubdirectory);
             } else {
-              partitionPath = p.getSd().getLocation();
+              partitionPath = partition.getSd().getLocation();
             }
           }
           partitionPathMap.put(taskRuntime.getPartition(), partitionPath);
@@ -137,14 +137,8 @@ public class MixedIcebergCommit extends IcebergCommit {
         DataFile finalDataFile = moveTargetFiles(targetFile, partitionPathMap.get(taskRuntime.getPartition()));
         newTargetFiles.add(finalDataFile);
       }
-      RewriteFilesOutput newOutput = new RewriteFilesOutput(
-          newTargetFiles.toArray(new DataFile[0]),
-          null,
-          output.summary()
-      );
-
-      taskRuntime.updateOutput(newOutput);
     }
+    return newTargetFiles;
   }
 
   @Override
@@ -155,7 +149,8 @@ public class MixedIcebergCommit extends IcebergCommit {
     LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
         fromSnapshotId);
 
-    prepareCommit();
+    //In the scene of moving files to hive, the files will be renamed
+    List<DataFile> hiveNewDataFiles = prepareCommit();
 
     Set<DataFile> addedDataFiles = Sets.newHashSet();
     Set<DataFile> removedDataFiles = Sets.newHashSet();
@@ -191,7 +186,9 @@ public class MixedIcebergCommit extends IcebergCommit {
       }
 
       RewriteFilesOutput output = taskRuntime.getOutput();
-      if (output.getDataFiles() != null) {
+      if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
+        addedDataFiles.addAll(hiveNewDataFiles);
+      } else if (output.getDataFiles() != null) {
         Collections.addAll(addedDataFiles, output.getDataFiles());
       }
 

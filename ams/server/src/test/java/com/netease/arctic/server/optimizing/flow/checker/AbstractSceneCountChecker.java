@@ -18,43 +18,47 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.IcebergCommit;
-import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
-import java.util.List;
 import javax.annotation.Nullable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.hadoop.hive.metastore.api.Partition;
 
-public class FullOptimizingChecker implements CompleteOptimizingFlow.Checker {
+import java.util.List;
+
+public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlow.Checker {
+
+  private int except;
 
   private int count;
+
+  public AbstractSceneCountChecker(int except) {
+    this.except = except;
+  }
 
   @Override
   public boolean condition(
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit
-  ) {
-    if (CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties()).getOutputDir() != null) {
+      @Nullable IcebergCommit latestCommit) {
+    if (internalCondition(table, latestTaskDescriptors, latestPlanner, latestCommit)) {
       count++;
       return true;
     }
     return false;
   }
 
+  protected abstract boolean internalCondition(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable IcebergCommit latestCommit);
+
   @Override
   public boolean senseHasChecked() {
-    return count > 0;
+    return count >= except;
   }
 
   @Override
@@ -62,12 +66,6 @@ public class FullOptimizingChecker implements CompleteOptimizingFlow.Checker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit
-  ) throws Exception {
-    SupportHive supportHive = (SupportHive) table;
-    String hiveLocation = supportHive.hiveLocation();
-
-    HMSClientPool hmsClient = supportHive.getHMSClient();
-    List<Partition> list = hmsClient.run(c -> c.listPartitions(table.id().getDatabase(), table.id().getTableName(), (short) 100));
+      @Nullable IcebergCommit latestCommit) throws Exception {
   }
 }
