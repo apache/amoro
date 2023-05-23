@@ -30,7 +30,6 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -40,6 +39,7 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,8 +127,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
     List<Record> list = new ArrayList<>();
     for (CompletableFuture<List<Record>> completableFuture : completableFutures) {
-      List<Record> records = completableFuture.get();
-      list.addAll(records);
+      list.addAll(completableFuture.get());
     }
     return list;
   }

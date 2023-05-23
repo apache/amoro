@@ -19,18 +19,18 @@
 package com.netease.arctic.server.optimizing.flow.checker;
 
 import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
-public class OptimizingCountChecker extends AbstractSceneCountChecker {
-
-  public OptimizingCountChecker(int except) {
-    super(except);
+public class MinorOptimizingCheck extends AbstractSceneCountChecker {
+  public MinorOptimizingCheck() {
+    super(1);
   }
 
   @Override
@@ -39,6 +39,7 @@ public class OptimizingCountChecker extends AbstractSceneCountChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable IcebergCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors);
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
+        latestPlanner.getOptimizingType() == OptimizingType.MINOR;
   }
 }

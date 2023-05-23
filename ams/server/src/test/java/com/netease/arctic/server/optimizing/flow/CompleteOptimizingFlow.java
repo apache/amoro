@@ -39,7 +39,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import javax.annotation.Nullable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -47,6 +46,7 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.util.StructLikeMap;
 import org.mockito.Mockito;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -137,7 +137,10 @@ public class CompleteOptimizingFlow {
     ).get();
   }
 
-  private void check(List<TaskDescriptor> taskDescriptors, OptimizingPlanner planner, IcebergCommit commit) throws Exception {
+  private void check(
+      List<TaskDescriptor> taskDescriptors,
+      OptimizingPlanner planner,
+      IcebergCommit commit) throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
         checker.check(table, taskDescriptors, planner, commit);
@@ -163,9 +166,9 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
     Mockito.when(tableRuntime.getNewestProcessId()).thenReturn(1L);
     Mockito.when(tableRuntime.getPendingInput()).thenReturn(null);
-    Mockito.when(tableRuntime.getLastMinorOptimizingTime()).thenReturn(Long.MAX_VALUE);
-    Mockito.when(tableRuntime.getLastMajorOptimizingTime()).thenReturn(Long.MAX_VALUE);
-    Mockito.when(tableRuntime.getLastFullOptimizingTime()).thenReturn(Long.MAX_VALUE);
+    Mockito.doCallRealMethod().when(tableRuntime).getLastMinorOptimizingTime();
+    Mockito.doCallRealMethod().when(tableRuntime).getLastMajorOptimizingTime();
+    Mockito.doCallRealMethod().when(tableRuntime).getLastFullOptimizingTime();
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
@@ -246,7 +249,7 @@ public class CompleteOptimizingFlow {
 
     void check(
         ArcticTable table,
-        @Nullable List<TaskDescriptor> LatestTaskDescriptors,
+        @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
         @Nullable IcebergCommit latestCommit) throws Exception;
   }
