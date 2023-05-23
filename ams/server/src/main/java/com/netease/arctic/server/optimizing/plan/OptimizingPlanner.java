@@ -27,7 +27,6 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
-import com.sun.xml.internal.ws.server.ServerPropertyConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
