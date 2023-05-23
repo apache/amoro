@@ -70,7 +70,7 @@
                                     <include>org.apache.zookeeper:zookeeper-jute</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
-                                    <include>org.apache.iceberg:iceberg-spark-3</include>
+                                    <include>org.apache.iceberg:iceberg-spark3</include>
                                     <include>org.apache.iceberg:iceberg-common</include>
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
