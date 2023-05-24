@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.excutors;
+package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;

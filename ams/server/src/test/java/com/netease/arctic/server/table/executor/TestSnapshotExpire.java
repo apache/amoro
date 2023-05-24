@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.excutors;
+package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
@@ -29,7 +29,6 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.executor.SnapshotsExpiringExecutor;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
