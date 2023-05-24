@@ -39,7 +39,6 @@ import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
-import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -159,7 +158,7 @@ public class ArcticServiceContainer {
     return this.optimizingService;
   }
 
-  private void initConfig() throws IllegalConfigurationException, IOException {
+  private void initConfig() throws IOException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
@@ -228,14 +227,14 @@ public class ArcticServiceContainer {
 
     private JSONObject yamlConfig;
 
-    public void init() throws IllegalConfigurationException, IOException {
+    public void init() throws IOException {
       initServiceConfig();
       initContainerConfig();
       initResourceGroupConfig();
     }
 
     @SuppressWarnings("unchecked")
-    private void initResourceGroupConfig() throws IllegalConfigurationException {
+    private void initResourceGroupConfig() {
       LOG.info("initializing resource group configuration...");
       JSONArray optimizeGroups = yamlConfig.getJSONArray(ArcticManagementConf.OPTIMIZER_GROUP_LIST);
       for (int i = 0; i < optimizeGroups.size(); i++) {
@@ -244,7 +243,7 @@ public class ArcticServiceContainer {
             groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_NAME),
             groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_CONTAINER));
         if (!ResourceContainers.contains(groupBuilder.getContainer())) {
-          throw new IllegalConfigurationException(
+          throw new IllegalStateException(
               "can not find such container config named" +
                   groupBuilder.getContainer());
         }
@@ -306,7 +305,7 @@ public class ArcticServiceContainer {
     }
 
     @SuppressWarnings("unchecked")
-    private void initContainerConfig() throws IllegalConfigurationException {
+    private void initContainerConfig() {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();

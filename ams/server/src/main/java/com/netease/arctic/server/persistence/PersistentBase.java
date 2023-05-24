@@ -21,6 +21,7 @@ package com.netease.arctic.server.persistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.exception.PersistenceException;
+import javafx.scene.shape.Arc;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -49,7 +50,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -63,7 +64,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw t;
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -75,7 +76,7 @@ public abstract class PersistentBase {
         R result = func.apply(mapper);
         return result;
       } catch (Throwable t) {
-        throw t;
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -86,12 +87,11 @@ public abstract class PersistentBase {
       try {
         int result = func.apply(getMapper(session, mapperClz));
         if (result == 0) {
-          throw errorSupplier.get();
+          throw  errorSupplier.get();
         }
         session.commit();
       } catch (Throwable t) {
-        session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
