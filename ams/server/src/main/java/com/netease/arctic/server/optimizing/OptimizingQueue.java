@@ -1,7 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
@@ -80,6 +79,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
+        process.getTaskMap().entrySet().stream().filter(
+            entry -> entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED ||
+            entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
+            .forEach(entry -> taskMap.put(entry.getKey(), entry.getValue()));
         process.getTaskMap().values().stream()
             .filter(task -> task.getStatus() == TaskRuntime.Status.PLANNED)
             .forEach(taskQueue::offer);
@@ -105,7 +108,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   public List<OptimizerInstance> getOptimizers() {
-    return ImmutableList.copyOf(authOptimizers.values());
+    return Lists.newArrayList(authOptimizers.values());
   }
 
   public void removeOptimizer(String resourceId) {
@@ -533,6 +536,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwnership(this);
         taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+        taskRuntime.setStatusMachine();
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
       });
     }

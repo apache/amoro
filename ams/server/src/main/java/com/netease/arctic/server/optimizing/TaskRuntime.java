@@ -46,7 +46,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private OptimizingTaskId taskId;
   @StatedPersistentBase.StateField
   private Status status = Status.PLANNED;
-  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
+  private TaskStatusMachine statusMachine;
   @StatedPersistentBase.StateField
   private int retry = 0;
   @StatedPersistentBase.StateField
@@ -77,6 +77,7 @@ public class TaskRuntime extends StatedPersistentBase {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
+    this.statusMachine = new TaskStatusMachine();
     this.summary = new MetricsSummary(input);
     this.tableId = taskDescriptor.getTableId();
     this.properties = properties;
@@ -270,6 +271,10 @@ public class TaskRuntime extends StatedPersistentBase {
     this.status = status;
   }
 
+  public void setStatusMachine() {
+    this.statusMachine = new TaskStatusMachine();
+  }
+
   public MetricsSummary getSummary() {
     return summary;
   }
@@ -283,6 +288,9 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {
+    if (this.optimizingThread == null) {
+      return;
+    }
     if (!thread.equals(this.optimizingThread)) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }

@@ -136,8 +136,6 @@ CREATE TABLE task_runtime (
     cost_time       BIGINT,
     status          VARCHAR(16),
     fail_reason     VARCHAR(4096),
-    optimizer_token VARCHAR(50),
-    thread_id       INT,
     rewrite_output  BLOB,
     metrics_summary CLOB,
     properties      CLOB,

@@ -20,7 +20,7 @@ public class TaskFilesPersistence {
   }
 
   public static Map<Integer, RewriteFilesInput> loadTaskInputs(long processId) {
-    return persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
+    return persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId)).get("input");
   }
 
   public static RewriteFilesOutput loadTaskOutput(byte[] content) {
