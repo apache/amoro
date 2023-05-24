@@ -536,7 +536,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwnership(this);
         taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
-        taskRuntime.setStatusMachine();
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
       });
     }
