@@ -44,6 +44,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
 public class TestCatalog extends CatalogTestBase{
+  private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -174,10 +177,9 @@ public class TestCatalog extends CatalogTestBase{
       }
     });
     try (CloseableIterator<Row> iter = tableResult.collect()) {
-      List<Row> results = Lists.newArrayList(iter);
-      return results;
+      return Lists.newArrayList(iter);
     } catch (Exception e) {
-//      LOG.warn("Failed to collect table result", e);
+      LOG.warn("Failed to collect table result", e);
       return null;
     }
   }
