@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -65,6 +66,11 @@ public class SchedulingPolicy {
     } finally {
       tableLock.unlock();
     }
+  }
+
+  @VisibleForTesting
+  Map<ServerTableIdentifier, TableRuntime> getTableRuntimeMap() {
+    return tableRuntimeMap;
   }
 
   private static class QuotaOccupySorter implements Comparator<TableRuntime> {
