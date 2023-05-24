@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.util;
 
-import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper;
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark32Helper;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
@@ -70,6 +70,6 @@ public class ExpressionHelper {
   public org.apache.spark.sql.catalyst.expressions.Expression toCatalyst(
       Expression expr, LogicalPlan plan
   ) {
-    return ArcticSpark33Helper.toCatalyst(expr, plan);
+    return ArcticSpark32Helper.toCatalyst(expr, plan);
   }
 }

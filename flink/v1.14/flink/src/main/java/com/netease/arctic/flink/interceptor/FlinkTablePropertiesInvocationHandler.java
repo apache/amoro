@@ -34,16 +34,18 @@ import java.util.Map;
 public class FlinkTablePropertiesInvocationHandler implements InvocationHandler, Serializable {
 
   private ArcticTable arcticTable;
-  private Map<String, String> flinkTableProperties = new HashMap<>();
+  private final Map<String, String> flinkTableProperties = new HashMap<>();
+  protected Map<String, String> tablePropertiesCombined = new HashMap<>();
 
   public FlinkTablePropertiesInvocationHandler(Map<String, String> flinkTableProperties,
                                                ArcticTable arcticTable) {
-    this.flinkTableProperties.putAll(arcticTable.properties());
+    this.tablePropertiesCombined.putAll(arcticTable.properties());
     this.arcticTable = arcticTable;
     if (flinkTableProperties == null) {
       return;
     }
     this.flinkTableProperties.putAll(flinkTableProperties);
+    this.tablePropertiesCombined.putAll(flinkTableProperties);
   }
 
   public Object getProxy() {
@@ -54,11 +56,31 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     if ("properties".equals(method.getName())) {
-      return flinkTableProperties;
+      return tablePropertiesCombined;
     } else if ("asKeyedTable".equals(method.getName())) {
       return proxy;
     }
-    return method.invoke(arcticTable, args);
+    Object result = method.invoke(arcticTable, args);
+    // rewrite the properties as of the arctic table properties may be updated.
+    if ("refresh".equals(method.getName())) {
+      rewriteProperties();
+    }
+    return result;
+  }
+
+  private void rewriteProperties() {
+    Map<String, String> refreshedProperties = arcticTable.properties();
+    // iterate through the properties of the arctic table and update the properties of the tablePropertiesCombined.
+    for (Map.Entry<String, String> entry : refreshedProperties.entrySet()) {
+      if (flinkTableProperties.containsKey(entry.getKey())) {
+        // Don't update the properties of the tablePropertiesCombined
+        continue;
+      }
+      if (!tablePropertiesCombined.containsKey(entry.getKey()) ||
+          !tablePropertiesCombined.get(entry.getKey()).equals(entry.getValue())) {
+        tablePropertiesCombined.put(entry.getKey(), entry.getValue());
+      }
+    }
   }
 
 }

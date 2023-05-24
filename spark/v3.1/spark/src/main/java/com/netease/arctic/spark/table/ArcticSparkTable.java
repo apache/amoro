@@ -55,9 +55,6 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
       TableCapability.OVERWRITE_DYNAMIC);
 
   private final ArcticTable arcticTable;
-  private final StructType requestedSchema;
-  private final boolean refreshEagerly;
-  private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
@@ -67,26 +64,13 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
         return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
       }
     }
-    return new ArcticSparkTable(table, false, catalog);
-  }
-
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
-    this(arcticTable, null, refreshEagerly, catalog);
+    return new ArcticSparkTable(table, catalog);
   }
 
   public ArcticSparkTable(ArcticTable arcticTable,
-                          StructType requestedSchema,
-                          boolean refreshEagerly,
                           ArcticCatalog catalog) {
     this.arcticTable = arcticTable;
-    this.requestedSchema = requestedSchema;
-    this.refreshEagerly = refreshEagerly;
     this.catalog = catalog;
-
-    if (requestedSchema != null) {
-      // convert the requested schema to throw an exception if any requested fields are unknown
-      SparkSchemaUtil.convert(arcticTable.schema(), requestedSchema);
-    }
   }
 
   private SparkSession sparkSession() {
@@ -108,17 +92,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
 
   @Override
   public StructType schema() {
-    if (lazyTableSchema == null) {
-      Schema tableSchema = arcticTable.schema();
-      if (requestedSchema != null) {
-        Schema prunedSchema = SparkSchemaUtil.prune(tableSchema, requestedSchema);
-        this.lazyTableSchema = SparkSchemaUtil.convert(prunedSchema);
-      } else {
-        this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
-      }
-    }
-
-    return lazyTableSchema;
+    Schema tableSchema = arcticTable.schema();
+    return SparkSchemaUtil.convert(tableSchema);
   }
 
   @Override
@@ -177,13 +152,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    SparkScanBuilder scanBuilder = new SparkScanBuilder(sparkSession(), arcticTable, options);
-
-    if (requestedSchema != null) {
-      scanBuilder.pruneColumns(requestedSchema);
-    }
-
-    return scanBuilder;
+    return new SparkScanBuilder(sparkSession(), arcticTable, options);
   }
 
   @Override

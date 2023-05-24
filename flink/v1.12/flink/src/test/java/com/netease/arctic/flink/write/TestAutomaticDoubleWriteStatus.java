@@ -18,13 +18,18 @@
 
 package com.netease.arctic.flink.write;
 
+<<<<<<<< HEAD:flink/v1.12/flink/src/test/java/com/netease/arctic/flink/write/TestAutomaticDoubleWriteStatus.java
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
+========
+import org.apache.flink.streaming.api.watermark.Watermark;
+
+>>>>>>>> opensource-arctic/master:flink/v1.15/flink/src/test/java/com/netease/arctic/flink/write/TestAutomaticDoubleWriteStatus.java
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import org.apache.flink.streaming.api.watermark.Watermark;
+import com.netease.arctic.table.ArcticTable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,18 +51,21 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
 
     AutomaticDoubleWriteStatus status = new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
     status.open();
+    ArcticTable arcticTable = tableLoader.loadArcticTable();
+
     Assert.assertFalse(status.isDoubleWrite());
     status.processWatermark(new Watermark(System.currentTimeMillis() - 11 * 1000));
     Assert.assertFalse(status.isDoubleWrite());
     Assert.assertFalse(
-        Boolean.parseBoolean(tableLoader.loadArcticTable().properties()
-            .getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
+        Boolean.parseBoolean(arcticTable.properties()
+            .get(LOG_STORE_CATCH_UP.key())));
     status.processWatermark(new Watermark(System.currentTimeMillis() - 9 * 1000));
     Assert.assertTrue(status.isDoubleWrite());
-
     Assert.assertTrue(status.isDoubleWrite());
+
+    arcticTable.refresh();
     Assert.assertTrue(
-        Boolean.parseBoolean(tableLoader.loadArcticTable().properties()
-            .getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
+        Boolean.parseBoolean(arcticTable.properties()
+            .get(LOG_STORE_CATCH_UP.key())));
   }
 }

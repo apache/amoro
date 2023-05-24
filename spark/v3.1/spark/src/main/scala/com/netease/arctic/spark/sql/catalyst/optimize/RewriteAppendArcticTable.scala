@@ -20,7 +20,6 @@ package com.netease.arctic.spark.sql.catalyst.optimize
 
 import java.util
 
-import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.sql.utils.{ProjectingInternalRow, WriteQueryProjections}
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDATE_OPERATION}
@@ -69,12 +68,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
     WriteQueryProjections(frontRowProjection, backRowProjection)
   }
 
-  def checkDuplicatesEnabled(): Boolean = {
-    java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
-      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
-      SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
-  }
-
   def buildJoinCondition(
       primaries: util.List[String],
       tableScan: LogicalPlan,
@@ -116,14 +109,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           query
         }
     }
-  }
-
-  private def buildKeyedTableInsertProjection(relation: LogicalPlan): LogicalPlan = {
-    val output = relation.output
-    val outputWithValues = output.map(a => {
-      Alias(a, "_arctic_after_" + a.name)()
-    })
-    Project(outputWithValues, relation)
   }
 
   private def buildKeyedTableBeforeProject(relation: DataSourceV2Relation): LogicalPlan = {

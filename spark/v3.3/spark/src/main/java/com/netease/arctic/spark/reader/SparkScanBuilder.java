@@ -27,6 +27,7 @@ import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Binder;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -149,6 +150,9 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
 
   @Override
   public Scan build() {
+    Preconditions.checkArgument(table.isKeyedTable() || table.isUnkeyedTable(),
+        "Unable to build scan for table: " + table.id().toString() + ", unknown table " +
+            "type");
     if (table.isKeyedTable()) {
       return new KeyedSparkBatchScan(
           table.asKeyedTable(),
@@ -163,10 +167,8 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
           lazySchemaWithRowIdent(),
           filterExpressions,
           options);
-    } else {
-      throw new IllegalStateException("Unable to build scan for table: " + table.id().toString() + ", unknown table " +
-          "type");
     }
+    return null;
   }
 
   @Override

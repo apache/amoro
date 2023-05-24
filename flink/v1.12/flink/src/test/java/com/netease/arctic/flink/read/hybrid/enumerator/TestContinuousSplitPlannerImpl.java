@@ -47,8 +47,12 @@ import java.util.List;
 
 public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestContinuousSplitPlannerImpl.class);
+<<<<<<<< HEAD:flink/v1.12/flink/src/test/java/com/netease/arctic/flink/read/hybrid/enumerator/TestContinuousSplitPlannerImpl.java
   protected static final RowType ROW_TYPE = FlinkSchemaUtil.convert(BasicTableTestHelper.TABLE_SCHEMA);
   protected KeyedTable testKeyedTable;
+========
+  protected static final RowType ROW_TYPE = FlinkSchemaUtil.convert(TABLE_SCHEMA);
+>>>>>>>> opensource-arctic/master:flink/v1.15/flink/src/test/java/com/netease/arctic/flink/read/hybrid/enumerator/TestContinuousSplitPlannerImpl.java
 
   protected static final LocalDateTime ldt =
       LocalDateTime.of(
