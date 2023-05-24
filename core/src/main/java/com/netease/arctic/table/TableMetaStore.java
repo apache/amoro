@@ -365,7 +365,6 @@ public class TableMetaStore implements Serializable {
       return callable.call();
     } catch (Throwable e) {
       if (e instanceof RuntimeException) {
-        LOG.error("run with ugi request failed.", e);
         throw (RuntimeException) e;
       }
       throw new RuntimeException("run with ugi request failed.", e);

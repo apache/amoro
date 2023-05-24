@@ -34,14 +34,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArcticThriftUrl {
-  private static final Logger logger = LoggerFactory.getLogger(ArcticThriftUrl.class);
   public static final String PARAM_SOCKET_TIMEOUT = "socketTimeout";
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
   public static final String ZOOKEEPER_FLAG = "zookeeper";
   public static final String THRIFT_FLAG = "thrift";
   public static final String THRIFT_URL_FORMAT = "thrift://%s:%d/%s%s";
-  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
   public static final int maxRetries = 3;
+  private static final Logger logger = LoggerFactory.getLogger(ArcticThriftUrl.class);
+  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
   private final String schema;
   private final String host;
   private final int port;
@@ -50,6 +50,17 @@ public class ArcticThriftUrl {
 
   // origin url before parse
   private final String url;
+
+  private ArcticThriftUrl(
+      String schema, String host, int port, String catalogName, int socketTimeout,
+      String url) {
+    this.schema = schema;
+    this.host = host;
+    this.port = port;
+    this.catalogName = catalogName;
+    this.socketTimeout = socketTimeout;
+    this.url = url;
+  }
 
   /**
    * parse thrift url, now support thrift://host:port/{catalogName} and zookeeper://host:port/{cluster}/{catalogName}
@@ -142,7 +153,8 @@ public class ArcticThriftUrl {
           // an error occurs when the thread carrying kerberos authentication information accesses the zk.
           // Therefore, clear the authentication information and try again
           retryCount++;
-          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount),
+          logger.error(
+              String.format("Caught exception, retrying... (retry count: %s)", retryCount),
               authFailedException);
           try {
             Subject subject = Subject.getSubject(java.security.AccessController.getContext());
@@ -164,17 +176,6 @@ public class ArcticThriftUrl {
       throw new RuntimeException(String.format("invalid ams url %s", url));
     }
     return null;
-  }
-
-  private ArcticThriftUrl(
-      String schema, String host, int port, String catalogName, int socketTimeout,
-      String url) {
-    this.schema = schema;
-    this.host = host;
-    this.port = port;
-    this.catalogName = catalogName;
-    this.socketTimeout = socketTimeout;
-    this.url = url;
   }
 
   public String schema() {
