@@ -11,6 +11,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -19,8 +20,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -29,7 +30,13 @@ public class TestUpsertPushDown extends TableTestBase {
   public TestUpsertPushDown(PartitionSpec partitionSpec) {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(BasicTableTestHelper.TABLE_SCHEMA, BasicTableTestHelper.PRIMARY_KEY_SPEC,
-        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true")));
+        partitionSpec, buildTableProperties()));
+  }
+
+  private static Map<String, String> buildTableProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(TableProperties.UPSERT_ENABLED, "true");
+    return properties;
   }
 
   @Parameterized.Parameters(name = "spec = {0}")
