@@ -36,7 +36,6 @@ import org.junit.runners.Parameterized;
 import java.util.Map;
 import java.util.Set;
 
-<<<<<<<< HEAD:flink/v1.12/flink/src/test/java/com/netease/arctic/flink/shuffle/TestRoundRobinShuffleRulePolicy.java
 @RunWith(Parameterized.class)
 public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
 
@@ -54,9 +53,6 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
       {false, true},
       {false, false}};
   }
-========
-public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
->>>>>>>> opensource-arctic/master:flink/v1.15/flink/src/test/java/com/netease/arctic/flink/shuffle/TestRoundRobinShuffleRulePolicy.java
 
   @Test
   public void testPrimaryKeyPartitionedTable() throws Exception {

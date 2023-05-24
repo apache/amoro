@@ -18,15 +18,12 @@
 
 package com.netease.arctic.flink.write;
 
-<<<<<<<< HEAD:flink/v1.12/flink/src/test/java/com/netease/arctic/flink/write/TestAutomaticDoubleWriteStatus.java
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-========
 import org.apache.flink.streaming.api.watermark.Watermark;
 
->>>>>>>> opensource-arctic/master:flink/v1.15/flink/src/test/java/com/netease/arctic/flink/write/TestAutomaticDoubleWriteStatus.java
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;

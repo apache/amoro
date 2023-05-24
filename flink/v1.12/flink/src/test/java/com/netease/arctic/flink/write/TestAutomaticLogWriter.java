@@ -251,7 +251,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     List<Object[]> expected = isGapNone ? expects.subList(1, expects.size()) : expects.subList(2, expects.size());
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
-//    Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP_DEFAULT)));
+    Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
   }
 
   private void checkLogstoreDataAccuracy(String topic, List<Object[]> expects) {

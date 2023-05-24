@@ -32,6 +32,7 @@ import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -44,6 +45,7 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.iceberg.UpdateProperties;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -73,6 +75,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -218,6 +222,26 @@ public class TestKeyed extends FlinkTestBase {
     if (Objects.equals(logType, LOG_STORE_STORAGE_TYPE_PULSAR)) {
       pulsarHelper.op().deleteTopicByForce(topic);
     }
+  }
+
+  @Test
+  public void testRefresh() {
+    ArcticTableLoader tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+
+    tableLoader.open();
+    ArcticTable arcticTable = tableLoader.loadArcticTable();
+    boolean catchUp = true;
+    String catchUpTs = "1";
+
+    UpdateProperties updateProperties = arcticTable.updateProperties();
+    updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(catchUp));
+    updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), catchUpTs);
+    updateProperties.commit();
+
+    arcticTable.refresh();
+    Map<String, String> properties = arcticTable.properties();
+    Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
+    Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
   }
 
   @Test

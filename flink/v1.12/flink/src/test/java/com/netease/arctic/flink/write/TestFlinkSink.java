@@ -49,7 +49,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-<<<<<<<< HEAD:flink/v1.12/flink/src/test/java/com/netease/arctic/flink/write/TestFlinkSink.java
 @RunWith(Parameterized.class)
 public class TestFlinkSink extends FlinkTestBase {
 
@@ -63,9 +62,6 @@ public class TestFlinkSink extends FlinkTestBase {
     return Arrays.asList(
       new Object[][]{{true}, {false}});
   }
-========
-public class TestFlinkSink extends FlinkTestBase {
->>>>>>>> opensource-arctic/master:flink/v1.14/flink/src/test/java/com/netease/arctic/flink/write/TestFlinkSink.java
 
   @Test
   public void testKeyedSink() throws Exception {
