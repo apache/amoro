@@ -18,7 +18,9 @@
 
 package com.netease.arctic.flink;
 
-import com.netease.arctic.TableTestBase;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
@@ -26,9 +28,6 @@ import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;
@@ -65,7 +64,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.junit.After;
+import org.apache.iceberg.types.Types;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestName;
@@ -73,6 +73,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -81,7 +82,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
 public class FlinkTestBase extends TableTestBase {
@@ -94,9 +94,6 @@ public class FlinkTestBase extends TableTestBase {
   @Rule
   public TestName name = new TestName();
 
-  public static boolean IS_LOCAL = true;
-  public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
-
   public static String metastoreUrl;
 
   protected static final int KAFKA_PARTITION_NUMS = 1;
@@ -105,66 +102,38 @@ public class FlinkTestBase extends TableTestBase {
   protected Map<String, String> props;
   private volatile StreamExecutionEnvironment env = null;
 
+  public static final Schema TABLE_SCHEMA = new Schema(
+    Types.NestedField.required(1, "id", Types.IntegerType.get()),
+    Types.NestedField.required(2, "name", Types.StringType.get()),
+    Types.NestedField.required(3, "ts", Types.LongType.get()),
+    Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone())
+  );
+
   public static final TableSchema FLINK_SCHEMA = TableSchema.builder()
-      .field("id", DataTypes.INT())
-      .field("name", DataTypes.STRING())
-      .field("op_time", DataTypes.TIMESTAMP())
-      .build();
+    .field("id", DataTypes.INT())
+    .field("name", DataTypes.STRING())
+    .field("ts", DataTypes.BIGINT())
+    .field("op_time", DataTypes.TIMESTAMP())
+    .build();
   public static final RowType FLINK_ROW_TYPE = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
-
-  protected static final TableIdentifier PK_TABLE_ID_WITHOUT_PARTITION = TableIdentifier.of(
-      TEST_CATALOG_NAME, "test_db", "test_pk_no_partition_table");
-  protected static KeyedTable testKeyedNoPartitionTable;
-
-  protected static final TableIdentifier PARTITION_TABLE_ID = TableIdentifier.of(
-      TEST_CATALOG_NAME, "test_db", "test_partition_table");
-  protected static UnkeyedTable testPartitionTable;
 
   public static InternalCatalogBuilder catalogBuilder;
   public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
+  public FlinkTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
+  @Before
   public void before() throws Exception {
-    if (IS_LOCAL) {
-      metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
-      testKeyedNoPartitionTable = testCatalog
-          .newTableBuilder(PK_TABLE_ID_WITHOUT_PARTITION, TABLE_SCHEMA)
-          .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_no_partition_table")
-          .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-          .create().asKeyedTable();
-
-      testPartitionTable = testCatalog
-          .newTableBuilder(PARTITION_TABLE_ID, TABLE_SCHEMA)
-          .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/partition_table")
-          .withPartitionSpec(SPEC)
-          .create().asUnkeyedTable();
-
-      catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl + "/" + TEST_CATALOG_NAME);
-    } else {
-      metastoreUrl = METASTORE_URL;
-    }
+    metastoreUrl = getCatalogUrl();
+    catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
   }
 
-  @After
-  public void clean() {
-    LOG.info("clean start");
-    if (IS_LOCAL && testCatalog != null) {
-      if (testCatalog.tableExists(PK_TABLE_ID_WITHOUT_PARTITION)) {
-        testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
-        AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
-      }
-
-      if (testCatalog.tableExists(PARTITION_TABLE_ID)) {
-        testCatalog.dropTable(PARTITION_TABLE_ID, true);
-        AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
-      }
-    }
-    LOG.info("clean end");
-  }
-
-  public void config(String catalog) {
+  public void config() {
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogValidator.CATALOG_TYPE_VALUE_ARCTIC);
-    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl + "/" + catalog);
+    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl);
   }
 
   public static void prepare() throws Exception {
@@ -269,8 +238,8 @@ public class FlinkTestBase extends TableTestBase {
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
     ImmutableSet.Builder<Record> b = ImmutableSet.builder();
     rows.forEach(r ->
-        b.add(record.copy(ImmutableMap.of("id", r.getField(0), "name", r.getField(1),
-            "op_time", r.getField(2)))));
+      b.add(record.copy(ImmutableMap.of("id", r.getField(0), "name", r.getField(1),
+          "ts", r.getField(2), "op_time", r.getField(3)))));
     return b.build();
   }
 
@@ -291,14 +260,21 @@ public class FlinkTestBase extends TableTestBase {
   }
 
   protected static RowData createRowData(Integer id, String name, String dateTime, RowKind rowKind) {
-    return GenericRowData.ofKind(rowKind,
-        id, StringData.fromString(name), TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
+    return GenericRowData.ofKind(
+        rowKind,
+        id,
+        StringData.fromString(name),
+        LocalDateTime.parse(dateTime).toInstant(ZoneOffset.UTC).toEpochMilli(),
+        TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
   }
 
   protected static RowData createRowData(RowKind rowKind, Object... objects) {
     return GenericRowData.ofKind(
-        rowKind, objects[0], StringData.fromString((String) objects[1]),
-        TimestampData.fromLocalDateTime((LocalDateTime) objects[2]));
+        rowKind,
+        objects[0],
+        StringData.fromString((String) objects[1]),
+        objects[2],
+        TimestampData.fromLocalDateTime((LocalDateTime) objects[3]));
   }
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {
