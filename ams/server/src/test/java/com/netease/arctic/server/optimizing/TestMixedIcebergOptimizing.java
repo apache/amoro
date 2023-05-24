@@ -31,11 +31,11 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
-public class MixedIcebergOptimizingTest extends AbstractOptimizingTest {
+public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
   private final ArcticTable arcticTable;
   private final BaseOptimizingChecker checker;
 
-  public MixedIcebergOptimizingTest(ArcticTable arcticTable) {
+  public TestMixedIcebergOptimizing(ArcticTable arcticTable) {
     super();
     this.arcticTable = arcticTable;
     this.checker = new BaseOptimizingChecker(arcticTable.id());
