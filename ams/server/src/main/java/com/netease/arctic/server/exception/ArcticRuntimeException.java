@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class ArcticRuntimeException extends RuntimeException {
 
@@ -105,11 +104,11 @@ public class ArcticRuntimeException extends RuntimeException {
   }
 
   public static ArcticRuntimeException buildArcticException(Throwable throwable,
-      Function<Throwable, ArcticRuntimeException> ExceptionTransform) {
+      Function<Throwable, ArcticRuntimeException> exceptionTransform) {
     if (throwable instanceof ArcticRuntimeException) {
       return (ArcticRuntimeException) throwable;
     } else {
-      return ExceptionTransform.apply(throwable);
+      return exceptionTransform.apply(throwable);
     }
   }
 

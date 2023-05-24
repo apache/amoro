@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-public class NestedSqlSessionTest {
+public class TestNestedSqlSession {
 
   @Mock
   private SqlSession sqlSession;

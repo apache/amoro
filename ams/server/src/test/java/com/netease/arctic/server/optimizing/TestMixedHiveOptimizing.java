@@ -37,12 +37,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MixedHiveOptimizingTest extends AbstractOptimizingTest {
+public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   private final ArcticTable arcticTable;
   private final HiveMetaStoreClient hiveClient;
   private final BaseOptimizingChecker checker;
 
-  public MixedHiveOptimizingTest(ArcticTable arcticTable, HiveMetaStoreClient hiveClient) {
+  public TestMixedHiveOptimizing(ArcticTable arcticTable, HiveMetaStoreClient hiveClient) {
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
     this.checker = new BaseOptimizingChecker(arcticTable.id());
