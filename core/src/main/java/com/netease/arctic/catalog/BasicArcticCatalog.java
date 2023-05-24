@@ -534,8 +534,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
       try {
         client.getTable(identifier.buildTableIdentifier());
-        throw new org.apache.iceberg.exceptions.AlreadyExistsException("table already exist: " +
-            identifier.getTableName());
+        throw new org.apache.iceberg.exceptions.AlreadyExistsException("table already exist");
       } catch (NoSuchObjectException e) {
         checkProperties();
       } catch (TException e) {
