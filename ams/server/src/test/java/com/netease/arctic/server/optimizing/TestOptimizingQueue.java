@@ -2,6 +2,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
@@ -14,6 +15,8 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.AMSTableTestBase;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
@@ -33,6 +36,7 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestOptimizingQueue extends AMSTableTestBase {
@@ -130,6 +134,83 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, queue.getTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SUCCESS, null);
   }
+  
+  @Test
+  public void testInitTableRuntime() {
+    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    appendData(arcticTable.asUnkeyedTable(), 1);
+    appendData(arcticTable.asUnkeyedTable(), 2);
+    String authToken = "token";
+    int threadId = 1;
+    OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, threadId);
+    TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    TableRuntime runtime = tableRuntimeMeta.getTableRuntime();
+
+    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+
+    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
+        Collections.singletonList(tableRuntimeMeta));
+    // 1.poll task
+    OptimizingTask task = queue.pollTask(authToken, threadId);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(1, queue.getTaskMap().size());
+    TaskRuntime taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, thread);
+
+    // 2.ack task
+    queue.ackTask(authToken, threadId, task.getTaskId());
+    Assert.assertEquals(1, queue.getTaskMap().size());
+    taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
+
+    // 3.fail task
+    String errorMessage = "unknown error";
+    queue.completeTask(authToken, buildOptimizingTaskFailResult(task.getTaskId(), threadId, errorMessage));
+    Assert.assertEquals(0, queue.getTaskMap().size());
+    assertTaskRuntime(taskRuntime, TaskRuntime.Status.PLANNED, null); // retry and change to PLANNED
+    Assert.assertEquals(1, taskRuntime.getRetry());
+    Assert.assertEquals(errorMessage, taskRuntime.getFailReason());
+    
+    // 4.reload from sysdb
+    List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
+    Assert.assertEquals(1, tableRuntimeMetas.size());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
+    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas);
+
+    Map<OptimizingTaskId, TaskRuntime> taskMap = queue.getTaskMap();
+
+    // TODO fix bug and check
+
+  }
+
+  @Test
+  public void testOptimizer() throws InterruptedException {
+    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
+        Collections.emptyList());
+    OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
+    registerInfo.setThreadCount(1);
+    registerInfo.setMemoryMb(1024);
+    registerInfo.setGroupName(defaultResourceGroup().getName());
+    registerInfo.setResourceId("1");
+    registerInfo.setStartTime(System.currentTimeMillis());
+
+    // authenticate
+    String authToken = queue.authenticate(registerInfo);
+    List<OptimizerInstance> optimizers = queue.getOptimizers();
+    Assert.assertEquals(1, optimizers.size());
+    OptimizerInstance optimizerInstance = optimizers.get(0);
+    Assert.assertEquals(authToken, optimizerInstance.getToken());
+
+    // touch
+    long oldTouchTime = optimizerInstance.getTouchTime();
+    Thread.sleep(1);
+    queue.touch(authToken);
+    Assert.assertTrue(optimizerInstance.getTouchTime() > oldTouchTime);
+
+    // remove
+    queue.removeOptimizer(registerInfo.getResourceId());
+    Assert.assertEquals(0, queue.getOptimizers().size());
+  }
 
   private void assertTaskRuntime(TaskRuntime taskRuntime, TaskRuntime.Status status,
                                  OptimizingQueue.OptimizingThread thread) {
@@ -186,6 +267,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   private static class Persistency extends PersistentBase {
-
+    public List<TableRuntimeMeta> selectTableRuntimeMetas() {
+      return getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    }
   }
 }
