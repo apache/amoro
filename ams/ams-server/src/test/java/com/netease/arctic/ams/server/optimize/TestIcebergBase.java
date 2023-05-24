@@ -37,7 +37,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.ArrayUtil;
-import org.apache.iceberg.util.PropertyUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;

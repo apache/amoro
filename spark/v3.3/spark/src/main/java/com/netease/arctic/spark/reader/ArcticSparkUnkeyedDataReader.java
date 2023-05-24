@@ -26,7 +26,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.parquet.schema.MessageType;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
@@ -43,7 +42,7 @@ public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataRe
       String nameMapping,
       boolean caseSensitive) {
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        ArcticSparkUtils::convertConstant, false);
+        ArcticSparkUtils::convertConstant, true);
   }
 
   @Override
@@ -57,7 +56,8 @@ public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataRe
   protected Function<Schema, Function<InternalRow, StructLike>> toStructLikeFunction() {
     return schema -> {
       final StructType structType = SparkSchemaUtil.convert(schema);
-      return row -> new SparkInternalRowWrapper(structType).wrap(row);
+      SparkInternalRowWrapper wrapper = new SparkInternalRowWrapper(structType);
+      return row -> wrapper.wrap(row);
     };
   }
 }

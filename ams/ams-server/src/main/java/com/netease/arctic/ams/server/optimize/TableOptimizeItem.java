@@ -60,6 +60,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -352,7 +353,7 @@ public class TableOptimizeItem extends IJDBCService {
         long targetFileSize = optimizeTaskStat.getNewFileSize();
         // if minor optimize, insert files as base new files
         if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor &&
-            !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+            !ArcticTableUtil.isIcebergTableFormat(getArcticTable())) {
           if (optimizeTaskItem.getOptimizeTask().getInsertFiles() == null ||
               optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
                   optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
@@ -461,7 +462,7 @@ public class TableOptimizeItem extends IJDBCService {
       // if the table is Pending, should not plan again
       return;
     }
-    if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+    if (ArcticTableUtil.isIcebergTableFormat(getArcticTable())) {
       arcticTable.asUnkeyedTable().refresh();
       Snapshot currentSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
       if (currentSnapshot == null) {
@@ -679,7 +680,7 @@ public class TableOptimizeItem extends IJDBCService {
         boolean minorNotNeedExecute = optimizeTask.getDeleteFiles().isEmpty() ||
             (optimizeTask.getBaseFiles().isEmpty() && optimizeTask.getInsertFiles().isEmpty());
         if (minorNotNeedExecute && optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) &&
-            !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+            !ArcticTableUtil.isIcebergTableFormat(arcticTable)) {
           optimizeTaskItem.onPrepared(System.currentTimeMillis(),
               optimizeTask.getInsertFiles(), optimizeTask.getInsertFileSize(), 0L);
         }
@@ -1028,7 +1029,7 @@ public class TableOptimizeItem extends IJDBCService {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
-    if (isMinorOptimizing() && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+    if (isMinorOptimizing() && !ArcticTableUtil.isIcebergTableFormat(getArcticTable())) {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
@@ -1045,7 +1046,7 @@ public class TableOptimizeItem extends IJDBCService {
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
-        if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+        if (ArcticTableUtil.isIcebergTableFormat(getArcticTable())) {
           optimizeCommit = new IcebergOptimizeCommit(getArcticTable(true), tasksToCommit);
         } else if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),

@@ -21,20 +21,18 @@ package com.netease.arctic.spark.table;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
-import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCapability;
 import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ArcticSparkChangeTable extends SparkTable {
 
@@ -44,7 +42,7 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
-      );
+  );
 
   public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
     super(basicUnkeyedTable, refreshEagerly);
@@ -68,13 +66,8 @@ public class ArcticSparkChangeTable extends SparkTable {
     return new SparkScanBuilder(sparkSession(), basicUnkeyedTable, options, buildSchema(basicUnkeyedTable));
   }
 
-  public Schema buildSchema(BasicUnkeyedTable table) {
-    Schema schema = table.schema();
-    List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
-    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(MetadataColumns.FILE_OFFSET_FILED);
-    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
-    return new Schema(columns);
+  public Schema buildSchema(UnkeyedTable table) {
+    return MetadataColumns.appendChangeStoreMetadataColumns(table.schema());
   }
 
   @Override

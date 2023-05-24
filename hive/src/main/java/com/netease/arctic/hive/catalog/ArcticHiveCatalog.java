@@ -42,6 +42,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.IcebergSchemaUtil;
 import org.apache.iceberg.PartitionField;
@@ -49,6 +50,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -100,7 +102,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       throw new org.apache.iceberg.exceptions.AlreadyExistsException(
           e, "Database '%s' already exists!", databaseName);
 
-    }  catch (TException | InterruptedException e) {
+    } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to create database:" + databaseName, e);
     }
   }
@@ -140,6 +142,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
             false /* ignoreUnknownTab */);
         return null;
       });
+    } catch (NoSuchObjectException e) {
+      // pass
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
     }
@@ -157,6 +161,15 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     return new ArcticHiveTableBuilder(identifier, schema);
   }
 
+  /**
+   * we check the privilege by calling existing method, the method will throw the UncheckedIOException Exception
+   */
+  private void checkPrivilege(ArcticFileIO fileIO, String fileLocation) {
+    if (!fileIO.exists(fileLocation)) {
+      throw new NoSuchTableException("Table's base location %s does not exist ", fileLocation);
+    }
+  }
+
   @Override
   protected KeyedHiveTable loadKeyedTable(TableMeta tableMeta) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
@@ -166,6 +179,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
 
     ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
+    checkPrivilege(fileIO, baseLocation);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
@@ -185,10 +199,10 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
-    Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
-
     ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
+    checkPrivilege(fileIO, baseLocation);
+    Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool,
         catalogMeta.getCatalogProperties());

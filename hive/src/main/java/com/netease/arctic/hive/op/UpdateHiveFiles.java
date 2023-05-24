@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,6 +74,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected StructLikeMap<Partition> partitionToDelete;
   protected StructLikeMap<Partition> partitionToCreate;
   protected final StructLikeMap<Partition> partitionToAlter;
+  protected final StructLikeMap<Partition> partitionToAlterLocation;
   protected String unpartitionTableLocation;
   protected Long txId = null;
   protected boolean validateLocation = true;
@@ -101,6 +101,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.partitionToAlter = StructLikeMap.create(table.spec().partitionType());
     this.partitionToCreate = StructLikeMap.create(table.spec().partitionType());
     this.partitionToDelete = StructLikeMap.create(table.spec().partitionType());
+    this.partitionToAlterLocation = StructLikeMap.create(table.spec().partitionType());
   }
 
   @Override
@@ -289,21 +290,24 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
    * check files in the partition, and delete orphan files
    */
   private void checkPartitionedOrphanFilesAndDelete(boolean isUnPartitioned) {
-    List<String> partitionsToCheck = new ArrayList<>();
+    List<String> partitionsToCheck = Lists.newArrayList();
     if (isUnPartitioned) {
       partitionsToCheck.add(this.unpartitionTableLocation);
     } else {
-      partitionsToCheck = this.partitionToCreate.values()
-          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+      partitionsToCheck.addAll(this.partitionToCreate.values()
+          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
+      partitionsToCheck.addAll(this.partitionToAlterLocation.values()
+          .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
     }
+    Set<String> addFilesPathCollect = addFiles.stream()
+        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toSet());
+    Set<String> deleteFilesPathCollect = deleteFiles.stream()
+        .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toSet());
+
     for (String partitionLocation: partitionsToCheck) {
-      List<String> addFilesPathCollect = addFiles.stream()
-          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-      List<String> deleteFilesPathCollect = deleteFiles.stream()
-          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
       try (ArcticFileIO io = table.io()) {
-        List<FileStatus> exisitedFiles = io.list(partitionLocation);
-        for (FileStatus filePath: exisitedFiles) {
+        List<FileStatus> existedFiles = io.list(partitionLocation);
+        for (FileStatus filePath: existedFiles) {
           if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
               !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
             io.deleteFile(String.valueOf(filePath.getPath().toString()));
@@ -348,6 +352,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         } else {
           // this partition is need to alter, rather than delete
           partitionToAlter.put(entry.getKey(), entry.getValue());
+          partitionToAlterLocation.put(entry.getKey(), entry.getValue());
           partitionToDelete.remove(entry.getKey());
           continue;
         }

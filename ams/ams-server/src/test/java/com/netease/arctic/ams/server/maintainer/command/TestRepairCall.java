@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.maintainer.command;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TableTestHelper;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
@@ -46,7 +46,7 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeFile = removeFile();
     Assert.assertTrue(analyze(context).contains(removeFile));
 
-    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelper.TEST_TABLE_ID);
 
     repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
 
@@ -70,7 +70,7 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeManifest = removeManifest();
     Assert.assertTrue(analyze(context).contains(removeManifest));
 
-    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelper.TEST_TABLE_ID);
     repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
 
     Assert.assertFalse(manifestExists(removeManifest, getArcticTable().asKeyedTable().changeTable()));
@@ -82,7 +82,7 @@ public class TestRepairCall extends CallCommandTestBase {
     String removeManifestList = removeManifestList();
     Assert.assertTrue(analyze(context).contains(removeManifestList));
 
-    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelper.TEST_TABLE_ID);
     repair(context, RepairWay.ROLLBACK, tableAnalyzeResult.getRollbackList().get(0).snapshotId());
     getArcticTable().refresh();
     Assert.assertFalse(getArcticTable().asKeyedTable().changeTable().currentSnapshot().manifestListLocation().equalsIgnoreCase(removeManifestList));
@@ -94,17 +94,17 @@ public class TestRepairCall extends CallCommandTestBase {
     int version = removeMetadata();
     Assert.assertTrue(analyze(context).contains(String.valueOf(version)));
 
-    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelpers.TEST_TABLE_ID);
+    TableAnalyzeResult tableAnalyzeResult = context.getTableAvailableResult(TableTestHelper.TEST_TABLE_ID);
     repair(context, RepairWay.ROLLBACK_OR_DROP_TABLE, null);
-    getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+    getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
   }
 
   private String analyze(Context context) {
-    return callFactory.generateAnalyzeCall(TableTestHelpers.TEST_TABLE_ID.toString()).call(context);
+    return callFactory.generateAnalyzeCall(TableTestHelper.TEST_TABLE_ID.toString()).call(context);
   }
 
   private String repair(Context context, RepairWay repairWay, Long option) {
-    return callFactory.generateRepairCall(TableTestHelpers.TEST_TABLE_ID.toString(), repairWay, option).call(context);
+    return callFactory.generateRepairCall(TableTestHelper.TEST_TABLE_ID.toString(), repairWay, option).call(context);
   }
 
   private boolean fileExists(String path, Table table) {

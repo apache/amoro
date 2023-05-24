@@ -18,7 +18,7 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
@@ -38,14 +38,15 @@ public class TestStructLikeWrapperSizeEstimator {
         new StructLikeCollections(true, Long.MAX_VALUE);
 
     StructLikeBaseMap<ChangedLsn> map =
-        structLikeCollections.createStructLikeMap(TableTestHelpers.TABLE_SCHEMA.asStruct());
+        structLikeCollections.createStructLikeMap(BasicTableTestHelper.TABLE_SCHEMA.asStruct());
     ChangedLsn changedLsn = ChangedLsn.of(1, 2);
     map.put(record1, changedLsn);
     long oldSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
     map.put(record2, changedLsn);
     long newSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
     long record2Size = newSize - oldSize;
-    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(TableTestHelpers.TABLE_SCHEMA.asStruct());
+    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(
+        BasicTableTestHelper.TABLE_SCHEMA.asStruct());
     StructLikeWrapper wrapper = wrapperFactory.create().set(record2);
 
     // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record

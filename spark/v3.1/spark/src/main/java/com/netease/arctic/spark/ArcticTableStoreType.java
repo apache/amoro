@@ -25,10 +25,6 @@ public enum ArcticTableStoreType {
   CHANGE;
 
   public static ArcticTableStoreType from(String name) {
-    try {
-      return ArcticTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException ignored) {
-      return null;
-    }
+    return ArcticTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
   }
 }
