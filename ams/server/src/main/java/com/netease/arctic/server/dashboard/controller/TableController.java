@@ -92,7 +92,7 @@ import java.util.stream.Collectors;
  */
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
-  private final static long UPGRADE_INGO_EXPIRE_INTERVAL = 60 * 60 * 1000;
+  private static final long UPGRADE_INGO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;

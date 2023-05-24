@@ -20,8 +20,10 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
+import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -82,6 +84,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public long getTargetSnapshotId() {
     return currentSnapshot.snapshotId();
+  }
+
+  public long getTargetChangeSnapshotId() {
+    if (currentSnapshot instanceof KeyedTableSnapshot) {
+      return ((KeyedTableSnapshot) currentSnapshot).changeSnapshotId();
+    } else {
+      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+    }
   }
 
   @Override

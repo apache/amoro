@@ -53,6 +53,8 @@ public class MetricsSummary {
       positionalDeleteSize += metrics.getPositionalDeleteSize();
       eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
       equalityDeleteSize += metrics.getEqualityDeleteSize();
+      newFileCnt += metrics.getNewFileCnt();
+      newFileSize += metrics.getNewFileSize();
     });
   }
 

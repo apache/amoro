@@ -31,9 +31,10 @@ public interface OptimizingMapper {
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
   @Insert("INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
-      " target_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence, to_sequence) VALUES" +
-      " (#{table.id}, #{table.catalog}," +
-      " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{status}, #{optimizingType}," +
+      " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence," +
+      " to_sequence) VALUES (#{table.id}, #{table.catalog}," +
+      " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId}," +
+      " #{status}, #{optimizingType}," +
       " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
       " #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}," +
@@ -43,6 +44,7 @@ public interface OptimizingMapper {
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
       @Param("targetSnapshotId") long targetSnapshotId,
+      @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
       @Param("status") OptimizingProcess.Status status,
       @Param("optimizingType") OptimizingType optimizingType,
       @Param("planTime") long planTime,
@@ -61,7 +63,8 @@ public interface OptimizingMapper {
       @Param("endTime") long endTime,
       @Param("summary") MetricsSummary summary);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
+  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
+      " target_change_snapshot_id, status," +
       " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}")
   @Results({
@@ -71,6 +74,7 @@ public interface OptimizingMapper {
       @Result(property = "dbName", column = "db_name"),
       @Result(property = "tableName", column = "table_name"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+      @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
       @Result(property = "status", column = "status"),
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
@@ -82,7 +86,8 @@ public interface OptimizingMapper {
       @Param("catalogName") String catalogName, @Param(
       "dbName") String dbName, @Param("tableName") String tableName);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id, status," +
+  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
+      " target_change_snapshot_id, status," +
       " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}" +
       " AND status = 'SUCCESS'")
@@ -93,6 +98,7 @@ public interface OptimizingMapper {
       @Result(property = "dbName", column = "db_name"),
       @Result(property = "tableName", column = "table_name"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+      @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
       @Result(property = "status", column = "status"),
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
@@ -110,7 +116,8 @@ public interface OptimizingMapper {
   @Insert({
       "<script>",
       "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, partition_data, start_time, " +
-          "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary) VALUES ",
+          "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties) " +
+          "VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
       "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}," +
           " #{taskRuntime.tableId}, #{taskRuntime.partition}, " +
@@ -120,7 +127,8 @@ public interface OptimizingMapper {
           " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
           "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
           " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
-          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})",
+          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+          "#{taskRuntime.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})",
       "</foreach>",
       "</script>"
   })
@@ -157,7 +165,9 @@ public interface OptimizingMapper {
       " rewrite_output = #{taskRuntime.output, jdbcType=BLOB," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
       " metrics_summary = #{taskRuntime.summary," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " properties = #{taskRuntime.properties," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
       " WHERE process_id = #{taskRuntime.taskId.processId} AND " +
       "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);

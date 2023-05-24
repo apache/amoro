@@ -55,7 +55,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final ResourceGroup optimizerGroup;
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryQueue = new LinkedTransferQueue<>();
-  private final SchedulingPolicy schedulingPolicy = new SchedulingPolicy();
+  private final SchedulingPolicy schedulingPolicy;
   private final Map<OptimizingTaskId, TaskRuntime> taskMap = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
 
@@ -65,6 +65,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                          List<TableRuntimeMeta> tableRuntimeMetaList) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerGroup = optimizerGroup;
+    this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
@@ -266,6 +267,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final TableRuntime tableRuntime;
     private final long planTime;
     private final long targetSnapshotId;
+    private final long targetChangeSnapshotId;
     private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
     private final MetricsSummary metricsSummary;
     private final Lock lock = new ReentrantLock();
@@ -283,6 +285,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
       targetSnapshotId = planner.getTargetSnapshotId();
+      targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
       loadTaskRuntimes(planner.planTasks());
       metricsSummary = new MetricsSummary(taskMap.values());
       fromSequence = planner.getFromSequence();
@@ -295,12 +298,20 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       tableRuntime = tableRuntimeMeta.getTableRuntime();
       optimizingType = tableRuntimeMeta.getOptimizingType();
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+      targetChangeSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
+      if (tableRuntimeMeta.getFromSequence() != null) {
+        fromSequence = tableRuntimeMeta.getFromSequence();
+      }
+      if (tableRuntimeMeta.getToSequence() != null) {
+        toSequence = tableRuntimeMeta.getToSequence();
+      }
       loadTaskRuntimes();
       metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.getTableRuntime().recover(this);
     }
 
+    @Override
     public long getProcessId() {
       return processId;
     }
@@ -358,14 +369,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       }
     }
 
+    @Override
     public boolean isClosed() {
       return status == OptimizingProcess.Status.CLOSED;
     }
 
+    @Override
     public long getPlanTime() {
       return planTime;
     }
 
+    @Override
     public long getDuration() {
       long dur = endTime == ArcticServiceConstants.INVALID_TIME ?
           System.currentTimeMillis() - planTime :
@@ -373,8 +387,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return Math.max(0, dur);
     }
 
+    @Override
     public long getTargetSnapshotId() {
       return targetSnapshotId;
+    }
+
+    @Override
+    public long getTargetChangeSnapshotId() {
+      return targetChangeSnapshotId;
     }
 
     public String getFailedReason() {
@@ -402,6 +422,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
      *
      * @return -
      */
+    @Override
     public long getQuotaTime(long calculatingStartTime, long calculatingEndTime) {
       return taskMap.values().stream()
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime)).sum();
@@ -476,8 +497,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, status, optimizingType, planTime, getSummary(), getFromSequence(),
-                  getToSequence())),
+                  processId, targetSnapshotId, targetChangeSnapshotId, status, optimizingType, planTime, getSummary(),
+                  getFromSequence(), getToSequence())),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),

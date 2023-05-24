@@ -83,9 +83,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_COMMIT_RETRY_NUMBER = "self-optimizing.commit.num-retries";
   public static final int SELF_OPTIMIZING_COMMIT_RETRY_NUMBER_DEFAULT = Integer.MAX_VALUE;
 
-  public static final String SELF_OPTIMIZING_EXECUTE_TIMEOUT = "self-optimizing.execute.timeout";
-  public static final long SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
-
   public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
   public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
 
@@ -108,12 +105,6 @@ public class TableProperties {
       "self-optimizing.major.trigger.duplicate-ratio";
   public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
 
-  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT = "self-optimizing.major.trigger.file-count";
-  public static final int SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT_DEFAULT = 12;
-
-  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL = "self-optimizing.major.trigger.interval";
-  public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
-
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
   public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
 
@@ -128,22 +119,13 @@ public class TableProperties {
   public static final String ENABLE_OPTIMIZE = "optimize.enable";
 
   @Deprecated
-  public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
-
-  @Deprecated
   public static final String OPTIMIZE_GROUP = "optimize.group";
 
   @Deprecated
   public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
 
   @Deprecated
-  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
-
-  @Deprecated
   public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
 
   @Deprecated
   public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.trigger.max-interval";
@@ -153,13 +135,6 @@ public class TableProperties {
 
   @Deprecated
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
-
-  @Deprecated
-  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
-      "optimize.full.trigger.delete-file-size-bytes";
 
   @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";

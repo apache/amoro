@@ -90,8 +90,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (catalogExist(catalogMeta.getCatalogName())) {
       throw new AlreadyExistsException("Catalog " + catalogMeta.getCatalogName());
     }
-    doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalogMeta));
-    initServerCatalog(catalogMeta);
+    doAsTransaction(
+        () -> doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalogMeta)),
+        () -> initServerCatalog(catalogMeta));
   }
 
   private void initServerCatalog(CatalogMeta catalogMeta) {

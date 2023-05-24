@@ -234,8 +234,7 @@ public class OptimizingIntegrationTest {
         amsEnv.catalog(AmsEnvironment.MIXED_ICEBERG_CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
             .withPrimaryKeySpec(primaryKeySpec)
             .withPartitionSpec(partitionSpec)
-            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000")
-            .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
+            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000");
 
     return tableBuilder.create();
   }
@@ -247,8 +246,7 @@ public class OptimizingIntegrationTest {
         amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
             .withPrimaryKeySpec(primaryKeySpec)
             .withPartitionSpec(partitionSpec)
-            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000")
-            .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
+            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000");
 
     tableBuilder.create();
   }

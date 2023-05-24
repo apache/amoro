@@ -4,6 +4,8 @@ import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
+import java.util.Map;
+
 public class TableRuntimeMeta {
   private long tableId;
   private String catalogName;
@@ -11,6 +13,7 @@ public class TableRuntimeMeta {
   private String tableName;
   private long currentSnapshotId;
   private long lastOptimizedSnapshotId;
+  private long lastOptimizedChangeSnapshotId;
   private long currentChangeSnapshotId;
   private long lastMajorOptimizingTime;
   private long lastMinorOptimizingTime;
@@ -23,10 +26,13 @@ public class TableRuntimeMeta {
   private OptimizingProcess.Status processStatus;
   private OptimizingType optimizingType;
   private long targetSnapshotId;
+  private long targetChangeSnapshotId;
   private long planTime;
   private long endTime;
   private String failReason;
   private String summary;
+  private Map<String, Long> fromSequence;
+  private Map<String, Long> toSequence;
 
   private TableRuntime tableRuntime;
 
@@ -57,6 +63,14 @@ public class TableRuntimeMeta {
 
   public long getLastOptimizedSnapshotId() {
     return lastOptimizedSnapshotId;
+  }
+
+  public long getLastOptimizedChangeSnapshotId() {
+    return lastOptimizedChangeSnapshotId;
+  }
+
+  public long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
   }
 
   public long getTableId() {
@@ -159,6 +173,14 @@ public class TableRuntimeMeta {
     this.lastOptimizedSnapshotId = lastOptimizedSnapshotId;
   }
 
+  public void setLastOptimizedChangeSnapshotId(long lastOptimizedChangeSnapshotId) {
+    this.lastOptimizedChangeSnapshotId = lastOptimizedChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
+  }
+
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
@@ -173,6 +195,22 @@ public class TableRuntimeMeta {
 
   public void setLastFullOptimizingTime(long lastFullOptimizingTime) {
     this.lastFullOptimizingTime = lastFullOptimizingTime;
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return fromSequence;
+  }
+
+  public void setFromSequence(Map<String, Long> fromSequence) {
+    this.fromSequence = fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
+  }
+
+  public void setToSequence(Map<String, Long> toSequence) {
+    this.toSequence = toSequence;
   }
 
   public void setTableStatus(OptimizingStatus tableStatus) {
