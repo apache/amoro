@@ -20,6 +20,8 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -27,14 +29,20 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.exception.AlreadyExistsException;
+import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
@@ -118,5 +126,180 @@ public class TestTableService extends AMSTableTestBase {
         () -> tableService().dropTableMetadata(tableMeta().getTableIdentifier(), true));
 
     tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
+  }
+
+  @Test
+  public void testBlockAndRelease() {
+    createDatabase();
+    createTable();
+    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+
+    List<BlockableOperation> operations = new ArrayList<>();
+    operations.add(BlockableOperation.BATCH_WRITE);
+    operations.add(BlockableOperation.OPTIMIZE);
+
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    assertBlocker(block, operations);
+    assertBlockerCnt(1);
+    assertBlocked(BlockableOperation.OPTIMIZE);
+    assertBlocked(BlockableOperation.BATCH_WRITE);
+
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testBlockConflict() {
+    createDatabase();
+    createTable();
+    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+
+    List<BlockableOperation> operations = new ArrayList<>();
+    operations.add(BlockableOperation.BATCH_WRITE);
+    operations.add(BlockableOperation.OPTIMIZE);
+
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+
+    Assert.assertThrows("should be conflict", BlockerConflictException.class,
+        () -> tableService().block(tableIdentifier, operations, getProperties()));
+
+    assertBlocker(block, operations);
+    assertBlockerCnt(1);
+    assertBlocked(BlockableOperation.OPTIMIZE);
+    assertBlocked(BlockableOperation.BATCH_WRITE);
+
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testRenewBlocker() throws InterruptedException {
+    createDatabase();
+    createTable();
+    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+
+    List<BlockableOperation> operations = new ArrayList<>();
+    operations.add(BlockableOperation.BATCH_WRITE);
+    operations.add(BlockableOperation.OPTIMIZE);
+
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+    Thread.sleep(1);
+
+    tableService().renewBlocker(tableIdentifier, block.getBlockerId() + "");
+    assertBlockerCnt(1);
+    assertBlocked(BlockableOperation.OPTIMIZE);
+    assertBlocked(BlockableOperation.BATCH_WRITE);
+
+    assertBlocker(block, operations);
+    assertBlockerCnt(1);
+    assertBlocked(BlockableOperation.OPTIMIZE);
+    assertBlocked(BlockableOperation.BATCH_WRITE);
+    assertBlockerRenewed(tableService().getBlockers(tableIdentifier).get(0));
+
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    assertBlockerCnt(0);
+    assertNotBlocked(BlockableOperation.OPTIMIZE);
+    assertNotBlocked(BlockableOperation.BATCH_WRITE);
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testAutoIncrementBlockerId() {
+    createDatabase();
+    createTable();
+    TableIdentifier tableIdentifier = serverTableIdentifier().getIdentifier();
+
+    List<BlockableOperation> operations = new ArrayList<>();
+    operations.add(BlockableOperation.BATCH_WRITE);
+    operations.add(BlockableOperation.OPTIMIZE);
+
+    Blocker block = tableService().block(tableIdentifier, operations, getProperties());
+
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+
+    Blocker block2 = tableService().block(tableIdentifier, operations, getProperties());
+
+    Assert.assertEquals(Long.parseLong(block2.getBlockerId()) - Long.parseLong(block.getBlockerId()), 1);
+
+    tableService().releaseBlocker(tableIdentifier, block2.getBlockerId() + "");
+
+    dropTable();
+    dropDatabase();
+  }
+
+  private void assertBlocker(Blocker block, List<BlockableOperation> operations) {
+    Assert.assertEquals(operations.size(), block.getOperations().size());
+    operations.forEach(operation -> Assert.assertTrue(block.getOperations().contains(operation)));
+    Assert.assertEquals(getProperties().size() + 3, block.getProperties().size());
+    getProperties().forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
+    long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    Assert.assertEquals(timeout + "", block.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT));
+
+    Assert.assertEquals(timeout, Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY)) -
+        Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY)));
+  }
+
+  private void assertBlockerRenewed(Blocker block) {
+    long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
+    long actualTimeout = Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY)) -
+        Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY));
+    Assert.assertTrue("actualTimeout is " + actualTimeout, actualTimeout > timeout);
+  }
+
+  private void assertNotBlocked(BlockableOperation operation) {
+    Assert.assertFalse(isBlocked(operation));
+    Assert.assertFalse(isTableRuntimeBlocked(operation));
+  }
+
+  private void assertBlocked(BlockableOperation operation) {
+    Assert.assertTrue(isBlocked(operation));
+    Assert.assertTrue(isTableRuntimeBlocked(operation));
+  }
+
+  private boolean isBlocked(BlockableOperation operation) {
+    return tableService().getBlockers(serverTableIdentifier().getIdentifier()).stream()
+        .anyMatch(blocker -> blocker.getOperations().contains(operation));
+  }
+
+  private boolean isTableRuntimeBlocked(BlockableOperation operation) {
+    return tableService().getRuntime(serverTableIdentifier()).isBlocked(operation);
+  }
+
+  private void assertBlockerCnt(int i) {
+    List<Blocker> blockers;
+    blockers = tableService().getBlockers(serverTableIdentifier().getIdentifier());
+    Assert.assertEquals(i, blockers.size());
+  }
+  
+  private Map<String, String> getProperties() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("test_key", "test_value");
+    properties.put("2", "");
+    properties.put("3", null);
+    return properties;
   }
 }
