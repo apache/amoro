@@ -7,7 +7,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class StatedPersistentBaseTest {
+public class TestStatedPersistentBase {
 
   private static class ExtendedPersistency extends StatedPersistentBase {
     @StatedPersistentBase.StateField
@@ -83,19 +83,19 @@ public class StatedPersistentBaseTest {
 
   public static void main(String[] args) {
     for (int i = 0; i < 10; i++) {
-      new StatedPersistentBaseTest().testNormalClass();
-      new StatedPersistentBaseTest().testStatedClass();
+      new TestStatedPersistentBase().testNormalClass();
+      new TestStatedPersistentBase().testStatedClass();
     }
 
     long start = System.currentTimeMillis();
     for (int i = 0; i < 100000; i++) {
-      new StatedPersistentBaseTest().testNormalClass();
+      new TestStatedPersistentBase().testNormalClass();
     }
     System.out.println("Normal class: " + (System.currentTimeMillis() - start));
 
     start = System.currentTimeMillis();
     for (int i = 0; i < 100000; i++) {
-      new StatedPersistentBaseTest().testStatedClass();
+      new TestStatedPersistentBase().testStatedClass();
     }
     System.out.println("Stated class: " + (System.currentTimeMillis() - start));
   }

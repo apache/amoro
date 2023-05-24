@@ -30,11 +30,11 @@ import java.io.IOException;
 
 import static com.netease.arctic.IcebergTableTestHelper.partitionData;
 
-public class IcebergHadoopOptimizingTest extends AbstractOptimizingTest {
+public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   private final Table table;
   private final BaseOptimizingChecker checker;
 
-  public IcebergHadoopOptimizingTest(TableIdentifier tb, Table table) {
+  public TestIcebergHadoopOptimizing(TableIdentifier tb, Table table) {
     this.table = table;
     this.checker = new BaseOptimizingChecker(tb);
   }

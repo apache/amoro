@@ -140,7 +140,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     ServerTableIdentifier serverTableIdentifier = getInternalCatalog(tableIdentifier.getCatalog())
         .dropTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     Optional.ofNullable(tableRuntimeMap.remove(serverTableIdentifier))
-        .ifPresent(TableRuntime::dispose);
+        .ifPresent(tableRuntime -> {
+          if (headHandler != null) {
+            headHandler.fireTableRemoved(tableRuntime);
+          }
+          tableRuntime.dispose();
+        });
   }
 
   @Override
@@ -446,7 +451,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private void disposeTable(ExternalCatalog externalCatalog, ServerTableIdentifier tableIdentifier) {
     externalCatalog.disposeTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
-        .ifPresent(TableRuntime::dispose);
+        .ifPresent(tableRuntime -> {
+          if (headHandler != null) {
+            headHandler.fireTableRemoved(tableRuntime);
+          }
+          tableRuntime.dispose();
+        });
   }
 
   private static class TableIdentity {

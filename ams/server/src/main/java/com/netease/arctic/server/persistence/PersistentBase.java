@@ -49,7 +49,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -63,7 +63,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw t;
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -75,7 +75,7 @@ public abstract class PersistentBase {
         R result = func.apply(mapper);
         return result;
       } catch (Throwable t) {
-        throw t;
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
@@ -86,12 +86,12 @@ public abstract class PersistentBase {
       try {
         int result = func.apply(getMapper(session, mapperClz));
         if (result == 0) {
-          throw errorSupplier.get();
+          throw  errorSupplier.get();
         }
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.buildArcticException(t, PersistenceException::new);
       }
     }
   }
