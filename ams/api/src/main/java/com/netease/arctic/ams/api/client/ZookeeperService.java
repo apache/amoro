@@ -32,13 +32,24 @@ import java.nio.charset.StandardCharsets;
  */
 public class ZookeeperService {
 
+  private static volatile ZookeeperService instance;
   private CuratorFramework zkClient;
   private String zkServerAddress;
-  private static volatile ZookeeperService instance;
 
   private ZookeeperService(String zkServerAddress) {
     this.zkServerAddress = zkServerAddress;
     this.zkClient = newClient();
+  }
+
+  public static ZookeeperService getInstance(String zkServerAddress) {
+    if (instance == null) {
+      synchronized (ZookeeperService.class) {
+        if (instance == null) {
+          instance = new ZookeeperService(zkServerAddress);
+        }
+      }
+    }
+    return instance;
   }
 
   private CuratorFramework newClient() {
@@ -54,17 +65,6 @@ public class ZookeeperService {
         .build();
     client.start();
     return client;
-  }
-
-  public static ZookeeperService getInstance(String zkServerAddress) {
-    if (instance == null) {
-      synchronized (ZookeeperService.class) {
-        if (instance == null) {
-          instance = new ZookeeperService(zkServerAddress);
-        }
-      }
-    }
-    return instance;
   }
 
   public boolean exist(String path) throws Exception {

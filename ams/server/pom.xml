@@ -37,10 +37,8 @@
         <powermock.version>2.0.2</powermock.version>
         <fastjson.version>1.2.83</fastjson.version>
         <netty.version>4.1.56.Final</netty.version>
-        <jetty.verison>9.4.46.v20220331</jetty.verison>
-        <kotlin.version>1.5.32</kotlin.version>
         <spark.version>3.1.1</spark.version>
-        <arctic.junit.version>5.9.1</arctic.junit.version>
+        <junit5.version>5.9.1</junit5.version>
         <mybatis.version>3.5.6</mybatis.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
@@ -57,95 +55,24 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-yarn-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>libthrift</artifactId>
-                    <groupId>org.apache.thrift</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-ams-optimizer</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>cglib</groupId>
-                    <artifactId>cglib</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-metrics-influxdb_${scala.binary.version}</artifactId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>servlet-api</artifactId>
-                    <groupId>javax.servlet</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.avro</groupId>
-                    <artifactId>avro</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.curator</groupId>
-                    <artifactId>curator-framework</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.curator</groupId>
-                    <artifactId>curator-recipes</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-ams-dashboard</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-hadoop</artifactId>
-            <version>${parquet-hadoop.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <version>${thrift.version}</version>
         </dependency>
 
         <dependency>
@@ -345,12 +272,6 @@
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -389,30 +310,23 @@
         </dependency>
 
         <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <version>1.9.1</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${arctic.junit.version}</version>
+            <version>${junit5.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>${arctic.junit.version}</version>
+            <version>${junit5.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${arctic.junit.version}</version>
+            <version>${junit5.version}</version>
         </dependency>
 
         <dependency>
