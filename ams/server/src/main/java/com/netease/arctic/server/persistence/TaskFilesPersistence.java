@@ -7,6 +7,8 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,13 @@ public class TaskFilesPersistence {
   }
 
   public static Map<Integer, RewriteFilesInput> loadTaskInputs(long processId) {
-    return persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
+    List<byte[]> bytes =
+        persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
+    if (bytes == null) {
+      return Collections.emptyMap();
+    } else {
+      return SerializationUtil.simpleDeserialize(bytes.get(0));
+    }
   }
 
   public static RewriteFilesOutput loadTaskOutput(byte[] content) {
