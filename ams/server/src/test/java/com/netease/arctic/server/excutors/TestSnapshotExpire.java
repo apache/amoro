@@ -65,7 +65,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {
+    return new Object[][]{
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -102,13 +102,13 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     SnapshotsExpiringExecutor.deleteChangeFile(
         testKeyedTable, changeTableFiles, testKeyedTable.changeTable().currentSnapshot().sequenceNumber());
-    Set<DataFile> currentDataFiles = new HashSet<>();
+    Set<String> currentDataFiles = new HashSet<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
-      fileScanTasks.forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file()));
+      fileScanTasks.forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file().path().toString()));
     }
-    Set<DataFile> expectedDataFiles = existedDataFiles.stream().filter(
-        file -> file.partition().equals(partitions.get(1))).collect(Collectors.toSet());
-    Assert.assertTrue(expectedDataFiles.equals(expectedDataFiles));
+    Set<String> expectedDataFiles = existedDataFiles.stream().filter(
+        file -> file.partition().equals(partitions.get(1))).map(f -> f.path().toString()).collect(Collectors.toSet());
+    Assert.assertEquals(expectedDataFiles, currentDataFiles);
     changeTableFiles.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
   }
 

@@ -25,6 +25,7 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -67,7 +68,7 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
-    orphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
+    OrphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
   }
 
