@@ -29,8 +29,8 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
-  public BlockerExpiringExecutor(TableManager tableRuntimes) {
-    super(tableRuntimes, 1);
+  public BlockerExpiringExecutor(TableManager tableManager) {
+    super(tableManager, 1);
   }
 
   @Override
