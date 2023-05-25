@@ -239,6 +239,9 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {
+    if (arcticTable.spec().isUnpartitioned()) {
+      return new ArrayList<>();
+    }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
     getTableFile(arcticTable, null, Integer.MAX_VALUE).forEach(e -> {
       if (!partitionBaseInfoHashMap.containsKey(e.getPartitionName())) {
