@@ -36,9 +36,8 @@ public class PartitionBaseInfo {
   public PartitionBaseInfo(String partition, long fileCount, long fileSize, long lastCommitTime) {
     this.partition = partition;
     this.fileCount = fileCount;
-    this.fileSize = fileSize;
+    setFileSize(fileSize);
     this.lastCommitTime = lastCommitTime;
-    this.size = AmsUtil.byteToXB(fileSize);
   }
 
   public String getPartition() {

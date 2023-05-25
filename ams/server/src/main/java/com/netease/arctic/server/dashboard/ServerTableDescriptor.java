@@ -285,7 +285,7 @@ public class ServerTableDescriptor extends PersistentBase {
           InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
           partitionPath = spec.partitionToPath(wrapper.wrap(parRecord));
         }
-        if (partitionPath != null && spec.isPartitioned() && !partitionPath.equals(partition)) {
+        if (partition != null && spec.isPartitioned() && !partition.equals(partitionPath)) {
           continue;
         }
         Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
