@@ -55,14 +55,14 @@ import java.util.stream.Collectors;
 public class ServerTableDescriptor extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ServerTableDescriptor.class);
-  private static final Map<Integer, DataFileType> BASE_STORE_FILE_TYPE_MAP = new HashMap<>();
+  private static final Map<Integer, DataFileType> ICEBERG_FILE_TYPE_MAP = new HashMap<>();
 
   private final TableService tableService;
 
   static {
-    BASE_STORE_FILE_TYPE_MAP.put(FileContent.DATA.id(), DataFileType.BASE_FILE);
-    BASE_STORE_FILE_TYPE_MAP.put(FileContent.POSITION_DELETES.id(), DataFileType.POS_DELETE_FILE);
-    BASE_STORE_FILE_TYPE_MAP.put(FileContent.EQUALITY_DELETES.id(), DataFileType.EQ_DELETE_FILE);
+    ICEBERG_FILE_TYPE_MAP.put(FileContent.DATA.id(), DataFileType.BASE_FILE);
+    ICEBERG_FILE_TYPE_MAP.put(FileContent.POSITION_DELETES.id(), DataFileType.POS_DELETE_FILE);
+    ICEBERG_FILE_TYPE_MAP.put(FileContent.EQUALITY_DELETES.id(), DataFileType.EQ_DELETE_FILE);
   }
 
   public ServerTableDescriptor(TableService tableService) {
@@ -293,7 +293,7 @@ public class ServerTableDescriptor extends PersistentBase {
         }
         Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
         DataFileType dataFileType =
-            isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : BASE_STORE_FILE_TYPE_MAP.get(contentId);
+            isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : ICEBERG_FILE_TYPE_MAP.get(contentId);
         long commitTime = -1;
         if (table.snapshot(snapshotId) != null) {
           commitTime = table.snapshot(snapshotId).timestampMillis();
