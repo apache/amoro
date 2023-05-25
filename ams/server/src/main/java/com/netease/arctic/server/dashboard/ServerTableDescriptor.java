@@ -26,6 +26,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -78,7 +79,7 @@ public class ServerTableDescriptor extends PersistentBase {
       transactionsOfTable.setCommitTime(snapshot.timestampMillis());
       transactionsOfTables.add(transactionsOfTable);
     }));
-    Collections.reverse(transactionsOfTables);
+    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.commitTime, o1.commitTime));
     return transactionsOfTables;
   }
 
