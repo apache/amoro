@@ -64,6 +64,9 @@ public class SerializationUtil {
   }
 
   public static <T> T simpleDeserialize(byte[] bytes) {
+    if (bytes == null) {
+      return null;
+    }
     try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
       try (ObjectInputStream ois = new ObjectInputStream(bis)) {
         return (T) ois.readObject();

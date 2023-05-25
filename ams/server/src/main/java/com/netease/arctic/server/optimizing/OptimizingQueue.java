@@ -30,6 +30,7 @@ import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -214,6 +215,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     });
   }
 
+  @VisibleForTesting
+  Map<OptimizingTaskId, TaskRuntime> getTaskMap() {
+    return taskMap;
+  }
+
   private TaskRuntime pollOrPlan() {
     planLock.lock();
     try {
@@ -262,6 +268,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private double getAvailableCore(TableRuntime tableRuntime) {
     return tableRuntime.getOptimizingConfig().getTargetQuota();
+  }
+
+  @VisibleForTesting
+  SchedulingPolicy getSchedulingPolicy() {
+    return schedulingPolicy;
   }
 
   private class TableOptimizingProcess implements OptimizingProcess, TaskRuntime.TaskOwner {
@@ -346,6 +357,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     public void acceptResult(TaskRuntime taskRuntime) {
       lock.lock();
       try {
+        try {
+          tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
+        } catch (Throwable t) {
+          LOG.warn("{} failed to add task quota {}, ignore it", tableRuntime.getTableIdentifier(),
+              taskRuntime.getTaskId(), t);
+        }
         if (isClosed()) {
           throw new OptimizingClosedException(processId);
         }
@@ -367,7 +384,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       } catch (Exception e) {
         LOG.error("accept result error:", e);
       } finally {
-        tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
         lock.unlock();
       }
     }
