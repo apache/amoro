@@ -40,9 +40,8 @@ public class PartitionFileBaseInfo {
     this.fileType = fileType;
     this.commitTime = commitTime;
     this.partitionName = partitionName;
-    this.path = path;
-    this.file = AmsUtil.getFileName(path);
-    this.fileSize = fileSize;
+    setPath(path);
+    setFileSize(fileSize);
   }
 
   public long getCommitId() {

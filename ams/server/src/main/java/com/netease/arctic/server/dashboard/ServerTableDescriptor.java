@@ -275,32 +275,30 @@ public class ServerTableDescriptor extends PersistentBase {
         .where(Expressions.notEqual(ManifestEntryFields.STATUS.name(), ManifestEntryFields.Status.DELETED.id()))
         .build()) {
       for (Record record : manifests) {
-        long snapshotId = (long) record.get(ManifestEntryFields.SNAPSHOT_ID.fieldId());
-        GenericRecord dataFile = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
+        long snapshotId = (long) record.getField(ManifestEntryFields.SNAPSHOT_ID.name());
+        GenericRecord dataFile = (GenericRecord) record.getField(ManifestEntryFields.DATA_FILE_FIELD_NAME);
         Integer contentId = (Integer) dataFile.getField(DataFile.CONTENT.name());
-        if (contentId != null && contentId != 0) {
-          String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-          String partitionPath = null;
-          GenericRecord parRecord = (GenericRecord) dataFile.getField(DataFile.PARTITION_NAME);
-          if (parRecord != null) {
-            InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
-            partitionPath = spec.partitionToPath(wrapper.wrap(parRecord));
-          }
-          if (partitionPath != null && spec.isPartitioned() && !partitionPath.equals(partition)) {
-            continue;
-          }
-          Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
-          DataFileType dataFileType =
-              isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : BASE_STORE_FILE_TYPE_MAP.get(contentId);
-          long commitTime = -1;
-          if (table.snapshot(snapshotId) != null) {
-            commitTime = table.snapshot(snapshotId).timestampMillis();
-          }
-          result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
-              partitionPath, filePath, fileSize));
-          if (result.size() >= limit) {
-            return result;
-          }
+        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
+        String partitionPath = null;
+        GenericRecord parRecord = (GenericRecord) dataFile.getField(DataFile.PARTITION_NAME);
+        if (parRecord != null) {
+          InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
+          partitionPath = spec.partitionToPath(wrapper.wrap(parRecord));
+        }
+        if (partitionPath != null && spec.isPartitioned() && !partitionPath.equals(partition)) {
+          continue;
+        }
+        Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
+        DataFileType dataFileType =
+            isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : BASE_STORE_FILE_TYPE_MAP.get(contentId);
+        long commitTime = -1;
+        if (table.snapshot(snapshotId) != null) {
+          commitTime = table.snapshot(snapshotId).timestampMillis();
+        }
+        result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
+            partitionPath, filePath, fileSize));
+        if (result.size() >= limit) {
+          return result;
         }
       }
     } catch (IOException exception) {
