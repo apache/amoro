@@ -39,7 +39,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.isOptimizingEnabled();
+    return true;
   }
 
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
@@ -67,7 +67,9 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       tableRuntime.refresh(table);
       if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
           changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
-        tryEvalutingPendingInput(tableRuntime, table);
+        if (tableRuntime.isOptimizingEnabled()) {
+          tryEvalutingPendingInput(tableRuntime, table);
+        }
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
