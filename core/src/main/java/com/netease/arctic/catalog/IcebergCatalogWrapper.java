@@ -23,9 +23,12 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticFileIOIcebergAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicTableBuilder;
 import com.netease.arctic.table.BasicUnkeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -37,6 +40,9 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.hadoop.HadoopFileIO;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -196,12 +202,21 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
-    throw new UnsupportedOperationException("unsupported new iceberg table for now.");
+    return this.newTableBuilder(identifier, schema, TableFormat.ICEBERG);
   }
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
-    return null;
+    switch (format) {
+      case ICEBERG:
+        return new IcebergTableBuilder(schema, format, identifier);
+      case MIXED_ICEBERG:
+      default:
+        throw new IllegalArgumentException(
+            String.format("the catalog %s doesn't support to create table with format: %s", name(), format)
+        );
+    }
+
   }
 
   @Override
@@ -224,8 +239,51 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(
-            Namespace.of(tableIdentifier.getDatabase()),
-            tableIdentifier.getTableName());
+        Namespace.of(tableIdentifier.getDatabase()),
+        tableIdentifier.getTableName());
+  }
+
+  private ArcticFileIO createArcticFileIO(FileIO io) {
+    if (io instanceof HadoopFileIO) {
+      return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+    } else {
+      return new ArcticFileIOIcebergAdapter(io);
+    }
+  }
+
+  protected class IcebergTableBuilder extends BasicTableBuilder<IcebergTableBuilder> {
+
+    public IcebergTableBuilder(Schema schema, TableFormat format, TableIdentifier identifier) {
+      super(schema, format, identifier);
+      Preconditions.checkArgument(TableFormat.ICEBERG == format,
+          "this table build only support to create iceberg table");
+    }
+
+    @Override
+    public ArcticTable create() {
+
+      Table table = icebergCatalog.buildTable(
+              toIcebergTableIdentifier(identifier), schema
+          ).withPartitionSpec(spec)
+          .withProperties(properties)
+          .withSortOrder(sortOrder)
+          .create();
+
+      FileIO io = table.io();
+      ArcticFileIO arcticFileIO = createArcticFileIO(io);
+      return new BasicIcebergTable(identifier, table, arcticFileIO, meta.getCatalogProperties());
+    }
+
+    @Override
+    public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
+      throw new UnsupportedOperationException("can't create an iceberg table with primary key");
+    }
+
+    @Override
+    protected IcebergTableBuilder self() {
+      return this;
+    }
+
   }
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {
