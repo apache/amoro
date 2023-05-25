@@ -75,6 +75,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -391,6 +392,7 @@ public class TableController extends RestBaseController {
 
     List<DDLInfo> ddlInfos = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
         tableName));
+    Collections.reverse(ddlInfos);
     PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
         offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
