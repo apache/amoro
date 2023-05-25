@@ -38,25 +38,17 @@ import java.util.stream.Collectors;
 
 public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
 
-  private static final Logger LOG = LoggerFactory.getLogger("ThriftClientPool");
-
-  private final ThriftClientFactory clientFactory;
-
-  private final ThriftPingFactory pingFactory;
-
-  private final GenericObjectPool<ThriftClient<T>> pool;
-
-  private String url;
-
-  private boolean serviceReset = false;
-
-  private final PoolConfig poolConfig;
+  private static final Logger LOG = LoggerFactory.getLogger(ThriftClientPool.class);
   // for thrift connects
   private static final int retries = 5;
-
   private static final int retryInterval = 2000;
-
   private static final int maxMessageSize = 100 * 1024 * 1024;
+  private final ThriftClientFactory clientFactory;
+  private final ThriftPingFactory pingFactory;
+  private final GenericObjectPool<ThriftClient<T>> pool;
+  private final PoolConfig poolConfig;
+  private String url;
+  private boolean serviceReset = false;
 
   /**
    * Construct a new pool using default config
@@ -249,25 +241,25 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
     ThriftClient<T> finalClient = client;
     return (X) Proxy.newProxyInstance(this.getClass().getClassLoader(), finalClient.iface()
         .getClass().getInterfaces(), (proxy, method, args) -> {
-      if (returnToPool.get()) {
-        throw new IllegalStateException("Object returned via iface can only used once!");
-      }
-      boolean success = false;
-      try {
-        Object result = method.invoke(finalClient.iface(), args);
-        success = true;
-        return result;
-      } catch (InvocationTargetException e) {
-        throw e.getTargetException();
-      } finally {
-        if (success) {
-          pool.returnObject(finalClient);
-        } else {
-          finalClient.closeClient();
-          pool.invalidateObject(finalClient);
+        if (returnToPool.get()) {
+          throw new IllegalStateException("Object returned via iface can only used once!");
         }
-        returnToPool.set(true);
-      }
-    });
+        boolean success = false;
+        try {
+          Object result = method.invoke(finalClient.iface(), args);
+          success = true;
+          return result;
+        } catch (InvocationTargetException e) {
+          throw e.getTargetException();
+        } finally {
+          if (success) {
+            pool.returnObject(finalClient);
+          } else {
+            finalClient.closeClient();
+            pool.invalidateObject(finalClient);
+          }
+          returnToPool.set(true);
+        }
+      });
   }
 }

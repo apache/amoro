@@ -38,8 +38,9 @@ public class ThriftClient<T extends TServiceClient> implements Closeable {
 
   private boolean finish;
 
-  public ThriftClient(TServiceClient client, ObjectPool<ThriftClient<T>> pool,
-                      ServiceInfo serviceInfo) {
+  public ThriftClient(
+      TServiceClient client, ObjectPool<ThriftClient<T>> pool,
+      ServiceInfo serviceInfo) {
     super();
     this.client = client;
     this.pool = pool;
@@ -104,5 +105,4 @@ public class ThriftClient<T extends TServiceClient> implements Closeable {
     TTransport outputTransport = client.getOutputProtocol().getTransport();
     return !inputTransport.isOpen() || !outputTransport.isOpen();
   }
-
 }

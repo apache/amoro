@@ -31,6 +31,6 @@
         </Root>
         <Logger name="com.netease.arctic" level="INFO" additivity="false">
             <AppenderRef ref="stdout"/>
-        </Logger>TableMetaStore
+        </Logger>
     </Loggers>
 </Configuration>
