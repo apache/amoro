@@ -20,12 +20,14 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.OverwriteFiles;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StructLike;
@@ -35,12 +37,14 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
@@ -148,7 +152,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   @Override
-  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionOptimizedSequence) {
+  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
     Preconditions.checkState(this.dynamic != null,
         "updateOptimizedSequence() or updateOptimizedSequenceDynamically() must be invoked");
     applyDeleteExpression();
@@ -231,13 +235,19 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     // step3: set optimized sequence id
+    PartitionSpec spec = transaction.table().spec();
+    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
     if (this.dynamic) {
-      partitionOptimizedSequence.putAll(sequenceForChangedPartitions);
+      sequenceForChangedPartitions.forEach((partition, sequence) ->
+          partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap())
+              .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence)));
     } else {
-      partitionOptimizedSequence.putAll(this.partitionOptimizedSequence);
+      this.partitionOptimizedSequence.forEach((partition, sequence) ->
+          partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap())
+              .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence)));
     }
 
-    return partitionOptimizedSequence;
+    return partitionProperties;
   }
 
   private void applyDeleteExpression() {
