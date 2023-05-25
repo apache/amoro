@@ -1,6 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
@@ -109,7 +110,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   public List<OptimizerInstance> getOptimizers() {
-    return Lists.newArrayList(authOptimizers.values());
+    return ImmutableList.copyOf(authOptimizers.values());
   }
 
   public void removeOptimizer(String resourceId) {
