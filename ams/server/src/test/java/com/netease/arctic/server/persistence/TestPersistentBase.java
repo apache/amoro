@@ -1,6 +1,5 @@
 package com.netease.arctic.server.persistence;
 
-import com.netease.arctic.server.exception.PersistenceException;
 import com.netease.arctic.server.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.Assert;
@@ -12,7 +11,7 @@ import org.mockito.Mockito;
 
 import static org.mockito.Mockito.never;
 
-public class PersistentBaseTest {
+public class TestPersistentBase {
 
   private TestMapper mapper = Mockito.mock(TestMapper.class);
   private NestedSqlSession session = Mockito.mock(NestedSqlSession.class);
@@ -82,11 +81,11 @@ public class PersistentBaseTest {
 
     try {
       testObject.doAsExisted(TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
-    } catch (PersistenceException e) {
+    } catch (UndefinedException e) {
       Mockito.verify(mapper, Mockito.times(1)).testMethod2();
       Mockito.verify(session, Mockito.times(1)).rollback();
       Mockito.verify(session, never()).commit();
-      Assertions.assertEquals("error", e.getCause().getMessage());
+      Assertions.assertEquals("error", e.getMessage());
       return;
     }
     Assert.assertEquals(false, true);

@@ -53,7 +53,6 @@ public class ResourceGroup {
     return container;
   }
 
-
   //generate inner builder class, use addProperties instead of set
   public static class Builder {
     private final String name;
@@ -61,14 +60,16 @@ public class ResourceGroup {
     private final Map<String, String> properties = new HashMap<>();
 
     public Builder(String name, String container) {
-      Preconditions.checkArgument(name != null && container != null,
+      Preconditions.checkArgument(
+          name != null && container != null,
           "Resource group name and container name can not be null");
       this.name = name;
       this.container = container;
     }
 
     public Builder(String name) {
-      Preconditions.checkArgument(name != null,
+      Preconditions.checkArgument(
+          name != null,
           "Resource group name can not be null");
       this.name = name;
       this.container = Constants.EXTERNAL_RESOURCE_CONTAINER;

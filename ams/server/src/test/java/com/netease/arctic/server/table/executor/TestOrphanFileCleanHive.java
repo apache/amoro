@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.excutors;
+package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -67,7 +67,7 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
-    orphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
+    OrphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
   }
 

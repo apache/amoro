@@ -99,8 +99,9 @@ public class MockArcticMetastoreServer implements Runnable {
   public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
     MockArcticMetastoreServer server = getInstance();
     if (server.handler().getCatalogs().stream()
-        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName())))
+        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName()))) {
       server.handler().createCatalog(catalogMeta);
+    }
   }
 
   public static String getHadoopSite() {

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.excutors;
+package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -25,7 +25,6 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
-import com.netease.arctic.server.table.executor.HiveCommitSyncExecutor;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;

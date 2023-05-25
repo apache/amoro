@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.excutors;
+package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -24,7 +24,6 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.server.table.executor.SnapshotsExpiringExecutor;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.DataFile;

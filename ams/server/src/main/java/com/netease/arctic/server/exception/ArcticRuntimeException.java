@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class ArcticRuntimeException extends RuntimeException {
 
@@ -102,12 +103,17 @@ public class ArcticRuntimeException extends RuntimeException {
     return transformLegacyException(throwable);
   }
 
-  private static ArcticRuntimeException buildArcticException(Throwable throwable) {
+  public static ArcticRuntimeException buildArcticException(Throwable throwable,
+      Function<Throwable, ArcticRuntimeException> exceptionTransform) {
     if (throwable instanceof ArcticRuntimeException) {
       return (ArcticRuntimeException) throwable;
     } else {
-      return new UndefinedException(throwable);
+      return exceptionTransform.apply(throwable);
     }
+  }
+
+  private static ArcticRuntimeException buildArcticException(Throwable throwable) {
+    return buildArcticException(throwable, UndefinedException::new);
   }
 
   private static TException transformLegacyException(Throwable throwable) {
