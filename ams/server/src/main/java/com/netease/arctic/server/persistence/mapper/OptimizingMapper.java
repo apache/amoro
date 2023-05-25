@@ -18,6 +18,7 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.type.JdbcType;
 
 import java.util.List;
 import java.util.Map;
@@ -187,8 +188,10 @@ public interface OptimizingMapper {
       @Param("input") Map<Integer, RewriteFilesInput> input);
 
   @Select("SELECT rewrite_input FROM table_optimizing_process WHERE process_id = #{processId}")
-  @Result(property = "input", column = "rewrite_input", typeHandler = Object2ByteArrayConvert.class)
-  Map<String, Map<Integer, RewriteFilesInput>> selectProcessInputFiles(@Param("processId") long processId);
+  @Results({
+      @Result(column = "rewrite_input", jdbcType = JdbcType.BLOB)
+  })
+  List<byte[]> selectProcessInputFiles(@Param("processId") long processId);
 
   /**
    * Optimizing task quota operations below
