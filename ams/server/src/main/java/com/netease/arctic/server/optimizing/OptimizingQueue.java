@@ -81,8 +81,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
         process.getTaskMap().entrySet().stream().filter(
-            entry -> entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED ||
-            entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
+                entry -> entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED ||
+                    entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
             .forEach(entry -> taskMap.put(entry.getKey(), entry.getValue()));
         process.getTaskMap().values().stream()
             .filter(task -> task.getStatus() == TaskRuntime.Status.PLANNED)
@@ -205,7 +205,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
     List<TaskRuntime> suspendingTasks = taskMap.values().stream()
-        .filter(task -> task.isSuspending(currentTime) ||
+        .filter(task -> task.getOptimizingThread() == null ||
+            task.isSuspending(currentTime) ||
             expiredOptimizers.contains(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
