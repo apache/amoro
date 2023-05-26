@@ -108,7 +108,7 @@ public class ServerTableDescriptor extends PersistentBase {
       transactionsOfTable.setCommitTime(snapshot.timestampMillis());
       transactionsOfTables.add(transactionsOfTable);
     }));
-    Collections.reverse(transactionsOfTables);
+    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.commitTime, o1.commitTime));
     return transactionsOfTables;
   }
 
