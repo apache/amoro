@@ -283,6 +283,9 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {
+    if (this.optimizingThread == null) {
+      return;
+    }
     if (!thread.equals(this.optimizingThread)) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }
@@ -354,6 +357,7 @@ public class TaskRuntime extends StatedPersistentBase {
       if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
+      next = nextStatusMap.get(status);
       if (!next.contains(targetStatus)) {
         throw new IllegalTaskStateException(taskId, status, targetStatus);
       }
