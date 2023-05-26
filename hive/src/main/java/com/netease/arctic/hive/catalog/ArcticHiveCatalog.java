@@ -165,6 +165,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     public TableBuilder withProperty(String key, String value) {
       if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
         allowExistedHiveTable = true;
+        super.withProperty(key, value);
       } else if (key.equals(TableProperties.TABLE_EVENT_TIME_FIELD)) {
         super.withProperty(key, value.toLowerCase(Locale.ROOT));
       } else {

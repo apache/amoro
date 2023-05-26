@@ -268,7 +268,10 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    ctx.json(OkResponse.of(upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table))));
+    UpgradeRunningInfo info = upgradeRunningInfo.containsKey(TableIdentifier.of(catalog, db, table)) ?
+        upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table)) :
+        new UpgradeRunningInfo(UpgradeStatus.NONE.toString());
+    ctx.json(OkResponse.of(info));
   }
 
   /**
@@ -458,7 +461,7 @@ public class TableController extends RestBaseController {
     } else {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
     }
-    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isNotBlank(keywords) ||
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
@@ -470,7 +473,7 @@ public class TableController extends RestBaseController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList = tableService.listDatabases(catalog).stream()
-        .filter(item -> StringUtils.isNotBlank(keywords) || item.contains(keywords))
+        .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
         .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
   }
