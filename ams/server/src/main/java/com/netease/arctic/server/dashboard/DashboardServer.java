@@ -88,7 +88,7 @@ public class DashboardServer {
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
-    this.tableController = new TableController(tableService, tableDescriptor);
+    this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();

@@ -247,12 +247,18 @@ export interface ITopTableItem {
   index: number
 }
 
+export interface IOptimizeGroup {
+  container: string
+  name: string
+  properties: IMap<any>
+}
+
 export interface IContainerSetting {
   name: string
-  type: string
-  properties: IMap<string>,
-  optimizeGroup: IMap<string>[],
-  propertiesArray?: []
+  classpath: string
+  properties: IMap<string>
+  optimizeGroup: IOptimizeGroup[]
+  propertiesArray?: IMap<any>[]
 }
 
 export interface IResourceUsage {

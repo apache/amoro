@@ -34,7 +34,6 @@ import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +45,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private OptimizingTaskId taskId;
   @StatedPersistentBase.StateField
   private Status status = Status.PLANNED;
-  private TaskStatusMachine statusMachine;
+  private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   @StatedPersistentBase.StateField
   private int retry = 0;
   @StatedPersistentBase.StateField
@@ -77,7 +76,6 @@ public class TaskRuntime extends StatedPersistentBase {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
-    this.statusMachine = new TaskStatusMachine();
     this.summary = new MetricsSummary(input);
     this.tableId = taskDescriptor.getTableId();
     this.properties = properties;
@@ -93,22 +91,6 @@ public class TaskRuntime extends StatedPersistentBase {
       }
       owner.acceptResult(this);
       optimizingThread = null;
-    });
-  }
-
-  /**
-   * Mix-Hive table need move file to hive location in Commit stage. so need to update output.
-   *
-   * @param filesOutput
-   */
-  public void updateOutput(RewriteFilesOutput filesOutput) {
-    invokeConsisitency(() -> {
-      Preconditions.checkArgument(filesOutput != null, "Old output must not be null");
-      statusMachine.accept(Status.SUCCESS);
-      summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-      summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-      output = filesOutput;
-      persistTaskRuntime(this);
     });
   }
 
@@ -284,6 +266,9 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {
+    if (this.optimizingThread == null) {
+      return;
+    }
     if (!thread.equals(this.optimizingThread)) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }
@@ -355,6 +340,7 @@ public class TaskRuntime extends StatedPersistentBase {
       if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
+      next = nextStatusMap.get(status);
       if (!next.contains(targetStatus)) {
         throw new IllegalTaskStateException(taskId, status, targetStatus);
       }

@@ -50,34 +50,10 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      // we treat all files in hive location as segment files
-      return dataFile.fileSizeInBytes() <= maxFragmentSize && notInHiveLocation(dataFile.path().toString());
-    } else if (file.type() == DataFileType.INSERT_FILE) {
-      // we treat all insert files as fragment files
-      return true;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
-  }
-
-  private boolean notInHiveLocation(String filePath) {
-    return !filePath.contains(hiveLocation);
-  }
-
-  @Override
-  protected boolean canSegmentFileRewrite(IcebergDataFile dataFile) {
-    // files in hive location should not be rewritten
-    return notInHiveLocation(dataFile.path().toString());
-  }
-
-  @Override
   protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
     if (moveFiles2CurrentHiveLocation()) {
       // if we are going to move files to old hive location, only files not in hive location should full optimizing
-      return notInHiveLocation(dataFile.path().toString());
+      return evaluator().notInHiveLocation(dataFile);
     } else {
       // if we are going to rewrite all files to a new hive location, all files should full optimizing
       return true;
@@ -85,7 +61,27 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   private boolean moveFiles2CurrentHiveLocation() {
-    return evaluator().isFullNecessary() && !config.isFullRewriteAllFiles() && !findAnyDelete();
+    return evaluator().isFullNecessary() && !config.isFullRewriteAllFiles() && !evaluator().anyDeleteExist();
+  }
+
+  @Override
+  protected MixedHivePartitionEvaluator evaluator() {
+    return ((MixedHivePartitionEvaluator) super.evaluator());
+  }
+
+  @Override
+  protected CommonPartitionEvaluator buildEvaluator() {
+    return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
+  }
+
+  @Override
+  protected boolean taskNeedExecute(SplitTask task) {
+    if (evaluator().isFullNecessary()) {
+      // if is full optimizing for hive, task should execute if there are any data files
+      return task.getRewriteDataFiles().size() > 0;
+    } else {
+      return super.taskNeedExecute(task);
+    }
   }
 
   @Override
@@ -93,7 +89,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     OptimizingInputProperties properties = super.buildTaskProperties();
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();
-    } else if (evaluator().isFullNecessary()){
+    } else if (evaluator().isFullNecessary()) {
       properties.setOutputDir(constructCustomHiveSubdirectory());
     }
     return properties;
@@ -108,6 +104,56 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       }
     }
     return customHiveSubdirectory;
+  }
+
+  protected static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
+    private final String hiveLocation;
+    private boolean hasNotInHiveLocationFile = false;
+
+    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
+                                       long planTime, boolean keyedTable) {
+      super(tableRuntime, partition, planTime, keyedTable);
+      this.hiveLocation = hiveLocation;
+    }
+
+    @Override
+    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      super.addFile(dataFile, deletes);
+      if (!hasNotInHiveLocationFile && notInHiveLocation(dataFile)) {
+        hasNotInHiveLocationFile = true;
+      }
+    }
+
+    @Override
+    protected boolean isFragmentFile(IcebergDataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      if (file.type() == DataFileType.BASE_FILE) {
+        // we treat all files in hive location as segment files
+        return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile);
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
+    @Override
+    public boolean isFullNecessary() {
+      if (!reachFullInterval()) {
+        return false;
+      }
+      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles || hasNotInHiveLocationFile;
+    }
+
+    @Override
+    public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      return super.shouldRewriteSegmentFile(dataFile, deletes) && notInHiveLocation(dataFile);
+    }
+
+    private boolean notInHiveLocation(IcebergContentFile<?> file) {
+      return !file.path().toString().contains(hiveLocation);
+    }
   }
 
 }

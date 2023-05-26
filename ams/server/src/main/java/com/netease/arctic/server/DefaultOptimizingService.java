@@ -159,7 +159,8 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public List<OptimizerInstance> listOptimizers() {
-    return optimizingQueueByGroup.values().stream()
+    return optimizingQueueByGroup.values()
+        .stream()
         .flatMap(queue -> queue.getOptimizers().stream())
         .collect(Collectors.toList());
   }

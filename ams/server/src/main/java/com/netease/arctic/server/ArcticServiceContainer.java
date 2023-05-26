@@ -39,7 +39,6 @@ import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
-import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -59,6 +58,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +117,13 @@ public class ArcticServiceContainer {
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
 
@@ -158,7 +165,7 @@ public class ArcticServiceContainer {
     return this.optimizingService;
   }
 
-  private void initConfig() throws IllegalConfigurationException, IOException {
+  private void initConfig() throws IOException {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
   }
@@ -227,14 +234,14 @@ public class ArcticServiceContainer {
 
     private JSONObject yamlConfig;
 
-    public void init() throws IllegalConfigurationException, IOException {
+    public void init() throws IOException {
       initServiceConfig();
       initContainerConfig();
       initResourceGroupConfig();
     }
 
     @SuppressWarnings("unchecked")
-    private void initResourceGroupConfig() throws IllegalConfigurationException {
+    private void initResourceGroupConfig() {
       LOG.info("initializing resource group configuration...");
       JSONArray optimizeGroups = yamlConfig.getJSONArray(ArcticManagementConf.OPTIMIZER_GROUP_LIST);
       for (int i = 0; i < optimizeGroups.size(); i++) {
@@ -243,7 +250,7 @@ public class ArcticServiceContainer {
             groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_NAME),
             groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_CONTAINER));
         if (!ResourceContainers.contains(groupBuilder.getContainer())) {
-          throw new IllegalConfigurationException(
+          throw new IllegalStateException(
               "can not find such container config named" +
                   groupBuilder.getContainer());
         }
@@ -277,7 +284,7 @@ public class ArcticServiceContainer {
           (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
-      //mysql config
+      // mysql config
       if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
           .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
         if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key()) ||
@@ -286,7 +293,7 @@ public class ArcticServiceContainer {
         }
       }
 
-      //HA config
+      // HA config
       if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key()) &&
           ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key())) {
@@ -295,10 +302,17 @@ public class ArcticServiceContainer {
                   "the ams high availability");
         }
       }
+      // terminal config
+      String terminalBackend = systemConfig.getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
+          .toString().toLowerCase();
+      if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
+        throw new RuntimeException(
+            String.format("Illegal terminal implement: %s, local, kyuubi, custom is available", terminalBackend));
+      }
     }
 
     @SuppressWarnings("unchecked")
-    private void initContainerConfig() throws IllegalConfigurationException {
+    private void initContainerConfig() {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();

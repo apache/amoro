@@ -108,6 +108,7 @@ CREATE TABLE `table_runtime`
     `current_snapshot_id`           bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
+    `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
     `last_major_optimizing_time`    timestamp COMMENT 'Latest Major Optimize time for all partitions',
     `last_minor_optimizing_time`    timestamp COMMENT 'Latest Minor Optimize time for all partitions',
     `last_full_optimizing_time`     timestamp COMMENT 'Latest Full Optimize time for all partitions',
@@ -128,6 +129,7 @@ CREATE TABLE `table_optimizing_process`
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
     `target_snapshot_id`            bigint(20) NOT NULL,
+    `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
@@ -136,7 +138,7 @@ CREATE TABLE `table_optimizing_process`
     `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
-    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition'
+    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -154,10 +156,9 @@ CREATE TABLE `task_runtime`
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
-    `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
+    `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';

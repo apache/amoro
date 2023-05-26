@@ -52,6 +52,5 @@ public abstract class ThriftUtil {
     } catch (Throwable e) {
       logger.warn("close output transport fail", e);
     }
-
   }
 }

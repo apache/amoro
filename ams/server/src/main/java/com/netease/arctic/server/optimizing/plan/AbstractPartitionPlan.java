@@ -26,7 +26,6 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -39,11 +38,10 @@ import java.util.stream.Collectors;
 public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   public static final int INVALID_SEQUENCE = -1;
 
-  private final String partition;
+  protected final String partition;
   protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
-  protected final long maxFragmentSize;
-  private BasicPartitionEvaluator evaluator;
+  private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
 
   protected ArcticTable tableObject;
@@ -64,7 +62,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
-    this.maxFragmentSize = config.maxFragmentSize();
     this.planTime = planTime;
   }
 
@@ -73,15 +70,15 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return partition;
   }
 
-  protected BasicPartitionEvaluator evaluator() {
+  protected CommonPartitionEvaluator evaluator() {
     if (evaluator == null) {
       evaluator = buildEvaluator();
     }
     return evaluator;
   }
 
-  protected BasicPartitionEvaluator buildEvaluator() {
-    return new BasicPartitionEvaluator(tableRuntime, partition, planTime);
+  protected CommonPartitionEvaluator buildEvaluator() {
+    return new CommonPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override
@@ -99,9 +96,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return evaluator().getCost();
   }
 
+  @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     evaluator().addFile(dataFile, deletes);
-    if (isFragmentFile(dataFile)) {
+    if (evaluator().isFragmentFile(dataFile)) {
       fragmentFiles.put(dataFile, deletes);
     } else {
       segmentFiles.put(dataFile, deletes);
@@ -143,14 +141,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected abstract OptimizingInputProperties buildTaskProperties();
 
-  protected boolean findAnyDelete() {
-    return evaluator().getEqualityDeleteFileCount() + evaluator().getPosDeleteFileCount() > 0;
-  }
-
-  protected boolean isFragmentFile(IcebergDataFile file) {
-    return file.fileSizeInBytes() <= maxFragmentSize;
-  }
-
   protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
     if (config.isFullRewriteAllFiles()) {
       return true;
@@ -158,10 +148,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       // if a file is related any delete files or is not big enough, it should full optimizing
       return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
     }
-  }
-
-  protected boolean canSegmentFileRewrite(IcebergDataFile icebergFile) {
-    return true;
   }
 
   protected void markSequence(long sequence) {
@@ -251,21 +237,12 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           deleteFiles.addAll(deleteFileSet);
         });
         segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (canSegmentFileRewrite(icebergFile) &&
-              getRecordCount(deleteFileSet) >= icebergFile.recordCount() * config.getMajorDuplicateRatio()) {
+          if (evaluator().shouldRewriteSegmentFile(icebergFile, deleteFileSet)) {
             rewriteDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
-          } else if (deleteFileSet.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
+          } else if (evaluator.shouldRewritePosForSegmentFile(icebergFile, deleteFileSet)) {
             rewritePosDataFiles.add(icebergFile);
             deleteFiles.addAll(deleteFileSet);
-          } else {
-            long posDeleteCount = deleteFileSet.stream()
-                .filter(file -> file.content() == FileContent.POSITION_DELETES)
-                .count();
-            if (posDeleteCount > 1) {
-              rewritePosDataFiles.add(icebergFile);
-              deleteFiles.addAll(deleteFileSet);
-            }
           }
         });
       }
@@ -313,10 +290,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           tableObject);
       return new TaskDescriptor(tableRuntime.getTableIdentifier().getId(),
           partition, input, properties.getProperties());
-    }
-
-    private long getRecordCount(List<IcebergContentFile<?>> files) {
-      return files.stream().mapToLong(ContentFile::recordCount).sum();
     }
   }
 }
