@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
@@ -42,7 +42,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit) {
+      @Nullable UnKeyedTableCommit latestCommit) {
     if (internalCondition(table, latestTaskDescriptors, latestPlanner, latestCommit)) {
       count++;
       return true;
@@ -54,7 +54,7 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit);
+      @Nullable UnKeyedTableCommit latestCommit);
 
   @Override
   public boolean senseHasChecked() {
@@ -66,6 +66,6 @@ public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlo
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit) throws Exception {
+      @Nullable UnKeyedTableCommit latestCommit) throws Exception {
   }
 }

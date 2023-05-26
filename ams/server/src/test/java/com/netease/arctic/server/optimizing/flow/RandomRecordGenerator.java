@@ -42,7 +42,7 @@ import java.util.UUID;
 
 public class RandomRecordGenerator {
 
-  private final Random random = new Random();
+  private final Random random;
 
   private final Schema primary;
 
@@ -56,7 +56,12 @@ public class RandomRecordGenerator {
 
   private final Schema schema;
 
-  public RandomRecordGenerator(Schema schema, PartitionSpec spec, Schema primary, int partitionCount) {
+  public RandomRecordGenerator(
+      Schema schema,
+      PartitionSpec spec,
+      Schema primary,
+      int partitionCount,
+      Long seed) {
     this.schema = schema;
     this.primary = primary;
     if (this.primary != null) {
@@ -65,6 +70,8 @@ public class RandomRecordGenerator {
         primaryIds.add(field.fieldId());
       }
     }
+
+    this.random = seed == null ? new Random() : new Random(seed);
 
     if (!spec.isUnpartitioned()) {
       partitionValues = new Map[partitionCount];
@@ -122,6 +129,25 @@ public class RandomRecordGenerator {
         continue;
       }
 
+      record.set(i, generateObject(field.type()));
+    }
+    return record;
+  }
+
+  public Record randomRecord() {
+    Record record = GenericRecord.create(schema);
+    Random random = new Random();
+    List<Types.NestedField> columns = schema.columns();
+    Map<Integer, Object> partitionValue = null;
+    if (partitionValues != null) {
+      partitionValue = partitionValues[random.nextInt(partitionValues.length)];
+    }
+    for (int i = 0; i < columns.size(); i++) {
+      Types.NestedField field = columns.get(i);
+      if (partitionIds.contains(field.fieldId())) {
+        record.set(i, partitionValue.get(field.fieldId()));
+        continue;
+      }
       record.set(i, generateObject(field.type()));
     }
     return record;

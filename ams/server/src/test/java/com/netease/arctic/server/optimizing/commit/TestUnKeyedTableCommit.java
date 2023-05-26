@@ -30,8 +30,8 @@ import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.optimizing.IcebergCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SequenceNumberFetcher;
 import org.apache.iceberg.ContentFile;
@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RunWith(Parameterized.class)
-public class TestIcebergCommit extends TableTestBase {
+public class TestUnKeyedTableCommit extends TableTestBase {
   protected int fileSeq;
   protected PartitionSpec spec;
   protected StructLike partitionData;
@@ -68,7 +68,7 @@ public class TestIcebergCommit extends TableTestBase {
 
   protected ArcticTable arcticTable;
 
-  public TestIcebergCommit(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestUnKeyedTableCommit(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -320,7 +320,7 @@ public class TestIcebergCommit extends TableTestBase {
     Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
     Mockito.when(taskRuntime.getInput()).thenReturn(input);
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
-    IcebergCommit commit = new IcebergCommit(
+    UnKeyedTableCommit commit = new UnKeyedTableCommit(
         Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot()).map(Snapshot::snapshotId)
             .orElse(null),
         getArcticTable(),

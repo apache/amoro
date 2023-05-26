@@ -33,6 +33,7 @@ import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingWrite2Hiv
 import com.netease.arctic.server.optimizing.flow.checker.MajorOptimizingChecker;
 import com.netease.arctic.server.optimizing.flow.checker.MinorOptimizingCheck;
 import com.netease.arctic.server.optimizing.flow.checker.OptimizingCountChecker;
+import com.netease.arctic.server.optimizing.flow.view.KeyedTableDataView;
 import com.netease.arctic.table.ArcticTable;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -45,12 +46,12 @@ import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_REWR
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
 
 @RunWith(Parameterized.class)
-public class TestContinuousOptimizing extends TableTestBase {
+public class TestKeyedContinuousOptimizing extends TableTestBase {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestContinuousOptimizing(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestKeyedContinuousOptimizing(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -104,8 +105,8 @@ public class TestContinuousOptimizing extends TableTestBase {
     //Need move file to hive scene
     table.updateProperties().set(SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, "false").commit();
 
-    TableDataView view = new TableDataView(table, tableTestHelper().primaryKeySpec().getPkSchema(),
-        partitionCount, primaryUpperBound, writeTargetFileSize);
+    KeyedTableDataView view = new KeyedTableDataView(table, tableTestHelper().primaryKeySpec().getPkSchema(),
+        partitionCount, primaryUpperBound, writeTargetFileSize, null);
 
     //init checker
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
