@@ -158,6 +158,7 @@ public interface ArcticCatalog {
   void refresh();
 
   /**
+   * // TODO:
    * Return a table blocker manager.
    * @param tableIdentifier a table identifier
    * @return A Table Blocker Mana

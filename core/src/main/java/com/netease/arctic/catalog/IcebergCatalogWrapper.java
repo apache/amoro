@@ -26,13 +26,12 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOIcebergAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BasicTableBuilder;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.iceberg.BasicIcebergTable;
+import com.netease.arctic.iceberg.IcebergTableBuilder;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
@@ -42,7 +41,6 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +50,7 @@ import java.util.stream.Collectors;
 
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
+ * deprecated, using {@link com.netease.arctic.iceberg.IcebergTables} instead
  */
 public class IcebergCatalogWrapper implements ArcticCatalog {
 
@@ -171,7 +170,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     Table icebergTable = tableMetaStore.doAs(() -> icebergCatalog
         .loadTable(toIcebergTableIdentifier(tableIdentifier)));
-    ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
+    ArcticFileIO arcticFileIO = ArcticFileIOs.buildAdaptIcebergFileIO(tableMetaStore, icebergTable.io());
     return new BasicIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
         icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO,
         meta.getCatalogProperties());
@@ -209,7 +208,9 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
     switch (format) {
       case ICEBERG:
-        return new IcebergTableBuilder(schema, format, identifier);
+        return new IcebergTableBuilder(
+            tableMetaStore, icebergCatalog, meta.getCatalogProperties(),
+            schema, identifier);
       case MIXED_ICEBERG:
       default:
         throw new IllegalArgumentException(
@@ -243,62 +244,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         tableIdentifier.getTableName());
   }
 
-  private ArcticFileIO createArcticFileIO(FileIO io) {
-    if (io instanceof HadoopFileIO) {
-      return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
-    } else {
-      return new ArcticFileIOIcebergAdapter(io);
-    }
-  }
 
-  protected class IcebergTableBuilder extends BasicTableBuilder<IcebergTableBuilder> {
 
-    public IcebergTableBuilder(Schema schema, TableFormat format, TableIdentifier identifier) {
-      super(schema, format, identifier);
-      Preconditions.checkArgument(TableFormat.ICEBERG == format,
-          "this table build only support to create iceberg table");
-    }
-
-    @Override
-    public ArcticTable create() {
-
-      Table table = icebergCatalog.buildTable(
-              toIcebergTableIdentifier(identifier), schema
-          ).withPartitionSpec(spec)
-          .withProperties(properties)
-          .withSortOrder(sortOrder)
-          .create();
-
-      FileIO io = table.io();
-      ArcticFileIO arcticFileIO = createArcticFileIO(io);
-      return new BasicIcebergTable(identifier, table, arcticFileIO, meta.getCatalogProperties());
-    }
-
-    @Override
-    public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
-      throw new UnsupportedOperationException("can't create an iceberg table with primary key");
-    }
-
-    @Override
-    protected IcebergTableBuilder self() {
-      return this;
-    }
-
-  }
-
-  public static class BasicIcebergTable extends BasicUnkeyedTable {
-
-    public BasicIcebergTable(
-        TableIdentifier tableIdentifier,
-        Table icebergTable,
-        ArcticFileIO arcticFileIO,
-        Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
-    }
-
-    @Override
-    public TableFormat format() {
-      return TableFormat.ICEBERG;
-    }
-  }
 }
