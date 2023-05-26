@@ -23,12 +23,15 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PartitionEvaluator {
 
   String getPartition();
 
   void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+  
+  void addPartitionProperties(Map<String, String> properties);
 
   boolean isNecessary();
 

@@ -55,6 +55,12 @@ public class OptimizingConfig {
   //base.file-index.hash-bucket
   private int baseHashBucket;
 
+  //self-optimizing.trigger.base-max-delay
+  private long baseMaxDelay;
+
+  //self-optimizing.trigger.hive-max-delay
+  private long hiveMaxDelay;
+
   public OptimizingConfig() {
   }
 
@@ -201,6 +207,24 @@ public class OptimizingConfig {
     return this;
   }
 
+  public long getBaseMaxDelay() {
+    return baseMaxDelay;
+  }
+
+  public OptimizingConfig setBaseMaxDelay(long baseMaxDelay) {
+    this.baseMaxDelay = baseMaxDelay;
+    return this;
+  }
+
+  public long getHiveMaxDelay() {
+    return hiveMaxDelay;
+  }
+
+  public OptimizingConfig setHiveMaxDelay(long hiveMaxDelay) {
+    this.hiveMaxDelay = hiveMaxDelay;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -213,7 +237,8 @@ public class OptimizingConfig {
         minorLeastInterval == that.minorLeastInterval &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
         fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
-        baseHashBucket == that.baseHashBucket &&
+        baseHashBucket == that.baseHashBucket && baseMaxDelay == that.baseMaxDelay &&
+        hiveMaxDelay == that.hiveMaxDelay &&
         Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
@@ -221,7 +246,7 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
         maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorDuplicateRatio,
-        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket);
+        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseMaxDelay, hiveMaxDelay);
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
@@ -284,6 +309,14 @@ public class OptimizingConfig {
         .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT));
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT))
+        .setBaseMaxDelay(CompatiblePropertyUtil.propertyAsLong(
+            properties,
+            TableProperties.SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY,
+            TableProperties.SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY_DEFAULT))
+        .setHiveMaxDelay(CompatiblePropertyUtil.propertyAsLong(
+            properties,
+            TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY,
+            TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY_DEFAULT));
   }
 }

@@ -27,6 +27,7 @@ import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -99,6 +100,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
+    // partition property
+    protected long lastBaseOptimizedTime;
 
     public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
                                           boolean keyedTable) {
@@ -111,6 +114,15 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       super.addFile(dataFile, deletes);
       if (!hasChangeFiles && isChangeFile(dataFile)) {
         hasChangeFiles = true;
+      }
+    }
+
+    @Override
+    public void addPartitionProperties(Map<String, String> properties) {
+      super.addPartitionProperties(properties);
+      String optimizedTime = properties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+      if (optimizedTime != null) {
+        this.lastBaseOptimizedTime = Long.parseLong(optimizedTime);
       }
     }
 
@@ -144,12 +156,18 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
+        } else if (hasChangeFiles && reachBaseOptimizedDelay()) {
+          return true;
         } else {
           return false;
         }
       } else {
         return super.isMinorNecessary();
       }
+    }
+
+    protected boolean reachBaseOptimizedDelay() {
+      return config.getBaseMaxDelay() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseMaxDelay();
     }
 
     protected int getBaseSplitCount() {

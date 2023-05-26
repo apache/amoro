@@ -117,6 +117,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     }
   }
 
+  @Override
+  public void addPartitionProperties(Map<String, String> properties) {
+    
+  }
+
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
     if (taskSplitter == null) {
       taskSplitter = buildTaskSplitter();

@@ -28,6 +28,7 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CommonPartitionEvaluator implements PartitionEvaluator {
@@ -82,6 +83,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     } else {
       addSegmentFile(dataFile, deletes);
     }
+  }
+
+  @Override
+  public void addPartitionProperties(Map<String, String> properties) {
   }
 
   private boolean isDuplicateDelete(IcebergContentFile<?> delete) {
