@@ -59,6 +59,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected long posDeleteFileSize = 0L;
 
   private long cost = -1;
+  private Boolean necessary = null;
+  private OptimizingType optimizingType = null;
 
   public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
@@ -156,7 +158,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public boolean isNecessary() {
-    return isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+    if (necessary == null) {
+      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+    }
+    return necessary;
   }
 
   @Override
@@ -178,8 +183,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public OptimizingType getOptimizingType() {
-    return isFullNecessary() ? OptimizingType.FULL_MAJOR :
-        isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+    if (optimizingType == null) {
+      optimizingType = isFullNecessary() ? OptimizingType.FULL_MAJOR :
+          isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+    }
+    return optimizingType;
   }
 
   public boolean isMajorNecessary() {
