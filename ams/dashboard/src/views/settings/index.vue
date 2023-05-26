@@ -21,26 +21,29 @@
                   <h3 class="left">{{$t('name')}}</h3>
                   <span class="right">{{container.name}}</span>
                 </li>
-                <li class="item">
-                  <h3 class="left">{{$t('type')}}</h3>
-                  <span class="right">{{container.type}}</span>
+                <li v-if="container.classpath" class="item">
+                  <h3 class="left">{{$t('implementation')}}</h3>
+                  <span class="right">{{container.classpath}}</span>
                 </li>
               </ul>
               <h3 class="g-mb-12 g-mt-12">{{$t('properties')}}</h3>
-              <a-table
-                rowKey="key"
-                v-if="container.propertiesArray.length"
-                :columns="basicColumns"
-                :data-source="container.propertiesArray"
-                :pagination="false"
-              />
-              <h3 class="g-mb-12 g-mt-12">{{$t('optimzeGroup')}}</h3>
-              <a-table
-                rowKey="name"
-                :columns="optimzeGroupColumns"
-                :data-source="container.optimizeGroup"
-                :pagination="false"
-              />
+                <a-table
+                  rowKey="key"
+                  :columns="basicColumns"
+                  :data-source="container.propertiesArray"
+                  :pagination="false"
+                />
+              <h3 class="g-mb-12 g-mt-12">{{$t('optimizerGroups')}}</h3>
+              <a-collapse>
+                <a-collapse-panel v-for="innerGroup in container.optimizeGroup" :key="innerGroup.name" :header="innerGroup.name">
+                  <a-table
+                    rowKey="name"
+                    :columns="basicColumns"
+                    :data-source="innerGroup.innerPropertiesArray"
+                    :pagination="false"
+                  />
+                </a-collapse-panel>
+              </a-collapse>
             </a-collapse-panel>
           </a-collapse>
         </div>
@@ -116,6 +119,15 @@ async function getContainersSettingInfo() {
         containerSetting[index].propertiesArray.push({
           key: key,
           value: ele.properties[key]
+        })
+      });
+      (ele.optimizeGroup || []).forEach(group => {
+        group.innerPropertiesArray = []
+        Object.keys(group.properties || {}).forEach(key => {
+          group.innerPropertiesArray.push({
+            key: key,
+            value: group.properties[key]
+          })
         })
       })
     })
