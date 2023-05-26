@@ -242,15 +242,17 @@ public class ServerTableDescriptor extends PersistentBase {
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFile(arcticTable, null, Integer.MAX_VALUE).forEach(e -> {
-      if (!partitionBaseInfoHashMap.containsKey(e.getPartitionName())) {
-        partitionBaseInfoHashMap.put(e.getPartitionName(), new PartitionBaseInfo());
-        partitionBaseInfoHashMap.get(e.getPartitionName()).setPartition(e.getPartitionName());
+    getTableFile(arcticTable, null, Integer.MAX_VALUE).forEach(fileInfo -> {
+      if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartitionName())) {
+        partitionBaseInfoHashMap.put(fileInfo.getPartitionName(), new PartitionBaseInfo());
+        partitionBaseInfoHashMap.get(fileInfo.getPartitionName()).setPartition(fileInfo.getPartitionName());
       }
-      PartitionBaseInfo p = partitionBaseInfoHashMap.get(e.getPartitionName());
-      p.setFileCount(p.getFileCount() + 1);
-      p.setFileSize(p.getFileSize() + e.getFileSize());
-      p.setLastCommitTime(p.getLastCommitTime() > e.getCommitTime() ? p.getLastCommitTime() : e.getCommitTime());
+      PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartitionName());
+      partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
+      partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
+      partitionInfo.setLastCommitTime(partitionInfo.getLastCommitTime() > fileInfo.getCommitTime() ?
+          partitionInfo.getLastCommitTime() :
+          fileInfo.getCommitTime());
     });
 
     return new ArrayList<>(partitionBaseInfoHashMap.values());
