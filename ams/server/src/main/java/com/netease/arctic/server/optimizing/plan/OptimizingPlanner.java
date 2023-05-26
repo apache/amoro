@@ -40,8 +40,7 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private static final int MAX_INPUT_FILE_COUNT_PER_THREAD = 5000;
-  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5 * 1024 * 1024 * 1024;
+  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5L * 1024 * 1024 * 1024;
 
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
