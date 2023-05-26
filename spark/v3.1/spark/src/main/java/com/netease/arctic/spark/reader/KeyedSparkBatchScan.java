@@ -51,7 +51,6 @@ import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
@@ -116,28 +115,6 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     }
 
     return new Stats(sizeInBytes, numRows);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    KeyedSparkBatchScan that = (KeyedSparkBatchScan) o;
-    return table.id().equals(that.table.id()) &&
-        readSchema().equals(that.readSchema()) && // compare Spark schemas to ignore field ids
-        filterExpressions.toString().equals(that.filterExpressions.toString());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        table.id(), readSchema(), filterExpressions.toString());
   }
 
   private List<CombinedScanTask> tasks() {

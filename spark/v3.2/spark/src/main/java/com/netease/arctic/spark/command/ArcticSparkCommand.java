@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.command;
 
+import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.StructType;
 
@@ -27,7 +28,7 @@ public interface ArcticSparkCommand {
 
   StructType outputType();
 
-  Row[] execute();
+  Row[] execute() throws AnalysisException;
 
   default String execInfo() {
     return "";

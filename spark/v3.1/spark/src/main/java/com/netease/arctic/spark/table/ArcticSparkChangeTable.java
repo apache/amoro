@@ -21,6 +21,7 @@ package com.netease.arctic.spark.table;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -41,7 +42,7 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
-      );
+  );
 
   public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
     super(basicUnkeyedTable, refreshEagerly);
@@ -65,7 +66,7 @@ public class ArcticSparkChangeTable extends SparkTable {
     return new SparkScanBuilder(sparkSession(), basicUnkeyedTable, options, buildSchema(basicUnkeyedTable));
   }
 
-  public Schema buildSchema(BasicUnkeyedTable table) {
+  public Schema buildSchema(UnkeyedTable table) {
     return MetadataColumns.appendChangeStoreMetadataColumns(table.schema());
   }
 
