@@ -39,6 +39,7 @@ public class TableProperties {
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
   public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
+  public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
 
   public static final String LOCATION = "location";
 
@@ -107,6 +108,14 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
   public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+
+  public static final String SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY =
+      "self-optimizing.trigger.base-max-delay";
+  public static final long SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY_DEFAULT = -1L;
+
+  public static final String SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY =
+      "self-optimizing.trigger.hive-max-delay";
+  public static final long SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY_DEFAULT = -1L;
 
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
@@ -273,7 +282,7 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-  
+
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";

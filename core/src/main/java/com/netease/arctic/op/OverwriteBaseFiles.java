@@ -234,18 +234,21 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       }
     }
 
-    // step3: set optimized sequence id
+    // step3: set optimized sequence id, optimized time
+    String commitTime = String.valueOf(System.currentTimeMillis());
     PartitionSpec spec = transaction.table().spec();
     StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
+    StructLikeMap<Long> toChangePartitionSequence;
     if (this.dynamic) {
-      sequenceForChangedPartitions.forEach((partition, sequence) ->
-          partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap())
-              .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence)));
+      toChangePartitionSequence = sequenceForChangedPartitions;
     } else {
-      this.partitionOptimizedSequence.forEach((partition, sequence) ->
-          partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap())
-              .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence)));
+      toChangePartitionSequence = this.partitionOptimizedSequence;
     }
+    toChangePartitionSequence.forEach((partition, sequence) -> {
+      Map<String, String> properties = partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap());
+      properties.put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence));
+      properties.put(TableProperties.PARTITION_BASE_OPTIMIZED_TIME, commitTime);
+    });
 
     return partitionProperties;
   }

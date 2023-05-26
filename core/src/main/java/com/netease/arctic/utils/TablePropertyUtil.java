@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -102,20 +103,27 @@ public class TablePropertyUtil {
     return value;
   }
 
-  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
-    StructLikeMap<Long> partitionOptimizedSequence = StructLikeMap.create(keyedTable.spec().partitionType());
+  public static StructLikeMap<Long> getPartitionBaseOptimizedTime(KeyedTable keyedTable) {
+    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+  }
 
-    StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
+  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
+    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
+  }
+
+  public static StructLikeMap<Long> getPartitionLongProperties(UnkeyedTable unkeyedTable, String key) {
+    StructLikeMap<Long> result = StructLikeMap.create(unkeyedTable.spec().partitionType());
+
+    StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
     partitionProperty.forEach((partitionKey, propertyValue) -> {
-      Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE) == null) ?
-          null : Long.parseLong(propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE));
-      if (maxTxId != null) {
-        partitionOptimizedSequence.put(partitionKey, maxTxId);
+      Long longValue = (propertyValue == null || propertyValue.get(key) == null) ?
+          null : Long.parseLong(propertyValue.get(key));
+      if (longValue != null) {
+        result.put(partitionKey, longValue);
       }
     });
 
-    return partitionOptimizedSequence;
+    return result;
   }
 
   public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
