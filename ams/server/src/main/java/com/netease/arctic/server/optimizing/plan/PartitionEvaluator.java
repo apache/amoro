@@ -27,6 +27,13 @@ import java.util.Map;
 
 public interface PartitionEvaluator {
 
+  /**
+   * Weight determines the priority of partition execution, with higher weights having higher priority.
+   */
+  interface Weight extends Comparable<Weight> {
+
+  }
+
   String getPartition();
 
   void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
@@ -36,6 +43,8 @@ public interface PartitionEvaluator {
   boolean isNecessary();
 
   long getCost();
+  
+  Weight getWeight();
 
   OptimizingType getOptimizingType();
 

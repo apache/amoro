@@ -176,6 +176,12 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       return super.shouldRewriteSegmentFile(dataFile, deletes) && notInHiveLocation(dataFile);
     }
 
+    @Override
+    public PartitionEvaluator.Weight getWeight() {
+      return new Weight(getCost(),
+          hasChangeFiles && reachBaseOptimizedDelay() || hasNewHiveData() && reachHiveOptimizedDelay());
+    }
+
     private boolean notInHiveLocation(IcebergContentFile<?> file) {
       return !file.path().toString().contains(hiveLocation);
     }

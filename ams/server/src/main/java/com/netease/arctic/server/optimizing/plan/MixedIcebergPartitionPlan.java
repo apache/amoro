@@ -32,6 +32,7 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.BinPacking;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -184,6 +185,31 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         return false;
       }
       return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles;
+    }
+
+    @Override
+    public PartitionEvaluator.Weight getWeight() {
+      return new Weight(getCost(), hasChangeFiles && reachBaseOptimizedDelay());
+    }
+
+    protected static class Weight implements PartitionEvaluator.Weight {
+      private final long cost;
+      private final boolean reachDelay;
+
+      public Weight(long cost, boolean reachDelay) {
+        this.cost = cost;
+        this.reachDelay = reachDelay;
+      }
+
+      @Override
+      public int compareTo(@NotNull PartitionEvaluator.Weight o) {
+        Weight that = (Weight) o;
+        int compare = Boolean.compare(this.reachDelay, that.reachDelay);
+        if (compare != 0) {
+          return compare;
+        }
+        return Long.compare(this.cost, that.cost);
+      }
     }
   }
 

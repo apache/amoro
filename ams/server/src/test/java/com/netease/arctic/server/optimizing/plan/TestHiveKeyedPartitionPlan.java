@@ -22,16 +22,26 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
@@ -69,5 +79,35 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
     String hiveLocation = hiveTable.hiveLocation();
     return new MixedHivePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
         System.currentTimeMillis());
+  }
+
+  @Test
+  public void testFullOptimizingWithHiveDelay() {
+    updateChangeHashBucket(4);
+    closeFullOptimizingInterval();
+    closeMinorOptimizingInterval();
+    List<Record> newRecords;
+    long transactionId;
+    List<DataFile> dataFiles = Lists.newArrayList();
+    // write fragment file
+    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    dataFiles.addAll(OptimizingTestHelpers.appendChange(getArcticTable(),
+        tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
+            newRecords, false)));
+    StructLike partition = dataFiles.get(0).partition();
+
+    // not trigger optimize
+    Assert.assertEquals(0, planWithCurrentFiles().size());
+
+    // update hive delay
+    updateTableProperty(TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY, 1 + "");
+    Assert.assertEquals(4, planWithCurrentFiles().size());
+    updatePartitionProperty(partition, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        (System.currentTimeMillis() / 1000 - 10) + "");
+    Assert.assertEquals(4, planWithCurrentFiles().size());
+    updatePartitionProperty(partition, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        (System.currentTimeMillis() / 1000 + 1000) + "");
+    Assert.assertEquals(0, planWithCurrentFiles().size());
   }
 }

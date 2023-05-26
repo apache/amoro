@@ -119,7 +119,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   @Override
   public void addPartitionProperties(Map<String, String> properties) {
-    
+    evaluator().addPartitionProperties(properties);
   }
 
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
@@ -214,6 +214,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileSize() {
     return evaluator().getPosDeleteFileSize();
+  }
+
+  @Override
+  public Weight getWeight() {
+    return evaluator().getWeight();
   }
 
   protected class SplitTask {

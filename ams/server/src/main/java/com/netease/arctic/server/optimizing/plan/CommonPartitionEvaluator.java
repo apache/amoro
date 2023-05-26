@@ -26,6 +26,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -171,6 +172,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
+  public PartitionEvaluator.Weight getWeight() {
+    return new Weight(getCost());
+  }
+
+  @Override
   public OptimizingType getOptimizingType() {
     return isFullNecessary() ? OptimizingType.FULL_MAJOR :
         isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
@@ -260,5 +266,19 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
+  }
+
+  public static class Weight implements PartitionEvaluator.Weight {
+
+    private final long cost;
+
+    public Weight(long cost) {
+      this.cost = cost;
+    }
+
+    @Override
+    public int compareTo(@NotNull PartitionEvaluator.Weight o) {
+      return Long.compare(this.cost, ((Weight) o).cost);
+    }
   }
 }
