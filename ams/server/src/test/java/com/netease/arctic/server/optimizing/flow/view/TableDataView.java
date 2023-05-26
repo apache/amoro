@@ -16,29 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.flow.checker;
+package com.netease.arctic.server.optimizing.flow.view;
 
-import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
-import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
-import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.table.ArcticTable;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.data.Record;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
-public class OptimizingCountChecker extends AbstractSceneCountChecker {
-
-  public OptimizingCountChecker(int except) {
-    super(except);
-  }
-
-  @Override
-  protected boolean internalCondition(
-      ArcticTable table,
-      @Nullable List<TaskDescriptor> latestTaskDescriptors,
-      OptimizingPlanner latestPlanner,
-      @Nullable UnKeyedTableCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors);
-  }
+public interface TableDataView {
+  MatchResult match(List<Record> records);
 }

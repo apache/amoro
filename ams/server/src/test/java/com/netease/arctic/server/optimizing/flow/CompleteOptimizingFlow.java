@@ -25,10 +25,10 @@ import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.optimizing.IcebergCommit;
-import com.netease.arctic.server.optimizing.MixedIcebergCommit;
+import com.netease.arctic.server.optimizing.KeyedTableCommit;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -115,7 +115,7 @@ public class CompleteOptimizingFlow {
 
     asyncExecute(taskRuntimes);
 
-    IcebergCommit committer = committer(taskRuntimes, planner.getFromSequence(),
+    UnKeyedTableCommit committer = committer(taskRuntimes, planner.getFromSequence(),
         planner.getToSequence(), planner.getTargetSnapshotId());
     committer.commit();
     check(taskDescriptors, planner, null);
@@ -140,7 +140,7 @@ public class CompleteOptimizingFlow {
   private void check(
       List<TaskDescriptor> taskDescriptors,
       OptimizingPlanner planner,
-      IcebergCommit commit) throws Exception {
+      UnKeyedTableCommit commit) throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
         checker.check(table, taskDescriptors, planner, commit);
@@ -189,16 +189,16 @@ public class CompleteOptimizingFlow {
     }
   }
 
-  private IcebergCommit committer(
+  private UnKeyedTableCommit committer(
       List<TaskRuntime> taskRuntimes,
       Map<String, Long> fromSequence,
       Map<String, Long> toSequence,
       Long formSnapshotId) {
 
-    if (table.format() == TableFormat.ICEBERG) {
-      return new IcebergCommit(formSnapshotId, table, taskRuntimes);
+    if (table.isUnkeyedTable()) {
+      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes);
     } else {
-      return new MixedIcebergCommit(
+      return new KeyedTableCommit(
           table,
           taskRuntimes,
           formSnapshotId,
@@ -243,7 +243,7 @@ public class CompleteOptimizingFlow {
         ArcticTable table,
         @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
-        @Nullable IcebergCommit latestCommit);
+        @Nullable UnKeyedTableCommit latestCommit);
 
     boolean senseHasChecked();
 
@@ -251,7 +251,7 @@ public class CompleteOptimizingFlow {
         ArcticTable table,
         @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
-        @Nullable IcebergCommit latestCommit) throws Exception;
+        @Nullable UnKeyedTableCommit latestCommit) throws Exception;
   }
 
   public static final class Builder {

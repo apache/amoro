@@ -20,8 +20,9 @@ package com.netease.arctic.server.optimizing.flow.checker;
 
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.server.optimizing.IcebergCommit;
-import com.netease.arctic.server.optimizing.flow.TableDataView;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
+import com.netease.arctic.server.optimizing.flow.view.MatchResult;
+import com.netease.arctic.server.optimizing.flow.view.TableDataView;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
@@ -46,7 +47,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-
 public abstract class AbstractHiveChecker extends OptimizingCountChecker {
 
   private int count;
@@ -63,13 +63,13 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit
+      @Nullable UnKeyedTableCommit latestCommit
   ) throws Exception {
 
     List<String> locations = dataLocations(table);
     List<Record> allRecordsInHive = readAllRecordsInHive(table, locations);
 
-    TableDataView.MatchResult match = view.match(allRecordsInHive);
+    MatchResult match = view.match(allRecordsInHive);
     if (!match.isOk()) {
       throw new RuntimeException("Hive data is error: " + match);
     }

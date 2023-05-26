@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.server.optimizing.IcebergCommit;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
@@ -38,7 +38,7 @@ public class MinorOptimizingCheck extends AbstractSceneCountChecker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit) {
+      @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
         latestPlanner.getOptimizingType() == OptimizingType.MINOR;
   }

@@ -34,7 +34,6 @@ import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -92,22 +91,6 @@ public class TaskRuntime extends StatedPersistentBase {
       }
       owner.acceptResult(this);
       optimizingThread = null;
-    });
-  }
-
-  /**
-   * Mix-Hive table need move file to hive location in Commit stage. so need to update output.
-   *
-   * @param filesOutput
-   */
-  public void updateOutput(RewriteFilesOutput filesOutput) {
-    invokeConsisitency(() -> {
-      Preconditions.checkArgument(filesOutput != null, "Old output must not be null");
-      statusMachine.accept(Status.SUCCESS);
-      summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-      summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-      output = filesOutput;
-      persistTaskRuntime(this);
     });
   }
 

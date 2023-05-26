@@ -13,7 +13,6 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
-import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
@@ -73,6 +72,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
     TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
+    if (tableRuntime.getOptimizingStatus().isProcessing() &&
+        tableRuntimeMeta.getOptimizingProcessId() != 0) {
+      tableRuntime.recover(new TableOptimizingProcess(tableRuntimeMeta));
+    }
+
     if (tableRuntime.isOptimizingEnabled()) {
       //TODO: load task quotas
       tableRuntime.resetTaskQuotas(System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
@@ -89,10 +93,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             .filter(task -> task.getStatus() == TaskRuntime.Status.PLANNED)
             .forEach(taskQueue::offer);
       }
-    } else if (tableRuntime.getOptimizingStatus().isProcessing() &&
-        tableRuntimeMeta.getOptimizingProcessId() != 0) {
-      TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
-      process.close();
+    } else {
+      OptimizingProcess process = tableRuntime.getOptimizingProcess();
+      if (process != null) {
+        process.close();
+      }
     }
   }
 
@@ -460,14 +465,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         status = Status.SUCCESS;
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
-      } catch (OptimizingCommitException e) {
+      } catch (Exception e) {
         LOG.warn("Commit optimizing failed. inner message is " + e.getMessage(), e);
-        if (!e.isRetryable() || ++retryCommitCount <= tableRuntime.getMaxCommitRetryCount()) {
-          status = Status.FAILED;
-          failedReason = e.getMessage();
-          endTime = System.currentTimeMillis();
-          persistProcessCompleted(false);
-        }
+        status = Status.FAILED;
+        failedReason = e.getMessage();
+        endTime = System.currentTimeMillis();
+        persistProcessCompleted(false);
       }
     }
 
@@ -486,17 +489,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return toSequence;
     }
 
-    private IcebergCommit buildCommit() {
+    private UnKeyedTableCommit buildCommit() {
       ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-      switch (table.format()) {
-        case ICEBERG:
-          return new IcebergCommit(targetSnapshotId, table, taskMap.values());
-        case MIXED_ICEBERG:
-        case MIXED_HIVE:
-          return new MixedIcebergCommit(table, taskMap.values(), targetSnapshotId,
-              convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
-        default:
-          throw new IllegalStateException();
+      if (table.isUnkeyedTable()) {
+        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+      } else {
+        return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId,
+            convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
       }
     }
 
