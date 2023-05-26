@@ -156,8 +156,6 @@ CREATE TABLE `task_runtime`
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
-    `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',

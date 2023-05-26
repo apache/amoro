@@ -126,8 +126,9 @@ public class OptimizerController extends RestBaseController {
       } else {
         optimizers = optimizerManager.listOptimizers(optimizerGroup);
       }
-      optimizers.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
-      List<JSONObject> result = optimizers.stream().map(e -> {
+      List<OptimizerInstance> optimizerList = new ArrayList<>(optimizers);
+      optimizerList.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
+      List<JSONObject> result = optimizerList.stream().map(e -> {
         JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
         jsonObject.put("jobId", e.getResourceId());
         jsonObject.put("optimizerGroup", e.getGroupName());
