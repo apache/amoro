@@ -95,28 +95,11 @@ public class ArcticRuntimeException extends RuntimeException {
             .toString();
   }
 
-  public static ArcticException transform2ArcticException(Throwable throwable) {
-    return buildArcticException(throwable).transform();
+  public static ArcticException normalize(Throwable throwable) {
+    return wrap(throwable).transform();
   }
 
-  public static TException transformCompatibleException(Throwable throwable) {
-    return transformLegacyException(throwable);
-  }
-
-  public static ArcticRuntimeException buildArcticException(Throwable throwable,
-      Function<Throwable, ArcticRuntimeException> exceptionTransform) {
-    if (throwable instanceof ArcticRuntimeException) {
-      return (ArcticRuntimeException) throwable;
-    } else {
-      return exceptionTransform.apply(throwable);
-    }
-  }
-
-  private static ArcticRuntimeException buildArcticException(Throwable throwable) {
-    return buildArcticException(throwable, UndefinedException::new);
-  }
-
-  private static TException transformLegacyException(Throwable throwable) {
+  public static TException normalizeCompatibly(Throwable throwable) {
     if (throwable.getClass().equals(ObjectNotExistsException.class)) {
       return new NoSuchObjectException(throwable.getMessage());
     } else if (throwable.getClass().equals(AlreadyExistsException.class)) {
@@ -130,5 +113,18 @@ public class ArcticRuntimeException extends RuntimeException {
       return new OperationConflictException(throwable.getMessage());
     }
     return new TException(throwable.getMessage());
+  }
+
+  public static ArcticRuntimeException wrap(Throwable throwable,
+                                            Function<Throwable, ArcticRuntimeException> exceptionTransform) {
+    if (throwable instanceof ArcticRuntimeException) {
+      return (ArcticRuntimeException) throwable;
+    } else {
+      return exceptionTransform.apply(throwable);
+    }
+  }
+
+  private static ArcticRuntimeException wrap(Throwable throwable) {
+    return wrap(throwable, UndefinedException::new);
   }
 }
