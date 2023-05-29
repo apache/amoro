@@ -2,6 +2,7 @@ package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizer.util.ExceptionUtil;
 import com.netease.arctic.optimizer.util.PropertyUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
@@ -101,7 +102,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       LOG.error(String.format("Optimizer executor[%s] executed task[%s] failed", threadId,
           task.getTaskId()), t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
-      errorResult.setErrorMessage(t.getMessage());
+      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
       return errorResult;
     }
   }
