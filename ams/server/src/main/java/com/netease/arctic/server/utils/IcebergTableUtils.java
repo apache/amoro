@@ -31,8 +31,11 @@ import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,11 +75,15 @@ public class IcebergTableUtils {
   public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    TableEntriesScan manifestReader = TableEntriesScan.builder(internalTable)
+    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
         .allEntries().build();
-    for (IcebergFileEntry entry : manifestReader.entries()) {
-      validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
+    try(CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
 
     return validFilesPath;

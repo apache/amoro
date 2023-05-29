@@ -91,7 +91,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       throw new org.apache.iceberg.exceptions.AlreadyExistsException(
           e, "Database '%s' already exists!", databaseName);
 
-    }  catch (TException | InterruptedException e) {
+    } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to create database:" + databaseName, e);
     }
   }
