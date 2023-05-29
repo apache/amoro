@@ -9,7 +9,7 @@ Currently, Arctic is a LakeHouse management system on top of iceberg format. Ben
 ![Introduce](site/docs/ch/images/introduce_arctic.png)
 
 - AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms running on optimizers, which could be scaled as demand and scheduled on different platforms.
-- Mutiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
+- Multiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
 	* Iceberg format — learn more about iceberg format details and usage with different engines: [Iceberg Docs](https://iceberg.apache.org/docs/latest/)
 	* Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-iceberg-format) and [Mixed Hive format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-hive-format)
 ## Arctic features
@@ -26,19 +26,20 @@ Currently, Arctic is a LakeHouse management system on top of iceberg format. Ben
 
 Arctic contains modules as below:
 
-- `arctic-core` contains core abstractions and common implementions for other modules
+- `arctic-core` contains core abstractions and common implementation for other modules
 - `arctic-flink` is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)
 - `arctic-spark` is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)
-- `arctic-trino` now provides query integrating with apache trino, built on JDK11
-- `arctic-optimizing` exposes optimizing container/group api and provides default implemetion
-- `arctic-ams` is arctic meta service module
+- `arctic-trino` now provides query integrating with apache trino, built on JDK17
+- `arctic-optimizing` exposes optimizing container/group api and provides default implementation
+- `arctic-ams` is arctic management service module
   - `ams-api` contains ams thrift api
   - `ams-dashboard` is the dashboard frontend for ams
   - `ams-server` is the backend server for ams
+  - `ams-optimizer` provides default optimizer implementation
 
 ## Building
 
-Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
+Arctic is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 
 * To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 ```
@@ -47,18 +48,18 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
     <toolchain>
         <type>jdk</type>
         <provides>
-            <version>11</version>
+            <version>17</version>
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk11Home}</jdkHome>
+            <jdkHome>${yourJdk17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
 ```
 * To invoke a build and run tests: `mvn package -P toolchain`
 * To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 11 dependency: `mvn clean package -DskipTests -pl '!trino'`
+* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
 
 ## Engines supported
 
@@ -67,8 +68,8 @@ Arctic support multiple processing engines as below:
 | Processing Engine | Version                   |
 | ----------------- |---------------------------|
 | Flink             | 1.12.x, 1.14.x and 1.15.x |
-| Spark             | 3.1, 3.3                  |
-| Trino             | 380                       |
+| Spark             | 3.1, 3.2, 3.3             |
+| Trino             | 406                       |
 
 ## Quickstart
 

@@ -32,7 +32,6 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
         new ThreadFactoryBuilder()
             .setDaemon(false)
             .setNameFormat("ASYNC-" + getThreadName() + "-%d").build());
-    this.tableManager.addHandlerChain(this);
   }
 
   @Override

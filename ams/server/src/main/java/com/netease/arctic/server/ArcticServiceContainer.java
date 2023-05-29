@@ -117,6 +117,13 @@ public class ArcticServiceContainer {
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
 
@@ -199,12 +206,12 @@ public class ArcticServiceContainer {
 
     ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
         new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
-            new TableManagementService(tableService), ArcticRuntimeException::transformCompatibleException));
+            new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
     processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
         new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
-            optimizingService, ArcticRuntimeException::transform2ArcticException));
+            optimizingService, ArcticRuntimeException::normalize));
     processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);

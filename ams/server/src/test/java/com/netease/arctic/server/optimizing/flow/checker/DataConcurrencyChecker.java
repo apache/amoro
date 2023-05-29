@@ -18,33 +18,18 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.server.optimizing.IcebergCommit;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
-import com.netease.arctic.server.optimizing.flow.TableDataView;
+import com.netease.arctic.server.optimizing.flow.DataReader;
+import com.netease.arctic.server.optimizing.flow.view.MatchResult;
+import com.netease.arctic.server.optimizing.flow.view.TableDataView;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
 
@@ -61,7 +46,7 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit) {
+      @Nullable UnKeyedTableCommit latestCommit) {
     count++;
     return true;
   }
@@ -76,94 +61,14 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable IcebergCommit latestCommit
+      @Nullable UnKeyedTableCommit latestCommit
   ) throws Exception {
-    if (CollectionUtils.isEmpty(latestTaskDescriptors)) {
-      return;
-    }
+    table.refresh();
+    List<Record> records = new DataReader(table).allData();
 
-    List<Record> records;
-    if (table.isKeyedTable()) {
-      records = readKeyed(table.asKeyedTable());
-    } else {
-      records = readUnKeyed(table.asUnkeyedTable());
-    }
-
-    TableDataView.MatchResult match = view.match(records);
+    MatchResult match = view.match(records);
     if (!match.isOk()) {
       throw new RuntimeException("Data is error: " + match);
     }
-  }
-
-  private List<Record> readKeyed(KeyedTable table) throws IOException, ExecutionException, InterruptedException {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
-    AdaptHiveGenericArcticDataReader dataReader = new AdaptHiveGenericArcticDataReader(
-        table.io(),
-        table.schema(),
-        table.schema(),
-        table.primaryKeySpec(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        null,
-        false
-    );
-    List<CompletableFuture<List<Record>>> completableFutures = new ArrayList<>();
-    for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-      for (KeyedTableScanTask scanTask : combinedScanTask.tasks()) {
-        completableFutures.add(CompletableFuture.supplyAsync(() -> {
-          CloseableIterator<Record> closeableIterator = dataReader.readData(scanTask);
-          List<Record> list = new ArrayList<>();
-          Iterators.addAll(list, closeableIterator);
-          try {
-            closeableIterator.close();
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          return list;
-        }));
-      }
-    }
-
-    List<Record> list = new ArrayList<>();
-    for (CompletableFuture<List<Record>> completableFuture : completableFutures) {
-      list.addAll(completableFuture.get());
-    }
-    return list;
-  }
-
-  private List<Record> readUnKeyed(UnkeyedTable table) throws ExecutionException, InterruptedException {
-    GenericIcebergDataReader dataReader = new GenericIcebergDataReader(
-        table.io(),
-        table.schema(),
-        table.schema(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
-    CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles();
-
-    List<CompletableFuture<List<Record>>> completableFutures = new ArrayList<>();
-    for (FileScanTask fileScanTask : fileScanTasks) {
-      completableFutures.add(CompletableFuture.supplyAsync(() -> {
-        CloseableIterable<Record> closeableIterable = dataReader.readData(fileScanTask);
-        List<Record> list = new ArrayList<>();
-        Iterables.addAll(list, closeableIterable);
-        try {
-          closeableIterable.close();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-        return list;
-      }));
-    }
-
-    List<Record> list = new ArrayList<>();
-    for (CompletableFuture<List<Record>> completableFuture : completableFutures) {
-      List<Record> records = completableFuture.get();
-      list.addAll(records);
-    }
-    return list;
   }
 }

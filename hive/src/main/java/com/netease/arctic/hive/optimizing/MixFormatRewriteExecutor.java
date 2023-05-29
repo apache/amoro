@@ -52,7 +52,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
   @Override
   protected FileWriter<Record, DataWriteResult> dataWriter() {
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-        .withTransactionId(getTransactionId(input.rewrittenDataFilesForMixed()))
+        .withTransactionId(table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
         .withTaskId(0)
         .withCustomHiveSubdirectory(outputDir)
         .withTargetFileSize(targetSize())
