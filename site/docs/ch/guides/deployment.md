@@ -123,8 +123,8 @@ mysql> source {ARCTIC_HOME}/conf/mysql/ams-mysql-init.sql
 ```shell
 ams:
   database:
-    type: "mysql"
-    jdbc-driver-class: "com.mysql.cj.jdbc.Driver"
+    type: mysql
+    jdbc-driver-class: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://{host}:{port}/{database}?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
     username: {user}
     passord: {password}
@@ -165,18 +165,18 @@ containers:
   - name: flinkContainer
     container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
     properties:
-      flink-home: /opt/flink/                              #Flink install home
-      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   #Flink launch jvm args, like kerberos config when ues kerberos
-      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            #Hadoop config dir
-      export.HADOOP_USER_NAME: hadoop                      #Hadoop user submit on yarn
-      export.FLINK_CONF_DIR: /etc/hadoop/conf/             #Flink config dir
+      flink-home: "/opt/flink/"                              #Flink install home
+      jvm-args: "-Djava.security.krb5.conf=/opt/krb5.conf"   #Flink launch jvm args, like kerberos config when ues kerberos
+      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"            #Hadoop config dir
+      export.HADOOP_USER_NAME: "hadoop"                      #Hadoop user submit on yarn
+      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"             #Flink config dir
 
 optimizer_groups:
   - name: flinkGroup             # container name, should be in the names of containers  
     container: flinkContainer
     properties:
-      task-manager.memory: 2048
-      job-manager.memory: 1024
+      task-manager.memory: "2048"
+      job-manager.memory: "1024"
 ```
 
 ### 完整配置
@@ -185,10 +185,11 @@ optimizer_groups:
 
 ```shell
 ams:
+
   admin-username: admin
-  admin-passowrd: admin
-  server-bind-host: 0.0.0.0
-  server-expose-host: 127.
+  admin-password: admin
+  server-bind-host: "0.0.0.0"
+  server-expose-host: "127.0.0.1"
   refresh-external-catalog-interval: 180000 # 3min
   refresh-table-thread-count: 10
   refresh-table-interval: 60000 #1min
@@ -243,36 +244,36 @@ containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: 1024 # MB
-      export.JAVA_HOME: /opt/java   # JDK environment
+      memory: "1024" # The size of memory allocated for each parallel
+      export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
 #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
 #    properties:
-#      flink-home: /opt/flink/                              # Flink install home
-#      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   # Flink launch jvm args, like kerberos config when ues kerberos
-#      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            # Hadoop config dir
-#      export.HADOOP_USER_NAME: hadoop                      # Hadoop user submit on yarn
-#      export.FLINK_CONF_DIR: /etc/hadoop/conf/             # Flink config dir
+#      flink-home: "/opt/flink/"                              # Flink install home
+#      jvm-args: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"            # Hadoop config dir
+#      export.HADOOP_USER_NAME: "hadoop"                      # Hadoop user submit on yarn
+#      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"             # Flink config dir
 
 optimizer_groups:
   - name: default
     container: localContainer
     properties:
-      memory: 1024 # MB
-      
+
   - name: external-group
     container: external # The external container is used to host all externally launched optimizers.
 
-#  - name: flinkGroup             
+#  - name: flinkGroup
 #    container: flinkContainer
 #    properties:
-#      task-manager.memory: 2048
-#      job-manager.memory: 1024
+#      task-manager.memory: "2048"
+#      job-manager.memory: "1024"
 
 blocker:
   timeout: 60000 # 1min
+
 
 ```
 
