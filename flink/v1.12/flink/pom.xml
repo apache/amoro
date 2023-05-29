@@ -69,6 +69,17 @@
         <!--arctic-->
         <dependency>
             <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.12-pulsar-bridge</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.12-iceberg-bridge</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -567,6 +578,13 @@
                             <value>com.netease.arctic.listener.ArcticRunListener</value>
                         </property>
                     </properties>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${jacoco.flink.skip}</skip>
                 </configuration>
             </plugin>
         </plugins>

@@ -30,7 +30,7 @@ import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSER
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.arctic.catalyst.{ArcticSpark33Helper, ExpressionHelper}
+import org.apache.spark.sql.arctic.catalyst.{ArcticSpark32Helper, ExpressionHelper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
@@ -235,7 +235,7 @@ case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[Logical
       rowIdAttrs,
       ArcticExtensionUtils.isKeyedTable(relation))
     val writeBuilder =
-      ArcticSpark33Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
+      ArcticSpark32Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
     val write = writeBuilder.build()
     ArcticRowLevelWrite(writeRelation, mergeRows, options, projections, Some(write))
   }
@@ -262,18 +262,37 @@ case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[Logical
       sourceOutput: Seq[Attribute]): Seq[Expression] = {
 
     action match {
-      case _: UpdateAction =>
-        Seq(Literal(UPDATE_OPERATION)) ++ targetOutput ++ sourceOutput
+      case u: UpdateAction =>
+        val finalSourceOutput = rebuildAttribute(sourceOutput, u.assignments)
+        Seq(Literal(UPDATE_OPERATION)) ++ targetOutput ++ finalSourceOutput
 
       case _: DeleteAction =>
         Seq(Literal(DELETE_OPERATION)) ++ targetOutput ++ sourceOutput
 
-      case _: InsertAction =>
-        Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ sourceOutput
+      case i: InsertAction =>
+        val finalSourceOutput = rebuildAttribute(sourceOutput, i.assignments)
+        Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ finalSourceOutput
 
       case other =>
         throw new UnsupportedOperationException(s"Unexpected action: $other")
     }
+  }
+
+  private def rebuildAttribute(sourceOutput: Seq[Attribute], assignments: Seq[Assignment]): Seq[Expression] = {
+    val expressions = sourceOutput.map(v => {
+      val assignment = assignments.find(f => {
+        f.key match {
+          case a: Attribute =>
+            a.name.equals(v.name)
+        }
+      })
+      if (assignment.isEmpty) {
+        v
+      } else {
+        assignment.get.value
+      }
+    })
+    expressions
   }
 
   private def buildMergeRowsOutput(

@@ -25,7 +25,6 @@ import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.parquet.ParquetValueReaders;
 import org.apache.iceberg.parquet.TypeWithSchemaVisitor;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
@@ -63,11 +62,6 @@ public class SparkParquetReaders {
   private SparkParquetReaders() {
   }
 
-  public static ParquetValueReader<InternalRow> buildReader(
-      Schema expectedSchema,
-      MessageType fileSchema) {
-    return buildReader(expectedSchema, fileSchema, ImmutableMap.of());
-  }
 
   @SuppressWarnings("unchecked")
   public static ParquetValueReader<InternalRow> buildReader(
