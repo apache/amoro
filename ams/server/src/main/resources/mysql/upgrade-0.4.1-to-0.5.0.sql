@@ -175,15 +175,12 @@ CREATE TABLE `optimizing_task_quota`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
 -- init table_runtime
-insert into table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,
+INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,
 last_optimized_snapshotId, last_optimized_change_snapshotId,
 last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time,optimizing_status,
 optimizing_status_start_time, optimizing_process_id, optimizer_group)
-select t.table_id,s.catalog_name,s.db_name,s.table_name,s.current_snapshot_id,s.current_change_snapshotId,-1 last_optimized_snapshotId,
--1 last_optimized_change_snapshotId,
-FROM_UNIXTIME(JSON_EXTRACT(s.latest_major_optimize_time, '$.""')/1000) last_major_optimizing_time,
-FROM_UNIXTIME(JSON_EXTRACT(s.latest_minor_optimize_time, '$.""')/1000) last_minor_optimizing_time,
-FROM_UNIXTIME(JSON_EXTRACT(s.latest_full_optimize_time,'$.""')/1000) last_full_optimizing_time,
+SELECT t.table_id,s.catalog_name,s.db_name,s.table_name,s.current_snapshot_id,s.current_change_snapshotId,-1 last_optimized_snapshotId,
+-1 last_optimized_change_snapshotId,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,
 CASE
 	WHEN s.optimize_status= "Pending" THEN "PENDING"
 	WHEN s.optimize_status= "Idle" THEN "IDLE"
