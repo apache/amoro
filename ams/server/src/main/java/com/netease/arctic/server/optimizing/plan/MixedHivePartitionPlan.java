@@ -110,7 +110,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
   protected static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
     private final String hiveLocation;
-    private boolean hasNotInHiveLocationDataFile = false;
+    private boolean filesNotInHiveLocation = false;
     // partition property
     protected long lastHiveOptimizedTime;
 
@@ -123,8 +123,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     @Override
     public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
       super.addFile(dataFile, deletes);
-      if (!hasNotInHiveLocationDataFile && notInHiveLocation(dataFile)) {
-        hasNotInHiveLocationDataFile = true;
+      if (!filesNotInHiveLocation && notInHiveLocation(dataFile)) {
+        filesNotInHiveLocation = true;
       }
     }
 
@@ -164,7 +164,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     protected boolean hasNewHiveData() {
-      return anyDeleteExist() || hasChangeFiles || hasNotInHiveLocationDataFile;
+      return anyDeleteExist() || hasChangeFiles || filesNotInHiveLocation;
     }
 
     protected boolean reachHiveRefreshInterval() {
