@@ -1,8 +1,8 @@
-用户可以通过从 Github 上下载稳定的 0.4.0 的 release zip 包，或者可以下载源码根据 README 进行编译。
+用户可以通过从 Github 上下载稳定的 0.5.0 的 release zip 包，或者可以下载源码根据 README 进行编译。
 
 ## 环境要求
 
-- Java 8, Trino 需要安装 Java11
+- Java 8, Trino 需要安装 Java17
 - Optional: MySQL 5.5 及以上 或者 MySQL 8
 - Optional: zookeeper 3.4.x 及以上
 - Optional: Hive(2.x or 3.x)
@@ -40,13 +40,13 @@ maven-archiver/
 或者从  dist/target 切换到 spark runtime 包
 $ spark/v3.1/spark-runtime/target
 $ ls
-arctic-spark-3.1-runtime-0.4.0.jar (spark v3.1 目标flink runtime 包)
-arctic-spark-3.1-runtime-0.4.0-tests.jar
-arctic-spark-3.1-runtime-0.4.0-sources.jar
-original-arctic-spark-3.1-runtime-0.4.0.jar
+arctic-spark-3.1-runtime-x.y.z.jar (spark v3.1 目标flink runtime 包)
+arctic-spark-3.1-runtime-x.y.z-tests.jar
+arctic-spark-3.1-runtime-x.y.z-sources.jar
+original-arctic-spark-3.1-runtime-x.y.z.jar
 ```
 
-如果需要同时编译 Trino 模块，需要先本地安装 jdk11，并且在用户的 ${user.home}/.m2/ 目录下配置 toolchains.xml，然后执行 mvn
+如果需要同时编译 Trino 模块，需要先本地安装 jdk17，并且在用户的 ${user.home}/.m2/ 目录下配置 toolchains.xml，然后执行 mvn
 package -P toolchain 进行整个项目的编译即可。
 
 ```shell
@@ -55,11 +55,11 @@ package -P toolchain 进行整个项目的编译即可。
     <toolchain>
         <type>jdk</type>
         <provides>
-            <version>11</version>
+            <version>17</version>
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk11Home}</jdkHome>
+            <jdkHome>${yourJdk17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
@@ -71,15 +71,19 @@ package -P toolchain 进行整个项目的编译即可。
 
 ### 配置服务地址
 
-- arctic.ams.server-host.prefix 配置选择你服务绑定的 IP 地址或者网段前缀, 目的是在 HA
-  模式下，用户可以在多台主机上使用相同的配置文件；如果用户只部署单节点，该配置也可以直接指定完整的 IP 地址。
+- server-expose-host 配置服务暴露的 IP 地址或者网段前缀, 如果在高可用模式下，可以使用 IP 地址前缀来达成在不同机器上使用相同配置文件的目的；
+  如果只部署单节点，该配置也可以指定为完整的 IP 地址。
 - AMS 本身对外提供 http 服务和 thrift 服务，需要配置这两个服务监听的端口。Http 服务默认端口1630， Thrift 服务默认端口1260
 
 ```shell
 ams:
-  arctic.ams.server-host.prefix: "127." #To facilitate batch deployment can config server host prefix.Must be enclosed in double quotes
-  arctic.ams.thrift.port: 1260   # ams thrift服务访问的端口
-  arctic.ams.http.port: 1630    # ams dashboard 访问的端口
+  server-expose-host: 127.
+  
+  thrift-server:
+    bind-port: 1260
+    
+  http-server:
+    bind-port: 1630
 ```
 
 ???+ 注意
@@ -88,7 +92,7 @@ ams:
 
 ### 配置系统库
 
-用户可以使用 MySQL 作为系统库使用，默认为 Derby，首先在 MySQL 中初始化系统库：
+用户可以使用 MySQL/Derby 作为 AMS 的系统库，默认为 Derby，如果要使用 MySQL 作为系统库，则需要先初始化库表：
 
 ```shell
 $ mysql -h{mysql主机IP} -P{mysql端口} -u{username} -p
@@ -111,141 +115,165 @@ Query OK, 1 row affected (0.01 sec)
 
 mysql> use arctic;
 Database changed
-mysql> source {ARCTIC_HOME}/conf/mysql/x.y.z-init.sql
+mysql> source {ARCTIC_HOME}/conf/mysql/ams-mysql-init.sql
 ```
 
 在 `ams` 下添加 MySQL 配置：
 
 ```shell
 ams:
-  arctic.ams.mybatis.ConnectionURL: jdbc:mysql://{host}:{port}/{database}?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver
-  arctic.ams.mybatis.ConnectionUserName: {user}
-  arctic.ams.mybatis.ConnectionPassword: {password}
-  arctic.ams.database.type: mysql
+  database:
+    type: "mysql"
+    jdbc-driver-class: "com.mysql.cj.jdbc.Driver"
+    url: jdbc:mysql://{host}:{port}/{database}?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+    username: {user}
+    passord: {password}
 ```
 
 ### 配置高可用
 
-为了提高稳定性，AMS 支持一主多备的 HA 模式，通过 Zookeeper 来实现选主，指定 AMS 集群名和 Zookeeper 地址。AMS集群名用来在同一套
-Zookeeper 集群上绑定不同的 AMS 集群，避免相互影响。
+为了提高系统可用性，AMS 支持一主多备的高可用模式，通过 Zookeeper 来实现选主。
 
 ```shell
 ams:
-  #HA config
-  arctic.ams.ha.enable: true     #开启 ha
-  arctic.ams.cluster.name: default  # 区分同一套 zookeeper 上绑定多套 AMS
-  arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183  # zookeeper server地址
+  ha:
+    enabled: true
+    cluster-name: default # 区分不同的 AMS 集群
+    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
+```
+
+### 配置 Terminal
+
+Terminal 默认在 local 模式执行的情况下，可以配置 Spark 相关参数
+
+```shell
+ams:
+  terminal:
+    backend: local
+    local.spark.sql.session.timeZone: UTC
+    local.spark.sql.iceberg.handle-timestamp-without-timezone: false
+    local.using-session-catalog-for-hive: true
 ```
 
 ### 配置 Optimizer
 
-Self-optimizing 需要配置 optimizer 资源，包含 Containers 配置和 Optimizer group 配置。以配置 Flink 类型的 Optimizer
+Self-optimizing 需要配置 optimizer 资源，包含 Containers 配置和 Optimizer groups 配置。以配置 Flink 类型的 Optimizer
 为例，配置如下， 详细的参数说明及其它类型的配置见 [managing-optimizers](managing-optimizers.md)
 
 ```shell
 containers:
   - name: flinkContainer
-    type: flink
+    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
     properties:
-      FLINK_HOME: /opt/flink/        #flink install home
-      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
-      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
-      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
-      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
-optimize_group:
-  - name: flinkOp
-    # container name, should be in the names of containers  
+      flink-home: /opt/flink/                              #Flink install home
+      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   #Flink launch jvm args, like kerberos config when ues kerberos
+      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            #Hadoop config dir
+      export.HADOOP_USER_NAME: hadoop                      #Hadoop user submit on yarn
+      export.FLINK_CONF_DIR: /etc/hadoop/conf/             #Flink config dir
+
+optimizer_groups:
+  - name: flinkGroup             # container name, should be in the names of containers  
     container: flinkContainer
     properties:
-      taskmanager.memory: 2048
-      jobmanager.memory: 1024
+      task-manager.memory: 2048
+      job-manager.memory: 1024
 ```
+
+### 完整配置
 
 一个完整的配置样例如下：
 
 ```shell
 ams:
-  arctic.ams.server-host.prefix: "127." #To facilitate batch deployment can config server host prefix.Must be enclosed in double quotes
-  arctic.ams.thrift.port: 1260   # ams thrift服务访问的端口
-  arctic.ams.http.port: 1630    # ams dashboard 访问的端口
-  arctic.ams.optimize.check.thread.pool-size: 10
-  arctic.ams.optimize.commit.thread.pool-size: 10
-  arctic.ams.expire.thread.pool-size: 10
-  arctic.ams.orphan.clean.thread.pool-size: 10
-  arctic.ams.file.sync.thread.pool-size: 10
-  # derby config.sh 
-  # arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver
-  # arctic.ams.mybatis.ConnectionURL: jdbc:derby:/tmp/arctic/derby;create=true
-  # arctic.ams.database.type: derby
-  # mysql config
-  arctic.ams.mybatis.ConnectionURL: jdbc:mysql://{host}:{port}/{database}?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver
-  arctic.ams.mybatis.ConnectionUserName: {user}
-  arctic.ams.mybatis.ConnectionPassword: {password}
-  arctic.ams.database.type: mysql
+  admin-username: admin
+  admin-passowrd: admin
+  server-bind-host: 0.0.0.0
+  server-expose-host: 127.
+  refresh-external-catalog-interval: 180000 # 3min
+  refresh-table-thread-count: 10
+  refresh-table-interval: 60000 #1min
+  expire-table-thread-count: 10
+  clean-orphan-file-thread-count: 10
+  sync-hive-tables-thread-count: 10
 
-  #HA config
-  arctic.ams.ha.enable: true     #开启ha
-  arctic.ams.cluster.name: default  # 区分同一套zookeeper上绑定多套AMS
-  arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
+  thrift-server:
+    bind-port: 1260
+    max-message-size: 104857600 # 100MB
+    worker-thread-count: 20
+    selector-thread-count: 2
+    selector-queue-size: 4
 
-  # Kyuubi config
-  arctic.ams.terminal.backend: kyuubi
-  arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/
-  
-  # login config
-  login.username: admin
-  login.password: admin
+  http-server:
+    bind-port: 1630
 
-# extension properties for like system
-extension_properties:
-#test.properties: test
+  self-optimizing:
+    commit-thread-count: 10
+
+  database:
+    type: derby
+    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
+    url: jdbc:derby:/tmp/arctic/derby;create=true
+
+  #  MySQL database configuration.
+  #  database:
+  #    type: mysql
+  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+  #    url: jdbc:mysql://127.0.0.1:3306?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  #    username: root
+  #    password: root
+
+  terminal:
+    backend: local
+    local.spark.sql.session.timeZone: UTC
+    local.spark.sql.iceberg.handle-timestamp-without-timezone: false
+
+#  Kyuubi terminal backend configuration.
+#  terminal:
+#    backend: kyuubi
+#    kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/
+
+
+#  High availability configuration.
+#  ha:
+#    enabled: true
+#    cluster-name: default
+#    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
+
 containers:
-  # arctic optimizer container config.sh
   - name: localContainer
-    type: local
+    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      hadoop_home: /opt/hadoop
-      # java_home: /opt/java
-  - name: flinkContainer
-    type: flink
-    properties:
-      FLINK_HOME: /opt/flink/        #flink install home
-      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
-      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
-      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
-      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
-  - name: externalContainer
-    type: external
-    properties:
-optimize_group:
+      memory: 1024 # MB
+      export.JAVA_HOME: /opt/java   # JDK environment
+
+#containers:
+#  - name: flinkContainer
+#    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+#    properties:
+#      flink-home: /opt/flink/                              # Flink install home
+#      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   # Flink launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            # Hadoop config dir
+#      export.HADOOP_USER_NAME: hadoop                      # Hadoop user submit on yarn
+#      export.FLINK_CONF_DIR: /etc/hadoop/conf/             # Flink config dir
+
+optimizer_groups:
   - name: default
-    # container name, should equal with the name that containers config.sh
     container: localContainer
     properties:
-      # unit MB
-      memory: 1024
-  - name: flinkOp
-    container: flinkContainer
-    properties:
-      taskmanager.memory: 1024
-      jobmanager.memory: 1024
-  - name: externalOp
-    container: external
-    properties:
-```
+      memory: 1024 # MB
+      
+  - name: external-group
+    container: external # The external container is used to host all externally launched optimizers.
 
-### 配置 Terminal
+#  - name: flinkGroup             
+#    container: flinkContainer
+#    properties:
+#      task-manager.memory: 2048
+#      job-manager.memory: 1024
 
-Terminal 在 local 模式执行的情况下，可以配置 Spark 相关参数
+blocker:
+  timeout: 60000 # 1min
 
-```shell
-arctic.ams.terminal.backend: local
-arctic.ams.terminal.local.spark.sql.session.timeZone: UTC
-arctic.ams.terminal.local.spark.sql.iceberg.handle-timestamp-without-timezone: false
-# When the catalog type is hive, using spark session catalog automatically in the terminal to access hive tables
-arctic.ams.terminal.local.using-session-catalog-for-hive: true
 ```
 
 ## 启动 AMS
