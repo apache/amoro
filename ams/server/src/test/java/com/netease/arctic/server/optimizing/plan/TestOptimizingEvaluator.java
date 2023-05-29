@@ -71,7 +71,7 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
   @Test
   public void testFragmentFiles() {
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     updateBaseHashBucket(1);
     List<DataFile> dataFiles = Lists.newArrayList();
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");

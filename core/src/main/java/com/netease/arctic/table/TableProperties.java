@@ -39,6 +39,7 @@ public class TableProperties {
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
   public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
+  public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
 
   public static final String LOCATION = "location";
 
@@ -221,6 +222,9 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
   public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
+  public static final String BASE_REFRESH_INTERVAL = "base.refresh-interval";
+  public static final long BASE_REFRESH_INTERVAL_DEFAULT = -1L;
+
   /**
    * table read related properties
    * TODO
@@ -273,7 +277,7 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-  
+
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";

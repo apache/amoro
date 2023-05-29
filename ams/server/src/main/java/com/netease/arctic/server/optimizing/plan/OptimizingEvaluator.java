@@ -33,6 +33,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Collection;
 import java.util.Map;
@@ -91,7 +92,22 @@ public class OptimizingEvaluator {
       PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
       evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
+    partitionProperty().forEach((partition, properties) -> {
+      String partitionToPath = partitionSpec.partitionToPath(partition);
+      PartitionEvaluator evaluator = partitionPlanMap.get(partitionToPath);
+      if (evaluator != null) {
+        evaluator.addPartitionProperties(properties);
+      }
+    });
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
+  }
+
+  private StructLikeMap<Map<String, String>> partitionProperty() {
+    if (arcticTable.isKeyedTable()) {
+      return arcticTable.asKeyedTable().baseTable().partitionProperty();
+    } else {
+      return arcticTable.asUnkeyedTable().partitionProperty();
+    }
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
