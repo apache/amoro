@@ -29,11 +29,17 @@ import java.util.List;
 
 public class MixedHiveCatalogImpl extends MixedCatalogImpl {
 
-  private final CachedHiveClientPool hiveClientPool;
+  private volatile CachedHiveClientPool hiveClientPool;
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
     super(catalogMeta, new MixedHiveTables(catalogMeta));
-    hiveClientPool = ((MixedHiveTables)tables()).getHiveClientPool();
+    hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+  }
+
+  @Override
+  public void onMetadataUpdate() {
+    tables = new MixedHiveTables(getMetadata());
+    hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
 
   @Override

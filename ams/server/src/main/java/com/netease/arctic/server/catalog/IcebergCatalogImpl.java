@@ -12,10 +12,15 @@ import java.util.stream.Collectors;
 
 public class IcebergCatalogImpl extends ExternalCatalog {
 
-  private final IcebergCatalogWrapper catalogWrapper;
+  private volatile IcebergCatalogWrapper catalogWrapper;
 
   protected IcebergCatalogImpl(CatalogMeta metadata) {
     super(metadata);
+    this.catalogWrapper = new IcebergCatalogWrapper(getMetadata(), Collections.emptyMap());
+  }
+
+  @Override
+  protected void onMetadataUpdate() {
     this.catalogWrapper = new IcebergCatalogWrapper(getMetadata(), Collections.emptyMap());
   }
 
