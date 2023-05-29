@@ -275,12 +275,12 @@
                                 <!--               zookeeper                 -->
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper</shadedPattern>
                                 </relocation>
                                 <!--               curator                 -->
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator</shadedPattern>
                                 </relocation>
                                 <!--               orc                 -->
                                 <relocation>
