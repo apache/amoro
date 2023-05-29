@@ -93,6 +93,7 @@
         <args4j.version>2.33</args4j.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
+        <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
         <junit5.jupiter.version>5.9.1</junit5.jupiter.version>
         <junit5.vintage.version>5.9.1</junit5.vintage.version>
@@ -106,7 +107,6 @@
         <fastjson.version>1.2.75</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
-
     </properties>
 
     <dependencyManagement>
