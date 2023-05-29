@@ -1,8 +1,9 @@
 ams:
-  admin-username: "admin"
-  admin-password: "admin"
-  server-bind-host: "0.0.0.0"
-  server-expose-host: "127.0.0.1"
+
+  admin-username: admin
+  admin-password: admin
+  server-bind-host: 0.0.0.0
+  server-expose-host: 127.0.0.1
   refresh-external-catalog-interval: 180000 # 3min
   refresh-table-thread-count: 10
   refresh-table-interval: 60000 #1min
@@ -24,17 +25,17 @@ ams:
     commit-thread-count: 10
 
   database:
-    type: "derby"
-    jdbc-driver-class: "org.apache.derby.jdbc.EmbeddedDriver"
-    url: "jdbc:derby:/tmp/arctic/derby;create=true"
+    type: derby
+    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
+    url: jdbc:derby:/tmp/arctic/derby;create=true
 
   #  MySQL database configuration.
   #  database:
-  #    type: "mysql"
-  #    jdbc-driver-class: "com.mysql.cj.jdbc.Driver"
-  #    url: "jdbc:derby:/tmp/arctic/derby;create=true"
-  #    username: "root"
-  #    password: "root"
+  #    type: mysql
+  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+  #    url: jdbc:mysql://127.0.0.1:3306?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  #    username: root
+  #    password: root
 
   terminal:
     backend: local
@@ -50,39 +51,40 @@ ams:
 #  High availability configuration.
 #  ha:
 #    enabled: true
-#    cluster-name: "default"
-#    zookeeper-address: "127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183"
+#    cluster-name: default
+#    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
 containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: "1024"
-      hadoop_home: /opt/hadoop
-      # java_home: /opt/java
+      memory: 1024 # MB
+      export.JAVA_HOME: /opt/java   # JDK environment
 
+#containers:
 #  - name: flinkContainer
 #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
 #    properties:
-#      FLINK_HOME: /opt/flink/        #flink install home
-#      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
-#      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
-#      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
-#      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
+#      flink-home: /opt/flink/                              # Flink install home
+#      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   # Flink launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            # Hadoop config dir
+#      export.HADOOP_USER_NAME: hadoop                      # Hadoop user submit on yarn
+#      export.FLINK_CONF_DIR: /etc/hadoop/conf/             # Flink config dir
 
 optimizer_groups:
   - name: default
     container: localContainer
     properties:
       memory: 1024 # MB
+
   - name: external-group
     container: external # The external container is used to host all externally launched optimizers.
 
-#  - name: flinkOp
+#  - name: flinkGroup
 #    container: flinkContainer
 #    properties:
-#      taskmanager.memory: 1024
-#      jobmanager.memory: 1024
+#      task-manager.memory: 2048
+#      job-manager.memory: 1024
 
 blocker:
   timeout: 60000 # 1min
