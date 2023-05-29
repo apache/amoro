@@ -22,12 +22,14 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
 import java.util.List;
+import java.util.Map;
 
 public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   private final String hiveLocation;
@@ -108,7 +110,9 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
   protected static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
     private final String hiveLocation;
-    private boolean hasNotInHiveLocationFile = false;
+    private boolean filesNotInHiveLocation = false;
+    // partition property
+    protected long lastHiveOptimizedTime;
 
     public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
                                        long planTime, boolean keyedTable) {
@@ -119,8 +123,18 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     @Override
     public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
       super.addFile(dataFile, deletes);
-      if (!hasNotInHiveLocationFile && notInHiveLocation(dataFile)) {
-        hasNotInHiveLocationFile = true;
+      if (!filesNotInHiveLocation && notInHiveLocation(dataFile)) {
+        filesNotInHiveLocation = true;
+      }
+    }
+
+    @Override
+    public void addPartitionProperties(Map<String, String> properties) {
+      super.addPartitionProperties(properties);
+      String optimizedTime = properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+      if (optimizedTime != null) {
+        // the unit of transient-time is seconds
+        this.lastHiveOptimizedTime = Integer.parseInt(optimizedTime) * 1000L;
       }
     }
 
@@ -140,15 +154,32 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     @Override
     public boolean isFullNecessary() {
+      if (reachHiveRefreshInterval() && hasNewHiveData()) {
+        return true;
+      }
       if (!reachFullInterval()) {
         return false;
       }
-      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles || hasNotInHiveLocationFile;
+      return fragmentFileCount > getBaseSplitCount() || hasNewHiveData();
+    }
+
+    protected boolean hasNewHiveData() {
+      return anyDeleteExist() || hasChangeFiles || filesNotInHiveLocation;
+    }
+
+    protected boolean reachHiveRefreshInterval() {
+      return config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
     }
 
     @Override
     public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
       return super.shouldRewriteSegmentFile(dataFile, deletes) && notInHiveLocation(dataFile);
+    }
+
+    @Override
+    public PartitionEvaluator.Weight getWeight() {
+      return new Weight(getCost(),
+          hasChangeFiles && reachBaseRefreshInterval() || hasNewHiveData() && reachHiveRefreshInterval());
     }
 
     private boolean notInHiveLocation(IcebergContentFile<?> file) {
