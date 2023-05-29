@@ -47,7 +47,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
-    if (isChangeFile(dataFile)) {
+    if (evaluator().isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
@@ -57,22 +57,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  protected boolean isChangeFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
-  }
-
   @Override
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
-    PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
-    if (file.type() == DataFileType.BASE_FILE) {
-      return dataFile.fileSizeInBytes() <= maxFragmentSize;
-    } else if (file.type() == DataFileType.INSERT_FILE) {
-      // for keyed table, we treat all insert files as fragment files
-      return true;
-    } else {
-      throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
-    }
+  protected MixedIcebergPartitionEvaluator evaluator() {
+    return ((MixedIcebergPartitionEvaluator) super.evaluator());
   }
 
   @Override
@@ -80,7 +67,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     if (super.taskNeedExecute(task)) {
       return true;
     } else {
-      return task.getRewriteDataFiles().stream().anyMatch(this::isChangeFile);
+      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
     }
   }
 
@@ -101,6 +88,84 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       return new TreeNodeTaskSplitter();
     } else {
       return new BinPackingTaskSplitter();
+    }
+  }
+
+  @Override
+  protected CommonPartitionEvaluator buildEvaluator() {
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
+  }
+
+  protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
+    protected final boolean keyedTable;
+    protected boolean hasChangeFiles = false;
+
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
+                                          boolean keyedTable) {
+      super(tableRuntime, partition, planTime);
+      this.keyedTable = keyedTable;
+    }
+
+    @Override
+    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      super.addFile(dataFile, deletes);
+      if (!hasChangeFiles && isChangeFile(dataFile)) {
+        hasChangeFiles = true;
+      }
+    }
+
+    protected boolean isChangeFile(IcebergDataFile dataFile) {
+      if (!keyedTable) {
+        return false;
+      }
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
+    }
+
+    @Override
+    protected boolean isFragmentFile(IcebergDataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      if (file.type() == DataFileType.BASE_FILE) {
+        return dataFile.fileSizeInBytes() <= fragmentSize;
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // for keyed table, we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
+    @Override
+    public boolean isMinorNecessary() {
+      if (keyedTable) {
+        int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
+        int baseSplitCount = getBaseSplitCount();
+        if (smallFileCount >= Math.max(baseSplitCount, config.getMinorLeastFileCount())) {
+          return true;
+        } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return super.isMinorNecessary();
+      }
+    }
+
+    protected int getBaseSplitCount() {
+      if (keyedTable) {
+        return config.getBaseHashBucket();
+      } else {
+        return 1;
+      }
+    }
+
+    @Override
+    public boolean isFullNecessary() {
+      if (!reachFullInterval()) {
+        return false;
+      }
+      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles;
     }
   }
 

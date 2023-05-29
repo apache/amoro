@@ -15,6 +15,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
@@ -24,7 +25,6 @@ import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +56,9 @@ public class ServerTableDescriptor extends PersistentBase {
       if (snapshot.operation().equals(DataOperations.REPLACE)) {
         return;
       }
+      if (snapshot.summary().containsKey(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
+        return;
+      }
       TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
       transactionsOfTable.setTransactionId(snapshot.snapshotId());
       int fileCount = PropertyUtil
@@ -74,21 +77,33 @@ public class ServerTableDescriptor extends PersistentBase {
       transactionsOfTable.setCommitTime(snapshot.timestampMillis());
       transactionsOfTables.add(transactionsOfTable);
     }));
-    Collections.reverse(transactionsOfTables);
+    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.commitTime, o1.commitTime));
     return transactionsOfTables;
   }
 
   public List<AMSDataFileInfo> getTransactionDetail(ServerTableIdentifier tableIdentifier, long transactionId) {
     List<AMSDataFileInfo> result = new ArrayList<>();
     ArcticTable arcticTable = tableService.loadTable(tableIdentifier);
-    Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+    Snapshot snapshot;
+    if (arcticTable.isKeyedTable()) {
+      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(transactionId);
+      if (snapshot == null) {
+        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(transactionId);
+      }
+    } else {
+      snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+    }
+    if (snapshot == null) {
+      throw new IllegalArgumentException("unknown snapshot " + transactionId + " of " + tableIdentifier);
+    }
+    final long snapshotTime = snapshot.timestampMillis();
     snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           arcticTable.spec(), f.partition(),
           f.content(),
           f.fileSizeInBytes(),
-          snapshot.timestampMillis(),
+          snapshotTime,
           "add"));
     });
     snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
@@ -97,7 +112,7 @@ public class ServerTableDescriptor extends PersistentBase {
           arcticTable.spec(), f.partition(),
           f.content(),
           f.fileSizeInBytes(),
-          snapshot.timestampMillis(),
+          snapshotTime,
           "remove"));
     });
     snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> {
@@ -106,7 +121,7 @@ public class ServerTableDescriptor extends PersistentBase {
           arcticTable.spec(), f.partition(),
           f.content(),
           f.fileSizeInBytes(),
-          snapshot.timestampMillis(),
+          snapshotTime,
           "add"));
     });
     snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> {
@@ -115,7 +130,7 @@ public class ServerTableDescriptor extends PersistentBase {
           arcticTable.spec(), f.partition(),
           f.content(),
           f.fileSizeInBytes(),
-          snapshot.timestampMillis(),
+          snapshotTime,
           "remove"));
     });
     return result;
@@ -124,8 +139,12 @@ public class ServerTableDescriptor extends PersistentBase {
   public List<DDLInfo> getTableOperations(ServerTableIdentifier tableIdentifier) {
     List<DDLInfo> result = new ArrayList<>();
     ArcticTable arcticTable = tableService.loadTable(tableIdentifier);
-    ;
-    Table table = arcticTable.asUnkeyedTable();
+    Table table;
+    if (arcticTable.isKeyedTable()) {
+      table = arcticTable.asKeyedTable().baseTable();
+    } else {
+      table = arcticTable.asUnkeyedTable();
+    }
     List<HistoryEntry> snapshotLog = ((HasTableOperations) table).operations().current().snapshotLog();
     List<org.apache.iceberg.TableMetadata.MetadataLogEntry> metadataLogEntries =
         ((HasTableOperations) table).operations().current().previousFiles();

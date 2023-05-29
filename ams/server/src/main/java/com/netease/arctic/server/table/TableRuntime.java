@@ -43,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +65,7 @@ public class TableRuntime extends StatedPersistentBase {
   // for unKeyedTable or base table
   private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   // for change table
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
@@ -77,8 +80,9 @@ public class TableRuntime extends StatedPersistentBase {
   private volatile OptimizingEvaluator.PendingInput pendingInput;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
-  protected TableRuntime(ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
-                         Map<String, String> properties) {
+  protected TableRuntime(
+      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
+      Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
@@ -94,6 +98,7 @@ public class TableRuntime extends StatedPersistentBase {
         tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
     this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
+    this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();
     this.currentChangeSnapshotId = tableRuntimeMeta.getCurrentChangeSnapshotId();
     this.currentStatusStartTime = tableRuntimeMeta.getCurrentStatusStartTime();
     this.lastMinorOptimizingTime = tableRuntimeMeta.getLastMinorOptimizingTime();
@@ -148,7 +153,8 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
-        optimizingStatus = OptimizingStatus.PENDING;
+        this.currentChangeSnapshotId = System.currentTimeMillis();
+        this.optimizingStatus = OptimizingStatus.PENDING;
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
       }
@@ -172,7 +178,8 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       pendingInput = null;
       if (optimizingStatus == OptimizingStatus.PENDING) {
-        optimizingStatus = OptimizingStatus.IDLE;
+        this.currentStatusStartTime = System.currentTimeMillis();
+        this.optimizingStatus = OptimizingStatus.IDLE;
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
       }
@@ -181,13 +188,14 @@ public class TableRuntime extends StatedPersistentBase {
 
   /**
    * TODO: this is not final solution
+   *
    * @param startTimeMills
    */
   public void resetTaskQuotas(long startTimeMills) {
     invokeInStateLock(() -> {
       taskQuotas.clear();
       taskQuotas.addAll(getAs(OptimizingMapper.class, mapper ->
-        mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
+          mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
     });
   }
 
@@ -197,6 +205,7 @@ public class TableRuntime extends StatedPersistentBase {
       currentStatusStartTime = System.currentTimeMillis();
       if (success) {
         lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
+        lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
         if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
@@ -297,6 +306,10 @@ public class TableRuntime extends StatedPersistentBase {
     return lastOptimizedSnapshotId;
   }
 
+  public long getLastOptimizedChangeSnapshotId() {
+    return lastOptimizedChangeSnapshotId;
+  }
+
   public long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
   }
@@ -363,6 +376,7 @@ public class TableRuntime extends StatedPersistentBase {
         .add("tableIdentifier", tableIdentifier)
         .add("currentSnapshotId", currentSnapshotId)
         .add("lastOptimizedSnapshotId", lastOptimizedSnapshotId)
+        .add("lastOptimizedChangeSnapshotId", lastOptimizedChangeSnapshotId)
         .add("optimizingStatus", optimizingStatus)
         .add("currentStatusStartTime", currentStatusStartTime)
         .add("lastMajorOptimizingTime", lastMajorOptimizingTime)
@@ -384,7 +398,10 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public double calculateQuotaOccupy() {
-    return getQuotaTime() / tableConfiguration.getOptimizingConfig().getTargetQuota();
+    return new BigDecimal((double) getQuotaTime() /
+        ArcticServiceConstants.QUOTA_LOOK_BACK_TIME /
+        tableConfiguration.getOptimizingConfig().getTargetQuota())
+        .setScale(4, RoundingMode.HALF_UP).doubleValue();
   }
 
   /**
@@ -395,7 +412,8 @@ public class TableRuntime extends StatedPersistentBase {
   public List<TableBlocker> getBlockers() {
     blockerLock.lock();
     try {
-      return getAs(TableBlockerMapper.class,
+      return getAs(
+          TableBlockerMapper.class,
           mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
     } finally {
       blockerLock.unlock();
@@ -410,8 +428,9 @@ public class TableRuntime extends StatedPersistentBase {
    * @param blockerTimeout -
    * @return TableBlocker if success
    */
-  public TableBlocker block(List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
-                            long blockerTimeout) {
+  public TableBlocker block(
+      List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
+      long blockerTimeout) {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
     Preconditions.checkArgument(blockerTimeout > 0, "blocker timeout must > 0");
@@ -448,7 +467,8 @@ public class TableRuntime extends StatedPersistentBase {
         throw new ObjectNotExistsException("Blocker " + blockerId);
       }
       long expirationTime = now + blockerTimeout;
-      doAs(TableBlockerMapper.class,
+      doAs(
+          TableBlockerMapper.class,
           mapper -> mapper.updateBlockerExpirationTime(Long.parseLong(blockerId), expirationTime));
       return expirationTime;
     } finally {
@@ -497,8 +517,9 @@ public class TableRuntime extends StatedPersistentBase {
         .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
   }
 
-  private TableBlocker buildTableBlocker(ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                                         Map<String, String> properties, long now, long blockerTimeout) {
+  private TableBlocker buildTableBlocker(
+      ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
+      Map<String, String> properties, long now, long blockerTimeout) {
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setTableIdentifier(tableIdentifier);
     tableBlocker.setCreateTime(now);

@@ -17,28 +17,20 @@
   ~ limitations under the License.
   -->
 
-<Configuration>
-    <!--<Configuration status="WARN" monitorInterval="30"> -->
-    <properties>
-        <property name="LOG_HOME">logs</property>
-    </properties>
-
+<!-- Extra logging related to initialization of Log4j.
+ Set to debug or trace if log4j initialization is failing. -->
+<Configuration status="WARN">
     <Appenders>
-        <!--*********************Console log***********************-->
-        <Console name="consoleAppender" target="SYSTEM_OUT">
-            <!--Set log format and color-->
-            <PatternLayout
-                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c: %m%n"/>
         </Console>
     </Appenders>
-
     <Loggers>
-        <Root level="info">
-            <AppenderRef ref="consoleAppender" level="info"/>
+        <Root level="WARN">
+            <AppenderRef ref="stdout"/>
         </Root>
-        <logger name="com.netease.arctic" level="info">
-            <AppenderRef ref="consoleAppender" level="info"/>
-        </logger>
+        <Logger name="com.netease.arctic" level="INFO" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>TableMetaStore
     </Loggers>
-
 </Configuration>

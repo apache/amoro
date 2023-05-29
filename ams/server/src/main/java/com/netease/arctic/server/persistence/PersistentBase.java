@@ -26,7 +26,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {
@@ -50,7 +49,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -64,7 +63,7 @@ public abstract class PersistentBase {
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw t;
+        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -76,7 +75,7 @@ public abstract class PersistentBase {
         R result = func.apply(mapper);
         return result;
       } catch (Throwable t) {
-        throw t;
+        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
@@ -87,12 +86,12 @@ public abstract class PersistentBase {
       try {
         int result = func.apply(getMapper(session, mapperClz));
         if (result == 0) {
-          throw errorSupplier.get();
+          throw  errorSupplier.get();
         }
         session.commit();
       } catch (Throwable t) {
         session.rollback();
-        throw new PersistenceException(t);
+        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }

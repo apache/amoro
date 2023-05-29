@@ -33,7 +33,7 @@ import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.optimizing.MixedIcebergCommit;
+import com.netease.arctic.server.optimizing.KeyedTableCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RunWith(Parameterized.class)
-public class TestMixIcebergCommit extends TestIcebergCommit {
+public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
   public TestMixIcebergCommit(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -142,7 +142,7 @@ public class TestMixIcebergCommit extends TestIcebergCommit {
     Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
     Mockito.when(taskRuntime.getInput()).thenReturn(input);
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
-    MixedIcebergCommit commit = new MixedIcebergCommit(
+    KeyedTableCommit commit = new KeyedTableCommit(
         getArcticTable(),
         Arrays.asList(taskRuntime),
         Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot()).map(Snapshot::snapshotId)

@@ -39,7 +39,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.isOptimizingEnabled();
+    return true;
   }
 
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
@@ -62,10 +62,14 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
+      long changeSnapshotBeforeRefresh = tableRuntime.getCurrentChangeSnapshotId();
       ArcticTable table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId()) {
-        tryEvalutingPendingInput(tableRuntime, table);
+      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
+          changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
+        if (tableRuntime.isOptimizingEnabled()) {
+          tryEvalutingPendingInput(tableRuntime, table);
+        }
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

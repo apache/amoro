@@ -18,38 +18,27 @@
 
 package com.netease.arctic.server.optimizing.flow.checker;
 
-import com.netease.arctic.server.optimizing.flow.CompleteOptimizingFlow;
+import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
+import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-public class OptimizingCountChecker implements CompleteOptimizingFlow.Checker {
-
-  private int count;
-
-  private int except;
+public class OptimizingCountChecker extends AbstractSceneCountChecker {
 
   public OptimizingCountChecker(int except) {
-    this.except = except;
+    super(except);
   }
 
   @Override
-  public boolean condition(ArcticTable table, List<TaskDescriptor> taskDescriptors) {
-    if (CollectionUtils.isNotEmpty(taskDescriptors)) {
-      count++;
-      return true;
-    }
-    return false;
-  }
-
-  @Override
-  public boolean senseHasCheck() {
-    return count >= except;
-  }
-
-  @Override
-  public void check(ArcticTable table, List<TaskDescriptor> taskDescriptors) throws Exception {
+  protected boolean internalCondition(
+      ArcticTable table,
+      @Nullable List<TaskDescriptor> latestTaskDescriptors,
+      OptimizingPlanner latestPlanner,
+      @Nullable UnKeyedTableCommit latestCommit) {
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors);
   }
 }

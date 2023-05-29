@@ -66,7 +66,7 @@ public interface ResourceMapper {
       " #{resource.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertResource(@Param("resource") Resource resource);
 
-  @Delete("DELETE FROM optimizer_instance WHERE instance_id = #{resourceId}")
+  @Delete("DELETE FROM resource WHERE resource_id = #{resourceId}")
   void deleteResource(@Param("resourceId") String resourceId);
 
   @Select("SELECT * FROM resource WHERE resource_id = #{resourceId}")
