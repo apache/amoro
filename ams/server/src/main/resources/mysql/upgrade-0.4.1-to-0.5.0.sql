@@ -1,6 +1,8 @@
 -- container_metadata
 ALTER TABLE `container_metadata` CHANGE `name` `container_name` varchar(64);
 ALTER TABLE `container_metadata` CHANGE `type` `container_type` varchar(64);
+ALTER TABLE `container_metadata` DROP PRIMARY KEY;
+ALTER TABLE `container_metadata` ADD PRIMARY KEY(`container_name`);
 
 -- catalog_metadata
 ALTER TABLE `catalog_metadata` ADD `database_count` INT NOT NULL DEFAULT 0;
@@ -12,6 +14,7 @@ ALTER TABLE `catalog_metadata` DROP COLUMN `display_name`;
 ALTER TABLE `database_metadata` ADD `table_count` INT NOT NULL DEFAULT 0;
 ALTER TABLE `database_metadata` DROP COLUMN `db_id`;
 ALTER TABLE `database_metadata` ADD PRIMARY KEY (`catalog_name`, `db_name`);
+ALTER TABLE `database_metadata` DROP INDEX `database_name_uindex`;
 
 -- resource
 CREATE TABLE `resource`
@@ -27,7 +30,7 @@ CREATE TABLE `resource`
     KEY  `resource_group` (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer instance info';
 
--- optimize_group
+-- resource_group
 CREATE TABLE `resource_group`
 (
     `group_name`       varchar(50) NOT NULL  COMMENT 'Optimize group name',
@@ -86,7 +89,7 @@ CREATE TABLE `optimizer`
 DROP TABLE IF EXISTS `optimizer_temp`;
 
 
--- optimizer
+-- table_runtime
 CREATE TABLE `table_runtime`
 (
     `table_id`                      bigint(20) NOT NULL,
@@ -111,7 +114,7 @@ CREATE TABLE `table_runtime`
 
 
 
--- table `task_runtime`
+-- task_runtime
 CREATE TABLE `task_runtime`
 (
     `process_id`                bigint(20) NOT NULL,
@@ -134,7 +137,7 @@ CREATE TABLE `task_runtime`
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
--- table `table_optimizing_process`
+-- table_optimizing_process
 CREATE TABLE `table_optimizing_process`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
@@ -157,7 +160,7 @@ CREATE TABLE `table_optimizing_process`
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
--- table `optimizing_task_quota`
+-- optimizing_task_quota
 CREATE TABLE `optimizing_task_quota`
 (
     `process_id`                bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
@@ -200,8 +203,7 @@ AND s.`table_name` = t.`table_name`;
 
 UPDATE table_runtime set table_config = '{"expireSnapshotEnabled":true,"snapshotTTLMinutes":720,"changeSnapshotTTLMinutes":10080,"changeDataTTLMinutes":10080,"cleanOrphanEnabled":false,"orphanExistingMinutes":2880,"optimizingConfig":{"enabled":true,"targetQuota":0.1,"optimizerGroup":"default","maxExecuteRetryCount":5,"maxCommitRetryCount":2147483647,"targetSize":134217728,"maxFileCount":10000,"openFileCost":4194304,"fragmentRatio":8,"minorLeastFileCount":12,"minorLeastInterval":3600000,"majorLeastFileCount":12,"majorDuplicateRatio":0.5,"fullTriggerInterval":-1,"fullRewriteAllFiles":true,"baseHashBucket":4}}';
 
-
-
+-- drop tables that are no longer needed
 DROP TABLE IF EXISTS `optimize_file`;
 DROP TABLE IF EXISTS `optimize_history`;
 DROP TABLE IF EXISTS `optimize_table_runtime`;
@@ -211,5 +213,3 @@ DROP TABLE IF EXISTS `table_transaction_meta`;
 DROP TABLE IF EXISTS `snapshot_info_cache`;
 DROP TABLE IF EXISTS `ddl_record`;
 DROP TABLE IF EXISTS `file_info_cache`;
-
-
