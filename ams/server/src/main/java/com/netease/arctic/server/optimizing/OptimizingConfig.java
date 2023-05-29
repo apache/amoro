@@ -55,10 +55,10 @@ public class OptimizingConfig {
   //base.file-index.hash-bucket
   private int baseHashBucket;
 
-  //self-optimizing.trigger.base-max-delay
+  //self-optimizing.trigger.max-base-delay
   private long baseMaxDelay;
 
-  //self-optimizing.trigger.hive-max-delay
+  //self-optimizing.trigger.max-hive-delay
   private long hiveMaxDelay;
 
   public OptimizingConfig() {

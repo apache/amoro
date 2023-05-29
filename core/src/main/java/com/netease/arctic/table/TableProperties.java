@@ -110,11 +110,11 @@ public class TableProperties {
   public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
 
   public static final String SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY =
-      "self-optimizing.trigger.base-max-delay";
+      "self-optimizing.trigger.max-base-delay";
   public static final long SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY_DEFAULT = -1L;
 
   public static final String SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY =
-      "self-optimizing.trigger.hive-max-delay";
+      "self-optimizing.trigger.max-hive-delay";
   public static final long SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY_DEFAULT = -1L;
 
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
