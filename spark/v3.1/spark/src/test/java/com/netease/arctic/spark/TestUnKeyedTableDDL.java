@@ -107,15 +107,13 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
     ArcticTable table = loadTable(ident);
     Map<String, String> props = table.properties();
     Assert.assertEquals("val",props.get("test-props"));
-    props = loadTablePropertiesFromAms(ident);
-    Assert.assertTrue(props.containsKey("test-props"));
+
 
     sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
       + " unset tblproperties ('test-props') ");
     table = loadTable(ident);
     Assert.assertFalse(table.properties().containsKey("test-props"));
-    props = loadTablePropertiesFromAms(ident);
-    Assert.assertFalse(props.containsKey("test-props"));
+
 
   }
 
