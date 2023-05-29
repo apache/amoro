@@ -26,7 +26,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -285,7 +284,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
 
     @Override
-    public int compareTo(@NotNull PartitionEvaluator.Weight o) {
+    public int compareTo(PartitionEvaluator.Weight o) {
       return Long.compare(this.cost, ((Weight) o).cost);
     }
   }
