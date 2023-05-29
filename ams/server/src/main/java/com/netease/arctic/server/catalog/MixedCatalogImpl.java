@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class MixedCatalogImpl extends InternalCatalog {
 
-  protected volatile MixedTables tables;
+  private final MixedTables tables;
 
   protected MixedCatalogImpl(CatalogMeta metadata) {
     super(metadata);
