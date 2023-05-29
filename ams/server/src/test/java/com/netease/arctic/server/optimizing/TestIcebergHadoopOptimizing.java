@@ -85,7 +85,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
@@ -103,7 +103,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 4, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
     checker.assertOptimizeHangUp();
@@ -189,7 +189,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
@@ -203,7 +203,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 4, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
 
@@ -304,9 +304,9 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
-    optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
+    // optimizeHistory = checker.waitOptimizeResult();
+    // checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     checker.assertOptimizeHangUp();

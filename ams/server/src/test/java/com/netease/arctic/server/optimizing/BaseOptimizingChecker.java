@@ -93,7 +93,10 @@ public class BaseOptimizingChecker extends PersistentBase {
           return Status.RUNNING;
         }
         Optional<TableOptimizingProcess> any =
-            tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
+            tableOptimizingProcesses.stream()
+                .filter(p -> p.getProcessId() > lastProcessId)
+                .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS.name()))
+                .findAny();
 
         if (any.isPresent()) {
           return Status.SUCCESS;
@@ -139,9 +142,6 @@ public class BaseOptimizingChecker extends PersistentBase {
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
             tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
-    if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
-      return;
-    }
     Optional<TableOptimizingProcess> any =
         tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
     any.ifPresent(h -> LOG.error("{} get unexpected optimize process {} {}", tableIdentifier, lastProcessId, h));

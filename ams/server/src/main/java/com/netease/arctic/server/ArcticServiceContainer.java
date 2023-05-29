@@ -20,7 +20,6 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
@@ -144,25 +143,6 @@ public class ArcticServiceContainer {
       tableService = null;
     }
     optimizingService = null;
-  }
-
-  public boolean isStarted() {
-    return server != null && server.isServing();
-  }
-
-  @VisibleForTesting
-  void setConfig(ConfigOption option, Object value) {
-    serviceConfig.set(option, value);
-  }
-
-  @VisibleForTesting
-  TableService getTableService() {
-    return this.tableService;
-  }
-
-  @VisibleForTesting
-  DefaultOptimizingService getOptimizingService() {
-    return this.optimizingService;
   }
 
   private void initConfig() throws IOException {
