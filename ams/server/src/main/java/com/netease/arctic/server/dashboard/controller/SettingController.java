@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.resource.ContainerMetadata;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SettingController extends RestBaseController {
   private static final String MASK_STRING = "******";
@@ -80,25 +80,7 @@ public class SettingController extends RestBaseController {
     List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();
     List<Map<String, Object>> result = new ArrayList<>();
     Objects.requireNonNull(containerMetas).forEach(container -> {
-      List<Map<String, String>> optimizeGroups =
-          optimizerManager.listResourceGroups(container.getName()).stream().map(group -> {
-            Map<String, String> optimizeGroupItem = new HashMap<>();
-            optimizeGroupItem.put("name", group.getName());
-            // local type only need memory
-            if (container.getName().equalsIgnoreCase("local")) {
-              if (group.getProperties() != null) {
-                optimizeGroupItem.put("memory", group.getProperties().get("memory"));
-              }
-            } else {
-              if (group.getProperties() != null) {
-                optimizeGroupItem.put("tmMemory", group.getProperties()
-                    .getOrDefault("taskmanager.memory", "-1"));
-                optimizeGroupItem.put("jmMemory", group.getProperties()
-                    .getOrDefault("jobmanager.memory", "-1"));
-              }
-            }
-            return optimizeGroupItem;
-          }).collect(Collectors.toList());
+      List<ResourceGroup> optimizeGroups = optimizerManager.listResourceGroups(container.getName());
       Map<String, Object> obj = new HashMap<>();
       obj.put("name", container.getName());
       obj.put("classpath", container.getImplClass());
