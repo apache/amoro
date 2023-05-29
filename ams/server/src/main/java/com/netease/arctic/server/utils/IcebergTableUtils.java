@@ -78,7 +78,7 @@ public class IcebergTableUtils {
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
         .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
         .allEntries().build();
-    try(CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {
         validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
       }
