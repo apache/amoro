@@ -2,8 +2,10 @@ package com.netease.arctic.server.optimizing;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
@@ -55,11 +57,11 @@ public class OptimizingConfig {
   //base.file-index.hash-bucket
   private int baseHashBucket;
 
-  //self-optimizing.trigger.max-base-delay
-  private long baseMaxDelay;
+  //base.refresh-interval
+  private long baseRefreshInterval;
 
-  //self-optimizing.trigger.max-hive-delay
-  private long hiveMaxDelay;
+  //base.hive.refresh-interval
+  private long hiveRefreshInterval;
 
   public OptimizingConfig() {
   }
@@ -207,21 +209,21 @@ public class OptimizingConfig {
     return this;
   }
 
-  public long getBaseMaxDelay() {
-    return baseMaxDelay;
+  public long getBaseRefreshInterval() {
+    return baseRefreshInterval;
   }
 
-  public OptimizingConfig setBaseMaxDelay(long baseMaxDelay) {
-    this.baseMaxDelay = baseMaxDelay;
+  public OptimizingConfig setBaseRefreshInterval(long baseRefreshInterval) {
+    this.baseRefreshInterval = baseRefreshInterval;
     return this;
   }
 
-  public long getHiveMaxDelay() {
-    return hiveMaxDelay;
+  public long getHiveRefreshInterval() {
+    return hiveRefreshInterval;
   }
 
-  public OptimizingConfig setHiveMaxDelay(long hiveMaxDelay) {
-    this.hiveMaxDelay = hiveMaxDelay;
+  public OptimizingConfig setHiveRefreshInterval(long hiveRefreshInterval) {
+    this.hiveRefreshInterval = hiveRefreshInterval;
     return this;
   }
 
@@ -237,8 +239,8 @@ public class OptimizingConfig {
         minorLeastInterval == that.minorLeastInterval &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
         fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
-        baseHashBucket == that.baseHashBucket && baseMaxDelay == that.baseMaxDelay &&
-        hiveMaxDelay == that.hiveMaxDelay &&
+        baseHashBucket == that.baseHashBucket && baseRefreshInterval == that.baseRefreshInterval &&
+        hiveRefreshInterval == that.hiveRefreshInterval &&
         Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
@@ -246,7 +248,7 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
         maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorDuplicateRatio,
-        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseMaxDelay, hiveMaxDelay);
+        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval, hiveRefreshInterval);
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
@@ -310,13 +312,13 @@ public class OptimizingConfig {
             properties,
             TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
             TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT))
-        .setBaseMaxDelay(CompatiblePropertyUtil.propertyAsLong(
+        .setBaseRefreshInterval(PropertyUtil.propertyAsLong(
             properties,
-            TableProperties.SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY,
-            TableProperties.SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY_DEFAULT))
-        .setHiveMaxDelay(CompatiblePropertyUtil.propertyAsLong(
+            TableProperties.BASE_REFRESH_INTERVAL,
+            TableProperties.BASE_REFRESH_INTERVAL_DEFAULT))
+        .setHiveRefreshInterval(PropertyUtil.propertyAsLong(
             properties,
-            TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY,
-            TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY_DEFAULT));
+            HiveTableProperties.REFRESH_HIVE_INTERVAL,
+            HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT));
   }
 }

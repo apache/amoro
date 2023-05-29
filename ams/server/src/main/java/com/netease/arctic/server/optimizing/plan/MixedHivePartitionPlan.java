@@ -154,7 +154,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     @Override
     public boolean isFullNecessary() {
-      if (reachHiveOptimizedDelay() && hasNewHiveData()) {
+      if (reachHiveRefreshInterval() && hasNewHiveData()) {
         return true;
       }
       if (!reachFullInterval()) {
@@ -167,8 +167,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       return anyDeleteExist() || hasChangeFiles || hasNotInHiveLocationDataFile;
     }
 
-    protected boolean reachHiveOptimizedDelay() {
-      return config.getHiveMaxDelay() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveMaxDelay();
+    protected boolean reachHiveRefreshInterval() {
+      return config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
     }
 
     @Override
@@ -179,7 +179,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     @Override
     public PartitionEvaluator.Weight getWeight() {
       return new Weight(getCost(),
-          hasChangeFiles && reachBaseOptimizedDelay() || hasNewHiveData() && reachHiveOptimizedDelay());
+          hasChangeFiles && reachBaseRefreshInterval() || hasNewHiveData() && reachHiveRefreshInterval());
     }
 
     private boolean notInHiveLocation(IcebergContentFile<?> file) {

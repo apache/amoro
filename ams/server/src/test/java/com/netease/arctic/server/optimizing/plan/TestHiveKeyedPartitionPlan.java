@@ -30,7 +30,6 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
@@ -101,7 +100,7 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
     Assert.assertEquals(0, planWithCurrentFiles().size());
 
     // update hive delay
-    updateTableProperty(TableProperties.SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY, 1 + "");
+    updateTableProperty(HiveTableProperties.REFRESH_HIVE_INTERVAL, 1 + "");
     Assert.assertEquals(4, planWithCurrentFiles().size());
     updatePartitionProperty(partition, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
         (System.currentTimeMillis() / 1000 - 10) + "");

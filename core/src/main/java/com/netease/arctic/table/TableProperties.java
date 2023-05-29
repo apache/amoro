@@ -109,14 +109,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
   public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
 
-  public static final String SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY =
-      "self-optimizing.trigger.max-base-delay";
-  public static final long SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY_DEFAULT = -1L;
-
-  public static final String SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY =
-      "self-optimizing.trigger.max-hive-delay";
-  public static final long SELF_OPTIMIZING_TRIGGER_HIVE_MAX_DELAY_DEFAULT = -1L;
-
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
@@ -229,6 +221,9 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
   public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
+
+  public static final String BASE_REFRESH_INTERVAL = "base.refresh-interval";
+  public static final long BASE_REFRESH_INTERVAL_DEFAULT = -1L;
 
   /**
    * table read related properties

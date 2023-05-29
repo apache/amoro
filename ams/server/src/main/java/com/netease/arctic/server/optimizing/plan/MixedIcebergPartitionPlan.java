@@ -157,7 +157,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
-        } else if (hasChangeFiles && reachBaseOptimizedDelay()) {
+        } else if (hasChangeFiles && reachBaseRefreshInterval()) {
           return true;
         } else {
           return false;
@@ -167,8 +167,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
     }
 
-    protected boolean reachBaseOptimizedDelay() {
-      return config.getBaseMaxDelay() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseMaxDelay();
+    protected boolean reachBaseRefreshInterval() {
+      return config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
     }
 
     protected int getBaseSplitCount() {
@@ -189,7 +189,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
     @Override
     public PartitionEvaluator.Weight getWeight() {
-      return new Weight(getCost(), hasChangeFiles && reachBaseOptimizedDelay());
+      return new Weight(getCost(), hasChangeFiles && reachBaseRefreshInterval());
     }
 
     protected static class Weight implements PartitionEvaluator.Weight {

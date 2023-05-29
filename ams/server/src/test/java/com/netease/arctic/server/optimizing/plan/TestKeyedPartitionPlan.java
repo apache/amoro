@@ -160,7 +160,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     Assert.assertEquals(0, planWithCurrentFiles().size());
 
     // update base delay
-    updateTableProperty(TableProperties.SELF_OPTIMIZING_TRIGGER_BASE_MAX_DELAY, 1 + "");
+    updateTableProperty(TableProperties.BASE_REFRESH_INTERVAL, 1 + "");
     Assert.assertEquals(4, planWithCurrentFiles().size());
     updatePartitionProperty(partition, TableProperties.PARTITION_BASE_OPTIMIZED_TIME,
         (System.currentTimeMillis() - 10) + "");
