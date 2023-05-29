@@ -38,7 +38,7 @@ public class MixedHiveCatalogImpl extends MixedCatalogImpl {
 
   @Override
   public void onMetadataUpdate() {
-    tables = new MixedHiveTables(getMetadata());
+    super.onMetadataUpdate();
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
 

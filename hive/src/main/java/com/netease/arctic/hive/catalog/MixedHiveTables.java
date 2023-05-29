@@ -36,7 +36,7 @@ import java.util.Map;
 
 public class MixedHiveTables extends MixedTables {
 
-  private final CachedHiveClientPool hiveClientPool;
+  private volatile CachedHiveClientPool hiveClientPool;
 
   public MixedHiveTables(CatalogMeta catalogMeta) {
     this(catalogMeta, null);
@@ -286,5 +286,11 @@ public class MixedHiveTables extends MixedTables {
   private boolean allowExistedHiveTable(TableMeta tableMeta) {
     String allowStringValue = tableMeta.getProperties().remove(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED);
     return Boolean.parseBoolean(allowStringValue);
+  }
+
+  @Override
+  public void refreshCatalogMeta(CatalogMeta meta) {
+    super.refreshCatalogMeta(meta);
+    this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 }
