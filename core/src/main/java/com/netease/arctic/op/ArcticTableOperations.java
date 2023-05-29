@@ -39,12 +39,12 @@ public class ArcticTableOperations implements TableOperations {
 
   @Override
   public TableMetadata current() {
-    return ops.current();
+    return arcticFileIO.doAs(ops::current);
   }
 
   @Override
   public TableMetadata refresh() {
-    return arcticFileIO.doAs(() -> ops.refresh());
+    return arcticFileIO.doAs(ops::refresh);
   }
 
   @Override
@@ -72,6 +72,40 @@ public class ArcticTableOperations implements TableOperations {
 
   @Override
   public TableOperations temp(TableMetadata uncommittedMetadata) {
-    return ops.temp(uncommittedMetadata);
+    TableOperations temp = ops.temp(uncommittedMetadata);
+    return new TableOperations() {
+      @Override
+      public TableMetadata current() {
+        return arcticFileIO.doAs(temp::current);
+      }
+
+      @Override
+      public TableMetadata refresh() {
+        return arcticFileIO.doAs(temp::refresh);
+      }
+
+      @Override
+      public void commit(TableMetadata base, TableMetadata metadata) {
+        arcticFileIO.doAs(() -> {
+          temp.commit(base, metadata);
+          return null;
+        });
+      }
+
+      @Override
+      public FileIO io() {
+        return arcticFileIO;
+      }
+
+      @Override
+      public String metadataFileLocation(String fileName) {
+        return arcticFileIO.doAs(() -> temp.metadataFileLocation(fileName));
+      }
+
+      @Override
+      public LocationProvider locationProvider() {
+        return arcticFileIO.doAs(temp::locationProvider);
+      }
+    };
   }
 }

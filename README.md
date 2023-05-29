@@ -67,7 +67,7 @@ Arctic support multiple processing engines as below:
 | Processing Engine | Version                   |
 | ----------------- |---------------------------|
 | Flink             | 1.12.x, 1.14.x and 1.15.x |
-| Spark             | 2.3, 3.1                  |
+| Spark             | 3.1, 3.3                  |
 | Trino             | 380                       |
 
 ## Quickstart

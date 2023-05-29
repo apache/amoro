@@ -24,7 +24,7 @@
 
     <groupId>com.netease.arctic</groupId>
     <artifactId>arctic-parent</artifactId>
-    <version>0.4.1</version>
+    <version>0.4.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Arctic Project Parent</name>

@@ -16,27 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.ams.api.client;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  DELTAWRITE("deltaWrite");
+import org.apache.curator.utils.ZookeeperFactory;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.admin.ZooKeeperAdmin;
+import org.apache.zookeeper.client.ZKClientConfig;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+public class ArcticZookeeperFactory implements ZookeeperFactory {
 
-  public final String mode;
-  WriteMode(String mode) {
-    this.mode = mode;
+  private final ZKClientConfig config;
+
+  public ArcticZookeeperFactory(ZKClientConfig config) {
+    this.config = config;
   }
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
+  @Override
+  public ZooKeeper newZooKeeper(String connectString, int sessionTimeout, Watcher watcher, boolean canBeReadOnly) throws Exception {
+    return new ZooKeeperAdmin(connectString, sessionTimeout, watcher, canBeReadOnly, config);
   }
 }

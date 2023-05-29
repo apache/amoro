@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -36,9 +36,12 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   private static final Logger LOG = LoggerFactory.getLogger(FlinkReporter.class);
   public static final String STATE_JOB_ID = "flink-job-id";
 
+  private static final String STATUS_IDENTIFICATION = "status_identification";
+
   private final BaseTaskReporter taskReporter;
   private final BaseToucher toucher;
   private final long heartBeatInterval;
+  private final long createTime;
   private volatile boolean stopped = false;
   private Thread thread;
 
@@ -46,12 +49,14 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
     this.taskReporter = taskReporter;
     this.toucher = toucher;
     this.heartBeatInterval = optimizerConfig.getHeartBeat();
+    this.createTime = System.currentTimeMillis();
   }
 
   public FlinkReporter(OptimizerConfig config) {
     this.taskReporter = new BaseTaskReporter(config);
     this.toucher = new BaseToucher(config);
     this.heartBeatInterval = config.getHeartBeat();
+    this.createTime = System.currentTimeMillis();
   }
 
   @Override
@@ -65,6 +70,7 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
           try {
             String jobId = getContainingTask().getEnvironment().getJobID().toString();
             state.put(STATE_JOB_ID, jobId);
+            state.put(STATUS_IDENTIFICATION, String.valueOf(createTime));
           } catch (Exception e) {
             LOG.error("failed to get joId, ignore", e);
           }

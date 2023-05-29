@@ -371,11 +371,9 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (!propertyChanges.isEmpty()) {
       Spark3Util.applyPropertyChanges(transaction.updateProperties(), propertyChanges).commit();
     }
-
     if (!schemaChanges.isEmpty()) {
       Spark3Util.applySchemaChanges(transaction.updateSchema(), schemaChanges).commit();
     }
-
     transaction.commitTransaction();
   }
 

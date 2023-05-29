@@ -21,6 +21,7 @@ package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.spark.SparkException;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -106,7 +107,7 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
             " using arctic partitioned by (data) " , database, "testPks");
 
     // insert overwrite values
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert overwrite " + database + "." + "testPks" +
                     " values (1, 1.1, 'abcd' ) , " +
                     "(1, 1.1, 'bbcd'), " +
@@ -128,7 +129,7 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
     sql("insert into " + database + "." + table +
             " values (1, 'aaaa', 'abcd' )");
 
-    Assert.assertThrows(UnsupportedOperationException.class,
+    Assert.assertThrows(SparkException.class,
             () -> sql("insert overwrite " + database + "." + insertTable +
                             " select * from {0}.{1} group by id, data, dt",
                     database, table));

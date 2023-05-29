@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,27 +17,30 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.table;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  DELTAWRITE("deltaWrite");
+import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+/**
+ * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
+ */
+public interface SupportsRowLevelOperator extends Table {
 
-  public final String mode;
-  WriteMode(String mode) {
-    this.mode = mode;
-  }
+  /**
+   * Returns support extend columns scan builder
+   * @param options
+   * @return
+   */
+  SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options);
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
-  }
+  boolean requireAdditionIdentifierColumns();
+
+
+  /**
+   * will table handle insert as upsert
+   *
+   * @return true if table require insert as upsert
+   */
+  boolean appendAsUpsert();
 }
