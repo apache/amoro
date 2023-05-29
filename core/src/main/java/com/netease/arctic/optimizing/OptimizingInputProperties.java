@@ -20,17 +20,18 @@ package com.netease.arctic.optimizing;
 
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 public class OptimizingInputProperties {
 
   public static final String ENABLE_SPILL_MAP = "enable_spill_map";
 
   public static final String MAX_IN_MEMORY_SIZE_IN_BYTES = "max_size_in_memory";
+
+  public static final String SPILL_MAP_PATH = "sill_map_path";
 
   public static final String OUTPUT_DIR = "output_location";
 
@@ -41,7 +42,7 @@ public class OptimizingInputProperties {
   private Map<String, String> properties;
 
   private OptimizingInputProperties(Map<String, String> properties) {
-    this.properties = checkNotNull(properties);
+    this.properties = Maps.newHashMap(properties);
   }
 
   public OptimizingInputProperties() {
@@ -59,6 +60,11 @@ public class OptimizingInputProperties {
 
   public OptimizingInputProperties setMaxSizeInMemory(long maxSizeInMemory) {
     properties.put(MAX_IN_MEMORY_SIZE_IN_BYTES, String.valueOf(maxSizeInMemory));
+    return this;
+  }
+
+  public OptimizingInputProperties setSpillMapPath(String path) {
+    properties.put(SPILL_MAP_PATH, path);
     return this;
   }
 
@@ -84,7 +90,9 @@ public class OptimizingInputProperties {
     String maxInMemoryStr = properties.get(MAX_IN_MEMORY_SIZE_IN_BYTES);
     Long maxInMemory = maxInMemoryStr == null ? null : Long.parseLong(maxInMemoryStr);
 
-    return new StructLikeCollections(enableSpillMap, maxInMemory);
+    String spillMapPath = properties.get(SPILL_MAP_PATH);
+
+    return new StructLikeCollections(enableSpillMap, maxInMemory, spillMapPath);
   }
 
   public String getOutputDir() {
