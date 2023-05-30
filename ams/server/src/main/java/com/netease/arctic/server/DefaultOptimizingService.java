@@ -142,11 +142,15 @@ public class DefaultOptimizingService extends DefaultResourceManager
    * @return OptimizeQueueItem
    */
   private OptimizingQueue getQueueByGroup(String optimizerGroup) {
+    return getOptionalQueueByGroup(optimizerGroup)
+        .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
+  }
+
+  private Optional<OptimizingQueue> getOptionalQueueByGroup(String optimizerGroup) {
     Preconditions.checkArgument(
         optimizerGroup != null,
         "optimizerGroup can not be null");
-    return Optional.ofNullable(optimizingQueueByGroup.get(optimizerGroup))
-        .orElseThrow(() -> new ObjectNotExistsException("Optimizer group " + optimizerGroup));
+    return Optional.ofNullable(optimizingQueueByGroup.get(optimizerGroup));
   }
 
   private OptimizingQueue getQueueByToken(String token) {
@@ -180,7 +184,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
-        getQueueByGroup(tableRuntime.getOptimizerGroup()).refreshTable(tableRuntime);
+        getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
       }
     }
 
@@ -188,20 +192,19 @@ public class DefaultOptimizingService extends DefaultResourceManager
     public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       if (!tableRuntime.getOptimizerGroup().equals(originalGroup)) {
-        getQueueByGroup(originalGroup).releaseTable(tableRuntime);
+        getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
       }
-      getQueueByGroup(tableRuntime.getOptimizerGroup()).refreshTable(tableRuntime);
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
-      getQueueByGroup(tableRuntime.getOptimizerGroup()).refreshTable(tableRuntime);
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableRemoved(TableRuntime tableRuntime) {
-      Optional.ofNullable(getQueueByGroup(tableRuntime.getOptimizerGroup()))
-          .ifPresent(queue -> queue.releaseTable(tableRuntime));
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 
     @Override
