@@ -117,8 +117,8 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
         return shouldKeep;
       }
     });
-    return CloseableIterable.
-        transform(files, f -> WrapFileWithSequenceNumberHelper.wrap(f.file(), f.getSeq()));
+    return CloseableIterable
+        .transform(files, f -> WrapFileWithSequenceNumberHelper.wrap(f.file(), f.getSeq()));
   }
 
   @Override
