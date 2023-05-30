@@ -60,6 +60,8 @@ public class TestOptimizingIntegration {
       TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table5");
   private static final TableIdentifier MIXED_ICEBERG_TB_6 =
       TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table6");
+  private static final TableIdentifier MIXED_ICEBERG_TB_7 =
+      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table7");
   private static final TableIdentifier MIXED_HIVE_TB_1 =
       TableIdentifier.of(AmsEnvironment.MIXED_HIVE_CATALOG, DATABASE, "mix_hive_table1");
   private static final TableIdentifier MIXED_HIVE_TB_2 = TableIdentifier.of(AmsEnvironment.MIXED_HIVE_CATALOG,
@@ -144,6 +146,14 @@ public class TestOptimizingIntegration {
     assertTableExist(MIXED_ICEBERG_TB_2);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
     testCase.testKeyedTableContinueOptimizing();
+  }
+
+  @Test
+  public void testPkTableMajorOptimizeLeftPosDelete() {
+    ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_3, PRIMARY_KEY, PartitionSpec.unpartitioned());
+    assertTableExist(MIXED_ICEBERG_TB_3);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    testCase.testPkTableMajorOptimizeLeftPosDelete();
   }
 
   @Test

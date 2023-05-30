@@ -280,8 +280,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   }
 
   public void testPartitionIcebergTablePartialOptimizing() throws IOException {
-    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-
     // Step 1: insert 6 data files for two partitions
     StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
     insertDataFile(table, Lists.newArrayList(
@@ -307,13 +305,10 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
-    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
 
     // wait Minor Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
-    // optimizeHistory = checker.waitOptimizeResult();
-    // checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     checker.assertOptimizeHangUp();

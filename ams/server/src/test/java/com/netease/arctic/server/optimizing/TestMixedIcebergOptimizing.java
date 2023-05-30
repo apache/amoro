@@ -169,7 +169,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1000");
 
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 5, 0);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 5, 4);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
 
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
@@ -201,7 +201,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     optimizeHistory = checker.waitOptimizeResult();
-    // checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 10, 4);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 10, 4);
     assertIds(readRecords(table), 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
 
     checker.assertOptimizeHangUp();
