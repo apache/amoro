@@ -508,7 +508,7 @@ public class TableController extends RestBaseController {
       if (table.isUnkeyedTable()) {
         UnkeyedTable unkeyedTable = table.asUnkeyedTable();
         baseInfo = new TableStatistics();
-        TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table, "TABLE");
+        TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table);
       } else if (table.isKeyedTable()) {
         KeyedTable keyedTable = table.asKeyedTable();
         if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {

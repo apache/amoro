@@ -51,7 +51,7 @@ public class TableStatCollector {
         LOG.warn("No related hive table found. " + table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
-      fillTableStatistics(tableInfo, internalTable, table, Constants.INNER_TABLE_CHANGE);
+      fillTableStatistics(tableInfo, internalTable, table);
       return tableInfo;
     } catch (Exception e) {
       LOG.error("failed to collect change table info of " + table.id(), e);
@@ -70,7 +70,7 @@ public class TableStatCollector {
         LOG.warn("No related hive table found. " + table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
-      fillTableStatistics(tableInfo, internalTable, table, Constants.INNER_TABLE_BASE);
+      fillTableStatistics(tableInfo, internalTable, table);
       return tableInfo;
     } catch (Exception e) {
       LOG.error("failed to collect base table info of " + table.id(), e);
@@ -174,20 +174,15 @@ public class TableStatCollector {
   public static void fillTableStatistics(
       TableStatistics tableStatistics,
       UnkeyedTable arcticInternalTable,
-      ArcticTable table,
-      String type) {
+      ArcticTable table) {
     if (arcticInternalTable == null) {
       initEmptyTableStatistics(tableStatistics, table.id());
       return;
     }
-
-    Iterable<Snapshot> snapshots = arcticInternalTable.snapshots();
-    Snapshot firstSnapshot = null;
-    Snapshot lastSnapshot = null;
-
-    FilesStatisticsBuilder totalFileStatBuilder = new FilesStatisticsBuilder();
+    tableStatistics.setTableIdentifier(table.id());
 
     // count current snapshot file count&size
+    FilesStatisticsBuilder totalFileStatBuilder = new FilesStatisticsBuilder();
     Snapshot currentSnapshot = arcticInternalTable.currentSnapshot();
     if (currentSnapshot != null) {
       long addedFilesSize =
@@ -198,21 +193,22 @@ public class TableStatCollector {
               .propertyAsInt(currentSnapshot.summary(), org.apache.iceberg.SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0);
       totalFileStatBuilder.addFiles(addedFilesSize, addedFilesCnt);
     }
+    tableStatistics.setTotalFilesStat(totalFileStatBuilder.build());
 
-    int cnt = 0;
+    // list all history snapshot
+    Iterable<Snapshot> snapshots = arcticInternalTable.snapshots();
+    Snapshot firstSnapshot = null;
+    Snapshot lastSnapshot = null;
+    int snapshotCount = 0;
     for (Snapshot snapshot : snapshots) {
-      cnt++;
+      snapshotCount++;
       lastSnapshot = snapshot;
       if (firstSnapshot == null) {
         firstSnapshot = snapshot;
       }
     }
 
-    tableStatistics.setTableIdentifier(table.id());
-    tableStatistics.setTotalFilesStat(totalFileStatBuilder.build());
-
-    Map<String, String> summary =
-        fillSummary(cnt, lastSnapshot, firstSnapshot, tableStatistics.getTotalFilesStat());
+    Map<String, String> summary = fillSummary(snapshotCount, lastSnapshot, firstSnapshot);
     tableStatistics.setSummary(summary);
     fillTableSnapshotInfo(tableStatistics, arcticInternalTable);
   }
@@ -227,21 +223,15 @@ public class TableStatCollector {
   }
 
   private static Map<String, String> fillSummary(
-      int cnt,
+      int snapshotCount,
       Snapshot lastSnapshot,
-      Snapshot firstSnapshot,
-      FilesStatistics totalFiles) {
+      Snapshot firstSnapshot) {
     Map<String, String> summary = new HashMap<>();
-    PropertiesUtil.putNotNullProperties(summary, "snapshotCnt", String.valueOf(cnt));
+    PropertiesUtil.putNotNullProperties(summary, "snapshotCnt", String.valueOf(snapshotCount));
     PropertiesUtil.putNotNullProperties(summary, "visibleTime",
         lastSnapshot == null ? null : String.valueOf(lastSnapshot.timestampMillis()));
     PropertiesUtil.putNotNullProperties(summary, "firstSnapshotCommitTime",
         firstSnapshot == null ? null : String.valueOf(firstSnapshot.timestampMillis()));
-    if (cnt != 0) {
-      PropertiesUtil.putNotNullProperties(summary, "averageSnapshotSize",
-          String.valueOf(totalFiles.getTotalSize() / cnt));
-    }
-
     return summary;
   }
 }
