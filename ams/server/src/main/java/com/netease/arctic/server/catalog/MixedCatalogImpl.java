@@ -26,7 +26,8 @@ public class MixedCatalogImpl extends InternalCatalog {
   }
 
   @Override
-  public void onMetadataUpdate() {
+  public void updateMetadata(CatalogMeta metadata) {
+    super.updateMetadata(metadata);
     this.tables.refreshCatalogMeta(getMetadata());
   }
 

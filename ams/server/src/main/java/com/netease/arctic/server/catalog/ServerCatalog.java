@@ -28,10 +28,7 @@ public abstract class ServerCatalog extends PersistentBase {
   public void updateMetadata(CatalogMeta metadata) {
     doAs(CatalogMetaMapper.class, mapper -> mapper.updateCatalog(metadata));
     this.metadata = metadata;
-    onMetadataUpdate();
   }
-
-  protected abstract void onMetadataUpdate();
 
   public abstract boolean exist(String database);
 

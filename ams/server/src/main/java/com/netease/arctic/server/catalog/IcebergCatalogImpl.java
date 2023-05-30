@@ -20,7 +20,8 @@ public class IcebergCatalogImpl extends ExternalCatalog {
   }
 
   @Override
-  protected void onMetadataUpdate() {
+  public void updateMetadata(CatalogMeta metadata) {
+    super.updateMetadata(metadata);
     this.catalogWrapper.refreshCatalogMeta(getMetadata());
   }
 
