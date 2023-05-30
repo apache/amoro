@@ -135,7 +135,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
     StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(table);
     StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
-    ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
+    ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
         .fromSequence(partitionOptimizedSequence)
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     if (expression != null) {

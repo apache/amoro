@@ -1154,7 +1154,7 @@ public class TableOptimizeItem extends IJDBCService {
       return null;
     }
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan()
+        getArcticTable().asKeyedTable().changeTable().newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .toSequence(maxSequence)
@@ -1189,7 +1189,7 @@ public class TableOptimizeItem extends IJDBCService {
     }
     // scan and get all change files grouped by sequence(snapshot)
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan()
+        getArcticTable().asKeyedTable().changeTable().newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());

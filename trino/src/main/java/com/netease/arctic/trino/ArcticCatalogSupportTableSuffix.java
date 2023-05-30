@@ -180,11 +180,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public TableScan newScan() {
-      return table.newScan();
-    }
-
-    @Override
     public TableIdentifier id() {
       return table.id();
     }
@@ -370,9 +365,9 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public ChangeTableIncrementalScan newChangeScan() {
+    public ChangeTableIncrementalScan newScan() {
       if (table instanceof ChangeTable) {
-        return ((ChangeTable) table).newChangeScan();
+        return ((ChangeTable) table).newScan();
       } else {
         throw new UnsupportedOperationException();
       }

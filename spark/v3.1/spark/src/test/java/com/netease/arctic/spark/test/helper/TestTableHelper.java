@@ -334,7 +334,7 @@ public class TestTableHelper {
     );
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks =
-             keyedTable.changeTable().newChangeScan().planTasks()) {
+             keyedTable.changeTable().newScan().planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
         try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
           while (records.hasNext()) {

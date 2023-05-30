@@ -255,7 +255,7 @@ public interface TestOptimizeBase {
                                                            StructLikeMap<Long> partitionOptimizedSequence,
                                                            StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        keyedTable.changeTable().newChangeScan()
+        keyedTable.changeTable().newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     List<ContentFileWithSequence<?>> changeFiles;
