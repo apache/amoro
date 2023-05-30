@@ -4,7 +4,6 @@ public class PropertyNames {
 
   public static final String RESOURCE_ID = "resource-id";
   public static final String EXPORT_PROPERTY_PREFIX = "export.";
-  public static final String JAVA_PARAMETERS_PROPERTY = "jvm-args";
 
   public static final String OPTIMIZER_AMS_URL = "ams-url";
   public static final String AMS_HOME = "ams-home";

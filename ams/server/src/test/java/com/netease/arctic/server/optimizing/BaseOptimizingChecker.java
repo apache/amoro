@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class BaseOptimizingChecker extends PersistentBase {
 
@@ -115,17 +116,17 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
 
     if (success) {
-      Optional<TableOptimizingProcess> result = getAs(
+      List<TableOptimizingProcess> result = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
               tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-          .filter(p -> p.getProcessId() > lastProcessId)
-          .findAny();
-      if (result.isPresent()) {
-        this.lastProcessId = result.get().getProcessId();
-        return result.get();
+          .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+      result.sort(Comparator.comparingLong(TableOptimizingProcess::getProcessId).reversed());
+      if (result.size() == 1) {
+        this.lastProcessId = result.get(0).getProcessId();
+        return result.get(0);
       } else {
-        return null;
+        throw new RuntimeException("optimize result size " + result.size());
       }
     } else {
       return null;
@@ -141,11 +142,9 @@ public class BaseOptimizingChecker extends PersistentBase {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
-    Optional<TableOptimizingProcess> any =
-        tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
-    any.ifPresent(h -> LOG.error("{} get unexpected optimize process {} {}", tableIdentifier, lastProcessId, h));
-    Assert.assertFalse("optimize is not stopped", any.isPresent());
+            tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
+        .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+    Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
   }
 
   protected boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout)

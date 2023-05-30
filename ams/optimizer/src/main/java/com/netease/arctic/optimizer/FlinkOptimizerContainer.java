@@ -72,9 +72,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
-    String taskManagerMemory = PropertyUtil.checkAndGetProperty(getContainerProperties(),
+    String taskManagerMemory = PropertyUtil.checkAndGetProperty(resource.getProperties(),
         TASK_MANAGER_MEMORY_PROPERTY);
-    String jobManagerMemory = PropertyUtil.checkAndGetProperty(getContainerProperties(), JOB_MANAGER_MEMORY_PROPERTY);
+    String jobManagerMemory = PropertyUtil.checkAndGetProperty(resource.getProperties(), JOB_MANAGER_MEMORY_PROPERTY);
     String jobPath = getAMSHome() + "/plugin/optimize/OptimizeJob.jar";
     return String.format("%s/bin/flink run -m yarn-cluster -ytm %s -yjm %s -c %s %s -m %s %s",
         getFlinkHome(), taskManagerMemory, jobManagerMemory,

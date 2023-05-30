@@ -8,14 +8,11 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
-import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
-import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.concurrent.CompletableFuture;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.shaded.com.google.common.io.MoreFiles;
 import org.apache.curator.shaded.com.google.common.io.RecursiveDeleteOption;
@@ -37,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AmsEnvironment {
@@ -52,7 +50,6 @@ public class AmsEnvironment {
   private int thriftBindPort;
   private final HMSMockServer testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
-  public static String HMS_DIR = "/hive/warehouse";
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
   public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
   public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
@@ -90,7 +87,7 @@ public class AmsEnvironment {
         DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableService").build();
     tableService = amsTableServiceField.bind(arcticService).get();
     DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceField =
-        DynFields.builder().hiddenImpl(DefaultTableService.class, "initTag").build();
+        DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
     boolean tableServiceIsStart = false;
     long startTime = System.currentTimeMillis();
     while (!tableServiceIsStart) {
@@ -211,7 +208,7 @@ public class AmsEnvironment {
                 DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "serviceConfig").build();
             serviceConfig = field.bind(arcticService).get();
             serviceConfig.set(ArcticManagementConf.THRIFT_BIND_PORT, thriftBindPort);
-            serviceConfig.set(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL, 5 * 1000L);
+            serviceConfig.set(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL, 1000L);
             // when AMS is successfully running, this thread will wait here
             arcticService.startService();
             break;

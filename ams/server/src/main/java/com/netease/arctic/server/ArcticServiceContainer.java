@@ -33,9 +33,7 @@ import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
-import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
-import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -234,8 +232,10 @@ public class ArcticServiceContainer {
               "can not find such container config named" +
                   groupBuilder.getContainer());
         }
-        if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES)) {
-          groupBuilder.addProperties(groupConfig.getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
+        if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) &&
+            groupConfig.get(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) != null) {
+          groupBuilder.addProperties(groupConfig.getObject(
+              ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
               Map.class));
         }
         resourceGroups.add(groupBuilder.build());

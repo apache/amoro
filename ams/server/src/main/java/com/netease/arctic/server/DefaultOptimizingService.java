@@ -68,7 +68,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final TableManager tableManager;
-  private RuntimeHandlerChain tableHandlerChain;
+  private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
@@ -108,9 +108,12 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
-    LOG.info("Optimizer {} polling task", authToken);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return queue.pollTask(authToken, threadId);
+    OptimizingTask task = queue.pollTask(authToken, threadId);
+    if (task != null) {
+      LOG.info("Optimizer {} polling task", authToken);
+    }
+    return task;
   }
 
   @Override
