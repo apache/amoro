@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOIcebergAdapter;
+import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicTableBuilder;
@@ -42,7 +42,6 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +234,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     if (io instanceof HadoopFileIO) {
       return ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
     } else {
-      return new ArcticFileIOIcebergAdapter(io);
+      return new ArcticFileIOAdapter(io);
     }
   }
 
