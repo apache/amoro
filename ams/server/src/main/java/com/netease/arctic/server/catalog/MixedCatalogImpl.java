@@ -26,6 +26,12 @@ public class MixedCatalogImpl extends InternalCatalog {
   }
 
   @Override
+  public void updateMetadata(CatalogMeta metadata) {
+    super.updateMetadata(metadata);
+    this.tables.refreshCatalogMeta(getMetadata());
+  }
+
+  @Override
   public List<String> listDatabases() {
     return getAs(TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));
   }
