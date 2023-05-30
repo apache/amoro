@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.test;
 
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.table.ArcticTable;
