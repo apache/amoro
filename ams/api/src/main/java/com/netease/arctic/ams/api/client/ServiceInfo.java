@@ -34,12 +34,12 @@ public class ServiceInfo {
     return host;
   }
 
-  public int getPort() {
-    return port;
-  }
-
   public void setHost(String host) {
     this.host = host;
+  }
+
+  public int getPort() {
+    return port;
   }
 
   public void setPort(int port) {
@@ -57,12 +57,20 @@ public class ServiceInfo {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (obj == null) return false;
-    if (getClass() != obj.getClass()) return false;
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
     ServiceInfo other = (ServiceInfo) obj;
     if (host == null) {
-      if (other.host != null) return false;
+      if (other.host != null) {
+        return false;
+      }
     } else if (!host.equals(other.host)) {
       return false;
     }

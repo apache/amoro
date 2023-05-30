@@ -24,7 +24,6 @@ import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,7 +181,7 @@ class BasicTableTrashManager implements TableTrashManager {
     List<String> targetLocationsInTrash = Lists.newArrayList();
     for (PathInfo p : paths) {
       String fullLocation = p.location() + "/" + targetRelationLocationInTable;
-      if (arcticFileIO.exists(fullLocation)){
+      if (arcticFileIO.exists(fullLocation)) {
         if (!arcticFileIO.isDirectory(fullLocation)) {
           targetLocationsInTrash.add(fullLocation);
         }

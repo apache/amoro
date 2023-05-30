@@ -82,8 +82,8 @@ public class Resource {
       this.type = type;
     }
 
-    public Builder(OptimizerRegisterInfo optimizerRegisterInfo, String ContainerName) {
-      this.containerName = ContainerName;
+    public Builder(OptimizerRegisterInfo optimizerRegisterInfo, String containerName) {
+      this.containerName = containerName;
       this.groupName = optimizerRegisterInfo.getGroupName();
       this.threadCount = optimizerRegisterInfo.getThreadCount();
       this.memoryMb = optimizerRegisterInfo.getMemoryMb();
@@ -108,7 +108,8 @@ public class Resource {
     }
 
     public Resource build() {
-      Preconditions.checkArgument(containerName != null && groupName != null && type != null,
+      Preconditions.checkArgument(
+          containerName != null && groupName != null && type != null,
           "containerName, groupName and type should not be null");
       return new Resource(this);
     }

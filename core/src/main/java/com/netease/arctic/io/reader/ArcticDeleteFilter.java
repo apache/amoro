@@ -239,8 +239,9 @@ public abstract class ArcticDeleteFilter<T> {
       records = deleteNodeFilter.filter(records);
     }
 
+    InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
     CloseableIterable<StructLike> structLikeIterable = CloseableIterable.transform(
-        records, record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
+        records, record -> internalRecordWrapper.copyFor(record));
 
     StructLikeBaseMap<ChangedLsn> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
     //init map

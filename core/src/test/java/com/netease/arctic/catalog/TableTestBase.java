@@ -51,7 +51,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   public void setupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
-    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)){
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
       getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     }
     switch (getTestFormat()) {

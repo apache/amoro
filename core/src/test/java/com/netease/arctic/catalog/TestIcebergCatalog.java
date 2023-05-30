@@ -32,6 +32,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -48,9 +49,15 @@ public class TestIcebergCatalog extends CatalogTestBase {
     super(catalogTestHelper);
   }
 
+  @Before
+  public void before() {
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    }
+  }
+
   @Test
   public void testLoadIcebergTable() {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     Assert.assertTrue(table instanceof BasicIcebergTable);
@@ -60,7 +67,6 @@ public class TestIcebergCatalog extends CatalogTestBase {
 
   @Test
   public void testRecoverableFileIO() throws TException {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);

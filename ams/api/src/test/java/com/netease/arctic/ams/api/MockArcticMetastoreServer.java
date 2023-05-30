@@ -69,15 +69,18 @@ public class MockArcticMetastoreServer implements Runnable {
     if (!INSTANCE.isStarted()) {
       INSTANCE.start();
       Map<String, String> storageConfig = new HashMap<>();
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+      storageConfig.put(
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
           CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, getHadoopSite());
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, getHadoopSite());
 
       Map<String, String> authConfig = new HashMap<>();
-      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+      authConfig.put(
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
           CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+      authConfig.put(
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
           System.getProperty("user.name"));
 
       Map<String, String> catalogProperties = new HashMap<>();
@@ -99,8 +102,9 @@ public class MockArcticMetastoreServer implements Runnable {
   public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
     MockArcticMetastoreServer server = getInstance();
     if (server.handler().getCatalogs().stream()
-        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName())))
+        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName()))) {
       server.handler().createCatalog(catalogMeta);
+    }
   }
 
   public static String getHadoopSite() {
@@ -238,7 +242,7 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public CatalogMeta getCatalog(String name) throws TException {
       return catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
-          .findFirst().orElseThrow(NoSuchObjectException::new);
+          .findFirst().orElseThrow(() -> new NoSuchObjectException("catalog with name: " + name + " non-exists."));
     }
 
     @Override

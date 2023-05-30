@@ -23,9 +23,12 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOIcebergAdapter;
+import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicTableBuilder;
+import com.netease.arctic.table.BasicUnkeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -240,8 +243,8 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(
-        Namespace.of(tableIdentifier.getDatabase()),
-        tableIdentifier.getTableName());
+            Namespace.of(tableIdentifier.getDatabase()),
+            tableIdentifier.getTableName());
   }
 
 

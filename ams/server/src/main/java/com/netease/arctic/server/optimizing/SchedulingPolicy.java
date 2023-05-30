@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class SchedulingPolicy {
 
-  private static final String SCHEDULING_POLICY = "scheduling_policy";
+  private static final String SCHEDULING_POLICY_PROPERTY_NAME = "scheduling-policy";
   private static final String QUOTA = "quota";
   private static final String BALANCED = "balanced";
 
@@ -25,7 +26,7 @@ public class SchedulingPolicy {
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
-    String schedulingPolicy = group.getProperties().get(SCHEDULING_POLICY);
+    String schedulingPolicy = group.getProperties().get(SCHEDULING_POLICY_PROPERTY_NAME);
     if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
@@ -65,6 +66,11 @@ public class SchedulingPolicy {
     } finally {
       tableLock.unlock();
     }
+  }
+
+  @VisibleForTesting
+  Map<ServerTableIdentifier, TableRuntime> getTableRuntimeMap() {
+    return tableRuntimeMap;
   }
 
   private static class QuotaOccupySorter implements Comparator<TableRuntime> {

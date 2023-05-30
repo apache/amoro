@@ -18,6 +18,7 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.type.JdbcType;
 
 import java.util.List;
 import java.util.Map;
@@ -116,16 +117,15 @@ public interface OptimizingMapper {
   @Insert({
       "<script>",
       "INSERT INTO task_runtime (process_id, task_id, retry_num, table_id, partition_data, start_time, " +
-          "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties) " +
+          "end_time, status, fail_reason, rewrite_output, metrics_summary, properties) " +
           "VALUES ",
       "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
       "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry}," +
           " #{taskRuntime.tableId}, #{taskRuntime.partition}, " +
           "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
           " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
-          "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR}," +
-          " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
-          "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
+          "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR}, " +
+          "#{taskRuntime.output, jdbcType=BLOB, " +
           " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
           " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
           "#{taskRuntime.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})",
@@ -135,7 +135,7 @@ public interface OptimizingMapper {
   void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime> taskRuntimes);
 
   @Select("SELECT process_id, task_id, retry_num, table_id, partition_data,  create_time, start_time, end_time," +
-      " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties FROM " +
+      " status, fail_reason, rewrite_output, metrics_summary, properties FROM " +
       "task_runtime WHERE table_id = #{table_id} AND process_id = #{process_id}")
   @Results({
       @Result(property = "taskId.processId", column = "process_id"),
@@ -147,8 +147,6 @@ public interface OptimizingMapper {
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
       @Result(property = "status", column = "status"),
       @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "optimizingThread.token", column = "optimizer_token"),
-      @Result(property = "optimizingThread.threadId", column = "thread_id"),
       @Result(property = "output", column = "rewrite_output", typeHandler = Object2ByteArrayConvert.class),
       @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
@@ -190,8 +188,10 @@ public interface OptimizingMapper {
       @Param("input") Map<Integer, RewriteFilesInput> input);
 
   @Select("SELECT rewrite_input FROM table_optimizing_process WHERE process_id = #{processId}")
-  @Result(property = "input", column = "rewrite_input", typeHandler = Object2ByteArrayConvert.class)
-  Map<Integer, RewriteFilesInput> selectProcessInputFiles(@Param("processId") long processId);
+  @Results({
+      @Result(column = "rewrite_input", jdbcType = JdbcType.BLOB)
+  })
+  List<byte[]> selectProcessInputFiles(@Param("processId") long processId);
 
   /**
    * Optimizing task quota operations below

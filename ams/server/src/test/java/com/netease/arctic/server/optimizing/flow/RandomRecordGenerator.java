@@ -27,6 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,24 +40,31 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class RandomRecordGenerator {
 
-  private final Random random = new Random();
+  private final Random random;
 
   private final Schema primary;
 
   private final Set<Integer> primaryIds = new HashSet<>();
 
-  private Map<Integer, Object>[] partitionValues;
+  private List<Map<Integer, Object>> partitionValues;
 
-  private final Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
+  private final Map<Integer, Map<Integer, Object>> primaryRelationWithPartition;
 
   private final Set<Integer> partitionIds = new HashSet<>();
 
   private final Schema schema;
 
-  public RandomRecordGenerator(Schema schema, PartitionSpec spec, Schema primary, int partitionCount) {
+  public RandomRecordGenerator(
+      Schema schema,
+      PartitionSpec spec,
+      Schema primary,
+      int partitionCount,
+      @Nullable Map<Integer, Map<Integer, Object>> primaryRelationWithPartition,
+      Long seed) {
     this.schema = schema;
     this.primary = primary;
     if (this.primary != null) {
@@ -66,13 +74,23 @@ public class RandomRecordGenerator {
       }
     }
 
-    if (!spec.isUnpartitioned()) {
-      partitionValues = new Map[partitionCount];
-      for (int i = 0; i < partitionCount; i++) {
-        partitionValues[i] = new HashMap<>();
-        for (PartitionField field : spec.fields()) {
-          partitionIds.add(field.sourceId());
-          partitionValues[i].put(field.sourceId(), generateObject(schema.findType(field.sourceId())));
+    this.random = seed == null ? new Random() : new Random(seed);
+
+    if (primaryRelationWithPartition != null && !primaryRelationWithPartition.isEmpty()) {
+      this.primaryRelationWithPartition = primaryRelationWithPartition;
+      this.partitionValues = primaryRelationWithPartition
+          .values().stream().distinct().collect(Collectors.toList());
+    } else {
+      this.primaryRelationWithPartition = new HashMap<>();
+      if (!spec.isUnpartitioned()) {
+        partitionValues = new ArrayList<>();
+        for (int i = 0; i < partitionCount; i++) {
+          Map<Integer, Object> map = new HashMap<>();
+          for (PartitionField field : spec.fields()) {
+            partitionIds.add(field.sourceId());
+            map.put(field.sourceId(), generateObject(schema.findType(field.sourceId())));
+          }
+          partitionValues.add(map);
         }
       }
     }
@@ -107,7 +125,7 @@ public class RandomRecordGenerator {
       partitionValue =
           primaryRelationWithPartition.computeIfAbsent(
               primaryValue,
-              p -> partitionValues[random.nextInt(partitionValues.length)]);
+              p -> partitionValues.get(random.nextInt(partitionValues.size())));
     }
     for (int i = 0; i < columns.size(); i++) {
       Types.NestedField field = columns.get(i);
@@ -122,6 +140,25 @@ public class RandomRecordGenerator {
         continue;
       }
 
+      record.set(i, generateObject(field.type()));
+    }
+    return record;
+  }
+
+  public Record randomRecord() {
+    Record record = GenericRecord.create(schema);
+    Random random = new Random();
+    List<Types.NestedField> columns = schema.columns();
+    Map<Integer, Object> partitionValue = null;
+    if (partitionValues != null) {
+      partitionValue = partitionValues.get(random.nextInt(partitionValues.size()));
+    }
+    for (int i = 0; i < columns.size(); i++) {
+      Types.NestedField field = columns.get(i);
+      if (partitionIds.contains(field.fieldId())) {
+        record.set(i, partitionValue.get(field.fieldId()));
+        continue;
+      }
       record.set(i, generateObject(field.type()));
     }
     return record;

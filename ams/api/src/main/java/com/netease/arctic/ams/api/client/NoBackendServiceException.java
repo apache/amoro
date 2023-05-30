@@ -21,5 +21,4 @@ package com.netease.arctic.ams.api.client;
 public class NoBackendServiceException extends ConnectionFailException {
 
   private static final long serialVersionUID = 8966434958841745191L;
-
 }

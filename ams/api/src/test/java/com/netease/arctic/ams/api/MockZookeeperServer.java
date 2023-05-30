@@ -48,7 +48,7 @@ public class MockZookeeperServer {
   }
 
   public static String getUri() {
-    return "127.0.0.1:"+ port;
+    return "127.0.0.1:" + port;
   }
 
   public static void stopServer() throws IOException {

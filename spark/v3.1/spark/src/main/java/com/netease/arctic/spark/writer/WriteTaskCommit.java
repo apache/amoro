@@ -89,18 +89,8 @@ public class WriteTaskCommit implements WriterCommitMessage {
       return this;
     }
 
-    public WriteTaskCommit.Builder addDataFiles(Iterable<DataFile> files) {
-      Iterables.addAll(dataFiles, files);
-      return this;
-    }
-
     public WriteTaskCommit.Builder addDeleteFiles(DeleteFile... files) {
       Collections.addAll(deleteFiles, files);
-      return this;
-    }
-
-    public WriteTaskCommit.Builder addDeleteFiles(Iterable<DeleteFile> files) {
-      Iterables.addAll(deleteFiles, files);
       return this;
     }
 

@@ -39,6 +39,8 @@ import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
+import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
+import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableMeta;
@@ -75,6 +77,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -92,7 +95,7 @@ import java.util.stream.Collectors;
  */
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
-  private static final long UPGRADE_INGO_EXPIRE_INTERVAL = 60 * 60 * 1000;
+  private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
@@ -250,7 +253,7 @@ public class TableController extends RestBaseController {
         } finally {
           tableUpgradeExecutor.schedule(
               () -> upgradeRunningInfo.remove(tableIdentifier),
-              UPGRADE_INGO_EXPIRE_INTERVAL,
+              UPGRADE_INFO_EXPIRE_INTERVAL,
               TimeUnit.MILLISECONDS);
         }
       });
@@ -265,7 +268,10 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    ctx.json(OkResponse.of(upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table))));
+    UpgradeRunningInfo info = upgradeRunningInfo.containsKey(TableIdentifier.of(catalog, db, table)) ?
+        upgradeRunningInfo.get(TableIdentifier.of(catalog, db, table)) :
+        new UpgradeRunningInfo(UpgradeStatus.NONE.toString());
+    ctx.json(OkResponse.of(info));
   }
 
   /**
@@ -371,12 +377,38 @@ public class TableController extends RestBaseController {
    * getRuntime partition list.
    */
   public void getTablePartitions(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+
+    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
+    List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(arcticTable);
+    int offset = (page - 1) * pageSize;
+    PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
    * getRuntime file list of some partition.
    */
   public void getPartitionFileListInfo(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String partition = ctx.pathParam("partition");
+
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
+    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition,
+        page * pageSize);
+    int offset = (page - 1) * pageSize;
+    PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /* getRuntime  operations of some table*/
@@ -391,6 +423,7 @@ public class TableController extends RestBaseController {
 
     List<DDLInfo> ddlInfos = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
         tableName));
+    Collections.reverse(ddlInfos);
     PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
         offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
@@ -428,7 +461,7 @@ public class TableController extends RestBaseController {
     } else {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
     }
-    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isNotBlank(keywords) ||
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
@@ -440,7 +473,7 @@ public class TableController extends RestBaseController {
     String keywords = ctx.queryParam("keywords");
 
     List<String> dbList = tableService.listDatabases(catalog).stream()
-        .filter(item -> StringUtils.isNotBlank(keywords) || item.contains(keywords))
+        .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
         .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
   }

@@ -24,14 +24,12 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import java.io.IOException;
-import java.util.List;
 
 public class TestRecoverableArcticFileIO extends TableTestBase {
   private RecoverableHadoopFileIO recoverableArcticFileIO;

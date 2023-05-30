@@ -88,11 +88,13 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(
+            baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
@@ -136,7 +138,7 @@ public class MixedTables {
   }
 
   public ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec) {
+                                       PartitionSpec partitionSpec) {
     if (primaryKeySpec.primaryKeyExisted()) {
       return createKeyedTable(tableMeta, schema, primaryKeySpec, partitionSpec);
     } else {
@@ -145,7 +147,7 @@ public class MixedTables {
   }
 
   protected KeyedTable createKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec) {
+                                        PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
@@ -191,7 +193,7 @@ public class MixedTables {
   }
 
   protected UnkeyedTable createUnKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec) {
+                                            PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);

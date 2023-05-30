@@ -54,7 +54,8 @@ public interface SupportsFileSystemOperations extends ArcticFileIO, SupportsPref
   void rename(String oldPath, String newPath);
 
 
-  Iterable<PathInfo> listDirectory(String location) ;
+  Iterable<PathInfo> listDirectory(String location);
+
 
   @Override
   default SupportsFileSystemOperations asFileSystemIO() {

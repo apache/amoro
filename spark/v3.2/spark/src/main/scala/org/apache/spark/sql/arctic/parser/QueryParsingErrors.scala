@@ -18,12 +18,9 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
+import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
 import org.antlr.v4.runtime.ParserRuleContext
 import org.apache.spark.sql.catalyst.parser.ParseException
-import org.apache.spark.sql.catalyst.trees.Origin
-import org.apache.spark.sql.connector.catalog.CatalogV2Implicits._
-import org.apache.spark.sql.types.StringType
 
 /**
  * Object for grouping all error messages of the query parsing.
@@ -31,64 +28,11 @@ import org.apache.spark.sql.types.StringType
  */
 private[sql] object QueryParsingErrors {
 
-  def invalidInsertIntoError(ctx: InsertIntoContext): Throwable = {
-    new ParseException("Invalid InsertIntoContext", ctx)
-  }
-
-  def insertOverwriteDirectoryUnsupportedError(ctx: InsertIntoContext): Throwable = {
-    new ParseException("INSERT OVERWRITE DIRECTORY is not supported", ctx)
-  }
 
   def columnAliasInOperationNotAllowedError(op: String, ctx: TableAliasContext): Throwable = {
     new ParseException(s"Columns aliases are not allowed in $op.", ctx.identifierList())
   }
 
-  def emptySourceForMergeError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException(
-      "Empty source for merge: you should specify a source" +
-        " table/subquery in merge.",
-      ctx.source)
-  }
-
-  def unrecognizedMatchedActionError(ctx: MatchedClauseContext): Throwable = {
-    new ParseException(
-      s"Unrecognized matched action: ${ctx.matchedAction().getText}",
-      ctx.matchedAction())
-  }
-
-  def insertedValueNumberNotMatchFieldNumberError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException(
-      "The number of inserted values cannot match the fields.",
-      ctx.notMatchedAction())
-  }
-
-  def unrecognizedNotMatchedActionError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException(
-      s"Unrecognized not matched action: ${ctx.notMatchedAction().getText}",
-      ctx.notMatchedAction())
-  }
-
-  def mergeStatementWithoutWhenClauseError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("There must be at least one WHEN clause in a MERGE statement", ctx)
-  }
-
-  def nonLastMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException(
-      "When there are more than one MATCHED clauses in a MERGE " +
-        "statement, only the last MATCHED clause can omit the condition.",
-      ctx)
-  }
-
-  def nonLastNotMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException(
-      "When there are more than one NOT MATCHED clauses in a MERGE " +
-        "statement, only the last NOT MATCHED clause can omit the condition.",
-      ctx)
-  }
-
-  def emptyPartitionKeyError(key: String, ctx: PartitionSpecContext): Throwable = {
-    new ParseException(s"Found an empty partition key '$key'.", ctx)
-  }
 
   def combinationQueryResultClausesUnsupportedError(ctx: QueryOrganizationContext): Throwable = {
     new ParseException(
@@ -140,9 +84,6 @@ private[sql] object QueryParsingErrors {
     new ParseException(s"Cannot resolve window reference '$name'", ctx)
   }
 
-  def joinCriteriaUnimplementedError(join: JoinCriteriaContext, ctx: RelationContext): Throwable = {
-    new ParseException(s"Unimplemented joinCriteria: $join", ctx)
-  }
 
   def naturalCrossJoinUnsupportedError(ctx: RelationContext): Throwable = {
     new ParseException("NATURAL CROSS JOIN is not supported", ctx)
@@ -163,6 +104,16 @@ private[sql] object QueryParsingErrors {
       ctx)
   }
 
+
+  def invalidFromToUnitValueError(ctx: IntervalValueContext): Throwable = {
+    new ParseException("The value of from-to unit must be a string", ctx)
+  }
+
+  def storedAsAndStoredByBothSpecifiedError(ctx: CreateFileFormatContext): Throwable = {
+    new ParseException("Expected either STORED AS or STORED BY, not both", ctx)
+  }
+
+
   def invalidEscapeStringError(ctx: PredicateContext): Throwable = {
     new ParseException("Invalid escape string. Escape string must contain only one character.", ctx)
   }
@@ -172,6 +123,11 @@ private[sql] object QueryParsingErrors {
       "Function trim doesn't support with " +
         s"type $trimOption. Please use BOTH, LEADING or TRAILING as trim type",
       ctx)
+  }
+
+  def invalidIntervalFormError(value: String, ctx: MultiUnitsIntervalContext): Throwable = {
+    new ParseException("Can only use numbers in the interval value part for" +
+      s" multiple unit value pairs interval form, but got invalid value: $value", ctx)
   }
 
   def functionNameUnsupportedError(functionName: String, ctx: ParserRuleContext): Throwable = {
@@ -223,16 +179,6 @@ private[sql] object QueryParsingErrors {
     new ParseException("at least one time unit should be given for interval literal", ctx)
   }
 
-  def invalidIntervalFormError(value: String, ctx: MultiUnitsIntervalContext): Throwable = {
-    new ParseException(
-      "Can only use numbers in the interval value part for" +
-        s" multiple unit value pairs interval form, but got invalid value: $value",
-      ctx)
-  }
-
-  def invalidFromToUnitValueError(ctx: IntervalValueContext): Throwable = {
-    new ParseException("The value of from-to unit must be a string", ctx)
-  }
 
   def fromToIntervalUnsupportedError(
       from: String,
@@ -260,17 +206,11 @@ private[sql] object QueryParsingErrors {
     new ParseException(s"Too many arguments for transform $name", ctx)
   }
 
-  def notEnoughArgumentsForTransformError(name: String, ctx: ApplyTransformContext): Throwable = {
-    new ParseException(s"Not enough arguments for transform $name", ctx)
-  }
 
   def invalidBucketsNumberError(describe: String, ctx: ApplyTransformContext): Throwable = {
     new ParseException(s"Invalid number of buckets: $describe", ctx)
   }
 
-  def invalidTransformArgumentError(ctx: TransformArgumentContext): Throwable = {
-    new ParseException("Invalid transform argument", ctx)
-  }
 
   def cannotCleanReservedNamespacePropertyError(
       property: String,
@@ -279,13 +219,6 @@ private[sql] object QueryParsingErrors {
     new ParseException(s"$property is a reserved namespace property, $msg.", ctx)
   }
 
-  def propertiesAndDbPropertiesBothSpecifiedError(ctx: CreateNamespaceContext): Throwable = {
-    new ParseException("Either PROPERTIES or DBPROPERTIES is allowed.", ctx)
-  }
-
-  def fromOrInNotAllowedInShowDatabasesError(ctx: ShowNamespacesContext): Throwable = {
-    new ParseException(s"FROM/IN operator is not allowed in SHOW DATABASES", ctx)
-  }
 
   def cannotCleanReservedTablePropertyError(
       property: String,
@@ -305,158 +238,16 @@ private[sql] object QueryParsingErrors {
       ctx)
   }
 
-  def storedAsAndStoredByBothSpecifiedError(ctx: CreateFileFormatContext): Throwable = {
-    new ParseException("Expected either STORED AS or STORED BY, not both", ctx)
-  }
-
-  def operationInHiveStyleCommandUnsupportedError(
-      operation: String,
-      command: String,
-      ctx: StatementContext,
-      msgOpt: Option[String] = None): Throwable = {
-    val basicError = s"$operation is not supported in Hive-style $command"
-    val msg = if (msgOpt.isDefined) {
-      s"$basicError, ${msgOpt.get}."
-    } else {
-      basicError
-    }
-    new ParseException(msg, ctx)
-  }
-
   def operationNotAllowedError(message: String, ctx: ParserRuleContext): Throwable = {
     new ParseException(s"Operation not allowed: $message", ctx)
-  }
-
-  def descColumnForPartitionUnsupportedError(ctx: DescribeRelationContext): Throwable = {
-    new ParseException("DESC TABLE COLUMN for a specific partition is not supported", ctx)
-  }
-
-  def incompletePartitionSpecificationError(
-      key: String,
-      ctx: DescribeRelationContext): Throwable = {
-    new ParseException(s"PARTITION specification is incomplete: `$key`", ctx)
-  }
-
-  def computeStatisticsNotExpectedError(ctx: IdentifierContext): Throwable = {
-    new ParseException(s"Expected `NOSCAN` instead of `${ctx.getText}`", ctx)
-  }
-
-  def addCatalogInCacheTableAsSelectNotAllowedError(
-      quoted: String,
-      ctx: CacheTableContext): Throwable = {
-    new ParseException(
-      s"It is not allowed to add catalog/namespace prefix $quoted to " +
-        "the table name in CACHE TABLE AS SELECT",
-      ctx)
-  }
-
-  def showFunctionsUnsupportedError(identifier: String, ctx: IdentifierContext): Throwable = {
-    new ParseException(s"SHOW $identifier FUNCTIONS not supported", ctx)
   }
 
   def duplicateCteDefinitionNamesError(duplicateNames: String, ctx: CtesContext): Throwable = {
     new ParseException(s"CTE definition can't have duplicate names: $duplicateNames.", ctx)
   }
 
-  def sqlStatementUnsupportedError(sqlText: String, position: Origin): Throwable = {
-    new ParseException(Option(sqlText), "Unsupported SQL statement", position, position)
-  }
-
-  def unquotedIdentifierError(ident: String, ctx: ErrorIdentContext): Throwable = {
-    new ParseException(
-      s"Possibly unquoted identifier $ident detected. " +
-        s"Please consider quoting it with back-quotes as `$ident`",
-      ctx)
-  }
-
-  def duplicateClausesError(clauseName: String, ctx: ParserRuleContext): Throwable = {
-    new ParseException(s"Found duplicate clauses: $clauseName", ctx)
-  }
-
-  def duplicateKeysError(key: String, ctx: ParserRuleContext): Throwable = {
-    // Found duplicate keys '$key'
-    new ParseException(errorClass = "DUPLICATE_KEY", messageParameters = Array(key), ctx)
-  }
-
-  def unexpectedFomatForSetConfigurationError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      s"""
-         |Expected format is 'SET', 'SET key', or 'SET key=value'. If you want to include
-         |special characters in key, or include semicolon in value, please use quotes,
-         |e.g., SET `ke y`=`v;alue`.
-       """.stripMargin.replaceAll("\n", " "),
-      ctx)
-  }
-
-  def invalidPropertyKeyForSetQuotedConfigurationError(
-      keyCandidate: String,
-      valueStr: String,
-      ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      s"'$keyCandidate' is an invalid property key, please " +
-        s"use quotes, e.g. SET `$keyCandidate`=`$valueStr`",
-      ctx)
-  }
-
-  def invalidPropertyValueForSetQuotedConfigurationError(
-      valueCandidate: String,
-      keyStr: String,
-      ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      s"'$valueCandidate' is an invalid property value, please " +
-        s"use quotes, e.g. SET `$keyStr`=`$valueCandidate`",
-      ctx)
-  }
-
-  def unexpectedFormatForResetConfigurationError(ctx: ResetConfigurationContext): Throwable = {
-    new ParseException(
-      s"""
-         |Expected format is 'RESET' or 'RESET key'. If you want to include special characters
-         |in key, please use quotes, e.g., RESET `ke y`.
-       """.stripMargin.replaceAll("\n", " "),
-      ctx)
-  }
-
-  def intervalValueOutOfRangeError(ctx: IntervalContext): Throwable = {
-    new ParseException(
-      "The interval value must be in the range of [-18, +18] hours" +
-        " with second precision",
-      ctx)
-  }
-
-  def invalidTimeZoneDisplacementValueError(ctx: SetTimeZoneContext): Throwable = {
-    new ParseException("Invalid time zone displacement value", ctx)
-  }
-
-  def createTempTableNotSpecifyProviderError(ctx: CreateTableContext): Throwable = {
-    new ParseException("CREATE TEMPORARY TABLE without a provider is not allowed.", ctx)
-  }
-
-  def rowFormatNotUsedWithStoredAsError(ctx: CreateTableLikeContext): Throwable = {
-    new ParseException("'ROW FORMAT' must be used with 'STORED AS'", ctx)
-  }
-
-  def useDefinedRecordReaderOrWriterClassesError(ctx: ParserRuleContext): Throwable = {
-    new ParseException(
-      "Unsupported operation: Used defined record reader/writer classes.",
-      ctx)
-  }
-
-  def directoryPathAndOptionsPathBothSpecifiedError(ctx: InsertOverwriteDirContext): Throwable = {
-    new ParseException(
-      "Directory path and 'path' in OPTIONS should be specified one, but not both",
-      ctx)
-  }
-
-  def unsupportedLocalFileSchemeError(ctx: InsertOverwriteDirContext): Throwable = {
-    new ParseException("LOCAL is supported only with file: scheme", ctx)
-  }
-
   def invalidGroupingSetError(element: String, ctx: GroupingAnalyticsContext): Throwable = {
     new ParseException(s"Empty set in $element grouping sets is not supported.", ctx)
   }
 
-  def unclosedBracketedCommentError(command: String, position: Origin): Throwable = {
-    new ParseException(Some(command), "Unclosed bracketed comment", position, position)
-  }
 }

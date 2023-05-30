@@ -25,19 +25,27 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
   @Override
   public T getResult(ResultSet rs, String columnName) throws SQLException {
     byte[] bytes = rs.getBytes(columnName);
+    if (bytes == null) {
+      return null;
+    }
     return SerializationUtil.simpleDeserialize(bytes);
   }
 
   @Override
   public T getResult(ResultSet rs, int columnIndex) throws SQLException {
     byte[] bytes = rs.getBytes(columnIndex);
+    if (bytes == null) {
+      return null;
+    }
     return SerializationUtil.simpleDeserialize(bytes);
   }
 
   @Override
   public T getResult(CallableStatement cs, int columnIndex) throws SQLException {
     byte[] bytes = cs.getBytes(columnIndex);
+    if (bytes == null) {
+      return null;
+    }
     return SerializationUtil.simpleDeserialize(bytes);
   }
 }
-
