@@ -28,7 +28,6 @@ import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -46,6 +45,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;

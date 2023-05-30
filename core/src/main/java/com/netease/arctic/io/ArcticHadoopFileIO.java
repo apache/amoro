@@ -107,19 +107,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO
     });
   }
 
-  @Override
-  public List<FileStatus> list(String location) {
-    return tableMetaStore.doAs(() -> {
-      Path path = new Path(location);
-      FileSystem fs = getFs(path);
-      try {
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        return Lists.newArrayList(fileStatuses);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to list files in " + location, e);
-      }
-    });
-  }
+
 
 
   @VisibleForTesting

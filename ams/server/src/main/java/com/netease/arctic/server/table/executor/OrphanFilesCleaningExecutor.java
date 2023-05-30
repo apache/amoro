@@ -317,20 +317,18 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       SupportsPrefixOperations pio, String location, long lastTime, Set<String> exclude, Pattern excludeRegex
   ) {
     int count = 0;
-    for (FileInfo fileInfo: pio.listPrefix(location)) {
+    for (FileInfo fileInfo : pio.listPrefix(location)) {
       String uriPath = TableFileUtil.getUriPath(fileInfo.location());
       if (!exclude.contains(uriPath) &&
-        fileInfo.createdAtMillis() < lastTime &&
+          fileInfo.createdAtMillis() < lastTime &&
           (excludeRegex == null || !excludeRegex.matcher(
-              TableFileUtil.getFileName(fileInfo.location())).matches()) ) {
+              TableFileUtil.getFileName(fileInfo.location())).matches())) {
         pio.deleteFile(uriPath);
         count += 1;
       }
     }
     return count;
   }
-
-
 
 
   private static String formatTime(long timestamp) {

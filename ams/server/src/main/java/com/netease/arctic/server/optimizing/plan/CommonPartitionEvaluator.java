@@ -28,6 +28,7 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CommonPartitionEvaluator implements PartitionEvaluator {
@@ -57,6 +58,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected long posDeleteFileSize = 0L;
 
   private long cost = -1;
+  private Boolean necessary = null;
+  private OptimizingType optimizingType = null;
 
   public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
@@ -82,6 +85,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     } else {
       addSegmentFile(dataFile, deletes);
     }
+  }
+
+  @Override
+  public void addPartitionProperties(Map<String, String> properties) {
   }
 
   private boolean isDuplicateDelete(IcebergContentFile<?> delete) {
@@ -150,7 +157,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public boolean isNecessary() {
-    return isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+    if (necessary == null) {
+      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+    }
+    return necessary;
   }
 
   @Override
@@ -166,9 +176,17 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
+  public PartitionEvaluator.Weight getWeight() {
+    return new Weight(getCost());
+  }
+
+  @Override
   public OptimizingType getOptimizingType() {
-    return isFullNecessary() ? OptimizingType.FULL_MAJOR :
-        isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+    if (optimizingType == null) {
+      optimizingType = isFullNecessary() ? OptimizingType.FULL_MAJOR :
+          isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+    }
+    return optimizingType;
   }
 
   public boolean isMajorNecessary() {
@@ -255,5 +273,19 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
+  }
+
+  public static class Weight implements PartitionEvaluator.Weight {
+
+    private final long cost;
+
+    public Weight(long cost) {
+      this.cost = cost;
+    }
+
+    @Override
+    public int compareTo(PartitionEvaluator.Weight o) {
+      return Long.compare(this.cost, ((Weight) o).cost);
+    }
   }
 }

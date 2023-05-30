@@ -71,15 +71,17 @@ public class DataReader {
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask scanTask : combinedScanTask.tasks()) {
         completableFutures.add(CompletableFuture.supplyAsync(() -> {
-          CloseableIterator<Record> closeableIterator = dataReader.readData(scanTask);
-          List<Record> list = new ArrayList<>();
-          Iterators.addAll(list, closeableIterator);
-          try {
-            closeableIterator.close();
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          return list;
+          return table.io().doAs(() -> {
+            CloseableIterator<Record> closeableIterator = dataReader.readData(scanTask);
+            List<Record> list = new ArrayList<>();
+            Iterators.addAll(list, closeableIterator);
+            try {
+              closeableIterator.close();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+            return list;
+          });
         }));
       }
     }

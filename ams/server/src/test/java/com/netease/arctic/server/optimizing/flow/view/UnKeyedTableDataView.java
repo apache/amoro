@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.writer.RecordWithAction;
-import com.netease.arctic.server.optimizing.flow.DataReader;
 import com.netease.arctic.server.optimizing.flow.RandomRecordGenerator;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
@@ -66,11 +65,12 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
       arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
     }
 
-    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(), null, partitionCount, seed);
+    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(),
+        null, partitionCount, null, seed);
     random = seed == null ? new Random() : new Random(seed);
 
     this.view = StructLikeMap.create(schema.asStruct());
-    addRecords2Map(view, new DataReader(arcticTable).allData());
+    // addRecords2Map(view, new DataReader(arcticTable).allData());
   }
 
   public WriteResult append(int count) throws IOException {

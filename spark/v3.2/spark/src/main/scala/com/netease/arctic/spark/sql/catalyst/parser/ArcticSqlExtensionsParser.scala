@@ -30,16 +30,14 @@ import com.netease.arctic.spark.util.ArcticSparkUtils
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
-import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.source.SparkTable
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
+import org.apache.spark.sql.arctic.parser.ArcticSqlExtendAstBuilder
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation, UnresolvedTable}
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
@@ -48,7 +46,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface
   with SQLConfHelper {
 
-  private lazy val createTableAstBuilder = new ArcticExtendSparkSqlAstBuilder(delegate)
+  private lazy val createTableAstBuilder = new ArcticSqlExtendAstBuilder()
   private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
   /**
@@ -104,16 +102,19 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     (normalized.contains("migrate") && normalized.contains("to arctic"))
   }
 
-  def isArcticExtendSparkStatement(sqlText: String): Boolean = {
+  private val arcticExtendSqlFilters: Seq[String => Boolean] = Seq(
+    s => s.contains("create table") && s.contains("primary key"),
+    s => s.contains("create temporary table") && s.contains("primary key"))
+
+  private def isArcticExtendSql(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-    normalized.contains("create table") && normalized.contains(
-      "using arctic") && normalized.contains("primary key")
+    arcticExtendSqlFilters.exists(f => f(normalized))
   }
 
   def buildLexer(sql: String): Option[Lexer] = {
     lazy val charStream = new UpperCaseCharStream(CharStreams.fromString(sql))
-    if (isArcticExtendSparkStatement(sql)) {
-      Some(new ArcticExtendSparkSqlLexer(charStream))
+    if (isArcticExtendSql(sql)) {
+      Some(new ArcticSqlExtendLexer(charStream))
     } else if (isArcticCommand(sql)) {
       Some(new ArcticSqlCommandLexer(charStream))
     } else {
@@ -123,8 +124,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def buildAntlrParser(stream: TokenStream, lexer: Lexer): Parser = {
     lexer match {
-      case _: ArcticExtendSparkSqlLexer =>
-        val parser = new ArcticExtendSparkSqlParser(stream)
+      case _: ArcticSqlExtendLexer =>
+        val parser = new ArcticSqlExtendParser(stream)
         parser.legacy_exponent_literal_as_decimal_enabled = conf.exponentLiteralAsDecimalEnabled
         parser.SQL_standard_keyword_behavior = conf.ansiEnabled
         parser
@@ -137,8 +138,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   }
 
   def toLogicalResult(parser: Parser): LogicalPlan = parser match {
-    case p: ArcticExtendSparkSqlParser =>
-      createTableAstBuilder.visitArcticCommand(p.arcticCommand())
+    case p: ArcticSqlExtendParser =>
+      createTableAstBuilder.visitExtendStatement(p.extendStatement())
     case p: ArcticSqlCommandParser =>
       arcticCommandAstVisitor.visitArcticCommand(p.arcticCommand())
   }
@@ -151,12 +152,10 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     if (lexerOpt.isDefined) {
       val lexer = lexerOpt.get
       lexer.removeErrorListeners()
-      lexer.addErrorListener(ArcticParseErrorListener)
 
       val tokenStream = new CommonTokenStream(lexer)
       val parser = buildAntlrParser(tokenStream, lexer)
       parser.removeErrorListeners()
-      parser.addErrorListener(ArcticParseErrorListener)
 
       try {
         try {
@@ -308,62 +307,4 @@ class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
     else Character.toUpperCase(la)
   }
   // scalastyle:on
-}
-
-/**
- * The post-processor validates & cleans-up the parse tree during the parse process.
- */
-case object ArcticSqlExtensionsPostProcessor extends ArcticExtendSparkSqlBaseListener {
-
-  /** Remove the back ticks from an Identifier. */
-  def exitQuotedIdentifier(ctx: QuotedIdentifierContext): Unit = {
-    replaceTokenByIdentifier(ctx, 1) { token =>
-      // Remove the double back ticks in the string.
-      token.setText(token.getText.replace("``", "`"))
-      token
-    }
-  }
-
-  /** Treat non-reserved keywords as Identifiers. */
-  def exitNonReserved(ctx: NonReservedContext): Unit = {
-    replaceTokenByIdentifier(ctx, 0)(identity)
-  }
-
-  private def replaceTokenByIdentifier(
-      ctx: ParserRuleContext,
-      stripMargins: Int)(
-      f: CommonToken => CommonToken = identity): Unit = {
-    val parent = ctx.getParent
-    parent.removeLastChild()
-    val token = ctx.getChild(0).getPayload.asInstanceOf[Token]
-    val newToken = new CommonToken(
-      new org.antlr.v4.runtime.misc.Pair(token.getTokenSource, token.getInputStream),
-      ArcticExtendSparkSqlParser.IDENTIFIER,
-      token.getChannel,
-      token.getStartIndex + stripMargins,
-      token.getStopIndex - stripMargins)
-    parent.addChild(new TerminalNodeImpl(f(newToken)))
-  }
-}
-
-/* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
-case object ArcticParseErrorListener extends BaseErrorListener {
-  override def syntaxError(
-      recognizer: Recognizer[_, _],
-      offendingSymbol: scala.Any,
-      line: Int,
-      charPositionInLine: Int,
-      msg: String,
-      e: RecognitionException): Unit = {
-    val (start, stop) = offendingSymbol match {
-      case token: CommonToken =>
-        val start = Origin(Some(line), Some(token.getCharPositionInLine))
-        val length = token.getStopIndex - token.getStartIndex + 1
-        val stop = Origin(Some(line), Some(token.getCharPositionInLine + length))
-        (start, stop)
-      case _ =>
-        val start = Origin(Some(line), Some(charPositionInLine))
-        (start, start)
-    }
-  }
 }

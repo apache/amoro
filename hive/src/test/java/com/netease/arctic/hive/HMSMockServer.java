@@ -55,13 +55,17 @@ import java.sql.Statement;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HMSMockServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(HMSMockServer.class);
 
   private static final String DEFAULT_DATABASE_NAME = "default";
-  private static final int DEFAULT_POOL_SIZE = 20;
+  private static final int DEFAULT_POOL_SIZE = 50;
 
   // create the metastore handlers based on whether we're working with Hive2 or Hive3 dependencies
   // we need to do this because there is a breaking API change between Hive2 and Hive3
@@ -275,12 +279,28 @@ public class HMSMockServer {
     baseHandler = HMS_HANDLER_CTOR.newInstance("new db based metaserver", serverConf);
     IHMSHandler handler = GET_BASE_HMS_HANDLER.invoke(serverConf, baseHandler, false);
 
+    SynchronousQueue<Runnable> executorQueue =
+        new SynchronousQueue<Runnable>();
+    AtomicInteger threadCount = new AtomicInteger(0);
+    ThreadPoolExecutor hiveThriftServerThreadPool = new ThreadPoolExecutor(
+        1,
+        poolSize,
+        60,
+        TimeUnit.SECONDS,
+        executorQueue,
+        r -> {
+          Thread thread = new Thread(r);
+          String threadName = "HMS-pool-" + threadCount.incrementAndGet();
+          thread.setName(threadName);
+          LOG.info("HMSMockServer create thread: " + threadName);
+          return thread;
+        }, new ThreadPoolExecutor.AbortPolicy());
+
     TThreadPoolServer.Args args = new TThreadPoolServer.Args(socket)
         .processor(new TSetIpAddressProcessor<>(handler))
         .transportFactory(new TTransportFactory())
         .protocolFactory(new TBinaryProtocol.Factory())
-        .minWorkerThreads(poolSize)
-        .maxWorkerThreads(poolSize);
+        .executorService(hiveThriftServerThreadPool);
 
     return new TThreadPoolServer(args);
   }

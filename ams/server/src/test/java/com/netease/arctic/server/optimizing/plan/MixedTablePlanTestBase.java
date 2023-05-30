@@ -37,12 +37,17 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -91,7 +96,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   public void testFragmentFilesBase() {
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     List<DataFile> fragmentFiles = Lists.newArrayList();
     // write fragment file
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
@@ -112,7 +117,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   public void testOnlyOneFragmentFileBase() {
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     // write fragment file
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
@@ -126,7 +131,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   public void testSegmentFilesBase() {
     // 1.Step1
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     updateBaseHashBucket(1);
     List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
     List<DataFile> dataFiles = Lists.newArrayList();
@@ -172,7 +177,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   }
 
   public void testWithDeleteFilesBase() {
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     updateBaseHashBucket(1);
 
     List<Record> newRecords;
@@ -271,7 +276,11 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected List<TaskDescriptor> planWithCurrentFiles() {
     AbstractPartitionPlan partitionPlan = buildPlanWithCurrentFiles();
-    return partitionPlan.splitTasks(0);
+    if (partitionPlan.isNecessary()) {
+      return partitionPlan.splitTasks(0);
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   protected AbstractPartitionPlan buildPlanWithCurrentFiles() {
@@ -281,6 +290,13 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
+    PartitionSpec spec = getArcticTable().spec();
+    partitionProperty().forEach((partition, properties) -> {
+      String partitionToPath = spec.partitionToPath(partition);
+      if (partitionToPath.equals(partitionPlan.getPartition())) {
+        partitionPlan.addPartitionProperties(properties);
+      }
+    });
     return partitionPlan;
   }
 
@@ -294,8 +310,36 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, ratio + "").commit();
   }
 
-  protected void closeFullOptimizing() {
+  protected void closeFullOptimizingInterval() {
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+  }
+
+  private StructLikeMap<Map<String, String>> partitionProperty() {
+    if (getArcticTable().isKeyedTable()) {
+      return getArcticTable().asKeyedTable().baseTable().partitionProperty();
+    } else {
+      return getArcticTable().asUnkeyedTable().partitionProperty();
+    }
+  }
+
+  protected void closeMinorOptimizingInterval() {
+    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "-1").commit();
+  }
+  
+  protected void updateTableProperty(String key, String value) {
+    getArcticTable().updateProperties().set(key, value).commit();
+  }
+
+  protected void updatePartitionProperty(StructLike partition, String key, String value) {
+    UnkeyedTable table;
+    if (getArcticTable().isKeyedTable()) {
+      table = getArcticTable().asKeyedTable().baseTable();
+    } else {
+      table = getArcticTable().asUnkeyedTable();
+    }
+    Transaction transaction = table.newTransaction();
+    table.updatePartitionProperties(transaction).set(partition, key, value).commit();
+    transaction.commitTransaction();
   }
 
   protected void openFullOptimizing() {
