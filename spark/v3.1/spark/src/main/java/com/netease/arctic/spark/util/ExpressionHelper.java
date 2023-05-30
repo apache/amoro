@@ -29,9 +29,6 @@ import org.apache.spark.sql.connector.iceberg.expressions.SortOrder;
 
 public class ExpressionHelper {
 
-  public Transform bucket(int numBuckets, String... columns) {
-    return Expressions.bucket(numBuckets, columns);
-  }
 
   public Transform truncate(String column, int width) {
     return Expressions.apply(

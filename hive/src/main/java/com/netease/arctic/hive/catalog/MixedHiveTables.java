@@ -234,7 +234,7 @@ public class MixedHiveTables extends MixedTables {
         client.dropTable(tableMeta.getTableIdentifier().getDatabase(),
             tableMeta.getTableIdentifier().getTableName(),
             false /* deleteData */,
-            false /* ignoreUnknownTab */);
+            true /* ignoreUnknownTab */);
         return null;
       });
     } catch (TException | InterruptedException e) {
