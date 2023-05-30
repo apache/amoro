@@ -6,13 +6,11 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -38,6 +36,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -46,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
 import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
 
 public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements SnapshotUpdate<T> {
@@ -301,7 +301,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     Set<String> deleteFilesPathCollect = deleteFiles.stream()
         .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toSet());
 
-    for (String partitionLocation: partitionsToCheck) {
+    for (String partitionLocation : partitionsToCheck) {
       try (ArcticHadoopFileIO io = table.io()) {
         io.listPrefix(partitionLocation).forEach(f -> {
           if (!addFilesPathCollect.contains(f.location()) &&

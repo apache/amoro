@@ -128,7 +128,7 @@ public class UpgradeHiveTableUtil {
         io.makeDirectories(newLocation);
 
         io.listDirectory(oldLocation).forEach(p -> {
-          if (!p.isDirectory()){
+          if (!p.isDirectory()) {
             io.asFileSystemIO().rename(p.location(), newLocation);
           }
         });

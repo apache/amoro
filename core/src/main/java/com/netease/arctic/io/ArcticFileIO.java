@@ -18,11 +18,9 @@
 
 package com.netease.arctic.io;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -49,9 +47,6 @@ public interface ArcticFileIO extends FileIO {
     InputFile inputFile = newInputFile(path);
     return inputFile.exists();
   }
-
-  @Deprecated
-  List<FileStatus> list(String location);
 
   /**
    * Returns true if this tableIo is an {@link SupportsPrefixOperations}

@@ -33,7 +33,6 @@ import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -82,8 +81,6 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     Assert.assertEquals(1, output.inputId());
   }
 
-  //TODO: UNIT TEST not passed
-  @Ignore
   @Test
   public void testExecuteTaskFailed() throws InterruptedException, TException {
     TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());

@@ -88,11 +88,13 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(
+            baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));

@@ -26,7 +26,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -39,10 +38,10 @@ import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.junit.Assert;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class UpdateHiveFilesTestHelpers {
 
@@ -88,7 +87,7 @@ public class UpdateHiveFilesTestHelpers {
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
       Assert.assertEquals(
-              Streams.stream(table.io().asFileSystemIO().listDirectory(valuePath))
+          Streams.stream(table.io().asFileSystemIO().listDirectory(valuePath))
               .map(FileInfo::location)
               .collect(Collectors.toSet()),
 
