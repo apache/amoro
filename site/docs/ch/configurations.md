@@ -49,7 +49,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                                                                                                                                  |
 | read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数                                                                                                                                       |
 | read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                                                                                                                                     |
-| read.split.delete-ratio            | 0.05             | 在 Mix-format 中当 Node 中的 delete 数据占比小于此值，那么就会将 Node 切分为多个 Task，且切分后的 Task 的 delete 数据占比不得大于此值，不过切分过后的 Task 的 data size 不会超过 read.split.target-size 所设置的大小 |
+| read.split.delete-ratio            | 0.05             |Delete文件占比小于此阈值时，读取任务会拆分成更多的任务以提高查询速度。 |
 
 ### 表写入配置
 

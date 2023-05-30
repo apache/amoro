@@ -177,12 +177,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
           if (deleteRatio < splitTaskByDeleteRatio) {
             long targetSize = Math.min(new Double(deleteWeight / splitTaskByDeleteRatio).longValue(), splitSize);
-            CloseableIterable<NodeFileScanTask> tasksIterable =
-                splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
-                    task.arcticEquityDeletes(), targetSize, lookBack, openFileCost);
-            List<NodeFileScanTask> tasks =
-                Lists.newArrayList(tasksIterable);
-            splitTasks.addAll(tasks);
+            split(task, targetSize);
             continue;
           }
         }
@@ -191,14 +186,16 @@ public class BasicKeyedTableScan implements KeyedTableScan {
           splitTasks.add(task);
           continue;
         }
-        CloseableIterable<NodeFileScanTask> tasksIterable =
-            splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
-                task.arcticEquityDeletes(), splitSize, lookBack, openFileCost);
-        List<NodeFileScanTask> tasks =
-            Lists.newArrayList(tasksIterable);
-        splitTasks.addAll(tasks);
+        split(task, splitSize);
       }
     });
+  }
+
+  private void split(NodeFileScanTask task, long targetSize) {
+    CloseableIterable<NodeFileScanTask> tasksIterable =
+        splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
+            task.arcticEquityDeletes(), targetSize, lookBack, openFileCost);
+    splitTasks.addAll(Lists.newArrayList(tasksIterable));
   }
 
   public CloseableIterable<NodeFileScanTask> splitNode(
