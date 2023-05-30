@@ -18,17 +18,24 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.PartitionKey;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Types;
 
 import java.io.IOException;
-
-import static com.netease.arctic.IcebergTableTestHelper.partitionData;
+import java.util.List;
+import java.util.Set;
 
 public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   private final Table table;
@@ -314,5 +321,30 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   private Record newRecord(Object... val) {
     return newRecord(table.schema(), val);
+  }
+
+  private StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
+    GenericRecord record = GenericRecord.create(tableSchema);
+    int index = 0;
+    Set<Integer> partitionField = Sets.newHashSet();
+    spec.fields().forEach(f -> partitionField.add(f.sourceId()));
+    List<Types.NestedField> tableFields = tableSchema.columns();
+    for (int i = 0; i < tableFields.size(); i++) {
+      // String sourceColumnName = tableSchema.findColumnName(i);
+      Types.NestedField sourceColumn = tableFields.get(i);
+      if (partitionField.contains(sourceColumn.fieldId())) {
+        Object partitionVal = partitionValues[index];
+        index++;
+        record.set(i, partitionVal);
+      } else {
+        record.set(i, 0);
+      }
+    }
+
+    PartitionKey pd = new PartitionKey(spec, tableSchema);
+    InternalRecordWrapper wrapper = new InternalRecordWrapper(tableSchema.asStruct());
+    wrapper = wrapper.wrap(record);
+    pd.partition(wrapper);
+    return pd;
   }
 }

@@ -18,16 +18,19 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
@@ -38,15 +41,18 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Multimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.iceberg.data.FileHelpers;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -58,10 +64,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static com.netease.arctic.IcebergTableTestHelper.writeEqDeleteFile;
-import static com.netease.arctic.IcebergTableTestHelper.writeNewDataFile;
-import static com.netease.arctic.IcebergTableTestHelper.writePosDeleteFile;
 
 public abstract class AbstractOptimizingTest {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingTest.class);
@@ -85,13 +87,19 @@ public abstract class AbstractOptimizingTest {
 
   protected static DataFile insertDataFile(Table table, List<Record> records, StructLike partitionData) throws
       IOException {
-    DataFile result = writeNewDataFile(table, records, partitionData);
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
+        .format(FileFormat.PARQUET).build();
+    DataFile dataFile = FileHelpers.writeDataFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        records);
 
     AppendFiles baseAppend = table.newAppend();
-    baseAppend.appendFile(result);
+    baseAppend.appendFile(dataFile);
     baseAppend.commit();
 
-    return result;
+    return dataFile;
   }
 
   protected static long getDataFileSize(Table table) {
@@ -120,9 +128,24 @@ public abstract class AbstractOptimizingTest {
   protected static void rowDelta(Table table, List<Record> insertRecords, List<Record> deleteRecords,
                                  StructLike partitionData)
       throws IOException {
-    DataFile dataFile = writeNewDataFile(table, insertRecords, partitionData);
+    // DataFile dataFile = writeNewDataFile(table, insertRecords, partitionData);
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
+        .format(FileFormat.PARQUET).build();
+    DataFile dataFile = FileHelpers.writeDataFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        insertRecords);
 
-    DeleteFile deleteFile = writeEqDeleteFile(table, deleteRecords, partitionData);
+    Schema eqDeleteRowSchema = table.schema().select("id");
+    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        deleteRecords,
+        eqDeleteRowSchema);
+
+    // DeleteFile deleteFile = writeEqDeleteFile(table, deleteRecords, partitionData);
     RowDelta rowDelta = table.newRowDelta();
     rowDelta.addRows(dataFile);
     rowDelta.addDeletes(deleteFile);
@@ -132,23 +155,50 @@ public abstract class AbstractOptimizingTest {
 
   protected static DeleteFile insertEqDeleteFiles(Table table, List<Record> records, StructLike partitionData)
       throws IOException {
-    DeleteFile result = writeEqDeleteFile(table, records, partitionData);
+    Schema eqDeleteRowSchema = table.schema().select("id");
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
+        .format(FileFormat.PARQUET).build();
+    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        records,
+        eqDeleteRowSchema);
+    // DeleteFile result = writeEqDeleteFile(table, records, partitionData);
 
     RowDelta rowDelta = table.newRowDelta();
-    rowDelta.addDeletes(result);
+    rowDelta.addDeletes(deleteFile);
     rowDelta.commit();
-    return result;
+    return deleteFile;
   }
 
   protected static void rowDeltaWithPos(Table table, List<Record> insertRecords, List<Record> deleteRecords,
                                         StructLike partitionData) throws IOException {
-    DataFile dataFile = writeNewDataFile(table, insertRecords, partitionData);
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
+        .format(FileFormat.PARQUET).build();
 
-    DeleteFile deleteFile = writeEqDeleteFile(table, deleteRecords, partitionData);
-    Multimap<String, Long>
-        file2Positions = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
-    file2Positions.put(dataFile.path().toString(), 0L);
-    DeleteFile posDeleteFile = writePosDeleteFile(table, file2Positions, partitionData);
+    DataFile dataFile = FileHelpers.writeDataFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        insertRecords);
+
+    Schema eqDeleteRowSchema = table.schema().select("id");
+    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        deleteRecords,
+        eqDeleteRowSchema);
+
+    List<Pair<CharSequence, Long>> file2Positions = Lists.newArrayList();
+    file2Positions.add(Pair.of(dataFile.path().toString(), 0L));
+
+    DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(
+        table,
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+        partitionData,
+        file2Positions).first();
     RowDelta rowDelta = table.newRowDelta();
     rowDelta.addRows(dataFile);
     rowDelta.addDeletes(deleteFile);
