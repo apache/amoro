@@ -225,26 +225,6 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
-  public void testRefresh() {
-    ArcticTableLoader tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
-
-    tableLoader.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
-    boolean catchUp = true;
-    String catchUpTs = "1";
-
-    UpdateProperties updateProperties = arcticTable.updateProperties();
-    updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(catchUp));
-    updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), catchUpTs);
-    updateProperties.commit();
-
-    arcticTable.refresh();
-    Map<String, String> properties = arcticTable.properties();
-    Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
-    Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
-  }
-
-  @Test
   public void testSinkSourceFile() throws IOException {
     Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();

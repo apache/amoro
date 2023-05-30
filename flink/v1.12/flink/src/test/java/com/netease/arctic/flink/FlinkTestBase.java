@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
@@ -102,12 +103,7 @@ public class FlinkTestBase extends TableTestBase {
   protected Map<String, String> props;
   private volatile StreamExecutionEnvironment env = null;
 
-  public static final Schema TABLE_SCHEMA = new Schema(
-    Types.NestedField.required(1, "id", Types.IntegerType.get()),
-    Types.NestedField.required(2, "name", Types.StringType.get()),
-    Types.NestedField.required(3, "ts", Types.LongType.get()),
-    Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone())
-  );
+  public static final Schema TABLE_SCHEMA = BasicTableTestHelper.TABLE_SCHEMA;
 
   public static final TableSchema FLINK_SCHEMA = TableSchema.builder()
     .field("id", DataTypes.INT())
