@@ -27,13 +27,12 @@ import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.spark.sql.{catalyst, connector, AnalysisException}
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergTruncateTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions._
 import org.apache.spark.sql.connector.write.{ExtendedLogicalWriteInfoImpl, WriteBuilder}
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.types.{DataType, LongType, StructType}
 
 object ArcticSpark33Helper extends SQLConfHelper {
@@ -69,6 +68,8 @@ object ArcticSpark33Helper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
+      case TruncateTransform(n, ref) =>
+        IcebergTruncateTransform(resolve(ref.fieldNames), width = n)
       case sort: SortOrder =>
         val catalystChild = toCatalyst(sort.expression(), query)
         catalyst.expressions.SortOrder(

@@ -18,170 +18,133 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HiveTableTestBase;
-import com.netease.arctic.hive.MockDataFileBuilder;
-import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
-import com.netease.arctic.op.RewritePartitions;
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TableFileUtils;
-import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.AppendFiles;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
-import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-public class TestRewritePartitions extends HiveTableTestBase {
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+
+@RunWith(Parameterized.class)
+public class TestRewritePartitions extends TableTestBase {
+
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
+
+  private List<DataFile> initDataFiles;
+
+  public TestRewritePartitions(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
+    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(true, true)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(false, true)}};
+  }
+
+  private void initDataFiles() {
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    initDataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+    initDataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+  }
 
   @Test
-  public void testUnKeyedTableRewritePartitions() throws TException {
-    UnkeyedTable table = testHiveTable;
-    Map<String, String> partitionAndLocations = Maps.newHashMap();
-
-    List<Map.Entry<String, String>> overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
-        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
-    );
-    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
-    List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
-
-    ReplacePartitions replacePartitions = table.newReplacePartitions();
-    initDataFiles.forEach(replacePartitions::addFile);
+  public void testRewriteAllPartitions() throws TException {
+    initDataFiles();
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "sam", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
+    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
+    dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    applyRewritePartitions(partitionAndLocations, overwriteFiles);
-    //assert hive partition equal with expect.
-    assertHivePartitionLocations(partitionAndLocations, table);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+  }
 
-    // =================== overwrite table ========================
-    overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
-        Maps.immutableEntry("name=ccc", "/test_path/partition4/data-c.parquet")
-    );
-
-    List<DataFile> overwriteDataFiles = dataFileBuilder.buildList(overwriteFiles);
-    replacePartitions = table.newReplacePartitions();
-    overwriteDataFiles.forEach(replacePartitions::addFile);
+  @Test
+  public void testRewritePartPartitions() throws TException {
+    initDataFiles();
+    DataFile p1DataFile = initDataFiles.stream().filter(dataFile -> dataFile.path().toString().contains("2022-01-01"))
+        .findAny().orElseThrow(() -> new IllegalStateException("Cannot find expect data file"));
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
+    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
+    ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
+    dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    applyRewritePartitions(partitionAndLocations, overwriteFiles);
-    //assert hive partition equal with expect.
-    assertHivePartitionLocations(partitionAndLocations, table);
+    List<DataFile> expectDataFiles = Lists.newArrayList(dataFiles);
+    expectDataFiles.add(p1DataFile);
+
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), expectDataFiles);
   }
 
   @Test
-  public void testKeyedTableRewritePartitions() throws Exception {
-    KeyedTable table = testKeyedHiveTable;
-    // ====================== init table partition by overwrite =====================
-    Map<String, String> partitionAndLocations = Maps.newHashMap();
+  public void testRewritePartitionInTransaction() throws TException {
+    initDataFiles();
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "sam", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
+    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    Transaction transaction = getBaseStore().newTransaction();
+    ReplacePartitions replacePartitions = transaction.newReplacePartitions();
+    dataFiles.forEach(replacePartitions::addFile);
+    replacePartitions.commit();
+    transaction.commitTransaction();
 
-    List<Map.Entry<String, String>> overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
-        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
-    );
-    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
-    List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
-
-    RewritePartitions rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.updateOptimizedSequenceDynamically(table.beginTransaction(""));
-    initDataFiles.forEach(rewritePartitions::addDataFile);
-    rewritePartitions.commit();
-
-    applyRewritePartitions(partitionAndLocations, overwriteFiles);
-    //assert hive partition equal with expect.
-    assertHivePartitionLocations(partitionAndLocations, table);
-
-    // =================== overwrite table ========================
-    overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
-        Maps.immutableEntry("name=ccc", "/test_path/partition4/data-c.parquet")
-    );
-
-    List<DataFile> overwriteDataFiles = dataFileBuilder.buildList(overwriteFiles);
-    rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.updateOptimizedSequenceDynamically(table.beginTransaction(""));
-    overwriteDataFiles.forEach(rewritePartitions::addDataFile);
-    rewritePartitions.commit();
-
-    applyRewritePartitions(partitionAndLocations, overwriteFiles);
-    //assert hive partition equal with expect.
-    assertHivePartitionLocations(partitionAndLocations, table);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
   }
 
   @Test
-  public void testRewritePartitionInTransaction() throws Exception {
-    UnkeyedTable table = testHiveTable;
-    Map<String, String> partitionAndLocations = Maps.newHashMap();
+  public void testRewriteCleanUntrackedFiles() throws TException {
+    initDataFiles();
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
 
-    List<Map.Entry<String, String>> overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
-        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
-    );
-    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
-    List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
-
-    Transaction tx = table.newTransaction();
-    ReplacePartitions replacePartitions = tx.newReplacePartitions();
-    initDataFiles.forEach(replacePartitions::addFile);
+    String hiveLocation = "test_hive_location";
+    HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true, hiveLocation);
+    // rewrite data files
+    List<DataFile> rewriteDataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false,
+        true, hiveLocation);
+    ReplacePartitions replacePartitions = getBaseStore().newReplacePartitions();
+    rewriteDataFiles.forEach(replacePartitions::addFile);
+    replacePartitions.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     replacePartitions.commit();
 
-    UpdateProperties updateProperties = tx.updateProperties();
-    updateProperties.set("test-rewrite-partition", "test-rewrite-partition-value");
-    updateProperties.commit();
-
-    table.refresh();
-
-    assertHivePartitionLocations(partitionAndLocations, table);
-    Assert.assertFalse(table.properties().containsKey("test-rewrite-partition"));
-
-    tx.commitTransaction();
-    applyRewritePartitions(partitionAndLocations, overwriteFiles);
-
-    assertHivePartitionLocations(partitionAndLocations, table);
-    Assert.assertTrue(table.properties().containsKey("test-rewrite-partition"));
-    Assert.assertEquals("test-rewrite-partition-value", table.properties().get("test-rewrite-partition"));
-  }
-
-  /**
-   * failed then add file of same partition with different location
-   */
-  @Test
-  public void testExceptionAddFileWithDifferentLocation() throws TException {
-    UnkeyedTable table = testHiveTable;
-
-    List<Map.Entry<String, String>> overwriteFiles = Lists.newArrayList(
-        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
-        Maps.immutableEntry("name=aaa", "/test_path/partition2/data-a2.parquet"),
-        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
-    );
-    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
-    List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
-
-    ReplacePartitions replacePartitions = table.newReplacePartitions();
-    initDataFiles.forEach(replacePartitions::addFile);
-
-    Assert.assertThrows(CannotAlterHiveLocationException.class, replacePartitions::commit);
-  }
-  private void applyRewritePartitions(
-      Map<String, String> partitionLocations,
-      List<Map.Entry<String, String>> overwriteFiles) {
-    overwriteFiles.forEach(kv -> {
-      String partLocation = TableFileUtils.getFileDir(kv.getValue());
-      partitionLocations.put(kv.getKey(), partLocation);
-    });
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
   }
 }

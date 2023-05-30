@@ -140,7 +140,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     return CloseableIterable.transform(
         fileScanTasks,
         fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
-            fileScanTask.deletes(), fileScanTask.spec()));
+            fileScanTask.deletes(), fileScanTask.spec(), expression));
   }
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {

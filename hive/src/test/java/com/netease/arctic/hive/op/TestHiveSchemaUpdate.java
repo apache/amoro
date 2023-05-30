@@ -18,105 +18,109 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.iceberg.PartitionSpec;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.List;
+import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_D;
+import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_DAY;
+import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_TIME_WITH_ZONE;
 
-public class TestHiveSchemaUpdate extends HiveTableTestBase {
+@RunWith(Parameterized.class)
+public class TestHiveSchemaUpdate extends TableTestBase {
 
-  @Test
-  public void testKeyedAdd() throws TException {
-    String testAddCol = "testAdd";
-    String testDoc = "test Doc";
-    testKeyedHiveTable.updateSchema().addColumn(testAddCol, Types.IntegerType.get(), testDoc).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_pk_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testAddCol) && fieldSchema.getComment().equalsIgnoreCase(testDoc) &&
-          fieldSchema.getType().equals("int")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(compareSchema(testKeyedHiveTable.changeTable().schema(), testKeyedHiveTable.spec(), fieldSchemas));
-    Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
+
+  public TestHiveSchemaUpdate(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
+  }
+
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
+    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(true, true)},
+                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                            new HiveTableTestHelper(false, true)}};
   }
 
   @Test
-  public void testKeyedUpdate() throws TException {
-    String testUpdateCol = "testUpdate";
-    String testDoc = "test Doc";
-    testKeyedHiveTable.updateSchema().addColumn(testUpdateCol, Types.FloatType.get(), "init doc").commit();
-    testKeyedHiveTable.updateSchema().updateColumn(testUpdateCol, Types.DoubleType.get(), testDoc).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_pk_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testUpdateCol) && fieldSchema.getComment().equalsIgnoreCase(testDoc) &&
-          fieldSchema.getType().equals("double")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(compareSchema(testKeyedHiveTable.changeTable().schema(), testKeyedHiveTable.spec(), fieldSchemas));
-    Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
+  public void testAddColumn() throws TException {
+    String addColumnName = "test_add";
+    String addColumnDoc = "test Doc";
+    getArcticTable().updateSchema().addColumn(addColumnName, Types.IntegerType.get(), addColumnDoc).commit();
+    Schema expectSchema = new Schema(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(2, "name", Types.StringType.get()),
+        Types.NestedField.required(3, "ts", Types.LongType.get()),
+        Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone()),
+        Types.NestedField.required(5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+        Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+        Types.NestedField.optional(8, addColumnName, Types.IntegerType.get(), addColumnDoc),
+        Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get())
+    );
+    checkTableSchema(expectSchema);
   }
 
   @Test
-  public void testUnKeyedAdd() throws TException {
-    String testAddCol = "testAdd";
-    String testDoc = "test Doc";
-    testHiveTable.updateSchema().addColumn(testAddCol, Types.IntegerType.get(), testDoc).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testAddCol) && fieldSchema.getComment().equalsIgnoreCase(testDoc) &&
-          fieldSchema.getType().equals("int")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+  public void testUpdateColumn() throws TException {
+    getArcticTable().updateSchema().updateColumn("id", Types.LongType.get(), "update doc").commit();
+    Schema expectSchema = new Schema(
+        Types.NestedField.required(1, "id", Types.LongType.get(), "update doc"),
+        Types.NestedField.required(2, "name", Types.StringType.get()),
+        Types.NestedField.required(3, "ts", Types.LongType.get()),
+        Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone()),
+        Types.NestedField.required(5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+        Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+        Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get())
+    );
+    checkTableSchema(expectSchema);
   }
 
   @Test
-  public void testUnKeyedUpdate() throws TException {
-    String testUpdateCol = "testUpdate";
-    String testDoc = "test Doc";
-    testHiveTable.updateSchema().addColumn(testUpdateCol, Types.FloatType.get(), "init doc").commit();
-    testHiveTable.updateSchema().updateColumn(testUpdateCol, Types.DoubleType.get(), testDoc).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testUpdateCol) && fieldSchema.getComment().equalsIgnoreCase(testDoc) &&
-          fieldSchema.getType().equals("double")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+  public void testAddColumnInTx() throws TException {
+    String addColumnName = "test_add";
+    String addColumnDoc = "test Doc";
+    Transaction transaction = getBaseStore().newTransaction();
+    transaction.updateSchema().addColumn(addColumnName, Types.IntegerType.get(), addColumnDoc).commit();
+    transaction.commitTransaction();
+    Schema expectSchema = new Schema(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(2, "name", Types.StringType.get()),
+        Types.NestedField.required(3, "ts", Types.LongType.get()),
+        Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone()),
+        Types.NestedField.required(5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+        Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+        Types.NestedField.optional(8, addColumnName, Types.IntegerType.get(), addColumnDoc),
+        Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get())
+    );
+    checkTableSchema(expectSchema);
   }
 
-  boolean compareSchema(Schema schema, PartitionSpec spec, List<FieldSchema> hiveSchema) {
-    List<FieldSchema> convertFields = HiveSchemaUtil.hiveTableFields(schema, spec);
-    convertFields.forEach(fieldSchema -> {
-      fieldSchema.setName(fieldSchema.getName().toLowerCase());
-    });
-    if (convertFields.size() != hiveSchema.size()) {
-      return false;
+  private void checkTableSchema(Schema expectSchema) throws TException {
+    Assert.assertEquals(expectSchema.asStruct(), getArcticTable().schema().asStruct());
+    if (isKeyedTable()) {
+      Assert.assertEquals(expectSchema.asStruct(), getArcticTable().asKeyedTable().changeTable().schema().asStruct());
+      Assert.assertEquals(expectSchema.asStruct(), getArcticTable().asKeyedTable().baseTable().schema().asStruct());
     }
-    for (FieldSchema fieldSchema : hiveSchema) {
-      if (!convertFields.contains(fieldSchema)) {
-        return false;
-      }
-    }
-    return true;
+    Table hiveTable = TEST_HMS.getHiveClient().getTable(getArcticTable().id().getDatabase(),
+        getArcticTable().id().getTableName());
+    Assert.assertEquals(HiveSchemaUtil.hiveTableFields(expectSchema, getArcticTable().spec()),
+        hiveTable.getSd().getCols());
   }
 }

@@ -61,8 +61,13 @@
                                     <include>com.netease.arctic:arctic-spark-3.1</include>
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
-                                    <incluede>com.netease.arctic:arctic-hive</incluede>
+                                    <include>com.netease.arctic:arctic-hive</include>
                                     <include>com.alibaba:fastjson</include>
+                                    <include>org.apache.curator:curator-framework</include>
+                                    <include>org.apache.curator:curator-client</include>
+                                    <include>org.apache.curator:curator-recipes</include>
+                                    <include>org.apache.zookeeper:zookeeper</include>
+                                    <include>org.apache.zookeeper:zookeeper-jute</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
                                     <include>org.apache.iceberg:iceberg-spark-3.1_2.12</include>
@@ -128,6 +133,16 @@
                                     <includes>
                                         <include>org.apache.spark.sql.execution.datasources.v2.Arctic*</include>
                                     </includes>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>org.apache.zookeeper</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper</shadedPattern>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>org.apache.curator</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.curator</shadedPattern>
                                 </relocation>
 
                                 <!-- relocation required dependencies -->
