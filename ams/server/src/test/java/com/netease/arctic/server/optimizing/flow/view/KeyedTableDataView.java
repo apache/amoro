@@ -29,18 +29,24 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
@@ -67,6 +73,8 @@ public class KeyedTableDataView extends AbstractTableDataView {
       long targetFileSize,
       Long seed) throws Exception {
     super(arcticTable, primary, targetFileSize);
+    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
+        primary.columns().size() == 1 && primary.columns().get(0).type().typeId() == Type.TypeID.INTEGER);
     this.schemaSize = schema.columns().size();
 
     this.primaryUpperBound = primaryUpperBound;
@@ -74,14 +82,39 @@ public class KeyedTableDataView extends AbstractTableDataView {
       arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
     }
 
-    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(), primary, partitionCount, seed);
-    random = seed == null ? new Random() : new Random(seed);
-
     this.view = StructLikeMap.create(primary.asStruct());
     List<Record> records = new DataReader(arcticTable).allData();
     for (Record record : records) {
       view.put(record, record);
     }
+
+    Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
+    if (!arcticTable.spec().isUnpartitioned()) {
+      Integer primaryField = primary.columns()
+          .stream().map(Types.NestedField::fieldId).findAny().get();
+      Set<Integer> partitionFields = arcticTable.spec().fields().stream()
+          .map(PartitionField::sourceId).collect(Collectors.toSet());
+      for (Record record : records) {
+        Integer primaryValue = null;
+        Map<Integer, Object> partitionValues = new HashMap<>();
+        for (int i = 0; i < schemaSize; i++) {
+          Types.NestedField field = schema.columns().get(i);
+          if (field.fieldId() == primaryField) {
+            primaryValue = (Integer) record.get(i);
+            break;
+          }
+          if (partitionFields.contains(field.fieldId())) {
+            partitionValues.put(field.fieldId(), record.get(i));
+            break;
+          }
+        }
+        primaryRelationWithPartition.put(primaryValue, partitionValues);
+      }
+    }
+
+    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(),
+        primary, partitionCount, primaryRelationWithPartition, seed);
+    random = seed == null ? new Random() : new Random(seed);
   }
 
   public WriteResult append(int count) throws IOException {

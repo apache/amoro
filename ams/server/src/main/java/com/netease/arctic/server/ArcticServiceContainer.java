@@ -186,12 +186,12 @@ public class ArcticServiceContainer {
 
     ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
         new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
-            new TableManagementService(tableService), ArcticRuntimeException::transformCompatibleException));
+            new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
     processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
         new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
-            optimizingService, ArcticRuntimeException::transform2ArcticException));
+            optimizingService, ArcticRuntimeException::normalize));
     processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
 
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);

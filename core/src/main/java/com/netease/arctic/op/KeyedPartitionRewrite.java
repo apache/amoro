@@ -20,15 +20,18 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Replace {@link BaseTable} partition files and change max transaction id map
@@ -55,9 +58,11 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionOptimizedSequence) {
+  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
+    PartitionSpec spec = transaction.table().spec();
+    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
     if (this.addFiles.isEmpty()) {
-      return partitionOptimizedSequence;
+      return partitionProperties;
     }
 
     Preconditions.checkNotNull(optimizedSequence, "optimized sequence must be set.");
@@ -67,11 +72,9 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    addFiles.forEach(f -> {
-      StructLike pd = f.partition();
-      partitionOptimizedSequence.put(pd, optimizedSequence);
-    });
-    return partitionOptimizedSequence;
+    addFiles.forEach(f -> partitionProperties.computeIfAbsent(f.partition(), k -> Maps.newHashMap())
+        .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(optimizedSequence)));
+    return partitionProperties;
   }
 
   @Override

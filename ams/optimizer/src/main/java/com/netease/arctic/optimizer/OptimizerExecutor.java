@@ -2,7 +2,7 @@ package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.optimizer.util.PropertyUtil;
+import com.netease.arctic.optimizer.util.ExceptionUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
@@ -81,14 +81,20 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private OptimizingTaskResult executeTask(OptimizingTask task) {
     try {
-      String executorFactoryImpl = PropertyUtil.checkAndGetProperty(
-          task.getProperties(),
-          OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL);
+      OptimizingInputProperties parse = OptimizingInputProperties.parse(task.getProperties());
+      String executorFactoryImpl = parse.getExecutorFactoryImpl();
       TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
           .impl(executorFactoryImpl).buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
-      factory.initialize(task.getProperties());
+
+      if (getConfig().isExtendDiskStorage()) {
+        parse.enableSpillMap();
+      }
+      parse.setMaxSizeInMemory(getConfig().getMemoryStorageSize());
+      parse.setSpillMapPath(getConfig().getDiskStoragePath());
+      factory.initialize(parse.getProperties());
+
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
       ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
@@ -101,7 +107,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       LOG.error(String.format("Optimizer executor[%s] executed task[%s] failed", threadId,
           task.getTaskId()), t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
-      errorResult.setErrorMessage(t.getMessage());
+      errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
       return errorResult;
     }
   }

@@ -26,7 +26,7 @@ import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{OPERATION_COLUMN, UPDAT
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark32Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, Cast, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.plans.RightOuter
@@ -50,7 +50,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         insertQuery.output.filter(_.name.contains("_arctic_before_"))
       val projections = buildInsertProjections(insertQuery, insertAttribute, isUpsert = true)
       val upsertOptions = writeOptions + (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.mode)
-      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
+      val writeBuilder = ArcticSpark32Helper.newWriteBuilder(r.table, query.schema, upsertOptions)
       val write = writeBuilder.build()
       ArcticRowLevelWrite(r, insertQuery, upsertOptions, projections, Some(write))
   }
