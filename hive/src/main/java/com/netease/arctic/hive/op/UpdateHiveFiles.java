@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -288,7 +287,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
    * check files in the partition, and delete orphan files
    */
   private void checkPartitionedOrphanFilesAndDelete(boolean isUnPartitioned) {
-    List<String> partitionsToCheck = new ArrayList<>();
+    List<String> partitionsToCheck = Lists.newArrayList();
     if (isUnPartitioned) {
       partitionsToCheck.add(this.unpartitionTableLocation);
     } else {
@@ -297,11 +296,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       partitionsToCheck.addAll(this.partitionToAlterLocation.values()
           .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList()));
     }
-    for (String partitionLocation : partitionsToCheck) {
-      List<String> addFilesPathCollect = addFiles.stream()
-          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-      List<String> deleteFilesPathCollect = deleteFiles.stream()
-          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
+    Set<String> addFilesPathCollect = addFiles.stream()
+        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toSet());
+    Set<String> deleteFilesPathCollect = deleteFiles.stream()
+        .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toSet());
+
+    for (String partitionLocation: partitionsToCheck) {
       try (ArcticHadoopFileIO io = table.io()) {
         io.listPrefix(partitionLocation).forEach(f -> {
           if (!addFilesPathCollect.contains(f.location()) &&

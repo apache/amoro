@@ -26,7 +26,7 @@ import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, OPERA
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsRowLevelOperator}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.arctic.catalyst.ArcticSpark33Helper
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark32Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -71,7 +71,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      val writeBuilder = ArcticSpark33Helper.newWriteBuilder(r.table, query.schema, options)
+      val writeBuilder = ArcticSpark32Helper.newWriteBuilder(r.table, query.schema, options)
       val write = writeBuilder.build()
 
       val projections =

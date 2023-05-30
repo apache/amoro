@@ -98,7 +98,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     OptimizingTaskResult taskResult = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
     Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
     Assert.assertNull(taskResult.getTaskOutput());
-    Assert.assertEquals(FAILED_TASK_MESSAGE, taskResult.getErrorMessage());
+    Assert.assertTrue(taskResult.getErrorMessage().contains(FAILED_TASK_MESSAGE));
   }
 
   public static class TestOptimizingInput extends BaseOptimizingInput {

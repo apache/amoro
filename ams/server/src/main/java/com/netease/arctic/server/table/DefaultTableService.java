@@ -50,7 +50,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private RuntimeHandlerChain headHandler;
   private Timer tableExplorerTimer;
 
-  private CompletableFuture<Boolean> initTag = new CompletableFuture<>();
+  private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
@@ -309,7 +309,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         new TableExplorer(),
         0,
         externalCatalogRefreshingInterval);
-    initTag.complete(true);
+    initialized.complete(true);
   }
 
   public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
@@ -418,14 +418,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   private void checkStarted() {
     try {
-      initTag.get();
+      initialized.get();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   private void checkNotStarted() {
-    if (initTag.isDone()) {
+    if (initialized.isDone()) {
       throw new IllegalStateException("Table service has started.");
     }
   }
