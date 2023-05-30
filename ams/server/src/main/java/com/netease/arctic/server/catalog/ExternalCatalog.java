@@ -10,10 +10,13 @@ public abstract class ExternalCatalog extends ServerCatalog {
     super(metadata);
   }
 
-  public ServerTableIdentifier syncTable(String database, String tableName) {
+  public void syncTable(String database, String tableName) {
     ServerTableIdentifier tableIdentifier =
             ServerTableIdentifier.of(getMetadata().getCatalogName(), database, tableName);
     doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier));
+  }
+
+  public ServerTableIdentifier getServerTableIdentifier(String database, String tableName) {
     return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifier(getMetadata().getCatalogName(),
         database, tableName));
   }

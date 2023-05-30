@@ -200,7 +200,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
     @Override
     public void handleTableRemoved(TableRuntime tableRuntime) {
-      Optional.ofNullable(getQueueByGroup(tableRuntime.getOptimizerGroup()))
+      Optional.ofNullable(optimizingQueueByGroup.get(tableRuntime.getOptimizerGroup()))
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 

@@ -118,7 +118,8 @@ CREATE TABLE `table_runtime`
     `optimizer_group`               varchar(64) NOT NULL,
     `table_config`                  mediumtext,
     `optimizing_config`             mediumtext,
-    PRIMARY KEY (`table_id`)
+    PRIMARY KEY (`table_id`),
+    UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
 
 CREATE TABLE `table_optimizing_process`
