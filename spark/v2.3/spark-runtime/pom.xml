@@ -60,7 +60,7 @@
                                     <include>com.netease.arctic:arctic-spark-2.3</include>
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
-                                    <incluede>com.netease.arctic:arctic-hive</incluede>
+                                    <include>com.netease.arctic:arctic-hive</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
                                     <include>org.apache.iceberg:iceberg-spark2</include>

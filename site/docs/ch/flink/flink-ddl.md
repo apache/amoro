@@ -13,7 +13,7 @@ CREATE CATALOG <catalog_name> WITH (
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|metastore.url|(none)|String|是|Arctic Metastore 的 URL，thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`|
+|metastore.url|(none)|String|是|Arctic Metastore 的 URL，thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`；如果 AMS 开启了[高可用](../guides/deployment.md#_6)，也可以通过 zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name} 的形式进行指定 |
 |default-database<img width=100/>|default|String|否|默认使用的数据库|
 |property-version|1|Integer|否|Catalog properties 版本，此选项是为了将来的向后兼容性|
 
