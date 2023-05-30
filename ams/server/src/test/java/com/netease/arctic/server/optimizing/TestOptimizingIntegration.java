@@ -168,7 +168,6 @@ public class TestOptimizingIntegration {
     ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_6);
     TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
-    //TODO
     testCase.testKeyedTableTxIdNotInOrder();
   }
 
@@ -179,7 +178,6 @@ public class TestOptimizingIntegration {
     KeyedTable table = amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).loadTable(MIXED_HIVE_TB_1).asKeyedTable();
     TestMixedHiveOptimizing testCase =
         new TestMixedHiveOptimizing(table, amsEnv.getTestHMS().getClient());
-    //TODO
     testCase.testHiveKeyedTableMajorOptimizeNotMove();
   }
 

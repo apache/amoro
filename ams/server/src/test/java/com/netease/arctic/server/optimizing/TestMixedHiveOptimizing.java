@@ -55,8 +55,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    //TODO Expected :1 Actual   :0
-    // checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
     // assertIdRange(readHiveTableData(), 1, 100);
