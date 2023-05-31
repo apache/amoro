@@ -62,22 +62,38 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
+
   // for unKeyedTable or base table
+  @StateField
   private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField
   private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField
   private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   // for change table
+  @StateField
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
+  @StateField
   private volatile long currentStatusStartTime = System.currentTimeMillis();
+  @StateField
   private volatile long lastMajorOptimizingTime;
+  @StateField
   private volatile long lastFullOptimizingTime;
+  @StateField
   private volatile long lastMinorOptimizingTime;
+  @StateField
   private volatile String optimizerGroup;
+  @StateField
   private volatile OptimizingProcess optimizingProcess;
+  @StateField
   private volatile TableConfiguration tableConfiguration;
+  @StateField
   private volatile long processId;
+  @StateField
   private volatile OptimizingEvaluator.PendingInput pendingInput;
+
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
