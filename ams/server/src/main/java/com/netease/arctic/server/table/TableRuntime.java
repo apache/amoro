@@ -64,34 +64,34 @@ public class TableRuntime extends StatedPersistentBase {
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
 
   // for unKeyedTable or base table
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   // for change table
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long currentStatusStartTime = System.currentTimeMillis();
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long lastMajorOptimizingTime;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long lastFullOptimizingTime;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long lastMinorOptimizingTime;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile String optimizerGroup;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile OptimizingProcess optimizingProcess;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile TableConfiguration tableConfiguration;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile long processId;
-  @StatedPersistentBase.StateField
+  @StateField
   private volatile OptimizingEvaluator.PendingInput pendingInput;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
