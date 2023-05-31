@@ -438,21 +438,23 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
+    doAsTransaction(
+        () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
+        () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
+    );
+  }
+
+  private void handleTableRuntimeAdded(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
-        externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    try {
-      ArcticTable table = externalCatalog.loadTable(
-          tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName());
-      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-      tableRuntimeMap.put(tableIdentifier, tableRuntime);
-      if (headHandler != null) {
-        headHandler.fireTableAdded(table, tableRuntime);
-      }
-    } catch (Exception e) {
-      disposeTable(externalCatalog, tableIdentifier);
-      LOG.error("sync table {} error while build table runtime", tableIdentifier, e);
+        externalCatalog.getServerTableIdentifier(tableIdentity.getDatabase(), tableIdentity.getTableName());
+    ArcticTable table = externalCatalog.loadTable(
+        tableIdentifier.getDatabase(),
+        tableIdentifier.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
+    if (headHandler != null) {
+      headHandler.fireTableAdded(table, tableRuntime);
     }
+    tableRuntimeMap.put(tableIdentifier, tableRuntime);
   }
 
   private void disposeTable(ExternalCatalog externalCatalog, ServerTableIdentifier tableIdentifier) {
