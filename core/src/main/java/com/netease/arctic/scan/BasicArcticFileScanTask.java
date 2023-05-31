@@ -27,6 +27,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;
@@ -112,6 +113,6 @@ public class BasicArcticFileScanTask implements ArcticFileScanTask {
 
   @Override
   public Iterable<FileScanTask> split(long splitSize) {
-    throw new UnsupportedOperationException("Unsupported split");
+    return ImmutableList.of(this);
   }
 }

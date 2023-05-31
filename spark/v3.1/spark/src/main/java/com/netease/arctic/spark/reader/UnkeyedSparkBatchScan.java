@@ -195,7 +195,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
           this.currentScanTask = scanTasks.next();
-          this.currentIterator = reader.readData(new BasicArcticFileScanTask(this.currentScanTask)).iterator();
+          this.currentIterator = reader.readData(this.currentScanTask).iterator();
         } else {
           this.currentIterator.close();
           return false;
