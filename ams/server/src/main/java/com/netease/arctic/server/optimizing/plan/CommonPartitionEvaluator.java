@@ -129,9 +129,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    if (deletes.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
+    if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
-    } else if (deletes.stream().filter(file -> file.content() == FileContent.POSITION_DELETES).count() > 1) {
+    } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
       return true;
     } else {
       return false;
