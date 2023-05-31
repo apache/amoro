@@ -38,8 +38,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizerContainer.class);
 
   public static final String FLINK_HOME_PROPERTY = "flink-home";
-  public static final String TASK_MANAGER_MEMORY_PROPERTY = "task-manager.memory";
-  public static final String JOB_MANAGER_MEMORY_PROPERTY = "job-manager.memory";
+  public static final String TASK_MANAGER_MEMORY_PROPERTY = "taskmanager.memory";
+  public static final String JOB_MANAGER_MEMORY_PROPERTY = "jobmanager.memory";
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
 
   private static final Pattern APPLICATION_ID_PATTERN = Pattern.compile("(.*)application_(\\d+)_(\\d+)");

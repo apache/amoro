@@ -84,6 +84,12 @@ public class ArcticManagementConf {
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
 
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
+
   public static final ConfigOption<Boolean> HA_ENABLE =
       ConfigOptions.key("ha.enabled")
           .booleanType()
@@ -210,12 +216,6 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(30)
           .withDescription("session timeout in minute");
-
-  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
-      ConfigOptions.key("blocker.timeout")
-          .longType()
-          .defaultValue(60000L)
-          .withDescription("session timeout in Milliseconds");
 
   public static final String SYSTEM_CONFIG = "ams";
 

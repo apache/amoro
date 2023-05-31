@@ -12,8 +12,8 @@ containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: 1024
-      export.JAVA_HOME: /opt/java   # JDK environment
+      memory: "1024"
+      export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 ### FlinkContainer
 Flink Container 的 type 为 flink, 是通过 Flink 作业启动 Optimizer 的一种方式，借助 Flink 可以方便地将 Optimizer 部署在 yarn 集群上，从而支持大规模数据场景下的使用。使用 flink 类型 需要添加 type 为 flink 的 container，container 的配置项包括:
@@ -29,11 +29,11 @@ containers:
   - name: flinkContainer
     container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
     properties:
-      flink-home: /opt/flink/                              #Flink install home
-      jvm-args: -Djava.security.krb5.conf=/opt/krb5.conf   #Flink launch jvm args, like kerberos config when ues kerberos
-      export.HADOOP_CONF_DIR: /etc/hadoop/conf/            #Hadoop config dir
-      export.HADOOP_USER_NAME: hadoop                      #Hadoop user submit on yarn
-      export.FLINK_CONF_DIR: /etc/hadoop/conf/             #Flink config dir
+      flink-home: "/opt/flink/"                                     # Flink install home
+      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
+      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
+      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
+      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
 ```
 ### ExternalContainer
 从 *0.4.0* 开始，支持在用户从 AMS 外提交 optimizer 任务，并且系统内置了一个名为 external 的 container 来管理这类 optimizer。
@@ -70,9 +70,9 @@ optimize_group:
   - name: flinkOp                  
     container: flinkContainer      # container name, should be in the names of containers  
     properties:
-      scheduling-policy: balanced  # schedule policy, quota or balanced
-      task-manager.memory: 2048
-      job-manager.memory: 1024
+      scheduling-policy: "balanced"  # schedule policy, quota or balanced
+      taskmanager.memory: "2048"
+      jobmanager.memory: "1024"
 ```
 ## Optimizers 扩缩容
 
