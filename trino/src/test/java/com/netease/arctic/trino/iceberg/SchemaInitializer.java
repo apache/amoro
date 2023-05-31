@@ -32,66 +32,56 @@ import static io.trino.testing.QueryAssertions.copyTpchTables;
 import static java.util.Objects.requireNonNull;
 
 public class SchemaInitializer
-        implements Consumer<QueryRunner>
-{
-    private final String schemaName;
-    private final Map<String, String> schemaProperties;
-    private final Iterable<TpchTable<?>> clonedTpchTables;
+    implements Consumer<QueryRunner> {
+  private final String schemaName;
+  private final Map<String, String> schemaProperties;
+  private final Iterable<TpchTable<?>> clonedTpchTables;
 
-    private SchemaInitializer(String schemaName, Map<String, String> schemaProperties, Iterable<TpchTable<?>> tpchTablesToClone)
-    {
-        this.schemaName = requireNonNull(schemaName, "schemaName is null");
-        this.schemaProperties = requireNonNull(schemaProperties, "schemaProperties is null");
-        this.clonedTpchTables = requireNonNull(tpchTablesToClone, "tpchTablesToClone is null");
+  private SchemaInitializer(String schemaName, Map<String, String> schemaProperties, Iterable<TpchTable<?>> tpchTablesToClone) {
+    this.schemaName = requireNonNull(schemaName, "schemaName is null");
+    this.schemaProperties = requireNonNull(schemaProperties, "schemaProperties is null");
+    this.clonedTpchTables = requireNonNull(tpchTablesToClone, "tpchTablesToClone is null");
+  }
+
+  public String getSchemaName() {
+    return schemaName;
+  }
+
+  @Override
+  public void accept(QueryRunner queryRunner) {
+    String schemaProperties = this.schemaProperties.entrySet().stream()
+        .map(entry -> entry.getKey() + " = " + entry.getValue())
+        .collect(Collectors.joining(", ", " WITH ( ", " )"));
+    queryRunner.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName + (this.schemaProperties.size() > 0 ? schemaProperties : ""));
+    copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, queryRunner.getDefaultSession(), clonedTpchTables);
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private String schemaName = "tpch";
+    private Map<String, String> schemaProperties = ImmutableMap.of();
+    private Iterable<TpchTable<?>> cloneTpchTables = ImmutableSet.of();
+
+    public Builder withSchemaName(String schemaName) {
+      this.schemaName = requireNonNull(schemaName, "schemaName is null");
+      return this;
     }
 
-    public String getSchemaName()
-    {
-        return schemaName;
+    public Builder withSchemaProperties(Map<String, String> schemaProperties) {
+      this.schemaProperties = requireNonNull(schemaProperties, "schemaProperties is null");
+      return this;
     }
 
-    @Override
-    public void accept(QueryRunner queryRunner)
-    {
-        String schemaProperties = this.schemaProperties.entrySet().stream()
-                .map(entry -> entry.getKey() + " = " + entry.getValue())
-                .collect(Collectors.joining(", ", " WITH ( ", " )"));
-        queryRunner.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName + (this.schemaProperties.size() > 0 ? schemaProperties : ""));
-        copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, queryRunner.getDefaultSession(), clonedTpchTables);
+    public Builder withClonedTpchTables(Iterable<TpchTable<?>> tpchTables) {
+      this.cloneTpchTables = ImmutableSet.copyOf(tpchTables);
+      return this;
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
+    public SchemaInitializer build() {
+      return new SchemaInitializer(schemaName, schemaProperties, cloneTpchTables);
     }
-
-    public static class Builder
-    {
-        private String schemaName = "tpch";
-        private Map<String, String> schemaProperties = ImmutableMap.of();
-        private Iterable<TpchTable<?>> cloneTpchTables = ImmutableSet.of();
-
-        public Builder withSchemaName(String schemaName)
-        {
-            this.schemaName = requireNonNull(schemaName, "schemaName is null");
-            return this;
-        }
-
-        public Builder withSchemaProperties(Map<String, String> schemaProperties)
-        {
-            this.schemaProperties = requireNonNull(schemaProperties, "schemaProperties is null");
-            return this;
-        }
-
-        public Builder withClonedTpchTables(Iterable<TpchTable<?>> tpchTables)
-        {
-            this.cloneTpchTables = ImmutableSet.copyOf(tpchTables);
-            return this;
-        }
-
-        public SchemaInitializer build()
-        {
-            return new SchemaInitializer(schemaName, schemaProperties, cloneTpchTables);
-        }
-    }
+  }
 }
