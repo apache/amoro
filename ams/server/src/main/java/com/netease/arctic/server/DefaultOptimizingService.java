@@ -239,5 +239,4 @@ public class DefaultOptimizingService extends DefaultResourceManager
       }
     }
   }
-
 }
