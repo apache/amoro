@@ -46,7 +46,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
-  private volatile boolean started = false;
   private RuntimeHandlerChain headHandler;
   private Timer tableExplorerTimer;
 

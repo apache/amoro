@@ -125,7 +125,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    return getRecordCount(deletes) >= dataFile.recordCount() * config.getMajorDuplicateRatio();
+    return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
   public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {

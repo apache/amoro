@@ -374,9 +374,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           throw new OptimizingClosedException(processId);
         }
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS && allTasksPrepared()) {
-          tableRuntime.beginCommitting();
           this.metricsSummary.addNewFileCnt(taskRuntime.getSummary().getNewFileCnt());
           this.metricsSummary.addNewFileSize(taskRuntime.getSummary().getNewFileSize());
+          tableRuntime.beginCommitting();
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
             retryTask(taskRuntime, true);
