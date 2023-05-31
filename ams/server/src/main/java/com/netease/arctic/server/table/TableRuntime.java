@@ -464,7 +464,7 @@ public class TableRuntime extends StatedPersistentBase {
       TableBlocker tableBlocker =
           getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
       if (tableBlocker == null) {
-        throw new ObjectNotExistsException("Blocker " + blockerId);
+        throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
       }
       long expirationTime = now + blockerTimeout;
       doAs(
