@@ -2,7 +2,7 @@
 
 ## 环境要求
 
-- Java 8, Trino 需要安装 Java11
+- Java 8, Trino 需要安装 Java17
 - Optional: MySQL 5.5 及以上 或者 MySQL 8
 - Optional: zookeeper 3.4.x 及以上
 - Optional: Hive(2.x or 3.x)
@@ -46,7 +46,7 @@ arctic-spark-3.1-runtime-0.4.0-sources.jar
 original-arctic-spark-3.1-runtime-0.4.0.jar
 ```
 
-如果需要同时编译 Trino 模块，需要先本地安装 jdk11，并且在用户的 ${user.home}/.m2/ 目录下配置 toolchains.xml，然后执行 mvn
+如果需要同时编译 Trino 模块，需要先本地安装 jdk17，并且在用户的 ${user.home}/.m2/ 目录下配置 toolchains.xml，然后执行 mvn
 package -P toolchain 进行整个项目的编译即可。
 
 ```shell
@@ -55,11 +55,11 @@ package -P toolchain 进行整个项目的编译即可。
     <toolchain>
         <type>jdk</type>
         <provides>
-            <version>11</version>
+            <version>17</version>
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk11Home}</jdkHome>
+            <jdkHome>${YourJDK17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>

@@ -202,8 +202,8 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     );
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks()) {
-      combinedScanTasks.forEach( combinedTask -> combinedTask.tasks().forEach( scTask -> {
-        try( CloseableIterator<Record> records = reader.readData(scTask)) {
+      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        try (CloseableIterator<Record> records = reader.readData(scTask)) {
           while (records.hasNext()) {
             result.add(records.next());
           }

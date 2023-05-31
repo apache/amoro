@@ -32,6 +32,7 @@ import io.trino.plugin.hive.HiveApplyProjectionUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.IcebergTableHandle;
+import io.trino.plugin.iceberg.TableStatisticsReader;
 import io.trino.plugin.iceberg.TableType;
 import io.trino.spi.connector.Assignment;
 import io.trino.spi.connector.ColumnHandle;
@@ -50,6 +51,10 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.statistics.ColumnStatistics;
+import io.trino.spi.statistics.DoubleRange;
+import io.trino.spi.statistics.Estimate;
+import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.PartitionSpecParser;
 import org.apache.iceberg.Schema;
@@ -71,10 +76,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
 import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
 import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
 import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
@@ -95,6 +103,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   private TypeManager typeManager;
 
   private ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap = new ConcurrentHashMap<>();
+
+  private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
 
   public KeyedConnectorMetadata(ArcticCatalog arcticCatalog, TypeManager typeManager) {
     this.arcticCatalog = arcticCatalog;
@@ -372,6 +382,123 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         newProjections,
         outputAssignments,
         false));
+  }
+
+  @Override
+  public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
+    if (!isArcticStatisticsEnabled(session)) {
+      return TableStatistics.empty();
+    }
+
+    KeyedTableHandle keyedTableHandle = (KeyedTableHandle) tableHandle;
+    IcebergTableHandle originalHandle = keyedTableHandle.getIcebergTableHandle();
+    // Certain table handle attributes are not applicable to select queries (which need stats).
+    // If this changes, the caching logic may here may need to be revised.
+    checkArgument(originalHandle.getUpdatedColumns().isEmpty(), "Unexpected updated columns");
+    checkArgument(!originalHandle.isRecordScannedFiles(), "Unexpected scanned files recording set");
+    checkArgument(originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
+
+    return tableStatisticsCache.computeIfAbsent(
+        new IcebergTableHandle(
+            originalHandle.getSchemaName(),
+            originalHandle.getTableName(),
+            originalHandle.getTableType(),
+            originalHandle.getSnapshotId(),
+            originalHandle.getTableSchemaJson(),
+            originalHandle.getPartitionSpecJson(),
+            originalHandle.getFormatVersion(),
+            originalHandle.getUnenforcedPredicate(),
+            originalHandle.getEnforcedPredicate(),
+            ImmutableSet.of(), // projectedColumns don't affect stats
+            originalHandle.getNameMappingJson(),
+            originalHandle.getTableLocation(),
+            originalHandle.getStorageProperties(),
+            NO_RETRIES, // retry mode doesn't affect stats
+            originalHandle.getUpdatedColumns(),
+            originalHandle.isRecordScannedFiles(),
+            originalHandle.getMaxScannedFileSize()),
+        handle -> {
+          ArcticTable arcticTable = getArcticTable(new SchemaTableName(
+              originalHandle.getSchemaName(), originalHandle.getTableName()));
+          TableStatistics baseTableStatistics = TableStatisticsReader.getTableStatistics(
+              typeManager,
+              session,
+              withSnapshotId(handle, arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
+              arcticTable.asKeyedTable().baseTable());
+          TableStatistics changeTableStatistics = TableStatisticsReader.getTableStatistics(
+              typeManager,
+              session,
+              withSnapshotId(handle, arcticTable.asKeyedTable().changeTable().currentSnapshot().snapshotId()),
+              arcticTable.asKeyedTable().changeTable());
+          return computeBothTablesStatistics(baseTableStatistics, changeTableStatistics);
+        });
+  }
+
+  private static IcebergTableHandle withSnapshotId(IcebergTableHandle handle, long snapshotId) {
+    return new IcebergTableHandle(
+        handle.getSchemaName(), handle.getTableName(), handle.getTableType(),
+        Optional.of(snapshotId),
+        handle.getTableSchemaJson(), handle.getPartitionSpecJson(), handle.getFormatVersion(),
+        handle.getUnenforcedPredicate(), handle.getEnforcedPredicate(), handle.getProjectedColumns(),
+        handle.getNameMappingJson(), handle.getTableLocation(), handle.getStorageProperties(), handle.getRetryMode(),
+        handle.getUpdatedColumns(), handle.isRecordScannedFiles(), handle.getMaxScannedFileSize());
+  }
+
+  private static TableStatistics computeBothTablesStatistics(
+      TableStatistics baseTableStatistics, TableStatistics changeTableStatistics) {
+    double baseRowCount = baseTableStatistics.getRowCount().getValue();
+    double changeRowCount = changeTableStatistics.getRowCount().getValue();
+    Estimate rowCount = Estimate.of(baseRowCount + changeRowCount);
+    Map<ColumnHandle, ColumnStatistics> baseColumnStatistics = baseTableStatistics.getColumnStatistics();
+    Map<ColumnHandle, ColumnStatistics> changeColumnStatistics = changeTableStatistics.getColumnStatistics();
+    Map<ColumnHandle, ColumnStatistics> newColumnStatistics = new HashMap<>();
+    changeColumnStatistics.forEach((columnHandle, statisticsOfChangeColumn) -> {
+      ColumnStatistics statisticsOfBaseColumn = baseColumnStatistics.get(columnHandle);
+      ColumnStatistics.Builder columnBuilder = new ColumnStatistics.Builder();
+
+      Estimate baseDataSize = statisticsOfBaseColumn.getDataSize();
+      Estimate changeDataSize = statisticsOfChangeColumn.getDataSize();
+      if (!baseDataSize.isUnknown() || !changeDataSize.isUnknown()) {
+        double value = Stream.of(baseDataSize, changeDataSize)
+            .mapToDouble(Estimate::getValue)
+            .average()
+            .getAsDouble();
+        columnBuilder.setDataSize(Double.isNaN(value) ? Estimate.unknown() : Estimate.of(value));
+      }
+
+      Optional<DoubleRange> baseRange = statisticsOfBaseColumn.getRange();
+      Optional<DoubleRange> changeRange = statisticsOfChangeColumn.getRange();
+      if (baseRange.isPresent() && changeRange.isPresent()) {
+        columnBuilder.setRange(DoubleRange.union(baseRange.get(), changeRange.get()));
+      } else {
+        columnBuilder.setRange(baseRange.isPresent() ? baseRange : changeRange);
+      }
+
+      Estimate baseNullsFraction = statisticsOfBaseColumn.getNullsFraction();
+      Estimate changeNullsFraction = statisticsOfChangeColumn.getNullsFraction();
+      if (!baseNullsFraction.isUnknown() && !changeNullsFraction.isUnknown()) {
+        columnBuilder.setNullsFraction(Estimate.of(
+            ((baseNullsFraction.getValue() * baseRowCount) +
+                (statisticsOfChangeColumn.getNullsFraction().getValue() * changeRowCount)) /
+                (baseRowCount + changeRowCount)));
+      } else {
+        columnBuilder.setNullsFraction(baseNullsFraction.isUnknown() ? changeNullsFraction : baseNullsFraction);
+      }
+
+      Estimate baseDistinctValue = statisticsOfBaseColumn.getDistinctValuesCount();
+      Estimate changeDistinctValue = statisticsOfChangeColumn.getDistinctValuesCount();
+      if (!baseDistinctValue.isUnknown() || !changeDistinctValue.isUnknown()) {
+        double value = Stream.of(baseDistinctValue, changeDistinctValue)
+            .mapToDouble(Estimate::getValue)
+            .map(dataSize -> Double.isNaN(dataSize) ? 0 : dataSize)
+            .sum();
+        columnBuilder.setDistinctValuesCount(Estimate.of(value));
+      }
+
+      ColumnStatistics columnStatistics = columnBuilder.build();
+      newColumnStatistics.put(columnHandle, columnStatistics);
+    });
+    return new TableStatistics(rowCount, newColumnStatistics);
   }
 
   private static Set<Integer> identityPartitionColumnsInAllSpecs(ArcticTable table) {
