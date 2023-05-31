@@ -54,7 +54,11 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
   @Override
   protected ArcticChangeTableScan newRefinedScan(
       TableOperations ops, Table table, Schema schema, TableScanContext context) {
-    return new ArcticChangeTableScan(ops, table, schema, context);
+    ArcticChangeTableScan scan = new ArcticChangeTableScan(ops, table, schema, context);
+    scan.fromPartitionSequence = this.fromPartitionSequence;
+    scan.fromPartitionLegacyTransactionId = this.fromPartitionLegacyTransactionId;
+    scan.toSequence = this.toSequence;
+    return scan;
   }
 
   @Override
