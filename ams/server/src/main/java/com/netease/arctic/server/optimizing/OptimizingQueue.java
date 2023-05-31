@@ -377,7 +377,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS) {
           this.metricsSummary.addNewFileCnt(taskRuntime.getSummary().getNewFileCnt());
           this.metricsSummary.addNewFileSize(taskRuntime.getSummary().getNewFileSize());
-          if (allTasksPrepared()) {
+          // the lock of TableOptimizingProcess makes it thread-safe
+          if (allTasksPrepared() && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
             tableRuntime.beginCommitting();
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
