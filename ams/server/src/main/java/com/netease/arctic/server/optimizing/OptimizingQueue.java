@@ -292,16 +292,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
     private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
-    private final MetricsSummary metricsSummary;
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
-    private final AtomicBoolean committing = new AtomicBoolean(false);
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
-    private int retryCommitCount = 0;
 
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
+
+    private boolean hasCommitted = false;
 
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
@@ -311,7 +310,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       targetSnapshotId = planner.getTargetSnapshotId();
       targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
       loadTaskRuntimes(planner.planTasks());
-      metricsSummary = new MetricsSummary(taskMap.values());
       fromSequence = planner.getFromSequence();
       toSequence = planner.getToSequence();
       beginAndPersistProcess();
@@ -331,7 +329,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         toSequence = tableRuntimeMeta.getToSequence();
       }
       loadTaskRuntimes();
-      metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.getTableRuntime().recover(this);
     }
 
@@ -377,10 +374,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           throw new OptimizingClosedException(processId);
         }
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS) {
-          this.metricsSummary.addNewFileCnt(taskRuntime.getSummary().getNewFileCnt());
-          this.metricsSummary.addNewFileSize(taskRuntime.getSummary().getNewFileSize());
           // the lock of TableOptimizingProcess makes it thread-safe
-          if (allTasksPrepared() && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+          if (allTasksPrepared() && tableRuntime.getOptimizingStatus().isProcessing() &&
+              tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
             tableRuntime.beginCommitting();
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
@@ -467,11 +463,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             taskMap.size(), taskMap.values());
       }
 
-      if (!committing.compareAndSet(false, true)) {
-        LOG.warn("{} is already committing, give up", tableRuntime.getTableIdentifier());
-        return;
-      }
+      lock.lock();
       try {
+        if (hasCommitted) {
+          LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+          throw new IllegalStateException("repeat commit, and last error " + failedReason);
+        }
+        hasCommitted = true;
         buildCommit().commit();
         status = Status.SUCCESS;
         endTime = System.currentTimeMillis();
@@ -483,13 +481,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
       } finally {
-        committing.set(false);
+        lock.unlock();
       }
     }
 
     @Override
     public MetricsSummary getSummary() {
-      return metricsSummary;
+      return new MetricsSummary(taskMap.values());
     }
 
     @Override

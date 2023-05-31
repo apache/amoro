@@ -106,11 +106,4 @@ public class MetricsSummary {
     this.newFileCnt = newFileCnt;
   }
 
-  protected void addNewFileSize(long newFileSize) {
-    this.newFileSize = newFileSize;
-  }
-
-  protected void addNewFileCnt(int newFileCnt) {
-    this.newFileCnt = newFileCnt;
-  }
 }
