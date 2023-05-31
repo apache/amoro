@@ -40,11 +40,6 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     super(ops, table);
   }
 
-  protected ArcticChangeTableScan(
-      TableOperations ops, Table table, Schema schema, TableScanContext context) {
-    super(ops, table, schema, context);
-  }
-
   @Override
   public ArcticChangeTableScan useSnapshot(long scanSnapshotId) {
     super.useSnapshot(scanSnapshotId);
