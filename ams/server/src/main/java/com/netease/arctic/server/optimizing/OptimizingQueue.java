@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -56,7 +57,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy schedulingPolicy;
-  private final Map<OptimizingTaskId, TaskRuntime> taskMap = new ConcurrentHashMap<>();
+  // keeps the SCHEDULED and ACKED tasks
+  private final Map<OptimizingTaskId, TaskRuntime> executingTaskMap = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
 
   private final TableManager tableManager;
@@ -88,7 +90,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         process.getTaskMap().entrySet().stream().filter(
                 entry -> entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED ||
                     entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
-            .forEach(entry -> taskMap.put(entry.getKey(), entry.getValue()));
+            .forEach(entry -> executingTaskMap.put(entry.getKey(), entry.getValue()));
         process.getTaskMap().values().stream()
             .filter(task -> task.getStatus() == TaskRuntime.Status.PLANNED)
             .forEach(taskQueue::offer);
@@ -153,7 +155,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
     if (task != null) {
       safelySchedule(task, new OptimizingThread(authToken, threadId));
-      taskMap.putIfAbsent(task.getTaskId(), task);
+      executingTaskMap.putIfAbsent(task.getTaskId(), task);
     }
     return task != null ? task.getOptimizingTask() : null;
   }
@@ -174,7 +176,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
-    Optional.ofNullable(taskMap.get(taskId))
+    Optional.ofNullable(executingTaskMap.get(taskId))
         .orElseThrow(() -> new TaskNotFoundException(taskId))
         .ack(new OptimizingThread(authToken, threadId));
   }
@@ -182,7 +184,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
-    Optional.ofNullable(taskMap.remove(taskResult.getTaskId()))
+    Optional.ofNullable(executingTaskMap.remove(taskResult.getTaskId()))
         .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
         .complete(thread, taskResult);
   }
@@ -210,21 +212,21 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(optimizerToken)));
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
-    List<TaskRuntime> suspendingTasks = taskMap.values().stream()
+    List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
         .filter(task -> task.getOptimizingThread() == null ||
             task.isSuspending(currentTime) ||
             expiredOptimizers.contains(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
-      taskMap.remove(task.getTaskId());
+      executingTaskMap.remove(task.getTaskId());
       //optimizing task of suspending optimizer would not be counted for retrying
       retryTask(task, false);
     });
   }
 
   @VisibleForTesting
-  Map<OptimizingTaskId, TaskRuntime> getTaskMap() {
-    return taskMap;
+  Map<OptimizingTaskId, TaskRuntime> getExecutingTaskMap() {
+    return executingTaskMap;
   }
 
   private TaskRuntime pollOrPlan() {
@@ -290,15 +292,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
     private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
-    private final MetricsSummary metricsSummary;
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
-    private int retryCommitCount = 0;
 
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
+
+    private boolean hasCommitted = false;
 
     public TableOptimizingProcess(OptimizingPlanner planner) {
       processId = planner.getProcessId();
@@ -308,7 +310,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       targetSnapshotId = planner.getTargetSnapshotId();
       targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
       loadTaskRuntimes(planner.planTasks());
-      metricsSummary = new MetricsSummary(taskMap.values());
       fromSequence = planner.getFromSequence();
       toSequence = planner.getToSequence();
       beginAndPersistProcess();
@@ -328,7 +329,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         toSequence = tableRuntimeMeta.getToSequence();
       }
       loadTaskRuntimes();
-      metricsSummary = new MetricsSummary(taskMap.values());
       tableRuntimeMeta.getTableRuntime().recover(this);
     }
 
@@ -373,10 +373,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         if (isClosed()) {
           throw new OptimizingClosedException(processId);
         }
-        if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS && allTasksPrepared()) {
-          tableRuntime.beginCommitting();
-          this.metricsSummary.addNewFileCnt(taskRuntime.getSummary().getNewFileCnt());
-          this.metricsSummary.addNewFileSize(taskRuntime.getSummary().getNewFileSize());
+        if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS) {
+          // the lock of TableOptimizingProcess makes it thread-safe
+          if (allTasksPrepared() && tableRuntime.getOptimizingStatus().isProcessing() &&
+              tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+            tableRuntime.beginCommitting();
+          }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
             retryTask(taskRuntime, true);
@@ -460,23 +462,32 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
             taskMap.size(), taskMap.values());
       }
+
+      lock.lock();
       try {
+        if (hasCommitted) {
+          LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+          throw new IllegalStateException("repeat commit, and last error " + failedReason);
+        }
+        hasCommitted = true;
         buildCommit().commit();
         status = Status.SUCCESS;
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
       } catch (Exception e) {
-        LOG.warn("Commit optimizing failed. inner message is " + e.getMessage(), e);
+        LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
         failedReason = e.getMessage();
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
+      } finally {
+        lock.unlock();
       }
     }
 
     @Override
     public MetricsSummary getSummary() {
-      return metricsSummary;
+      return new MetricsSummary(taskMap.values());
     }
 
     @Override

@@ -96,20 +96,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 1.poll task
     OptimizingTask task = queue.pollTask(authToken, threadId);
     Assert.assertNotNull(task);
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    TaskRuntime taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, thread);
 
     // 2.ack task
     queue.ackTask(authToken, threadId, task.getTaskId());
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
 
     // 3.fail task
     String errorMessage = "unknown error";
     queue.completeTask(authToken, buildOptimizingTaskFailResult(task.getTaskId(), threadId, errorMessage));
-    Assert.assertEquals(0, queue.getTaskMap().size());
+    Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.PLANNED, null); // retry and change to PLANNED
     Assert.assertEquals(1, taskRuntime.getRetry());
     Assert.assertEquals(errorMessage, taskRuntime.getFailReason());
@@ -119,19 +119,19 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     thread = new OptimizingQueue.OptimizingThread(authToken, threadId);
     task = queue.pollTask(authToken, threadId);
     Assert.assertNotNull(task);
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, thread);
 
     // 5.ackTask
     queue.ackTask(authToken, threadId, task.getTaskId());
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
 
     // 6.complete task
     queue.completeTask(authToken, buildOptimizingTaskResult(task.getTaskId(), threadId));
-    Assert.assertEquals(0, queue.getTaskMap().size());
+    Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SUCCESS, null);
   }
   
@@ -153,20 +153,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 1.poll task
     OptimizingTask task = queue.pollTask(authToken, threadId);
     Assert.assertNotNull(task);
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    TaskRuntime taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, thread);
 
     // 2.ack task
     queue.ackTask(authToken, threadId, task.getTaskId());
-    Assert.assertEquals(1, queue.getTaskMap().size());
-    taskRuntime = queue.getTaskMap().get(task.getTaskId());
+    Assert.assertEquals(1, queue.getExecutingTaskMap().size());
+    taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
 
     // 3.fail task
     String errorMessage = "unknown error";
     queue.completeTask(authToken, buildOptimizingTaskFailResult(task.getTaskId(), threadId, errorMessage));
-    Assert.assertEquals(0, queue.getTaskMap().size());
+    Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.PLANNED, null); // retry and change to PLANNED
     Assert.assertEquals(1, taskRuntime.getRetry());
     Assert.assertEquals(errorMessage, taskRuntime.getFailReason());
@@ -177,7 +177,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
     queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas);
 
-    Map<OptimizingTaskId, TaskRuntime> taskMap = queue.getTaskMap();
+    Map<OptimizingTaskId, TaskRuntime> taskMap = queue.getExecutingTaskMap();
 
     // TODO fix bug and check
 

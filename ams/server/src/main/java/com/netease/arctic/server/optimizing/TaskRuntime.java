@@ -43,26 +43,26 @@ public class TaskRuntime extends StatedPersistentBase {
   private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
-  @StatedPersistentBase.StateField
+  @StateField
   private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
-  @StatedPersistentBase.StateField
+  @StateField
   private int retry = 0;
-  @StatedPersistentBase.StateField
+  @StateField
   private long startTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentBase.StateField
+  @StateField
   private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentBase.StateField
+  @StateField
   private long costTime = 0;
-  @StatedPersistentBase.StateField
+  @StateField
   private OptimizingQueue.OptimizingThread optimizingThread;
-  @StatedPersistentBase.StateField
+  @StateField
   private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
-  @StatedPersistentBase.StateField
+  @StateField
   private RewriteFilesOutput output;
-  @StatedPersistentBase.StateField
+  @StateField
   private MetricsSummary summary;
   private Map<String, String> properties;
 
