@@ -67,13 +67,9 @@ case class DescribeKeyedTableExec(
       case table: KeyedTable =>
         rows += emptyRow()
         rows += toCatalystRow("# Primary keys", "", "")
-        if (!table.primaryKeySpec.primaryKeyExisted()) {
-          rows += toCatalystRow("Not keyed table", "", "")
-        } else {
-          table.primaryKeySpec().primaryKeyStruct().fields().toSeq.foreach(k => {
-            rows += toCatalystRow(k.name(), k.`type`().toString, "")
-          })
-        }
+        table.primaryKeySpec().primaryKeyStruct().fields().toSeq.foreach(k => {
+          rows += toCatalystRow(k.name(), k.`type`().toString, "")
+        })
       case _ =>
     }
   }

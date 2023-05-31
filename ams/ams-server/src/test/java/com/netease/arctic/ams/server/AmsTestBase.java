@@ -76,8 +76,6 @@ import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
-import com.netease.arctic.ams.server.utils.ThreadPool;
-import com.netease.arctic.ams.server.utils.SequenceNumberFetcherTest;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtilTest;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;

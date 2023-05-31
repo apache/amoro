@@ -71,8 +71,16 @@ public class TestHMS extends ExternalResource {
     return mockHms.getClient();
   }
 
+  public int getMetastorePort() {
+    return mockHms.getMetastorePort();
+  }
+
+  public String getWareHouseLocation() {
+    return mockHms.getWareHouseLocation();
+  }
+
   @Override
-  protected void before() throws Throwable {
+  public void before() throws Exception {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockHms.isStarted()) {
         mockHms.start();
@@ -90,7 +98,7 @@ public class TestHMS extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void after() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
       mockHms.stop();
       hmsFolder.delete();

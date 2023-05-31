@@ -55,9 +55,9 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
@@ -767,7 +767,7 @@ public class OptimizeQueueService extends IJDBCService {
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
           if (tableItem.startPlanIfNot()) {
             try {
-              if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+              if (ArcticTableUtil.isIcebergTableFormat(arcticTable)) {
                 optimizePlanResult = planNativeIcebergTable(tableItem, currentTime);
               } else {
                 optimizePlanResult = planArcticTable(tableItem, currentTime);

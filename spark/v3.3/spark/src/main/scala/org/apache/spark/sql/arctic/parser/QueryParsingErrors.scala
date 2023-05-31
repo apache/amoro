@@ -18,7 +18,7 @@
 
 package org.apache.spark.sql.arctic.parser
 
-import com.netease.arctic.spark.sql.parser.ArcticExtendSparkSqlParser._
+import com.netease.arctic.spark.sql.parser.ArcticSqlExtendParser._
 import org.antlr.v4.runtime.ParserRuleContext
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.trees.Origin
@@ -32,55 +32,13 @@ import org.apache.spark.sql.types.StringType
  */
 private[sql] object QueryParsingErrors extends QueryErrorsBase {
 
-  def invalidInsertIntoError(ctx: InsertIntoContext): Throwable = {
-    new ParseException("Invalid InsertIntoContext", ctx)
-  }
 
-  def insertOverwriteDirectoryUnsupportedError(ctx: InsertIntoContext): Throwable = {
-    new ParseException("INSERT OVERWRITE DIRECTORY is not supported", ctx)
-  }
 
   def columnAliasInOperationNotAllowedError(op: String, ctx: TableAliasContext): Throwable = {
     new ParseException(s"Columns aliases are not allowed in $op.", ctx.identifierList())
   }
 
-  def emptySourceForMergeError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("Empty source for merge: you should specify a source" +
-      " table/subquery in merge.", ctx.source)
-  }
 
-  def unrecognizedMatchedActionError(ctx: MatchedClauseContext): Throwable = {
-    new ParseException(s"Unrecognized matched action: ${ctx.matchedAction().getText}",
-      ctx.matchedAction())
-  }
-
-  def insertedValueNumberNotMatchFieldNumberError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException("The number of inserted values cannot match the fields.",
-      ctx.notMatchedAction())
-  }
-
-  def unrecognizedNotMatchedActionError(ctx: NotMatchedClauseContext): Throwable = {
-    new ParseException(s"Unrecognized not matched action: ${ctx.notMatchedAction().getText}",
-      ctx.notMatchedAction())
-  }
-
-  def mergeStatementWithoutWhenClauseError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("There must be at least one WHEN clause in a MERGE statement", ctx)
-  }
-
-  def nonLastMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("When there are more than one MATCHED clauses in a MERGE " +
-      "statement, only the last MATCHED clause can omit the condition.", ctx)
-  }
-
-  def nonLastNotMatchedClauseOmitConditionError(ctx: MergeIntoTableContext): Throwable = {
-    new ParseException("When there are more than one NOT MATCHED clauses in a MERGE " +
-      "statement, only the last NOT MATCHED clause can omit the condition.", ctx)
-  }
-
-  def emptyPartitionKeyError(key: String, ctx: PartitionSpecContext): Throwable = {
-    new ParseException(s"Found an empty partition key '$key'.", ctx)
-  }
 
   def combinationQueryResultClausesUnsupportedError(ctx: QueryOrganizationContext): Throwable = {
     new ParseException(
@@ -266,10 +224,6 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
       Array(s"$property is a reserved namespace property, $msg."), ctx)
   }
 
-  def propertiesAndDbPropertiesBothSpecifiedError(ctx: CreateNamespaceContext): ParseException = {
-    new ParseException("UNSUPPORTED_FEATURE",
-      Array("set PROPERTIES and DBPROPERTIES at the same time."), ctx)
-  }
 
   def cannotCleanReservedTablePropertyError(
       property: String, ctx: ParserRuleContext, msg: String): ParseException = {
@@ -303,24 +257,12 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
     new ParseException(s"Operation not allowed: $message", ctx)
   }
 
-  def descColumnForPartitionUnsupportedError(ctx: DescribeRelationContext): Throwable = {
-    new ParseException("DESC TABLE COLUMN for a specific partition is not supported", ctx)
-  }
 
-  def incompletePartitionSpecificationError(
-      key: String, ctx: DescribeRelationContext): Throwable = {
-    new ParseException(s"PARTITION specification is incomplete: `$key`", ctx)
-  }
 
   def computeStatisticsNotExpectedError(ctx: IdentifierContext): Throwable = {
     new ParseException(s"Expected `NOSCAN` instead of `${ctx.getText}`", ctx)
   }
 
-  def addCatalogInCacheTableAsSelectNotAllowedError(
-      quoted: String, ctx: CacheTableContext): Throwable = {
-    new ParseException(s"It is not allowed to add catalog/namespace prefix $quoted to " +
-      "the table name in CACHE TABLE AS SELECT", ctx)
-  }
 
   def showFunctionsUnsupportedError(identifier: String, ctx: IdentifierContext): Throwable = {
     new ParseException(
@@ -384,29 +326,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
         toSQLConf(keyStr), toSQLConf(valueCandidate)), ctx)
   }
 
-  def unexpectedFormatForResetConfigurationError(ctx: ResetConfigurationContext): Throwable = {
-    new ParseException(
-      s"""
-         |Expected format is 'RESET' or 'RESET key'. If you want to include special characters
-         |in key, please use quotes, e.g., RESET `ke y`.
-       """.stripMargin.replaceAll("\n", " "), ctx)
-  }
 
   def intervalValueOutOfRangeError(ctx: IntervalContext): Throwable = {
     new ParseException("The interval value must be in the range of [-18, +18] hours" +
       " with second precision", ctx)
-  }
-
-  def invalidTimeZoneDisplacementValueError(ctx: SetTimeZoneContext): Throwable = {
-    new ParseException("Invalid time zone displacement value", ctx)
-  }
-
-  def createTempTableNotSpecifyProviderError(ctx: CreateTableContext): Throwable = {
-    new ParseException("CREATE TEMPORARY TABLE without a provider is not allowed.", ctx)
-  }
-
-  def rowFormatNotUsedWithStoredAsError(ctx: CreateTableLikeContext): Throwable = {
-    new ParseException("'ROW FORMAT' must be used with 'STORED AS'", ctx)
   }
 
   def useDefinedRecordReaderOrWriterClassesError(ctx: ParserRuleContext): Throwable = {
@@ -414,52 +337,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
       "Unsupported operation: Used defined record reader/writer classes.", ctx)
   }
 
-  def directoryPathAndOptionsPathBothSpecifiedError(ctx: InsertOverwriteDirContext): Throwable = {
-    new ParseException(
-      "Directory path and 'path' in OPTIONS should be specified one, but not both", ctx)
-  }
-
-  def unsupportedLocalFileSchemeError(ctx: InsertOverwriteDirContext): Throwable = {
-    new ParseException("LOCAL is supported only with file: scheme", ctx)
-  }
-
   def invalidGroupingSetError(element: String, ctx: GroupingAnalyticsContext): Throwable = {
     new ParseException(s"Empty set in $element grouping sets is not supported.", ctx)
   }
 
-  def createViewWithBothIfNotExistsAndReplaceError(ctx: CreateViewContext): Throwable = {
-    new ParseException("CREATE VIEW with both IF NOT EXISTS and REPLACE is not allowed.", ctx)
-  }
-
-  def defineTempViewWithIfNotExistsError(ctx: CreateViewContext): Throwable = {
-    new ParseException("It is not allowed to define a TEMPORARY view with IF NOT EXISTS.", ctx)
-  }
-
-  def notAllowedToAddDBPrefixForTempViewError(
-      database: String,
-      ctx: CreateViewContext): Throwable = {
-    new ParseException(
-      s"It is not allowed to add database prefix `$database` for the TEMPORARY view name.", ctx)
-  }
-
-  def createFuncWithBothIfNotExistsAndReplaceError(ctx: CreateFunctionContext): Throwable = {
-    new ParseException("CREATE FUNCTION with both IF NOT EXISTS and REPLACE is not allowed.", ctx)
-  }
-
-  def defineTempFuncWithIfNotExistsError(ctx: CreateFunctionContext): Throwable = {
-    new ParseException("It is not allowed to define a TEMPORARY function with IF NOT EXISTS.", ctx)
-  }
-
-  def unsupportedFunctionNameError(quoted: String, ctx: CreateFunctionContext): Throwable = {
-    new ParseException(s"Unsupported function name '$quoted'", ctx)
-  }
-
-  def specifyingDBInCreateTempFuncError(
-      databaseName: String,
-      ctx: CreateFunctionContext): Throwable = {
-    new ParseException(
-      s"Specifying a database in CREATE TEMPORARY FUNCTION is not allowed: '$databaseName'", ctx)
-  }
 
   def invalidTableValuedFunctionNameError(
       name: Seq[String],
