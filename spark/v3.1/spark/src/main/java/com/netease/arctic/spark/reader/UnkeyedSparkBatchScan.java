@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.CombinedScanTask;
