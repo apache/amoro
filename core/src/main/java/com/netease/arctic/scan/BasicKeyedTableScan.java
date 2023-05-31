@@ -65,7 +65,6 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private final long openFileCost;
   private final long splitSize;
   private Expression expression;
-  private boolean includeColumnStats;
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
     this.table = table;
@@ -122,17 +121,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         splitSize, lookBack, openFileCost);
   }
 
-  @Override
-  public KeyedTableScan includeColumnStats() {
-    this.includeColumnStats = true;
-    return this;
-  }
-
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
     TableScan scan = table.baseTable().newScan();
-    if (includeColumnStats) {
-      scan = scan.includeColumnStats();
-    }
     if (this.expression != null) {
       scan = scan.filter(this.expression);
     }
@@ -152,9 +142,6 @@ public class BasicKeyedTableScan implements KeyedTableScan {
       //Only push down filters related to partition
       Expression partitionExpression = new BasicPartitionEvaluator(table.spec()).project(expression);
       changeTableScan.filter(partitionExpression);
-    }
-    if (includeColumnStats) {
-      changeTableScan.includeColumnStats();
     }
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }

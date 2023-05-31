@@ -41,13 +41,4 @@ public interface KeyedTableScan {
    */
   CloseableIterable<CombinedScanTask> planTasks();
 
-  /**
-   * Make this scan load the column stats with each data file.
-   *
-   * <p>Column stats include: value count, null value count, lower bounds, and upper bounds.
-   *
-   * @return scan based on this that loads column stats.
-   */
-  KeyedTableScan includeColumnStats();
-
 }
