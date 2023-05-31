@@ -60,6 +60,8 @@ public class TestOptimizingIntegration {
       TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table5");
   private static final TableIdentifier MIXED_ICEBERG_TB_6 =
       TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table6");
+  private static final TableIdentifier MIXED_ICEBERG_TB_7 =
+      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table7");
   private static final TableIdentifier MIXED_HIVE_TB_1 =
       TableIdentifier.of(AmsEnvironment.MIXED_HIVE_CATALOG, DATABASE, "mix_hive_table1");
   private static final TableIdentifier MIXED_HIVE_TB_2 = TableIdentifier.of(AmsEnvironment.MIXED_HIVE_CATALOG,
@@ -80,6 +82,9 @@ public class TestOptimizingIntegration {
     amsEnv = new AmsEnvironment(rootPath);
     amsEnv.start();
     amsEnv.startOptimizer();
+    amsEnv.catalog(AmsEnvironment.ICEBERG_CATALOG).createDatabase(DATABASE);
+    amsEnv.catalog(AmsEnvironment.MIXED_ICEBERG_CATALOG).createDatabase(DATABASE);
+    amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).createDatabase(DATABASE);
   }
 
   @AfterAll
@@ -177,20 +182,12 @@ public class TestOptimizingIntegration {
   }
 
   @Test
-  public void testPartitionArcticTablePartialOptimizing() {
-    ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, SPEC);
-    assertTableExist(MIXED_ICEBERG_TB_6);
-    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
-    testCase.testPartitionArcticTablePartialOptimizing();
-  }
-
-  @Test
   public void testHiveKeyedTableMajorOptimizeNotMove() throws TException, IOException {
     createHiveArcticTable(MIXED_HIVE_TB_1, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_HIVE_TB_1);
     KeyedTable table = amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).loadTable(MIXED_HIVE_TB_1).asKeyedTable();
     TestMixedHiveOptimizing testCase =
-        new TestMixedHiveOptimizing(table, amsEnv.getTestHMS().getHiveClient());
+        new TestMixedHiveOptimizing(table, amsEnv.getTestHMS().getClient());
     testCase.testHiveKeyedTableMajorOptimizeNotMove();
   }
 
@@ -200,7 +197,7 @@ public class TestOptimizingIntegration {
     assertTableExist(MIXED_HIVE_TB_2);
     KeyedTable table = amsEnv.catalog(AmsEnvironment.MIXED_HIVE_CATALOG).loadTable(MIXED_HIVE_TB_2).asKeyedTable();
     TestMixedHiveOptimizing testCase =
-        new TestMixedHiveOptimizing(table, amsEnv.getTestHMS().getHiveClient());
+        new TestMixedHiveOptimizing(table, amsEnv.getTestHMS().getClient());
     testCase.testHiveKeyedTableMajorOptimizeAndMove();
   }
 

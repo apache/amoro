@@ -30,7 +30,7 @@ public enum SqlExample {
           "    primary key (id)\n" +
           ") using arctic \n" +
           "partitioned by (days(ts)) \n" +
-          "tblproperties (\"table.props\" = \"val\");"),
+          "tblproperties ('table.props' = 'val');"),
   DELETE_TABLE("DeleteTable",
       "drop table db_name.table_name;"),
   EDIT_TABLE("EditTable",
