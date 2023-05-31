@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -294,6 +295,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final MetricsSummary metricsSummary;
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
+    private final AtomicBoolean committing = new AtomicBoolean(false);
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private int retryCommitCount = 0;
@@ -464,6 +466,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
             taskMap.size(), taskMap.values());
       }
+
+      if (!committing.compareAndSet(false, true)) {
+        LOG.warn("{} is already committing, give up", tableRuntime.getTableIdentifier());
+        return;
+      }
       try {
         buildCommit().commit();
         status = Status.SUCCESS;
@@ -475,6 +482,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         failedReason = e.getMessage();
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
+      } finally {
+        committing.set(false);
       }
     }
 
