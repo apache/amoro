@@ -73,6 +73,7 @@ import static org.junit.Assert.assertEquals;
 public class TestKafkaSourceReader {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaSourceReader.class);
   private static String topic;
+  private static final int KAFKA_PARTITION_NUMS = 1;
   private static final int NUM_SPLITS = 1;
   private static final int NUM_RECORDS_PER_SPLIT = 10;
   private static final int TOTAL_NUM_RECORDS = NUM_RECORDS_PER_SPLIT * NUM_SPLITS;
@@ -95,6 +96,7 @@ public class TestKafkaSourceReader {
   @Before
   public void initData() throws Exception {
     topic = TestUtil.getUtMethodName(testName);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, topic);
     write(topic, TOTAL_NUM_RECORDS);
   }
 
@@ -120,7 +122,7 @@ public class TestKafkaSourceReader {
     // re-create and restore
     reader = (LogKafkaSourceReader) createReader(groupId);
     reader.addSplits(splitList);
-    List<KafkaPartitionSplit> currentSplitList = reader.snapshotState(checkpointId++);
+    List<KafkaPartitionSplit> currentSplitList = reader.snapshotState(checkpointId);
     currentSplitList.forEach(s -> assertEquals(TOTAL_NUM_RECORDS, s.getStartingOffset()));
   }
 
