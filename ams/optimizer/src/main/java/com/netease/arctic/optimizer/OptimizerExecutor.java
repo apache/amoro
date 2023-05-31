@@ -100,7 +100,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
       OptimizingTaskResult result = new OptimizingTaskResult(task.getTaskId(), threadId);
       result.setTaskOutput(outputByteBuffer);
-      result.setSummary(result.summary);
+      result.setSummary(output.summary());
       LOG.info("Optimizer executor[{}] executed task[{}]", threadId, task.getTaskId());
       return result;
     } catch (Throwable t) {
