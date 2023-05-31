@@ -47,10 +47,9 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
 
   @Override
   public ArcticChangeTableScan useSnapshot(long scanSnapshotId) {
-    super.useSnapshot(scanSnapshotId);
-    Schema snapshotSchema = SnapshotUtil.schemaFor(table(), scanSnapshotId);
+    TableScan scan = super.useSnapshot(scanSnapshotId);
     return newRefinedScan(
-        tableOps(), table(), snapshotSchema, context().useSnapshotId(scanSnapshotId));
+        tableOps(), table(), scan.schema(), context().useSnapshotId(scanSnapshotId));
   }
 
   @Override
