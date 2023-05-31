@@ -26,7 +26,6 @@ import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
