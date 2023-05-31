@@ -246,7 +246,6 @@ containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: "1024" # The size of memory allocated for each parallel
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
@@ -262,6 +261,8 @@ containers:
 optimizer_groups:
   - name: default
     container: localContainer
+    properties:
+      memory: "1024" # The size of memory allocated for each parallel
 
   - name: external-group
     container: external # The external container is used to host all externally launched optimizers.

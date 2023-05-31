@@ -49,7 +49,9 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
-    String memory = PropertyUtil.checkAndGetProperty(getContainerProperties(), JOB_MEMORY_PROPERTY);
+    long memoryPerThread = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
+        JOB_MEMORY_PROPERTY));
+    long memory = memoryPerThread * resource.getThreadCount();
     return String.format("%s/bin/localOptimize.sh -m %s %s", getAMSHome(), memory,
         super.buildOptimizerStartupArgsString(resource));
   }

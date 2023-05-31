@@ -12,7 +12,6 @@ containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: "1024"
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 ### FlinkContainer
