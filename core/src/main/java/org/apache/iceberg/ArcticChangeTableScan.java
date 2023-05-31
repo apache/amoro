@@ -40,6 +40,11 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     super(ops, table);
   }
 
+  protected ArcticChangeTableScan(
+      TableOperations ops, Table table, Schema schema, TableScanContext context) {
+    super(ops, table, schema, context);
+  }
+
   @Override
   public ArcticChangeTableScan useSnapshot(long scanSnapshotId) {
     super.useSnapshot(scanSnapshotId);
@@ -51,25 +56,28 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
   @Override
   protected ArcticChangeTableScan newRefinedScan(
       TableOperations ops, Table table, Schema schema, TableScanContext context) {
-    return this;
+    return new ArcticChangeTableScan(ops, table, schema, context);
   }
 
   @Override
   public ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence) {
-    this.fromPartitionSequence = partitionSequence;
-    return this;
+    ArcticChangeTableScan scan = newRefinedScan(tableOps(), table(), schema(), context());
+    scan.fromPartitionSequence = partitionSequence;
+    return scan;
   }
 
   @Override
   public ChangeTableIncrementalScan toSequence(long sequence) {
-    this.toSequence = sequence;
-    return this;
+    ArcticChangeTableScan scan = newRefinedScan(tableOps(), table(), schema(), context());
+    scan.toSequence = sequence;
+    return scan;
   }
 
   @Override
   public ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId) {
-    this.fromPartitionLegacyTransactionId = partitionTransactionId;
-    return this;
+    ArcticChangeTableScan scan = newRefinedScan(tableOps(), table(), schema(), context());
+    scan.fromPartitionLegacyTransactionId = partitionTransactionId;
+    return scan;
   }
 
   @Override
