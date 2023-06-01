@@ -57,7 +57,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 4);
     assertIds(readRecords(table), 3, 4, 5, 6);
 
     // Step2: insert change data
@@ -70,7 +70,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
 
     // wait Minor/Major Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 8, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 8, 4);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
     // Step3: delete change data
@@ -90,9 +90,9 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     // wait Minor/Major Optimize result
     optimizeHistory = checker.waitOptimizeResult();
     if (arcticTable.spec().isPartitioned()) {
-      checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
+      checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 2);
     } else {
-      checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 10, 1);
+      checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 10, 4);
     }
     assertIds(readRecords(table), 3, 4, 5, 6, 9, 10);
     assertNames(readRecords(table), "aaa", "bbb", "eee", "ddd", "hhh_new", "iii_new");
@@ -227,7 +227,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     ));
     // wait Major Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
     // Step 3: insert data
@@ -239,7 +239,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     ));
     // wait Major Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 
     checker.assertOptimizeHangUp();

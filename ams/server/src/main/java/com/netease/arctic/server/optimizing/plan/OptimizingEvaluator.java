@@ -31,15 +31,20 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 public class OptimizingEvaluator {
+  
+  private static final Logger LOG = LoggerFactory.getLogger(OptimizingEvaluator.class);
 
   protected final ArcticTable arcticTable;
   protected final TableRuntime tableRuntime;
@@ -63,6 +68,7 @@ public class OptimizingEvaluator {
   }
 
   protected void initEvaluator() {
+    long startTime = System.currentTimeMillis();
     TableFileScanHelper tableFileScanHelper;
     if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
       tableFileScanHelper = new IcebergTableFileScanHelper(arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
@@ -78,6 +84,8 @@ public class OptimizingEvaluator {
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
     initPartitionPlans(tableFileScanHelper);
     isInitialized = true;
+    LOG.info("{} finish initEvaluator and get {} partitions necessary to optimize, cost {} ms",
+        arcticTable.id(), partitionPlanMap.size(), System.currentTimeMillis() - startTime);
   }
 
   protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
@@ -188,6 +196,19 @@ public class OptimizingEvaluator {
 
     public long getEqualityDeleteBytes() {
       return equalityDeleteBytes;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("partitions", partitions)
+          .add("dataFileCount", dataFileCount)
+          .add("dataFileSize", dataFileSize)
+          .add("equalityDeleteFileCount", equalityDeleteFileCount)
+          .add("positionalDeleteFileCount", positionalDeleteFileCount)
+          .add("positionalDeleteBytes", positionalDeleteBytes)
+          .add("equalityDeleteBytes", equalityDeleteBytes)
+          .toString();
     }
   }
 }

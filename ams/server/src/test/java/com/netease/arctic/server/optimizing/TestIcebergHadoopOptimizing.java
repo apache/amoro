@@ -110,7 +110,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 3, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
     checker.assertOptimizeHangUp();
@@ -210,7 +210,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 3, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
 
@@ -308,7 +308,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 3);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     checker.assertOptimizeHangUp();

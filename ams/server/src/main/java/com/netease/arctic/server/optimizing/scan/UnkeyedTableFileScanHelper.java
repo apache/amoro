@@ -14,6 +14,8 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
+  private static final Logger LOG = LoggerFactory.getLogger(UnkeyedTableFileScanHelper.class);
+
   private final UnkeyedTable table;
   private PartitionFilter partitionFilter;
 
@@ -34,10 +38,12 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
   @Override
   public List<FileScanResult> scan() {
     List<FileScanResult> results = Lists.newArrayList();
+    LOG.info("{} start scan files with snapshotId = {}", table.id(), snapshotId);
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       return results;
     }
 
+    long startTime = System.currentTimeMillis();
     PartitionSpec partitionSpec = table.spec();
     try (CloseableIterable<FileScanTask> filesIterable =
              table.newScan().useSnapshot(snapshotId).planFiles()) {
@@ -57,6 +63,8 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + table.id(), e);
     }
+    long endTime = System.currentTimeMillis();
+    LOG.info("{} finish scan files, cost {} ms, get {} files", table.id(), endTime - startTime, results.size());
     return results;
   }
 

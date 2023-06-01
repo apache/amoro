@@ -166,6 +166,19 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
     }
 
+    @Override
+    public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      if (deletes.stream().anyMatch(
+          delete -> delete.content() == FileContent.EQUALITY_DELETES || delete.content() == FileContent.DATA)) {
+        // change equality delete file's content is DATA
+        return true;
+      } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
     protected boolean reachBaseRefreshInterval() {
       return config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
     }

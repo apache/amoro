@@ -102,7 +102,7 @@ CREATE TABLE table_runtime (
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
     CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
-    CONSTRAINT table_name_idx UNIQUE (catalog_name, db_name, table_name)
+    CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
 
 CREATE TABLE table_optimizing_process (

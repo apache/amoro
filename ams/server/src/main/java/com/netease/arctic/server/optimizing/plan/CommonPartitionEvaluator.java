@@ -26,16 +26,21 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class CommonPartitionEvaluator implements PartitionEvaluator {
-  private final String partition;
+  private static final Logger LOG = LoggerFactory.getLogger(CommonPartitionEvaluator.class);
+
   private final Set<String> deleteFileSet = Sets.newHashSet();
-  protected final OptimizingConfig config;
   protected final TableRuntime tableRuntime;
+
+  private final String partition;
+  protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long planTime;
 
@@ -60,6 +65,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private long cost = -1;
   private Boolean necessary = null;
   private OptimizingType optimizingType = null;
+  private String name;
 
   public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
@@ -129,9 +135,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    if (deletes.stream().anyMatch(file -> file.content() != FileContent.POSITION_DELETES)) {
+    if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
-    } else if (deletes.stream().filter(file -> file.content() == FileContent.POSITION_DELETES).count() > 1) {
+    } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
       return true;
     } else {
       return false;
@@ -159,6 +165,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public boolean isNecessary() {
     if (necessary == null) {
       necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("{} necessary = {}, {}", name(), necessary, this);
+      }
     }
     return necessary;
   }
@@ -166,7 +175,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      cost = rewriteSegmentFileSize * 2 + fragmentFileSize * 2 +
+      // We estimate that the cost of writing is 3 times that of reading
+      cost = (rewriteSegmentFileSize + fragmentFileSize) * 4 +
           rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
       int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
           equalityDeleteFileCount;
@@ -185,6 +195,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (optimizingType == null) {
       optimizingType = isFullNecessary() ? OptimizingType.FULL_MAJOR :
           isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+      LOG.debug("{} optimizingType = {} ", name(), optimizingType);
     }
     return optimizingType;
   }
@@ -213,6 +224,13 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       return false;
     }
     return anyDeleteExist() || fragmentFileCount >= 2;
+  }
+
+  protected String name() {
+    if (name == null) {
+      name = String.format("partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
+    }
+    return name;
   }
 
   public boolean anyDeleteExist() {
@@ -287,5 +305,30 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     public int compareTo(PartitionEvaluator.Weight o) {
       return Long.compare(this.cost, ((Weight) o).cost);
     }
+  }
+
+  @Override
+  public String toString() {
+    return "CommonPartitionEvaluator{" +
+        "partition='" + partition + '\'' +
+        ", config=" + config +
+        ", fragmentSize=" + fragmentSize +
+        ", planTime=" + planTime +
+        ", lastMinorOptimizeTime=" + tableRuntime.getLastMinorOptimizingTime() +
+        ", lastMajorOptimizeTime=" + tableRuntime.getLastMajorOptimizingTime() +
+        ", lastFullOptimizeTime=" + tableRuntime.getLastFullOptimizingTime() +
+        ", fragmentFileCount=" + fragmentFileCount +
+        ", fragmentFileSize=" + fragmentFileSize +
+        ", segmentFileCount=" + segmentFileCount +
+        ", segmentFileSize=" + segmentFileSize +
+        ", rewriteSegmentFileCount=" + rewriteSegmentFileCount +
+        ", rewriteSegmentFileSize=" + rewriteSegmentFileSize +
+        ", rewritePosSegmentFileCount=" + rewritePosSegmentFileCount +
+        ", rewritePosSegmentFileSize=" + rewritePosSegmentFileSize +
+        ", equalityDeleteFileCount=" + equalityDeleteFileCount +
+        ", equalityDeleteFileSize=" + equalityDeleteFileSize +
+        ", posDeleteFileCount=" + posDeleteFileCount +
+        ", posDeleteFileSize=" + posDeleteFileSize +
+        '}';
   }
 }

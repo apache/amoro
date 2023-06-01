@@ -18,6 +18,8 @@
 
 package com.netease.arctic.optimizing;
 
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,5 +40,12 @@ public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingI
   @Override
   public Map<String, String> getOptions() {
     return options;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("options", options)
+        .toString();
   }
 }

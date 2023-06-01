@@ -188,40 +188,40 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     List<DeleteFile> readOnlyDeleteFiles = Lists.newArrayList();
     List<DeleteFile> rewrittenDeleteFiles = Lists.newArrayList();
 
-    // 1.write segment files
+    // 1.write 1 segment file A
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 40, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     rePosSegmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // 2.write pos-delete
+    // 2.write 2 pos-delete for the segment file A
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 0));
     rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rePosSegmentFiles, 1));
 
-    // 3.write segment files
+    // 3.write 1 segment file B
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 41, 80, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     rewrittenSegmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // 4.write pos-delete (radio >= 0.5)
-    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rewrittenSegmentFiles, 0, 19));
+    // 4.write 1 pos-delete (radio > 0.5) for 1 segment file B
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, rewrittenSegmentFiles, 0, 20));
 
-    // 5.write fragment files
+    // 5.write 1 fragment file C
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 81, 84, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
-    // 6.write fragment files
+    // 6.write 1 fragment file D
     newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 85, 88, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
     fragmentFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
 
-    // 7. write pos-delete
-    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, fragmentFiles, 0, 0));
+    // 7. write 2 pos-delete for fragment file C/D
+    rewrittenDeleteFiles.addAll(appendPosDelete(transactionId, fragmentFiles, 0));
 
     List<DataFile> segmentFiles = Lists.newArrayList();
     segmentFiles.addAll(rePosSegmentFiles);
