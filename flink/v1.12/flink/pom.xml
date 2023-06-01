@@ -274,6 +274,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-test-utils</artifactId>
+            <version>${flink.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-hive-metastore</artifactId>
             <version>${iceberg.version}</version>

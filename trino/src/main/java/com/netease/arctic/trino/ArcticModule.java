@@ -83,7 +83,7 @@ public class ArcticModule implements Module {
     binder.bind(TypeManager.class).toInstance(typeManager);
 
     configBinder(binder).bindConfig(ArcticConfig.class);
-    binder.bind(ArcticSessionProperties.class).in(Scopes.SINGLETON);
+    binder.bind(IcebergSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(KeyedConnectorSplitManager.class).in(Scopes.SINGLETON);
     binder.bind(KeyedPageSourceProvider.class).in(Scopes.SINGLETON);
     binder.bind(ArcticCatalogFactory.class).to(DefaultArcticCatalogFactory.class).in(Scopes.SINGLETON);
@@ -98,7 +98,7 @@ public class ArcticModule implements Module {
     configBinder(binder).bindConfig(IcebergConfig.class);
 
     newSetBinder(binder, SessionPropertiesProvider.class).addBinding()
-        .to(IcebergSessionProperties.class)
+        .to(ArcticSessionProperties.class)
         .in(Scopes.SINGLETON);
     binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
 
