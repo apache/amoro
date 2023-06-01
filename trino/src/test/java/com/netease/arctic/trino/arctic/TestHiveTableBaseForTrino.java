@@ -95,7 +95,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
       Types.NestedField.required(++i, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
       Types.NestedField.required(++i, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
       Types.NestedField.required(++i, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
-      Types.NestedField.required(++i, COLUMN_NAME_MAP, Types.MapType.ofOptional(++i,++i, Types.StringType.get(),
+      Types.NestedField.required(++i, COLUMN_NAME_MAP, Types.MapType.ofOptional(++i, ++i, Types.StringType.get(),
           Types.StringType.get())),
       Types.NestedField.required(++i, COLUMN_NAME_ARRAY, Types.ListType.ofOptional(++i, Types.StringType.get())),
       Types.NestedField.required(++i, COLUMN_NAME_STRUCT, Types.StructType.of(STRUCT_SUB_SCHEMA.columns())),
@@ -115,7 +115,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   protected static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
-    if (ref == 1){
+    if (ref == 1) {
       tempFolder.create();
       hms = new HMSMockServer(tempFolder.newFolder("hive"));
       hms.start();
@@ -150,7 +150,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   protected static void stopMetastore() {
     int ref = testCount.decrementAndGet();
-    if (ref == 0){
+    if (ref == 0) {
       hms.stop();
       hms = null;
       tempFolder.delete();
@@ -216,18 +216,18 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
     }
 
     public DataFile build(String valuePath, String path) {
-      DataFiles.Builder builder =  DataFiles.builder(table.spec())
+      DataFiles.Builder builder = DataFiles.builder(table.spec())
           .withPath(hiveTable.getSd().getLocation() + path)
           .withFileSizeInBytes(0)
           .withRecordCount(2);
 
-      if (!StringUtils.isEmpty(valuePath)){
+      if (!StringUtils.isEmpty(valuePath)) {
         builder = builder.withPartitionPath(valuePath);
       }
       return builder.build();
     }
 
-    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
+    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles) {
       return partValueFiles.stream().map(
           kv -> this.build(kv.getKey(), kv.getValue())
       ).collect(Collectors.toList());
@@ -246,6 +246,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   /**
    * assert hive table partition location as expected
+   *
    * @param partitionLocations
    * @param table
    * @throws TException
@@ -262,7 +263,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
     System.out.println("> assert hive partition location as expected");
     System.out.printf("HiveTable[%s.%s] partition count: %d \n", database, tableName, partitions.size());
-    for (Partition p: partitions){
+    for (Partition p : partitions) {
       System.out.printf(
           "HiveTablePartition[%s.%s  %s] location:%s \n", database, tableName,
           Joiner.on("/").join(p.getValues()), p.getSd().getLocation());

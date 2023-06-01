@@ -86,7 +86,7 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
   protected DeleteFile deleteFileOfPositionDelete;
 
   protected void initData() throws IOException {
-    long currentSequenceNumber  = testKeyedTable.beginTransaction(null);
+    long currentSequenceNumber = testKeyedTable.beginTransaction(null);
     //write base
     {
       GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
@@ -123,7 +123,7 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
       WriteResult result = writer.complete();
       AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-              .forEach(changeAppend::appendFile);
+          .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
 
