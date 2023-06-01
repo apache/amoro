@@ -91,8 +91,8 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     List<ManifestFile> deleteManifests = snapshot.deleteManifests(io);
     scanMetrics().totalDataManifests().increment((long) dataManifests.size());
     scanMetrics().totalDeleteManifests().increment((long) deleteManifests.size());
-    ArcticManifestGroup manifestGroup =
-        new ArcticManifestGroup(io, dataManifests, deleteManifests)
+    ArcticChangeManifestGroup manifestGroup =
+        new ArcticChangeManifestGroup(io, dataManifests, deleteManifests)
             .caseSensitive(isCaseSensitive())
             .select(scanColumns())
             .filterData(filter())
@@ -107,12 +107,12 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     if (dataManifests.size() > 1 && shouldPlanWithExecutor()) {
       manifestGroup.planWith(planExecutor());
     }
-    CloseableIterable<ArcticManifestGroup.ContentFileScanTaskWithSequence>
+    CloseableIterable<ArcticChangeManifestGroup.ChangeFileScanTask>
         files = manifestGroup.planFilesWithSequence();
 
     files = CloseableIterable.filter(files, f -> {
       StructLike partition = f.file().partition();
-      long sequenceNumber = f.getSeq();
+      long sequenceNumber = f.getDataSequenceNumber();
       Boolean shouldKeep = shouldKeepFile(partition, sequenceNumber);
       if (shouldKeep == null) {
         String filePath = f.file().path().toString();
@@ -123,7 +123,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
       }
     });
     return CloseableIterable
-        .transform(files, f -> WrapFileWithSequenceNumberHelper.wrap(f.file(), f.getSeq()));
+        .transform(files, f -> WrapFileWithSequenceNumberHelper.wrap(f.file(), f.getDataSequenceNumber()));
   }
 
   @Override

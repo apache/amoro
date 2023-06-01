@@ -26,80 +26,80 @@ import org.apache.iceberg.metrics.ScanMetrics;
 import java.util.List;
 import java.util.Map;
 
-public class ArcticManifestGroup extends ManifestGroup {
+public class ArcticChangeManifestGroup extends ManifestGroup {
 
-  ArcticManifestGroup(FileIO io, Iterable<ManifestFile> dataManifests, Iterable<ManifestFile> deleteManifests) {
+  ArcticChangeManifestGroup(FileIO io, Iterable<ManifestFile> dataManifests, Iterable<ManifestFile> deleteManifests) {
     super(io, dataManifests, deleteManifests);
   }
 
   @Override
-  ArcticManifestGroup caseSensitive(boolean newCaseSensitive) {
+  ArcticChangeManifestGroup caseSensitive(boolean newCaseSensitive) {
     super.caseSensitive(newCaseSensitive);
     return this;
   }
 
   @Override
-  ArcticManifestGroup select(List<String> newColumns) {
+  ArcticChangeManifestGroup select(List<String> newColumns) {
     super.select(newColumns);
     return this;
   }
 
   @Override
-  ArcticManifestGroup filterData(Expression newDataFilter) {
+  ArcticChangeManifestGroup filterData(Expression newDataFilter) {
     super.filterData(newDataFilter);
     return this;
   }
 
   @Override
-  ArcticManifestGroup specsById(Map<Integer, PartitionSpec> newSpecsById) {
+  ArcticChangeManifestGroup specsById(Map<Integer, PartitionSpec> newSpecsById) {
     super.specsById(newSpecsById);
     return this;
   }
 
   @Override
-  ArcticManifestGroup scanMetrics(ScanMetrics metrics) {
+  ArcticChangeManifestGroup scanMetrics(ScanMetrics metrics) {
     super.scanMetrics(metrics);
     return this;
   }
 
   @Override
-  ArcticManifestGroup ignoreDeleted() {
+  ArcticChangeManifestGroup ignoreDeleted() {
     super.ignoreDeleted();
     return this;
   }
 
 
-  public CloseableIterable<ContentFileScanTaskWithSequence> planFilesWithSequence() {
-    return plan(ArcticManifestGroup::createContentFileWithSequence);
+  public CloseableIterable<ChangeFileScanTask> planFilesWithSequence() {
+    return plan(ArcticChangeManifestGroup::createContentFileWithSequence);
   }
 
-  private static CloseableIterable<ContentFileScanTaskWithSequence> createContentFileWithSequence(
+  private static CloseableIterable<ChangeFileScanTask> createContentFileWithSequence(
       CloseableIterable<ManifestEntry<DataFile>> entries, TaskContext ctx) {
     return CloseableIterable.transform(
         entries,
         entry -> {
           DataFile dataFile = entry.file().copy(ctx.shouldKeepStats());
-          return new ContentFileScanTaskWithSequence(dataFile, entry.fileSequenceNumber());
+          return new ChangeFileScanTask(dataFile, entry.dataSequenceNumber());
         });
   }
 
 
-  public static class ContentFileScanTaskWithSequence implements ScanTask {
+  public static class ChangeFileScanTask implements ScanTask {
 
     private final DataFile file;
-    private final long seq;
+    private final long dataSequenceNumber;
 
-    public ContentFileScanTaskWithSequence(DataFile file, long seq) {
+    public ChangeFileScanTask(DataFile file, long seq) {
       this.file = file;
-      this.seq = seq;
+      this.dataSequenceNumber = seq;
     }
 
     public DataFile file() {
       return this.file;
     }
 
-    public long getSeq() {
-      return seq;
+    public long getDataSequenceNumber() {
+      return dataSequenceNumber;
     }
   }
 }
