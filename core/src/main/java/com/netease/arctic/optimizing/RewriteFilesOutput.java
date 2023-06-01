@@ -46,4 +46,13 @@ public class RewriteFilesOutput implements TableOptimizing.OptimizingOutput {
   public Map<String, String> summary() {
     return summary;
   }
+
+  @Override
+  public String toString() {
+    return "RewriteFilesOutput{" +
+        "dataFilesSize=" + (dataFiles == null ? 0 : dataFiles.length) +
+        ", deleteFilesSize=" + (deleteFiles == null ? 0 : deleteFiles.length) +
+        ", summary=" + summary +
+        '}';
+  }
 }

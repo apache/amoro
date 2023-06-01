@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
@@ -249,6 +250,29 @@ public class OptimizingConfig {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
         maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorDuplicateRatio,
         fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval, hiveRefreshInterval);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("enabled", enabled)
+        .add("targetQuota", targetQuota)
+        .add("optimizerGroup", optimizerGroup)
+        .add("maxExecuteRetryCount", maxExecuteRetryCount)
+        .add("maxCommitRetryCount", maxCommitRetryCount)
+        .add("targetSize", targetSize)
+        .add("maxFileCount", maxFileCount)
+        .add("openFileCost", openFileCost)
+        .add("fragmentRatio", fragmentRatio)
+        .add("minorLeastFileCount", minorLeastFileCount)
+        .add("minorLeastInterval", minorLeastInterval)
+        .add("majorDuplicateRatio", majorDuplicateRatio)
+        .add("fullTriggerInterval", fullTriggerInterval)
+        .add("fullRewriteAllFiles", fullRewriteAllFiles)
+        .add("baseHashBucket", baseHashBucket)
+        .add("baseRefreshInterval", baseRefreshInterval)
+        .add("hiveRefreshInterval", hiveRefreshInterval)
+        .toString();
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
