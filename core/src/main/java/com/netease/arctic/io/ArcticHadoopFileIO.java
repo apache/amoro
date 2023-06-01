@@ -71,9 +71,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       FileSystem fs = getFs(toDelete);
 
       try {
-        if (!fs.delete(toDelete, false)) {
-          throw new IOException("fileSystem delete " + path + " is failed");
-        }
+        fs.delete(toDelete, false);
       } catch (IOException e) {
         throw new UncheckedIOException("Fail to delete file: " + path, e);
       }
