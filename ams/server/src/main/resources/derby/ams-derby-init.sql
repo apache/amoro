@@ -40,8 +40,7 @@ CREATE TABLE resource (
     total_memory              INT,
     start_time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     properties                CLOB(64m),
-    CONSTRAINT resource_pk PRIMARY KEY (resource_id),
-    CONSTRAINT resource_group_idx UNIQUE (group_name)
+    CONSTRAINT resource_pk PRIMARY KEY (resource_id)
 );
 
 CREATE TABLE resource_group (
