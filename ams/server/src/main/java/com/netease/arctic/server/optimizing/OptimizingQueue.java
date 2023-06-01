@@ -543,14 +543,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
             () -> doAs(OptimizingMapper.class, mapper ->
                 mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    getSummary())),
+                    getSummary(), getFailedReason())),
             () -> tableRuntime.completeProcess(false)
         );
       } else {
         doAsTransaction(
             () -> doAs(OptimizingMapper.class, mapper ->
                 mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    getSummary())),
+                    getSummary(), getFailedReason())),
             () -> tableRuntime.completeProcess(true)
         );
       }

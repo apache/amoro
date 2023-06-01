@@ -55,14 +55,16 @@ public interface OptimizingMapper {
 
   @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
       " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
-      "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}, " +
+      "fail_reason = #{failedReason}" +
       " WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("optimizingStatus") OptimizingProcess.Status status,
       @Param("endTime") long endTime,
-      @Param("summary") MetricsSummary summary);
+      @Param("summary") MetricsSummary summary,
+      @Param("failedReason") String failedReason);
 
   @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
       " target_change_snapshot_id, status," +
