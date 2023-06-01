@@ -44,7 +44,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -157,6 +156,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       safelySchedule(task, new OptimizingThread(authToken, threadId));
       executingTaskMap.putIfAbsent(task.getTaskId(), task);
     }
+    if (task != null) {
+      LOG.info("poll task success, taskId = {}, authToken = {}, threadId = {}",
+          task.getTaskId(), authToken, threadId);
+    }
     return task != null ? task.getOptimizingTask() : null;
   }
 
@@ -256,15 +259,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
             getAvailableCore(tableRuntime));
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
-          LOG.debug("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+          LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
         }
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
-                optimizingProcess.getTaskMap().size());
-          }
+          LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
+              optimizingProcess.getTaskMap().size());
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
         } else {
           tableRuntime.cleanPendingInput();
@@ -573,6 +574,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       for (TaskDescriptor taskDescriptor : taskDescriptors) {
         TaskRuntime taskRuntime = new TaskRuntime(new OptimizingTaskId(processId, taskId++),
             taskDescriptor, taskDescriptor.properties());
+        LOG.info("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
+            taskRuntime.getSummary());
         taskMap.put(taskRuntime.getTaskId(), taskRuntime.claimOwnership(this));
       }
     }

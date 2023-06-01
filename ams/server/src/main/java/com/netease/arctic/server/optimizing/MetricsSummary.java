@@ -4,6 +4,7 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Collection;
 
@@ -106,4 +107,19 @@ public class MetricsSummary {
     this.newFileCnt = newFileCnt;
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("newFileSize", newFileSize)
+        .add("newFileCnt", newFileCnt)
+        .add("rewriteDataSize", rewriteDataSize)
+        .add("rewritePosDataSize", rewritePosDataSize)
+        .add("equalityDeleteSize", equalityDeleteSize)
+        .add("positionalDeleteSize", positionalDeleteSize)
+        .add("rewriteDataFileCnt", rewriteDataFileCnt)
+        .add("reRowDeletedDataFileCnt", reRowDeletedDataFileCnt)
+        .add("eqDeleteFileCnt", eqDeleteFileCnt)
+        .add("posDeleteFileCnt", posDeleteFileCnt)
+        .toString();
+  }
 }
