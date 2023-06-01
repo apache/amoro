@@ -56,7 +56,7 @@ public interface OptimizingMapper {
   @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
       " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
       "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}, " +
-      "fail_reason = #{failedReason}" +
+      "fail_reason = #{failedReason, jdbcType=VARCHAR}" +
       " WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
       @Param("tableId") long tableId,
