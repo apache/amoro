@@ -18,13 +18,21 @@
 
 package com.netease.arctic.flink.table;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
-import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -37,12 +45,15 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.iceberg.UpdateProperties;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -63,10 +74,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOCATION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_PROPERTIES_PREFIX;
@@ -83,39 +94,84 @@ public class TestKeyed extends FlinkTestBase {
   public TemporaryFolder tempFolder = new TemporaryFolder();
   @Rule
   public TestName testName = new TestName();
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
 
-  private static final String DB = PK_TABLE_ID.getDatabase();
+  private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
-
-  private String catalog;
   private String db;
   private String topic;
-  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
   private Map<String, String> tableProperties = new HashMap<>();
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
   private static LogPulsarHelper pulsarHelper;
-
-  @Parameterized.Parameter
   public boolean isHive;
-  @Parameterized.Parameter(1)
   public String logType;
-  @Parameterized.Parameter(2)
   public boolean kafkaLegacyEnable;
 
-  @Parameterized.Parameters(name = "isHive = {0}, logType = {1}, kafkaLegacyEnable = {2}")
+  public TestKeyed(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      String logType,
+      boolean kafkaLegacyEnable) {
+    super(catalogTestHelper, tableTestHelper);
+    this.isHive = isHive;
+    this.logType = logType;
+    this.kafkaLegacyEnable = kafkaLegacyEnable;
+  }
+
+  @Parameterized.Parameters(name = "{0}, {1}, {2}, {3}, {4}")
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][]{
-            {false, LOG_STORE_STORAGE_TYPE_KAFKA, true},
-            {false, LOG_STORE_STORAGE_TYPE_KAFKA, false},
-            {false, LOG_STORE_STORAGE_TYPE_PULSAR, false}
+          {
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true),
+            true,
+            LOG_STORE_STORAGE_TYPE_KAFKA,
+            true
+          },
+          {
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true),
+            true,
+            LOG_STORE_STORAGE_TYPE_KAFKA,
+            false
+          },
+          {
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true),
+            true,
+            LOG_STORE_STORAGE_TYPE_PULSAR,
+            false
+          },
+          {
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true),
+            false,
+            LOG_STORE_STORAGE_TYPE_KAFKA,
+            true
+          },
+          {
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true),
+            false,
+            LOG_STORE_STORAGE_TYPE_KAFKA,
+            false
+          },
+          {
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true),
+            false,
+            LOG_STORE_STORAGE_TYPE_PULSAR,
+            false
+          }
         });
   }
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    HiveTableTestBase.startMetastore();
     FlinkTestBase.prepare();
     pulsarHelper = new LogPulsarHelper(environment);
   }
@@ -125,19 +181,17 @@ public class TestKeyed extends FlinkTestBase {
     FlinkTestBase.shutdown();
   }
 
+  @Before
   public void before() throws Exception {
     if (isHive) {
-      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
-      db = HiveTableTestBase.HIVE_DB_NAME;
-      hiveTableTestBase.setupTables();
+      db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
-      catalog = TEST_CATALOG_NAME;
       db = DB;
-      super.before();
     }
+    super.before();
     prepareLog();
 
-    super.config(catalog);
+    super.config();
   }
 
   private void prepareLog() {
@@ -165,9 +219,6 @@ public class TestKeyed extends FlinkTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
-    if (isHive) {
-      hiveTableTestBase.clearTable();
-    }
     if (Objects.equals(logType, LOG_STORE_STORAGE_TYPE_PULSAR)) {
       pulsarHelper.op().deleteTopicByForce(topic);
     }
@@ -211,8 +262,7 @@ public class TestKeyed extends FlinkTestBase {
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
-        " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
+        " 'connector' = 'arctic'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -263,7 +313,6 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -315,7 +364,6 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
       " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -374,7 +422,6 @@ public class TestKeyed extends FlinkTestBase {
     getTableEnv().createTemporaryView("input", input);
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -425,7 +472,7 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
-        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic', 'location' = '" + tableDir.getAbsolutePath() + TABLE + "')");
+        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic')");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
@@ -469,7 +516,6 @@ public class TestKeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -537,7 +583,6 @@ public class TestKeyed extends FlinkTestBase {
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -594,7 +639,6 @@ public class TestKeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -658,7 +702,6 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -710,7 +753,6 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
       " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
       ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -771,7 +813,6 @@ public class TestKeyed extends FlinkTestBase {
     getTableEnv().createTemporaryView("input", input);
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));

@@ -17,6 +17,10 @@ package com.netease.arctic.flink.table;
  * limitations under the License.
  */
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
@@ -72,12 +76,16 @@ public class TestWatermark extends FlinkTestBase {
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
 
-  private static final String DB = PK_TABLE_ID.getDatabase();
+  private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
 
+  public TestWatermark() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
+
   public void before() throws Exception {
-    super.before();
-    super.config(TEST_CATALOG_NAME);
+    super.config();
   }
 
   @After
@@ -89,7 +97,6 @@ public class TestWatermark extends FlinkTestBase {
   public void testWatermark() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     sql("CREATE TABLE IF NOT EXISTS %s (" +
@@ -137,7 +144,6 @@ public class TestWatermark extends FlinkTestBase {
   public void testSelectWatermarkField() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     sql("CREATE TABLE IF NOT EXISTS %s (" +

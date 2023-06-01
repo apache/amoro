@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -58,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -78,6 +83,11 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
   private String latchId;
   private int NUM_SOURCES = 4;
   private int NUM_RECORDS = 10000;
+
+  public ArcticFileWriterITCase() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
 
   @Before
   public void setup() {
@@ -173,7 +183,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
       while (!isCanceled && nextValue < targetNumber) {
         synchronized (ctx.getCheckpointLock()) {
           ctx.collect(GenericRowData.of(
-              nextValue++, StringData.fromString(""), TimestampData.fromLocalDateTime(LocalDateTime.now())));
+              nextValue++, StringData.fromString(""), LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli(), TimestampData.fromLocalDateTime(LocalDateTime.now())));
         }
       }
     }
@@ -234,7 +244,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
 
   @Test
   public void testWrite() throws Exception {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
     JobGraph jobGraph = createJobGraph(tableLoader, FLINK_SCHEMA, true);
     final Configuration config = new Configuration();
