@@ -101,7 +101,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public void touch(String authToken) {
-    LOG.info("Optimizer {} touching", authToken);
+    LOG.debug("Optimizer {} touching", authToken);
     OptimizingQueue queue = getQueueByToken(authToken);
     queue.touch(authToken);
   }
@@ -111,7 +111,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizingTask task = queue.pollTask(authToken, threadId);
     if (task != null) {
-      LOG.info("Optimizer {} polling task", authToken);
+      LOG.info("Optimizer {} polling task {}", authToken, task.getTaskId());
     }
     return task;
   }
