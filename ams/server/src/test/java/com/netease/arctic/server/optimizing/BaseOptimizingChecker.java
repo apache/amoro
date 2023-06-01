@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class BaseOptimizingChecker extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizingChecker.class);
-  private static final long WAIT_SUCCESS_TIMEOUT = 300_000;
+  private static final long WAIT_SUCCESS_TIMEOUT = 150_000;
   private static final long CHECK_TIMEOUT = 1_000;
   private final TableIdentifier tableIdentifier;
   private long lastProcessId;
