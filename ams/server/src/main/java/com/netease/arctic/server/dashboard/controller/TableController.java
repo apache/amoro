@@ -129,63 +129,56 @@ public class TableController extends RestBaseController {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableMame),
         "catalog.database.tableName can not be empty in any element");
-    if (!tableService.catalogExist(catalog)) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "invalid catalog!", null));
-      return;
-    }
+    Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
 
-    try {
-      ArcticTable table = tableService.loadTable(ServerTableIdentifier.of(catalog, database, tableMame));
-      // set basic info
-      TableBasicInfo tableBasicInfo = getTableBasicInfo(table);
-      ServerTableMeta serverTableMeta = getServerTableMeta(table);
-      long tableSize = 0;
-      long tableFileCnt = 0;
-      Map<String, Object> baseMetrics = Maps.newHashMap();
-      FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
-      Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
-      baseMetrics.put("lastCommitTime", AmsUtil.longOrNull(baseSummary.get("visibleTime")));
-      baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
-      baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
-      baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
-      baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
-      tableSize += baseFilesStatistics.getTotalSize();
-      tableFileCnt += baseFilesStatistics.getFileCnt();
-      serverTableMeta.setBaseMetrics(baseMetrics);
+    ArcticTable table = tableService.loadTable(ServerTableIdentifier.of(catalog, database, tableMame));
+    // set basic info
+    TableBasicInfo tableBasicInfo = getTableBasicInfo(table);
+    ServerTableMeta serverTableMeta = getServerTableMeta(table);
+    long tableSize = 0;
+    long tableFileCnt = 0;
+    Map<String, Object> baseMetrics = Maps.newHashMap();
+    FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
+    Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
+    baseMetrics.put("lastCommitTime", AmsUtil.longOrNull(baseSummary.get("visibleTime")));
+    baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
+    baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
+    baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
+    baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
+    tableSize += baseFilesStatistics.getTotalSize();
+    tableFileCnt += baseFilesStatistics.getFileCnt();
+    serverTableMeta.setBaseMetrics(baseMetrics);
 
-      Map<String, Object> changeMetrics = Maps.newHashMap();
-      if (tableBasicInfo.getChangeStatistics() != null) {
-        FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
-        Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-        changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-        changeMetrics.put("totalSize", AmsUtil.byteToXB(changeFilesStatistics.getTotalSize()));
-        changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-        changeMetrics.put("averageFileSize", AmsUtil.byteToXB(changeFilesStatistics.getAverageSize()));
-        changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
-        tableSize += changeFilesStatistics.getTotalSize();
-        tableFileCnt += changeFilesStatistics.getFileCnt();
-      } else {
-        changeMetrics.put("lastCommitTime", null);
-        changeMetrics.put("totalSize", null);
-        changeMetrics.put("fileCount", null);
-        changeMetrics.put("averageFileSize", null);
-        changeMetrics.put("tableWatermark", null);
-      }
-      serverTableMeta.setChangeMetrics(changeMetrics);
-      Set<TableFormat> tableFormats =
-          com.netease.arctic.utils.CatalogUtil.tableFormats(tableService.getCatalogMeta(catalog));
-      Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
-      TableFormat tableFormat = tableFormats.iterator().next();
-      Map<String, Object> tableSummary = new HashMap<>();
-      tableSummary.put("size", AmsUtil.byteToXB(tableSize));
-      tableSummary.put("file", tableFileCnt);
-      tableSummary.put("averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-      tableSummary.put("tableFormat", AmsUtil.formatString(tableFormat.name()));
-      serverTableMeta.setTableSummary(tableSummary);
-      ctx.json(OkResponse.of(serverTableMeta));
-    } catch (Throwable t) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, t.getMessage(), ""));
+    Map<String, Object> changeMetrics = Maps.newHashMap();
+    if (tableBasicInfo.getChangeStatistics() != null) {
+      FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
+      Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
+      changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
+      changeMetrics.put("totalSize", AmsUtil.byteToXB(changeFilesStatistics.getTotalSize()));
+      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
+      changeMetrics.put("averageFileSize", AmsUtil.byteToXB(changeFilesStatistics.getAverageSize()));
+      changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+      tableSize += changeFilesStatistics.getTotalSize();
+      tableFileCnt += changeFilesStatistics.getFileCnt();
+    } else {
+      changeMetrics.put("lastCommitTime", null);
+      changeMetrics.put("totalSize", null);
+      changeMetrics.put("fileCount", null);
+      changeMetrics.put("averageFileSize", null);
+      changeMetrics.put("tableWatermark", null);
     }
+    serverTableMeta.setChangeMetrics(changeMetrics);
+    Set<TableFormat> tableFormats =
+        com.netease.arctic.utils.CatalogUtil.tableFormats(tableService.getCatalogMeta(catalog));
+    Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
+    TableFormat tableFormat = tableFormats.iterator().next();
+    Map<String, Object> tableSummary = new HashMap<>();
+    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
+    tableSummary.put("file", tableFileCnt);
+    tableSummary.put("averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    tableSummary.put("tableFormat", AmsUtil.formatString(tableFormat.name()));
+    serverTableMeta.setTableSummary(tableSummary);
+    ctx.json(OkResponse.of(serverTableMeta));
   }
 
   /**
@@ -207,17 +200,11 @@ public class TableController extends RestBaseController {
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
-    try {
-      Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHiveClient(), tableIdentifier);
-      List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
-      List<AMSColumnInfo> partitionColumnInfos = transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
-      hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
-          new HashMap<>(), hiveTable.getCreateTime());
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime hive table info", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime hive table info", ""));
-      return;
-    }
+    Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHiveClient(), tableIdentifier);
+    List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
+    List<AMSColumnInfo> partitionColumnInfos = transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
+    hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
+        new HashMap<>(), hiveTable.getCreateTime());
     ctx.json(OkResponse.of(hiveTableInfo));
   }
 
@@ -235,33 +222,29 @@ public class TableController extends RestBaseController {
 
     ArcticHiveCatalog arcticHiveCatalog
         = (ArcticHiveCatalog) CatalogLoader.load(String.join("/", AmsUtil.getAMSThriftAddress(serviceConfig), catalog));
-    try {
-      tableUpgradeExecutor.execute(() -> {
-        TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-        upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
-        try {
-          UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
-              upgradeHiveMeta.getPkList()
-                  .stream()
-                  .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)
-                  .collect(Collectors.toList()), upgradeHiveMeta.getProperties());
-          upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
-        } catch (Throwable t) {
-          LOG.error("Failed to upgrade hive table to arctic ", t);
-          upgradeRunningInfo.get(tableIdentifier).setErrorMessage(AmsUtil.getStackTrace(t));
-          upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
-        } finally {
-          tableUpgradeExecutor.schedule(
-              () -> upgradeRunningInfo.remove(tableIdentifier),
-              UPGRADE_INFO_EXPIRE_INTERVAL,
-              TimeUnit.MILLISECONDS);
-        }
-      });
-      ctx.json(OkResponse.ok());
-    } catch (Exception e) {
-      LOG.error("upgrade hive table error:", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upgrade hive table", ""));
-    }
+
+    tableUpgradeExecutor.execute(() -> {
+      TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+      upgradeRunningInfo.put(tableIdentifier, new UpgradeRunningInfo());
+      try {
+        UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
+            upgradeHiveMeta.getPkList()
+                .stream()
+                .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName)
+                .collect(Collectors.toList()), upgradeHiveMeta.getProperties());
+        upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
+      } catch (Throwable t) {
+        LOG.error("Failed to upgrade hive table to arctic ", t);
+        upgradeRunningInfo.get(tableIdentifier).setErrorMessage(AmsUtil.getStackTrace(t));
+        upgradeRunningInfo.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
+      } finally {
+        tableUpgradeExecutor.schedule(
+            () -> upgradeRunningInfo.remove(tableIdentifier),
+            UPGRADE_INFO_EXPIRE_INTERVAL,
+            TimeUnit.MILLISECONDS);
+      }
+    });
+    ctx.json(OkResponse.ok());
   }
 
   public void getUpgradeStatus(Context ctx) {
@@ -313,10 +296,9 @@ public class TableController extends RestBaseController {
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
     checkOffsetAndLimit(offset, limit);
+    Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
+        table)), "no such table");
 
-    if (!tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db, table))) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "no such table", ""));
-    }
     List<BaseMajorCompactRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
     List<BaseMajorCompactRecord> result =
         all.stream().sorted(Comparator.comparingLong(BaseMajorCompactRecord::getCommitTime).reversed())
@@ -336,17 +318,12 @@ public class TableController extends RestBaseController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    try {
-      List<TransactionsOfTable> transactionsOfTables =
-          tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
-      int offset = (page - 1) * pageSize;
-      PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
-          offset, pageSize, AmsUtil::toTransactionsOfTable);
-      ctx.json(OkResponse.of(pageResult));
-    } catch (Exception e) {
-      LOG.error("Failed to list transactions ", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to list transactions", ""));
-    }
+    List<TransactionsOfTable> transactionsOfTables =
+        tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
+    int offset = (page - 1) * pageSize;
+    PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
+        offset, pageSize, AmsUtil::toTransactionsOfTable);
+    ctx.json(OkResponse.of(pageResult));
   }
 
   /**
@@ -360,17 +337,12 @@ public class TableController extends RestBaseController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    try {
-      List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
-          tableName), Long.parseLong(transactionId));
-      int offset = (page - 1) * pageSize;
-      PageResult<AMSDataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(result,
-          offset, pageSize);
-      ctx.json(OkResponse.of(amsPageResult));
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime transactions detail", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime transactions detail", ""));
-    }
+    List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
+        tableName), Long.parseLong(transactionId));
+    int offset = (page - 1) * pageSize;
+    PageResult<AMSDataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(result,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**

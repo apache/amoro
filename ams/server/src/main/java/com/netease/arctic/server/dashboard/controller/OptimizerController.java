@@ -56,7 +56,6 @@ import java.util.stream.Collectors;
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
  */
 public class OptimizerController extends RestBaseController {
-  private static final Logger LOG = LoggerFactory.getLogger(OptimizerController.class);
 
   private static final String ALL_GROUP = "all";
   private final TableService tableService;
@@ -77,36 +76,31 @@ public class OptimizerController extends RestBaseController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    try {
-      List<TableRuntime> tableRuntimes = new ArrayList<>();
-      List<ServerTableIdentifier> tables = tableService.listTables();
-      for (ServerTableIdentifier identifier : tables) {
-        TableRuntime tableRuntime = tableService.getRuntime(identifier);
-        if (tableRuntime == null) {
-          continue;
-        }
-        if (ALL_GROUP.equals(optimizerGroup) || tableRuntime.getOptimizerGroup().equals(optimizerGroup)) {
-          tableRuntimes.add(tableRuntime);
-        }
+    List<TableRuntime> tableRuntimes = new ArrayList<>();
+    List<ServerTableIdentifier> tables = tableService.listTables();
+    for (ServerTableIdentifier identifier : tables) {
+      TableRuntime tableRuntime = tableService.getRuntime(identifier);
+      if (tableRuntime == null) {
+        continue;
       }
-      tableRuntimes.sort((o1, o2) -> {
-        // first we compare the status , and then we compare the start time when status are equal;
-        int statDiff = o1.getOptimizingStatus().compareTo(o2.getOptimizingStatus());
-        // status order is asc, startTime order is desc
-        if (statDiff == 0) {
-          long timeDiff = o1.getCurrentStatusStartTime() - o2.getCurrentStatusStartTime();
-          return timeDiff >= 0 ? (timeDiff == 0 ? 0 : -1) : 1;
-        } else {
-          return statDiff;
-        }
-      });
-      PageResult<TableRuntime, TableOptimizingInfo> amsPageResult = PageResult.of(tableRuntimes,
-          offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
-      ctx.json(OkResponse.of(amsPageResult));
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime optimizerGroup tables", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime optimizerGroup tables", ""));
+      if (ALL_GROUP.equals(optimizerGroup) || tableRuntime.getOptimizerGroup().equals(optimizerGroup)) {
+        tableRuntimes.add(tableRuntime);
+      }
     }
+    tableRuntimes.sort((o1, o2) -> {
+      // first we compare the status , and then we compare the start time when status are equal;
+      int statDiff = o1.getOptimizingStatus().compareTo(o2.getOptimizingStatus());
+      // status order is asc, startTime order is desc
+      if (statDiff == 0) {
+        long timeDiff = o1.getCurrentStatusStartTime() - o2.getCurrentStatusStartTime();
+        return timeDiff >= 0 ? (timeDiff == 0 ? 0 : -1) : 1;
+      } else {
+        return statDiff;
+      }
+    });
+    PageResult<TableRuntime, TableOptimizingInfo> amsPageResult = PageResult.of(tableRuntimes,
+        offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
@@ -119,34 +113,28 @@ public class OptimizerController extends RestBaseController {
 
     int offset = (page - 1) * pageSize;
 
-    try {
-      List<OptimizerInstance> optimizers;
-      if (optimizerGroup.equals("all")) {
-        optimizers = optimizerManager.listOptimizers();
-      } else {
-        optimizers = optimizerManager.listOptimizers(optimizerGroup);
-      }
-      List<OptimizerInstance> optimizerList = new ArrayList<>(optimizers);
-      optimizerList.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
-      List<JSONObject> result = optimizerList.stream().map(e -> {
-        JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
-        jsonObject.put("jobId", e.getResourceId());
-        jsonObject.put("optimizerGroup", e.getGroupName());
-        jsonObject.put("coreNumber", e.getThreadCount());
-        jsonObject.put("memory", e.getMemoryMb());
-        jsonObject.put("jobStatus", "RUNNING");
-        jsonObject.put("container", e.getContainerName());
-        return jsonObject;
-      }).collect(Collectors.toList());
-
-      PageResult<JSONObject, JSONObject> amsPageResult = PageResult.of(result,
-          offset, pageSize);
-      ctx.json(OkResponse.of(amsPageResult));
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime optimizer", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-          "Failed to getRuntime optimizer", ""));
+    List<OptimizerInstance> optimizers;
+    if (optimizerGroup.equals("all")) {
+      optimizers = optimizerManager.listOptimizers();
+    } else {
+      optimizers = optimizerManager.listOptimizers(optimizerGroup);
     }
+    List<OptimizerInstance> optimizerList = new ArrayList<>(optimizers);
+    optimizerList.sort(Comparator.comparingLong(OptimizerInstance::getStartTime).reversed());
+    List<JSONObject> result = optimizerList.stream().map(e -> {
+      JSONObject jsonObject = (JSONObject) JSON.toJSON(e);
+      jsonObject.put("jobId", e.getResourceId());
+      jsonObject.put("optimizerGroup", e.getGroupName());
+      jsonObject.put("coreNumber", e.getThreadCount());
+      jsonObject.put("memory", e.getMemoryMb());
+      jsonObject.put("jobStatus", "RUNNING");
+      jsonObject.put("container", e.getContainerName());
+      return jsonObject;
+    }).collect(Collectors.toList());
+
+    PageResult<JSONObject, JSONObject> amsPageResult = PageResult.of(result,
+        offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
@@ -154,20 +142,14 @@ public class OptimizerController extends RestBaseController {
    * url = /optimizerGroups.
    */
   public void getOptimizerGroups(Context ctx) {
-    try {
-      List<JSONObject> result = optimizerManager.listResourceGroups().stream()
-          .filter(resourceGroup -> !ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
-          .map(e -> {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("optimizerGroupName", e.getName());
-            return jsonObject;
-          }).collect(Collectors.toList());
-      ctx.json(OkResponse.of(result));
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime optimizerGroups", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-          "Failed to getRuntime optimizerGroups", ""));
-    }
+    List<JSONObject> result = optimizerManager.listResourceGroups().stream()
+        .filter(resourceGroup -> !ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(resourceGroup.getContainer()))
+        .map(e -> {
+          JSONObject jsonObject = new JSONObject();
+          jsonObject.put("optimizerGroupName", e.getName());
+          return jsonObject;
+        }).collect(Collectors.toList());
+    ctx.json(OkResponse.of(result));
   }
 
   /**
@@ -175,23 +157,18 @@ public class OptimizerController extends RestBaseController {
    */
   public void getOptimizerGroupInfo(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
-    try {
-      List<OptimizerInstance> optimizers;
-      if (optimizerGroup.equals("all")) {
-        optimizers = optimizerManager.listOptimizers();
-      } else {
-        optimizers = optimizerManager.listOptimizers(optimizerGroup);
-      }
-      OptimizerResourceInfo optimizerResourceInfo = new OptimizerResourceInfo();
-      optimizers.forEach(e -> {
-        optimizerResourceInfo.addOccupationCore(e.getThreadCount());
-        optimizerResourceInfo.addOccupationMemory(e.getMemoryMb());
-      });
-      ctx.json(OkResponse.of(optimizerResourceInfo));
-    } catch (Exception e) {
-      LOG.error("Failed to getRuntime optimizerGroup info", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to getRuntime optimizerGroup info", ""));
+    List<OptimizerInstance> optimizers;
+    if (optimizerGroup.equals("all")) {
+      optimizers = optimizerManager.listOptimizers();
+    } else {
+      optimizers = optimizerManager.listOptimizers(optimizerGroup);
     }
+    OptimizerResourceInfo optimizerResourceInfo = new OptimizerResourceInfo();
+    optimizers.forEach(e -> {
+      optimizerResourceInfo.addOccupationCore(e.getThreadCount());
+      optimizerResourceInfo.addOccupationMemory(e.getMemoryMb());
+    });
+    ctx.json(OkResponse.of(optimizerResourceInfo));
   }
 
   /**
@@ -201,27 +178,20 @@ public class OptimizerController extends RestBaseController {
    */
   public void releaseOptimizer(Context ctx) {
     String resourceId = ctx.pathParam("jobId");
-    if (resourceId.isEmpty()) {
-      ctx.json(ErrorResponse.of("resource id can not be empty, maybe it's a external optimizer"));
-      return;
-    }
-    try {
-      List<OptimizerInstance> optimizerInstances = optimizerManager.listOptimizers()
-          .stream()
-          .filter(e -> resourceId.equals(e.getResourceId()))
-          .collect(Collectors.toList());
-      Preconditions.checkState(optimizerInstances.size() > 0, String.format("The resource ID %s has not been indexed" +
-          " to any optimizer.", resourceId));
-      Resource resource = optimizerManager.getResource(resourceId);
-      resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
-      ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
-      optimizerManager.deleteResource(resourceId);
-      optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
-      ctx.json(OkResponse.of("Success to release optimizer"));
-    } catch (Exception e) {
-      LOG.error("Failed to release optimizer", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to release optimizer", ""));
-    }
+    Preconditions.checkArgument(!resourceId.isEmpty(), "resource id can not be empty, maybe it's a external optimizer");
+
+    List<OptimizerInstance> optimizerInstances = optimizerManager.listOptimizers()
+        .stream()
+        .filter(e -> resourceId.equals(e.getResourceId()))
+        .collect(Collectors.toList());
+    Preconditions.checkState(optimizerInstances.size() > 0, String.format("The resource ID %s has not been indexed" +
+        " to any optimizer.", resourceId));
+    Resource resource = optimizerManager.getResource(resourceId);
+    resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
+    ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
+    optimizerManager.deleteResource(resourceId);
+    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
+    ctx.json(OkResponse.of("Success to release optimizer"));
   }
 
   /**
@@ -238,14 +208,9 @@ public class OptimizerController extends RestBaseController {
         .setProperties(resourceGroup.getProperties())
         .setThreadCount(parallelism)
         .build();
-    try {
-      ResourceContainers.get(resource.getContainerName()).requestResource(resource);
-      optimizerManager.createResource(resource);
-      ctx.json(OkResponse.of("success to scaleOut optimizer"));
-    } catch (Exception e) {
-      LOG.error("Failed to scaleOut optimizer", e);
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to scaleOut optimizer", ""));
-    }
+    ResourceContainers.get(resource.getContainerName()).requestResource(resource);
+    optimizerManager.createResource(resource);
+    ctx.json(OkResponse.of("success to scaleOut optimizer"));
   }
 }
 
