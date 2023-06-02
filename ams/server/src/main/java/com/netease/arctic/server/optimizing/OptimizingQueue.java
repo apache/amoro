@@ -19,7 +19,6 @@ import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
-import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.TableManager;
@@ -138,7 +137,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (LOG.isDebugEnabled()) {
       LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     }
-    doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
@@ -198,7 +196,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (LOG.isDebugEnabled()) {
       LOG.debug("Register optimizer: " + optimizer);
     }
-    doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
   }
@@ -211,8 +208,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .map(OptimizerInstance::getToken)
         .collect(Collectors.toList());
 
-    expiredOptimizers.forEach(optimizerToken ->
-        doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(optimizerToken)));
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
