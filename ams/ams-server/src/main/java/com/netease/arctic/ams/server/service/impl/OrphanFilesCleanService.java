@@ -215,7 +215,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                                FileStatus fileStatus,
                                                Long lastTime,
                                                Set<String> exclude) {
-    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
+    String location = fileStatus.getPath().toString();
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
@@ -243,7 +243,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         return 0;
       }
     } else {
-      if (!exclude.contains(location) &&
+      if (!exclude.contains(TableFileUtils.getUriPath(location)) &&
           !exclude.contains(TableFileUtils.getUriPath(new Path(location).getParent().toString())) &&
           fileStatus.getModificationTime() < lastTime) {
         io.deleteFile(location);
@@ -259,12 +259,13 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                            Long lastTime,
                                            Set<String> exclude,
                                            Pattern excludeFileNameRegex) {
-    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
+    String location = fileStatus.getPath().toString();
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
     } else {
-      if (!exclude.contains(location) && fileStatus.getModificationTime() < lastTime &&
+      if (!exclude.contains(TableFileUtils.getUriPath(location)) &&
+          fileStatus.getModificationTime() < lastTime &&
           (excludeFileNameRegex == null ||
               !excludeFileNameRegex.matcher(TableFileUtils.getFileName(location)).matches())) {
         io.deleteFile(location);
