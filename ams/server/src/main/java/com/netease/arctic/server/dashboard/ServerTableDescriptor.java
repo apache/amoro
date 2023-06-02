@@ -3,9 +3,9 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
-import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
@@ -208,12 +208,12 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
-  public List<BaseMajorCompactRecord> getOptimizeInfo(String catalog, String db, String table) {
+  public List<OptimizedRecord> getOptimizeInfo(String catalog, String db, String table) {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
     return tableOptimizingProcesses.stream().map(e -> {
-      BaseMajorCompactRecord record = new BaseMajorCompactRecord();
+      OptimizedRecord record = new OptimizedRecord();
       List<TaskRuntime> taskRuntimes = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(e.getTableId(), e.getProcessId())).stream()
