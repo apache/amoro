@@ -18,6 +18,7 @@
 
 package com.netease.arctic.iceberg;
 
+import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
@@ -34,11 +35,12 @@ import java.util.Map;
 
 public class IcebergTables implements ArcticTables {
 
-  private Catalog catalog;
-  private Map<String, String> catalogProperties;
-  private TableMetaStore tableMetaStore;
+  private final Catalog catalog;
+  private final Map<String, String> catalogProperties;
+  private final TableMetaStore tableMetaStore;
 
-  public IcebergTables(Catalog catalog, Map<String, String> catalogProperties,  TableMetaStore tableMetaStore) {
+
+  public IcebergTables(Catalog catalog, Map<String, String> catalogProperties, TableMetaStore tableMetaStore) {
     this.catalog = catalog;
     this.catalogProperties = catalogProperties;
     this.tableMetaStore = tableMetaStore;

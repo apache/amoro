@@ -24,10 +24,13 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -39,77 +42,99 @@ import java.util.Map;
 public class BasicIcebergCatalog implements ArcticCatalog {
 
   private AmsClient client;
-  private IcebergCatalogWrapper catalogWrapper;
+  private CatalogMeta meta;
+  private volatile CommonExternalMetastore metastore;
+
 
   @Override
   public String name() {
-    return catalogWrapper.name();
+    return meta.getCatalogName();
   }
 
   @Override
   public void initialize(
       AmsClient client, CatalogMeta meta, Map<String, String> properties) {
+    this.meta = meta;
     this.client = client;
-    this.catalogWrapper = new IcebergCatalogWrapper(meta, properties);
   }
+
+
+  private CommonExternalMetastore lazyMetastore() {
+    if (metastore == null) {
+      synchronized (this) {
+        if (metastore == null){
+          this.metastore = new CommonExternalMetastore(this.meta);
+        }
+      }
+    }
+    return this.metastore;
+  }
+
 
   @Override
   public List<String> listDatabases() {
-    return catalogWrapper.listDatabases();
+    return lazyMetastore().listDatabases();
   }
 
   @Override
   public void createDatabase(String databaseName) {
-    catalogWrapper.createDatabase(databaseName);
+    lazyMetastore().createDatabase(databaseName);
   }
 
   @Override
   public void dropDatabase(String databaseName) {
-    catalogWrapper.dropDatabase(databaseName);
+    lazyMetastore().dropDatabase(databaseName);
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return catalogWrapper.listTables(database);
+    return null;
   }
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
-    return catalogWrapper.loadTable(tableIdentifier);
+    TableFormat format = lazyMetastore().tableFormat(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    return lazyMetastore().tables(format).loadTable(tableIdentifier);
   }
 
   @Override
   public boolean tableExists(TableIdentifier tableIdentifier) {
-    return catalogWrapper.tableExists(tableIdentifier);
+    return lazyMetastore().exist(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-    catalogWrapper.renameTable(from, newTableName);
+
   }
 
   @Override
   public boolean dropTable(TableIdentifier tableIdentifier, boolean purge) {
-    return catalogWrapper.dropTable(tableIdentifier, purge);
+    try {
+      TableFormat format = lazyMetastore().tableFormat(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+      return lazyMetastore().tables(format).dropTable(tableIdentifier, purge);
+    } catch (NoSuchTableException e) {
+      return false;
+    }
   }
 
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
-    return catalogWrapper.newTableBuilder(identifier, schema);
+    return this.newTableBuilder(identifier, schema, TableFormat.ICEBERG);
   }
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
-    return catalogWrapper.newTableBuilder(identifier, schema, format);
+    return lazyMetastore().tables(format).newTableBuilder(schema, identifier);
   }
 
   @Override
-  public void refresh() {
+  public synchronized void refresh() {
     try {
-      catalogWrapper.refreshCatalogMeta(client.getCatalog(catalogWrapper.name()));
+      this.meta = client.getCatalog(name());
+      this.metastore = null;
     } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load catalog %s.", catalogWrapper.name()), e);
+      throw new IllegalStateException(String.format("failed load catalog %s.", this.meta.getCatalogName()), e);
     }
   }
 
@@ -120,6 +145,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public Map<String, String> properties() {
-    return catalogWrapper.properties();
+    return meta.getCatalogProperties();
   }
 }

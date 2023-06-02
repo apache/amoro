@@ -281,6 +281,7 @@ public class TableProperties {
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
+  
 
   /**
    * Protected properties which should not be read by user.

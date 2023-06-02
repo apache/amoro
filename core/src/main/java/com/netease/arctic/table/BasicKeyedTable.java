@@ -20,7 +20,6 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
@@ -41,7 +40,6 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.thrift.TException;
 
 import java.util.Map;
 
@@ -49,7 +47,6 @@ import java.util.Map;
  * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
  */
 public class BasicKeyedTable implements KeyedTable {
-  private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
 
   /**
@@ -60,13 +57,9 @@ public class BasicKeyedTable implements KeyedTable {
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
-  protected TableMeta tableMeta;
 
   public BasicKeyedTable(
-      TableMeta tableMeta, String tableLocation,
       PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
-    this.tableMeta = tableMeta;
-    this.tableLocation = tableLocation;
     this.primaryKeySpec = primaryKeySpec;
     this.client = client;
     this.baseTable = baseTable;
@@ -91,7 +84,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public TableIdentifier id() {
-    return TableIdentifier.of(tableMeta.getTableIdentifier());
+    return baseTable.id();
   }
 
 
@@ -102,7 +95,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public String location() {
-    return tableLocation;
+    return this.baseTable.location();
   }
 
   @Override
@@ -142,14 +135,6 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public void refresh() {
-    try {
-      if (client != null) {
-        this.tableMeta = client.getTable(this.tableMeta.getTableIdentifier());
-      }
-    } catch (TException e) {
-      throw new IllegalStateException("failed refresh table from ams", e);
-    }
-
     baseTable.refresh();
     if (primaryKeySpec().primaryKeyExisted()) {
       changeTable.refresh();
@@ -181,7 +166,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public UpdateProperties updateProperties() {
-    return new UpdateKeyedTableProperties(this, tableMeta);
+    return new UpdateKeyedTableProperties(this);
   }
 
   @Override
@@ -211,6 +196,10 @@ public class BasicKeyedTable implements KeyedTable {
 
   public static class BaseInternalTable extends BasicUnkeyedTable implements BaseTable {
 
+    public BaseInternalTable(UnkeyedTable table) {
+      super(table.id(), table, table.io(), null, null);
+    }
+
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
@@ -219,6 +208,10 @@ public class BasicKeyedTable implements KeyedTable {
   }
 
   public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
+
+    public ChangeInternalTable(TableIdentifier baseIdentifier, UnkeyedTable table) {
+      super(baseIdentifier, table, table.io(), null, null);
+    }
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
