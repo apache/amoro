@@ -69,18 +69,6 @@
         <!--arctic-->
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-1.12-pulsar-bridge</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-1.12-iceberg-bridge</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -92,6 +80,38 @@
                     <artifactId>jersey-core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.aggregate</groupId>
+                    <artifactId>jetty-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-server</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.12-pulsar-bridge</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-flink-1.12-iceberg-bridge</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
@@ -215,32 +235,11 @@
             </exclusions>
         </dependency>
 
-        <!--   exclude jackson-databind   -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.10.2</version>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty.aggregate</groupId>
-                    <artifactId>jetty-all</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Protobuf & Protobuf Native Schema support. Add it to your pom if you need protobuf -->
