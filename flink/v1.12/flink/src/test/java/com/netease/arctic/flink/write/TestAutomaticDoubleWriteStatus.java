@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import org.apache.flink.streaming.api.watermark.Watermark;
 
 import com.netease.arctic.flink.FlinkTestBase;
@@ -33,9 +37,14 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STO
 public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
 
+  public TestAutomaticDoubleWriteStatus() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
+
   @Test
   public void testTableProperties() {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
     AutomaticDoubleWriteStatus status = new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
     status.open();
