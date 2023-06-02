@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.table;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
@@ -38,6 +42,7 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,8 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.LOCATION;
 import static org.apache.flink.table.planner.factories.TestValuesTableFactory.registerData;
 
 public class TestJoin extends FlinkTestBase {
@@ -65,17 +68,25 @@ public class TestJoin extends FlinkTestBase {
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
 
-  private static final String DB = PK_TABLE_ID.getDatabase();
+  private static final String DB = TableTestHelper.TEST_DB_NAME;
   private static final String TABLE = "test_keyed";
+  private static final TableIdentifier TABLE_ID =
+    TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, TABLE);
 
+  public TestJoin() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(false, false));
+  }
+
+  @Before
   public void before() throws Exception {
     super.before();
-    super.config(TEST_CATALOG_NAME);
+    super.config();
   }
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
+    getCatalog().dropTable(TABLE_ID, true);
   }
 
   @Test(timeout = 180000)
@@ -98,7 +109,6 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -155,7 +165,6 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -170,7 +179,7 @@ public class TestJoin extends FlinkTestBase {
         .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+        ArcticTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(

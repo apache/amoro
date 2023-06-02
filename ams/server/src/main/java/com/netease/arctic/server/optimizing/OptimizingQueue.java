@@ -154,10 +154,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       safelySchedule(task, new OptimizingThread(authToken, threadId));
       executingTaskMap.putIfAbsent(task.getTaskId(), task);
     }
-    if (task != null) {
-      LOG.info("poll task success, taskId = {}, authToken = {}, threadId = {}",
-          task.getTaskId(), authToken, threadId);
-    }
     return task != null ? task.getOptimizingTask() : null;
   }
 

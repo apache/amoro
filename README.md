@@ -30,8 +30,7 @@ Arctic contains modules as below:
 - `arctic-flink` is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)
 - `arctic-spark` is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)
 - `arctic-trino` now provides query integrating with apache trino, built on JDK17
-- `arctic-optimizing` exposes optimizing container/group api and provides default implementation
-- `arctic-ams` is arctic management service module
+- `arctic-ams` is arctic meta service module
   - `ams-api` contains ams thrift api
   - `ams-dashboard` is the dashboard frontend for ams
   - `ams-server` is the backend server for ams
@@ -52,7 +51,7 @@ Arctic is built using Maven with Java 1.8 and Java 17(only for `trino` module).
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk17Home}</jdkHome>
+            <jdkHome>${YourJDK17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
