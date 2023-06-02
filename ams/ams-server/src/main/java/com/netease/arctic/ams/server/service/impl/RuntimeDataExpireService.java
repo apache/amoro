@@ -65,16 +65,19 @@ public class RuntimeDataExpireService {
 
   private void expire() {
     List<TableMetadata> tableMetadata = metaService.listTables();
-
+    List<TableIdentifier> optimizeTables = optimizeService.refreshAndListTables();
     // expire and clear table_task_history table
     tableMetadata.forEach(meta -> {
       TableIdentifier identifier = meta.getTableIdentifier();
       try {
-        TableOptimizeRuntime tableOptimizeRuntime =
-            optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
-        tableTaskHistoryService.expireTaskHistory(identifier,
-            tableOptimizeRuntime.getLatestTaskPlanGroup(),
-            System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
+        // only expire the table in optimizeTables
+        if (optimizeTables.contains(identifier)) {
+          TableOptimizeRuntime tableOptimizeRuntime =
+                  optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
+          tableTaskHistoryService.expireTaskHistory(identifier,
+                  tableOptimizeRuntime.getLatestTaskPlanGroup(),
+                  System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
+        }
       } catch (Exception e) {
         LOG.error("{} failed to expire and clear table_task_history table", identifier, e);
       }
@@ -85,7 +88,7 @@ public class RuntimeDataExpireService {
       TableIdentifier identifier = meta.getTableIdentifier();
       try {
         optimizeService.expireOptimizeHistory(identifier,
-            System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
+                System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
       } catch (Exception e) {
         LOG.error("{} failed to expire and clear optimize_history table", identifier, e);
       }

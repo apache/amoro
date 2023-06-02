@@ -275,7 +275,12 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       refreshAndListTables();
       TableOptimizeItem reloadTableOptimizeItem = optimizeTables.get(tableIdentifier);
       if (reloadTableOptimizeItem == null) {
-        throw new NoSuchObjectException("can't find table " + tableIdentifier);
+        if (unOptimizeTables.contains(tableIdentifier)) {
+          throw new NoSuchObjectException(tableIdentifier + " not in optimizing tables, maybe property " +
+                  "self-optimizing.enabled is false!");
+        } else {
+          throw new NoSuchObjectException("can't find table " + tableIdentifier);
+        }
       }
       return reloadTableOptimizeItem;
     }
