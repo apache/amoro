@@ -25,7 +25,7 @@ Arctic 的 self-optimizing 的核心特性有：
 在数据写入过程中，可能会产生写放大和读放大两类情况：
 
 - 读放大 — 由于写入过程中产生过量的小文件，或 delete 文件与 insert 文件产生了过多的映射（如果你是 Iceberg v2 format 用户，对这个问题可能不陌生），如果 optimizing 的调度频率跟不上小文件产生的速度，会严重拖慢文件读取性能
-- 写放大 — 频繁地调度 optimizing 会让存量数据被频繁合并和重写，造成 CPU/IO/Memoery 的资源竞争和浪费，拖慢 optimizing 的速度，也会进一步引发读放大
+- 写放大 — 频繁地调度 optimizing 会让存量数据被频繁合并和重写，造成 CPU/IO/Memory 的资源竞争和浪费，拖慢 optimizing 的速度，也会进一步引发读放大
 
 为了缓解读放大需要频繁执行 optimizing，但是频繁 optimizing 会导致写放大，Self-optimizing 的设计需要在读放大和写放大之间提供最佳的 trade off，Arctic 的 self-optimizing 借鉴了 java 虚拟机分代垃圾回收算法，将文件按照大小分为 Fragment 和 Segment，将 Fragment 和 Segement 上执行的不同 self-optimizing 过程分为 minor 和 major 两种类型，为此 Arctic v0.4 引入了两个参数来定义 Fragment 和 Segment：
 
