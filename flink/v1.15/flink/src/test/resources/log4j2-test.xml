@@ -26,11 +26,20 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="com.netease.arctic" level="INFO" additivity="false">
-            <AppenderRef ref="stdout"/>
-        </Logger>
         <Root level="WARN">
             <AppenderRef ref="stdout"/>
         </Root>
+        <Logger name="com.netease.arctic" level="INFO" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="org.apache.flink" level="INFO" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="org.apache.pulsar" level="INFO" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
+        <Logger name="state.change.logger" level="FATAL" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
     </Loggers>
 </Configuration>
