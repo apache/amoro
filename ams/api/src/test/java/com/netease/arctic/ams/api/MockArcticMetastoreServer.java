@@ -21,6 +21,8 @@ package com.netease.arctic.ams.api;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TFramedTransport;
@@ -176,10 +178,20 @@ public class MockArcticMetastoreServer implements Runnable {
           new OptimizingService.Processor<>(optimizerManagerHandler);
       processor.registerProcessor("OptimizeManager", optimizerManProcessor);
 
+      final long maxMessageSize = 100 * 1024 * 1024L;
+      final TProtocolFactory protocolFactory;
+      final TProtocolFactory inputProtoFactory;
+      protocolFactory = new TBinaryProtocol.Factory();
+      inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
+
       TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
           .processor(processor)
           .transportFactory(new TFramedTransport.Factory())
-          .workerThreads(10);
+          .protocolFactory(protocolFactory)
+          .inputProtocolFactory(inputProtoFactory)
+          .workerThreads(10)
+          .selectorThreads(2)
+          .acceptQueueSizePerThread(4);
       server = new TThreadedSelectorServer(args);
       server.serve();
 
