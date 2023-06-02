@@ -20,10 +20,8 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
-import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 

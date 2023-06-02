@@ -20,11 +20,9 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 
 import java.io.Serializable;
 
