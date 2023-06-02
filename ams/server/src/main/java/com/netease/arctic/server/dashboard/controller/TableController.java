@@ -35,10 +35,10 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
-import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
+import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -93,14 +93,14 @@ import java.util.stream.Collectors;
 /**
  * Table moudle controller.
  */
-public class TableController extends RestBaseController {
+public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
   private static final long UPGRADE_INFO_EXPIRE_INTERVAL = 60 * 60 * 1000;
 
   private final TableService tableService;
   private final ServerTableDescriptor tableDescriptor;
   private final Configurations serviceConfig;
-  private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo = new ConcurrentHashMap<>(10);
+  private final ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> upgradeRunningInfo = new ConcurrentHashMap<>();
   private final ScheduledExecutorService tableUpgradeExecutor;
 
   public TableController(
@@ -312,14 +312,15 @@ public class TableController extends RestBaseController {
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    checkOffsetAndLimit(offset, limit);
+    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
+    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
 
     if (!tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db, table))) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "no such table", ""));
     }
-    List<BaseMajorCompactRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
-    List<BaseMajorCompactRecord> result =
-        all.stream().sorted(Comparator.comparingLong(BaseMajorCompactRecord::getCommitTime).reversed())
+    List<OptimizedRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
+    List<OptimizedRecord> result =
+        all.stream().sorted(Comparator.comparingLong(OptimizedRecord::getCommitTime).reversed())
             .skip(offset)
             .limit(limit)
             .collect(Collectors.toList());
@@ -421,10 +422,10 @@ public class TableController extends RestBaseController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    List<DDLInfo> ddlInfos = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
+    List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
         tableName));
-    Collections.reverse(ddlInfos);
-    PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
+    Collections.reverse(ddlInfoList);
+    PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfoList,
         offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
   }

@@ -32,7 +32,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlatformFileInfoController extends RestBaseController {
+public class PlatformFileInfoController {
 
   private PlatformFileManager platformFileInfoService;
 

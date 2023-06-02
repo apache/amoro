@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * through this interface, you can getRuntime the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
  */
-public class OptimizerController extends RestBaseController {
+public class OptimizerController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerController.class);
 
   private static final String ALL_GROUP = "all";

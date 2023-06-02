@@ -66,7 +66,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-public class CatalogController extends RestBaseController {
+public class CatalogController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
   private final PlatformFileManager platformFileInfoService;
 
