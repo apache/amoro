@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class SettingController extends RestBaseController {
+public class SettingController {
   private static final String MASK_STRING = "******";
   private static final Set<String> MASK_CONFIGURATION_SET = Sets.newHashSet();
 

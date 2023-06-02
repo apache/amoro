@@ -35,7 +35,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           completeTask(result);
         }
       } catch (Throwable t) {
-        LOG.error(String.format("Optimizer executor[%d] got an unexpected error", threadId), t);
+        LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
       }
     }
   }
@@ -50,7 +50,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       try {
         task = callAuthenticatedAms((client, token) -> client.pollTask(token, threadId));
       } catch (TException exception) {
-        LOG.error(String.format("Optimizer executor[%d] polled task failed", threadId), exception);
+        LOG.error("Optimizer executor[{}] polled task failed", threadId, exception);
       }
       if (task != null) {
         LOG.info("Optimizer executor[{}] polled task[{}] from ams", threadId, task.getTaskId());
@@ -71,9 +71,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
       return true;
     } catch (TException exception) {
-      LOG.error(
-          String.format("Optimizer executor[%d] acknowledged task[%s] failed", threadId, task.getTaskId()),
-          exception);
+      LOG.error("Optimizer executor[{}] acknowledged task[{}] failed", threadId, task.getTaskId(), exception);
       return false;
     }
   }
@@ -104,8 +102,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       LOG.info("Optimizer executor[{}] executed task[{}]", threadId, task.getTaskId());
       return result;
     } catch (Throwable t) {
-      LOG.error(String.format("Optimizer executor[%s] executed task[%s] failed", threadId,
-          task.getTaskId()), t);
+      LOG.error("Optimizer executor[{}] executed task[{}] failed", threadId, task.getTaskId(), t);
       OptimizingTaskResult errorResult = new OptimizingTaskResult(task.getTaskId(), threadId);
       errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, 4000));
       return errorResult;
@@ -120,8 +117,8 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       });
       LOG.info("Optimizer executor[{}] completed task[{}] to ams", threadId, optimizingTaskResult.getTaskId());
     } catch (TException exception) {
-      LOG.error(String.format("Optimizer executor[%d] completed task[%s] failed", threadId,
-          optimizingTaskResult.getTaskId()), exception);
+      LOG.error("Optimizer executor[{}] completed task[{}] failed", threadId,
+          optimizingTaskResult.getTaskId(), exception);
     }
   }
 }

@@ -21,7 +21,7 @@ package com.netease.arctic.server.dashboard.model;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
 
-public class BaseMajorCompactRecord {
+public class OptimizedRecord {
   protected TableIdentifier tableIdentifier;
   protected long visibleTime;
   protected long commitTime;
@@ -31,7 +31,7 @@ public class BaseMajorCompactRecord {
   protected FilesStatistics totalFilesStatAfterCompact;
   protected OptimizingType optimizeType;
 
-  public BaseMajorCompactRecord() {
+  public OptimizedRecord() {
   }
 
   public TableIdentifier getTableIdentifier() {
