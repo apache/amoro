@@ -273,17 +273,11 @@ public class CatalogController {
     Preconditions.checkNotNull(info.getStorageConfig(), "catalog storage config must not be null");
     Preconditions.checkNotNull(info.getProperties(), "catalog properties must not be null");
     if (tableService.catalogExist(info.getName())) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Duplicate catalog name!", null));
-      return;
+      throw new RuntimeException("Duplicate catalog name!");
     }
-    try {
-      CatalogMeta catalogMeta = constructCatalogMeta(info, null);
-      tableService.createCatalog(catalogMeta);
-      ctx.json(OkResponse.of(""));
-    } catch (Exception e) {
-      LOG.error("Failed to create catalog!", e);
-      ctx.json(new ErrorResponse(e.getMessage()));
-    }
+    CatalogMeta catalogMeta = constructCatalogMeta(info, null);
+    tableService.createCatalog(catalogMeta);
+    ctx.json(OkResponse.of(""));
   }
 
   /**
@@ -335,14 +329,9 @@ public class CatalogController {
     CatalogMeta optCatalog = tableService.getCatalogMeta(info.getName());
 
     // check only some item can be modified!
-    try {
-      CatalogMeta catalogMeta = constructCatalogMeta(info, optCatalog);
-      tableService.updateCatalog(catalogMeta);
-    } catch (Exception e) {
-      LOG.error("Failed to update catalog!", e);
-      ctx.json(new ErrorResponse(e.getMessage()));
-    }
-    ctx.json(OkResponse.of(null));
+    CatalogMeta catalogMeta = constructCatalogMeta(info, optCatalog);
+    tableService.updateCatalog(catalogMeta);
+    ctx.json(OkResponse.ok());
   }
 
   /**
@@ -365,7 +354,7 @@ public class CatalogController {
       tableService.dropCatalog(catalogName);
       ctx.json(OkResponse.of("OK"));
     } else {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some tables in catalog!", null));
+      throw new RuntimeException("Some tables in catalog!");
     }
   }
 
@@ -400,7 +389,7 @@ public class CatalogController {
       String key = configKey.replaceAll("-", "\\.");
       ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
     } else {
-      ctx.json(new ErrorResponse("Invalid request for " + confType));
+      throw new RuntimeException("Invalid request for " + confType);
     }
   }
 }
