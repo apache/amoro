@@ -41,6 +41,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
@@ -324,39 +325,34 @@ public class BaseOptimizeCommit {
         throw new IllegalArgumentException("for major optimize, can't add delete files " + addDeleteFiles);
       }
 
-      // rewrite DataFiles
-      RewriteFiles dataFilesRewrite = baseArcticTable.newRewrite();
-      dataFilesRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-        dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
+      if (deleteDataFiles.isEmpty()) {
+        throw new IllegalArgumentException("for major optimize, remove data files can't be empty " + deleteDataFiles);
       }
 
-      // if add DataFiles is empty, the DeleteFiles are must exist and apply to old DataFiles
-      if (CollectionUtils.isEmpty(addDataFiles)) {
-        dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
-      } else {
-        dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
-      }
-      dataFilesRewrite.commit();
-
-      // if add DataFiles is not empty, should remove DeleteFiles additional, because DeleteFiles maybe aren't existed
-      if (CollectionUtils.isNotEmpty(addDataFiles) && CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
-        RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
-            .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
-        removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        removeDeleteFiles
-            .rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
-        try {
-          removeDeleteFiles.commit();
-        } catch (ValidationException e) {
-          LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+      if (CollectionUtils.isEmpty(addDataFiles) && CollectionUtils.isEmpty(deleteDeleteFiles)) {
+        // To avoid the exception in org.apache.iceberg.BaseRewriteFiles#verifyInputAndOutputFiles() with iceberg 0.12,
+        // otherwise it will throw exception like
+        // 'Data files to add can not be empty because there's no delete file to be rewritten'.
+        // For iceberg 0.13+, there is no need to do this.
+        OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
+        overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+          overwriteFiles.validateFromSnapshot(baseSnapshotId);
         }
+        deleteDataFiles.forEach(overwriteFiles::deleteFile);
+        overwriteFiles.commit();
+      } else {
+        RewriteFiles dataFilesRewrite = baseArcticTable.newRewrite();
+        dataFilesRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+          dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
+        }
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
+        dataFilesRewrite.commit();
       }
 
-      LOG.info("{} major optimize committed, delete {} files [{} posDelete files], " +
-              "add {} new files [{} posDelete files]",
-          arcticTable.id(), majorDeleteFiles.size(), deleteDeleteFiles.size(), majorAddFiles.size(),
-          addDeleteFiles.size());
+      LOG.info("{} major optimize committed, delete {} files [{} posDelete files], add {} new files",
+          arcticTable.id(), majorDeleteFiles.size(), deleteDeleteFiles.size(), majorAddFiles.size());
     } else {
       LOG.info("{} skip major optimize commit", arcticTable.id());
     }
