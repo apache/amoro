@@ -38,6 +38,7 @@ import com.netease.arctic.optimizer.operator.executor.ExecutorFactory;
 import com.netease.arctic.optimizer.operator.executor.NodeTask;
 import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
+import com.netease.arctic.optimizer.util.ExceptionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -174,26 +175,12 @@ public class BaseTaskExecutor implements Serializable {
     optimizeTaskStat.setTaskId(taskId);
     optimizeTaskStat.setStatus(OptimizeStatus.Failed);
     optimizeTaskStat.setFiles(Collections.emptyList());
-    optimizeTaskStat.setErrorMessage(new ErrorMessage(System.currentTimeMillis(), buildErrorMessage(t, 3)));
+    optimizeTaskStat.setErrorMessage(
+        new ErrorMessage(System.currentTimeMillis(), ExceptionUtil.getErrorMessage(t, 4000)));
     optimizeTaskStat.setNewFileSize(0);
     optimizeTaskStat.setReportTime(now);
     optimizeTaskStat.setCostTime(now - startTime);
     return optimizeTaskStat;
-  }
-
-  private static String buildErrorMessage(Throwable t, int deep) {
-    StringBuilder message = new StringBuilder();
-    Throwable error = t;
-    int i = 0;
-    while (i++ < deep && error != null) {
-      if (i > 1) {
-        message.append(". caused by ");
-      }
-      message.append(error.getMessage());
-      error = error.getCause();
-    }
-    String result = message.toString();
-    return result.length() > 4000 ? result.substring(0, 4000) : result;
   }
 
   private NodeTask constructTask(ArcticTable table, OptimizeTask task, int attemptId) {
