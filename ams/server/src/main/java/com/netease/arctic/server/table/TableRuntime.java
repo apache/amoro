@@ -404,14 +404,13 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public long getQuotaTime() {
-    if (optimizingProcess == null) {
-      return 0;
-    }
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME;
     taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
-    return taskQuotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime)).sum() +
-        optimizingProcess.getQuotaTime(calculatingStartTime, calculatingEndTime);
+    long finishedTaskQuotaTime =
+        taskQuotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime)).sum();
+    long executingTaskQuotaTime = optimizingProcess.getQuotaTime(calculatingStartTime, calculatingEndTime);
+    return optimizingProcess == null ? finishedTaskQuotaTime : finishedTaskQuotaTime + executingTaskQuotaTime;
   }
 
   public double calculateQuotaOccupy() {

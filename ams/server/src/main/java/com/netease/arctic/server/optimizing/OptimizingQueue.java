@@ -444,8 +444,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
      */
     @Override
     public long getQuotaTime(long calculatingStartTime, long calculatingEndTime) {
-      return taskMap.values().stream()
-          .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime)).sum();
+      return taskMap.values()
+          .stream()
+          .filter(t -> !t.finished())
+          .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
+          .sum();
     }
 
     @Override
