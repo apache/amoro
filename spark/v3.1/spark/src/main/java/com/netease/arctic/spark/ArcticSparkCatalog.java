@@ -39,6 +39,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
@@ -225,15 +226,17 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
           .build();
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
+      Set<Integer> identifierFieldIds = Sets.newHashSet();
       List<Types.NestedField> columnsWithPk = new ArrayList<>();
       convertSchema.columns().forEach(nestedField -> {
         if (pkSet.contains(nestedField.name())) {
           columnsWithPk.add(nestedField.asRequired());
+          identifierFieldIds.add(nestedField.fieldId());
         } else {
           columnsWithPk.add(nestedField);
         }
       });
-      return new Schema(columnsWithPk);
+      return new Schema(columnsWithPk, identifierFieldIds);
     }
     return convertSchema;
   }

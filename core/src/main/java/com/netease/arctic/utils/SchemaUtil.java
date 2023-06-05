@@ -22,6 +22,7 @@ import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
@@ -55,20 +56,19 @@ public class SchemaUtil {
     int schemaId = fromSchema.schemaId();
     Types.StructType struct = fromSchema.asStruct();
     List<Types.NestedField> fields = Lists.newArrayList(struct.fields());
-    Set<Integer> identifierFields = baseSchema.identifierFieldIds();
-    HashSet<Integer> set = new HashSet<>(identifierFields);
+    Set<Integer> identifierFieldIds = Sets.newHashSet(baseSchema.identifierFieldIds());
     List<String> primaryKeys = primaryKeySpec.fields().stream()
-      .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
+        .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
     primaryKeys.forEach(p -> {
-      set.add(baseSchema.findField(p).fieldId());
+      identifierFieldIds.add(baseSchema.findField(p).fieldId());
     });
 
-    set.forEach(fieldId -> {
+    identifierFieldIds.forEach(fieldId -> {
       if (struct.field(fieldId) == null) {
         fields.add(baseSchema.findField(fieldId));
       }
     });
 
-    return new Schema(schemaId, fields, set);
+    return new Schema(schemaId, fields, identifierFieldIds);
   }
 }
