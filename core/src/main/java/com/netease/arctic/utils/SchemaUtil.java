@@ -26,7 +26,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,9 +58,7 @@ public class SchemaUtil {
     Set<Integer> identifierFieldIds = Sets.newHashSet(baseSchema.identifierFieldIds());
     List<String> primaryKeys = primaryKeySpec.fields().stream()
         .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
-    primaryKeys.forEach(p -> {
-      identifierFieldIds.add(baseSchema.findField(p).fieldId());
-    });
+    primaryKeys.forEach(p -> identifierFieldIds.add(baseSchema.findField(p).fieldId()));
 
     identifierFieldIds.forEach(fieldId -> {
       if (struct.field(fieldId) == null) {
