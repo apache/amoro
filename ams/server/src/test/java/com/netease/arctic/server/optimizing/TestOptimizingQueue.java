@@ -183,14 +183,13 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
-    // TODO check it after persist thread of runtime
-    // assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, null);
+    assertTaskRuntime(taskRuntime, TaskRuntime.Status.SCHEDULED, thread);
 
     // 3.ack task
-    // ackTaskAndCheck(authToken, thread, queue, task);
+    ackTaskAndCheck(authToken, thread, queue, task);
 
     // 4.succeed task
-    // succeedTaskAndCheck(authToken, thread, queue, task);
+    succeedTaskAndCheck(authToken, thread, queue, task);
   }
 
   @Test
@@ -217,8 +216,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
-    // TODO check it after persist runtime
-    // assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
+    assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
 
     // 4.succeed task
     succeedTaskAndCheck(authToken, thread, queue, task);
@@ -377,9 +375,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   private void assertTaskRuntime(TaskRuntime taskRuntime, TaskRuntime.Status status,
                                  OptimizingQueue.OptimizingThread thread) {
     Assert.assertEquals(status, taskRuntime.getStatus());
-    if (thread != null) {
-      Assert.assertEquals(thread, taskRuntime.getOptimizingThread());
-    }
+    Assert.assertEquals(thread, taskRuntime.getOptimizingThread());
   }
 
   private ResourceGroup defaultResourceGroup() {
