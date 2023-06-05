@@ -67,21 +67,25 @@ public class RuntimeDataExpireService {
     List<TableMetadata> tableMetadata = metaService.listTables();
     List<TableIdentifier> optimizeTables = optimizeService.refreshAndListTables();
     // expire and clear table_task_history table
-    tableMetadata.forEach(meta -> {
-      TableIdentifier identifier = meta.getTableIdentifier();
-      try {
-        // only expire the table in optimizeTables
-        if (optimizeTables.contains(identifier)) {
-          TableOptimizeRuntime tableOptimizeRuntime =
-                  optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
-          tableTaskHistoryService.expireTaskHistory(identifier,
-                  tableOptimizeRuntime.getLatestTaskPlanGroup(),
-                  System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
+    if (optimizeTables != null && optimizeTables.size() > 0) {
+      tableMetadata.forEach(meta -> {
+        TableIdentifier identifier = meta.getTableIdentifier();
+        try {
+          // only expire the table in optimizeTables
+          if (optimizeTables.contains(identifier)) {
+            TableOptimizeRuntime tableOptimizeRuntime =
+                    optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
+            tableTaskHistoryService.expireTaskHistory(identifier,
+                    tableOptimizeRuntime.getLatestTaskPlanGroup(),
+                    System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
+          }
+        } catch (Exception e) {
+          LOG.error("{} failed to expire and clear optimize_task_history table", identifier, e);
         }
-      } catch (Exception e) {
-        LOG.error("{} failed to expire and clear table_task_history table", identifier, e);
-      }
-    });
+      });
+    } else {
+      LOG.error("There are 0 tables to be expired and cleared in optimize_task_history");
+    }
 
     // expire and clear optimize_history table
     tableMetadata.forEach(meta -> {
