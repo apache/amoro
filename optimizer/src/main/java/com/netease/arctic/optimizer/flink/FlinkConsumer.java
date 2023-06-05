@@ -53,7 +53,7 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
         if (task != null) {
           sourceContext.collect(task);
         } else {
-          LOG.info("poll no task");
+          LOG.info("{} poll no task", taskConsumer.getConfig().getOptimizerId());
         }
       } catch (Exception e) {
         // The subscription is abnormal and cannot be restored, and a new consumer can be activated

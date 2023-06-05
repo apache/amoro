@@ -224,6 +224,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
   public static void main(String[] args) throws CmdLineException {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
+    LOG.info("init FlinkOptimizer with {}", optimizerConfig);
 
     env.addSource(new FlinkConsumer(optimizerConfig))
         .setParallelism(optimizerConfig.getExecutorParallel())

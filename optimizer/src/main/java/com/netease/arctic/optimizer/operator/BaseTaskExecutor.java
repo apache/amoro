@@ -38,6 +38,7 @@ import com.netease.arctic.optimizer.operator.executor.ExecutorFactory;
 import com.netease.arctic.optimizer.operator.executor.NodeTask;
 import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
+import com.netease.arctic.optimizer.util.ExceptionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
@@ -187,7 +188,8 @@ public class BaseTaskExecutor implements Serializable {
       optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
       optimizeTaskStat.setTaskId(task.getTaskId());
 
-      optimizeTaskStat.setErrorMessage(new ErrorMessage(System.currentTimeMillis(), buildErrorMessage(t, 3)));
+      optimizeTaskStat.setErrorMessage(
+          new ErrorMessage(System.currentTimeMillis(), ExceptionUtil.getErrorMessage(t, 4000)));
       return optimizeTaskStat;
     } catch (Throwable e) {
       throw new IllegalStateException(e);
