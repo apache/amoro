@@ -24,9 +24,9 @@ import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TThreadedSelectorServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TNonblockingServerSocket;
+import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +46,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -168,7 +172,7 @@ public class MockArcticMetastoreServer implements Runnable {
   @Override
   public void run() {
     try {
-      TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
+      TServerSocket socket = new TServerSocket(port);
       TMultiplexedProcessor processor = new TMultiplexedProcessor();
       ArcticTableMetastore.Processor<AmsHandler> amsProcessor =
           new ArcticTableMetastore.Processor<>(amsHandler);
@@ -184,15 +188,29 @@ public class MockArcticMetastoreServer implements Runnable {
       protocolFactory = new TBinaryProtocol.Factory();
       inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
 
-      TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
+      SynchronousQueue<Runnable> executorQueue = new SynchronousQueue<>();
+      AtomicInteger threadCount = new AtomicInteger(0);
+      ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+          1,
+          10,
+          60,
+          TimeUnit.SECONDS,
+          executorQueue,
+          r -> {
+            Thread thread = new Thread(r);
+            String threadName = "AMS-pool-" + threadCount.incrementAndGet();
+            thread.setName(threadName);
+            LOG.info("Mock AMS create thread: " + threadName);
+            return thread;
+          }, new ThreadPoolExecutor.AbortPolicy());
+
+      TThreadPoolServer.Args args = new TThreadPoolServer.Args(socket)
           .processor(processor)
           .transportFactory(new TFramedTransport.Factory())
           .protocolFactory(protocolFactory)
           .inputProtocolFactory(inputProtoFactory)
-          .workerThreads(10)
-          .selectorThreads(2)
-          .acceptQueueSizePerThread(4);
-      server = new TThreadedSelectorServer(args);
+          .executorService(threadPoolExecutor);
+      server = new TThreadPoolServer(args);
       server.serve();
 
       LOG.info("arctic in-memory metastore start");
