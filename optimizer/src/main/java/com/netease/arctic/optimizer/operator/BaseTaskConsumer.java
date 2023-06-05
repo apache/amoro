@@ -79,4 +79,8 @@ public class BaseTaskConsumer implements Serializable {
       return null;
     }
   }
+
+  public OptimizerConfig getConfig() {
+    return config;
+  }
 }

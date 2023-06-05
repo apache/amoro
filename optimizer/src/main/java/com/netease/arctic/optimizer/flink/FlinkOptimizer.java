@@ -245,6 +245,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
         "unknown".equals(optimizerConfig.getOptimizerId())) {
       OptimizerUtil.register(optimizerConfig);
     }
+    LOG.info("init FlinkOptimizer with {}", optimizerConfig);
 
     env.addSource(new FlinkConsumer(optimizerConfig))
         .setParallelism(optimizerConfig.getExecutorParallel())

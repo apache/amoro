@@ -55,7 +55,7 @@ public class FlinkConsumer extends RichParallelSourceFunction<TaskWrapper> {
         if (task != null) {
           sourceContext.collect(task);
         } else {
-          LOG.info("poll no task and wait for {} ms", POLL_INTERVAL);
+          LOG.info("{} poll no task and wait for {} ms", taskConsumer.getConfig().getOptimizerId(), POLL_INTERVAL);
           Thread.sleep(POLL_INTERVAL);
         }
       } catch (Exception e) {
