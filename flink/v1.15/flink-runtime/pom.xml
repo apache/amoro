@@ -207,6 +207,8 @@
                             <include>com.netease.arctic:*</include>
                             <include>org.apache.parquet:*</include>
                             <include>org.apache.commons:*</include>
+                            <include>org.apache.zookeeper:*</include>
+                            <include>org.apache.curator:*</include>
                             <include>commons-lang:*</include>
                             <include>com.fasterxml.jackson.core:*</include>
                             <include>org.apache.thrift:*</include>
@@ -272,6 +274,16 @@
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.org.apache.avro</shadedPattern>
+                                </relocation>
+                                <!--               zookeeper                 -->
+                                <relocation>
+                                    <pattern>org.apache.zookeeper</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper</shadedPattern>
+                                </relocation>
+                                <!--               curator                 -->
+                                <relocation>
+                                    <pattern>org.apache.curator</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator</shadedPattern>
                                 </relocation>
                                 <!--               orc                 -->
                                 <relocation>

@@ -169,8 +169,7 @@ public class KafkaSourceReader<T>
 
   // ------------------------
 
-  @VisibleForTesting
-  SortedMap<Long, Map<TopicPartition, OffsetAndMetadata>> getOffsetsToCommit() {
+  public SortedMap<Long, Map<TopicPartition, OffsetAndMetadata>> getOffsetsToCommit() {
     return offsetsToCommit;
   }
 
