@@ -42,10 +42,9 @@ public class TestOptimizer extends OptimizerTestBase {
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(1).toTask(0, 0));
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(2).toTask(0, 1));
-    TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 4);
+    TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 10);
     String token = optimizer.getToucher().getToken();
     List<OptimizingTaskResult> taskResults = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token);
-    System.out.println(taskResults);
     Assert.assertEquals(2, taskResults.size());
     optimizer.stopOptimizing();
   }
