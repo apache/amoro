@@ -451,6 +451,7 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void completeTask(String authToken, OptimizingTaskResult taskResult) throws TException {
       checkToken(authToken);
+      executingTasks.get(authToken).remove(taskResult.getThreadId());
       if (!completedTasks.containsKey(authToken)) {
         completedTasks.putIfAbsent(authToken, new CopyOnWriteArrayList<>());
       }
