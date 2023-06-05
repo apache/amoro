@@ -29,6 +29,7 @@ import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
 import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -93,6 +94,17 @@ public class DefaultOptimizingService extends DefaultResourceManager
           Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new)));
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
+  }
+
+  public void loadOptimizers() {
+    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    if (optimizers.isEmpty() || optimizers == null) {
+      return;
+    }
+    optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));
+    Map<String, OptimizingQueue> queues = optimizers.stream().collect(Collectors.toMap(
+        OptimizerInstance::getToken, optimizer -> optimizingQueueByGroup.get(optimizer.getGroupName())));
+    optimizingQueueByToken.putAll(queues);
   }
 
   @Override
@@ -214,6 +226,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeMetaList);
+      loadOptimizers();
       optimizerMonitorTimer = new Timer("OptimizerMonitor", true);
       optimizerMonitorTimer.schedule(
           new SuspendingDetector(),

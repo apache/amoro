@@ -28,6 +28,22 @@ CREATE TABLE `container_metadata`
     PRIMARY KEY (`container_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'container metadata';
 
+
+CREATE TABLE `optimizer`
+(
+    `token`                      varchar(50) NOT NULL,
+    `resource_id`                varchar(100) DEFAULT NULL  COMMENT 'optimizer instance id',
+    `group_name`                 varchar(50) DEFAULT NULL COMMENT 'group/queue name',
+    `container_name`             varchar(100) DEFAULT NULL  COMMENT 'container name',
+    `start_time`                 timestamp not null default CURRENT_TIMESTAMP COMMENT 'optimizer start time',
+    `touch_time`                 timestamp not null default CURRENT_TIMESTAMP COMMENT 'update time',
+    `thread_count`               int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
+    `total_memory`               bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
+    `properties`                 mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
+    PRIMARY KEY (`token`),
+    KEY  `resource_group` (`group_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'resource table';
+
 CREATE TABLE `resource`
 (
     `resource_id`               varchar(100) DEFAULT NULL  COMMENT 'optimizer instance id',
@@ -142,6 +158,8 @@ CREATE TABLE `task_runtime`
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
+    `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',

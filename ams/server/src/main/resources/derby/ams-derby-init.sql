@@ -18,6 +18,19 @@ CREATE TABLE database_metadata (
     PRIMARY KEY (catalog_name, db_name)
 );
 
+CREATE TABLE optimizer (
+    token                      VARCHAR(300) NOT NULL,
+    resource_id                VARCHAR(100) DEFAULT NULL,
+    group_name                 VARCHAR(50),
+    container_name             VARCHAR(100),
+    start_time                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    touch_time                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    thread_count               INT,
+    total_memory               INT,
+    properties                 CLOB(64m),
+    PRIMARY KEY (token)
+);
+
 CREATE TABLE resource (
     resource_id               VARCHAR(100),
     resource_type             SMALLINT DEFAULT 0,
@@ -123,6 +136,8 @@ CREATE TABLE task_runtime (
     cost_time       BIGINT,
     status          VARCHAR(16),
     fail_reason     VARCHAR(4096),
+    optimizer_token VARCHAR(50),
+    thread_id       INT,
     rewrite_output  BLOB,
     metrics_summary CLOB,
     properties      CLOB,
