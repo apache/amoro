@@ -19,8 +19,10 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
@@ -48,17 +50,21 @@ public class SchemaUtil {
    * @param fromSchema a Schema on which compared to
    * @return a new Schema on which contain the identifier fields of the base Schema and column fields of the fromSchema
    */
-  public static Schema fillUpIdentifierFields(Schema baseSchema, Schema fromSchema) {
+  public static Schema fillUpIdentifierFields(Schema baseSchema, Schema fromSchema, PrimaryKeySpec primaryKeySpec) {
     int schemaId = fromSchema.schemaId();
     Types.StructType struct = fromSchema.asStruct();
     List<Types.NestedField> fields = Lists.newArrayList(struct.fields());
-    Set<Integer> identifierFields = baseSchema.identifierFieldIds();
-    identifierFields.forEach(fieldId -> {
+    Set<Integer> identifierFieldIds = Sets.newHashSet(baseSchema.identifierFieldIds());
+    primaryKeySpec.fields().stream()
+        .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
+        .forEach(p -> identifierFieldIds.add(baseSchema.findField(p).fieldId()));
+
+    identifierFieldIds.forEach(fieldId -> {
       if (struct.field(fieldId) == null) {
         fields.add(baseSchema.findField(fieldId));
       }
     });
 
-    return new Schema(schemaId, fields, identifierFields);
+    return new Schema(schemaId, fields, identifierFieldIds);
   }
 }
