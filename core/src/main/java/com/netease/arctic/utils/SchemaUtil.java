@@ -28,7 +28,6 @@ import org.apache.iceberg.types.Types;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SchemaUtil {
 
