@@ -32,7 +32,6 @@
     <url>https://arctic.netease.com</url>
 
     <properties>
-        <fastjson.version>1.2.58</fastjson.version>
         <avro.version>1.10.1</avro.version>
     </properties>
 
