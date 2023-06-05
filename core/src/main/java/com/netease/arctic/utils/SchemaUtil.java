@@ -56,9 +56,9 @@ public class SchemaUtil {
     Types.StructType struct = fromSchema.asStruct();
     List<Types.NestedField> fields = Lists.newArrayList(struct.fields());
     Set<Integer> identifierFieldIds = Sets.newHashSet(baseSchema.identifierFieldIds());
-    List<String> primaryKeys = primaryKeySpec.fields().stream()
-        .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
-    primaryKeys.forEach(p -> identifierFieldIds.add(baseSchema.findField(p).fieldId()));
+    primaryKeySpec.fields().stream()
+        .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
+        .forEach(p -> identifierFieldIds.add(baseSchema.findField(p).fieldId()));
 
     identifierFieldIds.forEach(fieldId -> {
       if (struct.field(fieldId) == null) {
