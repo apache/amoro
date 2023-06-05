@@ -409,8 +409,9 @@ public class TableRuntime extends StatedPersistentBase {
     taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
     long finishedTaskQuotaTime =
         taskQuotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime)).sum();
-    long executingTaskQuotaTime = optimizingProcess.getQuotaTime(calculatingStartTime, calculatingEndTime);
-    return optimizingProcess == null ? finishedTaskQuotaTime : finishedTaskQuotaTime + executingTaskQuotaTime;
+    return optimizingProcess == null ?
+        finishedTaskQuotaTime :
+        finishedTaskQuotaTime + optimizingProcess.getRunningQuotaTime(calculatingStartTime, calculatingEndTime);
   }
 
   public double calculateQuotaOccupy() {

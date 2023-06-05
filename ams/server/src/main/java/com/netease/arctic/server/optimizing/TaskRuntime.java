@@ -162,7 +162,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public boolean finished() {
-    return this.status == Status.SUCCESS || this.status == Status.FAILED;
+    return this.status == Status.SUCCESS || this.status == Status.FAILED || this.status == Status.CANCELED;
   }
 
   protected void setInput(RewriteFilesInput input) {

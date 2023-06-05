@@ -443,7 +443,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
      * @return -
      */
     @Override
-    public long getQuotaTime(long calculatingStartTime, long calculatingEndTime) {
+    public long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime) {
       return taskMap.values()
           .stream()
           .filter(t -> !t.finished())
