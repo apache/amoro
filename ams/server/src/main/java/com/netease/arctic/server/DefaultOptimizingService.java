@@ -98,7 +98,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   public void loadOptimizers() {
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    if (optimizers.isEmpty() || optimizers == null) {
+    if (optimizers == null || optimizers.isEmpty()) {
       return;
     }
     optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));

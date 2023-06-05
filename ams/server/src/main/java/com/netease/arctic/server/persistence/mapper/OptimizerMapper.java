@@ -52,7 +52,8 @@ public interface OptimizerMapper {
   @Delete("DELETE FROM optimizer WHERE token = #{token}")
   void deleteOptimizer(@Param("token") String token);
 
-  @Select("SELECT * FROM optimizer")
+  @Select("SELECT token, resource_id, group_name, container_name, start_time, touch_time," +
+      "thread_count, total_memory, properties FROM optimizer")
   @Results({
       @Result(property = "token", column = "token"),
       @Result(property = "resourceId", column = "resource_id"),

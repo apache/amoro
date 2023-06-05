@@ -165,6 +165,8 @@ public interface OptimizingMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status}," +
       " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR}," +
+      " optimizer_token = #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}," +
+      " thread_id = #{taskRuntime.optimizingThread.threadId, jdbcType=INTEGER}," +
       " rewrite_output = #{taskRuntime.output, jdbcType=BLOB," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
       " metrics_summary = #{taskRuntime.summary," +

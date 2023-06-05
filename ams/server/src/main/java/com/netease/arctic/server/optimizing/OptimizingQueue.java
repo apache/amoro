@@ -68,6 +68,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     this.optimizerGroup = optimizerGroup;
     this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
+    loadOptimizers();
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -121,6 +122,18 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   public void removeOptimizer(String resourceId) {
     authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
+  }
+
+  public void loadOptimizers() {
+    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    if (optimizers == null || optimizers.isEmpty()) {
+      return;
+    }
+    optimizers.stream()
+        .filter(optimizer -> optimizer.getGroupName().equals(this.optimizerGroup.getName()))
+        .peek(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()))
+        .collect(Collectors.toMap(OptimizerInstance::getToken, optimizer -> optimizer,
+            (existingValue, newValue) -> newValue, () -> authOptimizers));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
