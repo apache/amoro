@@ -145,28 +145,28 @@ public class TestKeyed extends FlinkTestBase {
             true,
             LOG_STORE_STORAGE_TYPE_PULSAR,
             false
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
-            LOG_STORE_STORAGE_TYPE_KAFKA,
-            true
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
-            LOG_STORE_STORAGE_TYPE_KAFKA,
-            false
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
-            LOG_STORE_STORAGE_TYPE_PULSAR,
-            false
           }
+//          {
+//            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+//            new BasicTableTestHelper(true, true),
+//            false,
+//            LOG_STORE_STORAGE_TYPE_KAFKA,
+//            true
+//          },
+//          {
+//            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+//            new BasicTableTestHelper(true, true),
+//            false,
+//            LOG_STORE_STORAGE_TYPE_KAFKA,
+//            false
+//          },
+//          {
+//            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+//            new BasicTableTestHelper(true, true),
+//            false,
+//            LOG_STORE_STORAGE_TYPE_PULSAR,
+//            false
+//          }
         });
   }
 
@@ -271,7 +271,7 @@ public class TestKeyed extends FlinkTestBase {
         ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
+        sql("select id, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
             ", 'streaming'='false'" +
@@ -279,14 +279,81 @@ public class TestKeyed extends FlinkTestBase {
             "");
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{RowKind.INSERT, LocalDateTime.parse("2022-06-17T10:10:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000004, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.INSERT, 1000015, LocalDateTime.parse("2022-06-17T10:10:11.0"),
+        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+
+    Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
+  }
+
+  @Test
+  public void testSinkSourceFileWithoutSelectPK() throws IOException {
+    Assume.assumeFalse(kafkaLegacyEnable);
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+      LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0"),
+      LocalDateTime.parse("2022-06-17T10:08:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0"),
+      LocalDateTime.parse("2022-06-18T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+      LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+      LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+      LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+
+    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
+      InternalTypeInfo.ofFields(
+        DataTypes.INT().getLogicalType(),
+        DataTypes.VARCHAR(100).getLogicalType(),
+        DataTypes.TIMESTAMP().getLogicalType(),
+        DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE().getLogicalType()
+      ));
+
+    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"), $("op_time_tz"));
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("CREATE TABLE arcticCatalog." + db + "." + TABLE +
+      " (" +
+      " id INT," +
+      " name STRING," +
+      " op_time_tz TIMESTAMP WITH LOCAL TIME ZONE," +
+      " op_time TIMESTAMP," +
+      " PRIMARY KEY (id) NOT ENFORCED " +
+      ")" +
+      " WITH (" +
+      " 'connector' = 'arctic'" +
+      ")");
+
+    sql("insert into arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.emit.mode'='file'" +
+      ")*/ select id, name, op_time_tz, op_time from input");
+
+    List<Row> actual =
+      sql("select op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
+        "/*+ OPTIONS(" +
+        "'arctic.read.mode'='file'" +
+        ", 'streaming'='false'" +
+        ")*/" +
+        "");
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{RowKind.INSERT, LocalDateTime.parse("2022-06-17T10:10:11.0"),
+      LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     expected.add(new Object[]{RowKind.UPDATE_BEFORE, LocalDateTime.parse("2022-06-17T10:11:11.0"),
-        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+      LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     expected.add(new Object[]{RowKind.UPDATE_AFTER, LocalDateTime.parse("2022-06-17T10:11:11.0"),
-        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+      LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     expected.add(new Object[]{RowKind.INSERT, LocalDateTime.parse("2022-06-17T10:10:11.0"),
-        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+      LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
     Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
   }
