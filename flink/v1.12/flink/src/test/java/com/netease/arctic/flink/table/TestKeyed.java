@@ -483,7 +483,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   @Test
-  public void testSinkSourceFileWithoutSelectPK() throws IOException {
+  public void testSinkSourceFileWithoutSelectPK() throws Exception {
     Assume.assumeFalse(kafkaLegacyEnable);
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -515,6 +515,17 @@ public class TestKeyed extends FlinkTestBase {
       "'arctic.emit.mode'='file'" +
       ")*/" + " select * from input");
 
+    TableResult result = exec("select name, op_time from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'streaming'='false'" +
+      ") */");
+    LinkedList<Row> actual = new LinkedList<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      while (iterator.hasNext()) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
     List<Object[]> expected = new LinkedList<>();
     expected.add(new Object[]{"a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{"b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -524,9 +535,7 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{"e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-      new HashSet<>(sql("select name, op_time from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
-        "'streaming'='false'" +
-        ") */")));
+      new HashSet<>(actual));
   }
 
   @Test
