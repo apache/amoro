@@ -93,16 +93,16 @@ public class KafkaSourceFetcherManager
         (KafkaPartitionSplitReader) splitFetcher.getSplitReader();
 
     splitFetcher.enqueueTask(
-      new SplitFetcherTask() {
-        @Override
-        public boolean run() throws IOException {
-          kafkaReader.notifyCheckpointComplete(offsetsToCommit, callback);
-          return true;
-        }
+        new SplitFetcherTask() {
+          @Override
+          public boolean run() throws IOException {
+            kafkaReader.notifyCheckpointComplete(offsetsToCommit, callback);
+            return true;
+          }
 
-        @Override
-        public void wakeUp() {
-        }
+          @Override
+          public void wakeUp() {
+          }
       });
   }
 }

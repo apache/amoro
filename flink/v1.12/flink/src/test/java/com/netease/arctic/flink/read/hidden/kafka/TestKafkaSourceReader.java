@@ -65,9 +65,9 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
-import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.createRowData;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.createRowData;
 import static org.junit.Assert.assertEquals;
 
 public class TestKafkaSourceReader {
