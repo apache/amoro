@@ -24,10 +24,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.exceptions.NoSuchTableException;
@@ -39,7 +37,7 @@ import java.util.Map;
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
  */
-public class BasicIcebergCatalog implements ArcticCatalog {
+public class CommonExternalCatalog implements ArcticCatalog {
 
   private AmsClient client;
   private CatalogMeta meta;
@@ -104,7 +102,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-
+    throw new UnsupportedOperationException("doesn't support to rename table");
   }
 
   @Override

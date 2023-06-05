@@ -70,7 +70,7 @@ public class CommonExternalMetastore implements Metastore {
     }
 
     this.icebergTables = new IcebergTables(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
-    this.mixedIcebergTables = new MixedIcebergTables(this.icebergTables);
+    this.mixedIcebergTables = new MixedIcebergTables(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override

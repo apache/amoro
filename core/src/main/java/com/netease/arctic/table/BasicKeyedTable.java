@@ -20,6 +20,7 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.iceberg.EmptyAmsClient;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
@@ -196,10 +197,6 @@ public class BasicKeyedTable implements KeyedTable {
 
   public static class BaseInternalTable extends BasicUnkeyedTable implements BaseTable {
 
-    public BaseInternalTable(UnkeyedTable table) {
-      super(table.id(), table, table.io(), null, null);
-    }
-
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
@@ -208,10 +205,6 @@ public class BasicKeyedTable implements KeyedTable {
   }
 
   public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
-
-    public ChangeInternalTable(TableIdentifier baseIdentifier, UnkeyedTable table) {
-      super(baseIdentifier, table, table.io(), null, null);
-    }
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,

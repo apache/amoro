@@ -35,9 +35,9 @@ import java.util.Map;
 
 public class IcebergTables implements ArcticTables {
 
-  private final Catalog catalog;
-  private final Map<String, String> catalogProperties;
-  private final TableMetaStore tableMetaStore;
+  protected final Catalog catalog;
+  protected final Map<String, String> catalogProperties;
+  protected final TableMetaStore tableMetaStore;
 
 
   public IcebergTables(Catalog catalog, Map<String, String> catalogProperties, TableMetaStore tableMetaStore) {

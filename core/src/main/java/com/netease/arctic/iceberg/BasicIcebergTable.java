@@ -33,7 +33,7 @@ public class BasicIcebergTable extends BasicUnkeyedTable {
       Table icebergTable,
       ArcticFileIO arcticFileIO,
       Map<String, String> catalogProperties) {
-    super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+    super(tableIdentifier, icebergTable, arcticFileIO, new EmptyAmsClient(), catalogProperties);
   }
 
   @Override

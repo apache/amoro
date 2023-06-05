@@ -281,7 +281,7 @@ public class TableProperties {
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
-  
+
 
   /**
    * Protected properties which should not be read by user.
@@ -292,6 +292,12 @@ public class TableProperties {
    * Protected properties which should not be written by user.
    */
   public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
+
+  public static final String TABLE_FORMAT = "table-format";
+  public static final String TABLE_FORMAT_MIXED_ICEBERG = "mixed-iceberg";
+  public static final String TABLE_FORMAT_MIXED_HIVE = "mixed-hive";
+
+  public static final String MIXED_ICEBERG_PRIMARY_KEY_FIELDS = "mixed-iceberg.primary-key-fields";
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
@@ -312,5 +318,6 @@ public class TableProperties {
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
     WRITE_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
+    WRITE_PROTECTED_PROPERTIES.add(TABLE_FORMAT);
   }
 }

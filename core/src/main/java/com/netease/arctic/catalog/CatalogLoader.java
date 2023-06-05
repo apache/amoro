@@ -50,7 +50,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 public class CatalogLoader {
 
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
-  public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
+  public static final String ICEBERG_CATALOG_IMPL = CommonExternalCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
 
   /**
