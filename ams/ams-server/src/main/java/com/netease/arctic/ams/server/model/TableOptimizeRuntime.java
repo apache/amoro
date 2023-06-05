@@ -42,6 +42,10 @@ public class TableOptimizeRuntime implements Cloneable {
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskPlanGroup;
 
+  // not persist now, reset to 0 after restarting AMS
+  private long lastFailTime;
+  private int retry;
+
   public TableOptimizeRuntime() {
   }
 
@@ -190,6 +194,22 @@ public class TableOptimizeRuntime implements Cloneable {
     this.latestTaskPlanGroup = latestTaskPlanGroup;
   }
 
+  public long getLastFailTime() {
+    return lastFailTime;
+  }
+
+  public void setLastFailTime(long lastFailTime) {
+    this.lastFailTime = lastFailTime;
+  }
+
+  public int getRetry() {
+    return retry;
+  }
+
+  public void setRetry(int retry) {
+    this.retry = retry;
+  }
+
   @Override
   public String toString() {
     return "TableOptimizeRuntime{" +
@@ -202,6 +222,8 @@ public class TableOptimizeRuntime implements Cloneable {
         ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
+        ", lastFailTime=" + lastFailTime +
+        ", retry=" + retry +
         '}';
   }
 

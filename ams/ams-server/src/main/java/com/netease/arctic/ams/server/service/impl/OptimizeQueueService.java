@@ -739,9 +739,8 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
-              TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
-            LOG.debug("{} is not enable optimize continue", tableIdentifier);
+          if (!tableItem.allowOptimizing()) {
+            LOG.debug("{} is not enable optimize or retry too frequently continue", tableIdentifier);
             continue;
           }
 
