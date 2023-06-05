@@ -49,8 +49,27 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
 nav:
-  - Overview: index.md
-
+  - Introduction: index.md
+  - Concepts:
+    - Catalogs: concepts/catalogs.md
+    - Self-optimizing: concepts/self-optimizing.md
+    - Table Watermark: concepts/table-watermark.md
+  - Admin Guides:
+    - Deployment: guides/deployment.md
+    - Managing Catalogs: guides/managing-catalogs.md
+    - Managing Tables: guides/managing-tables.md
+    - Managing Optimizers: guides/managing-optimizers.md
+    - Using Kyuubi By Terminal: guides/using-kyuubi.md
+    - Metrics: guides/metrics.md
+  - Configurations: configurations.md
+  - Formats:
+      - Overview: formats/overview.md
+      - Iceberg: formats/iceberg.md
+      - Mixed Streaming: formats/mixed-streaming.md
+  - Engines:
+    - Overview: engines/overview.md
+    - Trino: engines/trino.md
+    - Impala: engines/impala.md
 
 plugins:
   - search
