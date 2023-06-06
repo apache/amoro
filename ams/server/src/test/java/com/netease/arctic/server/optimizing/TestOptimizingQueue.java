@@ -15,7 +15,6 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.persistence.PersistentBase;
-import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.AMSTableTestBase;
