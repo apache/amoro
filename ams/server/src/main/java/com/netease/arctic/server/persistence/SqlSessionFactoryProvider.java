@@ -21,6 +21,7 @@ package com.netease.arctic.server.persistence;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.persistence.mapper.ApiTokensMapper;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
+import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.PlatformFileMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
@@ -91,6 +92,7 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(TableMetaMapper.class);
     configuration.addMapper(OptimizingMapper.class);
     configuration.addMapper(CatalogMetaMapper.class);
+    configuration.addMapper(OptimizerMapper.class);
     configuration.addMapper(ApiTokensMapper.class);
     configuration.addMapper(PlatformFileMapper.class);
     configuration.addMapper(ResourceMapper.class);

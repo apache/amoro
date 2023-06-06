@@ -19,6 +19,7 @@ import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
+import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.TableManager;
@@ -61,12 +62,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private final TableManager tableManager;
 
-  public OptimizingQueue(TableManager tableManager, ResourceGroup optimizerGroup,
-                         List<TableRuntimeMeta> tableRuntimeMetaList) {
+  public OptimizingQueue(
+      TableManager tableManager,
+      ResourceGroup optimizerGroup,
+      List<TableRuntimeMeta> tableRuntimeMetaList,
+      List<OptimizerInstance> authOptimizers) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerGroup = optimizerGroup;
     this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
+    this.authOptimizers.putAll(authOptimizers.stream().collect(Collectors.toMap(
+        OptimizerInstance::getToken, optimizer -> optimizer)));
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -137,6 +143,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (LOG.isDebugEnabled()) {
       LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     }
+    doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
@@ -192,11 +199,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (LOG.isDebugEnabled()) {
       LOG.debug("Register optimizer: " + optimizer);
     }
+    doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
   }
 
-  public void checkSuspending() {
+  public List<String> checkSuspending() {
     long currentTime = System.currentTimeMillis();
     List<String> expiredOptimizers = authOptimizers.values().stream()
         .filter(optimizer -> currentTime - optimizer.getTouchTime() >
@@ -207,15 +215,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
-        .filter(task -> task.getOptimizingThread() == null ||
-            task.isSuspending(currentTime) ||
-            expiredOptimizers.contains(task.getOptimizingThread().getToken()))
+        .filter(task -> task.isSuspending(currentTime) ||
+            expiredOptimizers.contains(task.getOptimizingThread().getToken()) ||
+            !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
       executingTaskMap.remove(task.getTaskId());
       //optimizing task of suspending optimizer would not be counted for retrying
       retryTask(task, false);
     });
+    return expiredOptimizers;
   }
 
   @VisibleForTesting
@@ -577,12 +586,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   public static class OptimizingThread {
 
-    private final String token;
-    private final int threadId;
+    private String token;
+    private int threadId;
 
     public OptimizingThread(String token, int threadId) {
       this.token = token;
       this.threadId = threadId;
+    }
+
+    public OptimizingThread() {
     }
 
     public String getToken() {
