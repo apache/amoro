@@ -161,6 +161,10 @@ public class TaskRuntime extends StatedPersistentBase {
     return this;
   }
 
+  public boolean finished() {
+    return this.status == Status.SUCCESS || this.status == Status.FAILED || this.status == Status.CANCELED;
+  }
+
   protected void setInput(RewriteFilesInput input) {
     if (input == null) {
       throw new IllegalStateException("Optimizing input is null, id:" + taskId);
@@ -243,7 +247,7 @@ public class TaskRuntime extends StatedPersistentBase {
     if (startTime == ArcticServiceConstants.INVALID_TIME) {
       return 0;
     }
-    calculatingStartTime = Math.min(startTime, calculatingEndTime);
+    calculatingStartTime = Math.max(startTime, calculatingStartTime);
     calculatingEndTime = costTime == ArcticServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
     long lastingTime = calculatingEndTime - calculatingStartTime;
     return Math.max(0, lastingTime);
