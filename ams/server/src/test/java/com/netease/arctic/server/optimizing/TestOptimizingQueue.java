@@ -431,9 +431,5 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     public List<TableRuntimeMeta> selectTableRuntimeMetas() {
       return getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
     }
-
-    public List<OptimizerInstance> selectOptimizerInstances() {
-      return getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    }
   }
 }
