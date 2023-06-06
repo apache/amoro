@@ -51,6 +51,8 @@ import java.util.stream.Collectors;
 public class OptimizingQueue extends PersistentBase implements OptimizingService.Iface {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingQueue.class);
+  private final long optimizerTouchTimeout;
+  private final long taskAckTimeout;
   private final Lock planLock = new ReentrantLock();
   private final ResourceGroup optimizerGroup;
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
@@ -66,8 +68,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       TableManager tableManager,
       ResourceGroup optimizerGroup,
       List<TableRuntimeMeta> tableRuntimeMetaList,
-      List<OptimizerInstance> authOptimizers) {
+      List<OptimizerInstance> authOptimizers,
+      long optimizerTouchTimeout,
+      long taskAckTimeout) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
+    this.optimizerTouchTimeout = optimizerTouchTimeout;
+    this.taskAckTimeout = taskAckTimeout;
     this.optimizerGroup = optimizerGroup;
     this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
@@ -207,15 +213,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   public List<String> checkSuspending() {
     long currentTime = System.currentTimeMillis();
     List<String> expiredOptimizers = authOptimizers.values().stream()
-        .filter(optimizer -> currentTime - optimizer.getTouchTime() >
-            ArcticServiceConstants.OPTIMIZER_TOUCH_TIMEOUT)
+        .filter(optimizer -> currentTime - optimizer.getTouchTime() > optimizerTouchTimeout)
         .map(OptimizerInstance::getToken)
         .collect(Collectors.toList());
 
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
-        .filter(task -> task.isSuspending(currentTime) ||
+        .filter(task -> task.isSuspending(currentTime, taskAckTimeout) ||
             expiredOptimizers.contains(task.getOptimizingThread().getToken()) ||
             !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());

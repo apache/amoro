@@ -109,7 +109,7 @@ public class ArcticServiceContainer {
 
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    optimizingService = new DefaultOptimizingService(serviceConfig, tableService, resourceGroups);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);

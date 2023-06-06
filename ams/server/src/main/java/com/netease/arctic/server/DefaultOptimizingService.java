@@ -40,6 +40,7 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
+import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -55,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * OptimizerManagementService is implementing the OptimizerManager Thrift service, which manages the optimization tasks
+ * DefaultOptimizingService is implementing the OptimizerManager Thrift service, which manages the optimization tasks
  * for ArcticTable. It includes methods for authenticating optimizers, polling tasks from the optimizing queue,
  * acknowledging tasks,and completing tasks. The code uses several data structures, including maps for optimizing queues
  * ,task runtimes, and authenticated optimizers.
@@ -67,14 +68,19 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
 
+  private final long optimizerTouchTimeout;
+  private final long taskAckTimeout;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final TableManager tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
-  public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
+  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService,
+      List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
+    this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
+    this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.tableManager = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
   }
@@ -98,7 +104,8 @@ public class DefaultOptimizingService extends DefaultResourceManager
       List<OptimizerInstance> optimizersUnderGroup = optimizersByGroup.get(groupName);
       OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager, group,
           Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
-          Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new));
+          Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new),
+          optimizerTouchTimeout, taskAckTimeout);
       optimizingQueueByGroup.put(groupName, optimizingQueue);
       if (CollectionUtils.isNotEmpty(optimizersUnderGroup)) {
         optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));

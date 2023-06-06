@@ -286,9 +286,9 @@ public class TaskRuntime extends StatedPersistentBase {
     return new TaskQuota(this);
   }
 
-  public boolean isSuspending(long determineTime) {
+  public boolean isSuspending(long determineTime, long ackTimeout) {
     return status == TaskRuntime.Status.SCHEDULED &&
-        determineTime - startTime > ArcticServiceConstants.MAX_SCHEDULING_TIME;
+        determineTime - startTime > ackTimeout;
   }
 
   private static final Map<Status, Set<Status>> nextStatusMap = new HashMap<>();

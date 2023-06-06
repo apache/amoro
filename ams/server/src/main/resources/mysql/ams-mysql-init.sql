@@ -92,7 +92,7 @@ CREATE TABLE `table_metadata`
     `hdfs_site`       mediumtext COMMENT 'base64 code of hdfs site',
     `core_site`       mediumtext COMMENT 'base64 code of core site',
     `auth_method`     varchar(32)  DEFAULT NULL COMMENT 'auth method like KERBEROS/SIMPLE',
-    `hadoop_username` varchar(64)  DEFAULT NULL COMMENT 'hadpp username when auth method is SIMPLE',
+    `hadoop_username` varchar(64)  DEFAULT NULL COMMENT 'hadoop username when auth method is SIMPLE',
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
