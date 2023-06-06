@@ -85,26 +85,23 @@ public class DefaultOptimizingService extends DefaultResourceManager
   //TODO optimizing code
   public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));
+    Map<String, List<OptimizerInstance>> optimizersByGroup =
+        optimizers.stream().collect(Collectors.groupingBy(OptimizerInstance::getGroupName));
     Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
         .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
     optimizerGroups.forEach(group -> {
       String groupName = group.getName();
       List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
-      optimizingQueueByGroup.put(groupName, new OptimizingQueue(tableManager, group,
-          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new)));
+      List<OptimizerInstance> optimizersUnderGroup = optimizersByGroup.get(groupName);
+      OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager, group,
+          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+          Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new));
+      optimizingQueueByGroup.put(groupName, optimizingQueue);
+      optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
-  }
-
-  public void loadOptimizers() {
-    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    if (optimizers == null || optimizers.isEmpty()) {
-      return;
-    }
-    optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));
-    Map<String, OptimizingQueue> queues = optimizers.stream().collect(Collectors.toMap(
-        OptimizerInstance::getToken, optimizer -> optimizingQueueByGroup.get(optimizer.getGroupName())));
-    optimizingQueueByToken.putAll(queues);
   }
 
   @Override
@@ -192,6 +189,13 @@ public class DefaultOptimizingService extends DefaultResourceManager
   @Override
   public void deleteOptimizer(String group, String resourceId) {
     getQueueByGroup(group).removeOptimizer(resourceId);
+    List<OptimizerInstance> deleteOptimizers =
+        getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
+    deleteOptimizers.forEach(optimizer -> {
+      String token = optimizer.getToken();
+      optimizingQueueByToken.remove(token);
+      doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
+    });
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
@@ -226,7 +230,6 @@ public class DefaultOptimizingService extends DefaultResourceManager
     protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeMetaList);
-      loadOptimizers();
       optimizerMonitorTimer = new Timer("OptimizerMonitor", true);
       optimizerMonitorTimer.schedule(
           new SuspendingDetector(),
@@ -246,7 +249,13 @@ public class DefaultOptimizingService extends DefaultResourceManager
     @Override
     public void run() {
       try {
-        optimizingQueueByGroup.values().forEach(OptimizingQueue::checkSuspending);
+        optimizingQueueByGroup.values().forEach(optimizingQueue -> {
+          List<String> expiredOptimizers = optimizingQueue.checkSuspending();
+          expiredOptimizers.forEach(optimizerToken -> {
+            doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(optimizerToken));
+            optimizingQueueByToken.remove(optimizerToken);
+          });
+        });
       } catch (RuntimeException e) {
         LOG.error("Update optimizer status abnormal failed. try next round", e);
       }

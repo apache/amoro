@@ -66,5 +66,20 @@ public interface OptimizerMapper {
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
   })
   List<OptimizerInstance> selectAll();
+
+  @Select("SELECT token, resource_id, group_name, container_name, start_time, touch_time," +
+      "thread_count, total_memory, properties FROM optimizer WHERE resource_id = #{resourceId}")
+  @Results({
+      @Result(property = "token", column = "token"),
+      @Result(property = "resourceId", column = "resource_id"),
+      @Result(property = "groupName", column = "group_name"),
+      @Result(property = "containerName", column = "container_name"),
+      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "touchTime", column = "touch_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "threadCount", column = "thread_count"),
+      @Result(property = "memoryMb", column = "total_memory"),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
+  })
+  List<OptimizerInstance> selectByResourceId(@Param("resourceId") String resourceId);
 }
 

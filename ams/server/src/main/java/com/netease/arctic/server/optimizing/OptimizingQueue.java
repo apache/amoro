@@ -62,13 +62,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private final TableManager tableManager;
 
-  public OptimizingQueue(TableManager tableManager, ResourceGroup optimizerGroup,
-                         List<TableRuntimeMeta> tableRuntimeMetaList) {
+  public OptimizingQueue(
+      TableManager tableManager,
+      ResourceGroup optimizerGroup,
+      List<TableRuntimeMeta> tableRuntimeMetaList,
+      List<OptimizerInstance> authOptimizers) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerGroup = optimizerGroup;
     this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
-    loadOptimizers();
+    this.authOptimizers.putAll(authOptimizers.stream().collect(Collectors.toMap(
+        OptimizerInstance::getToken, optimizer -> optimizer)));
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -122,18 +126,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   public void removeOptimizer(String resourceId) {
     authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
-  }
-
-  public void loadOptimizers() {
-    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    if (optimizers == null || optimizers.isEmpty()) {
-      return;
-    }
-    optimizers.stream()
-        .filter(optimizer -> optimizer.getGroupName().equals(this.optimizerGroup.getName()))
-        .peek(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()))
-        .collect(Collectors.toMap(OptimizerInstance::getToken, optimizer -> optimizer,
-            (existingValue, newValue) -> newValue, () -> authOptimizers));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
@@ -212,7 +204,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     return optimizer.getToken();
   }
 
-  public void checkSuspending() {
+  public List<String> checkSuspending() {
     long currentTime = System.currentTimeMillis();
     List<String> expiredOptimizers = authOptimizers.values().stream()
         .filter(optimizer -> currentTime - optimizer.getTouchTime() >
@@ -220,19 +212,19 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .map(OptimizerInstance::getToken)
         .collect(Collectors.toList());
 
-    expiredOptimizers.forEach(optimizerToken ->
-        doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(optimizerToken)));
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
         .filter(task -> task.isSuspending(currentTime) ||
-            expiredOptimizers.contains(task.getOptimizingThread().getToken()))
+            expiredOptimizers.contains(task.getOptimizingThread().getToken()) ||
+            !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
       executingTaskMap.remove(task.getTaskId());
       //optimizing task of suspending optimizer would not be counted for retrying
       retryTask(task, false);
     });
+    return expiredOptimizers;
   }
 
   @VisibleForTesting
@@ -594,12 +586,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   public static class OptimizingThread {
 
-    private final String token;
-    private final int threadId;
+    private String token;
+    private int threadId;
 
     public OptimizingThread(String token, int threadId) {
       this.token = token;
       this.threadId = threadId;
+    }
+
+    public OptimizingThread() {
     }
 
     public String getToken() {
