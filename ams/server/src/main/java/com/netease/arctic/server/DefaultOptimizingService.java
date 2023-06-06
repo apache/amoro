@@ -41,6 +41,7 @@ import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +100,9 @@ public class DefaultOptimizingService extends DefaultResourceManager
           Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
           Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new));
       optimizingQueueByGroup.put(groupName, optimizingQueue);
-      optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));
+      if (CollectionUtils.isNotEmpty(optimizersUnderGroup)) {
+        optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));
+      }
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
   }
