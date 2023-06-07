@@ -18,8 +18,10 @@
 
 package com.netease.arctic.flink.read.hidden.pulsar;
 
-import com.netease.arctic.TableTestBase;
-import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSource;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -106,6 +108,11 @@ public class TestLogPulsarSource extends TableTestBase {
               .withHaLeadershipControl()
               .build());
 
+  public TestLogPulsarSource() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
+
   @Before
   public void initData() throws Exception {
     TOPIC += TestUtil.getUtMethodName(testName);
@@ -114,18 +121,16 @@ public class TestLogPulsarSource extends TableTestBase {
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
     dataInPulsar = logPulsarHelper.write(TOPIC, 0);
 
-    testCatalog = CatalogLoader.load(AMS.getUrl());
-    result = testCatalog
+    result = getCatalog()
         .newTableBuilder(RESULT_TABLE_ID, userSchema)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + RESULT_TABLE)
         .withPrimaryKeySpec(TestBaseLog.PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
-    catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(AMS.getUrl());
+    catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(getCatalogUrl());
   }
 
   @After
   public void after() {
-    testCatalog.dropTable(RESULT_TABLE_ID, true);
+    getCatalog().dropTable(RESULT_TABLE_ID, true);
     logPulsarHelper.op().deleteTopicByForce(TOPIC);
   }
 

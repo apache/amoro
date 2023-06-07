@@ -18,11 +18,10 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
+import com.google.common.base.Preconditions;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
-import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -32,7 +31,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlatformFileInfoController extends RestBaseController {
+public class PlatformFileInfoController {
 
   private PlatformFileManager platformFileInfoService;
 
@@ -45,21 +44,17 @@ public class PlatformFileInfoController extends RestBaseController {
    *
    * @param ctx
    */
-  public void uploadFile(Context ctx) {
-    try {
-      InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
-      //todo getRuntime file name
-      String name = ctx.uploadedFile("file").getFilename();
-      byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
-      String content = Base64.getEncoder().encodeToString(bytes);
-      Integer fid = platformFileInfoService.addFile(name, content);
-      Map<String, String> result  = new HashMap<>();
-      result.put("id", String.valueOf(fid));
-      result.put("url", "/ams/v1/files/" + fid);
-      ctx.json(OkResponse.of(result));
-    } catch (IOException e) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upload file", null));
-    }
+  public void uploadFile(Context ctx) throws IOException {
+    InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
+    //todo getRuntime file name
+    String name = ctx.uploadedFile("file").getFilename();
+    byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
+    String content = Base64.getEncoder().encodeToString(bytes);
+    Integer fid = platformFileInfoService.addFile(name, content);
+    Map<String, String> result = new HashMap<>();
+    result.put("id", String.valueOf(fid));
+    result.put("url", "/ams/v1/files/" + fid);
+    ctx.json(OkResponse.of(result));
   }
 
   /**
@@ -69,10 +64,7 @@ public class PlatformFileInfoController extends RestBaseController {
    */
   public void downloadFile(Context ctx) {
     String fileId = ctx.pathParam("fileId");
-    if (!StringUtils.isNumeric(fileId)) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Invalid file id", null));
-      return;
-    }
+    Preconditions.checkArgument(StringUtils.isNumeric(fileId), "Invalid file id");
     String content = platformFileInfoService.getFileContentById(Integer.valueOf(fileId));
     ctx.result(content);
   }

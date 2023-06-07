@@ -81,6 +81,10 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
   @Override
   public List<FileScanResult> scan() {
+    LOG.info("{} start scan files with changeSnapshotId = {}, baseSnapshotId = {}", arcticTable.id(), changeSnapshotId,
+        baseSnapshotId);
+    long startTime = System.currentTimeMillis();
+
     List<FileScanResult> results = Lists.newArrayList();
     ChangeFiles changeFiles = new ChangeFiles(arcticTable);
     UnkeyedTable baseTable;
@@ -113,6 +117,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       }
     }
 
+    LOG.info("{} finish scan change files, cost {} ms, get {} insert files", arcticTable.id(),
+        System.currentTimeMillis() - startTime, results.size());
+
     if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       PartitionSpec partitionSpec = baseTable.spec();
       try (CloseableIterable<FileScanTask> filesIterable =
@@ -136,6 +143,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         throw new UncheckedIOException("Failed to close table scan of " + arcticTable.id(), e);
       }
     }
+    LOG.info("{} finish scan files, cost {} ms, get {} files", arcticTable.id(), System.currentTimeMillis() - startTime,
+        results.size());
     return results;
   }
 

@@ -43,26 +43,26 @@ public class TaskRuntime extends StatedPersistentBase {
   private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
-  @StatedPersistentBase.StateField
+  @StateField
   private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
-  @StatedPersistentBase.StateField
+  @StateField
   private int retry = 0;
-  @StatedPersistentBase.StateField
+  @StateField
   private long startTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentBase.StateField
+  @StateField
   private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StatedPersistentBase.StateField
+  @StateField
   private long costTime = 0;
-  @StatedPersistentBase.StateField
+  @StateField
   private OptimizingQueue.OptimizingThread optimizingThread;
-  @StatedPersistentBase.StateField
+  @StateField
   private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
-  @StatedPersistentBase.StateField
+  @StateField
   private RewriteFilesOutput output;
-  @StatedPersistentBase.StateField
+  @StateField
   private MetricsSummary summary;
   private Map<String, String> properties;
 
@@ -161,6 +161,10 @@ public class TaskRuntime extends StatedPersistentBase {
     return this;
   }
 
+  public boolean finished() {
+    return this.status == Status.SUCCESS || this.status == Status.FAILED || this.status == Status.CANCELED;
+  }
+
   protected void setInput(RewriteFilesInput input) {
     if (input == null) {
       throw new IllegalStateException("Optimizing input is null, id:" + taskId);
@@ -243,7 +247,7 @@ public class TaskRuntime extends StatedPersistentBase {
     if (startTime == ArcticServiceConstants.INVALID_TIME) {
       return 0;
     }
-    calculatingStartTime = Math.min(startTime, calculatingEndTime);
+    calculatingStartTime = Math.max(startTime, calculatingStartTime);
     calculatingEndTime = costTime == ArcticServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
     long lastingTime = calculatingEndTime - calculatingStartTime;
     return Math.max(0, lastingTime);
@@ -266,9 +270,6 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {
-    if (this.optimizingThread == null) {
-      return;
-    }
     if (!thread.equals(this.optimizingThread)) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }
@@ -285,9 +286,9 @@ public class TaskRuntime extends StatedPersistentBase {
     return new TaskQuota(this);
   }
 
-  public boolean isSuspending(long determineTime) {
+  public boolean isSuspending(long determineTime, long ackTimeout) {
     return status == TaskRuntime.Status.SCHEDULED &&
-        determineTime - startTime > ArcticServiceConstants.MAX_SCHEDULING_TIME;
+        determineTime - startTime > ackTimeout;
   }
 
   private static final Map<Status, Set<Status>> nextStatusMap = new HashMap<>();

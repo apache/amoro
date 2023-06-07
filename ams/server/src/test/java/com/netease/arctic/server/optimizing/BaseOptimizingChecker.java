@@ -17,11 +17,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class BaseOptimizingChecker extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizingChecker.class);
-  private static final long WAIT_SUCCESS_TIMEOUT = 300_000;
+  private static final long WAIT_SUCCESS_TIMEOUT = 150_000;
   private static final long CHECK_TIMEOUT = 1_000;
   private final TableIdentifier tableIdentifier;
   private long lastProcessId;
@@ -93,7 +94,10 @@ public class BaseOptimizingChecker extends PersistentBase {
           return Status.RUNNING;
         }
         Optional<TableOptimizingProcess> any =
-            tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
+            tableOptimizingProcesses.stream()
+                .filter(p -> p.getProcessId() > lastProcessId)
+                .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS.name()))
+                .findAny();
 
         if (any.isPresent()) {
           return Status.SUCCESS;
@@ -112,17 +116,17 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
 
     if (success) {
-      Optional<TableOptimizingProcess> result = getAs(
+      List<TableOptimizingProcess> result = getAs(
           OptimizingMapper.class,
           mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
               tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-          .filter(p -> p.getProcessId() > lastProcessId)
-          .findAny();
-      if (result.isPresent()) {
-        this.lastProcessId = result.get().getProcessId();
-        return result.get();
+          .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+      result.sort(Comparator.comparingLong(TableOptimizingProcess::getProcessId).reversed());
+      if (result.size() == 1) {
+        this.lastProcessId = result.get(0).getProcessId();
+        return result.get(0);
       } else {
-        return null;
+        throw new RuntimeException("optimize result size " + result.size());
       }
     } else {
       return null;
@@ -138,14 +142,9 @@ public class BaseOptimizingChecker extends PersistentBase {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
-    if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
-      return;
-    }
-    Optional<TableOptimizingProcess> any =
-        tableOptimizingProcesses.stream().filter(p -> p.getProcessId() > lastProcessId).findAny();
-    any.ifPresent(h -> LOG.error("{} get unexpected optimize process {} {}", tableIdentifier, lastProcessId, h));
-    Assert.assertFalse("optimize is not stopped", any.isPresent());
+            tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
+        .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+    Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
   }
 
   protected boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout)

@@ -29,10 +29,9 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,13 +58,13 @@ public class BasicTableTestHelper implements TableTestHelper {
   public BasicTableTestHelper(
       Schema tableSchema,
       PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec,
-      Map<String, String> tableProperties) {
+      PartitionSpec partitionSpec, Map<String, String> tableProperties) {
+    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;
-    this.tableProperties = Maps.newHashMap(tableProperties == null ? Collections.emptyMap() : tableProperties);
-    this.tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+    this.tableProperties = tableProperties;
   }
 
   public BasicTableTestHelper(

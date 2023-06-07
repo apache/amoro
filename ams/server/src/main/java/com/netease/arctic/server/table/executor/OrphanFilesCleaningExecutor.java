@@ -238,7 +238,6 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return deleteCount;
   }
 
-
   private static int clearInternalTableMetadata(UnkeyedTable internalTable, long lastTime) {
     Set<String> validFiles = getValidMetadataFiles(internalTable);
     LOG.info("{} table getRuntime {} valid files", internalTable.id(), validFiles.size());
@@ -260,6 +259,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     }
     return 0;
   }
+
 
   private static Set<String> getValidMetadataFiles(UnkeyedTable internalTable) {
     TableIdentifier tableIdentifier = internalTable.id();

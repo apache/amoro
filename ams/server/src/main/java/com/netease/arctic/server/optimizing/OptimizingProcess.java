@@ -22,7 +22,7 @@ public interface OptimizingProcess {
 
   Status getStatus();
 
-  long getQuotaTime(long calculatingStartTime, long calculatingEndTime);
+  long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
   void commit();
 

@@ -16,7 +16,7 @@ import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
@@ -38,15 +38,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class DefaultTableService extends PersistentBase implements TableService {
+public class DefaultTableService extends StatedPersistentBase implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
   private final long blockerTimeout;
   private final Map<String, InternalCatalog> internalCatalogMap = new ConcurrentHashMap<>();
   private final Map<String, ExternalCatalog> externalCatalogMap = new ConcurrentHashMap<>();
+  @StateField
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
-  private volatile boolean started = false;
   private RuntimeHandlerChain headHandler;
   private Timer tableExplorerTimer;
 
@@ -439,20 +439,22 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
+    invokeConsisitency(() -> doAsTransaction(
+        () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
+        () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
+    ));
+  }
+
+  private void handleTableRuntimeAdded(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
-        externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    try {
-      ArcticTable table = externalCatalog.loadTable(
-          tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName());
-      TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-      tableRuntimeMap.put(tableIdentifier, tableRuntime);
-      if (headHandler != null) {
-        headHandler.fireTableAdded(table, tableRuntime);
-      }
-    } catch (Exception e) {
-      disposeTable(externalCatalog, tableIdentifier);
-      LOG.error("sync table {} error while build table runtime", tableIdentifier, e);
+        externalCatalog.getServerTableIdentifier(tableIdentity.getDatabase(), tableIdentity.getTableName());
+    ArcticTable table = externalCatalog.loadTable(
+        tableIdentifier.getDatabase(),
+        tableIdentifier.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
+    tableRuntimeMap.put(tableIdentifier, tableRuntime);
+    if (headHandler != null) {
+      headHandler.fireTableAdded(table, tableRuntime);
     }
   }
 
