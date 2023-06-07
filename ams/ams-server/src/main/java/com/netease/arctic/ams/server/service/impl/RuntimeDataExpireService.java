@@ -65,7 +65,7 @@ public class RuntimeDataExpireService {
 
   private void expire() {
     List<TableMetadata> tableMetadata = metaService.listTables();
-    List<TableIdentifier> optimizeTables = optimizeService.refreshAndListTables();
+    List<TableIdentifier> optimizeTables = optimizeService.listCachedTables();
     // expire and clear table_task_history table
     if (optimizeTables != null && optimizeTables.size() > 0) {
       tableMetadata.forEach(meta -> {
