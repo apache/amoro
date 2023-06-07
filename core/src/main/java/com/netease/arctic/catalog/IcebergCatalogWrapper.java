@@ -22,13 +22,10 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.iceberg.IcebergFormatOperations;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BasicTableBuilder;
-import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -42,8 +39,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
-import org.apache.iceberg.hadoop.HadoopFileIO;
-import org.apache.iceberg.io.FileIO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +48,7 @@ import java.util.stream.Collectors;
 
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
- * deprecated, using {@link com.netease.arctic.iceberg.IcebergTables} instead
+ * deprecated, using {@link IcebergFormatOperations} instead
  */
 public class IcebergCatalogWrapper implements ArcticCatalog {
 

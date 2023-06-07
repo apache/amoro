@@ -46,7 +46,7 @@ public class TestCatalogLoader {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof CommonExternalCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicExternalCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
@@ -59,7 +59,7 @@ public class TestCatalogLoader {
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof CommonExternalCatalog);
+    Assert.assertTrue(loadCatalog instanceof BasicExternalCatalog);
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 

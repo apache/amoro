@@ -21,7 +21,7 @@ package com.netease.arctic.table;
 import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.Schema;
 
-public interface ArcticTables {
+public interface TableFormatOperations {
 
   /**
    * Returns the supported {@link TableFormat} type.

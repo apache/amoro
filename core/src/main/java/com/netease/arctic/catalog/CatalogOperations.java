@@ -20,13 +20,13 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.ArcticTables;
+import com.netease.arctic.table.TableFormatOperations;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 
 import java.util.List;
 
-public interface Metastore {
+public interface CatalogOperations {
 
   /**
    * Show database list of metastore.
@@ -92,5 +92,5 @@ public interface Metastore {
    * @param format table format
    * @return table format operations
    */
-  ArcticTables tables(TableFormat format);
+  TableFormatOperations formatOperations(TableFormat format);
 }

@@ -18,15 +18,14 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.iceberg.IcebergTables;
-import com.netease.arctic.iceberg.mixed.MixedIcebergTables;
+import com.netease.arctic.iceberg.IcebergFormatOperations;
+import com.netease.arctic.iceberg.mixed.MixedIcebergOperations;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.ArcticTables;
-import com.netease.arctic.table.MixedTables;
+import com.netease.arctic.table.TableFormatOperations;
+import com.netease.arctic.table.MixedTableOperations;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
@@ -40,18 +39,18 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class CommonExternalMetastore implements Metastore {
+public class ExternalCatalogOperations implements CatalogOperations {
 
   protected final Catalog icebergCatalog;
   protected final TableMetaStore tableMetaStore;
   protected final CatalogMeta meta;
 
   protected final Pattern databaseFilterPattern;
-  protected final IcebergTables icebergTables;
-  protected final MixedTables mixedIcebergTables;
+  protected final IcebergFormatOperations icebergFormatOperations;
+  protected final MixedTableOperations mixedIcebergOperations;
 
 
-  public CommonExternalMetastore(CatalogMeta meta) {
+  public ExternalCatalogOperations(CatalogMeta meta) {
     meta.putToCatalogProperties(
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
         meta.getCatalogType());
@@ -72,8 +71,8 @@ public class CommonExternalMetastore implements Metastore {
       databaseFilterPattern = null;
     }
 
-    this.icebergTables = new IcebergTables(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
-    this.mixedIcebergTables = new MixedIcebergTables(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
+    this.icebergFormatOperations = new IcebergFormatOperations(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
+    this.mixedIcebergOperations = new MixedIcebergOperations(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
@@ -147,22 +146,22 @@ public class CommonExternalMetastore implements Metastore {
 
   @Override
   public ArcticTable loadTable(String database, String table) {
-    ArcticTable icebergTable = icebergTables.loadTable(com.netease.arctic.table.TableIdentifier.of(
+    ArcticTable icebergTable = icebergFormatOperations.loadTable(com.netease.arctic.table.TableIdentifier.of(
         this.icebergCatalog.name(), database, table
     ));
-    if (mixedIcebergTables.isMixedTable(icebergTable)) {
-      return mixedIcebergTables.loadMixedTable(icebergTable);
+    if (mixedIcebergOperations.isMixedTable(icebergTable)) {
+      return mixedIcebergOperations.loadMixedTable(icebergTable);
     }
     return icebergTable;
   }
 
   @Override
-  public ArcticTables tables(TableFormat format) {
+  public TableFormatOperations formatOperations(TableFormat format) {
     switch (format) {
       case ICEBERG:
-        return icebergTables;
+        return icebergFormatOperations;
       case MIXED_ICEBERG:
-        return mixedIcebergTables;
+        return mixedIcebergOperations;
       default:
         throw new IllegalArgumentException("this catalog doesn't support table format: " + format);
     }

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table;
 
-public interface MixedTables extends ArcticTables {
+public interface MixedTableOperations extends TableFormatOperations {
 
   boolean isMixedTable(ArcticTable base);
 

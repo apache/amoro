@@ -21,11 +21,11 @@ package com.netease.arctic.iceberg.mixed;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.iceberg.EmptyAmsClient;
-import com.netease.arctic.iceberg.IcebergTables;
+import com.netease.arctic.iceberg.IcebergFormatOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
-import com.netease.arctic.table.MixedTables;
+import com.netease.arctic.table.MixedTableOperations;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -38,10 +38,10 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import java.util.Map;
 
-public class MixedIcebergTables extends IcebergTables implements MixedTables {
+public class MixedIcebergOperations extends IcebergFormatOperations implements MixedTableOperations {
 
 
-  public MixedIcebergTables(
+  public MixedIcebergOperations(
       Catalog catalog, Map<String, String> catalogProperties, TableMetaStore tableMetaStore) {
     super(catalog, catalogProperties, tableMetaStore);
   }

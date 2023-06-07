@@ -37,11 +37,11 @@ import java.util.Map;
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
  */
-public class CommonExternalCatalog implements ArcticCatalog {
+public class BasicExternalCatalog implements ArcticCatalog {
 
   private AmsClient client;
   private CatalogMeta meta;
-  private volatile CommonExternalMetastore metastore;
+  private volatile ExternalCatalogOperations catalogOperations;
 
 
   @Override
@@ -57,15 +57,15 @@ public class CommonExternalCatalog implements ArcticCatalog {
   }
 
 
-  private CommonExternalMetastore lazyMetastore() {
-    if (metastore == null) {
+  private ExternalCatalogOperations lazyMetastore() {
+    if (catalogOperations == null) {
       synchronized (this) {
-        if (metastore == null){
-          this.metastore = new CommonExternalMetastore(this.meta);
+        if (catalogOperations == null){
+          this.catalogOperations = new ExternalCatalogOperations(this.meta);
         }
       }
     }
-    return this.metastore;
+    return this.catalogOperations;
   }
 
 
@@ -92,7 +92,7 @@ public class CommonExternalCatalog implements ArcticCatalog {
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     TableFormat format = lazyMetastore().tableFormat(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    return lazyMetastore().tables(format).loadTable(tableIdentifier);
+    return lazyMetastore().formatOperations(format).loadTable(tableIdentifier);
   }
 
   @Override
@@ -109,7 +109,7 @@ public class CommonExternalCatalog implements ArcticCatalog {
   public boolean dropTable(TableIdentifier tableIdentifier, boolean purge) {
     try {
       TableFormat format = lazyMetastore().tableFormat(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-      return lazyMetastore().tables(format).dropTable(tableIdentifier, purge);
+      return lazyMetastore().formatOperations(format).dropTable(tableIdentifier, purge);
     } catch (NoSuchTableException e) {
       return false;
     }
@@ -123,14 +123,14 @@ public class CommonExternalCatalog implements ArcticCatalog {
 
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema, TableFormat format) {
-    return lazyMetastore().tables(format).newTableBuilder(schema, identifier);
+    return lazyMetastore().formatOperations(format).newTableBuilder(schema, identifier);
   }
 
   @Override
   public synchronized void refresh() {
     try {
       this.meta = client.getCatalog(name());
-      this.metastore = null;
+      this.catalogOperations = null;
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", this.meta.getCatalogName()), e);
     }
