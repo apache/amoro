@@ -42,12 +42,13 @@ import java.util.stream.Collectors;
 
 public class CommonExternalMetastore implements Metastore {
 
-  private final Catalog icebergCatalog;
-  private final TableMetaStore tableMetaStore;
+  protected final Catalog icebergCatalog;
+  protected final TableMetaStore tableMetaStore;
+  protected final CatalogMeta meta;
 
-  private final Pattern databaseFilterPattern;
-  private final IcebergTables icebergTables;
-  private final MixedTables mixedIcebergTables;
+  protected final Pattern databaseFilterPattern;
+  protected final IcebergTables icebergTables;
+  protected final MixedTables mixedIcebergTables;
 
 
   public CommonExternalMetastore(CatalogMeta meta) {
@@ -57,6 +58,8 @@ public class CommonExternalMetastore implements Metastore {
     if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
       meta.getCatalogProperties().remove("type");
     }
+
+    this.meta = meta;
     this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
     this.icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
         meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
@@ -142,6 +145,7 @@ public class CommonExternalMetastore implements Metastore {
   }
 
 
+  @Override
   public ArcticTable loadTable(String database, String table) {
     ArcticTable icebergTable = icebergTables.loadTable(com.netease.arctic.table.TableIdentifier.of(
         this.icebergCatalog.name(), database, table
@@ -152,6 +156,7 @@ public class CommonExternalMetastore implements Metastore {
     return icebergTable;
   }
 
+  @Override
   public ArcticTables tables(TableFormat format) {
     switch (format) {
       case ICEBERG:

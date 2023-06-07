@@ -19,6 +19,8 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.ArcticTables;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 
@@ -76,4 +78,19 @@ public interface Metastore {
    * @throws org.apache.iceberg.exceptions.NoSuchTableException when table not exists.
    */
   TableFormat tableFormat(String database, String table);
+  /**
+   * load table
+   * @param database a database name
+   * @param table a table name
+   * @return instance of {@link com.netease.arctic.table.ArcticTable}
+   *   implementation referred by {@code database}.{@code table}
+   */
+  ArcticTable loadTable(String database, String table);
+
+  /**
+   * get the table format operations for this format
+   * @param format table format
+   * @return table format operations
+   */
+  ArcticTables tables(TableFormat format);
 }

@@ -39,10 +39,7 @@ public class ArcticFileIOIcebergAdapter implements ArcticFileIO {
     return ArcticFileIO.super.exists(path);
   }
 
-  @Override
-  public List<FileStatus> list(String location) {
-    return null;
-  }
+
 
   @Override
   public boolean supportPrefixOperations() {
