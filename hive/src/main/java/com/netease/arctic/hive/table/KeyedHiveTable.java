@@ -27,7 +27,6 @@ import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
