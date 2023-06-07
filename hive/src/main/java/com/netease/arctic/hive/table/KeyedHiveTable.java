@@ -21,7 +21,6 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
