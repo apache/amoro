@@ -67,7 +67,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     super(new ArrayPoolDataIteratorBatcher<>(config, new RowDataRecordFactory(
         FlinkSchemaUtil.convert(readSchema(tableSchema, projectedSchema)))));
     this.tableSchema = tableSchema;
-    this.readSchema = fillUpReadSchema(tableSchema, projectedSchema);
+    this.readSchema = fillUpReadSchema(tableSchema, projectedSchema, primaryKeySpec);
     this.primaryKeySpec = primaryKeySpec;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
@@ -142,9 +142,9 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * @param projectedSchema projected schema
    * @return a new Schema on which include the identifier fields.
    */
-  private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema) {
+  private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec) {
     Preconditions.checkNotNull(tableSchema, "Table schema can't be null");
-    return projectedSchema == null ? tableSchema : fillUpIdentifierFields(tableSchema, projectedSchema);
+    return projectedSchema == null ? tableSchema : fillUpIdentifierFields(tableSchema, projectedSchema, primaryKeySpec);
   }
 
   private static Schema readSchema(Schema tableSchema, Schema projectedSchema) {

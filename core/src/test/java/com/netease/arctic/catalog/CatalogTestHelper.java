@@ -20,7 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.catalog.Catalog;
 
 public interface CatalogTestHelper {
@@ -32,4 +32,6 @@ public interface CatalogTestHelper {
   CatalogMeta buildCatalogMeta(String baseDir);
 
   Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
+
+  MixedTables buildMixedTables(CatalogMeta catalogMeta);
 }

@@ -205,13 +205,13 @@
 
 This product includes code from Apache Iceberg.
 
-* org.apache.iceberg.data.DeleteFilter copied and modified to com.netease.arctic.iceberg.optimize.DeleteFilter
-* org.apache.iceberg.deletes.Deletes copied and modified to com.netease.arctic.iceberg.optimize.Deletes
-* org.apache.iceberg.data.InternalRecordWrapper copied and modified to com.netease.arctic.iceberg.optimize.InternalRecordWrapper
+* org.apache.iceberg.data.DeleteFilter copied and modified to com.netease.arctic.iceberg.DeleteFilter
+* org.apache.iceberg.deletes.Deletes copied and modified to com.netease.arctic.iceberg.Deletes
+* org.apache.iceberg.data.InternalRecordWrapper copied and modified to com.netease.arctic.iceberg.InternalRecordWrapper
 * org.apache.iceberg.util.StructLikeMap copied and modified to com.netease.arctic.utils.map.StructLikeMemoryMap
 * org.apache.iceberg.util.StructLikeSet copied and modified to com.netease.arctic.utils.StructLikeSet
-* org.apache.iceberg.util.StructLikeWrapper copied and modified to com.netease.arctic.iceberg.optimize.StructLikeWrapper
-* org.apache.iceberg.util.StructProjection copied and modified to com.netease.arctic.iceberg.optimize.StructProjection
+* org.apache.iceberg.util.StructLikeWrapper copied and modified to com.netease.arctic.iceberg.StructLikeWrapper
+* org.apache.iceberg.util.StructProjection copied and modified to com.netease.arctic.iceberg.StructProjection
 * org.apache.iceberg.data.parquet.BaseParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetReaders
 * org.apache.iceberg.data.parquet.BaseParquetWriter copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetWriter
 * org.apache.iceberg.data.parquet.GenericParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders

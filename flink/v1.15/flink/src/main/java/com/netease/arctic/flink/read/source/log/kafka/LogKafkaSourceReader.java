@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.source.log.kafka;
 
+import com.netease.arctic.flink.read.internals.KafkaSourceFetcherManager;
 import com.netease.arctic.flink.read.internals.KafkaSourceReader;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import org.apache.flink.api.connector.source.SourceReaderContext;
@@ -26,7 +27,6 @@ import org.apache.flink.connector.base.source.reader.RecordEmitter;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
-import org.apache.flink.connector.kafka.source.reader.fetcher.KafkaSourceFetcherManager;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

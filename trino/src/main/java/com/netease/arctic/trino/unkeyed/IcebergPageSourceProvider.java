@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.Traverser;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.iceberg.optimize.DeleteFilter;
+import com.netease.arctic.iceberg.DeleteFilter;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.trino.delete.DummyFileScanTask;
 import com.netease.arctic.trino.delete.TrinoRow;
@@ -366,7 +366,7 @@ public class IcebergPageSourceProvider
         dataPageSource.get(),
         projectionsAdapter,
         //                Optional.of(deleteFilter).filter(filter -> filter.hasPosDeletes() || filter.hasEqDeletes()),
-        //In order to be compatible with iceberg version 0.12
+        // In order to be compatible with iceberg version 0.12
         useIcebergDelete ? Optional.of(deleteFilter) : Optional.empty(),
         positionDeleteSink);
   }

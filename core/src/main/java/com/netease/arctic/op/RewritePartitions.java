@@ -5,7 +5,9 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.util.StructLikeMap;
 
-public interface RewritePartitions extends PendingUpdate<StructLikeMap<Long>> {
+import java.util.Map;
+
+public interface RewritePartitions extends PendingUpdate<StructLikeMap<Map<String, String>>> {
 
   /**
    * Add a {@link DataFile} to the table.

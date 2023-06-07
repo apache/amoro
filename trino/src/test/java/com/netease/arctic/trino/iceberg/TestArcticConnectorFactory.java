@@ -68,64 +68,68 @@ import static com.google.inject.Scopes.SINGLETON;
 
 public class TestArcticConnectorFactory implements ConnectorFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestArcticConnectorFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestArcticConnectorFactory.class);
 
-    @Override
-    public String getName() {
-        return "arctic";
+  @Override
+  public String getName() {
+    return "arctic";
+  }
+
+  @Override
+  public Connector create(String catalogName, Map<String, String> config, ConnectorContext context) {
+    ClassLoader classLoader = InternalIcebergConnectorFactory.class.getClassLoader();
+    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+      Bootstrap app = new Bootstrap(
+          new EventModule(),
+          new MBeanModule(),
+          new ConnectorObjectNameGeneratorModule("io.trino.plugin.iceberg", "trino.plugin.iceberg"),
+          new JsonModule(),
+          new TestUnionModule(),
+          new IcebergSecurityModule(),
+          new MBeanServerModule(),
+          binder -> {
+            binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
+            binder.bind(NodeManager.class).toInstance(context.getNodeManager());
+            binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+            binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
+            binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
+            binder.bind(TrinoFileSystemFactory.class).to(HdfsFileSystemFactory.class).in(SINGLETON);
+          });
+
+      Injector injector = app
+          .doNotInitializeLogging()
+          .setRequiredConfigurationProperties(config)
+          .initialize();
+
+      LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
+      ArcticTransactionManager transactionManager = injector.getInstance(ArcticTransactionManager.class);
+      ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
+      ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
+      ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
+      ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
+      Set<SessionPropertiesProvider> sessionPropertiesProviders = injector.getInstance(Key.get(new TypeLiteral<Set<SessionPropertiesProvider>>() {
+      }));
+      IcebergTableProperties icebergTableProperties = injector.getInstance(IcebergTableProperties.class);
+      Set<Procedure> procedures = injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {
+      }));
+      Set<TableProcedureMetadata> tableProcedures = injector.getInstance(Key.get(new TypeLiteral<Set<TableProcedureMetadata>>() {
+      }));
+      Optional<ConnectorAccessControl> accessControl = injector.getInstance(Key.get(new TypeLiteral<Optional<ConnectorAccessControl>>() {
+      }));
+
+      return new ArcticConnector(
+          lifeCycleManager,
+          transactionManager,
+          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
+          new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
+          new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
+          new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
+          sessionPropertiesProviders,
+          IcebergSchemaProperties.SCHEMA_PROPERTIES,
+          icebergTableProperties.getTableProperties(),
+          accessControl,
+          procedures,
+          tableProcedures);
     }
-
-    @Override
-    public Connector create(String catalogName, Map<String, String> config, ConnectorContext context) {
-        ClassLoader classLoader = InternalIcebergConnectorFactory.class.getClassLoader();
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = new Bootstrap(
-                    new EventModule(),
-                    new MBeanModule(),
-                    new ConnectorObjectNameGeneratorModule("io.trino.plugin.iceberg", "trino.plugin.iceberg"),
-                    new JsonModule(),
-                    new TestUnionModule(),
-                    new IcebergSecurityModule(),
-                    new MBeanServerModule(),
-                    binder -> {
-                        binder.bind(NodeVersion.class).toInstance(new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
-                        binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-                        binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-                        binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
-                        binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
-                        binder.bind(TrinoFileSystemFactory.class).to(HdfsFileSystemFactory.class).in(SINGLETON);
-                    });
-
-            Injector injector = app
-                    .doNotInitializeLogging()
-                    .setRequiredConfigurationProperties(config)
-                    .initialize();
-
-            LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-            ArcticTransactionManager transactionManager = injector.getInstance(ArcticTransactionManager.class);
-            ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-            ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
-            ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
-            ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
-            Set<SessionPropertiesProvider> sessionPropertiesProviders = injector.getInstance(Key.get(new TypeLiteral<Set<SessionPropertiesProvider>>() {}));
-            IcebergTableProperties icebergTableProperties = injector.getInstance(IcebergTableProperties.class);
-            Set<Procedure> procedures = injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {}));
-            Set<TableProcedureMetadata> tableProcedures = injector.getInstance(Key.get(new TypeLiteral<Set<TableProcedureMetadata>>() {}));
-            Optional<ConnectorAccessControl> accessControl = injector.getInstance(Key.get(new TypeLiteral<Optional<ConnectorAccessControl>>() {}));
-
-            return new ArcticConnector(
-                    lifeCycleManager,
-                    transactionManager,
-                    new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
-                    new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
-                    new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
-                    new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
-                    sessionPropertiesProviders,
-                    IcebergSchemaProperties.SCHEMA_PROPERTIES,
-                    icebergTableProperties.getTableProperties(),
-                    accessControl,
-                    procedures,
-                    tableProcedures);
-        }
-    }
+  }
 }

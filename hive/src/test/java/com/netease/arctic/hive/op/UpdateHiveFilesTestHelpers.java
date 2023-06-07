@@ -24,7 +24,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -144,9 +144,9 @@ public class UpdateHiveFilesTestHelpers {
     String fileDir = null;
     for (DataFile file : files) {
       if (fileDir == null) {
-        fileDir = TableFileUtils.getFileDir(file.path().toString());
+        fileDir = TableFileUtil.getFileDir(file.path().toString());
       } else {
-        Assert.assertEquals(fileDir, TableFileUtils.getFileDir(file.path().toString()));
+        Assert.assertEquals(fileDir, TableFileUtil.getFileDir(file.path().toString()));
       }
     }
     return fileDir;

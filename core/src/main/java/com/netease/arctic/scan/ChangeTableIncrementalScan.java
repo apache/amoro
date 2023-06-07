@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.data.IcebergContentFile;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
@@ -54,12 +54,12 @@ public interface ChangeTableIncrementalScan extends TableScan {
   ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
 
   /**
-   * Plan the {@link ContentFileWithSequence files with sequence} that will be read by this scan.
+   * Plan the {@link IcebergContentFile files with sequence} that will be read by this scan.
    * The sequence is the sequence for each file from iceberg metadata.
    *
    * @return an Iterable of files with sequence that are required by this scan
    */
-  CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence();
+  CloseableIterable<IcebergContentFile<?>> planFilesWithSequence();
 
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
