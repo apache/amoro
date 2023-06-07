@@ -27,6 +27,7 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.iceberg.DataFile;
@@ -36,6 +37,7 @@ import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,8 +177,13 @@ public class AmsTableTracer implements TableTracer {
       update = true;
     }
     if (this.properties != null && Constants.INNER_TABLE_BASE.equals(innerTable)) {
-      commitMeta.setProperties(this.properties);
-      update = true;
+      try {
+        Map<String, String> catalogProperties = client.getCatalog(table.id().getCatalog()).getCatalogProperties();
+        commitMeta.setProperties(CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogProperties));
+        update = true;
+      } catch (TException e) {
+        LOG.warn("get catalog properties error", e);
+      }
     }
     if (!update) {
       return;
