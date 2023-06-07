@@ -379,10 +379,6 @@ public class TableRuntime extends StatedPersistentBase {
     return tableConfiguration.getOptimizingConfig().getMaxExecuteRetryCount();
   }
 
-  public int getMaxCommitRetryCount() {
-    return tableConfiguration.getOptimizingConfig().getMaxCommitRetryCount();
-  }
-
   public long getNewestProcessId() {
     return processId;
   }
