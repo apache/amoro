@@ -225,15 +225,17 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
           .build();
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
+      Set<Integer> identifierFieldIds = new HashSet<>();
       List<Types.NestedField> columnsWithPk = new ArrayList<>();
       convertSchema.columns().forEach(nestedField -> {
         if (pkSet.contains(nestedField.name())) {
           columnsWithPk.add(nestedField.asRequired());
+          identifierFieldIds.add(nestedField.fieldId());
         } else {
           columnsWithPk.add(nestedField);
         }
       });
-      return new Schema(columnsWithPk);
+      return new Schema(columnsWithPk, identifierFieldIds);
     }
     return convertSchema;
   }

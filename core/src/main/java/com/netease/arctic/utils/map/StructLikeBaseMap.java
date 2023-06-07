@@ -18,8 +18,8 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
+import com.netease.arctic.iceberg.StructLikeWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 

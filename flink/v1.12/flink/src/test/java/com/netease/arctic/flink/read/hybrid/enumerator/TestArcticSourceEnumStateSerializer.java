@@ -20,8 +20,8 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
-import com.netease.arctic.flink.read.hybrid.assigner.TestShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.Split;
+import com.netease.arctic.flink.read.hybrid.assigner.TestShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
