@@ -129,7 +129,6 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
   }
 
   @Test
-  @Ignore
   public void testEmptyTargetFilesMajorOptimizeCommit() throws Exception {
     List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
