@@ -51,7 +51,7 @@ public interface TableTestHelper {
 
   Record generateTestRecord(int id, String name, long ts, String opTime);
 
-  List<DataFile> writeChangeStore(KeyedTable keyedTable, long txId, ChangeAction action,
+  List<DataFile> writeChangeStore(KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records, boolean orderedWrite);
 
   List<DataFile> writeBaseStore(ArcticTable keyedTable, long txId, List<Record> records, boolean orderedWrite);

@@ -32,15 +32,30 @@
     <url>https://arctic.netease.com</url>
 
     <modules>
-        <module>ams-api</module>
-        <module>ams-server</module>
-        <module>ams-dashboard</module>
+        <module>api</module>
+        <module>optimizer</module>
+        <module>server</module>
+        <module>dashboard</module>
     </modules>
 
     <properties>
         <thrift.version>0.13.0</thrift.version>
     </properties>
 
-    <dependencies></dependencies>
+    <dependencies>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

@@ -49,6 +49,10 @@ public class PrimaryKeySpec implements Serializable {
     return schema;
   }
 
+  public Schema getPkSchema() {
+    return schema.select(pkFields.stream().map(PrimaryKeyField::fieldName).collect(Collectors.toList()));
+  }
+
   public static Builder builderFor(Schema schema) {
     return new Builder(schema);
   }

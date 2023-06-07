@@ -20,9 +20,8 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.FileNameGenerator;
-import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
+import com.netease.arctic.data.FileNameRules;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.ChangeTable;
 import org.apache.iceberg.BaseCombinedScanTask;
 import org.apache.iceberg.CombinedScanTask;
@@ -161,11 +160,11 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
   }
 
   @Override
-  public CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence() {
+  public CloseableIterable<IcebergContentFile<?>> planFilesWithSequence() {
     return planFilesWithSequence(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
   }
 
-  private CloseableIterable<ContentFileWithSequence<?>> planFilesWithSequence(
+  private CloseableIterable<IcebergContentFile<?>> planFilesWithSequence(
       PartitionDataFilter shouldKeepFile,
       PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
@@ -191,7 +190,7 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
       Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);
       if (shouldKeep == null) {
         String filePath = entry.getFile().path().toString();
-        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameGenerator.parseChange(
+        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameRules.parseChange(
             filePath,
             sequenceNumber).transactionId());
       } else {
@@ -200,7 +199,7 @@ public class ChangeTableBasicIncrementalScan implements ChangeTableIncrementalSc
     });
     return CloseableIterable.transform(
         filteredEntry,
-        e -> WrapFileWithSequenceNumberHelper.wrap(e.getFile(), e.getSequenceNumber()));
+        e -> IcebergContentFile.wrap(e.getFile(), e.getSequenceNumber()));
   }
 
   @Override

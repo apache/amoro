@@ -40,7 +40,6 @@
     <modules>
         <module>core</module>
         <module>hive</module>
-        <module>optimizer</module>
         <module>flink</module>
         <module>spark</module>
         <module>trino</module>
@@ -67,6 +66,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
+        <maven.scalastyle.skip>false</maven.scalastyle.skip>
+        <jacoco.flink.skip>false</jacoco.flink.skip>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
@@ -83,32 +84,29 @@
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
+        <maven-spotless-plugin.version>2.27.2</maven-spotless-plugin.version>
+        <maven-scalastyle-plugin.version>1.0.0</maven-scalastyle-plugin.version>
 
         <iceberg.version>1.1.0</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
-        <mysql.version>8.0.20</mysql.version>
+        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <flink.version>1.12.7</flink.version>
+        <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
         <junit5.jupiter.version>5.9.1</junit5.jupiter.version>
         <junit5.vintage.version>5.9.1</junit5.vintage.version>
         <junit5.platform.version>1.9.1</junit5.platform.version>
         <commons-pool2.version>2.10.0</commons-pool2.version>
         <cglib.version>2.2.2</cglib.version>
-        <mockito.version>2.23.4</mockito.version>
+        <mockito.version>3.12.4</mockito.version>
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.75</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
-        <maven.scalastyle.skip>false</maven.scalastyle.skip>
-        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <spotless.scala.scalafmt.version>3.6.1</spotless.scala.scalafmt.version>
-        <maven.plugin.spotless.version>2.27.2</maven.plugin.spotless.version>
-        <jacoco.flink.skip>false</jacoco.flink.skip>
     </properties>
 
     <dependencyManagement>
@@ -123,24 +121,12 @@
                 <groupId>com.netease.arctic</groupId>
                 <artifactId>arctic-core</artifactId>
                 <version>${project.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty.aggregate</groupId>
-                        <artifactId>jetty-all</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-slf4j-impl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty.orbit</groupId>
-                        <artifactId>javax.servlet</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.netease.arctic</groupId>
+                <artifactId>arctic-hive</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
@@ -201,6 +187,13 @@
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet-avro.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.parquet</groupId>
+                        <artifactId>parquet-hadoop</artifactId>
+                    </exclusion>
+
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -251,20 +244,33 @@
 
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
+                <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-runtime_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <!-- API bridge between log4j 1 and 2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
 
             <dependency>
@@ -276,7 +282,7 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.version}</version>
+                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>
@@ -287,52 +293,58 @@
             </dependency>
 
             <dependency>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>${cglib.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit4.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${junit5.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit5.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit5.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit5.vintage.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit5.platform.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-engine</artifactId>
                 <version>${junit5.platform.version}</version>
                 <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>cglib</groupId>
-                <artifactId>cglib</artifactId>
-                <version>${cglib.version}</version>
             </dependency>
 
             <dependency>
@@ -518,7 +530,7 @@
                 <plugin>
                     <groupId>org.scalastyle</groupId>
                     <artifactId>scalastyle-maven-plugin</artifactId>
-                    <version>${maven.plugin.scalastyle.version}</version>
+                    <version>${maven-scalastyle-plugin.version}</version>
                     <configuration>
                         <verbose>false</verbose>
                         <failOnViolation>true</failOnViolation>
@@ -540,6 +552,11 @@
                             <phase>validate</phase>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${maven-spotless-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
