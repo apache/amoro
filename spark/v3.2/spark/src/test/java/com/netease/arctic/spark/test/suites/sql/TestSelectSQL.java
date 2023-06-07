@@ -29,6 +29,8 @@ import com.netease.arctic.spark.test.helper.TestTable;
 import com.netease.arctic.spark.test.helper.TestTableHelper;
 import com.netease.arctic.spark.test.helper.TestTables;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.MetadataColumns;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
@@ -114,6 +116,12 @@ public class TestSelectSQL extends SparkTableTestBase {
     List<Row> changeActual = ds.collectAsList();
     Assertions.assertEquals(expectChange.size(), changeActual.size());
 
+    Schema changeSchema = MetadataColumns.appendChangeStoreMetadataColumns(table.schema);
+    changeActual.stream().map(r -> TestTableHelper.rowToRecord(r, changeSchema.asStruct()))
+        .forEach(r -> {
+          Assertions.assertNotNull(r.getField(MetadataColumns.CHANGE_ACTION_NAME));
+          Assertions.assertTrue(((Long)r.getField(MetadataColumns.TRANSACTION_ID_FILED_NAME)) > 0);
+        });
   }
 
 }
