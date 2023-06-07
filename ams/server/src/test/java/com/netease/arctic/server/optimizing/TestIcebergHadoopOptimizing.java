@@ -18,17 +18,24 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.PartitionKey;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Types;
 
 import java.io.IOException;
-
-import static com.netease.arctic.IcebergTableTestHelper.partitionData;
+import java.util.List;
+import java.util.Set;
 
 public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   private final Table table;
@@ -85,7 +92,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
@@ -103,7 +110,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 3, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
     checker.assertOptimizeHangUp();
@@ -189,7 +196,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
@@ -203,7 +210,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait FullMajor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 4, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MAJOR, 3, 1);
 
     assertIds(readRecords(table), 5, 6, 7, 8);
 
@@ -273,8 +280,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   }
 
   public void testPartitionIcebergTablePartialOptimizing() throws IOException {
-    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-
     // Step 1: insert 6 data files for two partitions
     StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
     insertDataFile(table, Lists.newArrayList(
@@ -300,13 +305,10 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
-    updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
 
     // wait Minor Optimize result
     TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
-    optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 3);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     checker.assertOptimizeHangUp();
@@ -314,5 +316,30 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   private Record newRecord(Object... val) {
     return newRecord(table.schema(), val);
+  }
+
+  private StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
+    GenericRecord record = GenericRecord.create(tableSchema);
+    int index = 0;
+    Set<Integer> partitionField = Sets.newHashSet();
+    spec.fields().forEach(f -> partitionField.add(f.sourceId()));
+    List<Types.NestedField> tableFields = tableSchema.columns();
+    for (int i = 0; i < tableFields.size(); i++) {
+      // String sourceColumnName = tableSchema.findColumnName(i);
+      Types.NestedField sourceColumn = tableFields.get(i);
+      if (partitionField.contains(sourceColumn.fieldId())) {
+        Object partitionVal = partitionValues[index];
+        index++;
+        record.set(i, partitionVal);
+      } else {
+        record.set(i, 0);
+      }
+    }
+
+    PartitionKey pd = new PartitionKey(spec, tableSchema);
+    InternalRecordWrapper wrapper = new InternalRecordWrapper(tableSchema.asStruct());
+    wrapper = wrapper.wrap(record);
+    pd.partition(wrapper);
+    return pd;
   }
 }

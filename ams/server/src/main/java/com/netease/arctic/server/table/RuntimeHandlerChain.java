@@ -3,11 +3,15 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 
 public abstract class RuntimeHandlerChain {
+  
+  private static final Logger LOG = LoggerFactory.getLogger(RuntimeHandlerChain.class);
 
   private RuntimeHandlerChain next;
 
@@ -30,21 +34,21 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    handleStatusChanged(tableRuntime, originalStatus);
+    doSilently(() -> handleStatusChanged(tableRuntime, originalStatus));
     if (next != null) {
       next.fireStatusChanged(tableRuntime, originalStatus);
     }
   }
 
   public final void fireConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    handleConfigChanged(tableRuntime, originalConfig);
+    doSilently(() -> handleConfigChanged(tableRuntime, originalConfig));
     if (next != null) {
       next.fireConfigChanged(tableRuntime, originalConfig);
     }
   }
 
   public final void fireTableAdded(ArcticTable table, TableRuntime tableRuntime) {
-    handleTableAdded(table, tableRuntime);
+    doSilently(() -> handleTableAdded(table, tableRuntime));
     if (next != null) {
       next.fireTableAdded(table, tableRuntime);
     }
@@ -54,14 +58,22 @@ public abstract class RuntimeHandlerChain {
     if (next != null) {
       next.fireTableRemoved(tableRuntime);
     }
-    handleTableRemoved(tableRuntime);
+    doSilently(() -> handleTableRemoved(tableRuntime));
   }
 
   public final void dispose() {
     if (next != null) {
       next.doDispose();
     }
-    doDispose();
+    doSilently(this::doDispose);
+  }
+
+  private void doSilently(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Throwable t) {
+      LOG.error("failed to handle, ignore and continue", t);
+    }
   }
 
   protected abstract void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);

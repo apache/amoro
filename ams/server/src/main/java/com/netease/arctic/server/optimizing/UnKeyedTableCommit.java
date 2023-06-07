@@ -278,9 +278,9 @@ public class UnKeyedTableCommit {
     if (!table.io().exists(newFilePath)) {
       if (!table.io().exists(hiveLocation)) {
         LOG.debug("{} hive location {} does not exist and need to mkdir before rename", table.id(), hiveLocation);
-        table.io().asFileSystemIO().makeDirectories(hiveLocation);
+        table.io().mkdirs(hiveLocation);
       }
-      table.io().asFileSystemIO().rename(oldFilePath, newFilePath);
+      table.io().rename(oldFilePath, newFilePath);
       LOG.debug("{} move file from {} to {}", table.id(), oldFilePath, newFilePath);
     }
 

@@ -380,6 +380,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-data</artifactId>
+            <version>${iceberg.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

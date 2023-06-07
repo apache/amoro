@@ -71,9 +71,6 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
             .append(resource.getProperties().get(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE));
       }
     }
-    if (containerProperties.containsKey(PropertyNames.JAVA_PARAMETERS_PROPERTY)) {
-      stringBuilder.append(containerProperties.get(PropertyNames.JAVA_PARAMETERS_PROPERTY));
-    }
     if (resource.getResourceId() != null && resource.getResourceId().length() > 0) {
       stringBuilder.append(" -id ").append(resource.getResourceId());
     }

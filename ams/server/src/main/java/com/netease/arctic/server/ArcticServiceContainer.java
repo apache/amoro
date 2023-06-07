@@ -20,7 +20,6 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
@@ -34,9 +33,7 @@ import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
-import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
-import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -112,7 +109,7 @@ public class ArcticServiceContainer {
 
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(tableService, resourceGroups);
+    optimizingService = new DefaultOptimizingService(serviceConfig, tableService, resourceGroups);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -144,25 +141,6 @@ public class ArcticServiceContainer {
       tableService = null;
     }
     optimizingService = null;
-  }
-
-  public boolean isStarted() {
-    return server != null && server.isServing();
-  }
-
-  @VisibleForTesting
-  void setConfig(ConfigOption option, Object value) {
-    serviceConfig.set(option, value);
-  }
-
-  @VisibleForTesting
-  TableService getTableService() {
-    return this.tableService;
-  }
-
-  @VisibleForTesting
-  DefaultOptimizingService getOptimizingService() {
-    return this.optimizingService;
   }
 
   private void initConfig() throws IOException {
@@ -254,8 +232,10 @@ public class ArcticServiceContainer {
               "can not find such container config named" +
                   groupBuilder.getContainer());
         }
-        if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES)) {
-          groupBuilder.addProperties(groupConfig.getObject(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
+        if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) &&
+            groupConfig.get(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) != null) {
+          groupBuilder.addProperties(groupConfig.getObject(
+              ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
               Map.class));
         }
         resourceGroups.add(groupBuilder.build());

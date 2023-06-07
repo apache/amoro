@@ -20,11 +20,9 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.utils.Configurations;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 
 import java.io.Serializable;
 
@@ -62,8 +60,7 @@ public class LoginController {
           "user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "bad user " + postBody.get("user") + " or password!",
-          null));
+      throw new RuntimeException("bad user " + postBody.get("user") + " or password!");
     }
   }
 

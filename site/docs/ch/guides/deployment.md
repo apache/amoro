@@ -59,7 +59,7 @@ package -P toolchain 进行整个项目的编译即可。
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk17Home}</jdkHome>
+            <jdkHome>${YourJDK17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
@@ -166,7 +166,7 @@ containers:
     container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                              #Flink install home
-      jvm-args: "-Djava.security.krb5.conf=/opt/krb5.conf"   #Flink launch jvm args, like kerberos config when ues kerberos
+      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   #Flink launch jvm args, like kerberos config when ues kerberos
       export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"            #Hadoop config dir
       export.HADOOP_USER_NAME: "hadoop"                      #Hadoop user submit on yarn
       export.FLINK_CONF_DIR: "/etc/hadoop/conf/"             #Flink config dir
@@ -175,8 +175,8 @@ optimizer_groups:
   - name: flinkGroup             # container name, should be in the names of containers  
     container: flinkContainer
     properties:
-      task-manager.memory: "2048"
-      job-manager.memory: "1024"
+      taskmanager.memory: "2048"
+      jobmanager.memory: "1024"
 ```
 
 ### 完整配置
@@ -185,7 +185,6 @@ optimizer_groups:
 
 ```shell
 ams:
-
   admin-username: admin
   admin-password: admin
   server-bind-host: "0.0.0.0"
@@ -196,6 +195,9 @@ ams:
   expire-table-thread-count: 10
   clean-orphan-file-thread-count: 10
   sync-hive-tables-thread-count: 10
+  
+  blocker:
+    timeout: 60000 # 1min
 
   thrift-server:
     bind-port: 1260
@@ -209,6 +211,10 @@ ams:
 
   self-optimizing:
     commit-thread-count: 10
+    
+  optimizer:
+    heart-beat-timeout: 60000 # 1min
+    task-ack-timeout: 30000 # 30s
 
   database:
     type: derby
@@ -244,23 +250,23 @@ containers:
   - name: localContainer
     container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
     properties:
-      memory: "1024" # The size of memory allocated for each parallel
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
 #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
 #    properties:
-#      flink-home: "/opt/flink/"                              # Flink install home
-#      jvm-args: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
-#      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"            # Hadoop config dir
-#      export.HADOOP_USER_NAME: "hadoop"                      # Hadoop user submit on yarn
-#      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"             # Flink config dir
+#      flink-home: "/opt/flink/"                                     # Flink install home
+#      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
+#      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
+#      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
 
 optimizer_groups:
   - name: default
     container: localContainer
     properties:
+      memory: "1024" # The size of memory allocated for each parallel
 
   - name: external-group
     container: external # The external container is used to host all externally launched optimizers.
@@ -268,12 +274,8 @@ optimizer_groups:
 #  - name: flinkGroup
 #    container: flinkContainer
 #    properties:
-#      task-manager.memory: "2048"
-#      job-manager.memory: "1024"
-
-blocker:
-  timeout: 60000 # 1min
-
+#      taskmanager.memory: "2048"
+#      jobmanager.memory: "1024"
 
 ```
 

@@ -20,6 +20,12 @@ public class IcebergCatalogImpl extends ExternalCatalog {
   }
 
   @Override
+  public void updateMetadata(CatalogMeta metadata) {
+    super.updateMetadata(metadata);
+    this.catalogWrapper.refreshCatalogMeta(getMetadata());
+  }
+
+  @Override
   public boolean exist(String database) {
     return catalogWrapper.listDatabases().contains(database);
   }

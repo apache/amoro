@@ -40,8 +40,7 @@ CREATE TABLE resource (
     total_memory              INT,
     start_time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     properties                CLOB(64m),
-    CONSTRAINT resource_pk PRIMARY KEY (resource_id),
-    CONSTRAINT resource_group_idx UNIQUE (group_name)
+    CONSTRAINT resource_pk PRIMARY KEY (resource_id)
 );
 
 CREATE TABLE resource_group (
@@ -101,7 +100,8 @@ CREATE TABLE table_runtime (
     optimizer_group             VARCHAR(64) NOT NULL,
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
-    CONSTRAINT table_runtime_pk PRIMARY KEY (table_id)
+    CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
+    CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
 
 CREATE TABLE table_optimizing_process (
@@ -136,6 +136,8 @@ CREATE TABLE task_runtime (
     cost_time       BIGINT,
     status          VARCHAR(16),
     fail_reason     VARCHAR(4096),
+    optimizer_token VARCHAR(50),
+    thread_id       INT,
     rewrite_output  BLOB,
     metrics_summary CLOB,
     properties      CLOB,

@@ -152,4 +152,14 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   public ArcticTable getTable() {
     return table;
   }
+
+  @Override
+  public String toString() {
+    return "RewriteFilesInput{" +
+        "rewrittenDataFilesSize=" + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length) +
+        ", rePosDeletedDataFilesSize=" + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length) +
+        ", readOnlyDeleteFilesSize=" + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length) +
+        ", rewrittenDeleteFilesSize=" + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length) +
+        "} " + super.toString();
+  }
 }

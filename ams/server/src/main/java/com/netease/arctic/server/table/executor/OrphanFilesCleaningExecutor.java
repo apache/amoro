@@ -20,8 +20,6 @@ package com.netease.arctic.server.table.executor;
 
 import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.PathInfo;
-import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -33,17 +31,16 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.io.FileInfo;
-import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -170,95 +167,83 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   }
 
   private static int clearInternalTableContentsFiles(
-      UnkeyedTable internalTable, long lastTime, Set<String> exclude) {
+      UnkeyedTable internalTable, long lastTime,
+      Set<String> exclude) {
+    int deleteFilesCnt = 0;
     String dataLocation = internalTable.location() + File.separator + DATA_FOLDER_NAME;
-
-    try (ArcticFileIO io = internalTable.io()) {
-      if (io.supportFileSystemOperations()) {
-        SupportsFileSystemOperations fio = io.asFileSystemIO();
-        return deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude);
-      } else if (io.supportPrefixOperations()) {
-        SupportsPrefixOperations pio = io.asPrefixFileIO();
-        return deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
-      } else {
-        LOG.warn(String.format(
-            "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-            internalTable.name()
-        ));
+    if (internalTable.io().exists(dataLocation)) {
+      for (FileStatus fileStatus : internalTable.io().list(dataLocation)) {
+        deleteFilesCnt += deleteInvalidContentFiles(
+            internalTable.io(),
+            fileStatus,
+            lastTime,
+            exclude);
       }
     }
-
-    return 0;
+    return deleteFilesCnt;
   }
 
-  private static int deleteInvalidFilesInFs(
-      SupportsFileSystemOperations fio, String location, long lastTime, Set<String> excludes
-  ) {
-    if (!fio.exists(location)) {
+  private static int deleteInvalidContentFiles(
+      ArcticFileIO io,
+      FileStatus fileStatus,
+      Long lastTime,
+      Set<String> exclude) {
+    String location = fileStatus.getPath().toString();
+    if (io.isDirectory(location)) {
+      if (!io.isEmptyDirectory(location)) {
+        LOG.info("start orphan files clean in {}", location);
+        int deleteFileCnt = 0;
+        for (FileStatus file : io.list(location)) {
+          deleteFileCnt += deleteInvalidContentFiles(io, file, lastTime, exclude);
+        }
+        LOG.info("delete {} files in {}", deleteFileCnt, location);
+
+        if (location.endsWith(METADATA_FOLDER_NAME) || location.endsWith(DATA_FOLDER_NAME)) {
+          return 0;
+        }
+        TableFileUtil.deleteEmptyDirectory(io, location, exclude);
+        return deleteFileCnt;
+      } else if (io.isEmptyDirectory(location) &&
+          fileStatus.getModificationTime() < lastTime) {
+        if (location.endsWith(METADATA_FOLDER_NAME) || location.endsWith(DATA_FOLDER_NAME)) {
+          return 0;
+        }
+
+        TableFileUtil.deleteEmptyDirectory(io, location, exclude);
+        LOG.info("delete empty dir : {}[{}]", location, formatTime(fileStatus.getModificationTime()));
+        return 0;
+      } else {
+        return 0;
+      }
+    } else {
+      if (!exclude.contains(TableFileUtil.getUriPath(location)) &&
+          !exclude.contains(TableFileUtil.getUriPath(new Path(location).getParent().toString())) &&
+          fileStatus.getModificationTime() < lastTime) {
+        io.deleteFile(location);
+        return 1;
+      }
+
       return 0;
     }
-
-    int deleteCount = 0;
-    for (PathInfo p : fio.listDirectory(location)) {
-      String uriPath = TableFileUtil.getUriPath(p.location());
-      if (p.isDirectory()) {
-        int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
-        deleteCount += deleted;
-        if (!p.location().endsWith(METADATA_FOLDER_NAME) &&
-            !p.location().endsWith(DATA_FOLDER_NAME) &&
-            p.createdAtMillis() < lastTime &&
-            fio.isEmptyDirectory(p.location())) {
-          TableFileUtil.deleteEmptyDirectory(fio, p.location(), excludes);
-        }
-      } else {
-        String parentLocation = Paths.get(uriPath).getParent().toString();
-        String parentUriPath = TableFileUtil.getUriPath(parentLocation);
-        if (!excludes.contains(uriPath) &&
-            !excludes.contains(parentUriPath) &&
-            p.createdAtMillis() < lastTime) {
-          fio.deleteFile(uriPath);
-          deleteCount += 1;
-        }
-      }
-    }
-    return deleteCount;
   }
-
-  private static int deleteInvalidFilesByPrefix(
-      SupportsPrefixOperations pio, String prefix, long lastTime, Set<String> excludes
-  ) {
-    int deleteCount = 0;
-    for (FileInfo fileInfo : pio.listPrefix(prefix)) {
-      String uriPath = TableFileUtil.getUriPath(fileInfo.location());
-      if (!excludes.contains(uriPath) && fileInfo.createdAtMillis() < lastTime) {
-        pio.deleteFile(fileInfo.location());
-        deleteCount += 1;
-      }
-    }
-    return deleteCount;
-  }
-
 
   private static int clearInternalTableMetadata(UnkeyedTable internalTable, long lastTime) {
     Set<String> validFiles = getValidMetadataFiles(internalTable);
     LOG.info("{} table getRuntime {} valid files", internalTable.id(), validFiles.size());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(internalTable);
     LOG.info("{} table getRuntime exclude file name pattern {}", internalTable.id(), excludeFileNameRegex);
+    int deleteFilesCnt = 0;
     String metadataLocation = internalTable.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
-
-    try (ArcticFileIO io = internalTable.io()) {
-      if (io.supportPrefixOperations()) {
-        SupportsPrefixOperations pio = io.asPrefixFileIO();
-        return deleteInvalidMetadataFile(pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
-      } else {
-        LOG.warn(String.format(
-            "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-            internalTable.name()
-        ));
-      }
+    for (FileStatus fileStatus : internalTable.io().list(metadataLocation)) {
+      deleteFilesCnt += deleteInvalidMetadata(
+          internalTable.io(),
+          fileStatus,
+          lastTime,
+          validFiles,
+          excludeFileNameRegex);
     }
-    return 0;
+    return deleteFilesCnt;
   }
 
   private static Set<String> getValidMetadataFiles(UnkeyedTable internalTable) {
@@ -313,23 +298,27 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return null;
   }
 
-  private static int deleteInvalidMetadataFile(
-      SupportsPrefixOperations pio, String location, long lastTime, Set<String> exclude, Pattern excludeRegex
-  ) {
-    int count = 0;
-    for (FileInfo fileInfo : pio.listPrefix(location)) {
-      String uriPath = TableFileUtil.getUriPath(fileInfo.location());
-      if (!exclude.contains(uriPath) &&
-          fileInfo.createdAtMillis() < lastTime &&
-          (excludeRegex == null || !excludeRegex.matcher(
-              TableFileUtil.getFileName(fileInfo.location())).matches())) {
-        pio.deleteFile(uriPath);
-        count += 1;
+  private static int deleteInvalidMetadata(
+      ArcticFileIO io,
+      FileStatus fileStatus,
+      Long lastTime,
+      Set<String> exclude,
+      Pattern excludeFileNameRegex) {
+    String location = fileStatus.getPath().toString();
+    if (io.isDirectory(location)) {
+      LOG.warn("unexpected dir in metadata/, {}", location);
+      return 0;
+    } else {
+      if (!exclude.contains(TableFileUtil.getUriPath(location)) && fileStatus.getModificationTime() < lastTime &&
+          (excludeFileNameRegex == null ||
+              !excludeFileNameRegex.matcher(TableFileUtil.getFileName(location)).matches())) {
+        io.deleteFile(location);
+        return 1;
+      } else {
+        return 0;
       }
     }
-    return count;
   }
-
 
   private static String formatTime(long timestamp) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).toString();

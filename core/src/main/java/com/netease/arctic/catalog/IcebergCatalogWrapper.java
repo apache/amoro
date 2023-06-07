@@ -213,7 +213,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     return meta.getCatalogProperties();
   }
 
-  void refreshCatalogMeta(CatalogMeta meta) {
+  public void refreshCatalogMeta(CatalogMeta meta) {
     initialize(meta, customProperties);
   }
 

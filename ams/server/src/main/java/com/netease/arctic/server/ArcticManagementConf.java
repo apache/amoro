@@ -84,6 +84,12 @@ public class ArcticManagementConf {
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
 
+  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
+      ConfigOptions.key("blocker.timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("session timeout in Milliseconds");
+
   public static final ConfigOption<Boolean> HA_ENABLE =
       ConfigOptions.key("ha.enabled")
           .booleanType()
@@ -176,6 +182,17 @@ public class ArcticManagementConf {
           .defaultValue("")
           .withDescription("The password for connecting to the database.");
 
+  public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
+      ConfigOptions.key("optimizer.heart-beat-timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Timeout duration for Optimizer heartbeat.");
+
+  public static final ConfigOption<Long> OPTIMIZER_TASK_ACK_TIMEOUT =
+      ConfigOptions.key("optimizer.task-ack-timeout")
+          .longType()
+          .defaultValue(30000L)
+          .withDescription("Timeout duration for task acknowledgment.");
 
   /**
    * config key prefix of terminal
@@ -210,12 +227,6 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(30)
           .withDescription("session timeout in minute");
-
-  public static final ConfigOption<Long> BLOCKER_TIMEOUT =
-      ConfigOptions.key("blocker.timeout")
-          .longType()
-          .defaultValue(60000L)
-          .withDescription("session timeout in Milliseconds");
 
   public static final String SYSTEM_CONFIG = "ams";
 

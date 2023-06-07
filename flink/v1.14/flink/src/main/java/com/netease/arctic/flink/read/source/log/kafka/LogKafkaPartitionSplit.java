@@ -76,7 +76,7 @@ public class LogKafkaPartitionSplit extends KafkaPartitionSplit {
   }
 
   public LogKafkaPartitionSplit(LogKafkaPartitionSplitState splitState) {
-    super(splitState.getTopicPartition(), splitState.getStartingOffset(),
+    super(splitState.getTopicPartition(), splitState.getCurrentOffset(),
         splitState.getStoppingOffset().orElse(NO_STOPPING_OFFSET));
     retracting = splitState.isRetracting();
     retractStopOffset = splitState.getRetractStopOffset();
