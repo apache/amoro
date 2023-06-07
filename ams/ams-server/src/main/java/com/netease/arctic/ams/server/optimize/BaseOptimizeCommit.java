@@ -347,8 +347,22 @@ public class BaseOptimizeCommit {
         if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
           dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
         }
-        dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
         dataFilesRewrite.commit();
+
+        // try deleting DeleteFiles, it is not guaranteed to succeed.
+        if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
+          RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
+              .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
+          removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+          removeDeleteFiles
+              .rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), Collections.emptySet());
+          try {
+            removeDeleteFiles.commit();
+          } catch (ValidationException e) {
+            LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+          }
+        }
       }
 
       LOG.info("{} major optimize committed, delete {} files [{} posDelete files], add {} new files",
