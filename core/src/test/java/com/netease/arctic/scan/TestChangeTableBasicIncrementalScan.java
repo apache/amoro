@@ -34,7 +34,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
   public void testIncrementalScan() {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan();
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 3, 1, 2);
   }

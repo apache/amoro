@@ -94,7 +94,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence,
           legacyPartitionMaxTransactionId);
       if (maxSequence != Long.MIN_VALUE) {
-        ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newChangeScan()
+        ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .toSequence(maxSequence)
@@ -187,7 +187,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
     // scan and get all change files grouped by sequence(snapshot)
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        changeTable.newChangeScan()
+        changeTable.newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());
