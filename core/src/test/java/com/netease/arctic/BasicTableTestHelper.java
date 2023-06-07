@@ -26,11 +26,12 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,20 +59,23 @@ public class BasicTableTestHelper implements TableTestHelper {
       Schema tableSchema,
       PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec, Map<String, String> tableProperties) {
+    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;
     this.tableProperties = tableProperties;
   }
 
-  public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition,
+  public BasicTableTestHelper(
+      boolean hasPrimaryKey, boolean hasPartition,
       Map<String, String> tableProperties) {
     this(TABLE_SCHEMA, hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
         hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
   }
 
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, Maps.newHashMap());
+    this(hasPrimaryKey, hasPartition, null);
   }
 
   @Override
@@ -101,7 +105,7 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
     return DataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
@@ -112,7 +116,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   @Override
-  public List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression,
+  public List<Record> readKeyedTable(
+      KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
     return DataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
@@ -124,7 +129,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   @Override
-  public List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema,
+  public List<Record> readBaseStore(
+      ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
     return DataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }

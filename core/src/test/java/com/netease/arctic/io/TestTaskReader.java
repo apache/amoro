@@ -20,7 +20,7 @@ package com.netease.arctic.io;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
@@ -171,12 +171,11 @@ public class TestTaskReader extends TableDataTestBase {
 
   @Test
   public void testReadDeletedData() {
-    //TODO Reader return deleted record produced by equality delete file only now, should change the unit test after
-    // refactoring the reader to return all deleted records.
     Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
         Expressions.alwaysTrue(), null, useDiskMap, true));
-    //expect: (id=5)
+    //expect: (id=4,id=5)
     Set<Record> expectRecords = Sets.newHashSet();
+    expectRecords.add(allRecords.get(3));
     expectRecords.add(allRecords.get(4));
     Assert.assertEquals(expectRecords, records);
   }

@@ -18,7 +18,10 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
@@ -47,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -59,6 +63,11 @@ import java.util.stream.Collectors;
 public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   private static final Logger LOG = LoggerFactory.getLogger(TestRowDataReaderFunction.class);
   private static final AtomicInteger splitCount = new AtomicInteger();
+
+  public TestRowDataReaderFunction() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
 
   @Test
   public void testReadChangelog() throws IOException {
@@ -221,18 +230,18 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   protected List<RowData> generateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 7, StringData.fromString("syan"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 2, StringData.fromString("daniel"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 7, StringData.fromString("syan"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 7, StringData.fromString("syan2"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 2, StringData.fromString("daniel"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 7, StringData.fromString("syan2"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
   protected List<RowData> updateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 5, StringData.fromString("lind"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 5, StringData.fromString("lina"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 5, StringData.fromString("lina"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
@@ -254,45 +263,14 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   protected List<RowData> exceptsCollection() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("mary"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 6, StringData.fromString("mack"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.DELETE, 5, StringData.fromString("mary"), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("lind"), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 3, StringData.fromString("jake"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 4, StringData.fromString("sam"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 6, StringData.fromString("mack"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.DELETE, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
-
-//  protected List<ArcticSplit> plans(BaseAndChangeTask baseAndChangeTask) {
-//    Set<ArcticFileScanTask> allBaseTasks = baseAndChangeTask.allBaseTasks();
-//    List<ArcticSplit> allTasks = allBaseTasks.stream()
-//        .map(arcticFileScanTask -> new SnapshotSplit(
-//            Collections.singleton(arcticFileScanTask),
-//            splitCount.incrementAndGet())).collect(Collectors.toList());
-//    allTasks.addAll(
-//        baseAndChangeTask.transactionTasks().entrySet().stream()
-//            .sorted(Map.Entry.comparingByKey())
-//            .map(tasksWithinTransaction -> {
-//              List<ArcticFileScanTask> insertTasks = new ArrayList<>();
-//              List<ArcticFileScanTask> deleteTasks = new ArrayList<>();
-//              tasksWithinTransaction.getValue()
-//                  .forEach(task -> {
-//                    if (task.fileType().equals(DataFileType.INSERT_FILE)) {
-//                      insertTasks.add(task);
-//                    } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-//                      deleteTasks.add(task);
-//                    } else {
-//                      throw new IllegalArgumentException(
-//                          String.format(
-//                              "DataFileType %s is not supported during change log reading period.",
-//                              task.fileType()));
-//                    }
-//                  });
-//              return new ChangelogSplit(insertTasks, deleteTasks, splitCount.incrementAndGet());
-//            })
-//            .collect(Collectors.toList()));
-//    return allTasks;
-//  }
 }

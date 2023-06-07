@@ -54,188 +54,188 @@ import java.util.Map;
 //extends BasicUnkeyedTable is for adapt IcebergMeta
 public class TestArcticTable extends BasicUnkeyedTable {
 
-    private BaseTable table;
+  private BaseTable table;
 
-    private TableIdentifier tableIdentifier;
+  private TableIdentifier tableIdentifier;
 
-    public TestArcticTable(BaseTable table, TableIdentifier tableIdentifier) {
-        super(null, null, null, null, null);
-        this.table = table;
-        this.tableIdentifier = tableIdentifier;
-    }
+  public TestArcticTable(BaseTable table, TableIdentifier tableIdentifier) {
+    super(null, null, null, null, null);
+    this.table = table;
+    this.tableIdentifier = tableIdentifier;
+  }
 
-    @Override
-    public TableIdentifier id() {
-        return tableIdentifier;
-    }
+  @Override
+  public TableIdentifier id() {
+    return tableIdentifier;
+  }
 
-    @Override
-    public void refresh() {
-        table.refresh();
-    }
+  @Override
+  public void refresh() {
+    table.refresh();
+  }
 
-    @Override
-    public TableScan newScan() {
-        return table.newScan();
-    }
+  @Override
+  public TableScan newScan() {
+    return table.newScan();
+  }
 
-    @Override
-    public Schema schema() {
-        return table.schema();
-    }
+  @Override
+  public Schema schema() {
+    return table.schema();
+  }
 
-    @Override
-    public Map<Integer, Schema> schemas() {
-        return table.schemas();
-    }
+  @Override
+  public Map<Integer, Schema> schemas() {
+    return table.schemas();
+  }
 
-    @Override
-    public PartitionSpec spec() {
-        return table.spec();
-    }
+  @Override
+  public PartitionSpec spec() {
+    return table.spec();
+  }
 
-    @Override
-    public Map<Integer, PartitionSpec> specs() {
-        return table.specs();
-    }
+  @Override
+  public Map<Integer, PartitionSpec> specs() {
+    return table.specs();
+  }
 
-    @Override
-    public SortOrder sortOrder() {
-        return table.sortOrder();
-    }
+  @Override
+  public SortOrder sortOrder() {
+    return table.sortOrder();
+  }
 
-    @Override
-    public Map<Integer, SortOrder> sortOrders() {
-        return table.sortOrders();
-    }
+  @Override
+  public Map<Integer, SortOrder> sortOrders() {
+    return table.sortOrders();
+  }
 
-    @Override
-    public Map<String, String> properties() {
-        return table.properties();
-    }
+  @Override
+  public Map<String, String> properties() {
+    return table.properties();
+  }
 
-    @Override
-    public String location() {
-        return table.location();
-    }
+  @Override
+  public String location() {
+    return table.location();
+  }
 
-    @Override
-    public Snapshot currentSnapshot() {
-        return table.currentSnapshot();
-    }
+  @Override
+  public Snapshot currentSnapshot() {
+    return table.currentSnapshot();
+  }
 
-    @Override
-    public Snapshot snapshot(long snapshotId) {
-        return table.snapshot(snapshotId);
-    }
+  @Override
+  public Snapshot snapshot(long snapshotId) {
+    return table.snapshot(snapshotId);
+  }
 
-    @Override
-    public Iterable<Snapshot> snapshots() {
-        return table.snapshots();
-    }
+  @Override
+  public Iterable<Snapshot> snapshots() {
+    return table.snapshots();
+  }
 
-    @Override
-    public List<HistoryEntry> history() {
-        return table.history();
-    }
+  @Override
+  public List<HistoryEntry> history() {
+    return table.history();
+  }
 
-    @Override
-    public UpdateSchema updateSchema() {
-        return table.updateSchema();
-    }
+  @Override
+  public UpdateSchema updateSchema() {
+    return table.updateSchema();
+  }
 
-    @Override
-    public UpdatePartitionSpec updateSpec() {
-        return table.updateSpec();
-    }
+  @Override
+  public UpdatePartitionSpec updateSpec() {
+    return table.updateSpec();
+  }
 
-    @Override
-    public UpdateProperties updateProperties() {
-        return table.updateProperties();
-    }
+  @Override
+  public UpdateProperties updateProperties() {
+    return table.updateProperties();
+  }
 
-    @Override
-    public ReplaceSortOrder replaceSortOrder() {
-        return table.replaceSortOrder();
-    }
+  @Override
+  public ReplaceSortOrder replaceSortOrder() {
+    return table.replaceSortOrder();
+  }
 
-    @Override
-    public UpdateLocation updateLocation() {
-        return table.updateLocation();
-    }
+  @Override
+  public UpdateLocation updateLocation() {
+    return table.updateLocation();
+  }
 
-    @Override
-    public AppendFiles newAppend() {
-        return table.newAppend();
-    }
+  @Override
+  public AppendFiles newAppend() {
+    return table.newAppend();
+  }
 
-    @Override
-    public RewriteFiles newRewrite() {
-        return table.newRewrite();
-    }
+  @Override
+  public RewriteFiles newRewrite() {
+    return table.newRewrite();
+  }
 
-    @Override
-    public RewriteManifests rewriteManifests() {
-        return table.rewriteManifests();
-    }
+  @Override
+  public RewriteManifests rewriteManifests() {
+    return table.rewriteManifests();
+  }
 
-    @Override
-    public OverwriteFiles newOverwrite() {
-        return table.newOverwrite();
-    }
+  @Override
+  public OverwriteFiles newOverwrite() {
+    return table.newOverwrite();
+  }
 
-    @Override
-    public RowDelta newRowDelta() {
-        return table.newRowDelta();
-    }
+  @Override
+  public RowDelta newRowDelta() {
+    return table.newRowDelta();
+  }
 
-    @Override
-    public ReplacePartitions newReplacePartitions() {
-        return table.newReplacePartitions();
-    }
+  @Override
+  public ReplacePartitions newReplacePartitions() {
+    return table.newReplacePartitions();
+  }
 
-    @Override
-    public DeleteFiles newDelete() {
-        return table.newDelete();
-    }
+  @Override
+  public DeleteFiles newDelete() {
+    return table.newDelete();
+  }
 
-    @Override
-    public ExpireSnapshots expireSnapshots() {
-        return table.expireSnapshots();
-    }
+  @Override
+  public ExpireSnapshots expireSnapshots() {
+    return table.expireSnapshots();
+  }
 
-    @Override
-    public ManageSnapshots manageSnapshots() {
-        return table.manageSnapshots();
-    }
+  @Override
+  public ManageSnapshots manageSnapshots() {
+    return table.manageSnapshots();
+  }
 
-    @Override
-    public Transaction newTransaction() {
-        return table.newTransaction();
-    }
+  @Override
+  public Transaction newTransaction() {
+    return table.newTransaction();
+  }
 
-    @Override
-    public ArcticFileIO io() {
-        return null;
-    }
+  @Override
+  public ArcticFileIO io() {
+    return null;
+  }
 
-    @Override
-    public EncryptionManager encryption() {
-        return table.encryption();
-    }
+  @Override
+  public EncryptionManager encryption() {
+    return table.encryption();
+  }
 
-    @Override
-    public LocationProvider locationProvider() {
-        return table.locationProvider();
-    }
+  @Override
+  public LocationProvider locationProvider() {
+    return table.locationProvider();
+  }
 
-    @Override
-    public TableOperations operations() {
-        return table.operations();
-    }
+  @Override
+  public TableOperations operations() {
+    return table.operations();
+  }
 
-    @Override
-    public List<StatisticsFile> statisticsFiles() {
-        return table.statisticsFiles();
-    }
+  @Override
+  public List<StatisticsFile> statisticsFiles() {
+    return table.statisticsFiles();
+  }
 }

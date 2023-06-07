@@ -19,7 +19,7 @@
 package com.netease.arctic.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.SchemaUtil;
@@ -79,6 +79,9 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
 
   @Override
   protected ChangeAction action(Record data) {
+    if (data instanceof RecordWithAction) {
+      return ((RecordWithAction)data).getAction();
+    }
     return writeAction;
   }
 }

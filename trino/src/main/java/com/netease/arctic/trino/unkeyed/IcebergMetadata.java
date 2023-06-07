@@ -1533,7 +1533,9 @@ public class IcebergMetadata
 
   private void removeOrphanFiles(
       Table table,
-      ConnectorSession session, SchemaTableName schemaTableName, long expireTimestamp) {
+      ConnectorSession session,
+      SchemaTableName schemaTableName,
+      long expireTimestamp) {
     Set<String> processedManifestFilePaths = new HashSet<>();
     // Similarly to issues like https://github.com/trinodb/trino/issues/13759,
     // equivalent paths may have different String representations due to things like double slashes.
@@ -2194,9 +2196,36 @@ public class IcebergMetadata
       return TableStatistics.empty();
     }
 
-    IcebergTableHandle handle = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
-    return TableStatisticsReader.getTableStatistics(typeManager, session, handle, icebergTable);
+    IcebergTableHandle originalHandle = (IcebergTableHandle) tableHandle;
+    // Certain table handle attributes are not applicable to select queries (which need stats).
+    // If this changes, the caching logic may here may need to be revised.
+    checkArgument(originalHandle.getUpdatedColumns().isEmpty(), "Unexpected updated columns");
+    checkArgument(!originalHandle.isRecordScannedFiles(), "Unexpected scanned files recording set");
+    checkArgument(originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
+
+    return tableStatisticsCache.computeIfAbsent(
+        new IcebergTableHandle(
+            originalHandle.getSchemaName(),
+            originalHandle.getTableName(),
+            originalHandle.getTableType(),
+            originalHandle.getSnapshotId(),
+            originalHandle.getTableSchemaJson(),
+            originalHandle.getPartitionSpecJson(),
+            originalHandle.getFormatVersion(),
+            originalHandle.getUnenforcedPredicate(),
+            originalHandle.getEnforcedPredicate(),
+            ImmutableSet.of(), // projectedColumns don't affect stats
+            originalHandle.getNameMappingJson(),
+            originalHandle.getTableLocation(),
+            originalHandle.getStorageProperties(),
+            NO_RETRIES, // retry mode doesn't affect stats
+            originalHandle.getUpdatedColumns(),
+            originalHandle.isRecordScannedFiles(),
+            originalHandle.getMaxScannedFileSize()),
+        handle -> {
+          Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
+          return TableStatisticsReader.getTableStatistics(typeManager, session, handle, icebergTable);
+        });
   }
 
   @Override

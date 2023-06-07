@@ -33,6 +33,7 @@ import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorAnalyzeMetadata;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
+import io.trino.spi.connector.ConnectorMergeTableHandle;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorOutputMetadata;
 import io.trino.spi.connector.ConnectorOutputTableHandle;
@@ -380,7 +381,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   @Override
   public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
-      return TableStatistics.empty();
+      return keyedConnectorMetadata.getTableStatistics(session, tableHandle);
     } else {
       return icebergMetadata.getTableStatistics(session, tableHandle);
     }
@@ -391,7 +392,53 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
       ConnectorSession session,
       ConnectorTableHandle tableHandle,
       Map<String, Object> analyzeProperties) {
-    return icebergMetadata.getStatisticsCollectionMetadata(session, tableHandle, analyzeProperties);
+    if (tableHandle instanceof KeyedTableHandle) {
+      throw new TrinoException(NOT_SUPPORTED, "This connector does not support analyze");
+    } else {
+      return icebergMetadata.getStatisticsCollectionMetadata(session, tableHandle, analyzeProperties);
+    }
+  }
+
+  @Override
+  public ConnectorTableHandle beginStatisticsCollection(ConnectorSession session, ConnectorTableHandle tableHandle) {
+    if (tableHandle instanceof KeyedTableHandle) {
+      throw new TrinoException(NOT_SUPPORTED, "This connector does not support analyze");
+    } else {
+      return icebergMetadata.beginStatisticsCollection(session, tableHandle);
+    }
+  }
+
+  @Override
+  public ColumnHandle getMergeRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+    if (tableHandle instanceof KeyedTableHandle) {
+      throw new TrinoException(NOT_SUPPORTED, "Key table does not support modifying table rows");
+    } else {
+      return icebergMetadata.getMergeRowIdColumnHandle(session, tableHandle);
+    }
+  }
+
+  @Override
+  public ConnectorMergeTableHandle beginMerge(
+      ConnectorSession session,
+      ConnectorTableHandle tableHandle, RetryMode retryMode) {
+    if (tableHandle instanceof KeyedTableHandle) {
+      throw new TrinoException(NOT_SUPPORTED, "Key table does not support beginMerge");
+    } else {
+      return icebergMetadata.beginMerge(session, tableHandle, retryMode);
+    }
+  }
+
+  @Override
+  public void finishMerge(
+      ConnectorSession session,
+      ConnectorMergeTableHandle tableHandle,
+      Collection<Slice> fragments,
+      Collection<ComputedStatistics> computedStatistics) {
+    if (tableHandle instanceof KeyedTableHandle) {
+      throw new TrinoException(NOT_SUPPORTED, "Key table does not support finishMerge");
+    } else {
+      icebergMetadata.finishMerge(session, tableHandle, fragments, computedStatistics);
+    }
   }
 
   public void rollback() {
