@@ -49,7 +49,7 @@ public class CatalogBuilder {
             "Custom catalog support iceberg table only.");
         Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
             "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
-        return new MixedCatalogImpl(catalogMeta);
+        return new IcebergCatalogImpl(catalogMeta);
       default:
         throw new IllegalStateException("unsupported catalog type:" + type);
     }
