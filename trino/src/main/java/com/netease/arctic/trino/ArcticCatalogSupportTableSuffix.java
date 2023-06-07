@@ -54,7 +54,6 @@ import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.TableScan;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
@@ -381,9 +380,9 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public ChangeTableIncrementalScan newChangeScan() {
+    public ChangeTableIncrementalScan newScan() {
       if (table instanceof ChangeTable) {
-        return ((ChangeTable) table).newChangeScan();
+        return ((ChangeTable) table).newScan();
       } else {
         throw new UnsupportedOperationException();
       }

@@ -3,15 +3,14 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
-import com.netease.arctic.server.dashboard.model.BaseMajorCompactRecord;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.optimizing.MetricsSummary;
-import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -208,23 +207,19 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
-  public List<BaseMajorCompactRecord> getOptimizeInfo(String catalog, String db, String table) {
+  public List<OptimizedRecord> getOptimizeInfo(String catalog, String db, String table) {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
-    return tableOptimizingProcesses.stream().map(e -> {
-      BaseMajorCompactRecord record = new BaseMajorCompactRecord();
-      List<TaskRuntime> taskRuntimes = getAs(
-          OptimizingMapper.class,
-          mapper -> mapper.selectTaskRuntimes(e.getTableId(), e.getProcessId())).stream()
-          .filter(taskRuntime -> TaskRuntime.Status.SUCCESS.equals(taskRuntime.getStatus()))
-          .collect(Collectors.toList());
-      MetricsSummary metricsSummary = new MetricsSummary(taskRuntimes);
-      record.setCommitTime(e.getEndTime());
-      record.setPlanTime(e.getPlanTime());
-      record.setDuration(e.getEndTime() - e.getPlanTime());
-      record.setTableIdentifier(TableIdentifier.of(e.getCatalogName(), e.getDbName(), e.getTableName()));
-      record.setOptimizeType(e.getOptimizingType());
+    return tableOptimizingProcesses.stream().map(optimizingProcess -> {
+      OptimizedRecord record = new OptimizedRecord();
+      record.setCommitTime(optimizingProcess.getEndTime());
+      record.setPlanTime(optimizingProcess.getPlanTime());
+      record.setDuration(optimizingProcess.getEndTime() - optimizingProcess.getPlanTime());
+      record.setTableIdentifier(TableIdentifier.of(optimizingProcess.getCatalogName(), optimizingProcess.getDbName(),
+          optimizingProcess.getTableName()));
+      record.setOptimizeType(optimizingProcess.getOptimizingType());
+      MetricsSummary metricsSummary = optimizingProcess.getSummary();
       record.setTotalFilesStatBeforeCompact(FilesStatistics.builder()
           .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
           .addFiles(metricsSummary.getPositionalDeleteSize(), metricsSummary.getPosDeleteFileCnt())

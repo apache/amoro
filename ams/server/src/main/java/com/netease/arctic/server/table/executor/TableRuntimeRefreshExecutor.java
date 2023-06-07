@@ -48,13 +48,18 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    tryEvalutingPendingInput(tableRuntime, loadTable(tableRuntime));
+    tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
   }
 
-  private void tryEvalutingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
+  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
     OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
     if (evaluator.isNecessary()) {
-      tableRuntime.setPendingInput(evaluator.getPendingInput());
+      OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
+      if (logger.isDebugEnabled()) {
+        logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+            pendingInput);
+      }
+      tableRuntime.setPendingInput(pendingInput);
     }
   }
 
@@ -68,7 +73,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
           changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
         if (tableRuntime.isOptimizingEnabled()) {
-          tryEvalutingPendingInput(tableRuntime, table);
+          tryEvaluatingPendingInput(tableRuntime, table);
         }
       }
     } catch (Throwable throwable) {

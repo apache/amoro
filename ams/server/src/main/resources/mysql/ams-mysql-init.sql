@@ -54,6 +54,7 @@ CREATE TABLE `resource`
     `total_memory`              bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
     `start_time`                timestamp not null default CURRENT_TIMESTAMP COMMENT 'optimizer start time',
     `properties`                mediumtext COMMENT 'optimizer instance properties',
+    PRIMARY KEY (`resource_id`),
     KEY  `resource_group` (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer instance info';
 
@@ -91,7 +92,7 @@ CREATE TABLE `table_metadata`
     `hdfs_site`       mediumtext COMMENT 'base64 code of hdfs site',
     `core_site`       mediumtext COMMENT 'base64 code of core site',
     `auth_method`     varchar(32)  DEFAULT NULL COMMENT 'auth method like KERBEROS/SIMPLE',
-    `hadoop_username` varchar(64)  DEFAULT NULL COMMENT 'hadpp username when auth method is SIMPLE',
+    `hadoop_username` varchar(64)  DEFAULT NULL COMMENT 'hadoop username when auth method is SIMPLE',
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
@@ -157,6 +158,8 @@ CREATE TABLE `task_runtime`
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
+    `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
     `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',

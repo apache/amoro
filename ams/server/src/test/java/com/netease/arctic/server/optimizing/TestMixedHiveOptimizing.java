@@ -31,7 +31,6 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.FileInfo;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.thrift.TException;
@@ -49,7 +48,6 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
 
   public TestMixedHiveOptimizing(ArcticTable arcticTable, HiveMetaStoreClient hiveClient) {
     this.arcticTable = arcticTable;
-    Preconditions.checkArgument(arcticTable instanceof SupportHive);
     this.hiveClient = hiveClient;
     this.checker = new BaseOptimizingChecker(arcticTable.id());
   }

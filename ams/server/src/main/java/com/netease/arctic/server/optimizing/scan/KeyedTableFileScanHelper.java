@@ -81,6 +81,10 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
   @Override
   public List<FileScanResult> scan() {
+    LOG.info("{} start scan files with changeSnapshotId = {}, baseSnapshotId = {}", arcticTable.id(), changeSnapshotId,
+        baseSnapshotId);
+    long startTime = System.currentTimeMillis();
+
     List<FileScanResult> results = Lists.newArrayList();
     ChangeFiles changeFiles = new ChangeFiles(arcticTable);
     UnkeyedTable baseTable;
@@ -90,7 +94,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence,
           legacyPartitionMaxTransactionId);
       if (maxSequence != Long.MIN_VALUE) {
-        ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newChangeScan()
+        ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .toSequence(maxSequence)
@@ -112,6 +116,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         });
       }
     }
+
+    LOG.info("{} finish scan change files, cost {} ms, get {} insert files", arcticTable.id(),
+        System.currentTimeMillis() - startTime, results.size());
 
     if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       PartitionSpec partitionSpec = baseTable.spec();
@@ -136,6 +143,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         throw new UncheckedIOException("Failed to close table scan of " + arcticTable.id(), e);
       }
     }
+    LOG.info("{} finish scan files, cost {} ms, get {} files", arcticTable.id(), System.currentTimeMillis() - startTime,
+        results.size());
     return results;
   }
 
@@ -178,7 +187,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
     // scan and get all change files grouped by sequence(snapshot)
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        changeTable.newChangeScan()
+        changeTable.newScan()
             .fromSequence(partitionOptimizedSequence)
             .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());

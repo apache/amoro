@@ -59,7 +59,7 @@ package -P toolchain 进行整个项目的编译即可。
             <vendor>sun</vendor>
         </provides>
         <configuration>
-            <jdkHome>${yourJdk17Home}</jdkHome>
+            <jdkHome>${YourJDK17Home}</jdkHome>
         </configuration>
     </toolchain>
 </toolchains>
@@ -211,6 +211,10 @@ ams:
 
   self-optimizing:
     commit-thread-count: 10
+    
+  optimizer:
+    heart-beat-timeout: 60000 # 1min
+    task-ack-timeout: 30000 # 30s
 
   database:
     type: derby

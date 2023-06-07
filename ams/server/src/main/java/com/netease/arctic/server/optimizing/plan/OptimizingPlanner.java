@@ -147,11 +147,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       }
     }
     long endTime = System.nanoTime();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("{} ==== {} plan tasks cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
-          getOptimizingType(), endTime - startTime, (endTime - startTime) / 1_000_000);
-      LOG.debug("{} {} plan get {} tasks", tableRuntime.getTableIdentifier(), getOptimizingType(), tasks.size());
-    }
+    LOG.info("{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
+        getOptimizingType(), tasks.size(), endTime - startTime, (endTime - startTime) / 1_000_000);
     return cacheAndReturnTasks(tasks);
   }
 

@@ -21,14 +21,12 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -36,6 +34,7 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.ArcticChangeTableScan;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
@@ -144,8 +143,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     }
 
     @Override
-    public ChangeTableIncrementalScan newChangeScan() {
-      return new ChangeTableBasicIncrementalScan(this);
+    public ChangeTableIncrementalScan newScan() {
+      return new ArcticChangeTableScan(operations(), this);
     }
   }
 

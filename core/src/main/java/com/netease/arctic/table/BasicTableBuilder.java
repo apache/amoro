@@ -10,7 +10,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public abstract class BasicTableBuilder<SELF extends TableBuilder> implements TableBuilder {
+public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements TableBuilder {
   protected PartitionSpec spec = PartitionSpec.unpartitioned();
   protected SortOrder sortOrder = SortOrder.unsorted();
   protected Map<String, String> properties = Maps.newHashMap();
@@ -64,5 +64,5 @@ public abstract class BasicTableBuilder<SELF extends TableBuilder> implements Ta
     throw new UnsupportedOperationException("do not support create table transactional.");
   }
 
-  protected abstract SELF self() ;
+  protected abstract ThisT self();
 }

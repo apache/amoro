@@ -50,6 +50,7 @@ import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -134,8 +135,7 @@ import static org.testng.Assert.fail;
  * Generic test for connectors.
  */
 public abstract class BaseConnectorTest
-    extends AbstractTestQueries
-{
+    extends AbstractTestQueries {
 
   private Method method;
 
@@ -148,10 +148,9 @@ public abstract class BaseConnectorTest
     }
   }
 
-  protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior)
-  {
+  protected boolean hasBehavior(TestingConnectorBehavior connectorBehavior) {
     try {
-      return (boolean) method.invoke(connectorBehavior, new Predicate<TestingConnectorBehavior>(){
+      return (boolean) method.invoke(connectorBehavior, new Predicate<TestingConnectorBehavior>() {
 
         @Override
         public boolean test(TestingConnectorBehavior testingConnectorBehavior) {
@@ -165,8 +164,7 @@ public abstract class BaseConnectorTest
 
   @Test
   @Override
-  public void ensureTestNamingConvention()
-  {
+  public void ensureTestNamingConvention() {
     // Enforce a naming convention to make code navigation easier.
     assertThat(getClass().getName())
         .endsWith("ConnectorTest");
@@ -177,23 +175,20 @@ public abstract class BaseConnectorTest
    * shortcuts, not exercising certain aspects.
    */
   @Test
-  public void ensureDistributedQueryRunner()
-  {
+  public void ensureDistributedQueryRunner() {
     assertThat(getQueryRunner().getNodeCount()).as("query runner node count")
         .isGreaterThanOrEqualTo(3);
   }
 
   @Test
-  public void testShowCreateSchema()
-  {
+  public void testShowCreateSchema() {
     String schemaName = getSession().getSchema().orElseThrow();
     assertThat((String) computeScalar("SHOW CREATE SCHEMA " + schemaName))
         .isEqualTo(format("CREATE SCHEMA %s.%s", getSession().getCatalog().orElseThrow(), schemaName));
   }
 
   @Test
-  public void testCreateSchema()
-  {
+  public void testCreateSchema() {
     String schemaName = "test_schema_create_" + randomNameSuffix();
     if (!hasBehavior(SUPPORTS_CREATE_SCHEMA)) {
       assertQueryFails(createSchemaSql(schemaName), "This connector does not support creating schemas");
@@ -220,8 +215,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDropNonEmptySchemaWithTable()
-  {
+  public void testDropNonEmptySchemaWithTable() {
     String schemaName = "test_drop_non_empty_schema_table_" + randomNameSuffix();
     // A connector either supports CREATE SCHEMA and DROP SCHEMA or none of them.
     if (!hasBehavior(SUPPORTS_CREATE_SCHEMA)) {
@@ -232,16 +226,14 @@ public abstract class BaseConnectorTest
       assertUpdate("CREATE SCHEMA " + schemaName);
       assertUpdate("CREATE TABLE " + schemaName + ".t(x int)");
       assertQueryFails("DROP SCHEMA " + schemaName, ".*Cannot drop non-empty schema '\\Q" + schemaName + "\\E'");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE IF EXISTS " + schemaName + ".t");
       assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
     }
   }
 
   @Test
-  public void testDropNonEmptySchemaWithView()
-  {
+  public void testDropNonEmptySchemaWithView() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
 
     // A connector either supports CREATE SCHEMA and DROP SCHEMA or none of them.
@@ -256,16 +248,14 @@ public abstract class BaseConnectorTest
       assertUpdate("CREATE VIEW " + schemaName + ".v_t  AS SELECT 123 x");
 
       assertQueryFails("DROP SCHEMA " + schemaName, ".*Cannot drop non-empty schema '\\Q" + schemaName + "\\E'");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP VIEW IF EXISTS " + schemaName + ".v_t");
       assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
     }
   }
 
   @Test
-  public void testDropNonEmptySchemaWithMaterializedView()
-  {
+  public void testDropNonEmptySchemaWithMaterializedView() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW));
 
     // A connector either supports CREATE SCHEMA and DROP SCHEMA or none of them.
@@ -280,24 +270,21 @@ public abstract class BaseConnectorTest
       assertUpdate("CREATE MATERIALIZED VIEW " + schemaName + ".mv_t  AS SELECT 123 x");
 
       assertQueryFails("DROP SCHEMA " + schemaName, ".*Cannot drop non-empty schema '\\Q" + schemaName + "\\E'");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP MATERIALIZED VIEW IF EXISTS " + schemaName + ".mv_t");
       assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
     }
   }
 
   @Test
-  public void testColumnsInReverseOrder()
-  {
+  public void testColumnsInReverseOrder() {
     assertQuery("SELECT shippriority, clerk, totalprice FROM orders");
   }
 
   // Test char and varchar comparisons. Currently, unless such comparison is unwrapped in the engine, it's not pushed down into the connector,
   // but this can change with expression-based predicate pushdown.
   @Test
-  public void testCharVarcharComparison()
-  {
+  public void testCharVarcharComparison() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     try (TestTable table = new TestTable(
@@ -330,8 +317,7 @@ public abstract class BaseConnectorTest
   // Test varchar and char comparisons. Currently, unless such comparison is unwrapped in the engine, it's not pushed down into the connector,
   // but this can change with expression-based predicate pushdown.
   @Test
-  public void testVarcharCharComparison()
-  {
+  public void testVarcharCharComparison() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     try (TestTable table = new TestTable(
@@ -360,8 +346,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testAggregation()
-  {
+  public void testAggregation() {
     assertQuery("SELECT sum(orderkey) FROM orders");
     assertQuery("SELECT sum(totalprice) FROM orders");
     assertQuery("SELECT max(comment) FROM nation");
@@ -410,8 +395,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testExactPredicate()
-  {
+  public void testExactPredicate() {
     assertQueryReturnsEmptyResult("SELECT * FROM orders WHERE orderkey = 10");
 
     // filtered column is selected
@@ -422,8 +406,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInListPredicate()
-  {
+  public void testInListPredicate() {
     assertQueryReturnsEmptyResult("SELECT * FROM orders WHERE orderkey IN (10, 11, 20, 21)");
 
     // filtered column is selected
@@ -434,8 +417,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testIsNullPredicate()
-  {
+  public void testIsNullPredicate() {
     assertQueryReturnsEmptyResult("SELECT * FROM orders WHERE orderkey IS NULL");
     assertQueryReturnsEmptyResult("SELECT * FROM orders WHERE orderkey = 10 OR orderkey IS NULL");
 
@@ -447,8 +429,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testLikePredicate()
-  {
+  public void testLikePredicate() {
     // filtered column is not selected
     assertQuery("SELECT orderkey FROM orders WHERE orderpriority LIKE '5-L%'");
 
@@ -463,8 +444,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testMultipleRangesPredicate()
-  {
+  public void testMultipleRangesPredicate() {
     // List columns explicitly. Some connectors do not maintain column ordering.
     assertQuery("" +
         "SELECT orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment " +
@@ -473,8 +453,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRangePredicate()
-  {
+  public void testRangePredicate() {
     // List columns explicitly. Some connectors do not maintain column ordering.
     assertQuery("" +
         "SELECT orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment " +
@@ -483,16 +462,14 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDateYearOfEraPredicate()
-  {
+  public void testDateYearOfEraPredicate() {
     // Verify the predicate of '-1996-09-14' doesn't match '1997-09-14'. Both values return same formatted string when we use 'yyyy-MM-dd' in DateTimeFormatter
     assertQuery("SELECT orderdate FROM orders WHERE orderdate = DATE '1997-09-14'", "VALUES DATE '1997-09-14'");
     assertQueryReturnsEmptyResult("SELECT * FROM orders WHERE orderdate = DATE '-1996-09-14'");
   }
 
   @Test
-  public void testPredicateReflectedInExplain()
-  {
+  public void testPredicateReflectedInExplain() {
     // Even if the predicate is pushed down into the table scan, it should still be reflected in EXPLAIN (via ConnectorTableHandle.toString)
     assertExplain(
         "EXPLAIN SELECT name FROM nation WHERE nationkey = 42",
@@ -500,8 +477,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testSortItemsReflectedInExplain()
-  {
+  public void testSortItemsReflectedInExplain() {
     // Even if the sort items are pushed down into the table scan, it should still be reflected in EXPLAIN (via ConnectorTableHandle.toString)
     @Language("RegExp") String expectedPattern = hasBehavior(SUPPORTS_TOPN_PUSHDOWN)
         ? "sortOrder=\\[(?i:nationkey):.* DESC NULLS LAST] limit=5"
@@ -513,21 +489,18 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testConcurrentScans()
-  {
+  public void testConcurrentScans() {
     String unionMultipleTimes = join(" UNION ALL ", nCopies(25, "SELECT * FROM orders"));
     assertQuery("SELECT sum(if(rand() >= 0, orderkey)) FROM (" + unionMultipleTimes + ")", "VALUES 11246812500");
   }
 
   @Test
-  public void testSelectAll()
-  {
+  public void testSelectAll() {
     assertQuery("SELECT * FROM orders");
   }
 
   @Test
-  public void testSelectInTransaction()
-  {
+  public void testSelectInTransaction() {
     inTransaction(session -> {
       assertQuery(session, "SELECT nationkey, name, regionkey FROM nation");
       assertQuery(session, "SELECT regionkey, name FROM region");
@@ -539,8 +512,7 @@ public abstract class BaseConnectorTest
    * Test interactions between optimizer (including CBO), scheduling and connector metadata APIs.
    */
   @Test(timeOut = 300_000, dataProvider = "joinDistributionTypes")
-  public void testJoinWithEmptySides(JoinDistributionType joinDistributionType)
-  {
+  public void testJoinWithEmptySides(JoinDistributionType joinDistributionType) {
     Session session = noJoinReordering(joinDistributionType);
     // empty build side
     assertQuery(session, "SELECT count(*) FROM nation JOIN region ON nation.regionkey = region.regionkey AND region.name = ''", "VALUES 0");
@@ -551,8 +523,7 @@ public abstract class BaseConnectorTest
   }
 
   @DataProvider
-  public Object[][] joinDistributionTypes()
-  {
+  public Object[][] joinDistributionTypes() {
     return Stream.of(JoinDistributionType.values())
         .collect(toDataProvider());
   }
@@ -561,8 +532,7 @@ public abstract class BaseConnectorTest
    * Test interactions between optimizer (including CBO) and connector metadata APIs.
    */
   @Test
-  public void testJoin()
-  {
+  public void testJoin() {
     Session session = Session.builder(getSession())
         .setSystemProperty(IGNORE_STATS_CALCULATOR_FAILURES, "false")
         .build();
@@ -594,8 +564,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDescribeTable()
-  {
+  public void testDescribeTable() {
     MaterializedResult
         expectedColumns = MaterializedResult.resultBuilder(getSession(), VARCHAR, VARCHAR, VARCHAR, VARCHAR)
         .row("orderkey", "bigint", "", "")
@@ -613,8 +582,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testView()
-  {
+  public void testView() {
     if (!hasBehavior(SUPPORTS_CREATE_VIEW)) {
       assertQueryFails("CREATE VIEW nation_v AS SELECT * FROM nation", "This connector does not support creating views");
       return;
@@ -766,8 +734,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testViewCaseSensitivity()
-  {
+  public void testViewCaseSensitivity() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
 
     String upperCaseView = "test_view_uppercase_" + randomNameSuffix();
@@ -783,8 +750,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testMaterializedView()
-  {
+  public void testMaterializedView() {
     if (!hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW)) {
       assertQueryFails("CREATE MATERIALIZED VIEW nation_mv AS SELECT * FROM nation", "This connector does not support creating materialized views");
       return;
@@ -974,8 +940,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCompatibleTypeChangeForView()
-  {
+  public void testCompatibleTypeChangeForView() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
 
     String tableName = "test_table_" + randomNameSuffix();
@@ -997,8 +962,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCompatibleTypeChangeForView2()
-  {
+  public void testCompatibleTypeChangeForView2() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
 
     String tableName = "test_table_" + randomNameSuffix();
@@ -1020,8 +984,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test(dataProvider = "testViewMetadataDataProvider")
-  public void testViewMetadata(String securityClauseInCreate, String securityClauseInShowCreate)
-  {
+  public void testViewMetadata(String securityClauseInCreate, String securityClauseInShowCreate) {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
 
     String viewName = "meta_test_view_" + randomNameSuffix();
@@ -1097,18 +1060,16 @@ public abstract class BaseConnectorTest
   }
 
   @DataProvider
-  public static Object[][] testViewMetadataDataProvider()
-  {
-    return new Object[][] {
+  public static Object[][] testViewMetadataDataProvider() {
+    return new Object[][]{
         {"", "DEFINER"},
         {" SECURITY DEFINER", "DEFINER"},
         {" SECURITY INVOKER", "INVOKER"},
-        };
+    };
   }
 
   @Test
-  public void testShowCreateView()
-  {
+  public void testShowCreateView() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_VIEW));
     checkState(getSession().getCatalog().isPresent(), "catalog is not set");
     checkState(getSession().getSchema().isPresent(), "schema is not set");
@@ -1135,8 +1096,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRenameMaterializedView()
-  {
+  public void testRenameMaterializedView() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW));
 
     String schema = "rename_mv_test";
@@ -1183,8 +1143,7 @@ public abstract class BaseConnectorTest
       assertTestingMaterializedViewQuery(otherSchema, originalMaterializedView.getObjectName());
 
       assertUpdate(session, "DROP MATERIALIZED VIEW " + otherSchema + "." + originalMaterializedView.getObjectName());
-    }
-    else {
+    } else {
       assertQueryFails(
           session,
           "ALTER MATERIALIZED VIEW " + uppercaseName + " RENAME TO " + otherSchema + "." + originalMaterializedView.getObjectName(),
@@ -1202,15 +1161,13 @@ public abstract class BaseConnectorTest
     assertQueryReturnsEmptyResult(session, listMaterializedViewsSql("name = '" + renamedMaterializedView + "'"));
   }
 
-  private void assertTestingMaterializedViewQuery(String schema, String materializedViewName)
-  {
+  private void assertTestingMaterializedViewQuery(String schema, String materializedViewName) {
     assertThat(query("SELECT * FROM " + schema + "." + materializedViewName))
         .skippingTypesCheck()
         .matches("SELECT * FROM nation");
   }
 
-  private void createTestingMaterializedView(QualifiedObjectName view, Optional<String> comment)
-  {
+  private void createTestingMaterializedView(QualifiedObjectName view, Optional<String> comment) {
     assertUpdate(format("CREATE SCHEMA IF NOT EXISTS %s", view.getSchemaName()));
     assertUpdate(format(
         "CREATE MATERIALIZED VIEW %s %s AS SELECT * FROM nation",
@@ -1218,8 +1175,7 @@ public abstract class BaseConnectorTest
         comment.map(c -> format("COMMENT '%s'", c)).orElse("")));
   }
 
-  private String getTestingMaterializedViewsResultRow(QualifiedObjectName materializedView, String comment)
-  {
+  private String getTestingMaterializedViewsResultRow(QualifiedObjectName materializedView, String comment) {
     return format(
         "VALUES ('%s', '%s', '%s', '%s', 'SELECT *\nFROM\n  nation\n')",
         materializedView.getCatalogName(),
@@ -1230,8 +1186,7 @@ public abstract class BaseConnectorTest
 
   private String getTestingMaterializedViewsResultRows(
       QualifiedObjectName materializedView,
-      QualifiedObjectName otherMaterializedView)
-  {
+      QualifiedObjectName otherMaterializedView) {
     String viewDefinitionSql = "SELECT *\nFROM\n  nation\n";
 
     return format(
@@ -1247,8 +1202,7 @@ public abstract class BaseConnectorTest
         viewDefinitionSql);
   }
 
-  private String listMaterializedViewsSql(String... filterClauses)
-  {
+  private String listMaterializedViewsSql(String... filterClauses) {
     StringBuilder sql = new StringBuilder("SELECT" +
         "   catalog_name," +
         "   schema_name," +
@@ -1266,8 +1220,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testViewAndMaterializedViewTogether()
-  {
+  public void testViewAndMaterializedViewTogether() {
     if (!hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW) || !hasBehavior(SUPPORTS_CREATE_VIEW)) {
       return;
     }
@@ -1297,8 +1250,7 @@ public abstract class BaseConnectorTest
   }
 
   // TODO inline when all implementations fixed
-  protected void checkInformationSchemaViewsForMaterializedView(String schemaName, String viewName)
-  {
+  protected void checkInformationSchemaViewsForMaterializedView(String schemaName, String viewName) {
     assertThat(query("SELECT table_name FROM information_schema.views WHERE table_schema = '" + schemaName + "'"))
         .skippingTypesCheck()
         .containsAll("VALUES '" + viewName + "'");
@@ -1324,8 +1276,7 @@ public abstract class BaseConnectorTest
   // }
 
   protected void testReadMetadataWithRelationsConcurrentModifications(int readIterations, int testTimeoutSeconds)
-      throws Exception
-  {
+      throws Exception {
     Stopwatch testWatch = Stopwatch.createStarted();
 
     int readerTasksCount = 6
@@ -1383,8 +1334,7 @@ public abstract class BaseConnectorTest
         verifyNotNull(future, "Task did not completed before timeout; completed tasks: %s, current poll timeout: %s s", i, remainingTimeSeconds);
         future.get(); // non-blocking
       }
-    }
-    finally {
+    } finally {
       executor.shutdownNow();
     }
     assertTrue(executor.awaitTermination(10, SECONDS));
@@ -1394,13 +1344,10 @@ public abstract class BaseConnectorTest
    * Run {@code sql} query at least {@code minIterations} times and keep running until other tasks complete.
    * {@code incompleteReadTasks} is used for orchestrating end of execution.
    */
-  protected Callable<Void> queryRepeatedly(int minIterations, AtomicInteger incompleteReadTasks, @Language("SQL") String sql)
-  {
-    return new Callable<>()
-    {
+  protected Callable<Void> queryRepeatedly(int minIterations, AtomicInteger incompleteReadTasks, @Language("SQL") String sql) {
+    return new Callable<>() {
       @Override
-      public Void call()
-      {
+      public Void call() {
         boolean alwaysEmpty = true;
         for (int i = 0; i < minIterations; i++) {
           MaterializedResult result = computeActual(sql);
@@ -1418,20 +1365,16 @@ public abstract class BaseConnectorTest
       }
 
       @Override
-      public String toString()
-      {
+      public String toString() {
         return format("Query(%s)", sql);
       }
     };
   }
 
-  protected Callable<Void> createDropRepeatedly(Runnable initReady, Supplier<Boolean> done, String namePrefix, String createTemplate, String dropTemplate)
-  {
-    return new Callable<>()
-    {
+  protected Callable<Void> createDropRepeatedly(Runnable initReady, Supplier<Boolean> done, String namePrefix, String createTemplate, String dropTemplate) {
+    return new Callable<>() {
       @Override
-      public Void call()
-      {
+      public Void call() {
         int objectsToKeep = 3;
         Deque<String> liveObjects = new ArrayDeque<>(objectsToKeep);
         for (int i = 0; i < objectsToKeep; i++) {
@@ -1453,27 +1396,22 @@ public abstract class BaseConnectorTest
       }
 
       @Override
-      public String toString()
-      {
+      public String toString() {
         return format("Repeat (%s) and (%s)", createTemplate, dropTemplate);
       }
     };
   }
 
-  protected <T> void submitTasks(List<Callable<T>> callables, CompletionService<T> completionService)
-  {
+  protected <T> void submitTasks(List<Callable<T>> callables, CompletionService<T> completionService) {
     for (Callable<T> callable : callables) {
       String taskDescription = callable.toString();
-      completionService.submit(new Callable<T>()
-      {
+      completionService.submit(new Callable<T>() {
         @Override
         public T call()
-            throws Exception
-        {
+            throws Exception {
           try {
             return callable.call();
-          }
-          catch (Throwable e) {
+          } catch (Throwable e) {
             e.addSuppressed(new Exception("Task: " + taskDescription));
             throw e;
           }
@@ -1483,8 +1421,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testExplainAnalyze()
-  {
+  public void testExplainAnalyze() {
     assertExplainAnalyze("EXPLAIN ANALYZE SELECT * FROM orders");
     assertExplainAnalyze("EXPLAIN ANALYZE SELECT count(*), clerk FROM orders GROUP BY clerk");
     assertExplainAnalyze(
@@ -1504,16 +1441,14 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testExplainAnalyzeVerbose()
-  {
+  public void testExplainAnalyzeVerbose() {
     assertExplainAnalyze("EXPLAIN ANALYZE VERBOSE SELECT * FROM orders");
     assertExplainAnalyze("EXPLAIN ANALYZE VERBOSE SELECT rank() OVER (PARTITION BY orderkey ORDER BY clerk DESC) FROM orders");
     assertExplainAnalyze("EXPLAIN ANALYZE VERBOSE SELECT rank() OVER (PARTITION BY orderkey ORDER BY clerk DESC) FROM orders WHERE orderkey < 0");
   }
 
   @Test
-  public void testTableSampleSystem()
-  {
+  public void testTableSampleSystem() {
     MaterializedResult fullSample = computeActual("SELECT orderkey FROM orders TABLESAMPLE SYSTEM (100)");
     MaterializedResult emptySample = computeActual("SELECT orderkey FROM orders TABLESAMPLE SYSTEM (0)");
     MaterializedResult randomSample = computeActual("SELECT orderkey FROM orders TABLESAMPLE SYSTEM (50)");
@@ -1525,8 +1460,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testTableSampleWithFiltering()
-  {
+  public void testTableSampleWithFiltering() {
     MaterializedResult emptySample = computeActual("SELECT DISTINCT orderkey, orderdate FROM orders TABLESAMPLE SYSTEM (99) WHERE orderkey BETWEEN 0 AND 0");
     MaterializedResult halfSample = computeActual("SELECT DISTINCT orderkey, orderdate FROM orders TABLESAMPLE SYSTEM (50) WHERE orderkey BETWEEN 0 AND 9999999999");
     MaterializedResult all = computeActual("SELECT orderkey, orderdate FROM orders");
@@ -1538,8 +1472,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testShowCreateTable()
-  {
+  public void testShowCreateTable() {
     assertThat((String) computeActual("SHOW CREATE TABLE orders").getOnlyValue())
         // If the connector reports additional column properties, the expected value needs to be adjusted in the test subclass
         .matches("CREATE TABLE \\w+\\.\\w+\\.orders \\Q(\n" +
@@ -1556,8 +1489,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testSelectInformationSchemaTables()
-  {
+  public void testSelectInformationSchemaTables() {
     String catalog = getSession().getCatalog().get();
     String schema = getSession().getSchema().get();
     String schemaPattern = schema.replaceAll("^.", "_");
@@ -1585,8 +1517,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testSelectInformationSchemaColumns()
-  {
+  public void testSelectInformationSchemaColumns() {
     String catalog = getSession().getCatalog().get();
     String schema = getSession().getSchema().get();
     String schemaPattern = schema.replaceAll(".$", "_");
@@ -1635,16 +1566,14 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testShowCreateInformationSchema()
-  {
+  public void testShowCreateInformationSchema() {
     assertThat(query("SHOW CREATE SCHEMA information_schema"))
         .skippingTypesCheck()
         .matches(format("VALUES 'CREATE SCHEMA %s.information_schema'", getSession().getCatalog().orElseThrow()));
   }
 
   @Test
-  public void testShowCreateInformationSchemaTable()
-  {
+  public void testShowCreateInformationSchemaTable() {
     assertQueryFails("SHOW CREATE VIEW information_schema.schemata", "line 1:1: Relation '\\w+.information_schema.schemata' is a table, not a view");
     assertQueryFails("SHOW CREATE MATERIALIZED VIEW information_schema.schemata", "line 1:1: Relation '\\w+.information_schema.schemata' is a table, not a materialized view");
 
@@ -1656,8 +1585,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRollback()
-  {
+  public void testRollback() {
     skipTestUnless(hasBehavior(SUPPORTS_MULTI_STATEMENT_WRITES));
 
     String table = "test_rollback_" + randomNameSuffix();
@@ -1674,11 +1602,11 @@ public abstract class BaseConnectorTest
   }
 
   private static class RollbackException
-      extends RuntimeException {}
+      extends RuntimeException {
+  }
 
   @Test
-  public void testWriteNotAllowedInTransaction()
-  {
+  public void testWriteNotAllowedInTransaction() {
     skipTestUnless(!hasBehavior(SUPPORTS_MULTI_STATEMENT_WRITES));
 
     assertWriteNotAllowedInTransaction(SUPPORTS_CREATE_SCHEMA, "CREATE SCHEMA write_not_allowed");
@@ -1694,8 +1622,7 @@ public abstract class BaseConnectorTest
     // REFRESH MATERIALIZED VIEW is tested in testMaterializedView
   }
 
-  protected void assertWriteNotAllowedInTransaction(TestingConnectorBehavior behavior, @Language("SQL") String sql)
-  {
+  protected void assertWriteNotAllowedInTransaction(TestingConnectorBehavior behavior, @Language("SQL") String sql) {
     if (hasBehavior(behavior)) {
       assertThatThrownBy(() -> inTransaction(session -> computeActual(session, sql)))
           .hasMessageMatching("Catalog only supports writes using autocommit: \\w+");
@@ -1703,8 +1630,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRenameSchema()
-  {
+  public void testRenameSchema() {
     if (!hasBehavior(SUPPORTS_RENAME_SCHEMA)) {
       String schemaName = getSession().getSchema().orElseThrow();
       assertQueryFails(
@@ -1721,16 +1647,14 @@ public abstract class BaseConnectorTest
     try {
       assertUpdate("CREATE SCHEMA " + schemaName);
       assertUpdate("ALTER SCHEMA " + schemaName + " RENAME TO " + schemaName + "_renamed");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP SCHEMA IF EXISTS " + schemaName);
       assertUpdate("DROP SCHEMA IF EXISTS " + schemaName + "_renamed");
     }
   }
 
   @Test
-  public void testAddColumn()
-  {
+  public void testAddColumn() {
     if (!hasBehavior(SUPPORTS_ADD_COLUMN)) {
       assertQueryFails("ALTER TABLE nation ADD COLUMN test_add_column bigint", "This connector does not support adding columns");
       return;
@@ -1773,14 +1697,12 @@ public abstract class BaseConnectorTest
   /**
    * The table must have one column 'x' of varchar type.
    */
-  protected String tableDefinitionForAddColumn()
-  {
+  protected String tableDefinitionForAddColumn() {
     return "(x VARCHAR)";
   }
 
   @Test
-  public void testAddColumnWithComment()
-  {
+  public void testAddColumnWithComment() {
     if (!hasBehavior(SUPPORTS_ADD_COLUMN)) {
       // Covered by testAddColumn
       return;
@@ -1802,8 +1724,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDropColumn()
-  {
+  public void testDropColumn() {
     if (!hasBehavior(SUPPORTS_DROP_COLUMN)) {
       assertQueryFails("ALTER TABLE nation DROP COLUMN nationkey", "This connector does not support dropping columns");
       return;
@@ -1830,8 +1751,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRenameColumn()
-  {
+  public void testRenameColumn() {
     if (!hasBehavior(SUPPORTS_RENAME_COLUMN)) {
       assertQueryFails("ALTER TABLE nation RENAME COLUMN nationkey TO test_rename_column", "This connector does not support renaming columns");
       return;
@@ -1868,8 +1788,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCreateTable()
-  {
+  public void testCreateTable() {
     String tableName = "test_create_" + randomNameSuffix();
     if (!hasBehavior(SUPPORTS_CREATE_TABLE)) {
       assertQueryFails("CREATE TABLE " + tableName + " (a bigint, b double, c varchar(50))", "This connector does not support creating tables");
@@ -1919,8 +1838,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCreateTableSchemaNotFound()
-  {
+  public void testCreateTableSchemaNotFound() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     String schemaName = "test_schema_" + randomNameSuffix();
@@ -1929,15 +1847,13 @@ public abstract class BaseConnectorTest
       assertQueryFails(
           format("CREATE TABLE %s.%s (a bigint)", schemaName, tableName),
           format("Schema %s not found", schemaName));
-    }
-    finally {
+    } finally {
       assertUpdate(format("DROP TABLE IF EXISTS %s.%s", schemaName, tableName));
     }
   }
 
   @Test
-  public void testCreateTableAsSelect()
-  {
+  public void testCreateTableAsSelect() {
     String tableName = "test_ctas" + randomNameSuffix();
     if (!hasBehavior(SUPPORTS_CREATE_TABLE)) {
       assertQueryFails("CREATE TABLE IF NOT EXISTS " + tableName + " AS SELECT name, regionkey FROM nation", "This connector does not support creating tables with data");
@@ -2008,8 +1924,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCreateTableAsSelectSchemaNotFound()
-  {
+  public void testCreateTableAsSelectSchemaNotFound() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA));
 
     String schemaName = "test_schema_" + randomNameSuffix();
@@ -2018,15 +1933,13 @@ public abstract class BaseConnectorTest
       assertQueryFails(
           format("CREATE TABLE %s.%s AS SELECT name FROM nation", schemaName, tableName),
           format("Schema %s not found", schemaName));
-    }
-    finally {
+    } finally {
       assertUpdate(format("DROP TABLE IF EXISTS %s.%s", schemaName, tableName));
     }
   }
 
   @Test
-  public void testCreateTableAsSelectWithUnicode()
-  {
+  public void testCreateTableAsSelectWithUnicode() {
     // Covered by testCreateTableAsSelect
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
     assertCreateTableAsSelect(
@@ -2034,18 +1947,15 @@ public abstract class BaseConnectorTest
         "SELECT 1");
   }
 
-  protected void assertCreateTableAsSelect(@Language("SQL") String query, @Language("SQL") String rowCountQuery)
-  {
+  protected void assertCreateTableAsSelect(@Language("SQL") String query, @Language("SQL") String rowCountQuery) {
     assertCreateTableAsSelect(getSession(), query, query, rowCountQuery);
   }
 
-  protected void assertCreateTableAsSelect(@Language("SQL") String query, @Language("SQL") String expectedQuery, @Language("SQL") String rowCountQuery)
-  {
+  protected void assertCreateTableAsSelect(@Language("SQL") String query, @Language("SQL") String expectedQuery, @Language("SQL") String rowCountQuery) {
     assertCreateTableAsSelect(getSession(), query, expectedQuery, rowCountQuery);
   }
 
-  protected void assertCreateTableAsSelect(Session session, @Language("SQL") String query, @Language("SQL") String expectedQuery, @Language("SQL") String rowCountQuery)
-  {
+  protected void assertCreateTableAsSelect(Session session, @Language("SQL") String query, @Language("SQL") String expectedQuery, @Language("SQL") String rowCountQuery) {
     String table = "test_ctas_" + randomNameSuffix();
     assertUpdate(session, "CREATE TABLE " + table + " AS " + query, rowCountQuery);
     assertQuery(session, "SELECT * FROM " + table, expectedQuery);
@@ -2055,8 +1965,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCreateTableAsSelectNegativeDate()
-  {
+  public void testCreateTableAsSelectNegativeDate() {
     String tableName = "negative_date_" + randomNameSuffix();
 
     if (!hasBehavior(SUPPORTS_CREATE_TABLE_WITH_DATA)) {
@@ -2072,21 +1981,18 @@ public abstract class BaseConnectorTest
       assertUpdate(format("CREATE TABLE %s AS SELECT DATE '-0001-01-01' AS dt", tableName), 1);
       assertQuery("SELECT * FROM " + tableName, "VALUES DATE '-0001-01-01'");
       assertQuery(format("SELECT * FROM %s WHERE dt = DATE '-0001-01-01'", tableName), "VALUES DATE '-0001-01-01'");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE IF EXISTS " + tableName);
     }
   }
 
   @Language("RegExp")
-  protected String errorMessageForCreateTableAsSelectNegativeDate(String date)
-  {
+  protected String errorMessageForCreateTableAsSelectNegativeDate(String date) {
     throw new UnsupportedOperationException("This method should be overridden");
   }
 
   @Test
-  public void testRenameTable()
-  {
+  public void testRenameTable() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
     String tableName = "test_rename_" + randomNameSuffix();
     assertUpdate("CREATE TABLE " + tableName + " AS SELECT 123 x", 1);
@@ -2122,8 +2028,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRenameTableAcrossSchema()
-  {
+  public void testRenameTableAcrossSchema() {
     if (!hasBehavior(SUPPORTS_RENAME_TABLE_ACROSS_SCHEMAS)) {
       if (!hasBehavior(SUPPORTS_RENAME_TABLE)) {
         throw new SkipException("Skipping since rename table is not supported at all");
@@ -2160,8 +2065,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRenameTableToUnqualifiedPreservesSchema()
-  {
+  public void testRenameTableToUnqualifiedPreservesSchema() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_SCHEMA) && hasBehavior(SUPPORTS_CREATE_TABLE) && hasBehavior(SUPPORTS_RENAME_TABLE));
 
     String sourceSchemaName = "test_source_schema_" + randomNameSuffix();
@@ -2179,8 +2083,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testCommentTable()
-  {
+  public void testCommentTable() {
     if (!hasBehavior(SUPPORTS_COMMENT_ON_TABLE)) {
       assertQueryFails("COMMENT ON TABLE nation IS 'new comment'", "This connector does not support setting table comments");
       return;
@@ -2220,21 +2123,18 @@ public abstract class BaseConnectorTest
       // comment set when creating a table
       assertUpdate("CREATE TABLE " + tableName + "(key integer) COMMENT 'new table comment'");
       assertThat(getTableComment(catalogName, schemaName, tableName)).isEqualTo("new table comment");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE IF EXISTS " + tableName);
     }
   }
 
-  private String getTableComment(String catalogName, String schemaName, String tableName)
-  {
+  private String getTableComment(String catalogName, String schemaName, String tableName) {
     String sql = format("SELECT comment FROM system.metadata.table_comments WHERE catalog_name = '%s' AND schema_name = '%s' AND table_name = '%s'", catalogName, schemaName, tableName);
     return (String) computeActual(sql).getOnlyValue();
   }
 
   @Test
-  public void testCommentColumn()
-  {
+  public void testCommentColumn() {
     if (!hasBehavior(SUPPORTS_COMMENT_ON_COLUMN)) {
       assertQueryFails("COMMENT ON COLUMN nation.nationkey IS 'new comment'", "This connector does not support setting column comments");
       return;
@@ -2267,8 +2167,7 @@ public abstract class BaseConnectorTest
     //        assertUpdate("DROP TABLE " + tableName);
   }
 
-  protected String getColumnComment(String tableName, String columnName)
-  {
+  protected String getColumnComment(String tableName, String columnName) {
     MaterializedResult materializedResult = computeActual(format(
         "SELECT comment FROM information_schema.columns WHERE table_schema = '%s' AND table_name = '%s' AND column_name = '%s'",
         getSession().getSchema().orElseThrow(),
@@ -2278,8 +2177,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInsert()
-  {
+  public void testInsert() {
     if (!hasBehavior(SUPPORTS_INSERT)) {
       assertQueryFails("INSERT INTO nation(nationkey) VALUES (42)", "This connector does not support inserts");
       return;
@@ -2321,8 +2219,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInsertForDefaultColumn()
-  {
+  public void testInsertForDefaultColumn() {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     try (TestTable testTable = createTableWithDefaultColumns()) {
@@ -2335,14 +2232,12 @@ public abstract class BaseConnectorTest
     }
   }
 
-  protected TestTable createTableWithDefaultColumns()
-  {
+  protected TestTable createTableWithDefaultColumns() {
     throw new UnsupportedOperationException();
   }
 
   @Test
-  public void testInsertUnicode()
-  {
+  public void testInsertUnicode() {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
@@ -2371,8 +2266,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInsertHighestUnicodeCharacter()
-  {
+  public void testInsertHighestUnicodeCharacter() {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_unicode_", "(test varchar(50))")) {
@@ -2383,8 +2277,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInsertArray()
-  {
+  public void testInsertArray() {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
     String tableName = "test_insert_array_" + randomNameSuffix();
@@ -2403,8 +2296,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testInsertNegativeDate()
-  {
+  public void testInsertNegativeDate() {
     if (!hasBehavior(SUPPORTS_INSERT)) {
       assertQueryFails("INSERT INTO orders (orderdate) VALUES (DATE '-0001-01-01')", "This connector does not support inserts");
       return;
@@ -2427,13 +2319,11 @@ public abstract class BaseConnectorTest
   }
 
   @Language("RegExp")
-  protected String errorMessageForInsertNegativeDate(String date)
-  {
+  protected String errorMessageForInsertNegativeDate(String date) {
     throw new UnsupportedOperationException("This method should be overridden");
   }
 
-  protected boolean isReportingWrittenBytesSupported(Session session)
-  {
+  protected boolean isReportingWrittenBytesSupported(Session session) {
     CatalogName catalogName = session.getCatalog()
         .map(CatalogName::new)
         .orElseThrow();
@@ -2444,8 +2334,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void isReportingWrittenBytesSupported()
-  {
+  public void isReportingWrittenBytesSupported() {
     transaction(getQueryRunner().getTransactionManager(), getQueryRunner().getAccessControl())
         .singleStatement()
         .execute(getSession(), (Consumer<Session>) session -> skipTestUnless(isReportingWrittenBytesSupported(session)));
@@ -2457,12 +2346,12 @@ public abstract class BaseConnectorTest
         getSession(),
         query,
         queryStats -> assertThat(queryStats.getPhysicalWrittenDataSize().toBytes()).isGreaterThan(0L),
-        results -> {});
+        results -> {
+        });
   }
 
   @Test
-  public void testInsertIntoNotNullColumn()
-  {
+  public void testInsertIntoNotNullColumn() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     if (!hasBehavior(SUPPORTS_NOT_NULL_CONSTRAINT)) {
@@ -2488,14 +2377,12 @@ public abstract class BaseConnectorTest
   }
 
   @Language("RegExp")
-  protected String errorMessageForInsertIntoNotNullColumn(String columnName)
-  {
+  protected String errorMessageForInsertIntoNotNullColumn(String columnName) {
     throw new UnsupportedOperationException("This method should be overridden");
   }
 
   @Test
-  public void testInsertInTransaction()
-  {
+  public void testInsertInTransaction() {
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
     skipTestUnless(hasBehavior(SUPPORTS_MULTI_STATEMENT_WRITES)); // covered by testWriteNotAllowedInTransaction
 
@@ -2510,8 +2397,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDelete()
-  {
+  public void testDelete() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     // delete successive parts of the table
@@ -2547,15 +2433,13 @@ public abstract class BaseConnectorTest
       // check DELETE works with EXPLAIN ANALYZE
       assertExplainAnalyze("EXPLAIN ANALYZE DELETE FROM " + tableName + " WHERE TRUE");
       assertQuery("SELECT COUNT(*) from " + tableName, "SELECT 0");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE IF EXISTS " + tableName);
     }
   }
 
   @Test
-  public void testDeleteWithLike()
-  {
+  public void testDeleteWithLike() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_with_like_", "AS SELECT * FROM nation")) {
@@ -2565,8 +2449,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDeleteWithComplexPredicate()
-  {
+  public void testDeleteWithComplexPredicate() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version is updated
@@ -2583,8 +2466,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDeleteWithSubquery()
-  {
+  public void testDeleteWithSubquery() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version is updated
@@ -2607,8 +2489,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testExplainAnalyzeWithDeleteWithSubquery()
-  {
+  public void testExplainAnalyzeWithDeleteWithSubquery() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     String tableName = "test_delete_" + randomNameSuffix();
@@ -2621,8 +2502,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDeleteWithSemiJoin()
-  {
+  public void testDeleteWithSemiJoin() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version is updated
@@ -2656,8 +2536,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDeleteWithVarcharPredicate()
-  {
+  public void testDeleteWithVarcharPredicate() {
     skipTestUnless(hasBehavior(SUPPORTS_DELETE));
 
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_delete_with_varchar_predicate_", "AS SELECT * FROM orders")) {
@@ -2667,36 +2546,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void verifySupportsDeleteDeclaration()
-  {
-    if (hasBehavior(SUPPORTS_DELETE)) {
-      // Covered by testDeleteAllDataFromTable
-      return;
-    }
-
-    skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
-    try (TestTable table = new TestTable(getQueryRunner()::execute, "test_supports_delete", "(regionkey int)")) {
-      assertQueryFails("DELETE FROM " + table.getName(), MODIFYING_ROWS_MESSAGE);
-    }
-  }
-
-  @Test
-  public void verifySupportsRowLevelDeleteDeclaration()
-  {
-    if (hasBehavior(SUPPORTS_ROW_LEVEL_DELETE)) {
-      // Covered by testRowLevelDelete
-      return;
-    }
-
-    skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
-    try (TestTable table = new TestTable(getQueryRunner()::execute, "test_supports_row_level_delete", "(regionkey int)")) {
-      assertQueryFails("DELETE FROM " + table.getName() + " WHERE regionkey = 2", MODIFYING_ROWS_MESSAGE);
-    }
-  }
-
-  @Test
-  public void testDeleteAllDataFromTable()
-  {
+  public void testDeleteAllDataFromTable() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE) && hasBehavior(SUPPORTS_DELETE));
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_delete_all_data", "AS SELECT * FROM region")) {
       // not using assertUpdate as some connectors provide update count and some not
@@ -2706,8 +2556,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testRowLevelDelete()
-  {
+  public void testRowLevelDelete() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE) && hasBehavior(SUPPORTS_ROW_LEVEL_DELETE));
     // TODO (https://github.com/trinodb/trino/issues/5901) Use longer table name once Oracle version is updated
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_row_delete", "AS SELECT * FROM region")) {
@@ -2717,8 +2566,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testUpdate()
-  {
+  public void testUpdate() {
     if (!hasBehavior(SUPPORTS_UPDATE)) {
       // Note this change is a no-op, if actually run
       assertQueryFails("UPDATE nation SET nationkey = nationkey + regionkey WHERE regionkey < 1", MODIFYING_ROWS_MESSAGE);
@@ -2740,15 +2588,13 @@ public abstract class BaseConnectorTest
     }
   }
 
-  protected void verifyConcurrentUpdateFailurePermissible(Exception e)
-  {
+  protected void verifyConcurrentUpdateFailurePermissible(Exception e) {
     // By default, do not expect UPDATE to fail in case of concurrent updates
     throw new AssertionError("Unexpected concurrent update failure", e);
   }
 
   @Test
-  public void testDropTable()
-  {
+  public void testDropTable() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
     String tableName = "test_drop_table_" + randomNameSuffix();
     assertUpdate("CREATE TABLE " + tableName + "(col bigint)");
@@ -2759,16 +2605,14 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testDropTableIfExists()
-  {
+  public void testDropTableIfExists() {
     assertFalse(getQueryRunner().tableExists(getSession(), "test_drop_if_exists"));
     assertUpdate("DROP TABLE IF EXISTS test_drop_if_exists");
     assertFalse(getQueryRunner().tableExists(getSession(), "test_drop_if_exists"));
   }
 
   @Test
-  public void testTruncateTable()
-  {
+  public void testTruncateTable() {
     if (!hasBehavior(SUPPORTS_TRUNCATE)) {
       assertQueryFails("TRUNCATE TABLE nation", "This connector does not support truncating tables");
       return;
@@ -2783,8 +2627,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testQueryLoggingCount()
-  {
+  public void testQueryLoggingCount() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     QueryManager queryManager = getDistributedQueryRunner().getCoordinator().getQueryManager();
@@ -2824,13 +2667,11 @@ public abstract class BaseConnectorTest
    * The table must have two columns foo_1 and foo_2_4 of any type.
    */
   @Language("SQL")
-  protected String tableDefinitionForQueryLoggingCount()
-  {
+  protected String tableDefinitionForQueryLoggingCount() {
     return "(foo_1 int, foo_2_4 int)";
   }
 
-  private <T> T waitUntilStable(Supplier<T> computation, Duration timeout)
-  {
+  private <T> T waitUntilStable(Supplier<T> computation, Duration timeout) {
     T lastValue = computation.get();
     long start = System.nanoTime();
     while (!currentThread().isInterrupted() && nanosSince(start).compareTo(timeout) < 0) {
@@ -2845,16 +2686,14 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testShowSchemasFromOther()
-  {
+  public void testShowSchemasFromOther() {
     MaterializedResult result = computeActual("SHOW SCHEMAS FROM tpch");
     assertTrue(result.getOnlyColumnAsSet().containsAll(ImmutableSet.of(INFORMATION_SCHEMA, "tiny", "sf1")));
   }
 
   // TODO move to to engine-only
   @Test
-  public void testSymbolAliasing()
-  {
+  public void testSymbolAliasing() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     String tableName = "test_symbol_aliasing" + randomNameSuffix();
@@ -2864,8 +2703,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test
-  public void testWrittenStats()
-  {
+  public void testWrittenStats() {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
     skipTestUnless(hasBehavior(SUPPORTS_INSERT));
 
@@ -2887,15 +2725,13 @@ public abstract class BaseConnectorTest
       assertEquals(queryInfo.getQueryStats().getOutputPositions(), 1L);
       assertEquals(queryInfo.getQueryStats().getWrittenPositions(), 10L);
       assertTrue(queryInfo.getQueryStats().getLogicalWrittenDataSize().toBytes() > 0L);
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE IF EXISTS " + tableName);
     }
   }
 
   @Test(dataProvider = "testColumnNameDataProvider")
-  public void testColumnName(String columnName)
-  {
+  public void testColumnName(String columnName) {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_TABLE));
 
     if (!requiresDelimiting(columnName)) {
@@ -2904,8 +2740,7 @@ public abstract class BaseConnectorTest
     testColumnName(columnName, true);
   }
 
-  protected void testColumnName(String columnName, boolean delimited)
-  {
+  protected void testColumnName(String columnName, boolean delimited) {
     String nameInSql = columnName;
     if (delimited) {
       nameInSql = "\"" + columnName.replace("\"", "\"\"") + "\"";
@@ -2915,8 +2750,7 @@ public abstract class BaseConnectorTest
     try {
       // TODO test with both CTAS *and* CREATE TABLE + INSERT, since they use different connector API methods.
       assertUpdate("CREATE TABLE " + tableName + "(key varchar(50), " + nameInSql + " varchar(50))");
-    }
-    catch (RuntimeException e) {
+    } catch (RuntimeException e) {
       if (isColumnNameRejected(e, columnName, delimited)) {
         // It is OK if give column name is not allowed and is clearly rejected by the connector.
         return;
@@ -2935,25 +2769,21 @@ public abstract class BaseConnectorTest
       // predicate
       assertQuery("SELECT key FROM " + tableName + " WHERE " + nameInSql + " IS NULL", "VALUES ('null value')");
       assertQuery("SELECT key FROM " + tableName + " WHERE " + nameInSql + " = 'abc'", "VALUES ('sample value')");
-    }
-    finally {
+    } finally {
       assertUpdate("DROP TABLE " + tableName);
     }
   }
 
-  protected boolean isColumnNameRejected(Exception exception, String columnName, boolean delimited)
-  {
+  protected boolean isColumnNameRejected(Exception exception, String columnName, boolean delimited) {
     return false;
   }
 
-  protected static boolean requiresDelimiting(String identifierName)
-  {
+  protected static boolean requiresDelimiting(String identifierName) {
     return !identifierName.matches("[a-zA-Z][a-zA-Z0-9_]*");
   }
 
   @DataProvider
-  public Object[][] testColumnNameDataProvider()
-  {
+  public Object[][] testColumnNameDataProvider() {
     return testColumnNameTestData().stream()
         .map(this::filterColumnNameTestData)
         .filter(Optional::isPresent)
@@ -2961,8 +2791,7 @@ public abstract class BaseConnectorTest
         .collect(toDataProvider());
   }
 
-  private List<String> testColumnNameTestData()
-  {
+  private List<String> testColumnNameTestData() {
     return ImmutableList.<String>builder()
         .add("lowercase")
         .add("UPPERCASE")
@@ -2987,28 +2816,24 @@ public abstract class BaseConnectorTest
         .build();
   }
 
-  protected Optional<String> filterColumnNameTestData(String columnName)
-  {
+  protected Optional<String> filterColumnNameTestData(String columnName) {
     return Optional.of(columnName);
   }
 
-  protected String dataMappingTableName(String trinoTypeName)
-  {
+  protected String dataMappingTableName(String trinoTypeName) {
     return "test_data_mapping_smoke_" + trinoTypeName.replaceAll("[^a-zA-Z0-9]", "_") + "_" + randomNameSuffix();
   }
 
 
   @DataProvider
-  public final Object[][] testDataMappingSmokeTestDataProvider()
-  {
+  public final Object[][] testDataMappingSmokeTestDataProvider() {
     return testDataMappingSmokeTestData().stream()
         .map(this::filterDataMappingSmokeTestData)
         .flatMap(Optional::stream)
         .collect(toDataProvider());
   }
 
-  private List<DataMappingTestSetup> testDataMappingSmokeTestData()
-  {
+  private List<DataMappingTestSetup> testDataMappingSmokeTestData() {
     return ImmutableList.<DataMappingTestSetup>builder()
         .add(new DataMappingTestSetup("boolean", "false", "true"))
         .add(new DataMappingTestSetup("tinyint", "37", "127"))
@@ -3032,14 +2857,12 @@ public abstract class BaseConnectorTest
         .build();
   }
 
-  protected Optional<DataMappingTestSetup> filterDataMappingSmokeTestData(DataMappingTestSetup dataMappingTestSetup)
-  {
+  protected Optional<DataMappingTestSetup> filterDataMappingSmokeTestData(DataMappingTestSetup dataMappingTestSetup) {
     return Optional.of(dataMappingTestSetup);
   }
 
   @DataProvider
-  public final Object[][] testCaseSensitiveDataMappingProvider()
-  {
+  public final Object[][] testCaseSensitiveDataMappingProvider() {
     return testCaseSensitiveDataMappingData().stream()
         .map(this::filterCaseSensitiveDataMappingTestData)
         .flatMap(Optional::stream)
@@ -3047,13 +2870,11 @@ public abstract class BaseConnectorTest
   }
 
   protected Optional<DataMappingTestSetup> filterCaseSensitiveDataMappingTestData(
-      DataMappingTestSetup dataMappingTestSetup)
-  {
+      DataMappingTestSetup dataMappingTestSetup) {
     return Optional.of(dataMappingTestSetup);
   }
 
-  private List<DataMappingTestSetup> testCaseSensitiveDataMappingData()
-  {
+  private List<DataMappingTestSetup> testCaseSensitiveDataMappingData() {
     return ImmutableList.<DataMappingTestSetup>builder()
         .add(new DataMappingTestSetup("char(1)", "'A'", "'a'"))
         .add(new DataMappingTestSetup("varchar(1)", "'A'", "'a'"))
@@ -3065,8 +2886,7 @@ public abstract class BaseConnectorTest
   }
 
   @Test(dataProvider = "testColumnNameDataProvider")
-  public void testMaterializedViewColumnName(String columnName)
-  {
+  public void testMaterializedViewColumnName(String columnName) {
     skipTestUnless(hasBehavior(SUPPORTS_CREATE_MATERIALIZED_VIEW));
 
     if (!requiresDelimiting(columnName)) {
@@ -3075,8 +2895,7 @@ public abstract class BaseConnectorTest
     testMaterializedViewColumnName(columnName, true);
   }
 
-  private void testMaterializedViewColumnName(String columnName, boolean delimited)
-  {
+  private void testMaterializedViewColumnName(String columnName, boolean delimited) {
     String nameInSql = columnName;
     if (delimited) {
       nameInSql = "\"" + columnName.replace("\"", "\"\"") + "\"";
@@ -3085,8 +2904,7 @@ public abstract class BaseConnectorTest
 
     try {
       assertUpdate("CREATE MATERIALIZED VIEW " + viewName + " AS SELECT 'sample value' key, 'abc' " + nameInSql);
-    }
-    catch (RuntimeException e) {
+    } catch (RuntimeException e) {
       if (isColumnNameRejected(e, columnName, delimited)) {
         // It is OK if give column name is not allowed and is clearly rejected by the connector.
         return;
@@ -3100,8 +2918,7 @@ public abstract class BaseConnectorTest
     assertUpdate("DROP MATERIALIZED VIEW " + viewName);
   }
 
-  protected Consumer<Plan> assertPartialLimitWithPreSortedInputsCount(Session session, int expectedCount)
-  {
+  protected Consumer<Plan> assertPartialLimitWithPreSortedInputsCount(Session session, int expectedCount) {
     return plan -> {
       int actualCount = searchFrom(plan.getRoot())
           .where(node -> node instanceof LimitNode && ((LimitNode) node).isPartial() && ((LimitNode) node).requiresPreSortedInputs())
@@ -3120,54 +2937,45 @@ public abstract class BaseConnectorTest
     };
   }
 
-  protected String createSchemaSql(String schemaName)
-  {
+  protected String createSchemaSql(String schemaName) {
     return "CREATE SCHEMA " + schemaName;
   }
 
-  protected static final class DataMappingTestSetup
-  {
+  protected static final class DataMappingTestSetup {
     private final String trinoTypeName;
     private final String sampleValueLiteral;
     private final String highValueLiteral;
 
     private final boolean unsupportedType;
 
-    public DataMappingTestSetup(String trinoTypeName, String sampleValueLiteral, String highValueLiteral)
-    {
+    public DataMappingTestSetup(String trinoTypeName, String sampleValueLiteral, String highValueLiteral) {
       this(trinoTypeName, sampleValueLiteral, highValueLiteral, false);
     }
 
-    private DataMappingTestSetup(String trinoTypeName, String sampleValueLiteral, String highValueLiteral, boolean unsupportedType)
-    {
+    private DataMappingTestSetup(String trinoTypeName, String sampleValueLiteral, String highValueLiteral, boolean unsupportedType) {
       this.trinoTypeName = requireNonNull(trinoTypeName, "trinoTypeName is null");
       this.sampleValueLiteral = requireNonNull(sampleValueLiteral, "sampleValueLiteral is null");
       this.highValueLiteral = requireNonNull(highValueLiteral, "highValueLiteral is null");
       this.unsupportedType = unsupportedType;
     }
 
-    public String getTrinoTypeName()
-    {
+    public String getTrinoTypeName() {
       return trinoTypeName;
     }
 
-    public String getSampleValueLiteral()
-    {
+    public String getSampleValueLiteral() {
       return sampleValueLiteral;
     }
 
-    public String getHighValueLiteral()
-    {
+    public String getHighValueLiteral() {
       return highValueLiteral;
     }
 
-    public boolean isUnsupportedType()
-    {
+    public boolean isUnsupportedType() {
       return unsupportedType;
     }
 
-    public DataMappingTestSetup asUnsupported()
-    {
+    public DataMappingTestSetup asUnsupported() {
       return new DataMappingTestSetup(
           trinoTypeName,
           sampleValueLiteral,
@@ -3176,8 +2984,7 @@ public abstract class BaseConnectorTest
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
       // toString is brief because it's used for test case labels in IDE
       return trinoTypeName + (unsupportedType ? "!" : "");
     }

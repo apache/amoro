@@ -28,12 +28,12 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BasicKeyedTableScan;
-import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ArcticChangeTableScan;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -213,8 +213,8 @@ public class BasicKeyedTable implements KeyedTable {
     }
 
     @Override
-    public ChangeTableIncrementalScan newChangeScan() {
-      return new ChangeTableBasicIncrementalScan(this);
+    public ChangeTableIncrementalScan newScan() {
+      return new ArcticChangeTableScan(operations(), this);
     }
   }
 }

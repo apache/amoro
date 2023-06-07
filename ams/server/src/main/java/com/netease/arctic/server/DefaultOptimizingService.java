@@ -29,6 +29,7 @@ import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
 import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -39,7 +40,9 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
+import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * OptimizerManagementService is implementing the OptimizerManager Thrift service, which manages the optimization tasks
+ * DefaultOptimizingService is implementing the OptimizerManager Thrift service, which manages the optimization tasks
  * for ArcticTable. It includes methods for authenticating optimizers, polling tasks from the optimizing queue,
  * acknowledging tasks,and completing tasks. The code uses several data structures, including maps for optimizing queues
  * ,task runtimes, and authenticated optimizers.
@@ -65,14 +68,19 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
 
+  private final long optimizerTouchTimeout;
+  private final long taskAckTimeout;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final TableManager tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
-  public DefaultOptimizingService(DefaultTableService tableService, List<ResourceGroup> resourceGroups) {
+  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService,
+      List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
+    this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
+    this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.tableManager = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
   }
@@ -84,13 +92,24 @@ public class DefaultOptimizingService extends DefaultResourceManager
   //TODO optimizing code
   public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));
+    Map<String, List<OptimizerInstance>> optimizersByGroup =
+        optimizers.stream().collect(Collectors.groupingBy(OptimizerInstance::getGroupName));
     Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
         .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
     optimizerGroups.forEach(group -> {
       String groupName = group.getName();
       List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
-      optimizingQueueByGroup.put(groupName, new OptimizingQueue(tableManager, group,
-          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new)));
+      List<OptimizerInstance> optimizersUnderGroup = optimizersByGroup.get(groupName);
+      OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager, group,
+          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+          Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new),
+          optimizerTouchTimeout, taskAckTimeout);
+      optimizingQueueByGroup.put(groupName, optimizingQueue);
+      if (CollectionUtils.isNotEmpty(optimizersUnderGroup)) {
+        optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));
+      }
     });
     groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
   }
@@ -101,7 +120,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public void touch(String authToken) {
-    LOG.info("Optimizer {} touching", authToken);
+    LOG.debug("Optimizer {} touching", authToken);
     OptimizingQueue queue = getQueueByToken(authToken);
     queue.touch(authToken);
   }
@@ -111,7 +130,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizingTask task = queue.pollTask(authToken, threadId);
     if (task != null) {
-      LOG.info("Optimizer {} polling task", authToken);
+      LOG.info("Optimizer {} polling task {}", authToken, task.getTaskId());
     }
     return task;
   }
@@ -180,6 +199,13 @@ public class DefaultOptimizingService extends DefaultResourceManager
   @Override
   public void deleteOptimizer(String group, String resourceId) {
     getQueueByGroup(group).removeOptimizer(resourceId);
+    List<OptimizerInstance> deleteOptimizers =
+        getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
+    deleteOptimizers.forEach(optimizer -> {
+      String token = optimizer.getToken();
+      optimizingQueueByToken.remove(token);
+      doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
+    });
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
@@ -233,7 +259,13 @@ public class DefaultOptimizingService extends DefaultResourceManager
     @Override
     public void run() {
       try {
-        optimizingQueueByGroup.values().forEach(OptimizingQueue::checkSuspending);
+        optimizingQueueByGroup.values().forEach(optimizingQueue -> {
+          List<String> expiredOptimizers = optimizingQueue.checkSuspending();
+          expiredOptimizers.forEach(optimizerToken -> {
+            doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(optimizerToken));
+            optimizingQueueByToken.remove(optimizerToken);
+          });
+        });
       } catch (RuntimeException e) {
         LOG.error("Update optimizer status abnormal failed. try next round", e);
       }

@@ -182,6 +182,17 @@ public class ArcticManagementConf {
           .defaultValue("")
           .withDescription("The password for connecting to the database.");
 
+  public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
+      ConfigOptions.key("optimizer.heart-beat-timeout")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Timeout duration for Optimizer heartbeat.");
+
+  public static final ConfigOption<Long> OPTIMIZER_TASK_ACK_TIMEOUT =
+      ConfigOptions.key("optimizer.task-ack-timeout")
+          .longType()
+          .defaultValue(30000L)
+          .withDescription("Timeout duration for task acknowledgment.");
 
   /**
    * config key prefix of terminal
