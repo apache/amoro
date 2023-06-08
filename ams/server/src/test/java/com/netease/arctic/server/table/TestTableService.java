@@ -104,7 +104,7 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().createTable("unknown",
         copyMeta));
 
-    if (catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
+    if (tableTestHelper().format().equals(TableFormat.MIXED_ICEBERG)) {
       copyMeta.setTableIdentifier(new TableIdentifier(TableTestHelper.TEST_CATALOG_NAME, "unknown",
           TableTestHelper.TEST_TABLE_NAME));
       // test create table in not existed database

@@ -24,59 +24,79 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Map;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public class BasicCatalogTestHelper implements CatalogTestHelper {
 
-  private final TableFormat tableFormat;
+  private final String catalogType;
   private final Map<String, String> catalogProperties;
 
-  public BasicCatalogTestHelper(TableFormat tableFormat) {
-    this(tableFormat, Maps.newHashMap());
+  public static BasicCatalogTestHelper internalCatalog() {
+    return new BasicCatalogTestHelper(CatalogMetaProperties.CATALOG_TYPE_AMS);
   }
 
-  public BasicCatalogTestHelper(TableFormat tableFormat, Map<String, String> catalogProperties) {
-    Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
-        tableFormat.equals(TableFormat.MIXED_ICEBERG), "Cannot support table format:" + tableFormat);
-    this.tableFormat = tableFormat;
+  public static BasicCatalogTestHelper externalCatalog() {
+    return new BasicCatalogTestHelper(CatalogMetaProperties.CATALOG_TYPE_HADOOP);
+  }
+
+  private static String formatToType(TableFormat format) {
+    switch (format) {
+      case MIXED_ICEBERG:
+        return CatalogMetaProperties.CATALOG_TYPE_AMS;
+      case ICEBERG:
+        return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+      default:
+        throw new IllegalArgumentException("Unsupported format:" + format);
+    }
+  }
+
+  /**
+   * In order to be compatible with the old construction method.
+   * @param format - mixed-iceberg or iceberg
+   */
+  @Deprecated
+  public BasicCatalogTestHelper(TableFormat format) {
+    this(formatToType(format), Maps.newHashMap());
+  }
+
+  public BasicCatalogTestHelper(String catalogType) {
+    this(catalogType, Maps.newHashMap());
+  }
+
+  public BasicCatalogTestHelper(String catalogType, Map<String, String> catalogProperties) {
+    this.catalogType = catalogType;
     this.catalogProperties = catalogProperties;
   }
 
-  @Override
-  public TableFormat tableFormat() {
-    return tableFormat;
-  }
 
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap(catalogProperties);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, baseDir);
-    return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
-        properties, tableFormat());
+    return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, catalogType,
+        properties, getSupportedFormats());
   }
 
-  private String getCatalogType() {
-    switch (tableFormat) {
-      case ICEBERG:
-        return CATALOG_TYPE_HADOOP;
-      case MIXED_ICEBERG:
-        return CATALOG_TYPE_AMS;
-      default:
-        throw new UnsupportedOperationException("Unsupported table format:" + tableFormat);
+  @Override
+  public String catalogType() {
+    return catalogType;
+  }
+
+  protected TableFormat[] getSupportedFormats() {
+    if (isInternalCatalog()) {
+      return new TableFormat[]{TableFormat.MIXED_ICEBERG};
     }
+    return new TableFormat[]{TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG};
   }
 
   @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
-    if (!TableFormat.ICEBERG.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build iceberg catalog for table format:" + tableFormat);
+    if (isInternalCatalog()) {
+      throw new UnsupportedOperationException("Cannot build iceberg catalog for catalog(type=" + catalogType + ")");
     }
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
@@ -86,14 +106,14 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
 
   @Override
   public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
-    if (!TableFormat.MIXED_ICEBERG.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
+    if (!isInternalCatalog()) {
+      throw new UnsupportedOperationException("Cannot build mixed-tables for catalog(type=" + catalogType + ")");
     }
     return new MixedTables(catalogMeta);
   }
 
   @Override
   public String toString() {
-    return tableFormat.toString();
+    return catalogType;
   }
 }

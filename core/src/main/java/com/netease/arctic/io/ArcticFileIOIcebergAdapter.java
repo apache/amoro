@@ -1,13 +1,11 @@
 package com.netease.arctic.io;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 

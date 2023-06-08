@@ -22,8 +22,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.table.TableBuilder;
+import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.Schema;
@@ -39,7 +39,8 @@ public class IcebergFormatOperations implements TableFormatOperations {
   protected final TableMetaStore tableMetaStore;
 
 
-  public IcebergFormatOperations(Catalog catalog, Map<String, String> catalogProperties, TableMetaStore tableMetaStore) {
+  public IcebergFormatOperations(
+      Catalog catalog, Map<String, String> catalogProperties, TableMetaStore tableMetaStore) {
     this.catalog = catalog;
     this.catalogProperties = catalogProperties;
     this.tableMetaStore = tableMetaStore;

@@ -25,7 +25,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
@@ -38,14 +37,19 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestBasicArcticCatalog extends CatalogTestBase {
 
-  public TestBasicArcticCatalog(CatalogTestHelper catalogTestHelper) {
+  TableFormat format;
+
+  public TestBasicArcticCatalog(CatalogTestHelper catalogTestHelper, TableFormat format) {
     super(catalogTestHelper);
+    this.format = format;
   }
 
   @Parameterized.Parameters(name = "tableFormat = {0}")
-  public static Object[] parameters() {
-    return new Object[] {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
+  public static Object[][] parameters() {
+    return new Object[][] {
+        new Object[]{new BasicCatalogTestHelper(TableFormat.ICEBERG), TableFormat.ICEBERG},
+        new Object[]{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), TableFormat.MIXED_ICEBERG}
+    };
   }
 
   @Test
@@ -111,20 +115,8 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
   }
 
   protected void createTestTable() {
-    switch (getTestFormat()) {
-      case ICEBERG:
-        getIcebergCatalog().createTable(
-            TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-            BasicTableTestHelper.TABLE_SCHEMA);
-        break;
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        getCatalog()
-            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, BasicTableTestHelper.TABLE_SCHEMA)
-            .create();
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported table format:" + getTestFormat());
-    }
+    getCatalog()
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, BasicTableTestHelper.TABLE_SCHEMA, format)
+        .create();
   }
 }

@@ -18,6 +18,7 @@
 
 package com.netease.arctic;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
@@ -76,6 +77,11 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
     this(hasPrimaryKey, hasPartition, null);
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_ICEBERG;
   }
 
   @Override

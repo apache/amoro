@@ -32,13 +32,14 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestArcticHiveCatalog(CatalogTestHelper catalogTestHelper) {
-    super(catalogTestHelper);
+  public TestArcticHiveCatalog(CatalogTestHelper catalogTestHelper, TableFormat format) {
+    super(catalogTestHelper, format);
   }
 
   @Parameterized.Parameters(name = "testFormat = {0}")
-  public static Object[] parameters() {
-    return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                         new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
+  public static Object[][] parameters() {
+    return new Object[][] {
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), TableFormat.MIXED_HIVE},
+        {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf()), TableFormat.ICEBERG}};
   }
 }

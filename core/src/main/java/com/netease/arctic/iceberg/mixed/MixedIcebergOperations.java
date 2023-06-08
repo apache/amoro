@@ -70,7 +70,7 @@ public class MixedIcebergOperations extends IcebergFormatOperations implements M
     boolean changeDeleted = false;
     try {
       changeDeleted = super.dropTable(changeIdentifier, purge);
-    } catch (Exception e){
+    } catch (Exception e) {
       // pass
     }
     return deleted || changeDeleted;

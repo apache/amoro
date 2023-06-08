@@ -60,7 +60,7 @@ public class BasicExternalCatalog implements ArcticCatalog {
   private ExternalCatalogOperations lazyMetastore() {
     if (catalogOperations == null) {
       synchronized (this) {
-        if (catalogOperations == null){
+        if (catalogOperations == null) {
           this.catalogOperations = new ExternalCatalogOperations(this.meta);
         }
       }

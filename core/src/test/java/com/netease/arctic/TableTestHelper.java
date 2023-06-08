@@ -18,6 +18,7 @@
 
 package com.netease.arctic;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -40,6 +41,8 @@ public interface TableTestHelper {
 
   TableIdentifier TEST_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, TEST_TABLE_NAME);
+
+  TableFormat format();
 
   Schema tableSchema();
 

@@ -46,6 +46,10 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   }
 
   @Override
+  public String catalogType() {
+    return "hive";
+  }
+
   public TableFormat tableFormat() {
     return tableFormat;
   }

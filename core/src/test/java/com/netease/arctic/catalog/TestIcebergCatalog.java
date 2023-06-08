@@ -23,10 +23,10 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.iceberg.BasicIcebergTable;
 import com.netease.arctic.io.RecoverableHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.iceberg.BasicIcebergTable;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.thrift.TException;
@@ -42,7 +42,7 @@ public class TestIcebergCatalog extends CatalogTestBase {
 
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
-    return new Object[] {new BasicCatalogTestHelper(TableFormat.ICEBERG)};
+    return new Object[]{new BasicCatalogTestHelper(TableFormat.ICEBERG)};
   }
 
   public TestIcebergCatalog(CatalogTestHelper catalogTestHelper) {

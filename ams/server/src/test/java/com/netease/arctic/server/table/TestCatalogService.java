@@ -46,7 +46,7 @@ public class TestCatalogService extends TableServiceTestBase {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)},
+    return new Object[][] {{BasicCatalogTestHelper.internalCatalog()},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())}};
   }
 
@@ -113,7 +113,7 @@ public class TestCatalogService extends TableServiceTestBase {
 
   @Test
   public void testDropCatalogWithDatabase() {
-    Assume.assumeTrue(catalogTestHelper.tableFormat().equals(TableFormat.MIXED_ICEBERG));
+    Assume.assumeTrue(catalogTestHelper.isInternalCatalog());
     CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
     tableService().createCatalog(catalogMeta);
 

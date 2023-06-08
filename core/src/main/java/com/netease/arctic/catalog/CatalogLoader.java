@@ -18,6 +18,7 @@
 
 package com.netease.arctic.catalog;
 
+import com.google.common.collect.Sets;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
@@ -26,7 +27,6 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
@@ -34,6 +34,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,9 +50,9 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
  */
 public class CatalogLoader {
 
-  public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
-  public static final String ICEBERG_CATALOG_IMPL = BasicExternalCatalog.class.getName();
-  public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+  static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
+  static final String EXTERNAL_CATALOG_IMPL = BasicExternalCatalog.class.getName();
+  static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
 
   /**
    * Entrypoint for loading Catalog.
@@ -82,7 +83,7 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog.
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
    * @return arctic catalog object
    */
@@ -93,9 +94,9 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
-   * @param props client side catalog configs
+   * @param props       client side catalog configs
    * @return arctic catalog object
    */
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
@@ -105,39 +106,35 @@ public class CatalogLoader {
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
-      Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
-      TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "Hadoop catalog support iceberg table only.");
-          if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
-            catalogImpl = ICEBERG_CATALOG_IMPL;
-          } else {
-            // Compatibility with older versions
-            catalogImpl = AMS_CATALOG_IMPL;
-          }
+          Preconditions.checkArgument(
+              formatCheck(tableFormats, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG),
+              "Hadoop catalog support iceberg/mixed-iceberg table only.");
+          catalogImpl = EXTERNAL_CATALOG_IMPL;
           break;
         case CATALOG_TYPE_HIVE:
-          if (tableFormat.equals(TableFormat.ICEBERG)) {
-            catalogImpl = ICEBERG_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+          if (formatCheck(tableFormats, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG)) {
+            catalogImpl = EXTERNAL_CATALOG_IMPL;
+          } else if (formatCheck(tableFormats, TableFormat.MIXED_HIVE)) {
             catalogImpl = HIVE_CATALOG_IMPL;
           } else {
             throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
           }
           break;
         case CATALOG_TYPE_AMS:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.MIXED_ICEBERG),
+          Preconditions.checkArgument(
+              formatCheck(tableFormats, TableFormat.MIXED_ICEBERG),
               "AMS catalog support mixed iceberg table only.");
           catalogImpl = AMS_CATALOG_IMPL;
           break;
         case CATALOG_TYPE_CUSTOM:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "Custom catalog support iceberg table only.");
+          Preconditions.checkArgument(
+              formatCheck(tableFormats, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG),
+              "Custom catalog support iceberg/mixed-iceberg table only.");
           Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
               "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
-          catalogImpl = ICEBERG_CATALOG_IMPL;
+          catalogImpl = EXTERNAL_CATALOG_IMPL;
           break;
         default:
           throw new IllegalStateException("unsupported catalog type:" + type);
@@ -150,6 +147,15 @@ public class CatalogLoader {
     } catch (Exception e) {
       throw new IllegalStateException("failed when load catalog " + catalogName, e);
     }
+  }
+
+  private static boolean formatCheck(Set<TableFormat> formats, TableFormat... supported) {
+    if (formats.size() <= supported.length) {
+      Set<TableFormat> formatSet = Sets.newHashSet(formats);
+      Arrays.stream(supported).forEach(formatSet::remove);
+      return formatSet.isEmpty();
+    }
+    return false;
   }
 
   /**

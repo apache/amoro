@@ -78,6 +78,7 @@ public interface CatalogOperations {
    * @throws org.apache.iceberg.exceptions.NoSuchTableException when table not exists.
    */
   TableFormat tableFormat(String database, String table);
+
   /**
    * load table
    * @param database a database name

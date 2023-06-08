@@ -24,8 +24,8 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.iceberg.IcebergFormatOperations;
 import com.netease.arctic.iceberg.mixed.MixedIcebergOperations;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.table.MixedTableOperations;
+import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
@@ -71,8 +71,10 @@ public class ExternalCatalogOperations implements CatalogOperations {
       databaseFilterPattern = null;
     }
 
-    this.icebergFormatOperations = new IcebergFormatOperations(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
-    this.mixedIcebergOperations = new MixedIcebergOperations(icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
+    this.icebergFormatOperations = new IcebergFormatOperations(
+        icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
+    this.mixedIcebergOperations = new MixedIcebergOperations(
+        icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override

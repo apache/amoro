@@ -74,7 +74,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       icebergCatalog = catalogTestHelper.buildIcebergCatalog(catalogMeta);
     } else {
       mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
@@ -116,7 +116,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void createDatabase() {
-    if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       ((SupportsNamespaces)icebergCatalog).createNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
     } else {
       tableService().createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
@@ -124,7 +124,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void dropDatabase() {
-    if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       ((SupportsNamespaces)icebergCatalog).dropNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
     } else {
       tableService().dropDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
@@ -132,7 +132,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void createTable() {
-    if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       icebergCatalog.createTable(
           TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
           tableTestHelper.tableSchema(),
@@ -147,7 +147,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void dropTable() {
-    if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       icebergCatalog.dropTable(TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME));
       tableService().exploreExternalCatalog();
     } else {
@@ -173,7 +173,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void validateArcticTable(ArcticTable arcticTable) {
-    Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
+    Assert.assertEquals(tableTestHelper.format(), arcticTable.format());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
     Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
     Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());

@@ -41,8 +41,8 @@ public abstract class TableTestBase extends CatalogTestBase {
     this.tableTestHelper = tableTestHelper;
     if (isKeyedTable()) {
       Preconditions.checkArgument(
-          TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat()) ||
-              TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat()),
+          TableFormat.MIXED_HIVE.equals(tableTestHelper.format()) ||
+              TableFormat.MIXED_ICEBERG.equals(tableTestHelper.format()),
           "Only mixed format table support primary key spec");
     }
   }
@@ -54,7 +54,7 @@ public abstract class TableTestBase extends CatalogTestBase {
     if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
       getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     }
-    switch (getTestFormat()) {
+    switch (tableTestHelper.format()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
         createMixedFormatTable();

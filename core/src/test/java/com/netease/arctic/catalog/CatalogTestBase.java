@@ -21,7 +21,6 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
-import com.netease.arctic.ams.api.TableFormat;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
@@ -82,10 +81,6 @@ public abstract class CatalogTestBase {
 
   protected CatalogMeta getCatalogMeta() {
     return catalogMeta;
-  }
-
-  protected TableFormat getTestFormat() {
-    return testHelper.tableFormat();
   }
 
   protected Catalog getIcebergCatalog() {
