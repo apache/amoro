@@ -102,7 +102,7 @@ public class MixedTables {
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
-    return new BasicKeyedTable(buildPrimaryKeySpec(baseTable.schema(), tableMeta),
+    return new BasicKeyedTable(tableLocation, buildPrimaryKeySpec(baseTable.schema(), tableMeta),
         amsClient, baseTable, changeTable);
   }
 
@@ -181,7 +181,7 @@ public class MixedTables {
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
-    return new BasicKeyedTable(primaryKeySpec, amsClient, baseTable, changeTable);
+    return new BasicKeyedTable(tableLocation, primaryKeySpec, amsClient, baseTable, changeTable);
   }
 
   protected void fillTableProperties(TableMeta tableMeta) {

@@ -31,6 +31,7 @@ import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ArcticChangeTableScan;
 import org.apache.iceberg.PartitionSpec;
@@ -57,13 +58,22 @@ public class BasicKeyedTable implements KeyedTable {
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
+  protected final String tableLocation;
 
+  //Compatible with the older table layout
   public BasicKeyedTable(
-      PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
+      String tableLocation, PrimaryKeySpec primaryKeySpec, AmsClient client,
+      BaseTable baseTable, ChangeTable changeTable) {
+    this.tableLocation = tableLocation;
     this.primaryKeySpec = primaryKeySpec;
     this.client = client;
     this.baseTable = baseTable;
     this.changeTable = changeTable;
+  }
+
+  public BasicKeyedTable(PrimaryKeySpec primaryKeySpec, AmsClient client,
+                         BaseTable baseTable, ChangeTable changeTable) {
+    this(null, primaryKeySpec, client, baseTable, changeTable);
   }
 
   @Override
@@ -95,7 +105,11 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public String location() {
-    return this.baseTable.location();
+    if (StringUtils.isEmpty(this.tableLocation)) {
+      return this.baseTable.location();
+    } else {
+      return this.tableLocation;
+    }
   }
 
   @Override
