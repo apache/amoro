@@ -179,7 +179,11 @@ public class AmsTableTracer implements TableTracer {
     if (this.properties != null && Constants.INNER_TABLE_BASE.equals(innerTable)) {
       try {
         Map<String, String> catalogProperties = client.getCatalog(table.id().getCatalog()).getCatalogProperties();
-        commitMeta.setProperties(CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogProperties));
+        if (catalogProperties != null) {
+          commitMeta.setProperties(CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogProperties));
+        } else {
+          commitMeta.setProperties(this.properties);
+        }
         update = true;
       } catch (TException e) {
         LOG.warn("get catalog properties error", e);
