@@ -126,6 +126,9 @@ public class ExternalCatalogOperations implements CatalogOperations {
           "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
+    ((SupportsNamespaces) icebergCatalog).createNamespace(
+        Namespace.of(database)
+    );
   }
 
   @Override
