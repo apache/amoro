@@ -636,17 +636,6 @@
                 <hive.version>2.1.1</hive.version>
             </properties>
         </profile>
-<!--        <profile>-->
-<!--            <id>aws</id>-->
-<!--            <activation>-->
-<!--                <activeByDefault>false</activeByDefault>-->
-<!--            </activation>-->
-<!--            <dependencyManagement>-->
-<!--                <dependencies>-->
-
-<!--                </dependencies>-->
-<!--            </dependencyManagement>-->
-<!--        </profile>-->
         <profile>
             <id>deploy-maven-central</id>
             <distributionManagement>
