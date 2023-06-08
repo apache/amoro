@@ -39,7 +39,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.IOException;
 
 public class AMSTableTestBase extends TableServiceTestBase {
@@ -63,7 +62,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     this(catalogTestHelper, tableTestHelper, false);
   }
 
-  public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+  public AMSTableTestBase(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
       boolean autoInitTable) {
     this.catalogTestHelper = catalogTestHelper;
     this.tableTestHelper = tableTestHelper;
@@ -117,15 +117,16 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected void createDatabase() {
     if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
-      ((SupportsNamespaces)icebergCatalog).createNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
-    } else {
+      ((SupportsNamespaces) icebergCatalog).createNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
+    } else if (!tableService().listDatabases(TableTestHelper.TEST_CATALOG_NAME)
+        .contains(TableTestHelper.TEST_DB_NAME)) {
       tableService().createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
     }
   }
 
   protected void dropDatabase() {
     if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
-      ((SupportsNamespaces)icebergCatalog).dropNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
+      ((SupportsNamespaces) icebergCatalog).dropNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
     } else {
       tableService().dropDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
     }
