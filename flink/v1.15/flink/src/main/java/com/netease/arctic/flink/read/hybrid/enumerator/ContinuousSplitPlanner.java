@@ -19,12 +19,15 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import org.apache.commons.compress.utils.Lists;
 import org.apache.flink.annotation.Internal;
+import org.apache.iceberg.expressions.Expression;
 
 import java.io.Closeable;
+import java.util.List;
 
 /**
- * This interface is introduced so that we can plug in different split planner for unit test
+ * This interface is introduced so that we can plug in a different split planner for unit test
  */
 @Internal
 public interface ContinuousSplitPlanner extends Closeable {
@@ -32,5 +35,13 @@ public interface ContinuousSplitPlanner extends Closeable {
   /**
    * Discover the files appended between {@code lastPosition} and current table snapshot
    */
-  ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition);
+  default ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition) {
+    return planSplits(lastPosition, Lists.newArrayList());
+  }
+
+  /**
+   * Discover the files appended between {@code lastPosition} and current table snapshot,
+   * filter the data with expressions.
+   */
+  ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition, List<Expression> filters);
 }

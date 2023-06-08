@@ -320,7 +320,7 @@ public class DataTestHelpers {
       Expression expression) {
 
     ChangeTable changeTable = keyedTable.asKeyedTable().changeTable();
-    CloseableIterable<FileScanTask> fileScanTasks = changeTable.newChangeScan().filter(expression).planFiles();
+    CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().filter(expression).planFiles();
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (FileScanTask fileScanTask : fileScanTasks) {
       builder.addAll(reader.readData(fileScanTask));

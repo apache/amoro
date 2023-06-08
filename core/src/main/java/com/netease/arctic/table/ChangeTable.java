@@ -29,5 +29,5 @@ public interface ChangeTable extends UnkeyedTable {
    *
    * @return a table scan for this table
    */
-  ChangeTableIncrementalScan newChangeScan();
+  ChangeTableIncrementalScan newScan();
 }
