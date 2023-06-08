@@ -81,9 +81,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER = "self-optimizing.execute.num-retries";
   public static final int SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT = 5;
 
-  public static final String SELF_OPTIMIZING_COMMIT_RETRY_NUMBER = "self-optimizing.commit.num-retries";
-  public static final int SELF_OPTIMIZING_COMMIT_RETRY_NUMBER_DEFAULT = Integer.MAX_VALUE;
-
   public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
   public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
 
