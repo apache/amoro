@@ -103,15 +103,6 @@ public class OptimizingConfig {
     return this;
   }
 
-  public int getMaxCommitRetryCount() {
-    return maxCommitRetryCount;
-  }
-
-  public OptimizingConfig setMaxCommitRetryCount(int maxCommitRetryCount) {
-    this.maxCommitRetryCount = maxCommitRetryCount;
-    return this;
-  }
-
   public long getTargetSize() {
     return targetSize;
   }
@@ -284,10 +275,6 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER,
             TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT))
-        .setMaxCommitRetryCount(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_COMMIT_RETRY_NUMBER,
-            TableProperties.SELF_OPTIMIZING_COMMIT_RETRY_NUMBER_DEFAULT))
         .setOptimizerGroup(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.SELF_OPTIMIZING_GROUP,
