@@ -174,6 +174,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     String dataLocation = internalTable.location() + File.separator + DATA_FOLDER_NAME;
 
     try (ArcticFileIO io = internalTable.io()) {
+      // listPrefix will not return the directory and the orphan file clean should clean the empty dir.
       if (io.supportFileSystemOperations()) {
         SupportsFileSystemOperations fio = io.asFileSystemIO();
         return deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude);
@@ -211,7 +212,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
           TableFileUtil.deleteEmptyDirectory(fio, p.location(), excludes);
         }
       } else {
-        String parentLocation = Paths.get(uriPath).getParent().toString();
+        String parentLocation = TableFileUtil.getParent(p.location());
         String parentUriPath = TableFileUtil.getUriPath(parentLocation);
         if (!excludes.contains(uriPath) &&
             !excludes.contains(parentUriPath) &&
@@ -260,7 +261,6 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return 0;
   }
 
-
   private static Set<String> getValidMetadataFiles(UnkeyedTable internalTable) {
     TableIdentifier tableIdentifier = internalTable.id();
     Set<String> validFiles = new HashSet<>();
@@ -281,7 +281,8 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
         validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
       }
 
-      LOG.info("{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
+      LOG.info(
+          "{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
           tableIdentifier,
           snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()),
@@ -329,7 +330,6 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     }
     return count;
   }
-
 
   private static String formatTime(long timestamp) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).toString();

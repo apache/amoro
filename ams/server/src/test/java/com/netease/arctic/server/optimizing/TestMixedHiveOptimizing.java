@@ -140,10 +140,9 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   private List<String> filesInLocation(String location) {
-    try (ArcticHadoopFileIO io = ((SupportHive) arcticTable).io()) {
-      return Streams.stream(io.listDirectory(location))
-          .map(FileInfo::location)
-          .collect(Collectors.toList());
-    }
+    ArcticHadoopFileIO io = ((SupportHive) arcticTable).io();
+    return Streams.stream(io.listDirectory(location))
+        .map(FileInfo::location)
+        .collect(Collectors.toList());
   }
 }

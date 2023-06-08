@@ -107,4 +107,9 @@ public class TableFileUtil {
   public static String getUriPath(String path) {
     return URI.create(path).getPath();
   }
+
+  public static String getParent(String path) {
+    Path p = new Path(path);
+    return p.getParent().toString();
+  }
 }
