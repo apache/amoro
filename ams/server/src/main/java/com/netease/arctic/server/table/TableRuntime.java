@@ -180,12 +180,12 @@ public class TableRuntime extends StatedPersistentBase {
 
   public TableRuntime refresh(ArcticTable table) {
     return invokeConsisitency(() -> {
-      TableConfiguration configuration = tableConfiguration;
-      if (refreshSnapshots(table) || updateConfigInternal(table.properties())) {
+      boolean configChanged = updateConfigInternal(table.properties());
+      if (refreshSnapshots(table) || configChanged) {
         persistUpdatingRuntime();
       }
-      if (configuration != tableConfiguration) {
-        tableHandler.handleTableChanged(this, configuration);
+      if (configChanged) {
+        tableHandler.handleTableChanged(this, tableConfiguration);
       }
       return this;
     });
@@ -271,17 +271,17 @@ public class TableRuntime extends StatedPersistentBase {
 
   private boolean updateConfigInternal(Map<String, String> properties) {
     TableConfiguration newTableConfig = TableConfiguration.parseConfig(properties);
-    if (!tableConfiguration.equals(newTableConfig)) {
-      if (!Objects.equals(this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
-        if (optimizingProcess != null) {
-          optimizingProcess.close();
-        }
-        this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
-      }
-      this.tableConfiguration = newTableConfig;
-      return true;
+    if (tableConfiguration.equals(newTableConfig)) {
+      return false;
     }
-    return false;
+    if (!Objects.equals(this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
+      if (optimizingProcess != null) {
+        optimizingProcess.close();
+      }
+      this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
+    }
+    this.tableConfiguration = newTableConfig;
+    return true;
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
