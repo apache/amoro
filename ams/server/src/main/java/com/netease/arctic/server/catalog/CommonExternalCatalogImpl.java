@@ -2,52 +2,53 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.catalog.IcebergCatalogWrapper;
+import com.netease.arctic.catalog.CatalogOperations;
+import com.netease.arctic.catalog.ExternalCatalogOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.CatalogUtil;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class IcebergCatalogImpl extends ExternalCatalog {
+public class CommonExternalCatalogImpl extends ExternalCatalog {
 
-  private final IcebergCatalogWrapper catalogWrapper;
+  private CatalogOperations operations;
 
-  protected IcebergCatalogImpl(CatalogMeta metadata) {
+  protected CommonExternalCatalogImpl(CatalogMeta metadata) {
     super(metadata);
-    this.catalogWrapper = new IcebergCatalogWrapper(getMetadata(), Collections.emptyMap());
+    this.operations = new ExternalCatalogOperations(metadata);
   }
 
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
-    this.catalogWrapper.refreshCatalogMeta(getMetadata());
+    this.operations = new ExternalCatalogOperations(metadata);
   }
 
   @Override
   public boolean exist(String database) {
-    return catalogWrapper.listDatabases().contains(database);
+    return operations.exist(database);
   }
 
   @Override
   public boolean exist(String database, String tableName) {
-    return loadTable(database, tableName) != null;
+    return operations.exist(database, tableName);
   }
 
   @Override
   public List<String> listDatabases() {
-    return catalogWrapper.listDatabases();
+    return operations.listDatabases();
   }
 
   @Override
   public List<TableIdentifier> listTables() {
-    return toAmsIdList(catalogWrapper.listTables());
+    throw new UnsupportedOperationException("");
+//    return toAmsIdList(catalogWrapper.listTables());
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return toAmsIdList(catalogWrapper.listTables(database));
+    throw new UnsupportedOperationException("");
   }
 
   public List<TableIdentifier> toAmsIdList(List<com.netease.arctic.table.TableIdentifier> identifierList) {
@@ -56,7 +57,6 @@ public class IcebergCatalogImpl extends ExternalCatalog {
 
   @Override
   public ArcticTable loadTable(String database, String tableName) {
-    return catalogWrapper.loadTable(com.netease.arctic.table.TableIdentifier.of(catalogWrapper.name(), database,
-        tableName));
+    return operations.loadTable(database, tableName);
   }
 }
