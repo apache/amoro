@@ -37,10 +37,10 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    return new Object[][] {{BasicCatalogTestHelper.externalCatalog(),
                             new BasicTableTestHelper(true, true)},
-                           {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                            new BasicTableTestHelper(false, true)},
+                           {BasicCatalogTestHelper.externalCatalog(),
+                            new BasicTableTestHelper(false, true, TableFormat.ICEBERG)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(true, true)}};
   }

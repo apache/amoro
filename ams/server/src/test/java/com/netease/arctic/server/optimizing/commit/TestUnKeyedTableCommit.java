@@ -74,14 +74,14 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
   @Parameterized.Parameters(name = "commit_test")
   public static Object[] parameters() {
-    return new Object[][] {{
-                               new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                               new BasicTableTestHelper(false, true)
-                           },
-                           {
-                               new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                               new BasicTableTestHelper(false, false)
-                           }};
+    return new Object[][]{{
+        BasicCatalogTestHelper.externalCatalog(),
+        new BasicTableTestHelper(false, true, TableFormat.ICEBERG)
+    },
+        {
+            BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, false, TableFormat.ICEBERG)
+        }};
   }
 
   @Before
@@ -104,12 +104,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     addFile(changeDataFile1);
     DataFile baseDataFile1 = getBaseDataFile();
     execute(
-        new DataFile[] {changeDataFile1},
+        new DataFile[]{changeDataFile1},
         null,
         null,
-        new DataFile[] {baseDataFile1},
+        new DataFile[]{baseDataFile1},
         null);
-    checkFile(new ContentFile[] {baseDataFile1});
+    checkFile(new ContentFile[]{baseDataFile1});
 
     //change:                     change:
     //  changeEquFile2     =>       null
@@ -119,12 +119,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     addDelete(changeEquFile2);
     DataFile baseDataFile2 = getBaseDataFile();
     execute(
-        new DataFile[] {baseDataFile1},
+        new DataFile[]{baseDataFile1},
         null,
-        new ContentFile[] {changeEquFile2},
-        new DataFile[] {baseDataFile2},
+        new ContentFile[]{changeEquFile2},
+        new DataFile[]{baseDataFile2},
         null);
-    checkFile(new ContentFile[] {baseDataFile2});
+    checkFile(new ContentFile[]{baseDataFile2});
 
     //change:                     change:
     //  changeEquFile3     =>       null
@@ -137,12 +137,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     addDelete(changeEquFile3);
     DataFile baseDataFile3 = getBaseDataFile();
     execute(
-        new DataFile[] {changeDataFile3, baseDataFile2},
+        new DataFile[]{changeDataFile3, baseDataFile2},
         null,
-        new ContentFile[] {changeEquFile3},
-        new DataFile[] {baseDataFile3},
+        new ContentFile[]{changeEquFile3},
+        new DataFile[]{baseDataFile3},
         null);
-    checkFile(new ContentFile[] {baseDataFile3});
+    checkFile(new ContentFile[]{baseDataFile3});
 
     //change:                     change:
     //  changeEquFile4     =>       null
@@ -154,11 +154,11 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     DeleteFile basePosFile4 = getPositionDeleteFile();
     execute(
         null,
-        new DataFile[] {baseDataFile3},
-        new ContentFile[] {changeEquFile4},
+        new DataFile[]{baseDataFile3},
+        new ContentFile[]{changeEquFile4},
         null,
-        new DeleteFile[] {basePosFile4});
-    checkFile(new ContentFile[] {baseDataFile3, basePosFile4});
+        new DeleteFile[]{basePosFile4});
+    checkFile(new ContentFile[]{baseDataFile3, basePosFile4});
 
     //change:                     change:
     //  changeEquFile5     =>       null
@@ -174,12 +174,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     DataFile baseDataFile5 = getBaseDataFile();
     DeleteFile basePosFile5 = getPositionDeleteFile();
     execute(
-        new DataFile[] {changeDataFile5},
-        new DataFile[] {baseDataFile3},
-        new ContentFile[] {changeEquFile5, basePosFile4},
-        new DataFile[] {baseDataFile5},
-        new DeleteFile[] {basePosFile5});
-    checkFile(new ContentFile[] {baseDataFile3, basePosFile5, baseDataFile5});
+        new DataFile[]{changeDataFile5},
+        new DataFile[]{baseDataFile3},
+        new ContentFile[]{changeEquFile5, basePosFile4},
+        new DataFile[]{baseDataFile5},
+        new DeleteFile[]{basePosFile5});
+    checkFile(new ContentFile[]{baseDataFile3, basePosFile5, baseDataFile5});
 
     //change:                     change:
     //  null               =>       null
@@ -189,12 +189,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     //   baseDataFile5
     DataFile baseDataFile6 = getBaseDataFile();
     execute(
-        new DataFile[] {baseDataFile3, baseDataFile5},
+        new DataFile[]{baseDataFile3, baseDataFile5},
         null,
-        new ContentFile[] {basePosFile5},
-        new DataFile[] {baseDataFile6},
+        new ContentFile[]{basePosFile5},
+        new DataFile[]{baseDataFile6},
         null);
-    checkFile(new ContentFile[] {baseDataFile6});
+    checkFile(new ContentFile[]{baseDataFile6});
 
     //change:                     change:
     //  changeEquFile6     =>       null
@@ -203,9 +203,9 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     ContentFile<?> changeEquFile6 = getEqualityDeleteFile();
     addDelete(changeEquFile6);
     execute(
-        new DataFile[] {baseDataFile6},
+        new DataFile[]{baseDataFile6},
         null,
-        new ContentFile[] {changeEquFile6},
+        new ContentFile[]{changeEquFile6},
         null,
         null);
     checkFile(new ContentFile[0]);
@@ -218,12 +218,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     addFile(changeDataFile7);
     DataFile baseDataFile7 = getBaseDataFile();
     execute(
-        new DataFile[] {changeDataFile7},
+        new DataFile[]{changeDataFile7},
         null,
         null,
-        new DataFile[] {baseDataFile7},
+        new DataFile[]{baseDataFile7},
         null);
-    checkFile(new ContentFile[] {baseDataFile7});
+    checkFile(new ContentFile[]{baseDataFile7});
 
     //change:                     change:
     //  changeEquFile8     =>       null
@@ -235,11 +235,11 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     DeleteFile basePosFile8 = getPositionDeleteFile();
     execute(
         null,
-        new DataFile[] {baseDataFile7},
-        new ContentFile[] {changeEquFile8},
+        new DataFile[]{baseDataFile7},
+        new ContentFile[]{changeEquFile8},
         null,
-        new DeleteFile[] {basePosFile8});
-    checkFile(new ContentFile[] {baseDataFile7, basePosFile8});
+        new DeleteFile[]{basePosFile8});
+    checkFile(new ContentFile[]{baseDataFile7, basePosFile8});
 
     //change:                     change:
     //  null               =>       null

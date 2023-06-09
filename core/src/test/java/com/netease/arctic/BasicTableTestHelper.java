@@ -56,12 +56,20 @@ public class BasicTableTestHelper implements TableTestHelper {
   private final PartitionSpec partitionSpec;
   private final Map<String, String> tableProperties;
 
+  private final TableFormat format;
+
   public BasicTableTestHelper(
       Schema tableSchema,
       PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec, Map<String, String> tableProperties) {
-    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
-    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+      PartitionSpec partitionSpec, Map<String, String> tableProperties,
+      TableFormat format) {
+    this.format = format;
+    switch (format) {
+      case MIXED_ICEBERG:
+      case MIXED_HIVE:
+        tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
+        tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+    }
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;
@@ -70,18 +78,23 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   public BasicTableTestHelper(
       boolean hasPrimaryKey, boolean hasPartition,
-      Map<String, String> tableProperties) {
+      Map<String, String> tableProperties,
+      TableFormat format) {
     this(TABLE_SCHEMA, hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
-        hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
+        hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties, format);
   }
 
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, null);
+    this(hasPrimaryKey, hasPartition, null, TableFormat.MIXED_ICEBERG);
+  }
+
+  public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, TableFormat format) {
+    this(hasPrimaryKey, hasPartition, null, format);
   }
 
   @Override
   public TableFormat format() {
-    return TableFormat.MIXED_ICEBERG;
+    return format;
   }
 
   @Override

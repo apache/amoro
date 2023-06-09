@@ -80,9 +80,9 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
 
   public IcebergFormatRewriteFilesExecutorTest(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
+    super(BasicCatalogTestHelper.externalCatalog(),
+        new BasicTableTestHelper(
+            false, true, buildTableProperties(fileFormat), TableFormat.ICEBERG));
     this.fileFormat = fileFormat;
   }
 

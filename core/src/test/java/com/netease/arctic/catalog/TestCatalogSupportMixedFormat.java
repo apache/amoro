@@ -44,15 +44,18 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestMixedCatalog extends CatalogTestBase {
+public class TestCatalogSupportMixedFormat extends CatalogTestBase {
 
-  public TestMixedCatalog(CatalogTestHelper catalogTestHelper) {
+  public TestCatalogSupportMixedFormat(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper);
   }
 
-  @Parameterized.Parameters(name = "testFormat = {0}")
+  @Parameterized.Parameters(name = "catalogType = {0}")
   public static Object[] parameters() {
-    return new Object[] {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
+    return new Object[] {
+        BasicCatalogTestHelper.internalCatalog(),
+        BasicCatalogTestHelper.externalCatalog()
+    };
   }
 
 
@@ -65,9 +68,8 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testCreateUnkeyedTable() {
-
     UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
@@ -85,7 +87,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testCreateKeyedTable() {
     KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .create()
@@ -119,7 +121,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testCreateTableWithNewCatalogProperties() throws TException {
     UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
@@ -134,7 +136,7 @@ public class TestMixedCatalog extends CatalogTestBase {
         "false");
     getCatalog().refresh();
     createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
@@ -145,7 +147,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testUnkeyedRecoverableFileIO() throws TException {
     UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
@@ -163,7 +165,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
     createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
@@ -173,7 +175,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testKeyedRecoverableFileIO() throws TException {
     KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .create()
@@ -196,7 +198,7 @@ public class TestMixedCatalog extends CatalogTestBase {
 
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
     createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .create()
@@ -224,7 +226,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testGetTableBlockerManager() {
     KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .withPartitionSpec(getCreateTableSpec())
         .create()

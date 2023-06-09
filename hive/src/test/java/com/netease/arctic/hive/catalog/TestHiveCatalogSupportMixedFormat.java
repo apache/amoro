@@ -18,26 +18,30 @@
 
 package com.netease.arctic.hive.catalog;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TestIcebergCatalog;
+import com.netease.arctic.catalog.TestCatalogSupportMixedFormat;
 import com.netease.arctic.hive.TestHMS;
+import org.apache.iceberg.PartitionSpec;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.runners.JUnit4;
 
-@RunWith(Parameterized.class)
-public class TestIcebergHiveCatalog extends TestIcebergCatalog {
+@RunWith(JUnit4.class)
+public class TestHiveCatalogSupportMixedFormat extends TestCatalogSupportMixedFormat {
+
+  private static final PartitionSpec IDENTIFY_SPEC = PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
+      .identity("op_time").build();
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestIcebergHiveCatalog(CatalogTestHelper catalogTestHelper) {
-    super(catalogTestHelper);
+  public TestHiveCatalogSupportMixedFormat() {
+    super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()));
   }
 
-  @Parameterized.Parameters(name = "testFormat = {0}")
-  public static Object[] parameters() {
-    return new Object[] {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
+  @Override
+  protected PartitionSpec getCreateTableSpec() {
+    return IDENTIFY_SPEC;
   }
 }

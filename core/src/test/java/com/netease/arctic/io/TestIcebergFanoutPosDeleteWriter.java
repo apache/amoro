@@ -53,16 +53,16 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
   private final FileFormat fileFormat;
 
   public TestIcebergFanoutPosDeleteWriter(boolean partitionedTable, FileFormat fileFormat) {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, partitionedTable));
+    super(BasicCatalogTestHelper.externalCatalog(),
+        new BasicTableTestHelper(false, partitionedTable, TableFormat.ICEBERG));
     this.fileFormat = fileFormat;
   }
 
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
-    return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-                           {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-                           {true, FileFormat.ORC}, {false, FileFormat.ORC}};
+    return new Object[][]{{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
+        {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
+        {true, FileFormat.ORC}, {false, FileFormat.ORC}};
   }
 
   private StructLike getPartitionData() {

@@ -25,31 +25,50 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestBasicArcticCatalog extends CatalogTestBase {
+public class TestArcticCatalog extends CatalogTestBase {
 
   TableFormat format;
 
-  public TestBasicArcticCatalog(CatalogTestHelper catalogTestHelper, TableFormat format) {
+  public TestArcticCatalog(CatalogTestHelper catalogTestHelper, TableFormat format) {
     super(catalogTestHelper);
     this.format = format;
   }
 
-  @Parameterized.Parameters(name = "tableFormat = {0}")
+  @Parameterized.Parameters(name = "catalogType = {0}, tableFormat={1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        new Object[]{new BasicCatalogTestHelper(TableFormat.ICEBERG), TableFormat.ICEBERG},
-        new Object[]{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), TableFormat.MIXED_ICEBERG}
+        new Object[]{BasicCatalogTestHelper.externalCatalog(), TableFormat.ICEBERG},
+        new Object[]{BasicCatalogTestHelper.externalCatalog(), TableFormat.MIXED_ICEBERG},
+        new Object[]{BasicCatalogTestHelper.internalCatalog(), TableFormat.MIXED_ICEBERG}
     };
+  }
+
+
+  @Test
+  public void testIcebergTable() {
+    Assume.assumeTrue(format.equals(TableFormat.ICEBERG));
+    Catalog nativeIcebergCatalog = getIcebergCatalog();
+    nativeIcebergCatalog.createTable(
+        TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+        BasicTableTestHelper.TABLE_SCHEMA);
+
+    ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    Assert.assertEquals(TableFormat.ICEBERG, table.format());
+    Assert.assertTrue(table.isUnkeyedTable());
+    Assert.assertEquals(BasicTableTestHelper.TABLE_SCHEMA.asStruct(), table.schema().asStruct());
   }
 
   @Test
@@ -83,6 +102,7 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
     getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createTestTable();
     ArcticTable createTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    Assert.assertEquals(format, createTable.format());
     Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
@@ -102,6 +122,7 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
         "false");
     getCatalog().refresh();
     ArcticTable loadTable = getCatalog().loadTable(createTable.id());
+    Assert.assertEquals(format, createTable.format());
     Assert.assertFalse(PropertyUtil.propertyAsBoolean(loadTable.properties(),
         TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }

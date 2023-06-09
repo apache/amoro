@@ -20,14 +20,14 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TestBasicArcticCatalog;
+import com.netease.arctic.catalog.TestArcticCatalog;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
+public class TestArcticHiveCatalog extends TestArcticCatalog {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();

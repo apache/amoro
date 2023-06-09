@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.io.DataTestHelpers;
@@ -62,7 +63,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
       PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec,
       Map<String, String> tableProperties) {
-    super(tableSchema, primaryKeySpec, partitionSpec, tableProperties);
+    super(tableSchema, primaryKeySpec, partitionSpec, tableProperties, TableFormat.MIXED_HIVE);
   }
 
   public HiveTableTestHelper(

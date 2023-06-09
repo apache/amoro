@@ -27,10 +27,10 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+        {BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, true, TableFormat.ICEBERG)},
+        {BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, false, TableFormat.ICEBERG)}};
   }
 
 

@@ -185,8 +185,12 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public TableScan newScan() {
-      return table.newScan();
+    public ChangeTableIncrementalScan newScan() {
+      if (table instanceof ChangeTable) {
+        return ((ChangeTable) table).newScan();
+      } else {
+        throw new UnsupportedOperationException();
+      }
     }
 
     @Override
@@ -377,15 +381,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
       return table.updatePartitionProperties(transaction);
-    }
-
-    @Override
-    public ChangeTableIncrementalScan newScan() {
-      if (table instanceof ChangeTable) {
-        return ((ChangeTable) table).newScan();
-      } else {
-        throw new UnsupportedOperationException();
-      }
     }
   }
 }

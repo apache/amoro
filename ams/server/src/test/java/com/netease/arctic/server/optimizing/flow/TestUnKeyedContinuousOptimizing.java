@@ -67,12 +67,12 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
             new BasicTableTestHelper(false, false)
         },
         {
-            new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)
+            BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, false, TableFormat.ICEBERG)
         },
         {
-            new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)
+            BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, false, TableFormat.ICEBERG)
         },
         {
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),

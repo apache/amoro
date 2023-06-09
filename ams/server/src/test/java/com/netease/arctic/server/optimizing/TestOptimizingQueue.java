@@ -49,9 +49,9 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)}};
+    return new Object[][]{{
+        BasicCatalogTestHelper.externalCatalog(),
+        new BasicTableTestHelper(false, true, TableFormat.ICEBERG)}};
   }
 
   @Test

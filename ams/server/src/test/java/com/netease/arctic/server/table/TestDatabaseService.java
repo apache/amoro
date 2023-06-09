@@ -21,7 +21,6 @@ package com.netease.arctic.server.table;
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.exception.AlreadyExistsException;
@@ -41,8 +40,9 @@ public class TestDatabaseService extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)}};
+    return new Object[][]{{
+        BasicCatalogTestHelper.internalCatalog(),
+        new BasicTableTestHelper(true, true)}};
   }
 
   public TestDatabaseService(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -82,7 +82,7 @@ public class TestDatabaseService extends AMSTableTestBase {
 
   @Test
   public void testDropDatabaseWithTable() {
-    Assume.assumeTrue(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG));
+    Assume.assumeTrue(catalogTestHelper().isInternalCatalog());
     tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
     createTable();
     Assert.assertThrows(IllegalMetadataException.class, () -> tableService().dropDatabase(TEST_CATALOG_NAME,

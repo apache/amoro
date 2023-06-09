@@ -68,8 +68,9 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
 
   public TestGenericCombinedIcebergDataReader(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
+    super(BasicCatalogTestHelper.externalCatalog(),
+        new BasicTableTestHelper(false, partitionedTable,
+            buildTableProperties(fileFormat), TableFormat.ICEBERG));
     this.fileFormat = fileFormat;
   }
 
