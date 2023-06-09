@@ -180,12 +180,13 @@ public class TableRuntime extends StatedPersistentBase {
 
   public TableRuntime refresh(ArcticTable table) {
     return invokeConsisitency(() -> {
+      TableConfiguration configuration = tableConfiguration;
       boolean configChanged = updateConfigInternal(table.properties());
       if (refreshSnapshots(table) || configChanged) {
         persistUpdatingRuntime();
       }
       if (configChanged) {
-        tableHandler.handleTableChanged(this, tableConfiguration);
+        tableHandler.handleTableChanged(this, configuration);
       }
       return this;
     });
