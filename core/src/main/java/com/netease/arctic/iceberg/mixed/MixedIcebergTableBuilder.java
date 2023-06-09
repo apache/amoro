@@ -86,6 +86,11 @@ public class MixedIcebergTableBuilder extends BasicTableBuilder<MixedIcebergTabl
       String fields = Joiner.on(",").join(keySpec.fieldNames());
       properties.put(TableProperties.MIXED_ICEBERG_PRIMARY_KEY_FIELDS, fields);
     }
+
+    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
     return properties;
   }
 

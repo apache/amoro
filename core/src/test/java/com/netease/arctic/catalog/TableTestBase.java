@@ -68,7 +68,8 @@ public abstract class TableTestBase extends CatalogTestBase {
   private void createMixedFormatTable() {
     TableBuilder tableBuilder = getCatalog().newTableBuilder(
         TableTestHelper.TEST_TABLE_ID,
-        tableTestHelper.tableSchema());
+        tableTestHelper.tableSchema(),
+        tableTestHelper.format());
     tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
       tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());

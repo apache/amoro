@@ -61,6 +61,10 @@ public class TestArcticCatalog extends CatalogTestBase {
   public void testIcebergTable() {
     Assume.assumeTrue(format.equals(TableFormat.ICEBERG));
     Catalog nativeIcebergCatalog = getIcebergCatalog();
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    }
+
     nativeIcebergCatalog.createTable(
         TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
         BasicTableTestHelper.TABLE_SCHEMA);
@@ -74,6 +78,9 @@ public class TestArcticCatalog extends CatalogTestBase {
   @Test
   public void testCreateAndDropDatabase() {
     String createDbName = TableTestHelper.TEST_DB_NAME;
+    if (getCatalog().listDatabases().contains(createDbName)) {
+      getCatalog().dropDatabase(createDbName);
+    }
     Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
     getCatalog().createDatabase(createDbName);
     Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));

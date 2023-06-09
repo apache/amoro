@@ -64,12 +64,13 @@ public class BasicTableTestHelper implements TableTestHelper {
       PartitionSpec partitionSpec, Map<String, String> tableProperties,
       TableFormat format) {
     this.format = format;
-    switch (format) {
-      case MIXED_ICEBERG:
-      case MIXED_HIVE:
-        tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
-        tableProperties.put(TableProperties.FORMAT_VERSION, "2");
-    }
+//    switch (format) {
+//      case MIXED_ICEBERG:
+//      case MIXED_HIVE:
+//        tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
+//        tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+//    }
+    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;

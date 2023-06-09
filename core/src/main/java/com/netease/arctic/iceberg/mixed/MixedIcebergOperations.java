@@ -22,6 +22,8 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.iceberg.EmptyAmsClient;
 import com.netease.arctic.iceberg.IcebergFormatOperations;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
@@ -65,6 +67,16 @@ public class MixedIcebergOperations extends IcebergFormatOperations implements M
 
   @Override
   public boolean dropTable(TableIdentifier tableIdentifier, boolean purge) {
+    ArcticTable table;
+    try {
+      table = loadTable(tableIdentifier);
+    } catch (NoSuchTableException e) {
+      return false;
+    }
+    // delete custom trash location
+    String customTrashLocation = table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+    ArcticFileIO io = table.io();
+
     boolean deleted = super.dropTable(tableIdentifier, purge);
     TableIdentifier changeIdentifier = MixedIcebergTableBuilder.changeIdentifier(tableIdentifier);
     boolean changeDeleted = false;
@@ -72,6 +84,14 @@ public class MixedIcebergOperations extends IcebergFormatOperations implements M
       changeDeleted = super.dropTable(changeIdentifier, purge);
     } catch (Exception e) {
       // pass
+    }
+
+    // delete custom trash location
+    if (customTrashLocation != null) {
+      String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableIdentifier, customTrashLocation);
+      if (io.supportFileSystemOperations() && io.exists(trashParentLocation)) {
+        io.asPrefixFileIO().deletePrefix(trashParentLocation);
+      }
     }
     return deleted || changeDeleted;
   }

@@ -36,10 +36,13 @@ public class TestArcticHiveCatalog extends TestArcticCatalog {
     super(catalogTestHelper, format);
   }
 
-  @Parameterized.Parameters(name = "testFormat = {0}")
+  @Parameterized.Parameters(name = "catalogType={0}, testFormat = {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), TableFormat.MIXED_HIVE},
-        {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf()), TableFormat.ICEBERG}};
+        {new HiveCatalogTestHelper(TEST_HMS.getHiveConf(), TableFormat.MIXED_HIVE), TableFormat.MIXED_HIVE},
+        {new HiveCatalogTestHelper(TEST_HMS.getHiveConf(), TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+            TableFormat.ICEBERG},
+        {new HiveCatalogTestHelper(TEST_HMS.getHiveConf(), TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+            TableFormat.MIXED_ICEBERG}};
   }
 }

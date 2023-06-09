@@ -35,13 +35,17 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE;
 
 public class HiveCatalogTestHelper implements CatalogTestHelper {
 
-  private final TableFormat tableFormat;
+  private final TableFormat[] tableFormats;
   private final Configuration hiveConf;
 
+  @Deprecated
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
-    Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
-        tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);
-    this.tableFormat = tableFormat;
+    this(hiveConf, tableFormat);
+    Preconditions.checkArgument(TableFormat.MIXED_HIVE == tableFormat);
+  }
+
+  public HiveCatalogTestHelper(Configuration hiveConf, TableFormat... supportedFormats) {
+    this.tableFormats = supportedFormats;
     this.hiveConf = hiveConf;
   }
 
@@ -50,15 +54,12 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
     return "hive";
   }
 
-  public TableFormat tableFormat() {
-    return tableFormat;
-  }
 
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
-        properties, hiveConf, tableFormat);
+        properties, hiveConf, tableFormats);
   }
 
   @Override
@@ -71,14 +72,11 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
 
   @Override
   public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
-    if (!TableFormat.MIXED_HIVE.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
-    }
     return new MixedHiveTables(catalogMeta);
   }
 
   @Override
   public String toString() {
-    return tableFormat.toString();
+    return catalogType();
   }
 }

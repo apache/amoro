@@ -32,8 +32,10 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.ArcticTableUtil;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -82,6 +84,7 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
     Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
+    assertIcebergTableStore(loadTable);
   }
 
   @Test
@@ -116,6 +119,8 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
 
     Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), loadTable.changeTable().spec());
+    assertIcebergTableStore(loadTable.baseTable());
+    assertIcebergTableStore(loadTable.changeTable());
   }
 
   @Test
@@ -248,5 +253,14 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
 
   protected PartitionSpec getCreateTableSpec() {
     return BasicTableTestHelper.SPEC;
+  }
+
+  protected void assertIcebergTableStore(Table tableStore) {
+    Assert.assertEquals(2, ((HasTableOperations)tableStore).operations().current().formatVersion());
+    Assert.assertNotNull(tableStore.properties().get(TableProperties.TABLE_CREATE_TIME));
+    Assert.assertEquals("true",
+        tableStore.properties().get(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED));
+    Assert.assertEquals(String.valueOf(Integer.MAX_VALUE),
+        tableStore.properties().get("flink.max-continuous-empty-commits"));
   }
 }

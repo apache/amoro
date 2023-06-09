@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
 public class TestUpsertPushDown extends TableTestBase {
 
   public TestUpsertPushDown(PartitionSpec partitionSpec) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(BasicCatalogTestHelper.internalCatalog(),
         new BasicTableTestHelper(BasicTableTestHelper.TABLE_SCHEMA, BasicTableTestHelper.PRIMARY_KEY_SPEC,
-        partitionSpec, buildTableProperties()));
+        partitionSpec, buildTableProperties(), TableFormat.MIXED_ICEBERG));
   }
 
   private static Map<String, String> buildTableProperties() {
