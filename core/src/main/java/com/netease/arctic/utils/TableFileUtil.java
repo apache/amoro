@@ -108,6 +108,12 @@ public class TableFileUtil {
     return URI.create(path).getPath();
   }
 
+  /**
+   * get the parent uri path for given path
+   *
+   * @param path - path to get parent path
+   * @return the parent path
+   */
   public static String getParent(String path) {
     Path p = new Path(path);
     return p.getParent().toString();
