@@ -74,12 +74,10 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
   @Parameterized.Parameters(name = "commit_test")
   public static Object[] parameters() {
-    return new Object[][]{{
-        BasicCatalogTestHelper.externalCatalog(),
-        new BasicTableTestHelper(false, true, TableFormat.ICEBERG)
-    },
-        {
-            BasicCatalogTestHelper.externalCatalog(),
+    return new Object[][]{
+        {BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(false, true, TableFormat.ICEBERG)},
+        {BasicCatalogTestHelper.externalCatalog(),
             new BasicTableTestHelper(false, false, TableFormat.ICEBERG)
         }};
   }

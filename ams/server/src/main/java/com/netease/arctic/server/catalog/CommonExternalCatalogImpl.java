@@ -43,7 +43,6 @@ public class CommonExternalCatalogImpl extends ExternalCatalog {
   @Override
   public List<TableIdentifier> listTables() {
     throw new UnsupportedOperationException("");
-//    return toAmsIdList(catalogWrapper.listTables());
   }
 
   @Override

@@ -46,7 +46,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   private static String formatToType(TableFormat format) {
     switch (format) {
       case MIXED_ICEBERG:
-        return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+        return CatalogMetaProperties.CATALOG_TYPE_AMS;
       case ICEBERG:
         return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
       default:

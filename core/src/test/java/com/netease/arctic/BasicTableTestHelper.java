@@ -27,7 +27,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.types.Types;
@@ -64,12 +63,6 @@ public class BasicTableTestHelper implements TableTestHelper {
       PartitionSpec partitionSpec, Map<String, String> tableProperties,
       TableFormat format) {
     this.format = format;
-//    switch (format) {
-//      case MIXED_ICEBERG:
-//      case MIXED_HIVE:
-//        tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
-//        tableProperties.put(TableProperties.FORMAT_VERSION, "2");
-//    }
     tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;

@@ -118,7 +118,7 @@ public class BasicExternalCatalog implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
-    return this.newTableBuilder(identifier, schema, TableFormat.ICEBERG);
+    return this.newTableBuilder(identifier, schema, TableFormat.MIXED_ICEBERG);
   }
 
   @Override
