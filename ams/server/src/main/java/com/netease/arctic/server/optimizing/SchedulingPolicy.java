@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
@@ -26,7 +27,9 @@ public class SchedulingPolicy {
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
-    String schedulingPolicy = group.getProperties().get(SCHEDULING_POLICY_PROPERTY_NAME);
+    String schedulingPolicy = Optional.ofNullable(group.getProperties())
+            .orElseGet(Maps::newHashMap)
+            .get(SCHEDULING_POLICY_PROPERTY_NAME);
     if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
