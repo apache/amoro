@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ConvertStructUtil;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -81,9 +82,13 @@ public class AMSTableTestBase extends TableServiceTestBase {
       tableMeta = buildTableMeta();
     }
     tableService().createCatalog(catalogMeta);
-    Database database = new Database();
-    database.setName(TableTestHelper.TEST_DB_NAME);
-    TEST_HMS.getHiveClient().createDatabase(database);
+    try {
+      Database database = new Database();
+      database.setName(TableTestHelper.TEST_DB_NAME);
+      TEST_HMS.getHiveClient().createDatabase(database);
+    } catch (AlreadyExistsException e) {
+      //pass
+    }
     if (autoInitTable) {
       createDatabase();
       createTable();
