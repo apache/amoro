@@ -91,7 +91,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <mysql.version>8.0.20</mysql.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <flink.version>1.12.7</flink.version>
         <junit.version>4.13</junit.version>
         <commons-pool2.version>2.10.0</commons-pool2.version>
@@ -239,6 +239,10 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
