@@ -32,6 +32,7 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.junit.Assert;
@@ -141,6 +142,42 @@ public class TestTableEntriesScan extends TableDataTestBase {
       assertEntry(expectedEntries, entry);
     }
     Assert.assertEquals(2, cnt);
+  }
+
+  @Test
+  public void testScanEntriesFromSequence() throws IOException {
+    // change table commit 2 insert files, then commit 1 delete file
+    Table changeTable = getArcticTable().asKeyedTable().changeTable();
+    TableEntriesScan.Builder builder = TableEntriesScan.builder(changeTable)
+        .includeFileContent(FileContent.DATA)
+        .fromSequence(2L);
+    Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
+    int cnt = 0;
+
+    try (CloseableIterable<IcebergFileEntry> entries = builder.build().entries()) {
+      for (IcebergFileEntry entry : entries) {
+        cnt++;
+        assertEntry(expectedEntries, entry);
+      }
+    }
+    Assert.assertEquals(1, cnt);
+
+
+    // base table commit 4 insert files, then commit 1 pos-delete file
+    Table baseTable = getArcticTable().asKeyedTable().baseTable();
+    builder = TableEntriesScan.builder(baseTable)
+        .includeFileContent(FileContent.POSITION_DELETES)
+        .fromSequence(2L);
+    expectedEntries = getExpectedCurrentEntries(baseTable);
+    cnt = 0;
+
+    try (CloseableIterable<IcebergFileEntry> entries = builder.build().entries()) {
+      for (IcebergFileEntry entry : entries) {
+        cnt++;
+        assertEntry(expectedEntries, entry);
+      }
+    }
+    Assert.assertEquals(1, cnt);
   }
 
   private List<DataFile> writeIntoBase() throws IOException {

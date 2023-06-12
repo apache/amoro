@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ConvertStructUtil;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -39,7 +40,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.IOException;
 
 public class AMSTableTestBase extends TableServiceTestBase {
@@ -63,7 +63,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     this(catalogTestHelper, tableTestHelper, false);
   }
 
-  public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+  public AMSTableTestBase(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
       boolean autoInitTable) {
     this.catalogTestHelper = catalogTestHelper;
     this.tableTestHelper = tableTestHelper;
@@ -81,9 +82,13 @@ public class AMSTableTestBase extends TableServiceTestBase {
       tableMeta = buildTableMeta();
     }
     tableService().createCatalog(catalogMeta);
-    Database database = new Database();
-    database.setName(TableTestHelper.TEST_DB_NAME);
-    TEST_HMS.getHiveClient().createDatabase(database);
+    try {
+      Database database = new Database();
+      database.setName(TableTestHelper.TEST_DB_NAME);
+      TEST_HMS.getHiveClient().createDatabase(database);
+    } catch (AlreadyExistsException e) {
+      //pass
+    }
     if (autoInitTable) {
       createDatabase();
       createTable();
@@ -118,7 +123,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void createDatabase() {
     if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
       ((SupportsNamespaces)icebergCatalog).createNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
-    } else {
+    } else if (!tableService().listDatabases(TableTestHelper.TEST_CATALOG_NAME)
+        .contains(TableTestHelper.TEST_DB_NAME)) {
       tableService().createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
     }
   }
