@@ -64,8 +64,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private final int lookBack;
   private final long openFileCost;
   private final long splitSize;
-  private final double splitTaskByDeleteRatio;
-  private boolean enableSplitTaskByDelete;
+  private Double splitTaskByDeleteRatio;
   private Expression expression;
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
@@ -74,8 +73,6 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         TableProperties.SPLIT_OPEN_FILE_COST, TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
     splitSize = PropertyUtil.propertyAsLong(table.properties(),
         TableProperties.SPLIT_SIZE, TableProperties.SPLIT_SIZE_DEFAULT);
-    splitTaskByDeleteRatio = PropertyUtil.propertyAsDouble(table.properties(),
-        TableProperties.SPLIT_TASK_BY_DELETE_RATIO, TableProperties.SPLIT_TASK_BY_DELETE_RATIO_DEFAULT);
     lookBack = PropertyUtil.propertyAsInt(table.properties(),
         TableProperties.SPLIT_LOOKBACK, TableProperties.SPLIT_LOOKBACK_DEFAULT);
   }
@@ -126,8 +123,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   }
 
   @Override
-  public KeyedTableScan enableSplitTaskByDeleteRatio() {
-    this.enableSplitTaskByDelete = true;
+  public KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
+    this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
     return this;
   }
 
@@ -169,7 +166,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
           continue;
         }
 
-        if (enableSplitTaskByDelete) {
+        if (splitTaskByDeleteRatio != null) {
           long deleteWeight = task.arcticEquityDeletes().stream().mapToLong(s -> s.file().fileSizeInBytes())
               .map(s -> s + openFileCost)
               .sum();

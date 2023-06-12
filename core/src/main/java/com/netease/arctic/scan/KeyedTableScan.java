@@ -44,6 +44,6 @@ public interface KeyedTableScan {
   /**
    * Config if to split task by delete ratio, default is false
    */
-  KeyedTableScan enableSplitTaskByDeleteRatio();
+  KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio);
 
 }
