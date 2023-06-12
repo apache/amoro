@@ -46,8 +46,6 @@ import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
 import com.netease.arctic.ams.server.service.impl.TrashCleanService;
 import com.netease.arctic.ams.server.terminal.TerminalManager;
 
-import java.lang.reflect.Field;
-
 public class ServiceContainer {
   private static volatile IOptimizeService optimizeService;
 
@@ -92,8 +90,8 @@ public class ServiceContainer {
 
   private static volatile TerminalManager terminalManager;
 
-  public static volatile PlatformFileInfoService platformFileInfoService;
-
+  public static volatile  PlatformFileInfoService platformFileInfoService;
+  
   public static volatile TableBlockerService tableBlockerService;
 
   public static IOptimizeService getOptimizeService() {
@@ -391,19 +389,5 @@ public class ServiceContainer {
       }
     }
     return tableBlockerService;
-  }
-
-  public static void clearService() {
-    synchronized (ServiceContainer.class) {
-      Field[] fields = ServiceContainer.class.getDeclaredFields();
-      for (Field field : fields) {
-        field.setAccessible(true);
-        try {
-          field.set(null, null);
-        } catch (IllegalAccessException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    }
   }
 }

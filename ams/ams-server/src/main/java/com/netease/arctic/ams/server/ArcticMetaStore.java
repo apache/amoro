@@ -261,7 +261,6 @@ public class ArcticMetaStore {
     }
     residentThreads.forEach(Thread::interrupt);
     residentThreads.clear();
-    ServiceContainer.clearService();
     ThreadPool.shutdown();
   }
 
