@@ -67,7 +67,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -88,7 +88,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

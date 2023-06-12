@@ -78,10 +78,6 @@
                     <artifactId>avro</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.curator</groupId>
                     <artifactId>curator-framework</artifactId>
                 </exclusion>
@@ -127,7 +123,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -295,7 +291,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

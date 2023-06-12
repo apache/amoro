@@ -301,7 +301,6 @@
         <dependency>
             <groupId>ch.qos.reload4j</groupId>
             <artifactId>reload4j</artifactId>
-            <version>1.2.25</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -494,6 +493,12 @@
             <artifactId>zookeeper</artifactId>
             <version>${pulsar-zookeeper.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Add Pulsar 2.x as a dependency. -->
