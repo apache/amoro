@@ -65,6 +65,7 @@ public class TableEntriesScan {
   private final Set<FileContent> validFileContent;
   private final MetadataTableType metadataTableType;
   private final Schema schema;
+  private final Long fromSequence;
 
   private Table entriesTable;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
@@ -84,6 +85,7 @@ public class TableEntriesScan {
     private final Set<FileContent> fileContents = Sets.newHashSet();
     private Schema schema;
     private MetadataTableType metadataTableType = MetadataTableType.ENTRIES;
+    private Long fromSequence;
 
     public Builder(Table table) {
       this.table = table;
@@ -144,6 +146,16 @@ public class TableEntriesScan {
       return this;
     }
 
+    /**
+     * Set the sequence number, fetch all entries greater than or equal to this sequence number.
+     * @param fromSequence nullable.
+     * @return this for chains
+     */
+    public Builder fromSequence(Long fromSequence) {
+      this.fromSequence = fromSequence;
+      return this;
+    }
+
     public Builder project(Schema schema) {
       this.schema = schema;
       return this;
@@ -156,14 +168,14 @@ public class TableEntriesScan {
 
     public TableEntriesScan build() {
       return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry,
-          fileContents, includeColumnStats, schema, metadataTableType);
+          fileContents, includeColumnStats, schema, metadataTableType, fromSequence);
     }
   }
 
   private TableEntriesScan(
       Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
       Set<FileContent> validFileContent, boolean includeColumnStats,
-      Schema schema, MetadataTableType metadataTableType) {
+      Schema schema, MetadataTableType metadataTableType, Long fromSequence) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -173,6 +185,7 @@ public class TableEntriesScan {
     this.includeColumnStats = includeColumnStats;
     this.schema = schema;
     this.metadataTableType = metadataTableType;
+    this.fromSequence = fromSequence;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
@@ -189,6 +202,10 @@ public class TableEntriesScan {
 
     CloseableIterable<IcebergFileEntry> allEntries =
         CloseableIterable.transform(entries, (entry -> {
+          Long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
+          if (fromSequence != null && fromSequence > sequence) {
+            return null;
+          }
           ManifestEntryFields.Status status =
               ManifestEntryFields.Status.of(
                   entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
@@ -197,7 +214,6 @@ public class TableEntriesScan {
           FileContent fileContent =
               getFileContent(fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
           if (shouldKeep(status, fileContent)) {
-            Long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
             Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {

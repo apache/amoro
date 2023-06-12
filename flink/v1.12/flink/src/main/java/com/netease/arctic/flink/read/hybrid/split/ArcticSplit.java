@@ -58,6 +58,10 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
     return getClass() == ChangelogSplit.class;
   }
 
+  public final boolean isMergeOnReadSplit() {
+    return getClass() == MergeOnReadSplit.class;
+  }
+
   /**
    * Casts this split into a {@link SnapshotSplit}.
    */
@@ -70,6 +74,10 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
    */
   public final ChangelogSplit asChangelogSplit() {
     return (ChangelogSplit) this;
+  }
+
+  public final MergeOnReadSplit asMergeOnReadSplit() {
+    return (MergeOnReadSplit) this;
   }
 
   /**
@@ -95,13 +103,16 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
         .map(ArcticFileScanTask::file)
         .map(primaryKeyedFile ->
             MoreObjects.toStringHelper(primaryKeyedFile)
-                .add("file", primaryKeyedFile.path().toString())
-                .add("type", primaryKeyedFile.type().shortName())
-                .add("mask", primaryKeyedFile.node().mask())
-                .add("index", primaryKeyedFile.node().index())
-                .add("transactionId", primaryKeyedFile.transactionId())
+                .add("\n\tfile", primaryKeyedFile.path().toString())
+                .add("\n\ttype", primaryKeyedFile.type().shortName())
+                .add("\n\tmask", primaryKeyedFile.node().mask())
+                .add("\n\tindex", primaryKeyedFile.node().index())
+                .add("\n\ttransactionId", primaryKeyedFile.transactionId())
+                .add("\n\tfileSizeInBytes", primaryKeyedFile.fileSizeInBytes())
+                .add("\n\trecordCount", primaryKeyedFile.recordCount())
                 .toString()).collect(Collectors.toList()));
   }
 
   public abstract ArcticSplit copy();
+
 }

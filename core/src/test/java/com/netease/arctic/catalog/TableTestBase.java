@@ -19,14 +19,12 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.junit.After;
 import org.junit.Before;
 
@@ -39,12 +37,6 @@ public abstract class TableTestBase extends CatalogTestBase {
   public TableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper);
     this.tableTestHelper = tableTestHelper;
-    if (isKeyedTable()) {
-      Preconditions.checkArgument(
-          TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat()) ||
-              TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat()),
-          "Only mixed format table support primary key spec");
-    }
   }
 
   @Before
