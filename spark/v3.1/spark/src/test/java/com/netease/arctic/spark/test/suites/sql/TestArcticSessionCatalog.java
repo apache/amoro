@@ -18,10 +18,15 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
+import com.google.common.collect.Maps;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.helper.RecordGenerator;
+import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -32,19 +37,19 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect;
 import org.apache.spark.sql.catalyst.plans.logical.CreateV2Table;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class TestArcticSessionCatalog extends SparkTableTestBase {
-
-  private final String database = "session_database_test";
-  private final String table = "test_tbl";
 
   Dataset<Row> rs;
 
@@ -151,5 +156,28 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
 
     Table hiveTable = loadHiveTable();
     Assertions.assertNotNull(hiveTable);
+  }
+
+
+  @Test
+  public void testLoadLegacyTable() {
+    createTarget(schema,
+        c -> c.withPrimaryKeySpec(PrimaryKeySpec.builderFor(schema).addColumn("id").build()));
+    createViewSource(schema, source);
+    Table hiveTable = loadHiveTable();
+    Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
+    properties.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+    properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
+    hiveTable.setParameters(properties);
+    try {
+      context.getHiveClient().alter_table(hiveTable.getDbName(), hiveTable.getTableName(), hiveTable);
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
+
+    sql("insert into " + target() + " select * from " + source());
+    ArcticTable table = loadTable();
+    List<Record> changes = TestTableHelper.changeRecordsWithAction(table.asKeyedTable());
+    Assertions.assertTrue(changes.size() > 0);
   }
 }

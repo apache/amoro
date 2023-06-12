@@ -18,6 +18,8 @@
 
 package com.netease.arctic.spark;
 
+import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
@@ -223,8 +225,9 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   private boolean isArcticTable(Table table) {
-    return table.properties().containsKey("arctic.enabled") &&
-        table.properties().get("arctic.enabled").equals("true");
+    return table.properties() != null &&
+        CompatibleHivePropertyUtil.propertyAsBoolean(
+            table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
   }
 
   @Override
