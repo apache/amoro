@@ -231,7 +231,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
         try {
           hiveClientPool.run(client -> {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
+                tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);

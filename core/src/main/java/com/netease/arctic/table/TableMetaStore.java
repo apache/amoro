@@ -360,7 +360,7 @@ public class TableMetaStore implements Serializable {
     return proxyUgi.doAs((PrivilegedAction<T>) () -> doAsUgi(callable));
   }
 
-  private  <T> T doAsUgi(Callable<T> callable) {
+  private <T> T doAsUgi(Callable<T> callable) {
     try {
       return callable.call();
     } catch (Throwable e) {
