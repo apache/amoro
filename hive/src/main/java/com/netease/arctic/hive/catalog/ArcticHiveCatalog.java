@@ -127,7 +127,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
-    return new ArcticHiveTableBuilder(identifier, schema);
+    return new MixedHiveTableBuilder(identifier, schema);
   }
 
   public HMSClientPool getHMSClient() {
@@ -135,9 +135,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   }
 
 
-  class ArcticHiveTableBuilder extends ArcticTableBuilder {
+  class MixedHiveTableBuilder extends ArcticTableBuilder {
 
-    public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
+    public MixedHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
     }
 
