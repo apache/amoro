@@ -18,12 +18,15 @@
 
 package com.netease.arctic.trino;
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import io.trino.spi.classloader.ThreadContextClassLoader;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.inject.Inject;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * A factory to generate {@link ArcticCatalog}
@@ -44,9 +47,11 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
       synchronized (this) {
         if (arcticCatalog == null) {
           try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+            Map<String, String> properties = Maps.newHashMap();
+            properties.put(CatalogMetaProperties.SHOW_ONLY_MIXED_FORMAT, "true");
             this.arcticCatalog =
                 new ArcticCatalogSupportTableSuffix(
-                    CatalogLoader.load(arcticConfig.getCatalogUrl(), Collections.emptyMap()));
+                    CatalogLoader.load(arcticConfig.getCatalogUrl(), properties));
           }
         }
       }

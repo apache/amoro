@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark;
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.CatalogUtil;
@@ -407,7 +408,9 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
     Preconditions.checkArgument(StringUtils.isNotBlank(catalogUrl),
         "lack required properties: url");
-    catalog = CatalogLoader.load(catalogUrl, options);
+    Map<String, String> properties = Maps.newHashMap(options);
+    properties.put(CatalogMetaProperties.SHOW_ONLY_MIXED_FORMAT, "true");
+    catalog = CatalogLoader.load(catalogUrl, properties);
   }
 
   @Override

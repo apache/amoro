@@ -25,6 +25,7 @@ import com.netease.arctic.utils.ConfigurationFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.util.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,8 @@ public class InternalCatalogBuilder implements Serializable {
   private ArcticCatalog createBaseArcticCatalog() {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreUrl),
         "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
+    Map<String, String> properties = Maps.newHashMap(this.properties);
+    properties.put(CatalogMetaProperties.SHOW_ONLY_MIXED_FORMAT, "true");
     return CatalogLoader.load(metastoreUrl, properties);
   }
 
