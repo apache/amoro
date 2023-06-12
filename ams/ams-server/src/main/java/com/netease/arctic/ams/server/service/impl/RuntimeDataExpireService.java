@@ -65,27 +65,34 @@ public class RuntimeDataExpireService {
 
   private void expire() {
     List<TableMetadata> tableMetadata = metaService.listTables();
-
+    List<TableIdentifier> optimizeTables = optimizeService.listCachedTables();
     // expire and clear table_task_history table
-    tableMetadata.forEach(meta -> {
-      TableIdentifier identifier = meta.getTableIdentifier();
-      try {
-        TableOptimizeRuntime tableOptimizeRuntime =
-            optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
-        tableTaskHistoryService.expireTaskHistory(identifier,
-            tableOptimizeRuntime.getLatestTaskPlanGroup(),
-            System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
-      } catch (Exception e) {
-        LOG.error("{} failed to expire and clear table_task_history table", identifier, e);
-      }
-    });
+    if (optimizeTables != null && optimizeTables.size() > 0) {
+      tableMetadata.forEach(meta -> {
+        TableIdentifier identifier = meta.getTableIdentifier();
+        try {
+          // only expire the table in optimizeTables
+          if (optimizeTables.contains(identifier)) {
+            TableOptimizeRuntime tableOptimizeRuntime =
+                    optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
+            tableTaskHistoryService.expireTaskHistory(identifier,
+                    tableOptimizeRuntime.getLatestTaskPlanGroup(),
+                    System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
+          }
+        } catch (Exception e) {
+          LOG.error("{} failed to expire and clear optimize_task_history table", identifier, e);
+        }
+      });
+    } else {
+      LOG.error("There are 0 tables to be expired and cleared in optimize_task_history");
+    }
 
     // expire and clear optimize_history table
     tableMetadata.forEach(meta -> {
       TableIdentifier identifier = meta.getTableIdentifier();
       try {
         optimizeService.expireOptimizeHistory(identifier,
-            System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
+                System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
       } catch (Exception e) {
         LOG.error("{} failed to expire and clear optimize_history table", identifier, e);
       }
