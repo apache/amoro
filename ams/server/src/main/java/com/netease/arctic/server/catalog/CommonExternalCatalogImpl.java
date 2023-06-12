@@ -2,12 +2,11 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogOperations;
 import com.netease.arctic.catalog.ExternalCatalogOperations;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.CatalogUtil;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,17 +42,20 @@ public class CommonExternalCatalogImpl extends ExternalCatalog {
 
   @Override
   public List<TableIdentifier> listTables() {
-    throw new UnsupportedOperationException("");
+    return operations.listDatabases()
+        .stream().map(this::listTables)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    throw new UnsupportedOperationException("");
+    return operations.listTables(database)
+        .stream()
+        .map(m -> new TableIdentifier(this.name(), database, m.getTable()))
+        .collect(Collectors.toList());
   }
 
-  public List<TableIdentifier> toAmsIdList(List<com.netease.arctic.table.TableIdentifier> identifierList) {
-    return identifierList.stream().map(CatalogUtil::amsTaleId).collect(Collectors.toList());
-  }
 
   @Override
   public ArcticTable loadTable(String database, String tableName) {
