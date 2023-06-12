@@ -68,4 +68,10 @@ public class CatalogMetaProperties {
   public static final String TABLE_PROPERTIES_PREFIX = "table.";
   public static final String LOG_STORE_PROPERTIES_PREFIX = "log-store.";
   public static final String OPTIMIZE_PROPERTIES_PREFIX = "self-optimizing.";
+
+  public static final String SHOW_ONLY_MIXED_FORMAT = "show-only-mixed-format";
+  public static final String SHOW_ONLY_MIXED_FORMAT_DEFAULT = "false";
+
+  public static final String MIXED_FORMAT_CHANGE_STORE_SEPARATOR = "mixed-format.change-store.separator";
+  public static final String MIXED_FORMAT_CHANGE_STORE_SEPARATOR_DEFAULT = "_";
 }

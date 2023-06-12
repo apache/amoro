@@ -295,6 +295,7 @@ public class TableProperties {
   public static final String TABLE_FORMAT_MIXED_HIVE = "mixed-hive";
 
   public static final String MIXED_ICEBERG_PRIMARY_KEY_FIELDS = "mixed-iceberg.primary-key-fields";
+  public static final String MIXED_ICEBERG_CHANGE_STORE_IDENTIFIER = "mixed-iceberg.change.identifier";
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);

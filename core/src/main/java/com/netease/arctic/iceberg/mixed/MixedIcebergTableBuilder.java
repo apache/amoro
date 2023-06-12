@@ -12,6 +12,7 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -48,18 +49,23 @@ public class MixedIcebergTableBuilder extends BasicTableBuilder<MixedIcebergTabl
   @Override
   public ArcticTable create() {
     Map<String, String> tableProperties = this.tableProperties();
-    TableIdentifier changeIdentifier = changeIdentifier(this.identifier);
+    TableIdentifier changeIdentifier = ArcticTableUtil.changeStoreIdentifier(this.identifier, catalogProperties);
 
     if (keySpec.primaryKeyExisted() &&
         icebergCatalog.tableExists(icebergIdentifier(changeIdentifier))) {
       throw new IllegalStateException("the change store already exists");
     }
 
-    Table base = icebergCatalog.buildTable(icebergIdentifier(this.identifier), schema)
+    Catalog.TableBuilder baseBuilder = icebergCatalog.buildTable(icebergIdentifier(this.identifier), schema)
         .withPartitionSpec(spec)
         .withProperties(tableProperties)
-        .withSortOrder(sortOrder)
-        .create();
+        .withSortOrder(sortOrder);
+    if (keySpec.primaryKeyExisted()) {
+      baseBuilder = baseBuilder.withProperty(
+          TableProperties.MIXED_ICEBERG_CHANGE_STORE_IDENTIFIER,
+          changeIdentifier.getDatabase() + "." + changeIdentifier.getTableName());
+    }
+    Table base = baseBuilder.create();
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
 
     if (!keySpec.primaryKeyExisted()) {
@@ -94,14 +100,6 @@ public class MixedIcebergTableBuilder extends BasicTableBuilder<MixedIcebergTabl
     return properties;
   }
 
-
-  static TableIdentifier changeIdentifier(TableIdentifier identifier) {
-    return TableIdentifier.of(
-        identifier.getCatalog(),
-        identifier.getDatabase(),
-        String.format("_%s_change_", identifier.getTableName())
-    );
-  }
 
   static org.apache.iceberg.catalog.TableIdentifier icebergIdentifier(TableIdentifier identifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(

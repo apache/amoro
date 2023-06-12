@@ -80,16 +80,6 @@ public class CatalogLoader {
     return load(catalogUrl, Maps.newHashMap());
   }
 
-  /**
-   * Entrypoint for loading catalog.
-   *
-   * @param client      arctic metastore client
-   * @param catalogName arctic catalog name
-   * @return arctic catalog object
-   */
-  public static ArcticCatalog load(AmsClient client, String catalogName) {
-    return load(client, catalogName, Maps.newHashMap());
-  }
 
   /**
    * Entrypoint for loading catalog

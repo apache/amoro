@@ -70,6 +70,14 @@ public interface CatalogOperations {
    */
   void dropDatabase(String database);
 
+
+  /**
+   * get the table list in database
+   * @param database - database to list from
+   * @return table meta lists
+   */
+  List<CatalogTableMeta>  listTables(String database);
+
   /**
    * get the format of table.
    * @param database a database name

@@ -33,6 +33,7 @@ import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
@@ -86,7 +87,9 @@ public class BasicExternalCatalog implements ArcticCatalog {
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return null;
+    return lazyMetastore().listTables(database)
+        .stream().map(m -> TableIdentifier.of(this.name(), database, m.getTable()))
+        .collect(Collectors.toList());
   }
 
   @Override

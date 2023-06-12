@@ -27,6 +27,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.MixedTableOperations;
 import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
@@ -36,6 +38,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -44,10 +47,10 @@ public class ExternalCatalogOperations implements CatalogOperations {
   protected final Catalog icebergCatalog;
   protected final TableMetaStore tableMetaStore;
   protected final CatalogMeta meta;
-
   protected final Pattern databaseFilterPattern;
   protected final IcebergFormatOperations icebergFormatOperations;
   protected final MixedTableOperations mixedIcebergOperations;
+  protected final boolean showOnlyMixedFormat;
 
 
   public ExternalCatalogOperations(CatalogMeta meta) {
@@ -70,6 +73,11 @@ public class ExternalCatalogOperations implements CatalogOperations {
     } else {
       databaseFilterPattern = null;
     }
+    this.showOnlyMixedFormat = Boolean.parseBoolean(
+        meta.getCatalogProperties().getOrDefault(
+            CatalogMetaProperties.SHOW_ONLY_MIXED_FORMAT, CatalogMetaProperties.SHOW_ONLY_MIXED_FORMAT_DEFAULT
+        )
+    );
 
     this.icebergFormatOperations = new IcebergFormatOperations(
         icebergCatalog, meta.getCatalogProperties(), tableMetaStore);
@@ -141,6 +149,32 @@ public class ExternalCatalogOperations implements CatalogOperations {
       Namespace ns = Namespace.of(database);
       tableMetaStore.doAs(() -> supportsNamespaces.dropNamespace(ns));
     }
+  }
+
+  @Override
+  public List<CatalogTableMeta> listTables(String database) {
+    List<TableIdentifier> tableLists = icebergCatalog.listTables(Namespace.of(database));
+    Map<String, TableFormat> formats = tableLists.stream()
+        .collect(Collectors.toMap(TableIdentifier::name, s -> TableFormat.ICEBERG));
+
+    for (TableIdentifier identifier : tableLists) {
+      ArcticTable table = icebergFormatOperations.loadTable(com.netease.arctic.table.TableIdentifier.of(
+          this.icebergCatalog.name(), database, identifier.name()));
+      if (mixedIcebergOperations.isMixedTable(table)) {
+        //base store
+        formats.put(identifier.name(), TableFormat.MIXED_ICEBERG);
+        if (table.properties().containsKey(TableProperties.MIXED_ICEBERG_CHANGE_STORE_IDENTIFIER)) {
+          com.netease.arctic.table.TableIdentifier changeIdentifier =
+              ArcticTableUtil.changeStoreIdentifier(table);
+          formats.remove(changeIdentifier.getTableName());
+        }
+      }
+    }
+
+    return formats.entrySet().stream()
+        .map(e -> new CatalogTableMeta(this.meta.getCatalogName(), database, e.getKey(), e.getValue()))
+        .filter(m -> !showOnlyMixedFormat || m.getFormat() == TableFormat.MIXED_ICEBERG)
+        .collect(Collectors.toList());
   }
 
   @Override

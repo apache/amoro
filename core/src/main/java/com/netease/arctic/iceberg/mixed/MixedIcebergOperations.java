@@ -33,6 +33,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -73,17 +74,21 @@ public class MixedIcebergOperations extends IcebergFormatOperations implements M
     } catch (NoSuchTableException e) {
       return false;
     }
+    ArcticTable base = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table;
+
     // delete custom trash location
     String customTrashLocation = table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     ArcticFileIO io = table.io();
 
     boolean deleted = super.dropTable(tableIdentifier, purge);
-    TableIdentifier changeIdentifier = MixedIcebergTableBuilder.changeIdentifier(tableIdentifier);
     boolean changeDeleted = false;
-    try {
-      changeDeleted = super.dropTable(changeIdentifier, purge);
-    } catch (Exception e) {
-      // pass
+    if (table.isKeyedTable()) {
+      TableIdentifier changeIdentifier = ArcticTableUtil.changeStoreIdentifier(base);
+      try {
+        changeDeleted = super.dropTable(changeIdentifier, purge);
+      } catch (Exception e) {
+        // pass
+      }
     }
 
     // delete custom trash location
@@ -124,7 +129,7 @@ public class MixedIcebergOperations extends IcebergFormatOperations implements M
           new EmptyAmsClient(), null);
     }
 
-    TableIdentifier changeIdentifier = MixedIcebergTableBuilder.changeIdentifier(base.id());
+    TableIdentifier changeIdentifier = ArcticTableUtil.changeStoreIdentifier(base);
     Table change = catalog.loadTable(MixedIcebergTableBuilder.icebergIdentifier(changeIdentifier));
 
     AmsClient client = new EmptyAmsClient();

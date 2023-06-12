@@ -2,6 +2,7 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogOperations;
 import com.netease.arctic.catalog.ExternalCatalogOperations;
 import com.netease.arctic.table.ArcticTable;

@@ -18,9 +18,23 @@
 
 package com.netease.arctic.table;
 
+
+/**
+ * A mixed-in interface to support for mixed-format operations
+ */
 public interface MixedTableOperations extends TableFormatOperations {
 
+  /**
+   * check if this table is a table store and belong to a mixed-format table.
+   * @param base a basic format table to check
+   * @return true if this table is part of a mixed-format table's table store.
+   */
   boolean isMixedTable(ArcticTable base);
 
+  /**
+   * load a mixed-format table by a table store
+   * @param base - a table store of a mixed-format table
+   * @return the total mixed-format table.
+   */
   ArcticTable loadMixedTable(ArcticTable base);
 }
