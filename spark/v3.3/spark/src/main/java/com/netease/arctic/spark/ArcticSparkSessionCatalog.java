@@ -123,7 +123,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
     if (isArcticTable(table)) {
-      return arcticCatalog.loadTable(ident);
+      return getArcticCatalog().loadTable(ident);
     }
     return table;
   }
