@@ -1,7 +1,7 @@
 package com.netease.arctic.server.resource;
 
 import com.google.common.base.Preconditions;
-
+import com.google.common.collect.Maps;
 import java.util.Map;
 
 public class ContainerMetadata {
@@ -14,6 +14,7 @@ public class ContainerMetadata {
         "Resource container name and implementation class can not be null");
     this.name = name;
     this.implClass = implClass;
+    properties = Maps.newHashMap();
   }
 
   public String getName() {
