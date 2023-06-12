@@ -1,7 +1,6 @@
 package com.netease.arctic.server.resource;
 
 import com.google.common.base.Preconditions;
-
 import com.google.common.collect.Maps;
 import java.util.Map;
 
