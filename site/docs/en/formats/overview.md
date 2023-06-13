@@ -1,19 +1,24 @@
 ## Overview
 
-Table format (aka. format)最早由 Iceberg 提出，table format 可以描述为：
+Table format (aka. format) was first proposed by Iceberg, which can be described as follows:
 
-- 定义了表和文件的关系，任何引擎都可以根据 table format 查询和检索数据文件
-- Iceberg / Delta / Hudi 这类新型 format 进一步定义了表与快照，快照与文件的关系，表上所有写操作会产生新快照，所有表的读操作都面向快照，快照为数据湖带来了 MVCC、ACID 以及 Transaction 的能力。
+- It defines the relationship between tables and files, and any engine can query and retrieve data files according to the table format.
+- New formats such as Iceberg/Delta/Hudi further define the relationship between tables and snapshots, and the relationship between snapshots and files. 
+  All write operations on the table will generate new snapshots, and all read operations on the table are based on snapshots. 
+  Snapshots bring MVCC, ACID, and Transaction capabilities to data lakes.
 
-此外，[Iceberg](https://Iceberg.apache.org/) 这类新型 table format 还提供了 schema evolve、hidden partiton、data skip 等众多高级特性，[Hudi](https://hudi.apache.org/)、[Delta](https://delta.io/) 在具体功能上可能有所差异，但我们看到在过去两年的迭代中，table format 的标准随着三个开源项目的功能趋同在逐步确立。
+In addition, new table formats such as [Iceberg](https://Iceberg.apache.org/) also provide many advanced features such as schema evolve, hidden partition, and data skip.
+[Hudi](https://hudi.apache.org/) and [Delta](https://delta.io/) may have some differences in specific functions, but we see that the standard of table formats is gradually established with the functional convergence of these three open-source projects in the past two years.
 
-对用户，Arctic 的设计目标是开箱即用的湖仓系统，而在系统内部，Arctic 的设计理念是将不同 table format 作为数据湖的 storage engine 来使用，这种设计模式多见于 MySQL、ClickHouse 这样的开源系统。
-Arctic 选择了最早提出 table format 概念的 Iceberg 作为基础，在不魔改社区代码的前提下，为用户提供了一套可以兼容 Hive format，并且在流和更新场景下更加优化的 Mixed-Streaming format。Iceberg format 和 Mixed-Streaming format 各有优势，用户可以根据需求灵活选择，并且都能享受到 Arctic 开箱即用的体验。
+For users, the design goal of Arctic is to provide an out-of-the-box data lake system. Internally, Arctic's design philosophy is to use different table formats as storage engines for data lakes. 
+This design pattern is more common in open-source systems such as MySQL and ClickHouse.
 
-### Feature Matrix
+Currently, Arctic mainly provides the following three table formats:
 
-|     format      | Read | Write | Update | Overwrite | Merge Into | Delete | Batch Upsert | Streaming Upset | CDC  Ingestion | Primary Key | Time  Travel |
-|:---------------:|:----:|:-----:|:------:|:---------:|:----------:|:------:|:------------:|:---------------:|:--------------:|:-----------:|:------------:|
-|     Iceberg     |  ✅   |   ✅   |   ✅    |     ✅     |     ✅      |   ✅    |      ❌       |        ✅        |       ❌        |      ❌      |      ✅       |
-| Mixed-Streaming |  ✅   |   ✅   |   ✅    |     ✅     |     ✅      |   ✅    |      ✅       |        ✅        |       ✅        |      ✅      |      ❌       |
+- Iceberg format -- Users can directly entrust their Iceberg tables to Arctic for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Arctic.
+- Mixed Iceberg format -- Arctic provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed Iceberg format.
+- Mixed Hive format -- Many users do not want to affect the business originally built on Hive while using data lakes. Therefore, Arctic provides the Mixed Hive format, which can upgrade Hive tables to Mixed Hive format only through metadata migration, and the original Hive tables can still be used normally. 
+                       This ensures business stability and benefits from the advantages of data lake computing.
+
+
 

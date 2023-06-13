@@ -65,11 +65,11 @@ nav:
   - Formats:
       - Overview: formats/overview.md
       - Iceberg: formats/iceberg.md
-      - Mixed Streaming: formats/mixed-streaming.md
+      - Mixed Iceberg: formats/mixed-iceberg.md
+      - Mixed Hive: formats/mixed-hive.md
   - Engines:
     - Overview: engines/overview.md
     - Trino: engines/trino.md
-    - Impala: engines/impala.md
     - Spark:
         - Get Started: engines/spark/spark-get-started.md
         - Configurations: engines/spark/spark-conf.md

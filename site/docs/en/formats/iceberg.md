@@ -1,9 +1,18 @@
 ## Iceberg format
+Iceberg format refers to [Apache Iceberg](https://iceberg.apache.org) table, which is an open table format for large analytical datasets designed to provide scalable, efficient, and secure data storage and query solutions. 
+It supports data operations on multiple storage backends and provides features such as ACID transactions, multi-version control, and schema evolution, making data management and querying more flexible and convenient.
 
-Arctic v0.4 之后开始支持管理原生 [Iceberg](https://iceberg.apache.org) 表， 用户只需要在 Arctic 上将原生 Iceberg 的 catalog 登记进来即可将原生的 Iceberg 表托管给 Arctic 维护其表的性能及可用性,
-且 Arctic 对原生 Iceberg 的原生功能没有任何侵入性。
-Iceberg format 具有充分的向上和向下兼容特性，一般情况下，用户不用担心引擎客户端所用的 Iceberg 版本与 Arctic 依赖的 Iceberg 版本的兼容性。
+With the release of [Iceberg v2](https://iceberg.apache.org/spec/),  Iceberg addresses the shortcomings of row-level updates through the MOR (Merge On Read) mechanism, which better supports streaming updates. 
+However, as data and delete files are written, the read performance and availability of the table will decrease, and if not maintained in time, the table will quickly become unusable.
+<left>
+![Iceberg format](../images/formats/iceberg_format.png){:height="70%" width="70%"}
+</left>
 
-Arctic 同时支持 Iceberg format v1 和 v2。关于 v1 和 v2 的区别见 [v1 v2 区别](https://iceberg.apache.org/spec/)
-Arctic 支持原生 Iceberg 支持的所有 catalog 类型，包括但不限于: Hadoop, Hive, Glue, JDBC, Nessie, Snowflake，DynamoDb ..等类型
-Arctic 支持原生 Iceberg 支持的所有存储类型，包括但不限于: Hadoop, S3, AliyunOSS, GCS, ECS ..等类型
+Starting from Arctic v0.4, Iceberg format including v1 and v2 is supported. Users only need to register Iceberg's catalog in Arctic to host the table for Arctic maintenance. For detailed operation steps, please refer to[Managing Catalogs](../guides/managing-catalogs.md).
+Arctic maintains the performance and economic availability of Iceberg tables with minimal read/write costs through means such as small file merging, eq-delete file conversion to pos-delete files, duplicate data elimination, and file cleaning, and Arctic has no intrusive impact on the functionality of Iceberg.
+
+Iceberg format has full upward and downward compatibility features, and in general, users do not have to worry about the compatibility of the Iceberg version used by the engine client with the Iceberg version on which Arctic depends.
+
+Arctic supports all catalog types supported by Iceberg, including but not limited to: Hadoop, Hive, Glue, JDBC, Nessie, Snowflake, and so on.
+
+Arctic supports all storage types supported by Iceberg, including but not limited to: Hadoop, S3, AliyunOSS, GCS, ECS, and so on.
