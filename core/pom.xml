@@ -203,43 +203,36 @@
                 <dependency>
                     <groupId>org.apache.iceberg</groupId>
                     <artifactId>iceberg-aws</artifactId>
-                    <version>${iceberg.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>s3</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>glue</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>kms</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>dynamodb</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>sts</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
 
                 <dependency>
                     <groupId>software.amazon.awssdk</groupId>
                     <artifactId>url-connection-client</artifactId>
-                    <version>${awssdk.version}</version>
                 </dependency>
             </dependencies>
         </profile>

@@ -26,6 +26,7 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -66,6 +67,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
+  public ArcticHadoopFileIO io() {
+    return (ArcticHadoopFileIO) super.io();
+  }
+
+  @Override
   public TableFormat format() {
     return TableFormat.MIXED_HIVE;
   }
@@ -81,10 +87,9 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     }
   }
 
-
   @Override
   public String hiveLocation() {
-    return ((SupportHive)baseTable()).hiveLocation();
+    return ((SupportHive) baseTable()).hiveLocation();
   }
 
   @Override
@@ -118,12 +123,18 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return hiveClient;
   }
 
+
   public static class HiveChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client, Map<String, String> catalogProperties) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
     }
 
     @Override
@@ -139,12 +150,18 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
   public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
 
-    public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
-                                 ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
-                                 HMSClientPool hiveClient, Map<String, String> catalogProperties,
-                                 boolean syncHiveChange) {
+    public HiveBaseInternalTable(
+        TableIdentifier tableIdentifier, Table icebergTable,
+        ArcticHadoopFileIO arcticFileIO, String tableLocation, AmsClient client,
+        HMSClientPool hiveClient, Map<String, String> catalogProperties,
+        boolean syncHiveChange) {
       super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
           syncHiveChange);
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
     }
   }
 }

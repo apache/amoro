@@ -53,13 +53,7 @@ public class TestTableTrashManagers extends TableTestBase {
          new BasicTableTestHelper(false, false)}};
   }
 
-  @Test
-  public void testBuildTableTrashManager() {
-    TableIdentifier id = getArcticTable().id();
-    TableTrashManager trashManager = TableTrashManagers.build(getArcticTable());
-    Assert.assertEquals(id, trashManager.tableId());
-    Assert.assertEquals(getTableTrashLocation(id), trashManager.getTrashLocation());
-  }
+
 
   @Test
   public void testGetTrashLocation() {

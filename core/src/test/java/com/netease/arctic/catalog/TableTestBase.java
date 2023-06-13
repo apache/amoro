@@ -21,8 +21,10 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.CatalogUtil;
 import org.junit.After;
 import org.junit.Before;
 
@@ -30,6 +32,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   private final TableTestHelper tableTestHelper;
   private ArcticTable arcticTable;
+  private TableMetaStore tableMetaStore;
 
   public TableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper);
@@ -38,6 +41,11 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @Before
   public void setupTable() {
+    this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    }
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -50,7 +58,6 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createMixedFormatTable() {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     TableBuilder tableBuilder = getCatalog().newTableBuilder(
         TableTestHelper.TEST_TABLE_ID,
         tableTestHelper.tableSchema());
@@ -76,7 +83,6 @@ public abstract class TableTestBase extends CatalogTestBase {
   @After
   public void dropTable() {
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
   }
 
   protected ArcticTable getArcticTable() {
@@ -85,6 +91,10 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   protected UnkeyedTable getBaseStore() {
     return ArcticTableUtil.baseStore(arcticTable);
+  }
+
+  protected TableMetaStore getTableMetaStore() {
+    return this.tableMetaStore;
   }
 
   protected boolean isKeyedTable() {
