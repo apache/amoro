@@ -74,8 +74,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
                                @Nullable String backendBaseDir,
                                boolean concurrent,
-                               SerializationUtils.SimpleSerializer<K> keySerializer,
-                               SerializationUtils.SimpleSerializer<T> valueSerializer,
+                               SerializationUtil.SimpleSerializer<K> keySerializer,
+                               SerializationUtil.SimpleSerializer<T> valueSerializer,
                                SizeEstimator<K> keySizeEstimator,
                                SizeEstimator<T> valueSizeEstimator) {
     if (concurrent) {
