@@ -34,7 +34,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.config.Configuration;
-import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
+import com.netease.arctic.ams.server.exception.ArcticRuntimeException;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
@@ -48,6 +48,7 @@ import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.ThriftServiceProxy;
 import com.netease.arctic.ams.server.utils.UpdateTool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.utils.ConfigurationFileUtils;
@@ -215,9 +216,9 @@ public class ArcticMetaStore {
         inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
       }
 
-      ArcticTableMetastore.Processor<ArcticTableMetastoreHandler> tableMetastoreProcessor =
-          new ArcticTableMetastore.Processor<>(
-              ServiceContainer.getTableMetastoreHandler());
+      ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
+          new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
+              ServiceContainer.getTableMetastoreHandler(), ArcticRuntimeException::normalizeCompatibly));
       processor.registerProcessor("TableMetastore", tableMetastoreProcessor);
 
       // register OptimizeManager
