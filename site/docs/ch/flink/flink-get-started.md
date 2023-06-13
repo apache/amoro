@@ -1,5 +1,5 @@
 ## 概要
-Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arctic connector 提供读写 Arctic 数据湖的能力且满足数据一致性保证，也提供实时维表关联 Arctic 数据湖的能力。为了满足对数据实时性要求很高的业务，Arctic 数据湖底层存储结构设计了 Logstore，其存放着最新的 changelog 或 append-only 实时数据。
+Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arctic connector 提供读写 Arctic 数据湖的能力且满足数据一致性保证，也提供实时维表关联 Arctic 数据湖的能力。为了满足对数据实时性要求很高的业务，Arctic 数据湖底层存储结构设计了 LogStore，其存放着最新的 changelog 或 append-only 实时数据。
 
 Arctic 集成了 [Apache Flink](https://flink.apache.org/) 的 DataStream API 与 Table API，以方便的使用 Flink 从 Arctic 表中读取数据，或将数据写入
 Arctic 表中。
@@ -24,7 +24,7 @@ Flink Connector 包括：
 | 0.4.0             | 1.14.x        | 0.13.2            | [flink-1.14-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.14-0.4.0.jar) |
 | 0.4.0             | 1.15.x        | 0.13.2            | [flink-1.15-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.15-0.4.0.jar) |
 
-Kafka 作为 Logstore 版本说明：
+Kafka 作为 LogStore 版本说明：
 
 | Connector Version | Flink Version | Kafka Versions |
 | ----------------- |---------------|  ----------------- |
@@ -101,8 +101,15 @@ Arctic 0.3.1 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取
 
 **通过 Flink SQL-Client 读取开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据**
 
-通过 Flink SQL-Client 得到的查询结果不能提供基于主键的 MOR 语义，如果需要通过 Flink 引擎查询得到合并后的结果，可以将 Arctic 表的内容通过 JDBC connector 写入到 MySQL 表中进行查看
+通过 Flink SQL-Client 得到的查询结果不能提供基于主键的 MOR 语义，如果需要通过 Flink 引擎查询得到合并后的结果，可以将 Arctic 表的内容通过 JDBC connector 写入到 MySQL 表中进行查看。
 
 **Flink 1.15 版本下通过 SQL-Client 写入开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据**
 
-需要在 SQL-Client 中执行命令 set table.exec.sink.upsert-materialize = none，以关闭 upsert materialize 算子生成的 upsert 视图。该算子会影响 ArcticWriter 在 write.upsert 特性开启时生成 delete 数据，导致重复主键的数据无法合并
+需要在 SQL-Client 中执行命令 set table.exec.sink.upsert-materialize = none，以关闭 upsert materialize 算子生成的 upsert 视图。该算子会影响 ArcticWriter 在 write.upsert 特性开启时生成 delete 数据，导致重复主键的数据无法合并。
+
+
+## 版本兼容及迁移
+
+- 0.4.1 版本开始对 LogStore 的 API 进行重构，迁移至 Flink FLIP-27 的新接口。对于使用 Arctic Flink 版本 <= 0.4.0 的读 Arctic LogStore（Kafka） 任务，在使用旧的 checkpoint 状态升级到新的版本时，需注意：
+    1. 需要设置 SQL Hint 参数来使用废弃的 API 运行：`log-store.kafka.compatible.enabled = true`，见 [读 LogStore](flink-dml.md#Logstore 实时数据)。否则可能出现部分数据重复的现象。
+    2. 如有条件，可以升级至新的 API 来运行。在使用旧版本 Arctic Flink 的任务运行时，将 Kafka 的数据断流一小断时间，即在一段时间内，不往 LogStore Kafka 中写入数据来保证任务已经成功 checkpoint 并完成 Kafka Offset 的提交。然后停止任务，升级至 Arctic Flink 新的版本，从前面的状态中恢复任务。之后再恢复上游 LogStore Kafka 的正常写入。

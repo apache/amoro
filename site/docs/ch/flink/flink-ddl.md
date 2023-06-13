@@ -34,7 +34,7 @@ catalogs:
   ...
 ```
 
-## DDL 语句
+## CREATE 语句
 
 ### CREATE DATABASE
 默认使用创建 catalog 时的 default-database 配置（默认值：default）。可使用下述例子创建数据库：
@@ -43,11 +43,6 @@ catalogs:
 CREATE DATABASE [catalog_name.]arctic_db;
 
 USE arctic_db;
-```
-### DROP DATABASE
-    
-```sql
-DROP DATABASE catalog_name.arctic_db
 ```
 
 ### CREATE TABLE
@@ -71,7 +66,7 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
 
 目前不支持计算列、watermark 字段的配置。
     
-### PARTITIONED BY
+#### PARTITIONED BY
 使用 PARTITIONED BY 创建分区表。
 ```sql
 CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
@@ -83,6 +78,7 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
 );
 ```
 Arctic 表支持隐藏分区，但 Flink 不支持函数计算的分区，因此目前通过 Flink Sql 只能创建相同值的分区。
+
 ### CREATE TABLE LIKE
 创建一个与已有表相同表结构、分区、表属性的表，可使用 CREATE TABLE LIKE
 
@@ -97,6 +93,14 @@ CREATE TABLE  `arctic_catalog`.`arctic_db`.`test_table_like`
     LIKE `arctic_catalog`.`arctic_db`.`test_table`;
 ```
 更多细节可参考 [Flink create table like](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#like)
+
+## DROP 语句
+
+### DROP DATABASE
+
+```sql
+DROP DATABASE catalog_name.arctic_db
+```
 
 ### DROP TABLE
 ```sql
@@ -116,6 +120,21 @@ SHOW DATABASES;
 ```sql
 SHOW TABLES;
 ```
+
+### SHOW CREATE TABLE
+查看表详情：
+```sql
+SHOW CREATE TABLE;
+```
+
+## DESC 语句
+查看表描述：
+```sql
+DESC TABLE;
+```
+
+## ALTER 语句
+暂不支持
 
 ## Supported Types
 

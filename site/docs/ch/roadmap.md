@@ -24,10 +24,10 @@ Arctic 预计每2-3个月发布一个大版本，每1个月发布一个小版本
 |Support manage already existing Iceberg table            | 0.4.0          | [ARCTIC-260](https://github.com/NetEase/arctic/issues/260) |
 |Support Spark 2.3、2.4、3.2、3.3 version                  | 0.4.0          | [ARCTIC-261](https://github.com/NetEase/arctic/issues/261) |
 |AMS terminal on Kyuubi                                   | 0.4.0          | [ARCTIC-262](https://github.com/NetEase/arctic/issues/262) |
-|Unify Changestore and Logstore for Flink source          | 0.4.0          | [ARCTIC-264](https://github.com/NetEase/arctic/issues/264) |
+|Unify ChangeStore and LogStore for Flink source          | 0.4.0          | [ARCTIC-264](https://github.com/NetEase/arctic/issues/264) |
 |Support upsert partial fields (inline upsert) of arctic table with Flink  | 0.5.0 | [ARCTIC-256](https://github.com/NetEase/arctic/issues/256) |
-|Support Pulsar as a new type for Logstore                | 0.5.0          | [ARCTIC-266](https://github.com/NetEase/arctic/issues/266) |
-|Support RocketMQ as a new type for Logstore              | 0.5.0          | [ARCTIC-267](https://github.com/NetEase/arctic/issues/267) |
+|Support Pulsar as a new type for LogStore                | 0.5.0          | [ARCTIC-266](https://github.com/NetEase/arctic/issues/266) |
+|Support RocketMQ as a new type for LogStore              | 0.5.0          | [ARCTIC-267](https://github.com/NetEase/arctic/issues/267) |
 
 ## 讨论中
 

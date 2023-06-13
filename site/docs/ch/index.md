@@ -15,7 +15,7 @@ Arctic 开放式架构如下所示：
 Arctic 为流和更新的场景提供更多可插拔的组件：
 
 - [Optimizers](concepts/self-optimizing.md#introduction) — 数据自优化的执行引擎插件，为流式湖仓数据异步地执行合并、排序、去重，layout 优化，optimizer 被设计为湖仓中的后台执行器，执行过程像虚拟机中的垃圾回收器一样对用户透明。
-- [LogStore](flink/hidden-kafka.md) — Arctic 内置的 mixed streaming format 可以在表上配置 LogStore，利用 Kafka、Pulsar 等消息队列为实时数据加工提供毫秒到秒级的 SLA，LogStore 本身也会作为一种表格式使用。
+- [LogStore](flink/using-logstore.md) — Arctic 内置的 mixed streaming format 可以在表上配置 LogStore，利用 Kafka、Pulsar 等消息队列为实时数据加工提供毫秒到秒级的 SLA，LogStore 本身也会作为一种表格式使用。
 - [Kyuubi](https://kyuubi.apache.org/) — Arctic 提供的 SQL 工具可以对接 Kyuubi 实现 SQLGateway 功能
 
 ### Multiple formats
