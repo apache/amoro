@@ -76,20 +76,14 @@ public class CompatiblePropertyUtil {
         return TableProperties.OPTIMIZE_GROUP;
       case TableProperties.SELF_OPTIMIZING_QUOTA:
         return TableProperties.OPTIMIZE_QUOTA;
-      case TableProperties.SELF_OPTIMIZING_RETRY_NUMBER:
+      case TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER:
         return TableProperties.OPTIMIZE_RETRY_NUMBER;
-      case TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT:
-        return TableProperties.OPTIMIZE_EXECUTE_TIMEOUT;
       case TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT:
         return TableProperties.OPTIMIZE_MAX_FILE_COUNT;
       case TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT:
         return TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT;
       case TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL:
         return TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL;
-      case TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT:
-        return TableProperties.MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT;
-      case TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL:
-        return TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL;
       case TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL:
         return TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL;
       case TableProperties.ENABLE_TABLE_EXPIRE:

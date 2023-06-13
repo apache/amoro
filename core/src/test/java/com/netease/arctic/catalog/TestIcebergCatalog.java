@@ -21,8 +21,8 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.io.RecoverableArcticFileIO;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -52,7 +52,7 @@ public class TestIcebergCatalog extends CatalogTestBase {
     getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createIcebergTable();
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
-    Assert.assertTrue(table instanceof BasicIcebergCatalog.BasicIcebergTable);
+    Assert.assertTrue(table instanceof IcebergCatalogWrapper.BasicIcebergTable);
     Assert.assertTrue(table.isUnkeyedTable());
     Assert.assertEquals(BasicTableTestHelper.TABLE_SCHEMA.asStruct(), table.schema().asStruct());
   }

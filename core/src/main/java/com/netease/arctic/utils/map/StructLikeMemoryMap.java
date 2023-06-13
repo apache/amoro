@@ -18,7 +18,7 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapper;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 

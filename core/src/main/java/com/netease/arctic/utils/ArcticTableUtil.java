@@ -1,6 +1,6 @@
 package com.netease.arctic.utils;
 
-import com.netease.arctic.catalog.BasicIcebergCatalog;
+import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 
@@ -11,7 +11,7 @@ public class ArcticTableUtil {
    * @return Whether iceberg table format
    */
   public static boolean isIcebergTableFormat(ArcticTable arcticTable) {
-    return arcticTable instanceof BasicIcebergCatalog.BasicIcebergTable;
+    return arcticTable instanceof IcebergCatalogWrapper.BasicIcebergTable;
   }
 
   /**
@@ -31,7 +31,7 @@ public class ArcticTableUtil {
   public static String tableRootLocation(ArcticTable arcticTable) {
     String tableRootLocation;
     if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {
-      tableRootLocation = TableFileUtils.getFileDir(arcticTable.location());
+      tableRootLocation = TableFileUtil.getFileDir(arcticTable.location());
     } else {
       tableRootLocation = arcticTable.location();
     }

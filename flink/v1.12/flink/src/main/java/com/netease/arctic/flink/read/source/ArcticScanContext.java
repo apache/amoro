@@ -141,6 +141,9 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     return schema;
   }
 
+  /**
+   * Only working for base store right now.
+   */
   public List<Expression> filters() {
     return filters;
   }

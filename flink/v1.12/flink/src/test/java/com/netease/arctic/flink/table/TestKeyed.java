@@ -20,7 +20,7 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
@@ -32,7 +32,6 @@ import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -45,7 +44,6 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
-import org.apache.iceberg.UpdateProperties;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -53,7 +51,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -75,8 +72,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -483,6 +478,62 @@ public class TestKeyed extends FlinkTestBase {
         new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
             "'streaming'='false'" +
             ") */")));
+  }
+
+  @Test
+  public void testSinkSourceFileWithoutSelectPK() throws Exception {
+    Assume.assumeFalse(kafkaLegacyEnable);
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000015, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{1000007, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    List<ApiExpression> rows = DataUtil.toRows(data);
+
+    Table input = getTableEnv().fromValues(DataTypes.ROW(
+        DataTypes.FIELD("id", DataTypes.INT()),
+        DataTypes.FIELD("name", DataTypes.STRING()),
+        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+      ),
+      rows
+    );
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+      ") WITH ('connector' = 'arctic')");
+
+    sql("insert into arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.emit.mode'='file'" +
+      ")*/" + " select * from input");
+
+    TableResult result = exec("select name, op_time from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'streaming'='false'" +
+      ") */");
+    LinkedList<Row> actual = new LinkedList<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      while (iterator.hasNext()) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{"a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{"b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{"c", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{"d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{"d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    expected.add(new Object[]{"e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+
+    Assert.assertEquals(DataUtil.toRowSet(expected),
+      new HashSet<>(actual));
   }
 
   @Test
