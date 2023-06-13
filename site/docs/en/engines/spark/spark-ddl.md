@@ -2,8 +2,8 @@
 
 ## CREATE TABLE
 
-在 Arctic Catalog 下使用 `USING ARCTIC` 指定使用 Arctic 数据源即可通过 `CREATE TABLE` 语句创建 Arctic 表。
-如果 Catalog 的类型是 Hive ，则创建的是 Hive 兼容表。
+To create an MixedFormat table under an Arctic Catalog, you can use `USING ARCTIC` to specify the provider in the
+`CREATE TABLE` statement. If the Catalog type is Hive, the created table will be a Hive-compatible table.
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -14,8 +14,8 @@ CREATE TABLE arctic_catalog.db.sample (
 
 ### PRIMARY KEY
 
-在 `CREATE TABLE` 语句中使用 `PRIMARY KEY` 指定主键列，这样即可创建有主键表。
-Arctic 将通过 MOR(Merge on read) 和 Optimize 实现主键列上的唯一性。
+You can use `PRIMARY KEY` in the `CREATE TABLE` statement to specify the primary key column.
+MixedFormat ensures the uniqueness of the primary key column through MOR (Merge on Read) and Self-Optimizing.
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -27,7 +27,7 @@ CREATE TABLE arctic_catalog.db.sample (
 
 ### PARTITIONED BY
 
-在 `CREATE TABLE` 语句中使用 `PARTITIONED BY` 指定分区方式，这样即可创建分区表。
+Using `PARTITIONED BY` in the `CREATE TABLE` statement to create a table with partition spec.
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -38,7 +38,8 @@ USING arctic
 PARTITIONED BY (category)
 ```
 
-在 `PARTITIONED BY` 子句中可以定义 分区表达式， arctic 支持 iceberg 中全部分区表达式
+In the `PARTITIONED BY` clause, you can define partition expressions, and Mixed-Iceberg format supports all partition
+expressions in Iceberg.
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -51,16 +52,20 @@ USING arctic
 PARTITIONED BY (bucket(16, id), days(ts), category)
 ```
 
-可使用的 transform 有:
+Supported transformations are:
 
-* years(ts): 截取时间类型字段作为分区值，精度到 year
-* months(ts): 截取时间类型字段作为分区值， 精度到 month
-* days(ts) or date(ts): 截取时间类型字段作为分区值，精度到 day
-* hours(ts) or date_hour(ts): 截图时间类型字段作为分区值，精度到 hour
-* bucket(N, col): 取某一列上的 hash 值作为分区值
-* truncate(L, col): 截取某一列上前 L 个字符作为分区值
+* years(ts): partition by year
+* months(ts): partition by month
+* days(ts) or date(ts): equivalent to dateint partitioning
+* hours(ts) or date_hour(ts): equivalent to dateint and hour partitioning
+* bucket(N, col): partition by hashed value mod N buckets
+* truncate(L, col): partition by value truncated to L
 
-> Hive 类型的 Catalog 不支持分区表达式。
+      Strings are truncated to the given length
+
+      Integers and longs truncate to bins: truncate(10, i) produces partitions 0, 10, 20, 30, …
+
+> Mixed-Hive format doesn't support transform.
 
 ## CREATE TABLE ... AS SELECT
 
@@ -70,10 +75,15 @@ USING arctic
 AS SELECT ...
 ```
 
-> CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及 properties 不会从源表中继承，需单独配置。
-> 可以通过 SPARK SQL`set spark.sql.arctic.check-source-data-uniqueness.enabled = true` 开启对源表主键的唯一性校验，若存在相同主键，写入时会报错提示。
+> The `CREATE TABLE ... AS SELECT` syntax is used to create a table and write the query results to the table. Primary
+> keys, partitions, and properties are not inherited from the source table and need to be configured separately.
 
-创建带主键、分区、preoperties 的表，可以使用如下语法：
+> You can enable uniqueness check for the primary key in the source table by setting set
+> `spark.sql.arctic.check-source-data-uniqueness.enabled = true` in Spark SQL. If there are duplicate primary keys, an
+> error will be raised during the write operation.
+
+
+You can use the following syntax to create a table with primary keys, partitions, and properties:
 
 ```
 CREATE TABLE arctic_catalog.db.sample
@@ -83,11 +93,12 @@ TBLPROPERTIES (''prop1''=''val1'', ''prop2''=''val2'')
 AS SELECT ...
 ```
 
-???+danger "CREATE TABLE ... AS SELECT 在当前版本没有原子性保证"
+???+danger "In the current version, `CREATE TABLE ... AS SELECT` does not provide atomicity guarantees."
 
 ## CREATE TABLE ... LIKE
 
-`CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区复制到新表中，但不会复制数据。
+The `CREATE TABLE ... LIKE` syntax copies the structure of a table, including primary keys and partitions, to a new
+table, but it does not copy the data.
 
 ``` 
 USE arctic_catalog;
@@ -97,14 +108,15 @@ USING arctic
 TBLPROPERTIES ('owner'='xxxx');
 ```
 
-> 因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema
-> 信息，如果是其他类型的表，则无法复制
+> Since `PRIMARY KEY` is not a standard Spark syntax, if the source table is a MixedFormat table with primary keys, the
+> new table can copy the schema information with the primary keys. Otherwise, only schema could be copied.
 
-???+danger 由于 Spark 语法规则的限制，`CreateTableLike` 只支持二元组的方式 db.table 并且只支持同 catalog 下的源表
+???+danger "`Create Table Like` only supports the binary form of `db.table` and in the same catalog" 
+
 
 ## REPLACE TABLE ... AS SELECT
 
-> REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表
+> The `REPLACE TABLE ... AS SELECT` syntax only supports tables without primary keys in the current version.
 
 ``` 
 REPLACE TABLE arctic_catalog.db.sample
@@ -112,7 +124,7 @@ USING arctic
 AS SELECT ...
 ```
 
-> REPLACE TABLE ... AS SELECT 在当前版本没有原子性保证
+> In the current version, `REPLACE TABLE ... AS SELECT` does not provide atomicity guarantees.
 
 ## DROP TABLE
 
@@ -122,7 +134,7 @@ DROP TABLE arctic_catalog.db.sample;
 
 ## TRUNCATE TABLE
 
-Arctic Spark 支持 `TRUNCATE TABLE` 语法用于删除表中所有行
+The `TRUNCATE TABLE` statement could delete all data in the table.
 
 ```sql
 TRUNCATE TABLE arctic_catalog.db.sample;
@@ -130,7 +142,7 @@ TRUNCATE TABLE arctic_catalog.db.sample;
 
 ## ALTER TABLE
 
-Arctic 支持的 `ALTER TABLE` 语法包括：
+The ALTER TABLE syntax supported by Mixed-Format includes:
 
 * ALTER TABLE ... SET TBLPROPERTIES
 * ALTER TABLE ... ADD COLUMN
@@ -147,7 +159,7 @@ ALTER TABLE arctic_catalog.db.sample SET TBLPROPERTIES (
 );
 ```
 
-使用 `UNSET` 可以移除 properties:
+Using `UNSET` to remove properties:
 
 ```sql
 ALTER TABLE arctic_catalog.db.sample UNSET TBLPROPERTIES ('read.split.target-size');
@@ -162,7 +174,7 @@ ADD COLUMNS (
   );
 ```
 
-可以同时添加多个列，用逗号分隔。
+You can add multiple columns at once, separated by commas.
 
 ```sql
 -- create a struct column
@@ -194,7 +206,7 @@ ALTER TABLE arctic_catalog.db.sample
 ADD COLUMN points.value.b int;
 ```
 
-可以通过添加 `FIRST` 或 `AFTER` 子句在任何位置添加列:
+You can add columns at any position by using the `FIRST` or `AFTER` clause.
 
 ```sql
 ALTER TABLE arctic_catalog.db.sample
@@ -214,22 +226,22 @@ ALTER TABLE arctic_catalog.db.sample RENAME COLUMN data TO payload;
 
 ### ALTER TABLE ... ALTER COLUMN
 
-Alter COLUMN 可以用于加宽类型，使字段成为可选字段，设置注释和重新排序字段。
+`"`ALTER COLUMN` can be used to widen types, make fields nullable, set comments, and reorder fields.
 
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double;
 ```
 
-若要从结构中添加或删除列，请使用带有嵌套列名的 `ADD COLUMN` 或 `DROP COLUMN`。
+To add or remove columns from a structure, use `ADD COLUMN` or `DROP COLUMN` with nested column names.
 
-Column 注释也可以使用 `ALTER COLUMN` 更新:
+Column comments can also be updated using `ALTER COLUMN`.
 
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double COMMENT 'unit is bytes per second';
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement COMMENT 'unit is kilobytes per second';
 ```
 
-允许使用 `FIRST` 和 `AFTER` 子句对结构中的顶级列或列进行重新排序:
+You can use the `FIRST` and `AFTER` clauses to reorder top-level or nested columns within a structure.
 
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN col FIRST;
@@ -254,7 +266,8 @@ ALTER TABLE arctic_catalog.db.sample DROP IF EXISTS PARTITION (dt=2022);
 
 ## DESC TABLE
 
-`DESCRIBE TABLE`返回表的基本元数据信息。 对于有主键表，也会展示主键信息。
+`DESCRIBE TABLE` returns basic metadata information about a table, including the primary key information for tables that
+have a primary key
 
 ```sql
  { DESC | DESCRIBE }  TABLE  arctic_catalog.db.sample;

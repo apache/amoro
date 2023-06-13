@@ -1,19 +1,18 @@
+## Querying with SQL
 
-# Querying with SQL
+### Querying Mixed-Format table by merge on read
 
-# Querying Mixed-Format table by merge on read
-
-使用 `Select` 语句查询 Arctic 表
+Using `Select` statement to query on Mixed-Format tables.
 
 ```sql 
 SELECT * FROM arctic_catalog.db.sample
 ```
 
-Spark 引擎会将 BaseStore 和 ChangeStore 的数据 Merge 后返回
+The Mixed-Format connector will merge the data from `BaseStore` and `ChangeStore`.
 
-# Query on change store
+### Query on change store
 
-对于主键表，可以通过 `.change` 查询 ChangeStore 的信息
+For a Mixed-Format table with primary keys. you can query on `ChangeStore` by `.change`.
 
 ```sql
 SELECT * FROM arctic_catalog.db.sample.change
@@ -26,24 +25,23 @@ SELECT * FROM arctic_catalog.db.sample.change
 +---+----+----+---------------+------------+--------------+
 ```
 
-查出来结果会多三列数据分别是：
+The addition columns are:
 
-- _transaction_id: 数据写入时AMS分配的 transaction id。批模式下为每条SQL执行时分配，流模式下为每次checkpoint 分配。
-- _file_offset：大小可以表示同一批 _transaction_id 中数据写入的先后顺序。
-- _change_action：表示数据的类型有 INSERT，DELETE 两种
+- _transaction_id: The transaction ID allocated by AMS during data write is assigned per SQL execution in batch mode and
+  per checkpoint in streaming mode.
+- _file_offset：The order of data written with the same `_transaction_id`.
+- _change_action：The type of change record, `INSERT` or `DELETE`.
 
+## Querying with DataFrames
 
-
-# Querying with DataFrames
-
-支持 DataFrame 读取，现在可以使用 `spark.read.table` 通过表名 load 表:
+You can read the Mixed-Format table by Spark DataFrames:
 
 ```scala
 val df = spark.read.table("arctic_catalog.db.sample")
 df.count
 ```
 
-当然也可以在 DataFrame 任务中通过 `.change` 来访问 ChangeStore
+And visit the `ChangeStore` by `.change`.
 
 ```scala
 val df = spark.read.table("arctic_catalog.db.sample.change")

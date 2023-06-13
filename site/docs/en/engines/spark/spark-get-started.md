@@ -6,11 +6,17 @@ for more information.
 
 # Mixed Format
 
-## 环境准备
 
-当前 Arctic-Spark-Connector 支持与 Spark 3.1  版本使用。在开始使用前，
-[下载](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-spark-3.1-runtime-0.4.0.jar)并将 
-arctic-spark-3.1-runtime.jar 复制到 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
+To use Arctic in a Spark shell, use the --packages option:
+
+```bash
+spark-shell --packages com.netease.arctic:arctic-spark-3.3-runtime:0.5.0
+```
+
+> If you want to include the connector in your Spark installation, add the `arctic-spark-3.3-runtime` Jar to
+> Spark's `jars` folder.
+
+## Adding catalogs
 
 ```
 ${SPARK_HOME}/bin/spark-sql \
@@ -19,21 +25,24 @@ ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
-> Arctic 通过 ArcticMetaService 管理 Catalog, Spark catalog 需要通过URL映射到 Arctic Catalog, 格式为:
-> `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`, arctic-spark-connector 会通过 thrift 协议自动
-> 下载 hadoop site 配置文件用于访问 hdfs 集群.
+> Arctic manages the Catalog through AMS, and Spark catalog needs to be mapped to Arctic Catalog via URL, 
+> in the following format:
+> `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`, 
+> The arctic-spark-connector will automatically download the Hadoop site configuration file through 
+> the thrift protocol for accessing the HDFS cluster
+
 >
-> AMS_PORT 为AMS服务 thrift api接口端口号，默认值为 1260
-> AMS_CATALOG_NAME 为启动AMS 服务时配置的 Catalog, 默认值为 local_catalog
+> The AMS_PORT is the port number of the AMS service's thrift API interface, with a default value of 1260
+> The AMS_CATALOG_NAME is the name of the Catalog you want to access on AMS.
 
-关于 Spark 下的详细配置，请参考 [Spark Configurations](spark-conf.md)
+Regarding detailed configurations for Spark, please refer to [Spark Configurations](spark-conf.md)
 
 
-## 创建表
+## Creating a table
 
-在 Spark SQL 命令行中，可以通过 `CREATE TABLE` 语句执行建表命令。
+In Spark SQL command line, you can execute a create table command using the `CREATE TABLE` statement.
 
-在执行建表操作前，请先创建 database。
+Before executing a create table operation, please make sure to create the `database` first.
 
 ```
 -- switch to arctic catalog defined in spark conf
@@ -43,7 +52,7 @@ use local_catalog;
 create database if not exists test_db;
 ```
 
-然后切换到刚建立的 database 下进行建表操作
+Then switch to the newly created database and perform the create table operation.
 
 ```
 use test_db;
@@ -58,11 +67,11 @@ create table test2 (id int, data string, ts timestamp) using arctic partitioned 
 create table test3 (id int, data string, ts timestamp, primary key(id)) using arctic partitioned by (days(ts));
 ```
 
-更多表相关 DDL，请参考 [Spark DDL](spark-ddl.md)
+For more information on Spark DDL related to tables, please refer to [Spark DDL](spark-ddl.md)
 
-## 写入
+## Writing to the table
 
-如果您使用 SparkSQL, 可以通过 `INSERT OVERWRITE` 或 `INSERT` SQL语句向 Arctic 表写入数据。
+If you are using Spark SQL, you can use the `INSERT OVERWRITE` or `INSERT` SQL statement to write data to an Arctic table.
 
 ```
 -- insert values into unkeyed table
@@ -79,20 +88,20 @@ insert overwrite test3 values
 ```
 
 
-> 如果使用 Static 类型的 Overwrite, 不能在分区上定义函数。
+> If you are using Static Overwrite, you cannot define transforms on partition fields.
 
-或者可以在 jar 任务中使用 DataFrame Api 向 Arctic 表写入数据
+Alternatively, you can use the DataFrame API to write data to an Arctic table within a JAR job.
 
 ``` 
 val df = spark.read().load("/path-to-table")
 df.writeTo('test_db.table1').overwritePartitions()
 ```
 
-更多表写入相关，请参考 [Spark Writes](spark-writes.md)
+For more information on writing to tables, please refer to [Spark Writes](spark-writes.md)
 
-## 读取
+## Reading from the table
 
-使用 `SELECT` SQL语句查询 Arctic 表
+To query the table using `SELECT` SQL statements
 
 ``` 
 select count(1) as count, data 
@@ -100,12 +109,12 @@ from test2
 group by data;
 ```
 
-对于有主键表，支持通过 `.change` 的方式访问 `ChangeStore`
+For table with primary keys defined, you can query on `ChangeStore` by `.change` 
 
 ``` 
 select count(1) as count, data
 from test_db.test3.change group by data;
 ```
-> 此处 change 表没有数据，结果返回空
 
-更多表读取相关，请参考 [Spark Queries](spark-queries.md)
+
+For more information on reading from tables, please refer to [Spark Queries](spark-queries.md)
