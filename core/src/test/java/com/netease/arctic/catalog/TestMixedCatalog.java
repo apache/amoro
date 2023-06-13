@@ -143,6 +143,41 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   @Test
+  public void testCreateTableWithNewCatalogLogProperties() throws TException {
+    UnkeyedTable createTable = getCatalog()
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+
+    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_ADDRESS,
+        "1.1.1.1");
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_MESSAGE_TOPIC,
+        "test-topic");
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+        "false");
+    getCatalog().refresh();
+    createTable = getCatalog()
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .withProperty(TableProperties.ENABLE_LOG_STORE, "true")
+        .create()
+        .asUnkeyedTable();
+    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+  }
+
+  @Test
   public void testUnkeyedRecoverableFileIO() throws TException {
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
