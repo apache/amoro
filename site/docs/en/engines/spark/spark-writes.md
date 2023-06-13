@@ -1,0 +1,180 @@
+# Writing with SQL
+
+## INSERT OVERWRITE 
+
+`INSERT OVERWRITE`可以用查询的结果替换表中的数据
+
+Spark 默认的覆盖模式是 Static
+
+Dynamic 覆盖模式通过设置`spark.sql.sources.partitionOverwriteMode=dynamic`
+
+为了演示 `dynamic overwrite` 和 `static overwrite` 的行为，由以下DDL定义一张测试表:
+
+```sql
+CREATE TABLE arctic_catalog.db.sample (
+    id int,
+    data string,
+    ts timestamp,
+    primary key (id))
+USING arctic
+PARTITIONED BY (days(ts))
+```
+
+当 Spark 的覆盖模式是 Dynamic 时，由 `SELECT` 查询生成的行的分区将被替换。
+
+```sql
+INSERT OVERWRITE arctic_catalog.db.sample values 
+(1, 'aaa',  timestamp(' 2022-1-1 09:00:00 ')), 
+(2, 'bbb',  timestamp(' 2022-1-2 09:00:00 ')), 
+(3, 'ccc',  timestamp(' 2022-1-3 09:00:00 '))
+```
+
+当 Spark 的覆盖模式为 Static 时，该 `PARTITION` 子句将转换为从表中 `SELECT` 的结果集。如果 `PARTITION` 省略该子句，则将替换所有分区
+
+```sql
+INSERT OVERWRITE arctic_catalog.db.sample 
+partition( dt = '2021-1-1')  values 
+(1, 'aaa'), (2, 'bbb'), (3, 'ccc') 
+```
+
+> 在 Static 模式下，不支持在分区字段上定义 transform
+
+> 可以通过 SPARK SQL`set spark.sql.arctic.check-source-data-uniqueness.enabled = true` 开启对源表主键的唯一性校验，若存在相同主键，写入时会报错提示。
+
+## INSERT INTO
+
+### 无主键表
+要向无主键表添加新数据，请使用 `INSERT INTO`
+
+```sql
+INSERT INTO arctic_catalog.db.sample VALUES (1, 'a'), (2, 'b')
+
+INSERT INTO prod.db.table SELECT ...
+```
+
+### 有主键表
+向有主键表添加新数据，可以根据配置 `write.upsert.enabled` 参数，来控制是否开启 `UPSERT` 功能。
+
+`UPSERT` 开启后，主键相同的行存在时执行 `UPDATE` 操作，不存在时执行 `INSERT` 操作
+
+`UPSERT` 关闭后，仅执行 `INSERT` 操作
+
+```sql
+CREATE TABLE arctic_catalog.db.keyedTable (
+    id int,
+    data string,
+    primary key (id))
+USING arctic
+TBLPROPERTIES ('write.upsert.enabled' = 'true')
+```
+
+```sql
+INSERT INTO arctic_catalog.db.keyedTable VALUES (1, 'a'), (2, 'b')
+
+INSERT INTO prod.db.keyedTable SELECT ...
+```
+> 可以通过 SPARK SQL`set spark.sql.arctic.check-source-data-uniqueness.enabled = true` 开启对源表主键的唯一性校验，若存在相同主键，写入时会报错提示。
+
+
+
+## DELETE FROM
+
+Arctic Spark 支持 `DELETE FROM` 语法用于删除表中数据
+
+```sql
+DELETE FROM arctic_catalog.db.sample
+WHERE ts >= '2020-05-01 00:00:00' and ts < '2020-06-01 00:00:00'
+
+DELETE FROM arctic_catalog.db.sample
+WHERE session_time < (SELECT min(session_time) FROM prod.db.good_events)
+
+DELETE FROM arctic_catalog.db.sample AS t1
+WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
+```
+
+
+## UPDATE 
+
+支持 `UPDATE` 语句对表进行更新
+
+更新语句使用 `SELECT` 来匹配要更新的行
+
+```sql
+UPDATE arctic_catalog.db.sample
+SET c1 = 'update_c1', c2 = 'update_c2'
+WHERE ts >= '2020-05-01 00:00:00' and ts < '2020-06-01 00:00:00'
+
+UPDATE arctic_catalog.db.sample
+SET session_time = 0, ignored = true
+WHERE session_time < (SELECT min(session_time) FROM prod.db.good_events)
+
+UPDATE arctic_catalog.db.sample AS t1
+SET order_status = 'returned'
+WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
+```
+
+
+
+## MERGE INTO
+
+```sql 
+MERGE INTO prod.db.target t   -- a target table
+USING (SELECT ...) s          -- the source updates
+ON t.id = s.id                -- condition to find updates for target rows
+WHEN ...                      -- updates
+```
+
+支持多个 `WHEN MATCHED ... THEN ...` 语法执行 `UPDATE`, `DELETE`, `INSERT` 等操作。
+
+```sql 
+
+MERGE INTO prod.db.target t   
+USING prod.db.source s       
+ON t.id = s.id             
+WHEN MATCHED AND s.op = 'delete' THEN DELETE
+WHEN MATCHED AND t.count IS NULL AND s.op = 'increment' THEN UPDATE SET t.count = 0
+WHEN MATCHED AND s.op = 'increment' THEN UPDATE SET t.count = t.count + 1          
+WHEN NOT MATCHED THEN INSERT *
+
+```
+
+
+# Writing with DataFrames
+
+
+### Appending data
+
+要向 Arctic 表添加数据，使用 `append()`:
+```sql
+val data: DataFrame = ...
+data.writeTo("arctic_catalog.db.sample").append()
+```
+
+> append 只支持无主键表
+
+
+
+### Overwriting data
+
+要动态覆盖分区，使用 `overwritePartitions()` :
+
+```sql
+val data: DataFrame = ...
+data.writeTo("arctic_catalog.db.sample").overwritePartitions()
+```
+
+### Creating tables
+创建表请使用 `create` 操作
+```sql
+val data: DataFrame = ...
+data.writeTo("arctic_catalog.db.sample").create()
+```
+
+创建表操作支持表配置方法，如 `partitionBy`，并且arctic支持使用 `option("primary.keys", "'xxx'")` 来指定主键:
+```sql
+val data: DataFrame = ...
+data.write().format("arctic")
+    .partitionBy("data")
+    .option("primary.keys", "'xxx'")
+    .save("arctic_catalog.db.sample")
+```

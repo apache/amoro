@@ -70,6 +70,12 @@ nav:
     - Overview: engines/overview.md
     - Trino: engines/trino.md
     - Impala: engines/impala.md
+    - Spark:
+        - Get Started: engines/spark/spark-get-started.md
+        - Configurations: engines/spark/spark-conf.md
+        - Spark DDL: engines/spark/spark-ddl.md
+        - Spark Queries: engines/spark/spark-queries.md
+        - Spark Writes: engines/spark/spark-writes.md
 
 plugins:
   - search
