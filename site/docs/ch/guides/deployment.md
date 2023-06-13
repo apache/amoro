@@ -133,7 +133,7 @@ Zookeeper 集群上绑定不同的 AMS 集群，避免相互影响。
 ```shell
 ams:
   #HA config
-  arctic.ams.ha.enable: true     #开启 ha
+  arctic.ams.ha.enabled: true     #开启 ha
   arctic.ams.cluster.name: default  # 区分同一套 zookeeper 上绑定多套 AMS
   arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183  # zookeeper server地址
 ```
@@ -186,7 +186,7 @@ ams:
   arctic.ams.database.type: mysql
 
   #HA config
-  arctic.ams.ha.enable: true     #开启ha
+  arctic.ams.ha.enabled: true     #开启ha
   arctic.ams.cluster.name: default  # 区分同一套zookeeper上绑定多套AMS
   arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
