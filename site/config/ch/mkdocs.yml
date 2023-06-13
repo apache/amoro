@@ -51,42 +51,39 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Concepts:
-    - Catalogs: concepts/catalogs.md
-    - Table Formats: concepts/table-formats.md
-    - Self-optimizing: concepts/self-optimizing.md
-    - Table Watermark: concepts/table-watermark.md
+      - Catalogs: concepts/catalogs.md
+      - Table Formats: concepts/table-formats.md
+      - Self-optimizing: concepts/self-optimizing.md
+      - Table Watermark: concepts/table-watermark.md
   - Quick Start:
       - Setup: quickstart/setup.md
       - Quick Demo: quickstart/quick-demo.md
       - CDC Ingestion: quickstart/cdc-ingestion.md
   - Admin Guides:
-    - Deployment: guides/deployment.md
-    - Managing Catalogs: guides/managing-catalogs.md
-    - Managing Tables: guides/managing-tables.md
-    - Managing Optimizers: guides/managing-optimizers.md
-    - Using Kyuubi By Terminal: guides/using-kyuubi.md
-    - Metrics: guides/metrics.md
+      - Deployment: guides/deployment.md
+      - Managing Catalogs: guides/managing-catalogs.md
+      - Managing Tables: guides/managing-tables.md
+      - Managing Optimizers: guides/managing-optimizers.md
+      - Using Kyuubi By Terminal: guides/using-kyuubi.md
+      - Metrics: guides/metrics.md
   - Configurations: configurations.md
   - Flink Integration:
-    - Getting Started: flink/flink-get-started.md
-    - Flink DDL: flink/flink-ddl.md
-    - Flink DML: flink/flink-dml.md
-    - Flink DIM: flink/flink-dim.md
-    - Flink DataStream: flink/flink-ds.md
-    - Using Kafka as Logstore: flink/hidden-kafka.md
-    - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
-    - Upgrading Arctic Flink: flink/upgrading-arctic-flink.md
+      - Getting Started: flink/flink-get-started.md
+      - Flink DDL: flink/flink-ddl.md
+      - Flink DML: flink/flink-dml.md
+      - Flink DataStream: flink/flink-ds.md
+      - Using LogStore: flink/using-logstore.md
   - Spark Integration:
-    - Getting Started: spark/spark-get-started.md
-    - Spark DDL: spark/spark-ddl.md
-    - Spark DML: spark/spark-dml.md
-    - Spark DataFrame: spark/spark-dataframe.md
+      - Getting Started: spark/spark-get-started.md
+      - Spark DDL: spark/spark-ddl.md
+      - Spark DML: spark/spark-dml.md
+      - Spark DataFrame: spark/spark-dataframe.md
   - MPP Integrations:
-    - Trino: mpp/trino.md
-    - Impala: mpp/impala.md
+      - Trino: mpp/trino.md
+      - Impala: mpp/impala.md
   - Benchmark:
-    - Benchmark Report: benchmark/benchmark.md
-    - How To Benchmark: benchmark/benchmark-step.md
+      - Benchmark Report: benchmark/benchmark.md
+      - How To Benchmark: benchmark/benchmark-step.md
   - Roadmap: roadmap.md
   - Contributing: contribute.md
 

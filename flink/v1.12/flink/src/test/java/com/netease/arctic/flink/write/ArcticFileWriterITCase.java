@@ -20,9 +20,9 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -290,7 +290,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
         paths.add(path);
         LOG.info("add file: {}", addedFile.path());
 
-        long txId = FileNameGenerator.parseChange(path, snapshot.sequenceNumber()).transactionId();
+        long txId = FileNameRules.parseChange(path, snapshot.sequenceNumber()).transactionId();
         minTxIdInSnapshot = Math.min(minTxIdInSnapshot, txId);
         maxTxIdInSnapshot = Math.max(maxTxIdInSnapshot, txId);
       }

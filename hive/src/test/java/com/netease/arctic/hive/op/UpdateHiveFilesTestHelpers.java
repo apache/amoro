@@ -24,17 +24,17 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -86,9 +86,11 @@ public class UpdateHiveFilesTestHelpers {
       Assert.assertEquals(
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
-      List<FileStatus> listFiles = table.io().list(valuePath);
       Assert.assertEquals(
-          listFiles.stream().map(FileStatus::getPath).map(Path::toString).collect(Collectors.toSet()),
+          Streams.stream(table.io().asFileSystemIO().listDirectory(valuePath))
+              .map(FileInfo::location)
+              .collect(Collectors.toSet()),
+
           filesByPartition.get(partitionData).stream().map(DataFile::path)
               .map(CharSequence::toString).collect(Collectors.toSet()));
     }
@@ -144,9 +146,9 @@ public class UpdateHiveFilesTestHelpers {
     String fileDir = null;
     for (DataFile file : files) {
       if (fileDir == null) {
-        fileDir = TableFileUtils.getFileDir(file.path().toString());
+        fileDir = TableFileUtil.getFileDir(file.path().toString());
       } else {
-        Assert.assertEquals(fileDir, TableFileUtils.getFileDir(file.path().toString()));
+        Assert.assertEquals(fileDir, TableFileUtil.getFileDir(file.path().toString()));
       }
     }
     return fileDir;

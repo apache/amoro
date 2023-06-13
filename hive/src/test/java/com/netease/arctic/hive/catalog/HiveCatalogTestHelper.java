@@ -20,9 +20,10 @@ package com.netease.arctic.hive.catalog;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
+import com.netease.arctic.catalog.MixedTables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -62,6 +63,14 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HIVE);
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
         catalogProperties, hiveConf);
+  }
+
+  @Override
+  public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
+    if (!TableFormat.MIXED_HIVE.equals(tableFormat)) {
+      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
+    }
+    return new MixedHiveTables(catalogMeta);
   }
 
   @Override

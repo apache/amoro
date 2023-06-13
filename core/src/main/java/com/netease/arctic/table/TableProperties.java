@@ -39,6 +39,7 @@ public class TableProperties {
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
   public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
+  public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
 
   public static final String LOCATION = "location";
 
@@ -77,11 +78,8 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
   public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
 
-  public static final String SELF_OPTIMIZING_RETRY_NUMBER = "self-optimizing.num-retries";
-  public static final int SELF_OPTIMIZING_RETRY_NUMBER_DEFAULT = 5;
-
-  public static final String SELF_OPTIMIZING_EXECUTE_TIMEOUT = "self-optimizing.execute.timeout";
-  public static final long SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
+  public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER = "self-optimizing.execute.num-retries";
+  public static final int SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT = 5;
 
   public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
   public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
@@ -99,20 +97,17 @@ public class TableProperties {
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL = "self-optimizing.minor.trigger.interval";
-  public static final long SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
+  public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
   public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
 
-  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT = "self-optimizing.major.trigger.file-count";
-  public static final int SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT_DEFAULT = 12;
-
-  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL = "self-optimizing.major.trigger.interval";
-  public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
-
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
-  public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+
+  public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
+  public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
 
   /**
@@ -122,22 +117,13 @@ public class TableProperties {
   public static final String ENABLE_OPTIMIZE = "optimize.enable";
 
   @Deprecated
-  public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
-
-  @Deprecated
   public static final String OPTIMIZE_GROUP = "optimize.group";
 
   @Deprecated
   public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
 
   @Deprecated
-  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
-
-  @Deprecated
   public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
 
   @Deprecated
   public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.trigger.max-interval";
@@ -147,13 +133,6 @@ public class TableProperties {
 
   @Deprecated
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
-
-  @Deprecated
-  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
-      "optimize.full.trigger.delete-file-size-bytes";
 
   @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
@@ -167,13 +146,13 @@ public class TableProperties {
   public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
-  public static final String CHANGE_DATA_TTL_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
 
   public static final String CHANGE_SNAPSHOT_KEEP_MINUTES = "snapshot.change.keep.minutes";
-  public static final String CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "10080"; // 7 Days
+  public static final long CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 10080; // 7 Days
 
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
-  public static final String BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "720"; // 12 Hours
+  public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
@@ -181,7 +160,7 @@ public class TableProperties {
   public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
-  public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
+  public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
   public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
   public static final boolean ENABLE_TABLE_TRASH_DEFAULT = false;
@@ -240,6 +219,9 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
   public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
+  public static final String BASE_REFRESH_INTERVAL = "base.refresh-interval";
+  public static final long BASE_REFRESH_INTERVAL_DEFAULT = -1L;
+
   /**
    * table read related properties
    * TODO
@@ -292,7 +274,7 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-  
+
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";

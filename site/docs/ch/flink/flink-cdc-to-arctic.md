@@ -7,7 +7,7 @@ CDC 是 Change Data Capture 的缩写，这是一个宽泛的概念，只要能�
 Flink CDC Connector 捕获数据库数据包含四种 RowKind: UPDATE_BEFORE, UPDATE_AFTER, DELETE and INSERT，Flink on Arctic Connector 也支持四种数据写入到 Arctic 数据湖。
 后续通过 Flink 引擎增量读取 Arctic 数据湖，也可以回放 CDC 数据。
 
-以下简单案例将 Mysql CDC 数据写入到 Arctic 数据湖
+以下简单案例将 MySQL CDC 数据写入到 Arctic 数据湖
 ```sql
 CREATE TABLE user_info (
     id int,
@@ -34,7 +34,7 @@ INSERT INTO arctic.db.user_info select * from user_info;
 ```
 
 ### 自动开启双写
-可通过以下方式，Flink 入湖任务自动将数据写入到 Logstore，而不需要手动重启任务。适用场景：数据库存量加增量数据入湖，存量数据写入 Filestore 进行批计算，最新数据写入 Logstore 进行实时计算。
+可通过以下方式，Flink 入湖任务自动将数据写入到 LogStore，而不需要手动重启任务。适用场景：数据库存量加增量数据入湖，存量数据写入 FileStore 进行批计算，最新数据写入 LogStore 进行实时计算。
 
 ```sql
 CREATE TABLE source (
@@ -52,13 +52,13 @@ INSERT INTO arctic.db.table
 > 
 > 前提
 >
-> - Arctic 表需要开启 Logstore。
+> - Arctic 表需要开启 LogStore。
 > 
 > - Source 表需要配置 Watermark。
 
 ![Introduce](../images/flink-auto-writer.png){:height="80%" width="80%"}
 
-当 AutomaticLogWriter 算子收到的 Watermark 大于等于当前时间减去配置的 GAP 时间，便会将后面新的数据写入到 Logstore。
+当 AutomaticLogWriter 算子收到的 Watermark 大于等于当前时间减去配置的 GAP 时间，便会将后面新的数据写入到 LogStore。
 
 ### 开启 Upsert 功能
 开启 UPSERT 功能后相同主键的多条 insert 数据会在表结构优化过程中合并，保留后面插入的 insert 数据。
@@ -88,7 +88,7 @@ SELECT * FROM arctic.db.user_info
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)
 
 ### Changelog 增量读取
-可以通过 Flink 引擎增量读取 Arctic 数据湖 Changestore 中 CDC 数据。
+可以通过 Flink 引擎增量读取 Arctic 数据湖 ChangeStore 中 CDC 数据。
 
 ```sql
 -- 在当前 session 中以流的模式运行 Flink 任务

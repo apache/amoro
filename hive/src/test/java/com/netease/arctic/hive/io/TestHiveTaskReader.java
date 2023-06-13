@@ -20,7 +20,7 @@ package com.netease.arctic.hive.io;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

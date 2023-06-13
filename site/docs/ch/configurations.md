@@ -7,23 +7,23 @@ Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的�
 Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 
-| 配置名称                                             | 默认值            | 描述                                               |
-|-----------------------------------------------------|------------------|---------------------------------------------------|
-| self-optimizing.enabled                             | true             | 是否开启 self-optimizing                                    |
-| self-optimizing.group                               | default          | self-optimizing 所属的 optimizer 组                                     |
-| self-optimizing.quota                               | 0.1              | 表所能占用的 self-optimizing 资源量                             |
-| self-optimizing.num-retries                         | 5                | self-optimizing 失败时的重试次数                               |
-| self-optimizing.execute.timeout                     | 1800000（30分钟） | self-optimizing 执行超时时间，超时会失败重试                                  |
-| self-optimizing.target-size                         | 134217728（128MB）| self-optimizing 的目标文件大小                                |
-| self-optimizing.max-file-count                      | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
-| self-optimizing.max-file-size-bytes                 | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
-| self-optimizing.fragment-ratio                      | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
-| self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
-| self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
-| self-optimizing.major.trigger.file-count            | 12               | 触发 major optimizing 的最少文件数量                      |
-| self-optimizing.major.trigger.duplicate-ratio       | 0.5              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
-| self-optimizing.major.trigger.interval              | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
-| self-optimizing.full.trigger.interval               | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
+| 配置名称                                          | 默认值            | 描述                                               |
+|-----------------------------------------------|------------------|---------------------------------------------------|
+| self-optimizing.enabled                       | true             | 是否开启 self-optimizing                                    |
+| self-optimizing.group                         | default          | self-optimizing 所属的 optimizer 组                                     |
+| self-optimizing.quota                         | 0.1              | 表所能占用的 self-optimizing 资源量                             |
+| self-optimizing.execute.num-retries           | 5                | self-optimizing 失败时的重试次数                               |
+| self-optimizing.execute.timeout               | 1800000（30分钟） | self-optimizing 执行超时时间，超时会失败重试                                  |
+| self-optimizing.target-size                   | 134217728（128MB）| self-optimizing 的目标文件大小                                |
+| self-optimizing.max-file-count                | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
+| self-optimizing.max-file-size-bytes           | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
+| self-optimizing.fragment-ratio                | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
+| self-optimizing.minor.trigger.file-count      | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
+| self-optimizing.minor.trigger.interval        | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
+| self-optimizing.major.trigger.file-count      | 12               | 触发 major optimizing 的最少文件数量                      |
+| self-optimizing.major.trigger.duplicate-ratio | 0.5              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
+| self-optimizing.major.trigger.interval        | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
+| self-optimizing.full.trigger.interval         | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
 
 ## 数据清理配置
 
@@ -64,17 +64,17 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | write.distribution-mode            | hash             | 数据写入时的 shuffle 规则，无主键表可以选择 none、hash，有主键表目前只能选择 hash                  |
 | write.distribution.hash-mode       | auto             | 使用 auto-bucket hash，支持 primary-key、partition-key、primary-partition-key 和 auto  |
 
-### Logstore 相关配置
+### LogStore 相关配置
 
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
-| log-store.enabled                  | false            | 是否开启 Logstore                        |
-| log-store.type                     | kafka            | Logstore 的类型，当前支持 'kafka'、'pulsar'            |
-| log-store.address                  | NULL             | 当 log-store.enabled=true 时必填，Logstore 的地址。对于 Kafka，为 kafka bootstrap servers地址；对于 Pulsar，为 Pulsar Service url，如: 'pulsar://localhost:6650'|
-| log-store.topic                    | NULL             | 当 log-store.enabled=true 时必填，Logstore 使用的 topic                      
+| log-store.enabled                  | false            | 是否开启 LogStore                        |
+| log-store.type                     | kafka            | LogStore 的类型，当前支持 'kafka'、'pulsar'            |
+| log-store.address                  | NULL             | 当 log-store.enabled=true 时必填，LogStore 的地址。对于 Kafka，为 kafka bootstrap servers地址；对于 Pulsar，为 Pulsar Service url，如: 'pulsar://localhost:6650'|
+| log-store.topic                    | NULL             | 当 log-store.enabled=true 时必填，LogStore 使用的 topic                      
 | log-store.consistency-guarantee.enabled   | false     | 标记是否开启一致性保证，目前 log-store.type=plusar 时不支持开启一致性保证 |
-| properties.pulsar.admin.adminUrl   | NULL             | Logstore 是 pulsar 时必填，否则可不填。Pulsar admin 的 HTTP URL，如：http://my-broker.example.com:8080|
-| properties.XXX                     | NULL             | Logstore的参数。<br><br>对于 Logstore 为 Kafka ('log-store.type'='kafka' 默认值)时，Kafka Consumer/Producer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.batch.size'='16384'`，<br>完整的参数信息可以参考 [Kafka consumer 配置](https://kafka.apache.org/documentation/#consumerconfigs)、[kafka producer 配置](https://kafka.apache.org/documentation/#producerconfigs)；<br><br>对于 Logstore 为 Pulsar ('log-store.type'='pulsar')时，Pulsar 支持的相关配置都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.pulsar.client.requestTimeoutMs'='60000'`，<br>完整的参数信息可以参考 [Flink-Pulsar-Connector文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar)
+| properties.pulsar.admin.adminUrl   | NULL             | LogStore 是 pulsar 时必填，否则可不填。Pulsar admin 的 HTTP URL，如：http://my-broker.example.com:8080|
+| properties.XXX                     | NULL             | Logstore的参数。<br><br>对于 LogStore 为 Kafka ('log-store.type'='kafka' 默认值)时，Kafka Consumer/Producer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.batch.size'='16384'`，<br>完整的参数信息可以参考 [Kafka consumer 配置](https://kafka.apache.org/documentation/#consumerconfigs)、[kafka producer 配置](https://kafka.apache.org/documentation/#producerconfigs)；<br><br>对于 LogStore 为 Pulsar ('log-store.type'='pulsar')时，Pulsar 支持的相关配置都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.pulsar.client.requestTimeoutMs'='60000'`，<br>完整的参数信息可以参考 [Flink-Pulsar-Connector文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar)
 
 
 ### Watermark 相关配置

@@ -9,7 +9,7 @@ Currently, Arctic is a LakeHouse management system on top of iceberg format. Ben
 ![Introduce](site/docs/ch/images/introduce_arctic.png)
 
 - AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms running on optimizers, which could be scaled as demand and scheduled on different platforms.
-- Mutiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
+- Multiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
 	* Iceberg format — learn more about iceberg format details and usage with different engines: [Iceberg Docs](https://iceberg.apache.org/docs/latest/)
 	* Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-iceberg-format) and [Mixed Hive format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-hive-format)
 ## Arctic features
@@ -26,15 +26,15 @@ Currently, Arctic is a LakeHouse management system on top of iceberg format. Ben
 
 Arctic contains modules as below:
 
-- `arctic-core` contains core abstractions and common implementions for other modules
+- `arctic-core` contains core abstractions and common implementation for other modules
 - `arctic-flink` is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)
 - `arctic-spark` is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)
 - `arctic-trino` now provides query integrating with apache trino, built on JDK17
-- `arctic-optimizing` exposes optimizing container/group api and provides default implemetion
 - `arctic-ams` is arctic meta service module
   - `ams-api` contains ams thrift api
   - `ams-dashboard` is the dashboard frontend for ams
   - `ams-server` is the backend server for ams
+  - `ams-optimizer` provides default optimizer implementation
 
 ## Building
 
@@ -67,7 +67,7 @@ Arctic support multiple processing engines as below:
 | Processing Engine | Version                   |
 | ----------------- |---------------------------|
 | Flink             | 1.12.x, 1.14.x and 1.15.x |
-| Spark             | 3.1, 3.3                  |
+| Spark             | 3.1, 3.2, 3.3             |
 | Trino             | 406                       |
 
 ## Quickstart

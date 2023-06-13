@@ -18,7 +18,6 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.ams.api.TreeNode;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -137,9 +136,5 @@ public final class DataTreeNode implements Serializable {
 
   public long getId() {
     return mask + 1 + index;
-  }
-
-  public TreeNode toAmsTreeNode() {
-    return new TreeNode(mask, index);
   }
 }

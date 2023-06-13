@@ -1,7 +1,7 @@
 package com.netease.arctic.utils.map;
 
 import com.netease.arctic.data.ChangedLsn;
-import com.netease.arctic.iceberg.optimize.StructProjection;
+import com.netease.arctic.iceberg.StructProjection;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;

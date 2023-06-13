@@ -36,7 +36,7 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
     this.batcher = batcher;
   }
 
-  protected abstract DataIterator<T> createDataIterator(ArcticSplit split);
+  public abstract DataIterator<T> createDataIterator(ArcticSplit split);
 
   @Override
   public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(ArcticSplit split) {

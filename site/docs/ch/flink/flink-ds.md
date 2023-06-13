@@ -4,9 +4,9 @@ Arctic 支持通过 Java API 以 Batch 或 Streaming 的方式读数据。
 ### Batch Mode
 使用 Batch 模式读 File 中的全量和增量数据。
 #### Bounded Source
-非主键表支持以批模式读取全量数据、指定 snapshot-id/时间戳的快照数据、指定 snapshot 区间的增量数据。
+- 非主键表支持以批模式读取全量数据、指定 snapshot-id 或 timestamp 的快照数据、指定 snapshot 区间的增量数据。
 
-主键表暂时只支持读当前全量及之后的 CDC 数据。
+- 主键表暂时只支持读当前全量及之后的 CDC 数据。
     
 ```java
 StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
@@ -47,9 +47,9 @@ properties 支持的参数，**当前只对非主键表生效**:
 |end-snapshot-id|(none)|String|否|需配合 start-snapshot-id，读两个区间的增量数据(snapshot1, snapshot2]|
 
 ### Streaming Mode
-Arctic 支持以 Streaming 模式通过 JAVA API 读 File 或 Log 中的增量数据
+Arctic 支持以 Streaming 模式通过 Java API 读 FileStore 或 LogStore 中的增量数据
 
-####读 Logstore 实时数据
+#### 读 LogStore 数据
 
 ```java
 StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
@@ -85,7 +85,7 @@ stream.print();
 env.execute("Test Arctic Stream Read");
 ```
 
-####读 Filestore 数据
+#### 读 FileStore 数据
     
 ```java
 StreamExecutionEnvironment env = ...;
@@ -113,7 +113,7 @@ env.execute("Test Arctic Stream Read");
 DataStream API 支持读取主键表和非主键表。properties 支持的配置项可以参考 Querying With SQL [章节 Hint Option](flink-dml.md#filestore)
 
 ## Writing With DataStream
-Arctic 表支持通过 JAVA API 往 Log 或 File 写入数据
+Arctic 表支持通过 Java API 往 LogStore 或 FileStore 写入数据
 ### Overwrite Data
 Arctic 表目前仅支持非主键表的动态 Overwrite 表中已有的数据
 
@@ -142,7 +142,7 @@ env.execute("Test Arctic Overwrite");
 
 ### Appending Data
 
-对于 Arctic 表，支持通过 JAVA API 指定往 File 或 Log 写入数据。
+对于 Arctic 表，支持通过 Java API 指定往 FileStore 或 LogStore 写入数据。
 
 ```java
 DataStream<RowData> input = ...;

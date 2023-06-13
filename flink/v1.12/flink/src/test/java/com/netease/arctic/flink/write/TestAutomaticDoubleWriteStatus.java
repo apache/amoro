@@ -20,13 +20,12 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import org.apache.flink.streaming.api.watermark.Watermark;
-
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.junit.Assert;
 import org.junit.Test;
 
