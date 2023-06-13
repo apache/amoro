@@ -1,5 +1,5 @@
 
-Arctic supports multiple Table Formats, if using the Native Iceberg Format, the runtime jars provided by [Iceberg community](https://iceberg.apache.org/releases/) can be used directly. If using Mixed Format, Arctic provides implementation packages for multiple engines, and the supported engines are as follows.
+Arctic supports multiple Table Formats, if using the Iceberg Format, the runtime jars provided by [Iceberg community](https://iceberg.apache.org/releases/) can be used directly. If using Mixed Format, Arctic provides implementation packages for multiple engines, and the supported engines are as follows.
 
 ### Compatibility Matrix for Mixed Format
 
