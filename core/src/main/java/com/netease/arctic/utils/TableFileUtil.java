@@ -23,10 +23,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URI;
-import java.util.Collections;
 import java.util.Set;
 
 public class TableFileUtil {
@@ -60,28 +58,30 @@ public class TableFileUtil {
     return fileLocation.substring(tableIndex + tableLocation.length(), fileIndex - 1);
   }
 
-  public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath) {
-    deleteEmptyDirectory(io, directoryPath, Collections.emptySet());
-  }
-
   /**
    * Try to recursiveDelete the empty directory
    *
-   * @param io   arcticTableFileIo
+   * @param io            arcticTableFileIo
    * @param directoryPath directory location
-   * @param exclude the directory will not be deleted
+   * @param exclude       the directory will not be deleted
    */
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath, Set<String> exclude) {
+    Preconditions.checkArgument(
+        io.supportFileSystemOperations(),
+        "The fileIo doesn't support directory operation");
     Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
-    Preconditions.checkArgument(io.isDirectory(directoryPath), "The target path is not directory");
+    Preconditions.checkArgument(
+        io.asFileSystemIO().isDirectory(directoryPath),
+        "The target path is not directory");
+
     String parent = new Path(directoryPath).getParent().toString();
     if (exclude.contains(directoryPath) || exclude.contains(parent)) {
       return;
     }
 
     LOG.debug("current path {} and parent path {} not in exclude.", directoryPath, parent);
-    if (io.isEmptyDirectory(directoryPath)) {
-      io.deleteDirectoryRecursively(directoryPath);
+    if (io.asFileSystemIO().isEmptyDirectory(directoryPath)) {
+      io.asFileSystemIO().deletePrefix(directoryPath);
       LOG.debug("success delete empty directory {}", directoryPath);
       deleteEmptyDirectory(io, parent, exclude);
     }
@@ -89,8 +89,9 @@ public class TableFileUtil {
 
   /**
    * Get the file path after move file to target directory
+   *
    * @param newDirectory target directory
-   * @param filePath file
+   * @param filePath     file
    * @return new file path
    */
   public static String getNewFilePath(String newDirectory, String filePath) {
@@ -99,10 +100,22 @@ public class TableFileUtil {
 
   /**
    * remove Uniform Resource Identifier (URI) in file path
+   *
    * @param path file path with Uniform Resource Identifier (URI)
    * @return file path without Uniform Resource Identifier (URI)
    */
   public static String getUriPath(String path) {
     return URI.create(path).getPath();
+  }
+
+  /**
+   * get the parent uri path for given path
+   *
+   * @param path - path to get parent path
+   * @return the parent path
+   */
+  public static String getParent(String path) {
+    Path p = new Path(path);
+    return p.getParent().toString();
   }
 }

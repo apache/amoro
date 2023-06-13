@@ -13,6 +13,7 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -58,7 +59,8 @@ public class MixedHiveTables extends MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticHadoopFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     checkPrivilege(fileIO, baseLocation);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
@@ -89,7 +91,8 @@ public class MixedHiveTables extends MixedTables {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticHadoopFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     checkPrivilege(fileIO, baseLocation);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
@@ -113,7 +116,8 @@ public class MixedHiveTables extends MixedTables {
       tableMeta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
     }
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticHadoopFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> {
       try {
@@ -217,7 +221,8 @@ public class MixedHiveTables extends MixedTables {
       throw new RuntimeException("Failed to create hive table:" + tableMeta.getTableIdentifier(), e);
     }
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildTableFileIO(tableIdentifier, tableLocation, tableMeta.getProperties(),
+    ArcticHadoopFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
+        tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
         tableMetaStore.getConfiguration()), fileIO, tableLocation, amsClient, hiveClientPool,

@@ -26,23 +26,29 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.hadoop.Util;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
-public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
+public class ArcticHadoopFileIO extends HadoopFileIO
+    implements ArcticFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
 
   private final TableMetaStore tableMetaStore;
+  private boolean fileRecycleEnabled;
 
   ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
     super(tableMetaStore.getConfiguration());
@@ -80,50 +86,29 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public void deleteDirectoryRecursively(String path) {
-    tableMetaStore.doAs(() -> {
-      Path toDelete = new Path(path);
-      FileSystem fs = getFs(toDelete);
-      try {
-        if (!fs.delete(toDelete, true)) {
-          throw new IOException("Fail to delete directory:" + path + " recursively, " +
-              "file system return false, need to check the hdfs path");
-        }
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to delete directory:" + path + " recursively", e);
-      }
-      return null;
-    });
-  }
-
-  @Override
-  public List<FileStatus> list(String location) {
+  public Iterable<PathInfo> listDirectory(String location) {
     return tableMetaStore.doAs(() -> {
       Path path = new Path(location);
       FileSystem fs = getFs(path);
       try {
         FileStatus[] fileStatuses = fs.listStatus(path);
-        return Lists.newArrayList(fileStatuses);
+        Iterator<PathInfo> it = Stream.of(fileStatuses)
+            .map(status -> new PathInfo(
+                status.getPath().toString(),
+                status.getLen(),
+                status.getAccessTime(),
+                status.isDirectory())
+            )
+            .iterator();
+        return () -> it;
       } catch (IOException e) {
         throw new UncheckedIOException("Fail to list files in " + location, e);
       }
     });
   }
 
-  @VisibleForTesting
-  public List<FileStatus> list(String location, Callable<List<FileStatus>> callable) {
-    return tableMetaStore.doAs(() -> {
-      callable.call();
-      Path path = new Path(location);
-      FileSystem fs = getFs(path);
-      try {
-        FileStatus[] fileStatuses = fs.listStatus(path);
-        return Lists.newArrayList(fileStatuses);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Fail to list files in " + location, e);
-      }
-    });
-  }
+
+
 
   @VisibleForTesting
   public List<FileStatus> listWithoutDoAs(String location) {
@@ -135,6 +120,23 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
     } catch (IOException e) {
       throw new UncheckedIOException("Fail to list files in " + location, e);
     }
+  }
+
+  @Override
+  public void makeDirectories(String path) {
+    tableMetaStore.doAs(() -> {
+      Path filePath = new Path(path);
+      FileSystem fs = getFs(filePath);
+      try {
+        if (!fs.mkdirs(filePath)) {
+          throw new IOException("Fail to mkdirs: path " + path +
+              " and file system return false,, need to check the hdfs path");
+        }
+      } catch (IOException e) {
+        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
+      }
+      return null;
+    });
   }
 
   @Override
@@ -203,20 +205,35 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
-  public void mkdirs(String path) {
+  public Iterable<FileInfo> listPrefix(String prefix) {
+    return tableMetaStore.doAs(() -> super.listPrefix(prefix));
+  }
+
+  @Override
+  public void deletePrefix(String prefix) {
     tableMetaStore.doAs(() -> {
-      Path filePath = new Path(path);
-      FileSystem fs = getFs(filePath);
+      Path toDelete = new Path(prefix);
+      FileSystem fs = getFs(toDelete);
       try {
-        if (!fs.mkdirs(filePath)) {
-          throw new IOException("Fail to mkdirs: path " + path +
-              " and file system return false,, need to check the hdfs path");
+        if (!fs.delete(toDelete, true)) {
+          throw new IOException("Fail to delete directory:" + prefix + " recursively, " +
+              "file system return false, need to check the hdfs path");
         }
       } catch (IOException e) {
-        throw new UncheckedIOException("Fail to mkdirs: path " + path, e);
+        throw new UncheckedIOException("Fail to delete directory:" + prefix + " recursively", e);
       }
       return null;
     });
+  }
+
+  @Override
+  public boolean supportPrefixOperations() {
+    return true;
+  }
+
+  @Override
+  public boolean supportFileSystemOperations() {
+    return true;
   }
 
   public TableMetaStore getTableMetaStore() {

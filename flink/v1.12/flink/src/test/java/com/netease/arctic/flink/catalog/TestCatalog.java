@@ -76,6 +76,9 @@ public class TestCatalog extends CatalogTestBase{
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogValidator.CATALOG_TYPE_VALUE_ARCTIC);
     props.put(ArcticCatalogValidator.METASTORE_URL, getCatalogUrl());
+    if (getCatalog().listDatabases().contains(DB)) {
+      getCatalog().dropDatabase(DB);
+    }
   }
 
   @Test

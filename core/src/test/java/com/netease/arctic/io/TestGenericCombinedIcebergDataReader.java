@@ -146,6 +146,7 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
       Record record = Iterables.getFirst(records, null);
       Assert.assertEquals(record.get(0), 3);
     }
+    dataReader.close();
   }
 
   @Test
@@ -161,6 +162,7 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
       Record last = Iterables.getLast(records);
       Assert.assertEquals(last.get(1), 1L);
     }
+    dataReader.close();
   }
 
   @Test
@@ -172,6 +174,7 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(3, Iterables.size(records));
     }
+    dataReader.close();
   }
 
   @Test
@@ -183,5 +186,6 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
     }
+    dataReader.close();
   }
 }
