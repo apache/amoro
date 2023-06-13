@@ -21,8 +21,6 @@ package com.netease.arctic.flink.lookup;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -36,8 +34,6 @@ import java.util.List;
  * as well as getting results by key and cleaning up the cache.
  */
 public interface KVTable extends Serializable, Closeable {
-  Logger LOG = LoggerFactory.getLogger(KVTable.class);
-
   /**
    * Initialize the lookup table
    */
@@ -71,7 +67,7 @@ public interface KVTable extends Serializable, Closeable {
   boolean filter(RowData value);
 
   /**
-   * @return if initialization is completed.
+   * @return if initialization is completed, return true.
    */
   boolean initialized();
 

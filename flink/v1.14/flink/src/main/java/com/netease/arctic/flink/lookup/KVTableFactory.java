@@ -45,27 +45,29 @@ public class KVTableFactory implements Serializable {
       RowDataPredicate rowDataPredicate) {
     Set<String> joinKeySet = new HashSet<>(joinKeys);
     Set<String> primaryKeySet = new HashSet<>(primaryKeys);
-    if (joinKeySet.size() > primaryKeySet.size() && joinKeySet.containsAll(primaryKeySet)) {
-      LOG.info("create unique index table, join keys contain all primary keys, unique keys are {}, join keys are {}.",
-          primaryKeys.toArray(), joinKeys.toArray());
-      return
-          new UniqueIndexTable(stateFactory, joinKeys, projectSchema,
-              convertLookupOptions(config),
-              rowDataPredicate);
-    }
-    if (new HashSet<>(primaryKeys).equals(new HashSet<>(joinKeys))) {
-      LOG.info("create unique index table, unique keys are {}, join keys are {}.",
-          primaryKeys.toArray(), joinKeys.toArray());
-      return
-          new UniqueIndexTable(stateFactory, primaryKeys, projectSchema,
-              convertLookupOptions(config), rowDataPredicate);
+    if (primaryKeySet.equals(joinKeySet)) {
+      LOG.info(
+          "create unique index table, unique keys are {}, lookup keys are {}.",
+          primaryKeys.toArray(),
+          joinKeys.toArray());
+      return new UniqueIndexTable(
+          stateFactory,
+          primaryKeys,
+          projectSchema,
+          convertLookupOptions(config),
+          rowDataPredicate);
     } else {
-      LOG.info("create secondary index table, unique keys are {}, join keys are {}.",
-          primaryKeys.toArray(), joinKeys.toArray());
-      return
-          new SecondaryIndexTable(stateFactory, primaryKeys, joinKeys, projectSchema,
-              convertLookupOptions(config),
-              rowDataPredicate);
+      LOG.info(
+          "create secondary index table, unique keys are {}, lookup keys are {}.",
+          primaryKeys.toArray(),
+          joinKeys.toArray());
+      return new SecondaryIndexTable(
+          stateFactory,
+          primaryKeys,
+          joinKeys,
+          projectSchema,
+          convertLookupOptions(config),
+          rowDataPredicate);
     }
   }
 }

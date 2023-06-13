@@ -21,6 +21,7 @@ package com.netease.arctic.flink.lookup;
 import com.netease.arctic.ArcticIOException;
 import com.netease.arctic.utils.map.RocksDBBackend;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;
 import org.apache.flink.shaded.guava30.com.google.common.cache.CacheBuilder;
@@ -110,7 +111,7 @@ public abstract class RocksDBCacheState<V> {
       guavaCache = CacheBuilder.newBuilder().maximumSize(lookupOptions.lruMaximumSize()).build();
     }
 
-    metricGroup.gauge(columnFamilyName + "_queue_size", () -> lookupRecordsQueue.size());
+    addGauge(columnFamilyName + "_queue_size", () -> lookupRecordsQueue.size());
 
     lookupRecordsQueue = new ConcurrentLinkedQueue<>();
     writeRocksDBThreadFutures =
@@ -158,8 +159,6 @@ public abstract class RocksDBCacheState<V> {
 //      throw new FlinkRuntimeException(e);
 //    }
   }
-
-  public abstract void flush();
 
   /**
    * Waiting for the writing threads completed.
@@ -227,7 +226,7 @@ public abstract class RocksDBCacheState<V> {
 
   public void initializationCompleted() {
     try {
-      rocksDB.rocksDB.enableAutoCompaction(Collections.singletonList(columnFamilyHandle));
+      rocksDB.getDB().enableAutoCompaction(Collections.singletonList(columnFamilyHandle));
       MutableColumnFamilyOptions mutableColumnFamilyOptions =
           MutableColumnFamilyOptions.builder()
               .setDisableAutoCompactions(false)
@@ -238,6 +237,10 @@ public abstract class RocksDBCacheState<V> {
     }
 
     LOG.info("set db options[disable_auto_compactions={}]", false);
+  }
+
+  public void addGauge(String metricName, Gauge<Object> gauge) {
+    metricGroup.gauge(metricName, gauge);
   }
 
   protected void checkConcurrentFailed() {

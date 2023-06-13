@@ -18,11 +18,10 @@
 
 package com.netease.arctic.flink.lookup;
 
-import org.apache.flink.metrics.MetricGroup;
-import org.apache.flink.table.data.RowData;
-
 import com.netease.arctic.log.Bytes;
 import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -35,111 +34,106 @@ import java.util.List;
  */
 public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
 
-    protected BinaryRowDataSerializerWrapper keySerializer;
+  protected BinaryRowDataSerializerWrapper keySerializer;
 
-    private static final byte[] EMPTY = new byte[0];
+  private static final byte[] EMPTY = new byte[0];
 
-    public RocksDBSetState(
-        RocksDBBackend rocksDB,
-        String columnFamilyName,
-        BinaryRowDataSerializerWrapper keySerialization,
-        BinaryRowDataSerializerWrapper elementSerialization,
-        BinaryRowDataSerializerWrapper valueSerializer,
-        MetricGroup metricGroup,
-        LookupOptions lookupOptions) {
-        super(
-            rocksDB,
-            columnFamilyName,
-            elementSerialization,
-            valueSerializer,
-            metricGroup,
-            lookupOptions,
-            false);
-        this.keySerializer = keySerialization;
-    }
+  public RocksDBSetState(
+      RocksDBBackend rocksDB,
+      String columnFamilyName,
+      BinaryRowDataSerializerWrapper keySerialization,
+      BinaryRowDataSerializerWrapper elementSerialization,
+      BinaryRowDataSerializerWrapper valueSerializer,
+      MetricGroup metricGroup,
+      LookupOptions lookupOptions) {
+    super(
+        rocksDB,
+        columnFamilyName,
+        elementSerialization,
+        valueSerializer,
+        metricGroup,
+        lookupOptions,
+        false);
+    this.keySerializer = keySerialization;
+  }
 
-    /**
-     * Retrieve the elements of the key.
-     * <p>Fetch the Collection from guava cache,
-     * if not present, fetch from rocksDB continuously, via prefix key scanning the rocksDB;
-     * if present, just return the result.
-     *
-     * @return not null, but may be empty.
-     */
-    public List<byte[]> get(RowData key) throws IOException {
-        final byte[] keyBytes = serializeKey(key);
-        ByteArrayWrapper keyWrap = wrap(keyBytes);
-        List<byte[]> result = guavaCache.getIfPresent(keyWrap);
-        if (result == null) {
-            try (RocksDBBackend.ValueIterator iterator =
-                     (RocksDBBackend.ValueIterator) rocksDB.values(columnFamilyName, keyBytes)) {
-                result = Lists.newArrayList();
-                while (iterator.hasNext()) {
-                    byte[] targetKeyBytes = iterator.key();
-                    if (isPrefixKey(targetKeyBytes, keyBytes)) {
-                        byte[] value = Arrays.copyOfRange(targetKeyBytes, keyBytes.length, targetKeyBytes.length);
-                        result.add(value);
-                    }
-                    iterator.next();
-                }
-                if (!result.isEmpty()) {
-                    guavaCache.put(keyWrap, result);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
+  /**
+   * Retrieve the elements of the key.
+   * <p>Fetch the Collection from guava cache,
+   * if not present, fetch from rocksDB continuously, via prefix key scanning the rocksDB;
+   * if present, just return the result.
+   *
+   * @return not null, but may be empty.
+   */
+  public List<byte[]> get(RowData key) throws IOException {
+    final byte[] keyBytes = serializeKey(key);
+    ByteArrayWrapper keyWrap = wrap(keyBytes);
+    List<byte[]> result = guavaCache.getIfPresent(keyWrap);
+    if (result == null) {
+      try (RocksDBBackend.ValueIterator iterator =
+               (RocksDBBackend.ValueIterator) rocksDB.values(columnFamilyName, keyBytes)) {
+        result = Lists.newArrayList();
+        while (iterator.hasNext()) {
+          byte[] targetKeyBytes = iterator.key();
+          if (isPrefixKey(targetKeyBytes, keyBytes)) {
+            byte[] value = Arrays.copyOfRange(targetKeyBytes, keyBytes.length, targetKeyBytes.length);
+            result.add(value);
+          }
+          iterator.next();
         }
-        return result;
-    }
-
-    private boolean isPrefixKey(byte[] targetKeyBytes, byte[] keyBytes) {
-        for (int i = 0; i < keyBytes.length; i++) {
-            if (targetKeyBytes[i] != keyBytes[i]) {
-                return false;
-            }
+        if (!result.isEmpty()) {
+          guavaCache.put(keyWrap, result);
         }
-        return true;
-    }
-
-    /**
-     * Merge key and element into guava cache and rocksdb.
-     */
-    public void merge(RowData joinKey, byte[] uniqueKeyBytes) throws IOException {
-        byte[] joinKeyBytes = serializeKey(joinKey);
-        byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, uniqueKeyBytes);
-        ByteArrayWrapper keyWrap = wrap(joinKeyBytes);
-        if (guavaCache.getIfPresent(keyWrap) != null) {
-            guavaCache.invalidate(keyWrap);
-        }
-        rocksDB.put(columnFamilyName, joinKeyAndPrimaryKeyBytes, EMPTY);
-    }
-
-    public void delete(RowData joinKey, byte[] elementBytes) throws IOException {
-        final byte[] joinKeyBytes = serializeKey(joinKey);
-        ByteArrayWrapper keyWrap = wrap(joinKeyBytes);
-        if (guavaCache.getIfPresent(keyWrap) != null) {
-            guavaCache.invalidate(keyWrap);
-        }
-        byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, elementBytes);
-        if (rocksDB.get(columnFamilyName, joinKeyAndPrimaryKeyBytes) != null) {
-            rocksDB.delete(columnFamilyName, joinKeyAndPrimaryKeyBytes);
-        }
-    }
-
-    public void batchWrite(RowData joinKey, byte[] uniqueKeyBytes) throws IOException {
-        byte[] joinKeyBytes = serializeKey(joinKey);
-        byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, uniqueKeyBytes);
-        LookupRecord.OpType opType = convertToOpType(joinKey.getRowKind());
-        lookupRecordsQueue.add(LookupRecord.of(opType, joinKeyAndPrimaryKeyBytes, EMPTY));
-    }
-
-    @Override
-    public void flush() {
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
 
     }
+    return result;
+  }
 
-    public byte[] serializeKey(RowData key) throws IOException {
-        return serializeKey(keySerializer, key);
+  private boolean isPrefixKey(byte[] targetKeyBytes, byte[] keyBytes) {
+    for (int i = 0; i < keyBytes.length; i++) {
+      if (targetKeyBytes[i] != keyBytes[i]) {
+        return false;
+      }
     }
+    return true;
+  }
+
+  /**
+   * Merge key and element into guava cache and rocksdb.
+   */
+  public void merge(RowData joinKey, byte[] uniqueKeyBytes) throws IOException {
+    byte[] joinKeyBytes = serializeKey(joinKey);
+    byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, uniqueKeyBytes);
+    ByteArrayWrapper keyWrap = wrap(joinKeyBytes);
+    if (guavaCache.getIfPresent(keyWrap) != null) {
+      guavaCache.invalidate(keyWrap);
+    }
+    rocksDB.put(columnFamilyName, joinKeyAndPrimaryKeyBytes, EMPTY);
+  }
+
+  public void delete(RowData joinKey, byte[] elementBytes) throws IOException {
+    final byte[] joinKeyBytes = serializeKey(joinKey);
+    ByteArrayWrapper keyWrap = wrap(joinKeyBytes);
+    if (guavaCache.getIfPresent(keyWrap) != null) {
+      guavaCache.invalidate(keyWrap);
+    }
+    byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, elementBytes);
+    if (rocksDB.get(columnFamilyName, joinKeyAndPrimaryKeyBytes) != null) {
+      rocksDB.delete(columnFamilyName, joinKeyAndPrimaryKeyBytes);
+    }
+  }
+
+  public void batchWrite(RowData joinKey, byte[] uniqueKeyBytes) throws IOException {
+    byte[] joinKeyBytes = serializeKey(joinKey);
+    byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, uniqueKeyBytes);
+    LookupRecord.OpType opType = convertToOpType(joinKey.getRowKind());
+    lookupRecordsQueue.add(LookupRecord.of(opType, joinKeyAndPrimaryKeyBytes, EMPTY));
+  }
+
+  public byte[] serializeKey(RowData key) throws IOException {
+    return serializeKey(keySerializer, key);
+  }
 }

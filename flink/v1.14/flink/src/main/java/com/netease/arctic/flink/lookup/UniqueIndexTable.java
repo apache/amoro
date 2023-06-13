@@ -23,6 +23,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -37,7 +39,8 @@ import static com.netease.arctic.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
  * Use a unique index to lookup. Working for the situation where the join keys include the arctic table's primary keys.
  */
 public class UniqueIndexTable implements KVTable {
-  private static final long serialVersionUID = 1L;
+  private static final Logger LOG = LoggerFactory.getLogger(UniqueIndexTable.class);
+  private static final long serialVersionUID = -6537777722200330050L;
   protected final RocksDBRecordState recordState;
 
   protected int[] uniqueKeyIndexMapping;
@@ -65,7 +68,7 @@ public class UniqueIndexTable implements KVTable {
   @Override
   public void open() {
     recordState.open();
-    recordState.metricGroup.gauge(UNIQUE_CACHE_SIZE, () -> recordState.guavaCache.size());
+    recordState.addGauge(UNIQUE_CACHE_SIZE, () -> recordState.guavaCache.size());
   }
 
   @Override
@@ -103,7 +106,6 @@ public class UniqueIndexTable implements KVTable {
       recordState.batchWrite(key, value);
     }
     recordState.checkConcurrentFailed();
-    recordState.flush();
   }
 
   @Override

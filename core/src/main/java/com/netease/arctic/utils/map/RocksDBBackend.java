@@ -307,6 +307,10 @@ public class RocksDBBackend {
     }
   }
 
+  public RocksDB getDB() {
+    return rocksDB;
+  }
+
   /**
    * Return Iterator of key-value pairs from RocksIterator.
    *

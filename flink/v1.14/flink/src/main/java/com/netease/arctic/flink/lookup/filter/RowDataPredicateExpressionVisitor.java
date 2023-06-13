@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.lookup.filter;
 
-import com.netease.arctic.flink.util.DateTimeUtils;
 import org.apache.flink.table.expressions.CallExpression;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.expressions.ExpressionDefaultVisitor;
@@ -29,7 +28,6 @@ import org.apache.flink.table.expressions.ValueLiteralExpression;
 import org.apache.flink.table.functions.BuiltInFunctionDefinitions;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
@@ -40,9 +38,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.AND;
 import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.DIVIDE;
@@ -120,15 +116,6 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     if (BuiltInFunctionDefinitions.IS_NOT_NULL.equals(call.getFunctionDefinition())) {
       return renderUnaryOperator(IS_NOT_NULL, call.getResolvedChildren().get(0));
     }
-//    if (BuiltInFunctionDefinitions.TO_TIMESTAMP.equals(call.getFunctionDefinition())) {
-//      return toTimestampOperator(call);
-//    }
-//    if (BuiltInFunctionDefinitions.FROM_UNIXTIME.equals(call.getFunctionDefinition())) {
-//      return fromUnixTimeOperator(call);
-//    }
-//    if (BuiltInFunctionDefinitions.UNIX_TIMESTAMP.equals(call.getFunctionDefinition())) {
-//      return unixTimestampOperator(call);
-//    }
     if (BuiltInFunctionDefinitions.PLUS.equals(call.getFunctionDefinition())) {
       return arithmeticOperator(PLUS, call);
     }
@@ -188,45 +175,6 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
             call));
   }
 
-  private Optional<RowDataPredicate> unixTimestampOperator(CallExpression call) {
-    List<ResolvedExpression> resolvedChildren = call.getResolvedChildren();
-    if (resolvedChildren.isEmpty()) {
-      return Optional.of(
-          new RowDataPredicate(new Serializable[]{DateTimeUtils.unixTimestamp()}));
-    }
-    throw new IllegalArgumentException(
-        "Only supported unix_timestamp() built-in function, CallExpression: " + call);
-  }
-
-  private Optional<RowDataPredicate> fromUnixTimeOperator(CallExpression call) {
-    List<ResolvedExpression> resolvedChildren = call.getResolvedChildren();
-    Optional<RowDataPredicate> leftPredicate = resolvedChildren.get(0).accept(this);
-    return leftPredicate.flatMap(left -> {
-      long unixtime = (long) left.parameters()[0];
-      if (resolvedChildren.size() == 1) {
-        return Optional.of(new RowDataPredicate(new
-            Serializable[]{
-            DateTimeUtils.formatUnixTimestamp(unixtime, TimeZone.getDefault())
-        }));
-      }
-      if (resolvedChildren.size() == 2) {
-        Optional<RowDataPredicate> rightPredicate =
-            resolvedChildren.get(1).accept(this);
-        String format = (String) rightPredicate.get().parameters()[0];
-        return Optional.of(new RowDataPredicate(new
-            Serializable[]{
-            Objects.requireNonNull(DateTimeUtils.formatUnixTimestamp(
-                unixtime,
-                format,
-                TimeZone.getDefault()))
-        }));
-      }
-      throw new FlinkRuntimeException(
-          "Not Supported build-in function: TO_TIMESTAMP, CallExpression: " + call
-      );
-    });
-  }
-
   protected Optional<RowDataPredicate> castOperator(CallExpression call) {
     List<ResolvedExpression> resolvedChildren = call.getResolvedChildren();
     Optional<RowDataPredicate> leftPredicate = resolvedChildren.get(0).accept(this);
@@ -247,34 +195,6 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
         String.format(
             "cast operator's children expressions should be 2. call expression: %s",
             call));
-  }
-
-  private Optional<RowDataPredicate> toTimestampOperator(CallExpression call) {
-    List<ResolvedExpression> resolvedChildren = call.getResolvedChildren();
-    Optional<RowDataPredicate> leftPredicate = resolvedChildren.get(0).accept(this);
-    return leftPredicate.flatMap(left -> {
-      String dateStr = (String) left.parameters()[0];
-      if (resolvedChildren.size() == 1) {
-        return Optional.of(new RowDataPredicate(new
-            Serializable[]{
-            DateTimeUtils.parseTimestampData(dateStr).getMillisecond()
-        }));
-      }
-      if (resolvedChildren.size() == 2) {
-        Optional<RowDataPredicate> rightPredicate =
-            resolvedChildren.get(1).accept(this);
-        String format = (String) rightPredicate.get().parameters()[0];
-        return Optional.of(new RowDataPredicate(new
-            Serializable[]{
-            Objects.requireNonNull(DateTimeUtils.parseTimestampData(
-                dateStr,
-                format)).getMillisecond()
-        }));
-      }
-      throw new FlinkRuntimeException(
-          "Not Supported build-in function: TO_TIMESTAMP, CallExpression: " + call
-      );
-    });
   }
 
   protected Optional<RowDataPredicate> renderUnaryOperator(

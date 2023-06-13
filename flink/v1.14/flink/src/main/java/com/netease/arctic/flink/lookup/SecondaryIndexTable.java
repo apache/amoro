@@ -23,6 +23,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +43,8 @@ import static com.netease.arctic.flink.lookup.LookupMetrics.SECONDARY_CACHE_SIZE
  * <p>t2 as an arctic table with primary keys: user_name, city_name.
  */
 public class SecondaryIndexTable extends UniqueIndexTable {
-  private static final long serialVersionUID = 1L;
+  private static final Logger LOG = LoggerFactory.getLogger(SecondaryIndexTable.class);
+  private static final long serialVersionUID = 8707586070315884365L;
   private final int[] secondaryKeyIndexMapping;
   private final RocksDBSetMemoryState setState;
 
@@ -74,7 +77,7 @@ public class SecondaryIndexTable extends UniqueIndexTable {
   public void open() {
     super.open();
     setState.open();
-    setState.metricGroup.gauge(SECONDARY_CACHE_SIZE, () -> setState.guavaCache.size());
+    setState.addGauge(SECONDARY_CACHE_SIZE, () -> setState.guavaCache.size());
   }
 
   @Override
@@ -128,8 +131,6 @@ public class SecondaryIndexTable extends UniqueIndexTable {
     }
     recordState.checkConcurrentFailed();
     setState.checkConcurrentFailed();
-    recordState.flush();
-    setState.flush();
   }
 
   @Override
