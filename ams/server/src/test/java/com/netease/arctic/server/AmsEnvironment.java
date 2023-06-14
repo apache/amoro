@@ -50,6 +50,9 @@ public class AmsEnvironment {
   private int thriftBindPort;
   private final HMSMockServer testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
+
+  public static final String INTERNAL_ICEBERG_CATALOG = "internal_iceberg";
+  public static final String INTERNAL_ICEBERG_CATALOG_WAREHOUSE = "/internal_iceberg/warehouse";
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
   public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
   public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
@@ -129,8 +132,21 @@ public class AmsEnvironment {
 
   private void initCatalog() {
     createIcebergCatalog();
+    createInternalIceberg();
     createMixIcebergCatalog();
     createMixHiveCatalog();
+  }
+
+  private void createInternalIceberg() {
+    String warehouseDir = rootPath + INTERNAL_ICEBERG_CATALOG_WAREHOUSE;
+    Map<String, String> properties = Maps.newHashMap();
+    createDirIfNotExist(warehouseDir);
+    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
+    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(INTERNAL_ICEBERG_CATALOG,
+        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.ICEBERG);
+
+    tableService.createCatalog(catalogMeta);
+    catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
   private void createIcebergCatalog() {
@@ -194,6 +210,10 @@ public class AmsEnvironment {
 
   public String getAmsUrl() {
     return "thrift://127.0.0.1:" + thriftBindPort;
+  }
+
+  public String getHttpUrl() {
+    return "http://127.0.0.1:1630" ;
   }
 
   private void startAms() throws Exception {

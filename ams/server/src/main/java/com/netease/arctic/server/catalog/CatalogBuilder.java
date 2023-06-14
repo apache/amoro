@@ -41,8 +41,9 @@ public class CatalogBuilder {
           throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
         }
       case CATALOG_TYPE_AMS:
-        Preconditions.checkArgument(tableFormat.equals(TableFormat.MIXED_ICEBERG),
-            "AMS catalog support mixed iceberg table only.");
+        Preconditions.checkArgument(
+            tableFormat.equals(TableFormat.MIXED_ICEBERG) || tableFormat.equals(TableFormat.ICEBERG),
+            "AMS catalog support iceberg/mixed-iceberg table only.");
         return new MixedCatalogImpl(catalogMeta);
       case CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),

@@ -19,9 +19,15 @@
 package com.netease.arctic.server.dashboard;
 
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
+import com.netease.arctic.server.dashboard.controller.IcebergRestCatalogController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
 import com.netease.arctic.server.dashboard.controller.OptimizerController;
 import com.netease.arctic.server.dashboard.controller.PlatformFileInfoController;
@@ -41,7 +47,9 @@ import com.netease.arctic.server.utils.Configurations;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.plugin.json.JavalinJackson;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.rest.RESTSerializers;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +84,7 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
   private final TerminalManager terminalManager;
+  private final IcebergRestCatalogController icebergRestCatalogController;
 
   public DashboardServer(Configurations serviceConfig, TableService tableService,
                          OptimizerManager optimizerManager) {
@@ -92,6 +101,7 @@ public class DashboardServer {
     this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
+    this.icebergRestCatalogController = new IcebergRestCatalogController(tableService);
   }
 
   private Javalin app;
@@ -136,6 +146,7 @@ public class DashboardServer {
       });
       config.sessionHandler(SessionHandler::new);
       config.enableCorsForAllOrigins();
+      config.jsonMapper(jsonMapper());
     });
     int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
     app.start(port);
@@ -288,7 +299,15 @@ public class DashboardServer {
         // version controller
         get("/versionInfo", versionController::getVersionInfo);
       });
+
+      // for iceberg rest catalog api
+      path(IcebergRestCatalogController.REST_CATALOG_API_PREFIX, () -> {
+        get("/{catalog}/v1/config", icebergRestCatalogController::getCatalogConfig);
+        get("/{catalog}/v1/namespaces", icebergRestCatalogController::listNamespaces);
+        post("/{catalog}/v1/namespaces", icebergRestCatalogController::createNamespace);
+      });
     });
+
 
     // after-handler
     app.after(ctx -> {
@@ -348,7 +367,8 @@ public class DashboardServer {
       "/favicon.ico",
       "/js/*",
       "/img/*",
-      "/css/*"
+      "/css/*",
+      IcebergRestCatalogController.REST_CATALOG_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
@@ -367,7 +387,7 @@ public class DashboardServer {
   }
 
   private boolean needApiKeyCheck(String uri) {
-    return uri.startsWith("/api");
+    return uri.startsWith("/api/ams") ;
   }
 
   private void checkApiToken(
@@ -417,5 +437,14 @@ public class DashboardServer {
     } finally {
       LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
     }
+  }
+
+  private JavalinJackson jsonMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.setPropertyNamingStrategy(new PropertyNamingStrategy.KebabCaseStrategy());
+    RESTSerializers.registerAll(mapper);
+    return new JavalinJackson(mapper);
   }
 }

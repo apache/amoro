@@ -32,6 +32,7 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -128,9 +129,17 @@ public class CatalogLoader {
           }
           break;
         case CATALOG_TYPE_AMS:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.MIXED_ICEBERG),
-              "AMS catalog support mixed iceberg table only.");
-          catalogImpl = AMS_CATALOG_IMPL;
+          if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+            catalogImpl = AMS_CATALOG_IMPL;
+          } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+//            catalogImpl = ICEBERG_CATALOG_IMPL;
+//            catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+//            catalogMeta.putToCatalogProperties("uri", );
+            catalogImpl = AMS_CATALOG_IMPL;
+          } else {
+            throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
+          }
+
           break;
         case CATALOG_TYPE_CUSTOM:
           Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
