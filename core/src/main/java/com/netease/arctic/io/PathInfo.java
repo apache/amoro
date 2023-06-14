@@ -16,38 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.table;
+package com.netease.arctic.io;
 
-import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.io.FileInfo;
 
 /**
- * Mix-in interface to mark task use hive as base store
+ * Extend {@link FileInfo} to indicate the directory type path object.
  */
-public interface SupportHive extends ArcticTable {
+public class PathInfo extends FileInfo {
 
-  ArcticHadoopFileIO io();
+  private final boolean isDirectory;
 
-  /**
-   * Base path to store hive data files
-   *
-   * @return path to store hive file
-   */
-  String hiveLocation();
 
-  /**
-   * the client to operate hive table
-   *
-   * @return hive metastore client
-   */
-  HMSClientPool getHMSClient();
+  public PathInfo(String location, long size, long createdAtMillis, boolean isDirectory) {
+    super(location, size, createdAtMillis);
+    this.isDirectory = isDirectory;
+  }
 
-  boolean enableSyncHiveDataToArctic();
-
-  boolean enableSyncHiveSchemaToArctic();
-
-  void syncHiveDataToArctic(boolean force);
-
-  void syncHiveSchemaToArctic();
+  public boolean isDirectory() {
+    return this.isDirectory;
+  }
 }

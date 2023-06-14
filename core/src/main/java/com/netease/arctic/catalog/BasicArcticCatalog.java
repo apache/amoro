@@ -444,10 +444,10 @@ public class BasicArcticCatalog implements ArcticCatalog {
     protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
         String catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
-            CatalogMetaProperties.KEY_WAREHOUSE,null);
+            CatalogMetaProperties.KEY_WAREHOUSE, null);
         if (catalogWarehouse == null) {
           catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
-              CatalogMetaProperties.KEY_WAREHOUSE_DIR,null);
+              CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
         }
         if (catalogWarehouse == null) {
           throw new NullPointerException("Catalog warehouse is null.");

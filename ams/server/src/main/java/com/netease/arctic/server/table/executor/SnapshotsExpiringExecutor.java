@@ -252,7 +252,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         })
         .cleanExpiredFiles(true)
         .commit();
-    parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    if (arcticInternalTable.io().supportFileSystemOperations()) {
+      parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    }
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 

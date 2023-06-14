@@ -51,12 +51,10 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -219,23 +217,6 @@ public class HiveTableTestBase extends TableTestBase {
     }
   }
 
-  public static void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
-    TableIdentifier identifier = table.id();
-    final String database = identifier.getDatabase();
-    final String tableName = identifier.getTableName();
-
-    List<Partition> partitions = hms.getClient().listPartitions(
-        database,
-        tableName,
-        (short) -1);
-
-    List<String> fileNameList = new ArrayList<>();
-    for (Partition p : partitions) {
-      fileNameList.addAll(table.io().list(p.getSd()
-          .getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
-    }
-    Assert.assertEquals(exceptedFiles, fileNameList);
-  }
 
   @Before
   public void setupTables() throws Exception {
