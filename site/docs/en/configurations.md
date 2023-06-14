@@ -12,13 +12,13 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.group                               | default          | Optimizer group for Self-optimizing                                   |
 | self-optimizing.quota                               | 0.1              | Quota for Self-optimizing, indicating the CPU resource the table can take up                       |
 | self-optimizing.num-retries                         | 5                | Number of retries after failure of Self-optimizing                       |
-| self-optimizing.target-size                         | 134217728（128MB）| Target size for Self-optimizing                           |
+| self-optimizing.target-size                         | 134217728(128MB) | Target size for Self-optimizing                           |
 | self-optimizing.max-file-count                      | 10000            | Maximum number of files processed by a Self-optimizing process              |               |
 | self-optimizing.fragment-ratio                      | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size           |
 | self-optimizing.minor.trigger.file-count            | 12               | The minimum numbers of fragment files to trigger minor optimizing   |
-| self-optimizing.minor.trigger.interval              | 3600000（1 hour）  | The time interval in milliseconds to trigger minor optimizing                         |
+| self-optimizing.minor.trigger.interval              | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                         |
 | self-optimizing.major.trigger.duplicate-ratio       | 0.5              | The ratio of duplicate data of segment files to trigger major optimizing  |
-| self-optimizing.full.trigger.interval               | -1（closed）         | The time interval in milliseconds to trigger full optimizing
+| self-optimizing.full.trigger.interval               | -1(closed)       | The time interval in milliseconds to trigger full optimizing
 
 ## Data-cleaning Configurations
 
@@ -27,11 +27,11 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 | Key                                                 | Default          | Description                                              |
 |---------------------------------------------|-----------|------------------------------------|
 | table-expire.enabled                        | true      | Enables periodically expire table                      |
-| change.data.ttl.minutes                     | 10080（7 days） | Time to live in minutes for data of ChangeStore                |
-| snapshot.change.keep.minutes                | 10080（7 days） | Table-Expiration keeps the latest snapshots of ChangeStore within a specified time in minutes            |
-| snapshot.base.keep.minutes                  | 720（12 hours） | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                |
+| change.data.ttl.minutes                     | 10080(7 days) | Time to live in minutes for data of ChangeStore                |
+| snapshot.change.keep.minutes                | 10080(7 days) | Table-Expiration keeps the latest snapshots of ChangeStore within a specified time in minutes            |
+| snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                |
 | clean-orphan-file.enabled                   | false     | Enables periodically clean orphan files                       |
-| clean-orphan-file.min-existing-time-minutes | 2880（2 days）  | Cleaning orphan files keeps the files modified within a specified time in minutes |
+| clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes |
 
 ## Mixed Format Configurations
 
@@ -41,9 +41,9 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 | Key                                                 | Default          | Description                                              |
 | ---------------------------------- | ---------------- | ----------------------------------       |
-| read.split.open-file-cost          | 4194304（4MB）    | The estimated cost to open a file                        |
+| read.split.open-file-cost          | 4194304(4MB)    | The estimated cost to open a file                        |
 | read.split.planning-lookback       | 10               | Number of bins to consider when combining input splits               |
-| read.split.target-size              | 134217728（128MB）| Target size when combining data input splits                     |
+| read.split.target-size              | 134217728(128MB)| Target size when combining data input splits                     |
 
 ### Writing Configurations
 
@@ -54,7 +54,7 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 | write.format.default               | parquet          | Default file format for the table, applicable to UnkeyedTable          |
 | base.file-index.hash-bucket        | 4                | Initial number of buckets for BaseStore auto-bucket         |
 | change.file-index.hash-bucket      | 4                | Initial number of buckets for ChangeStore auto-bucket       |
-| write.target-file-size-bytes       | 134217728（128MB）| Target size when writing                     |
+| write.target-file-size-bytes       | 134217728(128MB)| Target size when writing                     |
 | write.upsert.enabled               | false            | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled   |
 | write.distribution-mode            | hash             | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash           |
 | write.distribution.hash-mode       | auto             | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto  |
