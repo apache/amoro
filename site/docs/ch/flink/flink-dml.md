@@ -117,13 +117,13 @@ SELECT * FROM unkeyed /*+ OPTIONS('monitor-interval'='1s')*/ ;
 ```
 Hint Options
 
-|Key|默认值|类型|是否必填|描述|
-|--- |--- |--- |--- |--- |
-|streaming|true|Boolean|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
-|arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
-|monitor-interval<img width=120/>|10s|Duration|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
-|start-snapshot-id|(none)|Long|否|从指定的 snapshot 开始读取增量数据（不包括 start-snapshot-id 的快照数据），不指定则读当前快照之后（不包含当前）的增量数据|
-|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../configurations.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
+| Key                              | 默认值    | 类型       | 是否必填 | 描述                                                                                                                                                                                   |
+|----------------------------------|--------|----------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| streaming                        | true   | Boolean  | 否    | 以流的方式读取有界数据还是无界数据，false：读取有界数据，true：读取无界数据                                                                                                                                           |
+| arctic.read.mode                 | file   | String   | 否    | 指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置                                                                                                                                   |
+| monitor-interval<img width=120/> | 10s    | Duration | 否    | arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔                                                                                                                                          |
+| start-snapshot-id                | (none) | Long     | 否    | 从指定的 snapshot 开始读取增量数据（不包括 start-snapshot-id 的快照数据），不指定则读当前快照之后（不包含当前）的增量数据                                                                                                          |
+| 其他表参数                            | (none) | String   | 否    | Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../configurations.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL) |
 
 #### FileStore 数据(主键表)
 
@@ -144,13 +144,13 @@ SELECT * FROM keyed /*+ OPTIONS('streaming'='true', 'scan.startup.mode'='earlies
 
 Hint Options
 
-|Key| 默认值 |类型|是否必填|描述|
-|--- |---|--- |--- |--- |
-|streaming| true |String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
-|arctic.read.mode| file |String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
-|monitor-interval| 10s |String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
-|scan.startup.mode| latest |String|否|有效值为earliest、latest、timestamp（读 fileStore 暂未支持）。<br>当arctic.read.mode = file 时仅支持earliest、latest。'earliest'表示读取全量表数据，在streaming=true 时会继续增量读取；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据。<br>当 arctic.read.mode = log 时，表示 logStore 消费者初次启动时获取 offset 的模式，'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'。|
-|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../configurations.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
+|Key| 默认值 |类型|是否必填| 描述                                                                                                                                                                                                                                                                                                                                                                            |
+|--- |---|--- |--- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|streaming| true |String|否| 以流的方式读取有界数据还是无界数据，false：读取有界数据，true：读取无界数据                                                                                                                                                                                                                                                                                                                                    |
+|arctic.read.mode| file |String|否| 指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置                                                                                                                                                                                                                                                                                                                            |
+|monitor-interval| 10s |String|否| arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔                                                                                                                                                                                                                                                                                                                                   |
+|scan.startup.mode| latest |String|否| 有效值为earliest、latest、timestamp（读 fileStore 暂未支持）。<br>当arctic.read.mode = file 时仅支持earliest、latest。'earliest'表示读取全量表数据，在streaming=true 时会继续增量读取；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据。<br>当 arctic.read.mode = log 时，表示 logStore 消费者初次启动时获取 offset 的模式，'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'。 |
+|其他表参数|(none)|String|否| Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../configurations.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)                                                                                                                                                                                          |
 
 ## Writing With SQL
 Arctic 表支持通过 Flink SQL 往 LogStore 或 FileStore 写入数据

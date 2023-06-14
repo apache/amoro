@@ -77,7 +77,7 @@ nav:
         - Spark Queries: engines/spark/spark-queries.md
         - Spark Writes: engines/spark/spark-writes.md
     - Flink:
-        - Getting Started: engines/flink/flink-get-started.md
+        - Get Started: engines/flink/flink-get-started.md
         - Flink DDL: engines/flink/flink-ddl.md
         - Flink DML: engines/flink/flink-dml.md
         - Flink DataStream: engines/flink/flink-ds.md

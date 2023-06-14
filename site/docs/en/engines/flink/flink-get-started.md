@@ -1,9 +1,10 @@
 ## Overview
-The Apache Flink engine can process Arctic table data in batch and streaming mode. The Flink on Arctic connector provides the ability to read and write to the Arctic data lake while ensuring data consistency, and also provides real-time dimension table association with Arctic data lakes. To meet the high real-time data requirements of businesses, the Arctic data lake's underlying storage structure is designed with LogStore, which stores the latest changelog or append-only real-time data.
+The Apache Flink engine can process Arctic table data in batch and streaming mode. The Flink on Arctic connector provides the ability to read and write to the Arctic data lake while ensuring data consistency. To meet the high real-time data requirements of businesses, the Arctic data lake's underlying storage structure is designed with LogStore, which stores the latest changelog or append-only real-time data.
 
 Arctic integrates the DataStream API and Table API of [Apache Flink](https://flink.apache.org/) to facilitate the use of Flink to read data from Arctic tables or write data to Arctic tables.
 
 The documents under Arctic Flink directory only apply to Mixed-Format. If you are using Iceberg format tables, please refer to the official usage of Iceberg.
+
 [Iceberg Flink user manual](https://iceberg.apache.org/docs/latest/flink-connector/)
 
 Flink Connector includes:
@@ -34,12 +35,12 @@ Kafka as LogStore Version Description:
 
 The Arctic project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':arctic-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl 'arctic-flink-runtime-1.14' -am -DskipTests`
 
 The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` directory.
 
 ## Environment Preparation
-Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as needed. Taking 1.12 as an example:
+Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as needed. Taking Flink 1.12 as an example:
 
 ```shell
 FLINK_VERSION=1.12.7
@@ -83,14 +84,6 @@ cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
 cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
-## Hive兼容
-Arctic 0.3.1 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取/写入 Arctic Hive 兼容表数据。当通过 Flink 操作 Hive 兼容表时，需要注意以下几点：
-
-1. Flink Runtime Jar 不包括 Hive 依赖的 Jar 包内容，需要手动将[ Hive 依赖的 Jar 包](https://repo1.maven.org/maven2/org/apache/hive/hive-exec/2.1.1/hive-exec-2.1.1.jar)放到 flink/lib 目录下；
-2. 创建分区表时，分区字段需要放在最后一列；当分区字段为多个字段时，需要全部放在最后；
-3. 对于 Hive 兼容表，[建表方式](flink-ddl.md)和[读写方式](flink-dml.md)与非 Hive 兼容的 Arctic 表一致；
-4. 支持 Hive 版本为 2.1.1
-
 ## Hive compatibility
 Starting from Arctic version 0.3.1, Hive compatibility is supported, and data in Arctic Hive compatible tables can be read/written through Flink. When operating on Hive-compatible tables through Flink, the following points should be noted:
 
@@ -112,10 +105,10 @@ The query results obtained through Flink SQL-Client cannot provide MOR semantics
 
 **When writing to Arctic tables with write.upsert feature enabled through SQL-Client under Flink 1.15, there are still duplicate primary key data**
 
-You need to execute the command set table.exec.sink.upsert-materialize = none in SQL-Client to turn off the upsert materialize operator generated upsert view. This operator will affect the ArcticWriter's generation of delete data when the write.upsert feature is enabled, causing duplicate primary key data to not be merged.
+You need to execute the command `set table.exec.sink.upsert-materialize = none` in SQL-Client to turn off the upsert materialize operator generated upsert view. This operator will affect the ArcticWriter's generation of delete data when the write.upsert feature is enabled, causing duplicate primary key data to not be merged.
 
 ## Version compatibility and migration
 
 - Starting from version 0.4.1, the API of LogStore has been refactored and migrated to the new interface of Flink FLIP-27. For tasks that use Arctic Flink version <= 0.4.0 to read Arctic LogStore (Kafka), when upgrading the old checkpoint state to the new version, please note:
-  1. Set the SQL Hint parameter to use the deprecated API: `log-store.kafka.compatible.enabled = true`, see [Read LogStore](flink-dml.md#Logstore Real-time data). Otherwise, there may be duplicate data. 
+  1. Set the SQL Hint parameter to use the deprecated API: `log-store.kafka.compatible.enabled = true`, see [Read LogStore](flink-dml.md#Real-Time Data in LogStore). Otherwise, there may be duplicate data. 
   2. If conditions permit, upgrade to the new API. When running tasks with old versions of Arctic Flink, interrupt the data flow of Kafka for a short time, that is, do not write data to LogStore Kafka for a period of time to ensure that the task has successfully checkpointed and completed Kafka Offset submission. Then stop the task, upgrade to the new version of Arctic Flink, and restore the task from the previous state. Then restore the normal writing of upstream LogStore Kafka.

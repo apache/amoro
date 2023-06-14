@@ -13,10 +13,10 @@ Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<conf
 
 | Key                                    | Default Value | Type    | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 |----------------------------------------|---------------|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| metastore.url                          | (none)        | String  | Yes      | Arctic Metastore 的 URL，thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`；如果 AMS 开启了[高可用](../guides/deployment.md#_6)，也可以通过 zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name} 的形式进行指定                                                                                                                                                                                                                                                                  |
+| metastore.url                          | (none)        | String  | Yes      | The URL for Arctic Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If [high availability]((../guides/deployment.md#_6)) is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}.                                                                                                                                                                                             |
 | default-database<img width=100/>       | default       | String  | No       | The default database to use                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | property-version                       | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                                                                                                                                                                                                                                                          |
-| properties.auth.load-from-ams          | True          | BOOLEAN | No       | Whether to load security verification configuration from AMS. True: load from AMS; false: do not use AMS configuration. Note: regardless of whether this parameter is configured, as long as the user has configured the auth.*** related parameters below, this configuration will be used for access.                                                                                                                                                               |
+| properties.auth.load-from-ams          | True          | BOOLEAN | No       | Whether to load security verification configuration from AMS. <br>True: load from AMS; <br>false: do not use AMS configuration. <br>Note: regardless of whether this parameter is configured, as long as the user has configured the auth.*** related parameters below, this configuration will be used for access.                                                                                                                                                   |
 | properties.auth.type                   | (none)        | String  | No       | Table security verification type, valid values: simple, kerberos, or not configured. Default not configured, no permission check is required. simple: use the hadoop username, used in conjunction with the parameter 'properties.auth.simple.hadoop_username'; kerberos: configure kerberos permission verification, used in conjunction with the parameters 'properties.auth.kerberos.principal', 'properties.auth.kerberos.keytab', 'properties.auth.kerberos.krb' |
 | properties.auth.simple.hadoop_username | (none)        | String  | No       | Access using this hadoop username, required when 'properties.auth.type'='simple'.                                                                                                                                                                                                                                                                                                                                                                                     |
 | properties.auth.kerberos.principal     | (none)        | String  | No       | Configuration of kerberos principal, required when 'properties.auth.type'='kerberos'.                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -24,8 +24,8 @@ Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<conf
 | properties.auth.kerberos.keytab.path   | (none)        | String  | No       | The absolute path to the XXX.keytab configuration file for kerberos (the local file path of the Flink SQL submission machine, if the SQL task is submitted with the Flink SQL Client, the path is the local path of the same node, e.g. /XXX/XXX/XXX.keytab).' required if 'properties.auth.type' = 'kerberos'.                                                                                                                                                       |
 
 ### YAML configuration
-Refer to the Flink Sql Client [official configuration](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html#environment-files).
-Modify the conf/sql-client-defaults.yaml file in the Flink directory.
+Refer to the Flink SQL Client [official configuration](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html#environment-files).
+Modify the `conf/sql-client-defaults.yaml` file in the Flink directory.
 ```yaml
 catalogs:
 - name: <catalog_name>
@@ -37,7 +37,7 @@ catalogs:
 ## CREATE statement
 
 ### CREATE DATABASE
-By default, the default-database configuration (default value: default) when creating a catalog is used. You can create a database using the following example:
+By default, the default-database configuration (default value: default) when creating catalog is used. You can create a database using the following example:
 
 ```sql
 CREATE DATABASE [catalog_name.]arctic_db;
@@ -58,11 +58,11 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
 );
 ```
 
-Currently, most of the syntax supported by [Flink Sql create table](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#create-table) is supported, including:
+Currently, most of the syntax supported by [Flink SQL create table](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#create-table) is supported, including:
 
-- PARTITION BY (column1, column2, …): Configure Flink partition fields, but Flink does not yet support hidden partitions. 
-- PRIMARY KEY (column1, column2, …): Configure primary keys. 
-- WITH ('key'='value', …): Configure Arctic Table properties.
+- PARTITION BY (column1, column2, …): configure Flink partition fields, but Flink does not yet support hidden partitions. 
+- PRIMARY KEY (column1, column2, …): configure primary keys. 
+- WITH ('key'='value', …): configure Arctic Table properties.
 
 Currently, configuration of computed columns and watermark fields is not supported.
     
@@ -77,7 +77,7 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
     'key' = 'value'
 );
 ```
-Arctic tables support hidden partitions, but Flink does not support function-based partitions. Therefore, currently only partitions with the same value can be created through Flink Sql.
+Arctic tables support hidden partitions, but Flink does not support function-based partitions. Therefore, currently only partitions with the same value can be created through Flink SQL.
 
 ### CREATE TABLE LIKE
 Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.
@@ -127,13 +127,13 @@ View table details:
 SHOW CREATE TABLE;
 ```
 
-## DESC 语句
+## DESC statement
 View table description:
 ```sql
 DESC TABLE;
 ```
 
-## ALTER 语句
+## ALTER statement
 Not supported at the moment
 
 ## Supported Types
