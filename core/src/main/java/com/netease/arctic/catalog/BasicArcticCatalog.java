@@ -283,7 +283,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
     @Override
     public ArcticTable create() {
-      properties = CatalogUtil.mergeCatalogPropertiesToTable(properties, catalogMeta.getCatalogProperties());
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       doCreateCheck();
       TableMeta meta = builder.build();
