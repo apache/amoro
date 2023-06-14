@@ -27,6 +27,8 @@ public class IcebergRestControllerTest {
   static String restCatalogUri = "/api/iceberg/rest/catalog/" + AmsEnvironment.INTERNAL_ICEBERG_CATALOG;
 
 
+  private final String database = "test_ns" ;
+  private final String table = "test_iceberg_tbl";
 
   @BeforeAll
   public static void beforeAll() throws Exception {
@@ -54,11 +56,13 @@ public class IcebergRestControllerTest {
 
     Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
 
-    nsCatalog.createNamespace(Namespace.of(
-        "test"
-    ));
+    nsCatalog.createNamespace(Namespace.of(database));
     Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
+    nsCatalog.dropNamespace(Namespace.of(database));
+    Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
 
+
+    nsCatalog.createNamespace(Namespace.of(database));
     System.out.println(((SupportsNamespaces)catalog).listNamespaces());
   }
 }

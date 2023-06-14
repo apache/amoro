@@ -30,6 +30,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.http.Context;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -61,29 +63,28 @@ public class IcebergRestCatalogController {
     this.tableService = tableService;
   }
 
+
   /**
    * GET PREFIX/{catalog}/v1/config?warehouse={warehouse}
    */
   public void getCatalogConfig(Context ctx) {
-    System.out.println(ctx.req.toString());
-    String catalog = ctx.pathParam("catalog");
-    InternalCatalog internalCatalog = getCatalog(catalog);
-    Map<String, String> properties = Maps.newHashMap();
-    Map<String, String> overwrites = Maps.newHashMap();
-    internalCatalog.getMetadata().getCatalogProperties().forEach((k, v) -> {
-      if (!catalogPropertiesNotReturned.contains(k)) {
-        if (catalogPropertiesOverwrite.contains(k)) {
-          overwrites.put(k, v);
-        } else {
-          properties.put(k, v);
+    handleCatalog(ctx, catalog -> {
+      Map<String, String> properties = Maps.newHashMap();
+      Map<String, String> overwrites = Maps.newHashMap();
+      catalog.getMetadata().getCatalogProperties().forEach((k, v) -> {
+        if (!catalogPropertiesNotReturned.contains(k)) {
+          if (catalogPropertiesOverwrite.contains(k)) {
+            overwrites.put(k, v);
+          } else {
+            properties.put(k, v);
+          }
         }
-      }
+      });
+      return ConfigResponse.builder()
+          .withDefaults(properties)
+          .withOverrides(overwrites)
+          .build();
     });
-    ConfigResponse response = ConfigResponse.builder()
-        .withDefaults(properties)
-        .withOverrides(overwrites)
-        .build();
-    ctx.json(response);
   }
 
 
@@ -91,41 +92,83 @@ public class IcebergRestCatalogController {
    * GET PREFIX/{catalog}/v1/namespaces
    */
   public void listNamespaces(Context ctx) {
-    String catalog = ctx.pathParam("catalog");
-    InternalCatalog internalCatalog = getCatalog(catalog);
+    handleCatalog(ctx, catalog -> {
+      String ns = ctx.req.getParameter("parent");
+      Preconditions.checkArgument(ns == null,
+          "The catalog doesn't support multi-level namespaces");
+      List<Namespace> nsLists = catalog.listDatabases()
+          .stream().map(Namespace::of)
+          .collect(Collectors.toList());
+      return ListNamespacesResponse.builder()
+          .addAll(nsLists)
+          .build();
+    });
 
-    String ns = ctx.req.getParameter("parent");
-    Preconditions.checkArgument(ns == null,
-        "The catalog doesn't support multi-level namespaces");
-    List<Namespace> nsLists = internalCatalog.listDatabases()
-            .stream().map(Namespace::of)
-            .collect(Collectors.toList());
-    ctx.json(
-        ListNamespacesResponse.builder()
-            .addAll(nsLists)
-            .build()
-    );
   }
 
   /**
-   * POST PREFIX/{catalog}/v1/namespace
+   * POST PREFIX/{catalog}/v1/namespaces
    */
   public void createNamespace(Context ctx) {
+    handleCatalog(ctx, catalog -> {
+      CreateNamespaceRequest request = ctx.bodyAsClass(CreateNamespaceRequest.class);
+      Namespace ns = request.namespace();
+      Preconditions.checkArgument(
+          request.properties() == null || request.properties().isEmpty(),
+          "create namespace with properties is not supported now."
+      );
+      Preconditions.checkArgument(ns.length() == 1,
+          "multi-level namespace is not supported now");
+      catalog.createDatabase(ns.levels()[0]);
+      return CreateNamespaceResponse.builder().withNamespace(ns).build();
+    });
+  }
+
+  /**
+   * GET /{catalog}/v1/namespaces/{namespaces}
+   */
+  public void getNamespace(Context ctx) {
+    throw new UnsupportedOperationException("namespace properties is not supported");
+  }
+
+  /**
+   * DELETE PREFIX/{catalog}/v1/namespaces/{namespace}
+   */
+  public void dropNamespace(Context ctx) {
     String catalog = ctx.pathParam("catalog");
-    CreateNamespaceRequest request = ctx.bodyAsClass(CreateNamespaceRequest.class);
+    String ns = ctx.pathParam("namespace");
+    Preconditions.checkNotNull(ns, "namespace is null");
+    Preconditions.checkArgument(!ns.contains("."), "multi-level namespace is not supported");
     InternalCatalog internalCatalog = getCatalog(catalog);
-    Namespace ns = request.namespace();
-    Preconditions.checkArgument(
-        request.properties() == null || request.properties().isEmpty(),
-        "create namespace with properties is not supported now."
-    );
-    Preconditions.checkArgument(ns.length() == 1,
-        "multi-level namespace is not supported now");
-    internalCatalog.createDatabase(ns.levels()[0]);
-    ctx.json(CreateNamespaceResponse.builder().withNamespace(ns).build());
+    internalCatalog.dropDatabase(ns);
   }
 
 
+  /**
+   * POST PREFIX/{catalog}/v1/namespaces/{namespace}/properties
+   */
+  public void setNamespaceProperties(Context ctx) {
+    throw new UnsupportedOperationException("namespace properties is not supported");
+  }
+
+  /**
+   * GET PREFIX/{catalog}/v1/namespaces/{namespace}/tables
+   */
+  public void listTablesInNamespace(Context ctx) {
+
+  }
+
+
+  private void handleCatalog(Context ctx, Function<InternalCatalog, ? extends RESTResponse> handler) {
+    String catalog = ctx.pathParam("catalog");
+    Preconditions.checkNotNull(catalog, "lack require path params: catalog");
+    InternalCatalog internalCatalog = getCatalog(catalog);
+
+    RESTResponse r = handler.apply(internalCatalog);
+    if (r != null) {
+      ctx.json(r);
+    }
+  }
 
   private InternalCatalog getCatalog(String catalog) {
     Preconditions.checkNotNull(catalog, "lack required path variables: catalog");

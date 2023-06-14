@@ -84,7 +84,7 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
   private final TerminalManager terminalManager;
-  private final IcebergRestCatalogController icebergRestCatalogController;
+  private final IcebergRestCatalogController icebergRestController;
 
   public DashboardServer(Configurations serviceConfig, TableService tableService,
                          OptimizerManager optimizerManager) {
@@ -101,7 +101,7 @@ public class DashboardServer {
     this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
-    this.icebergRestCatalogController = new IcebergRestCatalogController(tableService);
+    this.icebergRestController = new IcebergRestCatalogController(tableService);
   }
 
   private Javalin app;
@@ -302,9 +302,13 @@ public class DashboardServer {
 
       // for iceberg rest catalog api
       path(IcebergRestCatalogController.REST_CATALOG_API_PREFIX, () -> {
-        get("/{catalog}/v1/config", icebergRestCatalogController::getCatalogConfig);
-        get("/{catalog}/v1/namespaces", icebergRestCatalogController::listNamespaces);
-        post("/{catalog}/v1/namespaces", icebergRestCatalogController::createNamespace);
+        get("/{catalog}/v1/config", icebergRestController::getCatalogConfig);
+        get("/{catalog}/v1/namespaces", icebergRestController::listNamespaces);
+        post("/{catalog}/v1/namespaces", icebergRestController::createNamespace);
+        get("/{catalog/v1/namespaces/{namespace}", icebergRestController::getNamespace);
+        delete("/{catalog}/v1/namespaces/{namespace}", icebergRestController::dropNamespace);
+        post("/{catalog}/v1/namespaces/{namespace}", icebergRestController::setNamespaceProperties);
+        get("/{catalog}/v1/namespaces/{namespace}/tables", icebergRestController::listTablesInNamespace);
       });
     });
 
