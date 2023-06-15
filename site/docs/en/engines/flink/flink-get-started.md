@@ -35,7 +35,7 @@ Kafka as LogStore Version Description:
 
 The Arctic project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl 'arctic-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl ':arctic-flink-runtime-1.14' -am -DskipTests`
 
 The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` directory.
 

@@ -35,7 +35,7 @@ Kafka 作为 LogStore 版本说明：
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
 
-`mvn clean package -pl 'arctic-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl ':arctic-flink-runtime-1.14' -am -DskipTests`
 
 Flink Runtime Jar 存放在 `flink/v1.14/flink-runtime/target` 目录。
 
