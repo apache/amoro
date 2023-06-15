@@ -136,7 +136,7 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
             awaitingSubtask, arcticSplit.taskIndex(), arcticSplit);
         enumeratorContext.assignSplit(arcticSplit, awaitingSubtask);
         awaitingReader.remove();
-      } else {
+      } else if (nextSplit.isUnavailable()) {
         if (!shouldWaitForMoreSplits()) {
           LOG.info("No more splits available for subtask {}", awaitingSubtask);
           enumeratorContext.signalNoMoreSplits(awaitingSubtask);
