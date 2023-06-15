@@ -2,7 +2,6 @@
 
 开发人员通常需要同时关注存储在 HDFS 中的数据和 Kafka 中的数据，这增加了业务开发的复杂性。为解决这一问题，Arctic 提出在表参数中新增了一个可选项"开启 LogStore"（`log-store.enabled`），通过这个选项，可以在操作单张表时同时获取秒级和分钟级的数据延迟，并确保这两个数据源的最终一致性。
 ## 概要
-### 使用 LogStore 前提
 
 |  Flink   |  Kafka   |  Pulsar   |
 |-----|-----|-----|
@@ -10,7 +9,7 @@
 |  Flink 1.14   |  &#x2714   |  &#x2716   |
 |  Flink 1.15   |  &#x2714   |  &#x2716   |
 
-
+### 使用 LogStore 前提
 新建 Arctic 表时，需要开启 LogStore。
 
 - 可以在 Arctic [Dashboard](http://localhost:1630) - Terminal 页面选择具体的 Catalog 后创建表
