@@ -79,6 +79,23 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
 ```
 Arctic 表支持隐藏分区，但 Flink 不支持函数计算的分区，因此目前通过 Flink Sql 只能创建相同值的分区。
 
+另外，还可以在不创建 Flink catalog 的情况下创建表：
+```sql
+CREATE TABLE `test_table` (
+    id BIGINT,
+    name STRING,
+    op_time TIMESTAMP,
+    PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+    'connector' = 'arctic',
+    'metastore.url' = '',
+    'arctic.catalog' = '',
+    'arctic.database' = '',
+    'arctic.table' = ''
+);
+```
+其中 `<metastore.url>` 为 Arctic Metastore 的 URL， `arctic.catalog`、`arctic.database`、`arctic.table` 分别表示在 AMS 下该表对应的 catalog 名称、database 名称和表名称。
+
 ### CREATE TABLE LIKE
 创建一个与已有表相同表结构、分区、表属性的表，可使用 CREATE TABLE LIKE
 

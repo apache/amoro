@@ -13,7 +13,7 @@ Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<conf
 
 | Key                                    | Default Value | Type    | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 |----------------------------------------|---------------|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| metastore.url                          | (none)        | String  | Yes      | The URL for Arctic Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If [high availability]((../guides/deployment.md#_6)) is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}.                                                                                                                                                                                             |
+| metastore.url                          | (none)        | String  | Yes      | The URL for Arctic Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}.                                                                                                                                                                                                                             |
 | default-database<img width=100/>       | default       | String  | No       | The default database to use                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | property-version                       | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                                                                                                                                                                                                                                                          |
 | properties.auth.load-from-ams          | True          | BOOLEAN | No       | Whether to load security verification configuration from AMS. <br>True: load from AMS; <br>false: do not use AMS configuration. <br>Note: regardless of whether this parameter is configured, as long as the user has configured the auth.*** related parameters below, this configuration will be used for access.                                                                                                                                                   |
@@ -78,6 +78,23 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
 );
 ```
 Arctic tables support hidden partitions, but Flink does not support function-based partitions. Therefore, currently only partitions with the same value can be created through Flink SQL.
+
+Alternatively, tables can be created without creating a Flink catalog:
+```sql
+CREATE TABLE `test_table` (
+    id BIGINT,
+    name STRING,
+    op_time TIMESTAMP,
+    PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+    'connector' = 'arctic',
+    'metastore.url' = '',
+    'arctic.catalog' = '',
+    'arctic.database' = '',
+    'arctic.table' = ''
+);
+```
+where `<metastore.url>` is the URL of the Arctic Metastore, and `arctic.catalog`, `arctic.database` and `arctic.table` are the catalog name, database name and table name of this table under the AMS, respectively.
 
 ### CREATE TABLE LIKE
 Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.
