@@ -15,6 +15,8 @@ public abstract class RuntimeHandlerChain {
 
   private RuntimeHandlerChain next;
 
+  private boolean initialized;
+
   protected void appendNext(RuntimeHandlerChain handler) {
     Preconditions.checkNotNull(handler);
     Preconditions.checkArgument(!Objects.equals(handler, this),
@@ -26,14 +28,17 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void startHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
+  public final void initialize(List<TableRuntimeMeta> tableRuntimeMetaList) {
     initHandler(tableRuntimeMetaList);
+    initialized = true;
     if (next != null) {
-      next.startHandler(tableRuntimeMetaList);
+      next.initialize(tableRuntimeMetaList);
     }
   }
 
   public final void fireStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    if (!initialized) return;
+
     doSilently(() -> handleStatusChanged(tableRuntime, originalStatus));
     if (next != null) {
       next.fireStatusChanged(tableRuntime, originalStatus);
@@ -41,6 +46,8 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    if (!initialized) return;
+
     doSilently(() -> handleConfigChanged(tableRuntime, originalConfig));
     if (next != null) {
       next.fireConfigChanged(tableRuntime, originalConfig);
@@ -48,6 +55,8 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+    if (!initialized) return;
+
     doSilently(() -> handleTableAdded(table, tableRuntime));
     if (next != null) {
       next.fireTableAdded(table, tableRuntime);
@@ -55,6 +64,8 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireTableRemoved(TableRuntime tableRuntime) {
+    if (!initialized) return;
+
     if (next != null) {
       next.fireTableRemoved(tableRuntime);
     }

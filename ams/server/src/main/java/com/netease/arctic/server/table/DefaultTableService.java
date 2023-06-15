@@ -302,7 +302,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     });
 
     if (headHandler != null) {
-      headHandler.startHandler(tableRuntimeMetaList);
+      headHandler.initialize(tableRuntimeMetaList);
     }
     tableExplorerTimer = new Timer("ExternalTableExplorer", true);
     tableExplorerTimer.scheduleAtFixedRate(

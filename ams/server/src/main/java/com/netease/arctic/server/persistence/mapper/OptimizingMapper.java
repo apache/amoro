@@ -89,11 +89,13 @@ public interface OptimizingMapper {
       @Param("catalogName") String catalogName, @Param(
       "dbName") String dbName, @Param("tableName") String tableName);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
-      " target_change_snapshot_id, status," +
-      " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
-      " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}" +
-      " AND status = 'SUCCESS'")
+  @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id," +
+      " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time," +
+      " a.fail_reason, a.summary FROM table_optimizing_process a" +
+      " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
+      " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
+      " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}" +
+      " AND a.status = 'SUCCESS'")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
