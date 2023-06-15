@@ -31,8 +31,31 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
+
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
 public class TestHiveSchemaUpdate extends HiveTableTestBase {
+
+  @Test
+  public void testHiveParameterFromArctic() throws TException {
+    String database = testHiveTable.id().getDatabase();
+    String table = testHiveTable.id().getTableName();
+    Map<String,String> tableParameter =  hms.getClient()
+            .getTable(database,table).getParameters();
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(table));
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+
+    Map<String,String> keyedTableParameter =  hms.getClient()
+            .getTable(testKeyedHiveTable.id().getDatabase(),testKeyedHiveTable.id().getTableName()).getParameters();
+    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(keyedTableParameter.get(ARCTIC_TABLE_ROOT_LOCATION)
+            .endsWith(testKeyedHiveTable.id().getTableName()));
+    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_FLAG));
+
+  }
 
   @Test
   public void testKeyedAdd() throws TException {
