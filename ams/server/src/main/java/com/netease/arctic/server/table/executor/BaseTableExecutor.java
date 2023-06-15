@@ -27,29 +27,23 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   protected BaseTableExecutor(TableManager tableManager, int poolSize) {
     this.tableManager = tableManager;
-    if (poolSize <= 0) {
-      this.executor = null;
-    } else {
-      this.executor = Executors.newScheduledThreadPool(
-          poolSize,
-          new ThreadFactoryBuilder()
-              .setDaemon(false)
-              .setNameFormat("ASYNC-" + getThreadName() + "-%d").build());
-    }
+    this.executor = Executors.newScheduledThreadPool(
+        poolSize,
+        new ThreadFactoryBuilder()
+            .setDaemon(false)
+            .setNameFormat("ASYNC-" + getThreadName() + "-%d").build());
   }
 
   @Override
   protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    if (executor != null) {
-      tableRuntimeMetaList.stream()
-          .map(TableRuntimeMeta::getTableRuntime)
-          .filter(this::enabled)
-          .forEach(tableRuntime ->
-              executor.schedule(
-                  () -> executeTask(tableRuntime),
-                  getStartDelay(),
-                  TimeUnit.MILLISECONDS));
-    }
+    tableRuntimeMetaList.stream()
+        .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
+        .filter(tableRuntime -> enabled(tableRuntime))
+        .forEach(tableRuntime ->
+            executor.schedule(
+                () -> executeTask(tableRuntime),
+                getStartDelay(),
+                TimeUnit.MILLISECONDS));
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
@@ -66,7 +60,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
-    if (executor != null && isExecutable(tableRuntime)) {
+    if (isExecutable(tableRuntime)) {
       executor.schedule(
           () -> executeTask(tableRuntime),
           millisecondsTime,
@@ -109,9 +103,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   @Override
   protected void doDispose() {
-    if (executor != null) {
-      executor.shutdown();
-    }
+    executor.shutdown();
   }
 
   protected long getStartDelay() {
