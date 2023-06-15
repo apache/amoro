@@ -28,6 +28,8 @@ import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -36,14 +38,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
-public class AdaptHiveService {
+public class AdaptHiveService implements Closeable {
 
   private static final Logger LOG = LoggerFactory.getLogger(AdaptHiveService.class);
 
   private static final int CORE_POOL_SIZE = 5;
   private static final long QUEUE_CAPACITY = 5;
   private static ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> runningInfoCache = new ConcurrentHashMap<>(10);
-  private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
+  private final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
       QUEUE_CAPACITY, TimeUnit.SECONDS, new LinkedBlockingDeque<>(5));
 
   public Object upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
@@ -77,5 +79,10 @@ public class AdaptHiveService {
 
   public void removeTableCache(TableIdentifier tableIdentifier) {
     runningInfoCache.remove(tableIdentifier);
+  }
+
+  @Override
+  public void close() throws IOException {
+    executor.shutdownNow();
   }
 }

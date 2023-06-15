@@ -46,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -80,6 +81,11 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         TableOrphanFileClean::new,
         true);
     LOG.info("Schedule Orphan Cleaner finished with {} tasks", tableIds.size());
+  }
+
+  @Override
+  public void close() throws IOException {
+    cleanTasks = null;
   }
 
   public static class TableOrphanFileClean implements ScheduledTasks.Task {

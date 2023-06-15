@@ -23,10 +23,12 @@ import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.ibatis.session.SqlSession;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 
-public class ContainerMetaService extends IJDBCService {
+public class ContainerMetaService extends IJDBCService implements Closeable {
 
   public List<Container> getContainers() {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -54,5 +56,10 @@ public class ContainerMetaService extends IJDBCService {
       ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
       return containerMetadataMapper.getType(name);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

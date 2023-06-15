@@ -75,6 +75,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
@@ -97,7 +98,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class OptimizeQueueService extends IJDBCService {
+public class OptimizeQueueService extends IJDBCService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeQueueService.class);
 
   private final Map<Integer, OptimizeQueueWrapper> optimizeQueues = new HashMap<>();
@@ -403,6 +404,11 @@ public class OptimizeQueueService extends IJDBCService {
       ContainerMetadataMapper containerMetadataMapper = getMapper(sqlSession, ContainerMetadataMapper.class);
       containerMetadataMapper.insertContainer(container);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public static class OptimizeQueueWrapper {

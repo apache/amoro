@@ -47,6 +47,8 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -56,7 +58,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DDLTracerService extends IJDBCService {
+public class DDLTracerService extends IJDBCService implements Closeable {
 
   private static final Logger LOG = LoggerFactory.getLogger(DDLTracerService.class);
 
@@ -301,6 +303,11 @@ public class DDLTracerService extends IJDBCService {
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
       tableMetadataMapper.updateTableSchemaId(new com.netease.arctic.table.TableIdentifier(identifier), schemaId);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public enum DDLType {

@@ -7,9 +7,11 @@ import com.netease.arctic.ams.server.model.PlatformFileInfo;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.ibatis.session.SqlSession;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Base64;
 
-public class PlatformFileInfoService extends IJDBCService {
+public class PlatformFileInfoService extends IJDBCService implements Closeable {
   /**
    * add some file
    * @param name
@@ -50,4 +52,8 @@ public class PlatformFileInfoService extends IJDBCService {
     }
   }
 
+  @Override
+  public void close() throws IOException {
+    
+  }
 }

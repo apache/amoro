@@ -40,6 +40,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -250,6 +251,11 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   @Override
   public boolean isExist(TableIdentifier tableIdentifier) {
     return loadTableMetadata(tableIdentifier) != null;
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public static class Key {

@@ -47,6 +47,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +78,11 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
         SupportHiveSyncService.SupportHiveSyncTask::new,
         false);
     LOG.info("Schedule Support Hive Sync finished with {} valid ids", ids.size());
+  }
+
+  @Override
+  public void close() throws IOException {
+    syncTasks = null;
   }
 
   public static class SupportHiveSyncTask implements ScheduledTasks.Task {

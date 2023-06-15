@@ -38,6 +38,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,35 +51,37 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-public class TerminalManager {
+public class TerminalManager implements Closeable {
 
   private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
 
   private final AtomicLong threadPoolCount = new AtomicLong();
-  TerminalSessionFactory sessionFactory;
-  int resultLimits = 1000;
-  boolean stopOnError = false;
+  private final TerminalSessionFactory sessionFactory;
+  private final int resultLimits;
+  private final boolean stopOnError;
 
-  int sessionTimeout = 30;
-  int sessionTimeoutCheckInterval = 5;
+  private final int sessionTimeout;
+  private final int sessionTimeoutCheckInterval = 5;
 
   private final Object sessionMapLock = new Object();
   private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
+  private volatile boolean stop;
 
-
-  ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
+  private final ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
       new LinkedBlockingQueue<>(),
       r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
+  private final Thread cleanThread;
 
   public TerminalManager(Configuration conf) {
     this.resultLimits = conf.getInteger(ArcticMetaStoreConf.TERMINAL_RESULT_LIMIT);
     this.stopOnError = conf.getBoolean(ArcticMetaStoreConf.TERMINAL_STOP_ON_ERROR);
     this.sessionTimeout = conf.getInteger(ArcticMetaStoreConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
-    Thread cleanThread = new Thread(new SessionCleanTask());
-    cleanThread.setName("terminal-session-gc");
-    cleanThread.start();
+    this.cleanThread = new Thread(new SessionCleanTask());
+    this.cleanThread.setName("terminal-session-gc");
+    this.cleanThread.start();
+    this.stop = false;
   }
 
   /**
@@ -298,6 +302,13 @@ public class TerminalManager {
     return factory;
   }
 
+  @Override
+  public void close() throws IOException {
+    this.stop = true;
+    cleanThread.interrupt();
+    executionPool.shutdownNow();
+  }
+
   private class SessionCleanTask implements Runnable {
     private static final long MINUTE_IN_MILLIS = 60 * 1000;
 
@@ -306,7 +317,7 @@ public class TerminalManager {
       LOG.info("Terminal Session Clean Task started");
       LOG.info("Terminal Session Clean Task, check interval: " + sessionTimeoutCheckInterval + " minutes");
       LOG.info("Terminal Session Timeout: " + sessionTimeout + " minutes");
-      while (true) {
+      while (!stop) {
         try {
           List<TerminalSessionContext> sessionToRelease = checkIdleSession();
           sessionToRelease.forEach(this::releaseSession);
@@ -324,6 +335,7 @@ public class TerminalManager {
           LOG.error("Interrupted when sleep", e);
         }
       }
+      LOG.info("Terminal Session Clean Task exist!");
     }
 
     private List<TerminalSessionContext> checkIdleSession() {

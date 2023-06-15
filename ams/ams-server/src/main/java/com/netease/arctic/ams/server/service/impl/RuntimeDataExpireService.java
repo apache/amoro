@@ -28,9 +28,11 @@ import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
-public class RuntimeDataExpireService {
+public class RuntimeDataExpireService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(RuntimeDataExpireService.class);
 
   private final ArcticTransactionService transactionService;
@@ -107,5 +109,10 @@ public class RuntimeDataExpireService {
         LOG.error("{} failed to expire and clear table_blocker", identifier, e);
       }
     });
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }
