@@ -15,7 +15,7 @@
 - 可以在 Arctic [Dashboard](http://localhost:1630) - Terminal 页面选择具体的 Catalog 后创建表
 
 ```sql
-create table db.log_table (
+CREATE TABLE db.log_table (
     id int,
     name string,
     ts timestamp,
@@ -31,13 +31,13 @@ tblproperties (
 - 也可以使用 Flink SQL 在 Flink-SQL-Client 创建表
 
 ```sql
--- 首先使用 use catalog 命令切换到 arctic catalog。
-create table db.log_table (
+-- 首先使用 USE CATALOG 命令切换到 arctic catalog。
+CREATE TABLE db.log_table (
     id int,
     name string,
     ts timestamp,
     primary key (id) not enforced
-) with (
+) WITH (
     'log-store.enabled' = 'true',
     'log-store.topic'='topic_log_test',
     'log-store.address'='localhost:9092');
@@ -45,11 +45,19 @@ create table db.log_table (
 
 ### 双写 LogStore 和 FileStore
 
-![Introduce](../images/double-write.png){:height="70%" width="70%"}
+<center>
 
-Arctic Connector通过双写操作将数据同时写入 LogStore 和 ChangeStore，而不开启 Kafka 事务以确保两者数据的一致性，因为开启事务会给下游任务带来数分钟的延迟（具体延迟时间取决于上游任务的检查点间隔）。
+![Introduce](../images/auto-writer.png){:height="80%" width="80%"}
+</center>
+
+Arctic Connector 通过双写操作将数据同时写入 LogStore 和 ChangeStore，而不开启 Kafka 事务以确保两者数据的一致性，因为开启事务会给下游任务带来数分钟的延迟（具体延迟时间取决于上游任务的检查点间隔）。
 
 当上游任务重新启动或发生故障切换时，会导致冗余数据发送到 LogStore。下游任务会识别并回滚这部分冗余数据，以保证数据的最终一致性。
+
+```sql
+INSERT INTO db.log_table /*+ OPTIONS('arctic.emit.mode'='log') */
+SELECT id, name, ts from sourceTable;
+```
 
 有关 LogStore 的配置，请参考[这里](../configurations.md#logstore)，消费Kafka的配置请参考[这里](flink-dml.md#logstore)。
 
@@ -57,11 +65,11 @@ Arctic Connector通过双写操作将数据同时写入 LogStore 和 ChangeStore
 
 ### 开启一致性读取
 ```sql
-select * from arctic.db.arctic
+SELECT * FROM arctic.db.log_table
 /*+ OPTIONS('arctic.read.mode'='log','log-store.consistency-guarantee.enabled'='true') */;
 
 --或者是创建表时开启一致性读取
-create table catalog.db.arctic (
+CREATE TABLE arctic.db.log_table (
     ...
 ) WITH (
     'log-store.enabled' = 'true',
@@ -69,6 +77,8 @@ create table catalog.db.arctic (
     'log-store.address'='localhost:9092',
     'log-store.consistency-guarantee.enabled'='true'
 );
+SELECT * FROM arctic.db.log_table
+/*+ OPTIONS('arctic.read.mode'='log') */;
 ```
 
 ### Hint Options

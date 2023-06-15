@@ -4,111 +4,84 @@ Developers often need to pay attention to data stored in HDFS as well as data in
 
 ## overview
 
-### Prerequisites for using LogStore
-
 |	Flink    |	Kafka    |  Pulsar	|	
 |-----	|-----	|-----	|			
 |	Flink 1.12	|	&#x2714	|	&#x2714	|
 |	Flink 1.14	|	&#x2714	|	&#x2716	|
 |	Flink 1.15	|	&#x2714	|	&#x2716	|
 
-
+### Prerequisites for using LogStore
 
 When creating an Arctic table, LogStore needs to be enabled.
 
 - You can create a table after selecting a specific Catalog on the Arctic [Dashboard](http://localhost:1630) - Terminal page
 
 ```sql
-
-create table db.log_table (
-
-id int,
-
-name string,
-
-ts timestamp,
-
-primary key (id)
-
+CREATE TABLE db.log_table (
+    id int,
+    name string,
+    ts timestamp,
+    primary key (id)
 ) using arctic
-
 tblproperties (
-
-“log-store.enabled“ = “true“,
-
-“log-store.topic“=“topic_log_test“,
-
-“log-store.address“=“localhost:9092“
-
+"log-store.enabled" = "true",
+"log-store.topic"="topic_log_test",
+"log-store.address"="localhost:9092"
 );
-
 ```
 
 - You can also use Flink SQL to create tables in Flink-SQL-Client
 
 ```sql
-
 -- First use the use catalog command to switch to the arctic catalog.
-
-create table db.log_table (
-
-id int,
-
-name string,
- 
-
-ts timestamp,
-
-primary key (id) not enforced
-
-) with (
-
-'log-store.enabled' = 'true',
-
-'log-store.topic'='topic_log_test',
-
-'log-store.address'='localhost:9092');
-
+CREATE TABLE db.log_table (
+    id int,
+    name string,
+    ts timestamp,
+    primary key (id) not enforced
+) WITH (
+    'log-store.enabled' = 'true',
+    'log-store.topic'='topic_log_test',
+    'log-store.address'='localhost:9092');
 ```
 
 ### Double write LogStore and FileStore
 
-![Introduce](../../images/flink/double-write.png){:height=“70%“ width=“70%“}
+<center>
+
+![Introduce](../../images/flink/auto-writer.png){:height=“80%“ width=“80%“}
+</center>
 
 Arctic Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).
 
 When an upstream task restarts or a failover occurs, it causes redundant data to be sent to the LogStore. Downstream tasks will identify and roll back this part of redundant data to ensure eventual data consistency.
 
+```sql
+INSERT INTO db.log_table /*+ OPTIONS('arctic.emit.mode'='log') */
+SELECT id, name, ts from sourceTable;
+```
+
 For the configuration of LogStore, please refer to [here](../../configurations.md#logstore-configurations), and for the configuration of consuming Kafka, please refer to [here](flink-dml.md#logstore).
 
-> Currently only the Apache Flink engine implements the dual-write LogStore and FileStore.
+> Currently, only the Apache Flink engine implements the dual-write LogStore and FileStore.
 
 ### Enable consistent read
 
 ```sql
-
-select * from arctic.db.arctic
-
+SELECT * FROM arctic.db.log_table
 /*+ OPTIONS('arctic.read.mode'='log','log-store.consistency-guarantee.enabled'='true') */;
 
 -- Or enable consistent read when creating the table
-
-create table catalog.db.arctic (
-
-...
-
+CREATE TABLE arctic.db.log_table (
+    ...
 ) WITH (
-
-'log-store.enabled' = 'true',
-
-'log-store.topic'='topic_log_test',
-
-'log-store.address'='localhost:9092',
-
-'log-store.consistency-guarantee.enabled'='true'
-
+    'log-store.enabled' = 'true',
+    'log-store.topic'='topic_log_test',
+    'log-store.address'='localhost:9092',
+    'log-store.consistency-guarantee.enabled'='true'
 );
-
+SELECT * FROM arctic.db.log_table
+/*+ OPTIONS('arctic.read.mode'='log') */;
 ```
 
 ### Hint Options
