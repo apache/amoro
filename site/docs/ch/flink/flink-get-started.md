@@ -1,5 +1,5 @@
 ## 概要
-Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arctic connector 提供读写 Arctic 数据湖的能力且满足数据一致性保证，也提供实时维表关联 Arctic 数据湖的能力。为了满足对数据实时性要求很高的业务，Arctic 数据湖底层存储结构设计了 LogStore，其存放着最新的 changelog 或 append-only 实时数据。
+Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arctic connector 提供读写 Arctic 数据湖的能力且满足数据一致性保证。为了满足对数据实时性要求很高的业务，Arctic 数据湖底层存储结构设计了 LogStore，其存放着最新的 changelog 或 append-only 实时数据。
 
 Arctic 集成了 [Apache Flink](https://flink.apache.org/) 的 DataStream API 与 Table API，以方便的使用 Flink 从 Arctic 表中读取数据，或将数据写入
 Arctic 表中。
