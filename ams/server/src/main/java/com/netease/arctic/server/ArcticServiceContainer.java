@@ -33,7 +33,9 @@ import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
+import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
+import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -113,20 +115,26 @@ public class ArcticServiceContainer {
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
-    tableService.addHandlerChain(optimizingService.getTableRuntimeHandler());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
-    tableService.addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
+    addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
 
     initThriftService();
     startThriftService();
     startHttpService();
+  }
+
+  private void addHandlerChain(RuntimeHandlerChain chain) {
+    if (chain != null) {
+      tableService.addHandlerChain(chain);
+    }
   }
 
   public void dispose() {
@@ -246,6 +254,7 @@ public class ArcticServiceContainer {
     private void initServiceConfig() throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getArcticHome() + SERVER_CONFIG_PATH;
+      LOG.info("load config from path: {}", configPath);
       yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
@@ -288,6 +297,32 @@ public class ArcticServiceContainer {
       if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
         throw new RuntimeException(
             String.format("Illegal terminal implement: %s, local, kyuubi, custom is available", terminalBackend));
+      }
+
+      validateThreadCount(systemConfig, ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT);
+      validateThreadCount(systemConfig, ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
+
+      if (enabled(systemConfig, ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
+        validateThreadCount(systemConfig, ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
+      }
+
+      if (enabled(systemConfig, ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
+        validateThreadCount(systemConfig, ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
+      }
+      if (enabled(systemConfig, ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
+        validateThreadCount(systemConfig, ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
+      }
+    }
+    
+    private boolean enabled(Map<String, Object> systemConfig, ConfigOption<Boolean> config) {
+      return (boolean) systemConfig.getOrDefault(config.key(), config.defaultValue());
+    }
+
+    private void validateThreadCount(Map<String, Object> systemConfig, ConfigOption<Integer> config) {
+      int threadCount = (int) systemConfig.getOrDefault(config.key(), config.defaultValue());
+      if (threadCount <= 0) {
+        throw new RuntimeException(
+            String.format("%s(%s) must > 0, actual value = %d", config.key(), config.description(), threadCount));
       }
     }
 
