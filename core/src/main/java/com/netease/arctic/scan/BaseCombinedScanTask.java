@@ -50,7 +50,7 @@ public class BaseCombinedScanTask implements CombinedScanTask {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("\ntasks", Joiner.on(",\n").join(tasks).replaceAll("\n", "\n\t"))
+        .add("\ntasks", Joiner.on(",\n\t").join(tasks))
         .toString();
   }
 }
