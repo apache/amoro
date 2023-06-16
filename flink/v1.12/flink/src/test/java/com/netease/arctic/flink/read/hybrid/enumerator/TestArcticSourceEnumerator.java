@@ -49,6 +49,8 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
 
   protected KeyedTable testKeyedTable;
   private final int splitCount = 4;
+  private final int parallelism = 5;
+
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
 
   protected static final LocalDateTime ldt =
@@ -86,8 +88,8 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
   }
 
   @Test
-  public void testMultipleReaderWhenSplitDiscovered() throws Exception {
-    TestingSplitEnumeratorContext splitEnumeratorContext = instanceSplitEnumeratorContext(5);
+  public void testReadersNumGreaterThanSplits() throws Exception {
+    TestingSplitEnumeratorContext splitEnumeratorContext = instanceSplitEnumeratorContext(parallelism);
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(splitEnumeratorContext);
     ArcticScanContext scanContext =
       ArcticScanContext.arcticBuilder()
@@ -133,6 +135,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     enumerator.addReader(4);
     enumerator.handleSourceEvent(4, new SplitRequestEvent());
 
+    Assert.assertEquals(parallelism - splitCount, enumerator.getReadersAwaitingSplit().size());
     Assert.assertTrue(enumerator.snapshotState().pendingSplits().isEmpty());
   }
 

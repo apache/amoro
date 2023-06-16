@@ -1,9 +1,5 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
@@ -12,19 +8,16 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.api.connector.source.ReaderInfo;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.connector.source.SplitsAssignment;
-import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.groups.SplitEnumeratorMetricGroup;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,7 +27,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +40,8 @@ import static org.apache.flink.util.Preconditions.checkState;
 
 public class TestArcticSourceEnumerator extends FlinkTestBase {
   private final int splitCount = 4;
+  private final int parallelism = 5;
+
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
 
   protected static final LocalDateTime ldt =
@@ -78,8 +72,8 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
   }
 
   @Test
-  public void testMultipleReaderWhenSplitDiscovered() throws Exception {
-    TestingSplitEnumeratorContext splitEnumeratorContext = instanceSplitEnumeratorContext(5);
+  public void testReadersNumGreaterThanSplits() throws Exception {
+    TestingSplitEnumeratorContext splitEnumeratorContext = instanceSplitEnumeratorContext(parallelism);
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(splitEnumeratorContext);
     ArcticScanContext scanContext =
       ArcticScanContext.arcticBuilder()
@@ -94,7 +88,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     ArcticSourceEnumerator enumerator = new ArcticSourceEnumerator(
       splitEnumeratorContext,
       shuffleSplitAssigner,
-      ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder),
+      ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder),
       scanContext,
       null,
       false);
@@ -125,6 +119,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     enumerator.addReader(4);
     enumerator.handleSourceEvent(4, new SplitRequestEvent());
 
+    Assert.assertEquals(parallelism - splitCount, enumerator.getReadersAwaitingSplit().size());
     Assert.assertTrue(enumerator.snapshotState(2).pendingSplits().isEmpty());
   }
 

@@ -23,6 +23,7 @@ import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.ReaderStartedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
@@ -172,5 +173,10 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
                         }));
     availableFuture.set(future);
     LOG.debug("Registered callback for future available splits");
+  }
+
+  @VisibleForTesting
+  public Map<Integer, String> getReadersAwaitingSplit() {
+    return readersAwaitingSplit;
   }
 }
