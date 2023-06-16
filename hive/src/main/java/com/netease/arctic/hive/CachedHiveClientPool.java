@@ -31,6 +31,8 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 import org.apache.hadoop.hive.metastore.api.UnknownTableException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -40,6 +42,8 @@ import java.util.concurrent.TimeUnit;
  * Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key.
  */
 public class CachedHiveClientPool implements HMSClientPool, Serializable {
+
+  private static final Logger LOG = LoggerFactory.getLogger(CachedHiveClientPool.class);
 
   private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
 
@@ -75,6 +79,15 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action));
     } catch (RuntimeException e) {
+      try {
+        LOG.error("Connect to hms failed and try to force retry.");
+        clientPool().close();
+        clientPoolCache = null;
+        init();
+        tableMetaStore.doAs(() -> clientPool().run(action));
+      } catch (RuntimeException re) {
+        throw throwTException(re);
+      }
       throw throwTException(e);
     }
   }
@@ -84,6 +97,15 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action, retry));
     } catch (RuntimeException e) {
+      try {
+        LOG.error("Connect to hms failed and try to force retry.");
+        clientPool().close();
+        clientPoolCache = null;
+        init();
+        tableMetaStore.doAs(() -> clientPool().run(action, retry));
+      } catch (RuntimeException re) {
+        throw throwTException(re);
+      }
       throw throwTException(e);
     }
   }
