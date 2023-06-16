@@ -93,7 +93,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
   @Override
   public Split getNext(int subtaskId) {
-    return getNextSplit(subtaskId).map(Split::of).orElseGet(Split::unavailable);
+    return getNextSplit(subtaskId).map(Split::of).orElseGet(isEmpty() ? Split::unavailable : Split::subtaskUnavailable);
   }
 
   private Optional<ArcticSplit> getNextSplit(int subTaskId) {
