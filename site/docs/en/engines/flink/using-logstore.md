@@ -54,8 +54,6 @@ CREATE TABLE db.log_table (
 
 Arctic Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).
 
-When an upstream task restarts or a failover occurs, it causes redundant data to be sent to the LogStore. Downstream tasks will identify and roll back this part of redundant data to ensure eventual data consistency.
-
 ```sql
 INSERT INTO db.log_table /*+ OPTIONS('arctic.emit.mode'='log') */
 SELECT id, name, ts from sourceTable;
@@ -64,34 +62,3 @@ SELECT id, name, ts from sourceTable;
 For the configuration of LogStore, please refer to [here](../../configurations.md#logstore-configurations), and for the configuration of consuming Kafka, please refer to [here](flink-dml.md#logstore).
 
 > Currently, only the Apache Flink engine implements the dual-write LogStore and FileStore.
-
-### Enable consistent read
-
-```sql
-SELECT * FROM arctic.db.log_table
-/*+ OPTIONS('arctic.read.mode'='log','log-store.consistency-guarantee.enabled'='true') */;
-
--- Or enable consistent read when creating the table
-CREATE TABLE arctic.db.log_table (
-    ...
-) WITH (
-    'log-store.enabled' = 'true',
-    'log-store.topic'='topic_log_test',
-    'log-store.address'='localhost:9092',
-    'log-store.consistency-guarantee.enabled'='true'
-);
-SELECT * FROM arctic.db.log_table
-/*+ OPTIONS('arctic.read.mode'='log') */;
-```
-
-### Hint Options
-
-|Key|Default|Type|Required| Description                                                                                                                                                                                                                                                                                |
-|--- |--- |--- |--- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|log.consumer.changelog.modes| all-kinds | String |No| The RowKind that will be generated when reading log data Type, supported: all-kinds, append-only. <br>all-kinds: will read the cdc data, including +I/-D/-U/+U; <br>append-only: Only Insert data will be generated, and this configuration is recommended when reading without a primary key. |
-
-### Limitation
-
-- When the consistency guarantee is enabled for downstream tasks, the Cumulate Window Agg Operator cannot be included, because this operator cannot handle Update_before/Delete data.
-
-- The downstream storage cannot process Delete data, for example, the downstream task is an ETL task, only Append data to the HDFS.
