@@ -329,7 +329,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
-            hiveParameters.putAll(constructProperties());
+            hiveParameters.putAll(constructProperties(meta));
             hiveTable.setParameters(hiveParameters);
             client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
           } else {
@@ -337,7 +337,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
                 FileFormat.valueOf(PropertyUtil.propertyAsString(metaProperties, TableProperties.DEFAULT_FILE_FORMAT,
                     TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-            setProToHive(hiveTable);
+            setProToHive(hiveTable, meta);
             client.createTable(hiveTable);
           }
           return null;
@@ -374,7 +374,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
-            hiveParameters.putAll(constructProperties());
+            hiveParameters.putAll(constructProperties(meta));
             hiveTable.setParameters(hiveParameters);
             client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
           } else {
@@ -382,7 +382,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
                 FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
                     TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-            setProToHive(hiveTable);
+            setProToHive(hiveTable, meta);
             client.createTable(hiveTable);
           }
           return null;
@@ -448,6 +448,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION);
+            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS);
             client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
             return null;
           });
@@ -470,15 +472,17 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
       }
     }
 
-    private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable) {
-      Map<String, String> parameters = constructProperties();
+    private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable, TableMeta meta) {
+      Map<String, String> parameters = constructProperties(meta);
       hiveTable.setParameters(parameters);
     }
 
-    private Map<String, String> constructProperties() {
+    private Map<String, String> constructProperties(TableMeta meta) {
       Map<String, String> parameters = new HashMap<>();
       parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
       parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
+      parameters.put(HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION,
+              meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE));
       return parameters;
     }
   }

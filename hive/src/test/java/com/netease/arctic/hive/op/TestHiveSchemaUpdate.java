@@ -19,7 +19,10 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.table.KeyedHiveTable;
+import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
@@ -31,8 +34,55 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
+
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
 public class TestHiveSchemaUpdate extends HiveTableTestBase {
+
+  @Test
+  public void testHiveParameterFromArctic() throws TException {
+
+    String unkeyedTable = "unkeyed_test_hive_table";
+    String keyedTable = "keyed_test_hive_table";
+
+    final TableIdentifier unKeyedHiveTableIdentifier =
+            TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, unkeyedTable);
+
+    final TableIdentifier keyedHiveTableIdentifier =
+            TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, keyedTable);
+
+    UnkeyedHiveTable testUnKeyedTable = (UnkeyedHiveTable) hiveCatalog
+            .newTableBuilder(unKeyedHiveTableIdentifier, HIVE_TABLE_SCHEMA)
+            .withPartitionSpec(HIVE_SPEC)
+            .create().asUnkeyedTable();
+
+    Map<String,String> tableParameter =  hms.getClient()
+            .getTable(HIVE_DB_NAME,unkeyedTable).getParameters();
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(unkeyedTable));
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+
+    hiveCatalog.dropTable(unKeyedHiveTableIdentifier, true);
+    AMS.handler().getTableCommitMetas().remove(unKeyedHiveTableIdentifier.buildTableIdentifier());
+    
+    KeyedHiveTable testKeyedTable = (KeyedHiveTable) hiveCatalog
+            .newTableBuilder(keyedHiveTableIdentifier, HIVE_TABLE_SCHEMA)
+            .withPartitionSpec(HIVE_SPEC)
+            .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+            .create().asKeyedTable();
+
+    Map<String,String> keyedTableParameter =  hms.getClient()
+            .getTable(HIVE_DB_NAME, keyedTable).getParameters();
+    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(keyedTableParameter.get(ARCTIC_TABLE_ROOT_LOCATION)
+            .endsWith(keyedTable));
+    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_FLAG));
+
+    hiveCatalog.dropTable(keyedHiveTableIdentifier, true);
+    AMS.handler().getTableCommitMetas().remove(keyedHiveTableIdentifier.buildTableIdentifier());
+  }
 
   @Test
   public void testKeyedAdd() throws TException {

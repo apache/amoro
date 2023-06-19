@@ -36,6 +36,9 @@ public class HiveTableProperties {
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
 
+  // save the location of arctic table. ranger can
+  public static final String ARCTIC_TABLE_ROOT_LOCATION = "arctic.table.root-location";
+
   public static final String PARTITION_PROPERTIES_KEY_HIVE_LOCATION = "hive-location";
 
   public static final String PARTITION_PROPERTIES_KEY_TRANSIENT_TIME = "transient-time";
