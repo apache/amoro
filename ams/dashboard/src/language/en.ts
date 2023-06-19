@@ -24,6 +24,8 @@ export default {
   optimizing: 'Optimizing',
   terminal: 'Terminal',
   settings: 'Settings',
+  resource: 'Resource',
+  optimizergroup: 'Optimizer Groups',
   systemSetting: 'System Settings',
   containerSetting: 'Container Settings',
   backHome: 'Back to Home',
@@ -76,6 +78,7 @@ export default {
   fileType: 'File Type',
   fileContent: 'File Content',
   startTime: 'StartTime',
+  finishTime: 'FinishTime',
   duration: 'Duration',
   optimizeType: 'Optimize Type',
   parallelism: 'Parallelism',
@@ -165,5 +168,11 @@ export default {
   leavePageModalTitle: 'Leave this page？',
   leavePageModalContent: 'Changes you made may not be saved.',
   leave: 'Leave',
-  invalidInput: 'Invalid input'
+  invalidInput: 'Invalid input',
+  addgroup: 'Add Group',
+  editgroup: 'Edit Group',
+  cannotDeleteGroupModalTitle: "Can't remove this group.",
+  cannotDeleteGroupModalContent: 'This group has been used.',
+  deleteGroupModalTitle: 'Remove this group',
+  processId: 'Process Id'
 }

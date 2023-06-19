@@ -30,6 +30,7 @@ const Settings = () => import('@/views/settings/index.vue')
 const Terminal = () => import('@/views/terminal/index.vue')
 const Login = () => import('@/views/login/index.vue')
 const Introduce = () => import('@/views/introduce/index.vue')
+const Resource = () => import('@/views/resource/index.vue')
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -68,7 +69,7 @@ const routes: Array<RouteRecordRaw> = [
         ]
       },
       {
-        path: 'optimizers',
+        path: 'optimizing',
         name: 'Optimizing',
         component: Optimizing
       },
@@ -85,6 +86,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'introduce',
         name: 'Introduce',
         component: Introduce
+      },
+      {
+        path: 'resource',
+        name: 'Resource',
+        component: Resource
       }
     ]
   },

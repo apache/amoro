@@ -83,8 +83,8 @@ export default defineComponent({
           icon: 'catalogs'
         },
         {
-          key: 'optimizers',
-          title: t('optimizers'),
+          key: 'optimizing',
+          title: t('Optimizing'),
           icon: 'optimizers'
         },
         {
@@ -95,6 +95,11 @@ export default defineComponent({
         {
           key: 'settings',
           title: t('settings'),
+          icon: 'settings'
+        },
+        {
+          key: 'resource',
+          title: t('resource'),
           icon: 'settings'
         }
       ]

@@ -202,6 +202,19 @@ export interface IOptimizeTableItem {
   tableNameOnly?: string
 }
 
+export interface IIOptimizeGroupItem {
+  resourceGroup: {
+    name: string;
+    container: string;
+    properties: {[prop: string]: string};
+  }
+  occupationCore: number;
+  occupationMemory: number;
+  name: string;
+  container: string;
+  resourceOccupation: string
+}
+
 export interface IOptimizeResourceTableItem {
   index: number
   jobId: number
