@@ -76,7 +76,8 @@ public class DefaultOptimizingService extends DefaultResourceManager
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
-  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService,
+  public DefaultOptimizingService(
+      Configurations serviceConfig, DefaultTableService tableService,
       List<ResourceGroup> resourceGroups) {
     super(resourceGroups);
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
@@ -206,6 +207,25 @@ public class DefaultOptimizingService extends DefaultResourceManager
       optimizingQueueByToken.remove(token);
       doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     });
+  }
+
+  @Override
+  public void createResourceGroup(ResourceGroup resourceGroup) {
+    super.createResourceGroup(resourceGroup);
+    String groupName = resourceGroup.getName();
+    OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager,
+        resourceGroup,
+        new ArrayList<>(),
+        new ArrayList<>(),
+        optimizerTouchTimeout,
+        taskAckTimeout);
+    optimizingQueueByGroup.put(groupName, optimizingQueue);
+  }
+
+  @Override
+  public void deleteResourceGroup(String groupName) {
+    optimizingQueueByGroup.remove(groupName);
+    super.deleteResourceGroup(groupName);
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {

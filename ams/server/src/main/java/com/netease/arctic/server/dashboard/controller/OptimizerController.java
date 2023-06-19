@@ -35,6 +35,7 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
@@ -278,8 +279,14 @@ public class OptimizerController {
   public void deleteCheckResourceGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
-    for (CatalogMeta meta : tableService.listCatalogMetas()) {
-      if (meta.getCatalogProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
+    for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
+      if (catalogMeta.getCatalogProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
+        ctx.json(OkResponse.of(false));
+        return;
+      }
+    }
+    for (TableMetadata tableMeta : tableService.listTableMetas()) {
+      if (tableMeta.getProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
         ctx.json(OkResponse.of(false));
         return;
       }
@@ -292,10 +299,10 @@ public class OptimizerController {
    * url = /optimize/containers/get
    */
   public void getContainers(Context ctx) {
-    ctx.json(ResourceContainers.getMetadataList()
+    ctx.json(OkResponse.of(ResourceContainers.getMetadataList()
         .stream()
         .map(ContainerMetadata::getName)
-        .collect(Collectors.toList()));
+        .collect(Collectors.toList())));
   }
 }
 
