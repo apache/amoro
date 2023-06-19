@@ -32,6 +32,7 @@ import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo.ConfigFileItem;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
@@ -210,6 +211,7 @@ public class CatalogController {
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
+    catalogMeta.getCatalogProperties().put(TableProperties.SELF_OPTIMIZING_GROUP, info.getOptimizerGroup());
     if (info.getTableFormatList() == null || info.getTableFormatList().isEmpty()) {
       throw new RuntimeException("Invalid table format list");
     }
@@ -309,6 +311,7 @@ public class CatalogController {
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
       info.setProperties(Maps.newHashMap(catalogMeta.getCatalogProperties()));
+      info.setOptimizerGroup(info.getProperties().getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, "default"));
       info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));
       return;

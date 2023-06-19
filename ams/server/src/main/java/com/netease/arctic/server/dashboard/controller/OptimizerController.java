@@ -21,6 +21,7 @@ package com.netease.arctic.server.dashboard.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Preconditions;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
@@ -29,12 +30,14 @@ import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
+import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 
 import java.util.ArrayList;
@@ -206,6 +209,93 @@ public class OptimizerController {
     ResourceContainers.get(resource.getContainerName()).requestResource(resource);
     optimizerManager.createResource(resource);
     ctx.json(OkResponse.of("success to scaleOut optimizer"));
+  }
+
+  /**
+   * get optimizeGroups
+   * url = /optimize/resourceGroups/get
+   */
+  public void getResourceGroup(Context ctx) {
+    List<OptimizerResourceInfo> result =
+        optimizerManager.listResourceGroups().stream().map(group -> {
+          List<OptimizerInstance> optimizers = optimizerManager.listOptimizers(group.getName());
+          OptimizerResourceInfo optimizerResourceInfo = new OptimizerResourceInfo();
+          optimizerResourceInfo.setResourceGroup(optimizerManager.getResourceGroup(group.getName()));
+          optimizers.forEach(optimizer -> {
+            optimizerResourceInfo.addOccupationCore(optimizer.getThreadCount());
+            optimizerResourceInfo.addOccupationMemory(optimizer.getMemoryMb());
+          });
+          return optimizerResourceInfo;
+        }).collect(Collectors.toList());
+    ctx.json(OkResponse.of(result));
+  }
+
+  /**
+   * create optimizeGroup: name, container, schedulePolicy, properties
+   * url = /optimize/resourceGroups/create
+   */
+  public void createResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    String container = (String) map.get("container");
+    Map<String, String> properties = (Map) map.get("properties");
+    ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
+    builder.addProperties(properties);
+    optimizerManager.createResourceGroup(builder.build());
+    ctx.json(OkResponse.of("Success to create optimize group"));
+  }
+
+  /**
+   * update optimizeGroup: name, container, schedulePolicy, properties
+   * url = /optimize/resourceGroups/update
+   */
+  public void updateResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    String container = (String) map.get("container");
+    Map<String, String> properties = (Map) map.get("properties");
+    ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
+    builder.addProperties(properties);
+    optimizerManager.updateResourceGroup(builder.build());
+    ctx.json(OkResponse.of("Success to update optimize group"));
+  }
+
+  /**
+   * delete optimizeGroup
+   * url = /optimize/resourceGroups/delete
+   */
+  public void deleteResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    optimizerManager.deleteResourceGroup(name);
+    ctx.json(OkResponse.of("Success to delete optimize group"));
+  }
+
+  /**
+   * check if optimizerGroup can be deleted
+   * url = /optimize/resourceGroups/delete/check
+   */
+  public void deleteCheckResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    for (CatalogMeta meta : tableService.listCatalogMetas()) {
+      if (meta.getCatalogProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
+        ctx.json(OkResponse.of(false));
+        return;
+      }
+    }
+    ctx.json(OkResponse.of(true));
+  }
+
+  /**
+   * check if optimizerGroup can be deleted
+   * url = /optimize/containers/get
+   */
+  public void getContainers(Context ctx) {
+    ctx.json(ResourceContainers.getMetadataList()
+        .stream()
+        .map(ContainerMetadata::getName)
+        .collect(Collectors.toList()));
   }
 }
 

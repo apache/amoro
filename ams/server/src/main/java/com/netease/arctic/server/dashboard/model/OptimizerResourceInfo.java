@@ -18,9 +18,20 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import com.netease.arctic.ams.api.resource.ResourceGroup;
+
 public class OptimizerResourceInfo {
+  private ResourceGroup resourceGroup;
   private int occupationCore = 0;
   private long occupationMemory = 0;
+
+  public ResourceGroup getResourceGroup() {
+    return resourceGroup;
+  }
+
+  public void setResourceGroup(ResourceGroup resourceGroup) {
+    this.resourceGroup = resourceGroup;
+  }
 
   public int getOccupationCore() {
     return occupationCore;

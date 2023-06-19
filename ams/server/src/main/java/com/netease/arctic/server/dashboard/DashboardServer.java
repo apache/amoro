@@ -216,6 +216,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups/get", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups/create", optimizerController::createResourceGroup);
+        post("/optimize/resourceGroups/update", optimizerController::updateResourceGroup);
+        post("/optimize/resourceGroups/delete", optimizerController::deleteResourceGroup);
+        post("/optimize/resourceGroups/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);
@@ -272,6 +278,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups/get", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups/create", optimizerController::createResourceGroup);
+        post("/optimize/resourceGroups/update", optimizerController::updateResourceGroup);
+        post("/optimize/resourceGroups/delete", optimizerController::deleteResourceGroup);
+        post("/optimize/resourceGroups/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);

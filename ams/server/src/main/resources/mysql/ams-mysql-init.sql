@@ -54,7 +54,6 @@ CREATE TABLE `resource`
     `total_memory`              bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
     `start_time`                timestamp not null default CURRENT_TIMESTAMP COMMENT 'optimizer start time',
     `properties`                mediumtext COMMENT 'optimizer instance properties',
-    PRIMARY KEY (`resource_id`),
     KEY  `resource_group` (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer instance info';
 
