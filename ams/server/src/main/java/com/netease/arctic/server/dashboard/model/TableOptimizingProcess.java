@@ -1,22 +1,32 @@
 package com.netease.arctic.server.dashboard.model;
 
+import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.MetricsSummary;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 public class TableOptimizingProcess {
 
-  private Long processId;
   private Long tableId;
   private String catalogName;
   private String dbName;
   private String tableName;
+
+  private Long processId;
+  private long startTime;
+  private OptimizingType optimizingType;
+  private OptimizingProcess.Status status;
+  private String failReason;
+  private long duration;
+  private int successTasks;
+  private int totalTasks;
+  private int runningTasks;
+  private long finishTime;
+  private FilesStatistics inputFiles;
+  private FilesStatistics outputFiles;
+
   private Long targetSnapshotId;
   private Long targetChangeSnapshotId;
-  private String status;
-  private OptimizingType optimizingType;
-  private long planTime;
-  private long endTime;
-  private String failReason;
   private MetricsSummary summary;
 
   public TableOptimizingProcess() {
@@ -70,11 +80,11 @@ public class TableOptimizingProcess {
     this.targetSnapshotId = targetSnapshotId;
   }
 
-  public String getStatus() {
+  public OptimizingProcess.Status getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(OptimizingProcess.Status status) {
     this.status = status;
   }
 
@@ -86,20 +96,52 @@ public class TableOptimizingProcess {
     this.optimizingType = optimizingType;
   }
 
-  public long getPlanTime() {
-    return planTime;
+  public long getStartTime() {
+    return startTime;
   }
 
-  public void setPlanTime(long planTime) {
-    this.planTime = planTime;
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
   }
 
-  public long getEndTime() {
-    return endTime;
+  public long getFinishTime() {
+    return finishTime;
   }
 
-  public void setEndTime(long endTime) {
-    this.endTime = endTime;
+  public void setFinishTime(long finishTime) {
+    this.finishTime = finishTime;
+  }
+
+  public long getDuration() {
+    return duration;
+  }
+
+  public void setDuration(long duration) {
+    this.duration = duration;
+  }
+
+  public int getSuccessTasks() {
+    return successTasks;
+  }
+
+  public void setSuccessTasks(int successTasks) {
+    this.successTasks = successTasks;
+  }
+
+  public int getTotalTasks() {
+    return totalTasks;
+  }
+
+  public void setTotalTasks(int totalTasks) {
+    this.totalTasks = totalTasks;
+  }
+
+  public int getRunningTasks() {
+    return runningTasks;
+  }
+
+  public void setRunningTasks(int runningTasks) {
+    this.runningTasks = runningTasks;
   }
 
   public String getFailReason() {
@@ -124,5 +166,40 @@ public class TableOptimizingProcess {
 
   public void setTargetChangeSnapshotId(Long targetChangeSnapshotId) {
     this.targetChangeSnapshotId = targetChangeSnapshotId;
+  }
+
+  public FilesStatistics getInputFiles() {
+    return inputFiles;
+  }
+
+  public void setInputFiles(FilesStatistics inputFiles) {
+    this.inputFiles = inputFiles;
+  }
+
+  public FilesStatistics getOutputFiles() {
+    return outputFiles;
+  }
+
+  public void setOutputFiles(FilesStatistics outputFiles) {
+    this.outputFiles = outputFiles;
+  }
+
+  public void init() {
+    if (finishTime > 0) {
+      duration = finishTime - startTime;
+    } else {
+      duration = System.currentTimeMillis() - startTime;
+    }
+    duration = duration > 0 ? duration : 0;
+    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+    inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
+    inputBuilder.addFiles(summary.getPositionalDeleteSize(), summary.getPosDeleteFileCnt());
+    inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
+    inputBuilder.addFiles(summary.getRewritePosDataSize(), summary.getReRowDeletedDataFileCnt());
+    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+    outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
+    
+    inputFiles = inputBuilder.build();
+    outputFiles = outputBuilder.build();
   }
 }

@@ -45,6 +45,7 @@ import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
+import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
@@ -283,6 +284,7 @@ public class TableController {
   /**
    * getRuntime optimize info.
    */
+  @Deprecated
   public void getOptimizeInfo(Context ctx) {
 
     String catalog = ctx.pathParam("catalog");
@@ -308,6 +310,29 @@ public class TableController {
   }
 
   /**
+   * getRuntime list of optimizing processes.
+   */
+  public void getOptimizingProcesses(Context ctx) {
+
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+
+    int offset = (page - 1) * pageSize;
+    int limit = pageSize;
+    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
+    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
+    Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
+        table)), "no such table");
+
+    PageResult<TableOptimizingProcess> result =
+        tableDescriptor.getOptimizingProcesses(catalog, db, table, offset, limit);
+    ctx.json(OkResponse.of(result));
+  }
+
+  /**
    * getRuntime list of transactions.
    */
   public void getTableTransactions(Context ctx) {
@@ -320,7 +345,7 @@ public class TableController {
     List<TransactionsOfTable> transactionsOfTables =
         tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
     int offset = (page - 1) * pageSize;
-    PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
+    PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
         offset, pageSize, AmsUtil::toTransactionsOfTable);
     ctx.json(OkResponse.of(pageResult));
   }
@@ -339,7 +364,7 @@ public class TableController {
     List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
         tableName), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
-    PageResult<AMSDataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(result,
+    PageResult<AMSDataFileInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
@@ -357,7 +382,7 @@ public class TableController {
     ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
     List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(arcticTable);
     int offset = (page - 1) * pageSize;
-    PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
+    PageResult<PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
@@ -377,7 +402,7 @@ public class TableController {
     List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition,
         page * pageSize);
     int offset = (page - 1) * pageSize;
-    PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
+    PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
@@ -395,7 +420,7 @@ public class TableController {
     List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
         tableName));
     Collections.reverse(ddlInfoList);
-    PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfoList,
+    PageResult<TableOperation> amsPageResult = PageResult.of(ddlInfoList,
         offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
   }

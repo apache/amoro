@@ -21,6 +21,10 @@ package com.netease.arctic.server.dashboard.model;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.table.TableIdentifier;
 
+/**
+ * Keep it only for the compatibility before the front-end upgrade, and delete it after the upgrade.
+ */
+@Deprecated
 public class OptimizedRecord {
   protected TableIdentifier tableIdentifier;
   protected long visibleTime;

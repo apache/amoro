@@ -6,11 +6,14 @@ import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.OptimizedRecord;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskStat;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.optimizing.MetricsSummary;
+import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -37,6 +40,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -225,15 +229,16 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
+  @Deprecated
   public List<OptimizedRecord> getOptimizeInfo(String catalog, String db, String table) {
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
     return tableOptimizingProcesses.stream().map(optimizingProcess -> {
       OptimizedRecord record = new OptimizedRecord();
-      record.setCommitTime(optimizingProcess.getEndTime());
-      record.setPlanTime(optimizingProcess.getPlanTime());
-      record.setDuration(optimizingProcess.getEndTime() - optimizingProcess.getPlanTime());
+      record.setCommitTime(optimizingProcess.getFinishTime());
+      record.setPlanTime(optimizingProcess.getStartTime());
+      record.setDuration(optimizingProcess.getFinishTime() - optimizingProcess.getStartTime());
       record.setTableIdentifier(TableIdentifier.of(optimizingProcess.getCatalogName(), optimizingProcess.getDbName(),
           optimizingProcess.getTableName()));
       record.setOptimizeType(optimizingProcess.getOptimizingType());
@@ -248,6 +253,61 @@ public class ServerTableDescriptor extends PersistentBase {
           metricsSummary.getNewFileSize()));
       return record;
     }).collect(Collectors.toList());
+  }
+
+  public PageResult<TableOptimizingProcess> getOptimizingProcesses(String catalog, String db, String table, int offset,
+                                                                   int limit) {
+    List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
+        OptimizingMapper.class,
+        mapper -> mapper.selectOptimizingProcesses(catalog, db, table, offset, limit));
+    List<Long> processIds =
+        tableOptimizingProcesses.stream().map(TableOptimizingProcess::getProcessId).collect(Collectors.toList());
+    if (!processIds.isEmpty()) {
+      List<OptimizingTaskStat> optimizingTaskStats = getAs(OptimizingMapper.class,
+          mapper -> mapper.selectOptimizeTaskStats(processIds));
+      initTaskStats(tableOptimizingProcesses, optimizingTaskStats);
+    }
+    Integer total = getAs(
+        OptimizingMapper.class,
+        mapper -> mapper.selectCountOptimizingProcesses(catalog, db, table));
+    tableOptimizingProcesses.forEach(TableOptimizingProcess::init);
+    return PageResult.of(tableOptimizingProcesses, total);
+  }
+
+  private void initTaskStats(List<TableOptimizingProcess> tableOptimizingProcesses,
+                             List<OptimizingTaskStat> optimizingTaskStats) {
+    Map<Long, Map<TaskRuntime.Status, Integer>> taskCountGroupByStatus = Maps.newHashMap();
+    for (OptimizingTaskStat stat : optimizingTaskStats) {
+      taskCountGroupByStatus
+          .computeIfAbsent(stat.getProcessId(), p -> Maps.newHashMap())
+          .put(stat.getStatus(), stat.getCount());
+    }
+    tableOptimizingProcesses.forEach(
+        p -> initProcessTaskStats(p, taskCountGroupByStatus.get(p.getProcessId())));
+  }
+
+  private void initProcessTaskStats(TableOptimizingProcess process, Map<TaskRuntime.Status, Integer> status2TaskCount) {
+    if (status2TaskCount == null) {
+      return;
+    }
+    int totalTasksCount = 0;
+    int successTasksCount = 0;
+    int runningTasksCount = 0;
+    for (Map.Entry<TaskRuntime.Status, Integer> entry : status2TaskCount.entrySet()) {
+      Integer taskCount = entry.getValue();
+      totalTasksCount += taskCount;
+      switch (entry.getKey()) {
+        case SUCCESS:
+          successTasksCount += taskCount;
+          break;
+        case SCHEDULED:
+        case ACKED:
+          runningTasksCount += taskCount;
+      }
+    }
+    process.setRunningTasks(runningTasksCount);
+    process.setSuccessTasks(successTasksCount);
+    process.setTotalTasks(totalTasksCount);
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {

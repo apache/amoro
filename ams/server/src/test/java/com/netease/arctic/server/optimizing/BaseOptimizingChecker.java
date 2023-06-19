@@ -96,7 +96,7 @@ public class BaseOptimizingChecker extends PersistentBase {
         Optional<TableOptimizingProcess> any =
             tableOptimizingProcesses.stream()
                 .filter(p -> p.getProcessId() > lastProcessId)
-                .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS.name()))
+                .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
                 .findAny();
 
         if (any.isPresent()) {
