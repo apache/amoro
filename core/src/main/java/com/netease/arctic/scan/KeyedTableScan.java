@@ -43,8 +43,8 @@ public interface KeyedTableScan {
 
   /**
    * To enable the feature of splitting tasks based on the delete ratio,
-   * If the delete ratio under a node is less than this value, the plan will be split into as many tasks as possible
-   * during execution.
+   * If the delete ratio under a node is less than splitTaskByDeleteRatio value,
+   * the plan will be split into as many tasks as possible during execution.
    */
   KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio);
 
