@@ -52,8 +52,6 @@ CREATE TABLE db.log_table (
 
 Arctic Connector 通过双写操作将数据同时写入 LogStore 和 ChangeStore，而不开启 Kafka 事务以确保两者数据的一致性，因为开启事务会给下游任务带来数分钟的延迟（具体延迟时间取决于上游任务的检查点间隔）。
 
-当上游任务重新启动或发生故障切换时，会导致冗余数据发送到 LogStore。下游任务会识别并回滚这部分冗余数据，以保证数据的最终一致性。
-
 ```sql
 INSERT INTO db.log_table /*+ OPTIONS('arctic.emit.mode'='log') */
 SELECT id, name, ts from sourceTable;
@@ -61,32 +59,4 @@ SELECT id, name, ts from sourceTable;
 
 有关 LogStore 的配置，请参考[这里](../configurations.md#logstore)，消费Kafka的配置请参考[这里](flink-dml.md#logstore)。
 
-> 目前只有 Apache Flink 引擎实现双写 LogStore 和 FileStore 功能。 
-
-### 开启一致性读取
-```sql
-SELECT * FROM arctic.db.log_table
-/*+ OPTIONS('arctic.read.mode'='log','log-store.consistency-guarantee.enabled'='true') */;
-
---或者是创建表时开启一致性读取
-CREATE TABLE arctic.db.log_table (
-    ...
-) WITH (
-    'log-store.enabled' = 'true',
-    'log-store.topic'='topic_log_test',
-    'log-store.address'='localhost:9092',
-    'log-store.consistency-guarantee.enabled'='true'
-);
-SELECT * FROM arctic.db.log_table
-/*+ OPTIONS('arctic.read.mode'='log') */;
-```
-
-### Hint Options
-|Key|默认值|类型|是否必填|描述|
-|--- |--- |--- |--- |--- |
-|log.consumer.changelog.modes| all-kinds   | String   |否| 读log数据时会产生的RowKind类型，支持：all-kinds, append-only。<br>all-kinds：会读出cdc的数据，包括+I/-D/-U/+U；<br>append-only：只会产生Insert数据，读无主键时建议使用此配置。|
-
-### 限制
-
-- 下游任务开启一致性保证时，不能包含 Cumulate Window Agg Operator，因为这个算子不能处理 Update_before/Delete 数据。
-- 目标端不能处理 Delete 数据，例如下游任务是 ETL 任务，只 Append 数据到目标端。
+> 目前只有 Apache Flink 引擎实现双写 LogStore 和 FileStore 功能。
