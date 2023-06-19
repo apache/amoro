@@ -192,13 +192,14 @@ public class TableOptimizingProcess {
     }
     duration = duration > 0 ? duration : 0;
     FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
-    inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
-    inputBuilder.addFiles(summary.getPositionalDeleteSize(), summary.getPosDeleteFileCnt());
-    inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
-    inputBuilder.addFiles(summary.getRewritePosDataSize(), summary.getReRowDeletedDataFileCnt());
     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-    outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
-    
+    if (summary != null) {
+      inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
+      inputBuilder.addFiles(summary.getPositionalDeleteSize(), summary.getPosDeleteFileCnt());
+      inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
+      inputBuilder.addFiles(summary.getRewritePosDataSize(), summary.getReRowDeletedDataFileCnt());
+      outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
+    }
     inputFiles = inputBuilder.build();
     outputFiles = outputBuilder.build();
   }
