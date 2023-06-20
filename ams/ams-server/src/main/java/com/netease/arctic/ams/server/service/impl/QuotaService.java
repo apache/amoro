@@ -29,6 +29,7 @@ import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -81,5 +82,10 @@ public class QuotaService implements IQuotaService {
     }
 
     return totalCostTime;
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

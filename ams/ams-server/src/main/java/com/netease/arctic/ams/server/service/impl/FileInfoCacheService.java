@@ -66,6 +66,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -78,7 +79,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class FileInfoCacheService extends IJDBCService {
+public class FileInfoCacheService extends IJDBCService implements Closeable {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileInfoCacheService.class);
 
@@ -681,6 +682,11 @@ public class FileInfoCacheService extends IJDBCService {
           .append(partitionFieldDataList.get(i).getValue());
     }
     return sb.toString();
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public static class SyncAndExpireFileCacheTask {

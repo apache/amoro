@@ -23,6 +23,8 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
 import com.netease.arctic.table.TableIdentifier;
 
-public interface ITableInfoService {
+import java.io.Closeable;
+
+public interface ITableInfoService extends Closeable {
   TableBasicInfo getTableBasicInfo(TableIdentifier tableIdentifier) throws MetaException, NoSuchObjectException;
 }

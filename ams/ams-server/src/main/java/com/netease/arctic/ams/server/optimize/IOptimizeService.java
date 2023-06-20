@@ -23,9 +23,10 @@ import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.table.TableIdentifier;
 
+import java.io.Closeable;
 import java.util.List;
 
-public interface IOptimizeService {
+public interface IOptimizeService extends Closeable {
 
   boolean isInited();
 

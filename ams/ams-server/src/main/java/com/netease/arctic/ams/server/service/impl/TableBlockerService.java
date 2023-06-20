@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class TableBlockerService extends IJDBCService {
+public class TableBlockerService extends IJDBCService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(TableBlockerService.class);
   private final long blockerTimeout;
 
@@ -257,5 +259,10 @@ public class TableBlockerService extends IJDBCService {
 
   private Lock getLock(TableIdentifier tableIdentifier) {
     return tableLockMap.computeIfAbsent(tableIdentifier, s -> new ReentrantLock());
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

@@ -29,13 +29,14 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class CatalogMetadataService extends IJDBCService {
+public class CatalogMetadataService extends IJDBCService implements Closeable {
 
   public List<CatalogMeta> getCatalogs() {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -193,5 +194,10 @@ public class CatalogMetadataService extends IJDBCService {
               getMapper(sqlSession, CatalogMetadataMapper.class);
       catalogMetadataMapper.updateCatalog(catalogMeta);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

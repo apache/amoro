@@ -52,6 +52,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,6 +87,11 @@ public class TableExpireService implements ITableExpireService {
         TableExpireTask::new,
         false);
     LOG.info("Schedule Expired Cleaner finished with {} valid ids", tableIds.size());
+  }
+
+  @Override
+  public void close() throws IOException {
+    cleanTasks = null;
   }
 
   public static class TableExpireTask implements ScheduledTasks.Task {

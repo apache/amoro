@@ -33,10 +33,12 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ArcticTransactionService extends IJDBCService {
+public class ArcticTransactionService extends IJDBCService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticTransactionService.class);
 
   private static final Set<TableIdentifier> validTableIdentifiers = new HashSet<>();
@@ -77,5 +79,10 @@ public class ArcticTransactionService extends IJDBCService {
   public void inValidTable(TableIdentifier tableIdentifier) {
     validTableIdentifiers.remove(tableIdentifier);
     LOG.info("{} is now invalid for allocating transaction id", tableIdentifier);
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }
