@@ -39,8 +39,12 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
-        .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
+        .setIcebergProperties(ImmutableMap.of(
+            "arctic.url",
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME),
+            "arctic.enable-split-task-by-delete-ratio",
+            "true"
+        ))
         .build();
   }
 
