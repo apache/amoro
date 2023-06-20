@@ -135,7 +135,7 @@ CREATE TABLE `table_optimizing_process`
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      timestamp default CURRENT_TIMESTAMP COMMENT 'Execute cost time',
+    `end_time`                      datetime(3) DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
