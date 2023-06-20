@@ -35,8 +35,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
-
 @RunWith(Parameterized.class)
 public class TestServerTableDescriptor extends AMSTableTestBase {
 
@@ -61,7 +59,8 @@ public class TestServerTableDescriptor extends AMSTableTestBase {
     List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(serverTableIdentifier());
     Assert.assertEquals(1, tableOperations.size());
     DDLInfo ddlInfo = tableOperations.get(0);
-    Assert.assertEquals(ddlInfo.getDdl(), "ALTER TABLE test_catalog.test_db.test_table SET TBLPROPERTIES ('key'='value1')");
+    Assert.assertEquals(ddlInfo.getDdl(),
+        "ALTER TABLE test_catalog.test_db.test_table SET TBLPROPERTIES ('key'='value1')");
     arcticTable.updateProperties().set("key", "value2").commit();
     tableOperations = serverTableDescriptor.getTableOperations(serverTableIdentifier());
     Assert.assertEquals(2, tableOperations.size());
