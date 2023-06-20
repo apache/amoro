@@ -54,7 +54,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
-        configuration.getLong(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL);
+        configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
   }
 
