@@ -266,7 +266,7 @@ public class ArcticServiceContainer {
 
     private void validateConfig(Map<String, Object> systemConfig) {
       if (!systemConfig.containsKey(ArcticManagementConf.SERVER_EXPOSE_HOST.key())) {
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
             "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
       }
       InetAddress inetAddress = AmsUtil.lookForBindHost(
@@ -278,7 +278,7 @@ public class ArcticServiceContainer {
           .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
         if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key()) ||
             !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
-          throw new RuntimeException("username and password must be configured if the database type is mysql");
+          throw new IllegalArgumentException("username and password must be configured if the database type is mysql");
         }
       }
 
@@ -286,7 +286,7 @@ public class ArcticServiceContainer {
       if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key()) &&
           ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key())) {
-          throw new RuntimeException(
+          throw new IllegalArgumentException(
               ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key() + " must be configured when you enable " +
                   "the ams high availability");
         }
@@ -295,7 +295,7 @@ public class ArcticServiceContainer {
       String terminalBackend = systemConfig.getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
           .toString().toLowerCase();
       if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
             String.format("Illegal terminal implement: %s, local, kyuubi, custom is available", terminalBackend));
       }
 
@@ -321,7 +321,7 @@ public class ArcticServiceContainer {
     private void validateThreadCount(Map<String, Object> systemConfig, ConfigOption<Integer> config) {
       int threadCount = (int) systemConfig.getOrDefault(config.key(), config.defaultValue());
       if (threadCount <= 0) {
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
             String.format("%s(%s) must > 0, actual value = %d", config.key(), config.description(), threadCount));
       }
     }
