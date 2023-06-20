@@ -28,8 +28,8 @@
           <div class="g-flex-ac">
             <span :style="{'background-color': (STATUS_CONFIG[record.status] || {}).color}" class="status-icon"></span>
             <span>{{ record.status }}</span>
-            <a-tooltip v-if="record.status === 'FAILED'" class="g-ml-4">
-              <template #title>{{record.failReason}}</template>
+            <a-tooltip v-if="record.status === 'FAILED'" class="g-ml-4" overlayClassName="table-failed-tip">
+              <template #title><span class="tip-title">{{record.failReason}}</span></template>
               <question-circle-outlined />
             </a-tooltip>
           </div>
@@ -61,7 +61,7 @@ const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('processId'), dataIndex: 'processId' },
   { title: t('startTime'), dataIndex: 'startTime' },
-  { title: t('optimizeType'), dataIndex: 'optimizeType' },
+  { title: t('type'), dataIndex: 'optimizingType' },
   { title: t('status'), dataIndex: 'status' },
   { title: t('duration'), dataIndex: 'duration' },
   { title: t('tasks'), dataIndex: 'tasks' },
@@ -96,18 +96,18 @@ async function getTableInfo() {
     const { list, total = 0 } = result
     pagination.total = total
     dataSource.push(...[...list || []].map(item => {
-      const { inputFiles, outputFiles } = item
+      const { inputFiles = {}, outputFiles = {} } = item
       return {
         ...item,
         // recordId,
         // startTime: item.commitTime ? d(new Date(item.commitTime), 'long') : '',
         // commitTime: item.commitTime ? dateFormat(item.commitTime) : '',
-        startTime: item.startTime ? dateFormat(item.startTime) : '',
-        finishTime: item.finishTime ? dateFormat(item.finishTime) : '',
+        startTime: item.startTime ? dateFormat(item.startTime) : '-',
+        finishTime: item.finishTime ? dateFormat(item.finishTime) : '-',
         duration: formatMS2Time(item.duration || 0),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks} / ${item.totalTasks}`
+        tasks: `${item.successTasks} / ${item.totalTasks}（${item.runningTasks} running）`
       }
     }))
     console.log(dataSource)
@@ -144,6 +144,9 @@ onMounted(() => {
   :deep(.ant-table-thead > tr > th) {
     padding: 4px 16px !important;
   }
+  :deep(.ant-table-thead > tr > th) {
+    padding: 4px 16px !important;
+  }
 }
 .status-icon {
   width: 8px;
@@ -152,5 +155,15 @@ onMounted(() => {
   background-color: #c9cdd4;
   display: inline-block;
   margin-right: 8px;
+}
+</style>
+<style lang="less">
+.table-failed-tip{
+  .tip-title{
+    display: block;
+    max-height: 700px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
 }
 </style>

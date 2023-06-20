@@ -174,5 +174,6 @@ export default {
   cannotDeleteGroupModalTitle: "Can't remove this group.",
   cannotDeleteGroupModalContent: 'This group has been used.',
   deleteGroupModalTitle: 'Remove this group',
-  processId: 'Process Id'
+  processId: 'Process Id',
+  tasks: 'Tasks'
 }

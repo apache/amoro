@@ -104,7 +104,6 @@ const handleOk = () => {
   formRef.value.validateFields().then(async () => {
     try {
       const properties = await propertiesRef.value.getProperties()
-      debugger
       const params = {
         name: formState.name,
         container: formState.container as string,

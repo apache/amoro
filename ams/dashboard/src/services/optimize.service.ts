@@ -89,9 +89,9 @@ export const updateResourceGroupsAPI = (params: {name: string; container: string
 }
 
 export const groupDeleteCheckAPI = (params: {name: string}) => {
-  return request.post('v1/optimize/resourceGroups/delete/check', params)
+  return request.post('/ams/v1/optimize/resourceGroups/delete/check', params)
 }
 
 export const groupDeleteAPI = (params: {name: string}) => {
-  return request.post('v1/optimize/resourceGroups/delete', params)
+  return request.post('/ams/v1/optimize/resourceGroups/delete', params)
 }

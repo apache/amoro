@@ -30,7 +30,7 @@
           <span class="primary-link g-mr-12" @click="removeGroup(record)">
             {{ t('remove') }}
           </span>
-          <span class="primary-link" @click="scaleOutGroup(record)">
+          <span class="primary-link" :class="{'disabled': record.container === 'external'}" @click="scaleOutGroup(record)">
             {{ t('scaleOut') }}
           </span>
         </template>
@@ -43,7 +43,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, shallowReactive } from 'vue'
 import { IOptimizeResourceTableItem, IIOptimizeGroupItem } from '@/types/common.type'
-import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteCheckAPI, groupDeleteAPI } from '@/services/optimize.service'
+import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteCheckAPI, groupDeleteAPI, releaseResource } from '@/services/optimize.service'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { mbToSize } from '@/utils'
@@ -106,6 +106,34 @@ function refresh(resetPage?: boolean) {
   }
 }
 
+function releaseModal (record: IOptimizeResourceTableItem) {
+  if (record.containerType === 'external') {
+    return
+  }
+  Modal.confirm({
+    title: t('releaseOptModalTitle'),
+    content: '',
+    okText: '',
+    cancelText: '',
+    onOk: () => {
+      releaseJob(record)
+    }
+  })
+}
+async function releaseJob (record: IOptimizeResourceTableItem) {
+  try {
+    releaseLoading.value = true
+    await releaseResource({
+      optimizerGroup: record.groupName,
+      jobId: record.jobId
+    })
+    refresh(true)
+    emit('refreshCurGroupInfo')
+  } finally {
+    releaseLoading.value = false
+  }
+}
+
 async function getOptimizersList () {
   try {
     optimizersList.length = 0
@@ -165,14 +193,16 @@ const removeGroup = async(record: IIOptimizeGroupItem) => {
   }
   Modal.warning({
     title: t('cannotDeleteGroupModalTitle'),
-    content: t('cannotDeleteGroupModalContent'),
-    wrapClassName: 'not-delete-modal'
+    content: t('cannotDeleteGroupModalContent')
   })
 }
 
 const groupRecord = ref({})
 const scaleOutViseble = ref<boolean>(false)
 const scaleOutGroup = (record: IIOptimizeGroupItem) => {
+  if (record.container === 'external') {
+    return
+  }
   groupRecord.value = { ...record }
   scaleOutViseble.value = true
 }
