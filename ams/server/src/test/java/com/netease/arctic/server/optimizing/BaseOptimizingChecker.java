@@ -87,8 +87,8 @@ public class BaseOptimizingChecker extends PersistentBase {
       success = waitUntilFinish(() -> {
         List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
             OptimizingMapper.class,
-            mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
+            mapper -> mapper.selectOptimizingProcesses(tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(), tableIdentifier.getTableName(), lastProcessId, Long.MAX_VALUE));
         if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
           LOG.info("optimize history is empty");
           return Status.RUNNING;
@@ -118,10 +118,11 @@ public class BaseOptimizingChecker extends PersistentBase {
     if (success) {
       List<TableOptimizingProcess> result = getAs(
           OptimizingMapper.class,
-          mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-              tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-          .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
-      result.sort(Comparator.comparingLong(TableOptimizingProcess::getProcessId).reversed());
+          mapper -> mapper.selectOptimizingProcesses(tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(), tableIdentifier.getTableName(), lastProcessId, Long.MAX_VALUE)).stream()
+          .filter(p -> p.getProcessId() > lastProcessId)
+          .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
+          .collect(Collectors.toList());
       if (result.size() == 1) {
         this.lastProcessId = result.get(0).getProcessId();
         return result.get(0);
@@ -141,9 +142,10 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
     List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
         OptimizingMapper.class,
-        mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-        .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+        mapper -> mapper.selectOptimizingProcesses(tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(), tableIdentifier.getTableName(), lastProcessId, Long.MAX_VALUE)).stream()
+        .filter(p -> p.getProcessId() > lastProcessId)
+        .collect(Collectors.toList());
     Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
   }
 

@@ -38,7 +38,6 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
-import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -77,7 +76,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,34 +277,6 @@ public class TableController {
             key -> keyValues
                 .put(hiveProperties.get(key), hiveProperties.get(key + "_DEFAULT")));
     ctx.json(OkResponse.of(keyValues));
-  }
-
-  /**
-   * getRuntime optimize info.
-   */
-  @Deprecated
-  public void getOptimizeInfo(Context ctx) {
-
-    String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String table = ctx.pathParam("table");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-
-    int offset = (page - 1) * pageSize;
-    int limit = pageSize;
-    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
-    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
-        table)), "no such table");
-
-    List<OptimizedRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
-    List<OptimizedRecord> result =
-        all.stream().sorted(Comparator.comparingLong(OptimizedRecord::getCommitTime).reversed())
-            .skip(offset)
-            .limit(limit)
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(PageResult.of(result, all.size())));
   }
 
   /**

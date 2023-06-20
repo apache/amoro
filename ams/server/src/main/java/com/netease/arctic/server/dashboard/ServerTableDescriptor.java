@@ -4,15 +4,12 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.dashboard.model.FilesStatistics;
-import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskStat;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
@@ -20,7 +17,6 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.DataFile;
@@ -47,6 +43,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -229,53 +227,37 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
-  @Deprecated
-  public List<OptimizedRecord> getOptimizeInfo(String catalog, String db, String table) {
-    List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
-    return tableOptimizingProcesses.stream().map(optimizingProcess -> {
-      OptimizedRecord record = new OptimizedRecord();
-      record.setCommitTime(optimizingProcess.getFinishTime());
-      record.setPlanTime(optimizingProcess.getStartTime());
-      record.setDuration(optimizingProcess.getFinishTime() - optimizingProcess.getStartTime());
-      record.setTableIdentifier(TableIdentifier.of(optimizingProcess.getCatalogName(), optimizingProcess.getDbName(),
-          optimizingProcess.getTableName()));
-      record.setOptimizeType(optimizingProcess.getOptimizingType());
-      MetricsSummary metricsSummary = optimizingProcess.getSummary();
-      record.setTotalFilesStatBeforeCompact(FilesStatistics.builder()
-          .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
-          .addFiles(metricsSummary.getPositionalDeleteSize(), metricsSummary.getPosDeleteFileCnt())
-          .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
-          .build());
-      record.setTotalFilesStatAfterCompact(FilesStatistics.build(
-          metricsSummary.getNewFileCnt(),
-          metricsSummary.getNewFileSize()));
-      return record;
-    }).collect(Collectors.toList());
-  }
-
   public PageResult<TableOptimizingProcess> getOptimizingProcesses(String catalog, String db, String table, int offset,
                                                                    int limit) {
-    List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectOptimizingProcesses(catalog, db, table, offset, limit));
-    List<Long> processIds =
-        tableOptimizingProcesses.stream().map(TableOptimizingProcess::getProcessId).collect(Collectors.toList());
-    if (!processIds.isEmpty()) {
-      List<OptimizingTaskStat> optimizingTaskStats = getAs(OptimizingMapper.class,
-          mapper -> mapper.selectOptimizeTaskStats(processIds));
-      initTaskStats(tableOptimizingProcesses, optimizingTaskStats);
+    List<TableOptimizingProcess> tableOptimizingProcesses = Collections.emptyList();
+    if (limit > 0) {
+      // do this because of derby not support LIMIT
+      List<Long> allProcessIds = getAs(
+          OptimizingMapper.class,
+          mapper -> mapper.selectOptimizingProcessIds(catalog, db, table));
+      List<Long> processIds = allProcessIds.stream()
+          .sorted(Comparator.reverseOrder())
+          .skip(offset)
+          .limit(limit)
+          .collect(Collectors.toList());
+      if (!processIds.isEmpty()) {
+        tableOptimizingProcesses = getAs(
+            OptimizingMapper.class,
+            mapper -> mapper.selectOptimizingProcesses(catalog, db, table, processIds.get(processIds.size() - 1),
+                processIds.get(0)));
+        List<OptimizingTaskStat> optimizingTaskStats = getAs(OptimizingMapper.class,
+            mapper -> mapper.selectOptimizeTaskStats(processIds));
+        initOptimizingProcesses(tableOptimizingProcesses, optimizingTaskStats);
+      }
     }
     Integer total = getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectCountOptimizingProcesses(catalog, db, table));
-    tableOptimizingProcesses.forEach(TableOptimizingProcess::init);
     return PageResult.of(tableOptimizingProcesses, total);
   }
 
-  private void initTaskStats(List<TableOptimizingProcess> tableOptimizingProcesses,
-                             List<OptimizingTaskStat> optimizingTaskStats) {
+  private void initOptimizingProcesses(List<TableOptimizingProcess> tableOptimizingProcesses,
+                                       List<OptimizingTaskStat> optimizingTaskStats) {
     Map<Long, Map<TaskRuntime.Status, Integer>> taskCountGroupByStatus = Maps.newHashMap();
     for (OptimizingTaskStat stat : optimizingTaskStats) {
       taskCountGroupByStatus
@@ -283,10 +265,11 @@ public class ServerTableDescriptor extends PersistentBase {
           .put(stat.getStatus(), stat.getCount());
     }
     tableOptimizingProcesses.forEach(
-        p -> initProcessTaskStats(p, taskCountGroupByStatus.get(p.getProcessId())));
+        p -> initOptimizingProcess(p, taskCountGroupByStatus.get(p.getProcessId())));
   }
 
-  private void initProcessTaskStats(TableOptimizingProcess process, Map<TaskRuntime.Status, Integer> status2TaskCount) {
+  private void initOptimizingProcess(TableOptimizingProcess process,
+                                     Map<TaskRuntime.Status, Integer> status2TaskCount) {
     if (status2TaskCount == null) {
       return;
     }
@@ -308,6 +291,7 @@ public class ServerTableDescriptor extends PersistentBase {
     process.setRunningTasks(runningTasksCount);
     process.setSuccessTasks(successTasksCount);
     process.setTotalTasks(totalTasksCount);
+    process.init();
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {

@@ -66,33 +66,6 @@ public interface OptimizingMapper {
       @Param("endTime") long endTime,
       @Param("summary") MetricsSummary summary,
       @Param("failedReason") String failedReason);
-  
-  @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id," +
-      " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time," +
-      " a.fail_reason, a.summary FROM table_optimizing_process a" +
-      " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
-      " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
-      " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}" +
-      " AND a.status = 'SUCCESS'")
-  @Results({
-      @Result(property = "processId", column = "process_id"),
-      @Result(property = "tableId", column = "table_id"),
-      @Result(property = "catalogName", column = "catalog_name"),
-      @Result(property = "dbName", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-      @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-      @Result(property = "status", column = "status"),
-      @Result(property = "optimizingType", column = "optimizing_type"),
-      @Result(property = "startTime", column = "plan_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "finishTime", column = "end_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
-  })
-  @Deprecated
-  List<TableOptimizingProcess> selectSuccessOptimizingProcesses(
-      @Param("catalogName") String catalogName, @Param(
-      "dbName") String dbName, @Param("tableName") String tableName);
 
   @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id," +
       " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time," +
@@ -100,7 +73,8 @@ public interface OptimizingMapper {
       " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
       " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
       " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}" +
-      " ORDER BY plan_time desc LIMIT #{limit} OFFSET #{offset}")
+      " AND process_id >= #{minProcessId} AND process_id <= #{maxProcessId}" +
+      " ORDER BY process_id desc")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -117,8 +91,15 @@ public interface OptimizingMapper {
       @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
   })
   List<TableOptimizingProcess> selectOptimizingProcesses(
-      @Param("catalogName") String catalogName, @Param("dbName") String dbName, @Param("tableName") String tableName, 
-      @Param("offset") int offset, @Param("limit") int limit);
+      @Param("catalogName") String catalogName, @Param("dbName") String dbName, @Param("tableName") String tableName,
+      @Param("minProcessId") long minProcessId, @Param("maxProcessId") long maxProcessId);
+
+  @Select("SELECT a.process_id FROM table_optimizing_process a" +
+      " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
+      " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
+      " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}")
+  List<Long> selectOptimizingProcessIds(@Param("catalogName") String catalogName, @Param("dbName") String dbName,
+                                        @Param("tableName") String tableName);
 
   @Select("SELECT count(*) FROM table_optimizing_process a" +
       " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
