@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
+import com.netease.arctic.server.dashboard.response.IcebergRestErrorCode;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.http.Context;
@@ -34,6 +35,7 @@ import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
+import org.apache.iceberg.rest.responses.ErrorResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 
 import java.util.Collections;
@@ -50,6 +52,7 @@ public class IcebergRestCatalogController {
 
   public static final String REST_CATALOG_API_PREFIX = "/api/iceberg/rest/catalog";
 
+
   private final TableService tableService;
   private final Set<String> catalogPropertiesNotReturned = Collections.unmodifiableSet(
       Sets.newHashSet(CatalogMetaProperties.TABLE_FORMATS)
@@ -63,6 +66,17 @@ public class IcebergRestCatalogController {
     this.tableService = tableService;
   }
 
+
+  public void handleException(Exception e, Context ctx) {
+    IcebergRestErrorCode code = IcebergRestErrorCode.exceptionToCode(e);
+    ErrorResponse response = ErrorResponse.builder()
+        .responseCode(code.code)
+        .withMessage(e.getClass().getSimpleName())
+        .withMessage(e.getMessage())
+        .build();
+    ctx.res.setStatus(code.code);
+    ctx.json(response);
+  }
 
   /**
    * GET PREFIX/{catalog}/v1/config?warehouse={warehouse}
@@ -94,7 +108,7 @@ public class IcebergRestCatalogController {
   public void listNamespaces(Context ctx) {
     handleCatalog(ctx, catalog -> {
       String ns = ctx.req.getParameter("parent");
-      Preconditions.checkArgument(ns == null,
+      checkUnsupported(ns == null,
           "The catalog doesn't support multi-level namespaces");
       List<Namespace> nsLists = catalog.listDatabases()
           .stream().map(Namespace::of)
@@ -113,11 +127,11 @@ public class IcebergRestCatalogController {
     handleCatalog(ctx, catalog -> {
       CreateNamespaceRequest request = ctx.bodyAsClass(CreateNamespaceRequest.class);
       Namespace ns = request.namespace();
-      Preconditions.checkArgument(
+      checkUnsupported(
           request.properties() == null || request.properties().isEmpty(),
           "create namespace with properties is not supported now."
       );
-      Preconditions.checkArgument(ns.length() == 1,
+      checkUnsupported(ns.length() == 1,
           "multi-level namespace is not supported now");
       catalog.createDatabase(ns.levels()[0]);
       return CreateNamespaceResponse.builder().withNamespace(ns).build();
@@ -138,7 +152,7 @@ public class IcebergRestCatalogController {
     String catalog = ctx.pathParam("catalog");
     String ns = ctx.pathParam("namespace");
     Preconditions.checkNotNull(ns, "namespace is null");
-    Preconditions.checkArgument(!ns.contains("."), "multi-level namespace is not supported");
+    checkUnsupported(!ns.contains("."), "multi-level namespace is not supported");
     InternalCatalog internalCatalog = getCatalog(catalog);
     internalCatalog.dropDatabase(ns);
   }
@@ -183,5 +197,11 @@ public class IcebergRestCatalogController {
         "The catalog is not an iceberg rest catalog"
     );
     return (InternalCatalog) internalCatalog;
+  }
+
+  private static void checkUnsupported(boolean condition, String message) {
+    if (!condition) {
+      throw new UnsupportedOperationException(message);
+    }
   }
 }

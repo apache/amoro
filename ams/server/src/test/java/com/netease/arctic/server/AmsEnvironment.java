@@ -122,6 +122,10 @@ public class AmsEnvironment {
     return catalogs.get(name);
   }
 
+  public ArcticServiceContainer serviceContainer() {
+    return this.arcticService;
+  }
+
   public boolean tableExist(TableIdentifier tableIdentifier) {
     return tableService.tableExist(tableIdentifier.buildTableIdentifier());
   }

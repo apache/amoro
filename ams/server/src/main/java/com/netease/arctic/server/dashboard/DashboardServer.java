@@ -112,7 +112,7 @@ public class DashboardServer {
     if ("".equals(indexHtml)) {
       try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
         try (InputStreamReader isr = new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
-            BufferedReader br = new BufferedReader(isr)) {
+             BufferedReader br = new BufferedReader(isr)) {
           StringBuilder sb = new StringBuilder();
           String line;
           while ((line = br.readLine()) != null) {
@@ -167,7 +167,7 @@ public class DashboardServer {
           if (null == ctx.sessionAttribute("user")) {
             ctx.sessionAttributeMap();
             LOG.info("session info: {}", JSONObject.toJSONString(
-                            ctx.sessionAttributeMap()));
+                ctx.sessionAttributeMap()));
             throw new ForbiddenException();
           }
         }
@@ -305,7 +305,7 @@ public class DashboardServer {
         get("/{catalog}/v1/config", icebergRestController::getCatalogConfig);
         get("/{catalog}/v1/namespaces", icebergRestController::listNamespaces);
         post("/{catalog}/v1/namespaces", icebergRestController::createNamespace);
-        get("/{catalog/v1/namespaces/{namespace}", icebergRestController::getNamespace);
+        get("/{catalog}/v1/namespaces/{namespace}", icebergRestController::getNamespace);
         delete("/{catalog}/v1/namespaces/{namespace}", icebergRestController::dropNamespace);
         post("/{catalog}/v1/namespaces/{namespace}", icebergRestController::setNamespaceProperties);
         get("/{catalog}/v1/namespaces/{namespace}/tables", icebergRestController::listTablesInNamespace);
@@ -319,7 +319,9 @@ public class DashboardServer {
 
     // exception-handler
     app.exception(Exception.class, (e, ctx) -> {
-      if (e instanceof ForbiddenException) {
+      if (ctx.req.getRequestURI().startsWith(IcebergRestCatalogController.REST_CATALOG_API_PREFIX)) {
+        icebergRestController.handleException(e, ctx);
+      } else if (e instanceof ForbiddenException) {
         try {
           // request doesn't start with /ams is  page request. we return index.html
           if (!ctx.req.getRequestURI().startsWith("/ams")) {
@@ -391,7 +393,7 @@ public class DashboardServer {
   }
 
   private boolean needApiKeyCheck(String uri) {
-    return uri.startsWith("/api/ams") ;
+    return uri.startsWith("/api/ams");
   }
 
   private void checkApiToken(
