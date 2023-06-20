@@ -73,7 +73,7 @@ case class AlterArcticTableDropPartitionExec(
     });
     // build filters
     val filters = splitConjunctivePredicates(deleteExpr).map {
-      filter =>
+      _ =>
         ExpressionHelper.translateFilter(deleteExpr).getOrElse(
           throw new UnsupportedOperationException("Cannot translate expression to source filter"))
     }.toArray

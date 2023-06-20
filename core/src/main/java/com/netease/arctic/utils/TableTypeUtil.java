@@ -1,6 +1,6 @@
 package com.netease.arctic.utils;
 
-import com.netease.arctic.catalog.BasicIcebergCatalog;
+import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.table.ArcticTable;
 
 /**
@@ -13,6 +13,6 @@ public class TableTypeUtil {
    * @return Whether iceberg table format
    */
   public static boolean isIcebergTableFormat(ArcticTable arcticTable) {
-    return arcticTable instanceof BasicIcebergCatalog.BasicIcebergTable;
+    return arcticTable instanceof IcebergCatalogWrapper.BasicIcebergTable;
   }
 }

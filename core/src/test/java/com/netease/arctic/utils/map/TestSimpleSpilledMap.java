@@ -1,6 +1,6 @@
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.SerializationUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,8 +17,8 @@ public class TestSimpleSpilledMap {
     SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
         null, new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
     map = spillableMap.new SimpleSpilledMap(
-        SerializationUtils.createJavaSimpleSerializer(),
-        SerializationUtils.createJavaSimpleSerializer(), null);
+        SerializationUtil.createJavaSimpleSerializer(),
+        SerializationUtil.createJavaSimpleSerializer(), null);
   }
 
   @After

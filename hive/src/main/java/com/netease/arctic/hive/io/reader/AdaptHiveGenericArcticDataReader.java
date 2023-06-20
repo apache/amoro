@@ -19,7 +19,7 @@
 package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.AbstractArcticDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;

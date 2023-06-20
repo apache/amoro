@@ -2,8 +2,9 @@
 Terminal 支持对接 Kyuubi, 将 SQL 提交到 Kyuubi 上执行。你只需要按照下面的指示添加 Kyuubi 配置：
 ```shell
 ams:
-  arctic.ams.terminal.backend: kyuubi
-  arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/  # kyuubi的jdbc地址
+  terminal:
+    backend: kyuubi
+    kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/  # kyuubi 的 jdbc 地址
 ```
 在不配置 Kyuubi 的情况下，Terminal 在 AMS 中的内存中执行。
 

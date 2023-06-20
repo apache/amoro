@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
@@ -28,7 +29,7 @@ import com.netease.arctic.hive.op.ReplaceHivePartitions;
 import com.netease.arctic.hive.op.RewriteHiveFiles;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -38,9 +39,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
-
 import java.util.Map;
-
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
@@ -52,28 +51,38 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   private final String tableLocation;
 
   private boolean syncHiveChange = true;
+  private final ArcticHadoopFileIO fileIO;
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      ArcticFileIO arcticFileIO,
+      ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties) {
-    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties, true);
+    this(
+        tableIdentifier,
+        icebergTable,
+        arcticFileIO,
+        tableLocation,
+        client,
+        hiveClient,
+        catalogProperties,
+        true);
   }
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
-      ArcticFileIO arcticFileIO,
+      ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties,
       boolean syncHiveChange) {
     super(tableIdentifier, icebergTable, arcticFileIO, client, catalogProperties);
+    this.fileIO = arcticFileIO;
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
     this.syncHiveChange = syncHiveChange;
@@ -83,6 +92,16 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
     if (enableSyncHiveDataToArctic()) {
       syncHiveDataToArctic(false);
     }
+  }
+
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
+  }
+
+  @Override
+  public ArcticHadoopFileIO io() {
+    return this.fileIO;
   }
 
   @Override
@@ -142,7 +161,8 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this, hiveClient, super.updateSchema());
+    return new HiveSchemaUpdate(this,
+        hiveClient, hiveClient, super.updateSchema());
   }
 
   @Override

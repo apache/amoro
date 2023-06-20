@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io.writer;
 
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;

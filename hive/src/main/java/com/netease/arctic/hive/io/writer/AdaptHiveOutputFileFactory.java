@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.io.writer;
 
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
@@ -55,7 +55,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final PartitionSpec partitionSpec;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final FileNameGenerator fileNameGenerator;
+  private final FileNameRules fileNameGenerator;
 
   public AdaptHiveOutputFileFactory(
       String baseLocation,
@@ -89,7 +89,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
-    this.fileNameGenerator = new FileNameGenerator(format, partitionId, taskId, transactionId);
+    this.fileNameGenerator = new FileNameRules(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {

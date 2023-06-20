@@ -18,58 +18,34 @@
 
 package com.netease.arctic.catalog;
 
-import com.google.common.collect.Maps;
-import com.netease.arctic.TableTestHelpers;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.CatalogUtil;
 import org.junit.After;
 import org.junit.Before;
 
-import java.util.Map;
-
 public abstract class TableTestBase extends CatalogTestBase {
 
-  private final Schema tableSchema;
-  private final PartitionSpec partitionSpec;
-  private final PrimaryKeySpec primaryKeySpec;
-  private final Map<String, String> tableProperties;
-
+  private final TableTestHelper tableTestHelper;
   private ArcticTable arcticTable;
+  private TableMetaStore tableMetaStore;
 
-  public TableTestBase(
-      TableFormat testFormat, Schema tableSchema, PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec, Map<String, String> tableProperties) {
-    super(testFormat);
-    this.tableSchema = tableSchema;
-    this.partitionSpec = partitionSpec;
-    this.primaryKeySpec = primaryKeySpec;
-    this.tableProperties = tableProperties;
-    if (isKeyedTable()) {
-      Preconditions.checkArgument(TableFormat.MIXED_HIVE.equals(testFormat) ||
-          TableFormat.MIXED_ICEBERG.equals(testFormat), "Only mixed format table support primary key spec");
-    }
-  }
-
-  public TableTestBase(
-      TableFormat testFormat, boolean keyedTable, boolean partitionedTable,
-      Map<String, String> tableProperties) {
-    this(testFormat, TableTestHelpers.TABLE_SCHEMA,
-        keyedTable ? TableTestHelpers.PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
-        partitionedTable ? TableTestHelpers.SPEC : PartitionSpec.unpartitioned(),
-        tableProperties);
-  }
-
-  public TableTestBase(TableFormat testFormat, boolean keyedTable, boolean partitionedTable) {
-    this(testFormat, keyedTable, partitionedTable, Maps.newHashMap());
+  public TableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper);
+    this.tableTestHelper = tableTestHelper;
   }
 
   @Before
   public void setupTable() {
+    this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+
+    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    }
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -82,42 +58,54 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createMixedFormatTable() {
-    getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
-    TableBuilder tableBuilder = getCatalog().newTableBuilder(TableTestHelpers.TEST_TABLE_ID, tableSchema);
-    tableBuilder.withProperties(tableProperties);
+    TableBuilder tableBuilder = getCatalog().newTableBuilder(
+        TableTestHelper.TEST_TABLE_ID,
+        tableTestHelper.tableSchema());
+    tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
-      tableBuilder.withPrimaryKeySpec(primaryKeySpec);
+      tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());
     }
     if (isPartitionedTable()) {
-      tableBuilder.withPartitionSpec(partitionSpec);
+      tableBuilder.withPartitionSpec(tableTestHelper.partitionSpec());
     }
     arcticTable = tableBuilder.create();
   }
 
   private void createIcebergFormatTable() {
     getIcebergCatalog().createTable(
-        TableTestHelpers.TEST_TABLE_ICEBERG_ID,
-        tableSchema,
-        partitionSpec,
-        tableProperties);
-    arcticTable = getCatalog().loadTable(TableTestHelpers.TEST_TABLE_ID);
+        org.apache.iceberg.catalog.TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+        tableTestHelper.tableSchema(),
+        tableTestHelper.partitionSpec(),
+        tableTestHelper.tableProperties());
+    arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
   }
 
   @After
   public void dropTable() {
-    getCatalog().dropTable(TableTestHelpers.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelpers.TEST_DB_NAME);
+    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
   }
 
   protected ArcticTable getArcticTable() {
     return arcticTable;
   }
 
+  protected UnkeyedTable getBaseStore() {
+    return ArcticTableUtil.baseStore(arcticTable);
+  }
+
+  protected TableMetaStore getTableMetaStore() {
+    return this.tableMetaStore;
+  }
+
   protected boolean isKeyedTable() {
-    return primaryKeySpec != null && primaryKeySpec.primaryKeyExisted();
+    return tableTestHelper.primaryKeySpec() != null && tableTestHelper.primaryKeySpec().primaryKeyExisted();
   }
 
   protected boolean isPartitionedTable() {
-    return partitionSpec != null && partitionSpec.isPartitioned();
+    return tableTestHelper.partitionSpec() != null && tableTestHelper.partitionSpec().isPartitioned();
+  }
+
+  protected TableTestHelper tableTestHelper() {
+    return tableTestHelper;
   }
 }

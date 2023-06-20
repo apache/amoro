@@ -86,22 +86,4 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   private def refreshCache(r: NamedRelation)(): Unit = {
     spark.sharedState.cacheManager.recacheByPlan(spark, r)
   }
-
-  private object ArcticCatalogAndIdentifier {
-    def unapply(identifier: Seq[String]): Option[(TableCatalog, Identifier)] = {
-      val catalogAndIdentifier = Spark3Util.catalogAndIdentifier(spark, seqAsJavaList(identifier))
-      catalogAndIdentifier.catalog() match {
-        case arcticCatalog: ArcticSparkSessionCatalog[_] =>
-          Some(arcticCatalog, catalogAndIdentifier.identifier())
-        case arcticCatalog: ArcticSparkCatalog =>
-          Some(arcticCatalog, catalogAndIdentifier.identifier())
-        case icebergCatalog: SparkCatalog =>
-          Some((icebergCatalog, catalogAndIdentifier.identifier))
-        case icebergCatalog: SparkSessionCatalog[_] =>
-          Some((icebergCatalog, catalogAndIdentifier.identifier))
-        case _ =>
-          None
-      }
-    }
-  }
 }

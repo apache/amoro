@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -67,7 +67,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import static com.netease.arctic.flink.read.ArcticSourceTest.tableRecords;
+import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
 
 public class ArcticFileWriterITCase extends FlinkTestBase {
 
@@ -280,7 +280,7 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
         paths.add(path);
         LOG.info("add file: {}", addedFile.path());
 
-        long txId = FileNameGenerator.parseChange(path, snapshot.sequenceNumber()).transactionId();
+        long txId = FileNameRules.parseChange(path, snapshot.sequenceNumber()).transactionId();
         minTxIdInSnapshot = Math.min(minTxIdInSnapshot, txId);
         maxTxIdInSnapshot = Math.max(maxTxIdInSnapshot, txId);
       }

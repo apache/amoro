@@ -19,9 +19,7 @@
 package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -37,12 +35,10 @@ import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return records
@@ -118,29 +114,38 @@ public abstract class AbstractArcticDataReader<T> {
             sourceNodes, structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                fileScanTask -> newParquetIterable(
+                    fileScanTask,
+                    newProjectedSchema,
+                    DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
     return dataIterable.iterator();
   }
 
+  //TODO Return deleted record produced by equality delete file only now, should refactor the reader to return all
+  // deleted records.
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
-
-    if (!equDeleteFiles.isEmpty()) {
+    boolean hasDeleteFile = keyedTableScanTask.arcticEquityDeletes().size() > 0 ||
+        keyedTableScanTask.dataTasks().stream().anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
+    if (hasDeleteFile) {
       ArcticDeleteFilter<T> arcticDeleteFilter =
           createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
               sourceNodes, structLikeCollections);
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(
+          CloseableIterable.concat(
+              CloseableIterable.transform(
+                  CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                  fileScanTask ->
+                      newParquetIterable(
+                          fileScanTask,
+                          newProjectedSchema,
+                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
@@ -174,12 +179,6 @@ public abstract class AbstractArcticDataReader<T> {
 
     return fileIO.doAs(builder::build);
   }
-
-  protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
-
-  protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 
   private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
 
@@ -229,4 +228,10 @@ public abstract class AbstractArcticDataReader<T> {
       return fileIO;
     }
   }
+
+  protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+      Schema projectSchema,
+      Map<Integer, ?> idToConstant);
+
+  protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 }

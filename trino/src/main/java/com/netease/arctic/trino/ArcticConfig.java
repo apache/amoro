@@ -20,6 +20,7 @@
 package com.netease.arctic.trino;
 
 import io.airlift.configuration.Config;
+import io.airlift.configuration.ConfigDescription;
 
 /**
  * Arctic config
@@ -27,6 +28,11 @@ import io.airlift.configuration.Config;
 public class ArcticConfig {
   private String catalogUrl;
   private boolean hdfsImpersonationEnabled;
+  private boolean tableStatisticsEnabled = true;
+
+  private Double splitTaskByDeleteRatio = 0.05;
+
+  private boolean enableSplitTaskByDeleteRatio = true;
 
   public String getCatalogUrl() {
     return catalogUrl;
@@ -34,6 +40,18 @@ public class ArcticConfig {
 
   public boolean getHdfsImpersonationEnabled() {
     return hdfsImpersonationEnabled;
+  }
+
+  public boolean isTableStatisticsEnabled() {
+    return tableStatisticsEnabled;
+  }
+
+  public Double getSplitTaskByDeleteRatio() {
+    return splitTaskByDeleteRatio;
+  }
+
+  public boolean isEnableSplitTaskByDeleteRatio() {
+    return enableSplitTaskByDeleteRatio;
   }
 
   @Config("arctic.url")
@@ -44,5 +62,21 @@ public class ArcticConfig {
   @Config("arctic.hdfs.impersonation.enabled")
   public void setHdfsImpersonationEnabled(boolean enabled) {
     this.hdfsImpersonationEnabled = enabled;
+  }
+
+  @Config("arctic.table-statistics-enable")
+  @ConfigDescription("Enable use of table statistics to Arctic table")
+  public void setTableStatisticsEnabled(boolean tableStatisticsEnabled) {
+    this.tableStatisticsEnabled = tableStatisticsEnabled;
+  }
+
+  @Config("arctic.enable-split-task-by-delete-ratio")
+  public void setEnableSplitTaskByDeleteRatio(boolean enableSplitTaskByDeleteRatio) {
+    this.enableSplitTaskByDeleteRatio = enableSplitTaskByDeleteRatio;
+  }
+
+  @Config("arctic.split-task-by-delete-ratio")
+  public void setSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
+    this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
   }
 }

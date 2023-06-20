@@ -51,8 +51,12 @@ public class TestAms extends ExternalResource {
     return mockAms.handler();
   }
 
+  public MockArcticMetastoreServer.OptimizerManagerHandler getOptimizerHandler() {
+    return mockAms.optimizerHandler();
+  }
+
   @Override
-  protected void before() throws Throwable {
+  public void before() throws Exception {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockAms.isStarted()) {
         mockAms.start();
@@ -69,7 +73,7 @@ public class TestAms extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void after() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
       mockAms.stopAndCleanUp();
       LOG.info("Stop mock AMS after testing.");

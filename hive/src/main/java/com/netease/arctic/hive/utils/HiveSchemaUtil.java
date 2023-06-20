@@ -110,6 +110,6 @@ public class HiveSchemaUtil {
   public static Schema changeFieldNameToLowercase(Schema schema) {
     Types.StructType struct = TypeUtil.visit(schema.asStruct(),
         new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE)).asStructType();
-    return new Schema(struct.fields());
+    return new Schema(struct.fields(), schema.identifierFieldIds());
   }
 }
