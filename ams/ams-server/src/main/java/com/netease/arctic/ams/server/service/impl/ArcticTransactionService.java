@@ -27,7 +27,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-public class ArcticTransactionService extends IJDBCService {
+import java.io.Closeable;
+import java.io.IOException;
+
+public class ArcticTransactionService extends IJDBCService implements Closeable {
 
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, int retry) {
     for (int i = 0; i < retry; i++) {
@@ -74,5 +77,10 @@ public class ArcticTransactionService extends IJDBCService {
       TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
       mapper.expire(identifier, time);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

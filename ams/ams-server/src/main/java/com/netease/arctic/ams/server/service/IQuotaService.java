@@ -21,6 +21,8 @@ package com.netease.arctic.ams.server.service;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.table.TableIdentifier;
 
-public interface IQuotaService {
+import java.io.Closeable;
+
+public interface IQuotaService extends Closeable {
   CoreInfo getTableResourceInfo(TableIdentifier tableIdentifier, long period);
 }

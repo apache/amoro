@@ -41,10 +41,12 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetastore.Iface {
+public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetastore.Iface, Closeable {
   public static final Logger LOG = LoggerFactory.getLogger(ArcticTableMetastoreHandler.class);
 
   private final IMetaService metaService;
@@ -210,5 +212,10 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     } catch (Exception e) {
       throw new OperationErrorException(e.getMessage());
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

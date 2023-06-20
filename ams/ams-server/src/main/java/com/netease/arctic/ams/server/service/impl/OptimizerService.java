@@ -37,12 +37,14 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZER_LAUNCHER_INFO;
 
-public class OptimizerService extends IJDBCService {
+public class OptimizerService extends IJDBCService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerService.class);
 
   public List<Optimizer> getOptimizers(String optimizerGroup) {
@@ -174,6 +176,11 @@ public class OptimizerService extends IJDBCService {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       optimizerMapper.deleteOptimizerByName(optimizerName);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+
   }
 }
 

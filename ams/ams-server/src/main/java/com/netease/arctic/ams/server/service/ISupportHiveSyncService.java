@@ -18,10 +18,12 @@
 
 package com.netease.arctic.ams.server.service;
 
+import java.io.Closeable;
+
 /**
  * Service for support hive sync periodically.
  */
-public interface ISupportHiveSyncService {
+public interface ISupportHiveSyncService extends Closeable {
   /**
    * Check support hive table tasks, sync iceberg partition location to hive table.
    */

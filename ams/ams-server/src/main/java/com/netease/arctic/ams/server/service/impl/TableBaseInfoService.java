@@ -40,6 +40,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public class TableBaseInfoService implements ITableInfoService {
@@ -108,4 +109,8 @@ public class TableBaseInfoService implements ITableInfoService {
     }
   }
 
+  @Override
+  public void close() throws IOException {
+    
+  }
 }

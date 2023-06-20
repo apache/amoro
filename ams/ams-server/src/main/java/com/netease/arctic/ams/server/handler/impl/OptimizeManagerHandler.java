@@ -29,7 +29,10 @@ import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import org.apache.thrift.TException;
 
-public class OptimizeManagerHandler implements OptimizeManager.Iface {
+import java.io.Closeable;
+import java.io.IOException;
+
+public class OptimizeManagerHandler implements OptimizeManager.Iface, Closeable {
 
   @Override
   public void ping() throws TException {
@@ -68,5 +71,10 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
     } catch (Exception e) {
       throw new OperationErrorException(e.getMessage());
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

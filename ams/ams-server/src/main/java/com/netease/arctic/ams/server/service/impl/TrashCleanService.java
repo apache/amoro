@@ -35,6 +35,8 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +45,7 @@ import java.util.stream.Collectors;
 /**
  * Service to clean trash periodically.
  */
-public class TrashCleanService {
+public class TrashCleanService implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(TrashCleanService.class);
 
   private static final long CHECK_INTERVAL = 24 * 60 * 60 * 1000;  // 1 days
@@ -67,6 +69,10 @@ public class TrashCleanService {
     LOG.info("Schedule Trash Cleaner finished with {} tasks", ids.size());
   }
 
+  @Override
+  public void close() throws IOException {
+    cleanTasks = null;
+  }
 
   public static class TableTrashCleanTask implements ScheduledTasks.Task {
     private final TableIdentifier tableIdentifier;

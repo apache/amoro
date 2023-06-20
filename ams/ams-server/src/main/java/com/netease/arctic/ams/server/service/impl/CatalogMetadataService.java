@@ -24,9 +24,11 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
-public class CatalogMetadataService extends IJDBCService {
+public class CatalogMetadataService extends IJDBCService implements Closeable {
 
   public List<CatalogMeta> getCatalogs() {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -60,5 +62,10 @@ public class CatalogMetadataService extends IJDBCService {
         }
       }
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+
   }
 }

@@ -22,10 +22,11 @@ import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.table.TableIdentifier;
 
+import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 
-public interface IMetaService {
+public interface IMetaService extends Closeable {
   /**
    * create table metadata
    * @param tableMeta   table metadata info

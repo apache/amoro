@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.ibatis.session.SqlSession;
 
+import java.io.IOException;
 import java.util.List;
 
 public class TableTaskHistoryService extends IJDBCService implements ITableTaskHistoryService {
@@ -96,5 +97,10 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
 
       taskHistoryMapper.expireTaskHistory(identifier, latestTaskHistoryId, expireTime);
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }
