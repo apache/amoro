@@ -27,7 +27,6 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.table.AMSTableTestBase;
-import com.netease.arctic.server.table.TableServiceTestBase;
 import com.netease.arctic.table.ArcticTable;
 import org.junit.Assert;
 import org.junit.Test;
