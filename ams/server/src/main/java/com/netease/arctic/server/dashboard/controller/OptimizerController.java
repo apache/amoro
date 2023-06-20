@@ -279,15 +279,29 @@ public class OptimizerController {
   public void deleteCheckResourceGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
+    for (OptimizerInstance optimizer : optimizerManager.listOptimizers()) {
+      if (optimizer.getGroupName().equals(name)) {
+        ctx.json(OkResponse.of(
+            "Cannot delete. Some optimizers belonging to this optimizer group is currently running.",
+            false));
+        return;
+      }
+    }
     for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
-      if (catalogMeta.getCatalogProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
-        ctx.json(OkResponse.of(false));
+      if (catalogMeta.getCatalogProperties() != null &&
+          catalogMeta.getCatalogProperties()
+              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        ctx.json(OkResponse.of("Cannot delete. Some catalogs are referencing this group.", false));
         return;
       }
     }
     for (TableMetadata tableMeta : tableService.listTableMetas()) {
-      if (tableMeta.getProperties().get(TableProperties.SELF_OPTIMIZING_GROUP).equals(name)) {
-        ctx.json(OkResponse.of(false));
+      if (tableMeta.getProperties() != null &&
+          tableMeta.getProperties()
+              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        ctx.json(OkResponse.of("Cannot delete. Some tables are referencing this group.", false));
         return;
       }
     }
