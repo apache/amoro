@@ -189,15 +189,6 @@ ams:
   admin-password: admin
   server-bind-host: "0.0.0.0"
   server-expose-host: "127.0.0.1"
-  refresh-external-catalog-interval: 180000 # 3min
-  refresh-table-thread-count: 10
-  refresh-table-interval: 60000 #1min
-  expire-table-thread-count: 10
-  clean-orphan-file-thread-count: 10
-  sync-hive-tables-thread-count: 10
-  
-  blocker:
-    timeout: 60000 # 1min
 
   thrift-server:
     bind-port: 1260
@@ -208,6 +199,13 @@ ams:
 
   http-server:
     bind-port: 1630
+    
+  refresh-external-catalogs:
+    interval: 180000 # 3min
+
+  refresh-tables:
+    thread-count: 10
+    interval: 60000 # 1min
 
   self-optimizing:
     commit-thread-count: 10
@@ -215,6 +213,22 @@ ams:
   optimizer:
     heart-beat-timeout: 60000 # 1min
     task-ack-timeout: 30000 # 30s
+    
+  blocker:
+    timeout: 60000 # 1min
+    
+  # optional features
+  expire-snapshots:
+    enabled: true
+    thread-count: 10
+
+  clean-orphan-files:
+    enabled: true
+    thread-count: 10
+
+  sync-hive-tables:
+    enabled: true
+    thread-count: 10
 
   database:
     type: derby
