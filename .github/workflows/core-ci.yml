@@ -46,6 +46,9 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
           cache: maven
+          
+      - name: Check style first
+        run: mvn checkstyle:check
 
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
