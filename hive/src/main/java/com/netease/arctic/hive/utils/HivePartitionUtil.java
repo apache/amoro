@@ -136,7 +136,7 @@ public class HivePartitionUtil {
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition objects
    */
-  public List<Partition> getHiveAllPartitions(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+  public static List<Partition> getHiveAllPartitions(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client ->
           client.listPartitions(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), Short.MAX_VALUE));

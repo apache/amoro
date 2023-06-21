@@ -18,18 +18,24 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.slf4j.Logger;
@@ -82,6 +88,7 @@ public class UpgradeHiveTableUtil {
           .withProperty(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
           .create();
       upgradeHive = true;
+      initPartitionProperties(arcticTable, arcticHiveCatalog, hiveTable);
       UpgradeHiveTableUtil.hiveDataMigration((SupportHive) arcticTable, arcticHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
@@ -171,5 +178,39 @@ public class UpgradeHiveTableUtil {
       throw new IOException(e);
     }
     return isSupport.get();
+  }
+
+  @VisibleForTesting
+  static void initPartitionProperties(ArcticTable table, ArcticHiveCatalog arcticHiveCatalog, Table hiveTable) {
+    UnkeyedHiveTable baseTable;
+    if (table.isKeyedTable()) {
+      baseTable = (UnkeyedHiveTable) table.asKeyedTable().baseTable();
+    } else {
+      baseTable = (UnkeyedHiveTable) table.asUnkeyedTable();
+    }
+    UpdatePartitionProperties updatePartitionProperties =
+        baseTable.updatePartitionProperties(null);
+    if (table.spec().isUnpartitioned()) {
+      updatePartitionProperties.set(
+          TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, baseTable.hiveLocation());
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+          hiveTable.getParameters().get("transient_lastDdlTime"));
+    } else {
+      List<Partition> partitions =
+          HivePartitionUtil.getHiveAllPartitions(arcticHiveCatalog.getHMSClient(), table.id());
+      partitions.forEach(partition -> {
+        updatePartitionProperties.set(
+            DataFiles.data(table.spec(), String.join("/", partition.getValues())),
+            HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+        updatePartitionProperties.set(
+            DataFiles.data(table.spec(), String.join("/", partition.getValues())),
+            HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            partition.getParameters().get("transient_lastDdlTime"));
+      });
+    }
+    updatePartitionProperties.commit();
   }
 }
