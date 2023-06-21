@@ -1,14 +1,16 @@
-package com.netease.arctic.server.dashboard.controller;
+package com.netease.arctic.server;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.IcebergSchemaUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -22,12 +24,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class IcebergRestControllerTest {
+public class IcebergRestCatalogServiceTest {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogServiceTest.class);
 
   @TempDir(cleanup = CleanupMode.ALWAYS)
   public static File TEMP_DIR;
@@ -100,7 +105,7 @@ public class IcebergRestControllerTest {
 
   @Nested
   public class NamespaceTests {
-    RESTCatalog nsCatalog ;
+    RESTCatalog nsCatalog;
 
     @BeforeEach
     public void setup() {
@@ -120,17 +125,20 @@ public class IcebergRestControllerTest {
 
   @Nested
   public class TableTests {
-    RESTCatalog nsCatalog ;
+    RESTCatalog nsCatalog;
 
     @BeforeEach
     public void setup() {
       nsCatalog = loadCatalog(Maps.newHashMap());
-      nsCatalog.createNamespace(ns);
+      serverCatalog.createDatabase(database);
     }
 
     @AfterEach
-    public void clean()  {
-      nsCatalog.dropNamespace(ns);
+    public void clean() {
+      if (serverCatalog.exist(database, table)) {
+        serverCatalog.dropTable(database, table);
+      }
+      serverCatalog.dropDatabase(database);
     }
 
     @Test
@@ -138,18 +146,23 @@ public class IcebergRestControllerTest {
       try (RESTCatalog nsCatalog = loadCatalog(Maps.newHashMap())) {
         Assertions.assertTrue(nsCatalog.listTables(ns).isEmpty());
 
+        LOG.info("Assert create iceberg table");
         nsCatalog.createTable(identifier, schema);
         Assertions.assertEquals(1, nsCatalog.listTables(ns).size());
         Assertions.assertEquals(identifier, nsCatalog.listTables(ns).get(0));
 
+        LOG.info("Assert load iceberg table");
+        Table tbl = nsCatalog.loadTable(identifier);
+        Assertions.assertNotNull(tbl);
+        Assertions.assertEquals(schema.asStruct(), tbl.schema().asStruct());
+
+        LOG.info("Assert table exists");
+        Assertions.assertTrue(nsCatalog.tableExists(identifier));
         nsCatalog.dropTable(identifier);
       }
     }
 
   }
-
-
-
 
 
   private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
