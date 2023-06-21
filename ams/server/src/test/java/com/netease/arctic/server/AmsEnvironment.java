@@ -232,7 +232,7 @@ public class AmsEnvironment {
                 DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "serviceConfig").build();
             serviceConfig = field.bind(arcticService).get();
             serviceConfig.set(ArcticManagementConf.THRIFT_BIND_PORT, thriftBindPort);
-            serviceConfig.set(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL, 1000L);
+            serviceConfig.set(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
             // when AMS is successfully running, this thread will wait here
             arcticService.startService();
             break;
