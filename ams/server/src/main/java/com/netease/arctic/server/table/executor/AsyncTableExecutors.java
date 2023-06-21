@@ -20,19 +20,25 @@ public class AsyncTableExecutors {
   }
 
   public void setup(TableManager tableManager, Configurations conf) {
-    this.snapshotsExpiringExecutor = new SnapshotsExpiringExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.EXPIRE_THREAD_POOL_SIZE));
-    this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.ORPHAN_CLEAN_THREAD_POOL_SIZE));
+    if (conf.getBoolean(ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
+      this.snapshotsExpiringExecutor = new SnapshotsExpiringExecutor(tableManager,
+          conf.getInteger(ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
+    }
+    if (conf.getBoolean(ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
+      this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableManager,
+          conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+    }
     this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_POOL_SIZE));
+        conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
     this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableManager);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
-    this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE));
+    if (conf.getBoolean(ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
+      this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableManager,
+          conf.getInteger(ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
+    }
     this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.SNAPSHOTS_REFRESHING_THREAD_POOL_SIZE),
-        conf.getLong(ArcticManagementConf.SNAPSHOTS_REFRESHING_INTERVAL));
+        conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
+        conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
   }
 
   public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
