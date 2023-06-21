@@ -165,9 +165,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public boolean isNecessary() {
     if (necessary == null) {
       necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} necessary = {}, {}", name(), necessary, this);
-      }
+      LOG.debug("{} necessary = {}, {}", name(), necessary, this);
     }
     return necessary;
   }

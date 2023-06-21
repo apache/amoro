@@ -909,11 +909,9 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                 // soon as possible
 
                 while (running) {
-                  if (LOG.isDebugEnabled()) {
-                    LOG.debug(
-                        "Consumer subtask {} is trying to discover new partitions ...",
-                        getRuntimeContext().getIndexOfThisSubtask());
-                  }
+                  LOG.debug(
+                      "Consumer subtask {} is trying to discover new partitions ...",
+                      getRuntimeContext().getIndexOfThisSubtask());
 
                   final List<KafkaTopicPartition> discoveredPartitions;
                   try {
@@ -1115,13 +1113,10 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
     }
 
     if (offsetCommitMode == OffsetCommitMode.ON_CHECKPOINTS) {
-      // only one commit operation must be in progress
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            "Consumer subtask {} committing offsets to Kafka/ZooKeeper for checkpoint {}.",
-            getRuntimeContext().getIndexOfThisSubtask(),
-            checkpointId);
-      }
+      LOG.debug(
+          "Consumer subtask {} committing offsets to Kafka/ZooKeeper for checkpoint {}.",
+          getRuntimeContext().getIndexOfThisSubtask(),
+          checkpointId);
 
       try {
         final int posInMap = pendingOffsetsToCommit.indexOf(checkpointId);

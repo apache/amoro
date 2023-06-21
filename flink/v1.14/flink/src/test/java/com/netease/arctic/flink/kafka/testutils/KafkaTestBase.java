@@ -112,7 +112,7 @@ public class KafkaTestBase {
       throws Exception {
     kafkaServer = new KafkaTestEnvironmentImpl();
 
-    LOG.info("Starting KafkaTestBase.prepare() for Kafka " + kafkaServer.getVersion());
+    LOG.info("Starting KafkaTestBase.prepare() for Kafka {}", kafkaServer.getVersion());
 
     kafkaServer.prepare(environmentConfig);
 
