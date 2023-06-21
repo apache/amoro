@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CommonPartitionEvaluator implements PartitionEvaluator {
-  private static final Logger LOG = LoggerFactory.getLogger(CommonPartitionEvaluator.class);
+public class IcebergPartitionEvaluator implements PartitionEvaluator {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergPartitionEvaluator.class);
 
   private final Set<String> deleteFileSet = Sets.newHashSet();
   protected final TableRuntime tableRuntime;
@@ -67,7 +67,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+  public IcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();

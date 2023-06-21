@@ -38,17 +38,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
+public class MixedIcebergPartitionPlan
+    extends AbstractPartitionPlan<MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator> {
 
   public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
                                    ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
+    this.evaluator = new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
   }
 
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
-    if (evaluator().isChangeFile(dataFile)) {
+    if (evaluator.isChangeFile(dataFile)) {
       markSequence(dataFile.getSequenceNumber());
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
@@ -59,16 +61,11 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected MixedIcebergPartitionEvaluator evaluator() {
-    return ((MixedIcebergPartitionEvaluator) super.evaluator());
-  }
-
-  @Override
-  protected boolean taskNeedExecute(SplitTask task) {
+  protected boolean taskNeedExecute(IcebergSplitTask task) {
     if (super.taskNeedExecute(task)) {
       return true;
     } else {
-      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
+      return task.getRewriteDataFiles().stream().anyMatch(evaluator::isChangeFile);
     }
   }
 
@@ -78,9 +75,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
     return properties;
   }
-  
+
   protected boolean isKeyedTable() {
-    return tableObject.isKeyedTable();
+    return arcticTable.isKeyedTable();
   }
 
   @Override
@@ -92,12 +89,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  @Override
-  protected CommonPartitionEvaluator buildEvaluator() {
-    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
-  }
 
-  protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
+  protected static class MixedIcebergPartitionEvaluator extends IcebergPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
     // partition property
@@ -229,9 +222,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
    * split task with bin-packing
    */
   private class BinPackingTaskSplitter implements TaskSplitter {
-
     @Override
-    public List<SplitTask> splitTasks(int targetTaskCount) {
+    public List<IcebergSplitTask> splitTasks(int targetTaskCount) {
       // bin-packing
       List<FileTask> allDataFiles = Lists.newArrayList();
       segmentFiles.forEach((dataFile, deleteFiles) ->
@@ -246,15 +238,15 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect
-      List<SplitTask> results = Lists.newArrayList();
+      List<IcebergSplitTask> results = Lists.newArrayList();
       for (List<FileTask> fileTasks : packed) {
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = com.google.common.collect.Maps.newHashMap();
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = com.google.common.collect.Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
         fileTasks.stream().filter(FileTask::isFragment)
             .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
         fileTasks.stream().filter(FileTask::isSegment)
             .forEach(f -> segmentFiles.put(f.getFile(), f.getDeleteFiles()));
-        results.add(new SplitTask(fragmentFiles, segmentFiles));
+        results.add(createIcebergSplitTask(fragmentFiles, segmentFiles));
       }
       return results;
     }
@@ -295,9 +287,10 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
    * split task with {@link DataTreeNode}
    */
   private class TreeNodeTaskSplitter implements TaskSplitter {
+
     @Override
-    public List<SplitTask> splitTasks(int targetTaskCount) {
-      List<SplitTask> result = Lists.newArrayList();
+    public List<IcebergSplitTask> splitTasks(int targetTaskCount) {
+      List<IcebergSplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
       segmentFiles.forEach(rootTree::addSegmentFile);
       fragmentFiles.forEach(rootTree::addFragmentFile);
@@ -309,7 +302,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
         subTree.collectFragmentFiles(fragmentFiles);
         subTree.collectSegmentFiles(segmentFiles);
-        result.add(new SplitTask(fragmentFiles, segmentFiles));
+        result.add(createIcebergSplitTask(fragmentFiles, segmentFiles));
       }
       return result;
     }

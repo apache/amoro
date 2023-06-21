@@ -120,7 +120,7 @@ public class OptimizingEvaluator {
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
     if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      return new CommonPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
+      return new IcebergPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
     } else {
       if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
         String hiveLocation = (((SupportHive) arcticTable).hiveLocation());

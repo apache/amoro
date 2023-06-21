@@ -25,16 +25,17 @@ import com.netease.arctic.table.ArcticTable;
 
 import java.util.Collections;
 
-public class IcebergPartitionPlan extends AbstractPartitionPlan {
+public class IcebergPartitionPlan extends AbstractPartitionPlan<IcebergPartitionEvaluator> {
 
   protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
+    this.evaluator = new IcebergPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override
   protected TaskSplitter buildTaskSplitter() {
     // TODO not split tasks in a partition now
-    return targetTaskCount -> Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
+    return targetTaskCount -> Collections.singletonList(createIcebergSplitTask(fragmentFiles, segmentFiles));
   }
 
   @Override
