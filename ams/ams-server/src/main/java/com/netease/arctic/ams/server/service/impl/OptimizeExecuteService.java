@@ -29,6 +29,8 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.optimizer.Optimizer;
 import com.netease.arctic.optimizer.factory.OptimizerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,7 @@ import static com.netease.arctic.ams.api.properties.OptimizerProperties.CONTAINE
 import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZER_GROUP_INFO;
 import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZER_JOB_INFO;
 
-public class OptimizeExecuteService {
+public class OptimizeExecuteService implements Closeable {
 
   public void startOptimizer(Long jobId) throws Exception {
 
@@ -105,6 +107,11 @@ public class OptimizeExecuteService {
       }
     }
     throw new NoSuchObjectException("no such OptimizerFactory impl named " + type);
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public static class OptimizerMonitor {

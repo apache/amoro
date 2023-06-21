@@ -21,9 +21,10 @@ package com.netease.arctic.ams.server.service;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.table.TableIdentifier;
 
+import java.io.Closeable;
 import java.util.List;
 
-public interface ITableTaskHistoryService {
+public interface ITableTaskHistoryService extends Closeable {
   List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String taskPlanGroup);
 
   void insertTaskHistory(TableTaskHistory taskHistory);

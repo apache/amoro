@@ -61,6 +61,8 @@ import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -71,7 +73,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class FileInfoCacheService extends IJDBCService {
+public class FileInfoCacheService extends IJDBCService implements Closeable {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileInfoCacheService.class);
 
@@ -555,6 +557,11 @@ public class FileInfoCacheService extends IJDBCService {
           .append(partitionFieldDataList.get(i).getValue());
     }
     return sb.toString();
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 
   public static class SyncAndExpireFileCacheTask {

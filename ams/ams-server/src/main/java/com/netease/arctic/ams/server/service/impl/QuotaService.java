@@ -28,6 +28,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -78,5 +79,10 @@ public class QuotaService implements IQuotaService {
     }
 
     return totalCostTime;
+  }
+
+  @Override
+  public void close() throws IOException {
+    
   }
 }

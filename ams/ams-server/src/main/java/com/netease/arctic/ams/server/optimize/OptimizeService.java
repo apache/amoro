@@ -55,6 +55,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -500,5 +501,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       return tableOptimizeRuntimeMapper.selectTableOptimizeRuntimes();
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    checkTasks = null;
   }
 }

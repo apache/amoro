@@ -41,8 +41,15 @@ import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
 import com.netease.arctic.ams.server.service.impl.TrashCleanService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.IOException;
 
 public class ServiceContainer {
+  private static final Logger LOG = LoggerFactory.getLogger(ServiceContainer.class);
+
   private static volatile IOptimizeService optimizeService;
   
   private static volatile ITableExpireService tableExpireService;
@@ -347,5 +354,84 @@ public class ServiceContainer {
       }
     }
     return containerMetaService;
+  }
+
+  private static void close(Closeable closeable) {
+    if (closeable == null) {
+      return;
+    }
+    try {
+      closeable.close();
+    } catch (IOException e) {
+      LOG.warn("failed to close {}, ignore", closeable);
+    }
+  }
+
+  public static void clear() {
+    close(optimizeService);
+    optimizeService = null;
+
+    close(tableExpireService);
+    tableExpireService = null;
+
+    close(orphanFilesCleanService);
+    orphanFilesCleanService = null;
+
+    close(orphanFilesCleanService);
+    orphanFilesCleanService = null;
+
+    close(trashCleanService);
+    trashCleanService = null;
+
+    close(optimizeQueueService);
+    optimizeQueueService = null;
+
+    close(metaService);
+    metaService = null;
+
+    close(quotaService);
+    quotaService = null;
+
+    close(optimizeExecuteService);
+    optimizeExecuteService = null;
+
+    close(optimizeManagerHandler);
+    optimizeManagerHandler = null;
+
+    close(optimizerService);
+    optimizerService = null;
+
+    close(containerMetaService);
+    containerMetaService = null;
+
+    close(catalogMetadataService);
+    catalogMetadataService = null;
+
+    close(fileInfoCacheService);
+    fileInfoCacheService = null;
+
+    close(tableTaskHistoryService);
+    tableTaskHistoryService = null;
+
+    close(arcticTransactionService);
+    arcticTransactionService = null;
+
+    close(tableInfoService);
+    tableInfoService = null;
+
+    close(tableMetastoreHandler);
+    tableMetastoreHandler = null;
+
+    close(ddlTracerService);
+    ddlTracerService = null;
+
+    close(runtimeDataExpireService);
+    runtimeDataExpireService = null;
+
+    close(adaptHiveService);
+    adaptHiveService = null;
+
+    close(supportHiveSyncService);
+    supportHiveSyncService = null;
   }
 }

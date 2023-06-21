@@ -18,10 +18,12 @@
 
 package com.netease.arctic.ams.server.service;
 
+import java.io.Closeable;
+
 /**
  * Service for cleaning orphan files periodically.
  */
-public interface IOrphanFilesCleanService {
+public interface IOrphanFilesCleanService extends Closeable {
   /**
    * Check orphan files clean tasks, add tasks of new tables, and clean tasks of removed table.
    */

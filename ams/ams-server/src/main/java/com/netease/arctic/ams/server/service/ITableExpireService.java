@@ -18,10 +18,12 @@
 
 package com.netease.arctic.ams.server.service;
 
+import java.io.Closeable;
+
 /**
  * Service for expiring tables periodically.
  */
-public interface ITableExpireService {
+public interface ITableExpireService extends Closeable {
   /**
    * Check table expire tasks, add tasks of new tables, and clean tasks of removed table.
    */
