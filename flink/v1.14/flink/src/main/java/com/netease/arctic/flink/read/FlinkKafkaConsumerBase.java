@@ -909,9 +909,11 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                 // soon as possible
 
                 while (running) {
-                  LOG.debug(
-                      "Consumer subtask {} is trying to discover new partitions ...",
-                      getRuntimeContext().getIndexOfThisSubtask());
+                  if (LOG.isDebugEnabled()) {
+                    LOG.debug(
+                        "Consumer subtask {} is trying to discover new partitions ...",
+                        getRuntimeContext().getIndexOfThisSubtask());
+                  }
 
                   final List<KafkaTopicPartition> discoveredPartitions;
                   try {
