@@ -116,6 +116,11 @@
             <classifier>nohive</classifier>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
         <!-- test dependencies -->
 
         <dependency>

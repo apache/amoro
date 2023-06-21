@@ -99,6 +99,7 @@
         <junit5.vintage.version>5.9.1</junit5.vintage.version>
         <junit5.platform.version>1.9.1</junit5.platform.version>
         <commons-pool2.version>2.10.0</commons-pool2.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
         <cglib.version>2.2.2</cglib.version>
         <mockito.version>3.12.4</mockito.version>
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
@@ -134,6 +135,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
                 <version>${commons-pool2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
 
             <dependency>
