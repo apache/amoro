@@ -1,21 +1,24 @@
 package com.netease.arctic.server.dashboard.controller;
 
+import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.catalog.InternalCatalog;
-import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.table.TableService;
 import org.apache.iceberg.CatalogUtil;
-import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
-import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +38,12 @@ public class IcebergRestControllerTest {
 
   private final String database = "test_ns";
   private final String table = "test_iceberg_tbl";
+
+  private final Namespace ns = Namespace.of(database);
+  private final TableIdentifier identifier = TableIdentifier.of(ns, table);
+
+  private final Schema schema = BasicTableTestHelper.TABLE_SCHEMA;
+  private final PartitionSpec spec = BasicTableTestHelper.SPEC;
 
   @BeforeAll
   public static void beforeAll() throws Exception {
@@ -57,43 +66,86 @@ public class IcebergRestControllerTest {
     serverCatalog = (InternalCatalog) service.getServerCatalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
   }
 
-  @Test
-  public void testCatalogProperties() {
-    CatalogMeta meta = serverCatalog.getMetadata();
-    CatalogMeta oldMeta = meta.deepCopy();
-    meta.putToCatalogProperties("cache-enabled", "false");
-    meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
-    serverCatalog.updateMetadata(meta);
-    String warehouseInAMS = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
-    Map<String, String> clientSideConfiguration = Maps.newHashMap();
-    clientSideConfiguration.put("warehouse", "/tmp");
-    clientSideConfiguration.put("cache-enabled", "true");
+  @Nested
+  public class CatalogPropertiesTest {
+    @Test
+    public void testCatalogProperties() {
+      CatalogMeta meta = serverCatalog.getMetadata();
+      CatalogMeta oldMeta = meta.deepCopy();
+      meta.putToCatalogProperties("cache-enabled", "false");
+      meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
+      serverCatalog.updateMetadata(meta);
+      String warehouseInAMS = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
-    try (RESTCatalog catalog = loadCatalog(clientSideConfiguration)) {
-      Map<String, String> finallyConfigs = catalog.properties();
-      // overwrites properties using value from ams
-      Assertions.assertEquals(warehouseInAMS, finallyConfigs.get("warehouse"));
-      // default properties using value from client then properties.
-      Assertions.assertEquals("true", finallyConfigs.get("cache-enabled"));
-      Assertions.assertEquals("10000", finallyConfigs.get("cache.expiration-interval-ms"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } finally {
-      serverCatalog.updateMetadata(oldMeta);
+      Map<String, String> clientSideConfiguration = Maps.newHashMap();
+      clientSideConfiguration.put("warehouse", "/tmp");
+      clientSideConfiguration.put("cache-enabled", "true");
+
+      try (RESTCatalog catalog = loadCatalog(clientSideConfiguration)) {
+        Map<String, String> finallyConfigs = catalog.properties();
+        // overwrites properties using value from ams
+        Assertions.assertEquals(warehouseInAMS, finallyConfigs.get("warehouse"));
+        // default properties using value from client then properties.
+        Assertions.assertEquals("true", finallyConfigs.get("cache-enabled"));
+        Assertions.assertEquals("10000", finallyConfigs.get("cache.expiration-interval-ms"));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      } finally {
+        serverCatalog.updateMetadata(oldMeta);
+      }
     }
   }
 
 
-  @Test
-  public void testNamespaceOperations() throws IOException {
-    try (RESTCatalog nsCatalog = loadCatalog(Maps.newHashMap())) {
+  @Nested
+  public class NamespaceTests {
+    RESTCatalog nsCatalog ;
+
+    @BeforeEach
+    public void setup() {
+      nsCatalog = loadCatalog(Maps.newHashMap());
+    }
+
+    @Test
+    public void testNamespaceOperations() throws IOException {
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
       nsCatalog.createNamespace(Namespace.of(database));
       Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
       nsCatalog.dropNamespace(Namespace.of(database));
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
     }
+  }
+
+
+  @Nested
+  public class TableTests {
+    RESTCatalog nsCatalog ;
+
+    @BeforeEach
+    public void setup() {
+      nsCatalog = loadCatalog(Maps.newHashMap());
+      nsCatalog.createNamespace(ns);
+    }
+
+    @AfterEach
+    public void clean()  {
+      nsCatalog.dropNamespace(ns);
+    }
+
+    @Test
+    public void testCreateTableAndListing() throws IOException {
+      try (RESTCatalog nsCatalog = loadCatalog(Maps.newHashMap())) {
+        Assertions.assertTrue(nsCatalog.listTables(ns).isEmpty());
+
+        nsCatalog.createTable(identifier, schema);
+        Assertions.assertEquals(1, nsCatalog.listTables(ns).size());
+        Assertions.assertEquals(identifier, nsCatalog.listTables(ns).get(0));
+
+        nsCatalog.dropTable(identifier);
+      }
+    }
+
   }
 
 
@@ -107,4 +159,5 @@ public class IcebergRestControllerTest {
         clientProperties, null
     );
   }
+
 }
