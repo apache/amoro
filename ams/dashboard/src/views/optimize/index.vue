@@ -140,8 +140,6 @@ export default defineComponent({
   height: 100%;
 }
 .optimize-wrap {
-  border: 1px solid #e5e5e5;
-  padding: 12px 0;
   height: 100%;
   overflow-y: auto;
   .optimize-group {

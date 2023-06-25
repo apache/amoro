@@ -25,7 +25,7 @@ const Tables = () => import('@/views/tables/index.vue')
 const HiveTables = () => import('@/views/hive-details/index.vue')
 const UpgradeTable = () => import('@/views/hive-details/upgrade.vue')
 const CreateTable = () => import('@/views/tables/create.vue')
-const Optimizing = () => import('@/views/optimize/index.vue')
+// const Optimizing = () => import('@/views/optimize/index.vue')
 const Settings = () => import('@/views/settings/index.vue')
 const Terminal = () => import('@/views/terminal/index.vue')
 const Login = () => import('@/views/login/index.vue')
@@ -71,7 +71,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'optimizing',
         name: 'Optimizing',
-        component: Optimizing
+        component: Resource
       },
       {
         path: 'settings',
@@ -86,12 +86,12 @@ const routes: Array<RouteRecordRaw> = [
         path: 'introduce',
         name: 'Introduce',
         component: Introduce
-      },
-      {
-        path: 'resource',
-        name: 'Resource',
-        component: Resource
       }
+      // {
+      //   path: 'resource',
+      //   name: 'Resource',
+      //   component: Resource
+      // }
     ]
   },
   {

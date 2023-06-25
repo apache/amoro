@@ -24,14 +24,14 @@
           </span>
         </template>
         <template v-if="column.dataIndex === 'operationGroup'">
+          <span class="primary-link g-mr-12" :class="{'disabled': record.container === 'external'}" @click="scaleOutGroup(record)">
+            {{ t('scaleOut') }}
+          </span>
           <span class="primary-link g-mr-12" @click="editGroup(record)">
             {{ t('edit') }}
           </span>
-          <span class="primary-link g-mr-12" @click="removeGroup(record)">
+          <span class="primary-link" @click="removeGroup(record)">
             {{ t('remove') }}
-          </span>
-          <span class="primary-link" :class="{'disabled': record.container === 'external'}" @click="scaleOutGroup(record)">
-            {{ t('scaleOut') }}
           </span>
         </template>
       </template>

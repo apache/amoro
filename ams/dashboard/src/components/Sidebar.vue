@@ -96,12 +96,12 @@ export default defineComponent({
           key: 'settings',
           title: t('settings'),
           icon: 'settings'
-        },
-        {
-          key: 'resource',
-          title: t('resource'),
-          icon: 'settings'
         }
+        // {
+        //   key: 'resource',
+        //   title: t('resource'),
+        //   icon: 'settings'
+        // }
       ]
       return hasToken.value ? menu : allMenu
     })

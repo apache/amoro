@@ -8,6 +8,20 @@
           @change="onChangeTab"
         >
           <a-tab-pane
+            key="tables"
+            :tab="t('tables')"
+            :class="[activeTab === 'tables' ? 'active' : '']"
+          >
+            <TableList curGroupName="all" type="tables" />
+          </a-tab-pane>
+          <a-tab-pane
+            key="optimizers"
+            :tab="t('optimizers')"
+            :class="[activeTab === 'optimizers' ? 'active' : '']"
+          >
+            <List type="optimizers" />
+          </a-tab-pane>
+          <a-tab-pane
             key="optimizergroup"
             :tab="t('optimizergroup')"
             :class="[activeTab === 'optimizergroup' ? 'active' : '']"
@@ -21,13 +35,6 @@
               @editGroup="editGroup"
             />
           </a-tab-pane>
-          <a-tab-pane
-            key="optimizers"
-            :tab="t('optimizers')"
-            :class="[activeTab === 'optimizers' ? 'active' : '']"
-          >
-            <List type="optimizers" />
-          </a-tab-pane>
         </a-tabs>
       </div>
     </div>
@@ -36,7 +43,10 @@
       :editRecord="groupEditRecord"
       v-if="showGroupModal"
       @cancel="showGroupModal = false"
-      @refresh="groupKeyCount++; showGroupModal = false"
+      @refresh="
+        groupKeyCount++;
+        showGroupModal = false;
+      "
     ></GroupModal>
   </div>
 </template>
@@ -56,13 +66,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import List from './components/List.vue'
+import TableList from '../optimize/components/List.vue'
 import GroupModal from '@/views/resource/components/GroupModal.vue'
 
 export default defineComponent({
   name: 'Resource',
   components: {
     List,
-    GroupModal
+    GroupModal,
+    TableList
   },
   setup() {
     const { t } = useI18n()
@@ -86,14 +98,14 @@ export default defineComponent({
     watch(
       () => route.query,
       (value) => {
-        state.activeTab = (value.tab as string) || 'optimizergroup'
+        state.activeTab = (value.tab as string) || 'tables'
       },
       {
         immediate: true
       }
     )
 
-    const editGroup = (editRecord: IIOptimizeGroupItem|null) => {
+    const editGroup = (editRecord: IIOptimizeGroupItem | null) => {
       if (editRecord) {
         state.groupEdit = true
         state.groupEditRecord = { ...editRecord }
@@ -132,8 +144,6 @@ export default defineComponent({
   height: 100%;
 }
 .resource-wrap {
-  border: 1px solid #e5e5e5;
-  padding: 12px 0;
   height: 100%;
   overflow-y: auto;
   .status-icon {
@@ -150,10 +160,10 @@ export default defineComponent({
     border: 1px solid #e5e5e5;
   }
   :deep(.ant-tabs-content-holder) {
-    padding: 0 24px;
+    // padding: 0 24px;
   }
   :deep(.ant-tabs-nav) {
-    padding: 0 12px;
+    // padding: 0 12px;
   }
   .table-name {
     color: @primary-color;
