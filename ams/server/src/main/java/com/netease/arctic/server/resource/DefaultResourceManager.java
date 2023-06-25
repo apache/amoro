@@ -1,18 +1,24 @@
 package com.netease.arctic.server.resource;
 
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceManager;
-import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
+import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.table.TableProperties;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DefaultResourceManager extends PersistentBase implements ResourceManager {
+public class DefaultResourceManager extends StatedPersistentBase implements ResourceManager {
 
-  public DefaultResourceManager(List<ResourceGroup> groups) {
+  private final TableService tableService;
+  public DefaultResourceManager(List<ResourceGroup> groups, TableService tableService) {
+    this.tableService = tableService;
     Set<String> oldGroups = listResourceGroups()
         .stream()
         .map(ResourceGroup::getName)
@@ -33,7 +39,32 @@ public class DefaultResourceManager extends PersistentBase implements ResourceMa
 
   @Override
   public void deleteResourceGroup(String groupName) {
-    doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+    if (canDeleteResourceGroup(groupName)) {
+      doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+    } else {
+      throw new RuntimeException("Cannot delete resource group: " + groupName + " because it is in use.");
+    }
+  }
+
+  @Override
+  public boolean canDeleteResourceGroup(String name) {
+    for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
+      if (catalogMeta.getCatalogProperties() != null &&
+          catalogMeta.getCatalogProperties()
+              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        return false;
+      }
+    }
+    for (TableMetadata tableMeta : tableService.listTableMetas()) {
+      if (tableMeta.getProperties() != null &&
+          tableMeta.getProperties()
+              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

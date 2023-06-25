@@ -29,6 +29,7 @@ import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
 import com.netease.arctic.server.resource.DefaultResourceManager;
@@ -70,6 +71,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
+  @StatedPersistentBase.StateField
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final TableManager tableManager;
@@ -79,7 +81,7 @@ public class DefaultOptimizingService extends DefaultResourceManager
   public DefaultOptimizingService(
       Configurations serviceConfig, DefaultTableService tableService,
       List<ResourceGroup> resourceGroups) {
-    super(resourceGroups);
+    super(resourceGroups, tableService);
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.tableManager = tableService;
@@ -211,21 +213,38 @@ public class DefaultOptimizingService extends DefaultResourceManager
 
   @Override
   public void createResourceGroup(ResourceGroup resourceGroup) {
-    super.createResourceGroup(resourceGroup);
-    String groupName = resourceGroup.getName();
-    OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager,
-        resourceGroup,
-        new ArrayList<>(),
-        new ArrayList<>(),
-        optimizerTouchTimeout,
-        taskAckTimeout);
-    optimizingQueueByGroup.put(groupName, optimizingQueue);
+    invokeConsisitency(() ->
+        doAsTransaction(() -> {
+          super.createResourceGroup(resourceGroup);
+          String groupName = resourceGroup.getName();
+          OptimizingQueue optimizingQueue = new OptimizingQueue(
+              tableManager,
+              resourceGroup,
+              new ArrayList<>(),
+              new ArrayList<>(),
+              optimizerTouchTimeout,
+              taskAckTimeout);
+          optimizingQueueByGroup.put(groupName, optimizingQueue);
+        })
+    );
   }
 
   @Override
   public void deleteResourceGroup(String groupName) {
-    optimizingQueueByGroup.remove(groupName);
-    super.deleteResourceGroup(groupName);
+    invokeConsisitency(() -> {
+      optimizingQueueByGroup.remove(groupName);
+      super.deleteResourceGroup(groupName);
+    });
+  }
+
+  @Override
+  public boolean canDeleteResourceGroup(String name) {
+    for (OptimizerInstance optimizer : listOptimizers()) {
+      if (optimizer.getGroupName().equals(name)) {
+        return false;
+      }
+    }
+    return super.canDeleteResourceGroup(name);
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {

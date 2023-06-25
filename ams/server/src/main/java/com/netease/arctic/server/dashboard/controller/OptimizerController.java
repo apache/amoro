@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
@@ -35,10 +34,8 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 
 import java.util.ArrayList;
@@ -46,6 +43,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
 
 /**
  * optimize controller.
@@ -240,6 +238,9 @@ public class OptimizerController {
     String name = (String) map.get("name");
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
+    if (optimizerManager.getResourceGroup(name)!= null) {
+      throw new BadRequestException("optimize group already exists named: " + name);
+    }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.createResourceGroup(builder.build());
@@ -279,33 +280,7 @@ public class OptimizerController {
   public void deleteCheckResourceGroup(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
-    for (OptimizerInstance optimizer : optimizerManager.listOptimizers()) {
-      if (optimizer.getGroupName().equals(name)) {
-        ctx.json(OkResponse.of(
-            "Cannot delete. Some optimizers belonging to this optimizer group is currently running.",
-            false));
-        return;
-      }
-    }
-    for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
-      if (catalogMeta.getCatalogProperties() != null &&
-          catalogMeta.getCatalogProperties()
-              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
-              .equals(name)) {
-        ctx.json(OkResponse.of("Cannot delete. Some catalogs are referencing this group.", false));
-        return;
-      }
-    }
-    for (TableMetadata tableMeta : tableService.listTableMetas()) {
-      if (tableMeta.getProperties() != null &&
-          tableMeta.getProperties()
-              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
-              .equals(name)) {
-        ctx.json(OkResponse.of("Cannot delete. Some tables are referencing this group.", false));
-        return;
-      }
-    }
-    ctx.json(OkResponse.of(true));
+    ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
   }
 
   /**
