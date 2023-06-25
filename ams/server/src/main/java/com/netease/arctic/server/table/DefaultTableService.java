@@ -173,15 +173,21 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables() {
+  public List<ServerTableIdentifier> listRunningTables() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers);
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables(String catalogName, String dbName) {
+  public List<ServerTableIdentifier> listRunningTables(String catalogName) {
     checkStarted();
-    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByDb(catalogName, dbName));
+    return getAs(TableMetaMapper.class, e -> e.selectTableIdentifiersByCatalog(catalogName));
+  }
+
+  @Override
+  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+    checkStarted();
+    return getServerCatalog(catalogName).listTables(dbName);
   }
 
   @Override

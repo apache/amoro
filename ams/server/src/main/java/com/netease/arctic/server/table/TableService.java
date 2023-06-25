@@ -66,16 +66,23 @@ public interface TableService extends CatalogService, TableManager {
   /**
    * load table identifiers
    *
-   * @return TableIdentifier list
+   * @return ServerTableIdentifier list
    */
-  List<ServerTableIdentifier> listTables();
+  List<ServerTableIdentifier> listRunningTables();
 
   /**
    * load table identifiers
    *
    * @return TableIdentifier list
    */
-  List<ServerTableIdentifier> listTables(String catalogName, String dbName);
+  List<ServerTableIdentifier> listRunningTables(String catalogName);
+
+  /**
+   * load table identifiers
+   *
+   * @return TableIdentifier list
+   */
+  List<TableIdentifier> listTables(String catalogName, String dbName);
 
   /**
    * create arctic database

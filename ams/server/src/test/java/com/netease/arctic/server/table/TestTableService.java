@@ -72,10 +72,10 @@ public class TestTableService extends AMSTableTestBase {
         tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<ServerTableIdentifier> tableIdentifierList = tableService().listTables(TEST_CATALOG_NAME,
+    List<TableIdentifier> tableIdentifierList = tableService().listTables(TEST_CATALOG_NAME,
         TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
-    Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0).getIdentifier());
+    Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
 
     // test list table metadata
     List<TableMetadata> tableMetadataList = tableService().listTableMetas();
@@ -115,7 +115,7 @@ public class TestTableService extends AMSTableTestBase {
 
     // test drop table
     dropTable();
-    Assert.assertEquals(0, tableService().listTables().size());
+    Assert.assertEquals(0, tableService().listRunningTables().size());
     Assert.assertEquals(0, tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME).size());
     Assert.assertEquals(0, tableService().listTableMetas().size());
     Assert.assertEquals(0, tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME).size());
