@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class DefaultResourceManager extends StatedPersistentBase implements ResourceManager {
 
   private final TableService tableService;
+
   public DefaultResourceManager(List<ResourceGroup> groups, TableService tableService) {
     this.tableService = tableService;
     Set<String> oldGroups = listResourceGroups()

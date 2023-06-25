@@ -37,13 +37,13 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
+import javax.ws.rs.BadRequestException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.ws.rs.BadRequestException;
 
 /**
  * optimize controller.
@@ -238,7 +238,7 @@ public class OptimizerController {
     String name = (String) map.get("name");
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
-    if (optimizerManager.getResourceGroup(name)!= null) {
+    if (optimizerManager.getResourceGroup(name) != null) {
       throw new BadRequestException("optimize group already exists named: " + name);
     }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
