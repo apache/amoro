@@ -24,6 +24,7 @@ import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.trino.ArcticSessionProperties;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.util.MetricUtil;
 import com.netease.arctic.trino.util.ObjectSerializerUtil;
@@ -90,6 +91,10 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
     KeyedTableScan tableScan = arcticTable.newScan()
         .filter(toIcebergExpression(
             icebergTableHandle.getEnforcedPredicate().intersect(icebergTableHandle.getUnenforcedPredicate())));
+
+    if (ArcticSessionProperties.enableSplitTaskByDeleteRatio(session)) {
+      tableScan.enableSplitTaskByDeleteRatio(ArcticSessionProperties.splitTaskByDeleteRatio(session));
+    }
 
     ClassLoader pluginClassloader = arcticTable.getClass().getClassLoader();
 
