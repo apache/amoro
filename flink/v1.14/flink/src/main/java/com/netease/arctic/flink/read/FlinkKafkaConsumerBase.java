@@ -1115,10 +1115,13 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
     }
 
     if (offsetCommitMode == OffsetCommitMode.ON_CHECKPOINTS) {
-      LOG.debug(
-          "Consumer subtask {} committing offsets to Kafka/ZooKeeper for checkpoint {}.",
-          getRuntimeContext().getIndexOfThisSubtask(),
-          checkpointId);
+      // only one commit operation must be in progress
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(
+            "Consumer subtask {} committing offsets to Kafka/ZooKeeper for checkpoint {}.",
+            getRuntimeContext().getIndexOfThisSubtask(),
+            checkpointId);
+      }
 
       try {
         final int posInMap = pendingOffsetsToCommit.indexOf(checkpointId);
