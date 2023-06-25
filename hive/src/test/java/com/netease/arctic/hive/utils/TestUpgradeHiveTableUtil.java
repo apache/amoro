@@ -39,6 +39,7 @@ import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -72,7 +73,6 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
   private String db = "testUpgradeHiveDb";
   private String table = "testUpgradeHiveTable";
   private boolean isPartitioned;
-  private Schema partitionSchema;
   private String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
   private String[] partitionValues = {"Bob", "2020-01-01"};
 
@@ -81,7 +81,6 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     super(catalogTestHelper);
     folder.create();
     this.isPartitioned = isPartitioned;
-    this.partitionSchema = HiveTableTestHelper.HIVE_TABLE_SCHEMA.select(partitionNames);
   }
 
   @Before
@@ -123,17 +122,19 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
         (UnkeyedHiveTable) table.asUnkeyedTable();
     if (table.spec().isPartitioned()) {
       List<Partition> partitions =
-          HivePartitionUtil.getHiveAllPartitions(((ArcticHiveCatalog)getCatalog()).getHMSClient(), table.id());
+          HivePartitionUtil.getHiveAllPartitions(((ArcticHiveCatalog) getCatalog()).getHMSClient(), table.id());
       for (Partition partition : partitions) {
-        Map<String, String> partitionProperties = baseTable.partitionProperty().get(DataFiles.data(table.spec(),
-            String.join("/", partition.getValues())));
+        StructLike partitionData = DataFiles.data(table.spec(), String.join("/", partition.getValues()));
+        Map<String, String> partitionProperties = baseTable.partitionProperty().get(partitionData);
         Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
         Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+        Assert.assertFalse(HiveMetaSynchronizer.partitionHasModified(baseTable, partition, partitionData));
       }
     } else {
       Map<String, String> partitionProperties = baseTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
       Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
       Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+      Assert.assertFalse(HiveMetaSynchronizer.tableHasModified(baseTable, hiveTable));
     }
   }
 
@@ -158,7 +159,6 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
         HivePartitionUtil.newPartition(hiveTable, partitions,
             hiveTable.getSd().getLocation() + "/" + String.join("/", partitions), new ArrayList<>(),
             (int) (System.currentTimeMillis() / 1000));
-    newPartition.getValues();
     TEST_HMS.getHiveClient().add_partition(newPartition);
   }
 
