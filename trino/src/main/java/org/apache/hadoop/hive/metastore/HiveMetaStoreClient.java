@@ -344,7 +344,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
       String newVar = conf.get(oneVar.varname, "");
       if (oldVar == null ||
           (oneVar.isCaseSensitive() ? !oldVar.equals(newVar) : !oldVar.equalsIgnoreCase(newVar))) {
-        LOG.info("Mestastore configuration {} changed from {} to {}", oneVar.varname, oldVar, newVar);
+        LOG.info("Mestastore configuration " + oneVar.varname +
+            " changed from " + oldVar + " to " + newVar);
         compatible = false;
       }
     }
@@ -427,7 +428,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
     for (int attempt = 0; !isConnected && attempt < retries; ++attempt) {
       for (URI store : metastoreUris) {
-        LOG.info("Trying to connect to metastore with URI {}", store);
+        LOG.info("Trying to connect to metastore with URI " + store);
         try {
           transport = new TSocket(store.getHost(), store.getPort(), clientSocketTimeout);
           if (useSasl) {
@@ -472,7 +473,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
           client = new ThriftHiveMetastore.Client(protocol);
           try {
             transport.open();
-            LOG.info("Opened a connection to metastore, current connections: {}", connCount.incrementAndGet());
+            LOG.info("Opened a connection to metastore, current connections: " + connCount.incrementAndGet());
             isConnected = true;
           } catch (TTransportException e) {
             tte = e;
@@ -501,7 +502,8 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
             }
           }
         } catch (MetaException e) {
-          LOG.error("Unable to connect to metastore with URI {} in attempt {}", store, attempt, e);
+          LOG.error("Unable to connect to metastore with URI " + store +
+              " in attempt " + attempt, e);
         }
         if (isConnected) {
           break;
@@ -510,7 +512,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
       // Wait before launching the next round of connection retries.
       if (!isConnected && retryDelaySeconds > 0) {
         try {
-          LOG.info("Waiting {} seconds before next connection attempt.", retryDelaySeconds);
+          LOG.info("Waiting " + retryDelaySeconds + " seconds before next connection attempt.");
           Thread.sleep(retryDelaySeconds * 1000);
         } catch (InterruptedException ignore) {
           ignore.printStackTrace();
@@ -554,7 +556,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     // just in case, we make this call.
     if ((transport != null) && transport.isOpen()) {
       transport.close();
-      LOG.info("Closed a connection to metastore, current connections: {}", connCount.decrementAndGet());
+      LOG.info("Closed a connection to metastore, current connections: " + connCount.decrementAndGet());
     }
   }
 
@@ -2162,7 +2164,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     try {
       hostname = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
-      LOG.error("Unable to resolve my host name.", e);
+      LOG.error("Unable to resolve my host name " + e.getMessage());
       throw new RuntimeException(e);
     }
     return client.open_txns(new OpenTxnRequest(numTxns, user, hostname));
