@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
+  protected final Logger LOG = LoggerFactory.getLogger(getClass());
 
   private static final long START_DELAY = 10 * 1000L;
 
@@ -44,7 +44,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
                 () -> executeTask(tableRuntime),
                 getStartDelay(),
                 TimeUnit.MILLISECONDS));
-    logger.info("Table executor {} initialized", getClass().getSimpleName());
+    LOG.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
   private void executeTask(TableRuntime tableRuntime) {
