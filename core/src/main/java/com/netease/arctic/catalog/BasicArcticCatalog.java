@@ -347,14 +347,16 @@ public class BasicArcticCatalog implements ArcticCatalog {
     }
 
     protected void checkProperties() {
-      boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(properties,
+      Map<String, String> mergedProperties = CatalogUtil.mergeCatalogPropertiesToTable(properties,
+          catalogMeta.getCatalogProperties());
+      boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(mergedProperties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
-        Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
             "log-store.topic must not be null when log-store.enabled is true.");
-        Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
             "log-store.address must not be null when log-store.enabled is true.");
-        String logStoreType = properties.get(LOG_STORE_TYPE);
+        String logStoreType = mergedProperties.get(LOG_STORE_TYPE);
         Preconditions.checkArgument(logStoreType == null ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA) ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
