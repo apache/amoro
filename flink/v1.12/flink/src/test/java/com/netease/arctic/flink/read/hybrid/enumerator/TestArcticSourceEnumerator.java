@@ -1,9 +1,5 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
@@ -12,7 +8,6 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.api.connector.source.ReaderInfo;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
@@ -23,7 +18,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,7 +27,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,8 +39,6 @@ import java.util.function.BiConsumer;
 import static org.apache.flink.util.Preconditions.checkState;
 
 public class TestArcticSourceEnumerator extends FlinkTestBase {
-
-  protected KeyedTable testKeyedTable;
   private final int splitCount = 4;
   private final int parallelism = 5;
 
@@ -58,27 +49,20 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
       LocalDate.of(2022, 1, 1),
       LocalTime.of(0, 0, 0, 0));
 
-  public TestArcticSourceEnumerator() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
-  }
-
   @Before
   public void init() throws IOException {
-    testKeyedTable = getArcticTable().asKeyedTable();
-
     //write change insert
     {
-      TaskWriter<RowData> taskWriter = createKeyedTaskWriter(testKeyedTable, FlinkSchemaUtil.convert(BasicTableTestHelper.TABLE_SCHEMA), false);
+      TaskWriter<RowData> taskWriter = createKeyedTaskWriter(testKeyedTable, FLINK_ROW_TYPE, false);
       List<RowData> insert = new ArrayList<RowData>() {{
         add(GenericRowData.ofKind(
-          RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+          RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
         add(GenericRowData.ofKind(
-          RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+          RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
         add(GenericRowData.ofKind(
-          RowKind.INSERT, 3, StringData.fromString("jake"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(2))));
+          RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(2))));
         add(GenericRowData.ofKind(
-          RowKind.INSERT, 4, StringData.fromString("sam"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(3))));
+          RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(3))));
       }};
       for (RowData record : insert) {
         taskWriter.write(record);
@@ -104,7 +88,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     ArcticSourceEnumerator enumerator = new ArcticSourceEnumerator(
       splitEnumeratorContext,
       shuffleSplitAssigner,
-      ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder),
+      ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder),
       scanContext,
       null,
       false);
