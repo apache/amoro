@@ -82,7 +82,7 @@ public class PageResult<R> {
       return new PageResult<>(Collections.emptyList(), 0);
     } else {
       List<R> result = list.stream().skip(offset).limit(limit).collect(Collectors.toList());
-      return new PageResult<R>(result, list.size());
+      return new PageResult<>(result, list.size());
     }
   }
 
@@ -91,7 +91,7 @@ public class PageResult<R> {
       return new PageResult<>(Collections.emptyList(), 0);
     } else {
       List<R> result = list.stream().skip(offset).limit(limit).map(convert).collect(Collectors.toList());
-      return new PageResult<R>(result, list.size());
+      return new PageResult<>(result, list.size());
     }
   }
 }

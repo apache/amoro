@@ -4,13 +4,11 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.dashboard.model.OptimizingTaskStat;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
-import com.netease.arctic.server.dashboard.response.PageResult;
-import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
+import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -36,7 +34,6 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -227,71 +223,22 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
-  public PageResult<TableOptimizingProcess> getOptimizingProcesses(String catalog, String db, String table, int offset,
-                                                                   int limit) {
-    List<TableOptimizingProcess> tableOptimizingProcesses = Collections.emptyList();
-    if (limit > 0) {
-      // do this because of derby not support LIMIT
-      List<Long> allProcessIds = getAs(
-          OptimizingMapper.class,
-          mapper -> mapper.selectOptimizingProcessIds(catalog, db, table));
-      List<Long> processIds = allProcessIds.stream()
-          .sorted(Comparator.reverseOrder())
-          .skip(offset)
-          .limit(limit)
-          .collect(Collectors.toList());
-      if (!processIds.isEmpty()) {
-        tableOptimizingProcesses = getAs(
-            OptimizingMapper.class,
-            mapper -> mapper.selectOptimizingProcesses(catalog, db, table, processIds.get(processIds.size() - 1),
-                processIds.get(0)));
-        List<OptimizingTaskStat> optimizingTaskStats = getAs(OptimizingMapper.class,
-            mapper -> mapper.selectOptimizeTaskStats(processIds));
-        initOptimizingProcesses(tableOptimizingProcesses, optimizingTaskStats);
-      }
-    }
-    Integer total = getAs(
+  public List<OptimizingProcessMeta> getOptimizingProcesses(String catalog, String db, String table) {
+    return getAs(
         OptimizingMapper.class,
-        mapper -> mapper.selectCountOptimizingProcesses(catalog, db, table));
-    return PageResult.of(tableOptimizingProcesses, total);
+        mapper -> mapper.selectOptimizingProcesses(catalog, db, table));
   }
 
-  private void initOptimizingProcesses(List<TableOptimizingProcess> tableOptimizingProcesses,
-                                       List<OptimizingTaskStat> optimizingTaskStats) {
-    Map<Long, Map<TaskRuntime.Status, Integer>> taskCountGroupByStatus = Maps.newHashMap();
-    for (OptimizingTaskStat stat : optimizingTaskStats) {
-      taskCountGroupByStatus
-          .computeIfAbsent(stat.getProcessId(), p -> Maps.newHashMap())
-          .put(stat.getStatus(), stat.getCount());
-    }
-    tableOptimizingProcesses.forEach(
-        p -> initOptimizingProcess(p, taskCountGroupByStatus.get(p.getProcessId())));
+  public List<OptimizingTaskMeta> getOptimizingTasks(long processId) {
+    return getAs(OptimizingMapper.class,
+        mapper -> mapper.selectOptimizeTaskStats(Collections.singletonList(processId)));
   }
 
-  private void initOptimizingProcess(TableOptimizingProcess process,
-                                     Map<TaskRuntime.Status, Integer> status2TaskCount) {
-    if (status2TaskCount == null) {
-      return;
-    }
-    int totalTasksCount = 0;
-    int successTasksCount = 0;
-    int runningTasksCount = 0;
-    for (Map.Entry<TaskRuntime.Status, Integer> entry : status2TaskCount.entrySet()) {
-      Integer taskCount = entry.getValue();
-      totalTasksCount += taskCount;
-      switch (entry.getKey()) {
-        case SUCCESS:
-          successTasksCount += taskCount;
-          break;
-        case SCHEDULED:
-        case ACKED:
-          runningTasksCount += taskCount;
-      }
-    }
-    process.setRunningTasks(runningTasksCount);
-    process.setSuccessTasks(successTasksCount);
-    process.setTotalTasks(totalTasksCount);
-    process.init();
+  public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
+    List<Long> processIds = processMetaList.stream()
+        .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
+    return getAs(OptimizingMapper.class,
+        mapper -> mapper.selectOptimizeTaskStats(processIds));
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {
