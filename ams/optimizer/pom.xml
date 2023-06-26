@@ -34,7 +34,7 @@
     <properties>
         <fastjson.version>1.2.58</fastjson.version>
         <avro.version>1.10.1</avro.version>
-        <optimizer-flink.version>1.12.7</optimizer-flink.version>
+        <optimizer-flink.version>1.14.6</optimizer-flink.version>
     </properties>
 
     <dependencies>
@@ -63,7 +63,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-runtime-blink_${scala.binary.version}</artifactId>
+            <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -76,7 +76,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
+            <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -102,7 +102,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime_${scala.binary.version}</artifactId>
+            <artifactId>flink-runtime</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -141,7 +141,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-metrics-influxdb_${scala.binary.version}</artifactId>
+            <artifactId>flink-metrics-influxdb</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
         </dependency>
