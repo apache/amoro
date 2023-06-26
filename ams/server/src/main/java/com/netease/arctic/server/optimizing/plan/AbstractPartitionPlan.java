@@ -62,15 +62,12 @@ public abstract class AbstractPartitionPlan<T extends IcebergPartitionEvaluator>
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
     this.planTime = planTime;
-    this.evaluator = buildEvaluator();
   }
 
   @Override
   public String getPartition() {
     return partition;
   }
-
-  protected abstract T buildEvaluator();
 
   @Override
   public boolean isNecessary() {
