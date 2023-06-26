@@ -2,7 +2,6 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;

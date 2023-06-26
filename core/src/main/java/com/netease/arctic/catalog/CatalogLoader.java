@@ -32,7 +32,6 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -106,7 +105,8 @@ public class CatalogLoader {
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
-      Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
+      Preconditions.checkArgument(tableFormats.size() == 1,
+          "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
@@ -132,9 +132,6 @@ public class CatalogLoader {
           if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (tableFormat.equals(TableFormat.ICEBERG)) {
-//            catalogImpl = ICEBERG_CATALOG_IMPL;
-//            catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
-//            catalogMeta.putToCatalogProperties("uri", );
             catalogImpl = AMS_CATALOG_IMPL;
           } else {
             throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");

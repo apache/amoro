@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;

@@ -217,7 +217,7 @@ public class AmsEnvironment {
   }
 
   public String getHttpUrl() {
-    return "http://127.0.0.1:1630" ;
+    return "http://127.0.0.1:1630";
   }
 
   private void startAms() throws Exception {

@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;

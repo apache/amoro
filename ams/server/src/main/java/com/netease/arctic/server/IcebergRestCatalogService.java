@@ -314,7 +314,7 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
-      TableMetadata tableMetadata = loadTable(catalog, tableMeta);
+      TableMetadata tableMetadata = loadTableMetadata(catalog, tableMeta);
       return LoadTableResponse.builder()
           .withTableMetadata(tableMetadata)
           .build();
@@ -327,7 +327,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void commitTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = ctx.bodyAsClass(UpdateTableRequest.class);
-      TableMetadata base = loadTable(catalog, tableMeta);
+      TableMetadata base = loadTableMetadata(catalog, tableMeta);
       TableMetadata.Builder builder = TableMetadata.buildFrom(base);
       request.requirements().forEach(r -> r.validate(base));
       request.updates().forEach(u -> u.applyTo(builder));
@@ -357,14 +357,14 @@ public class IcebergRestCatalogService extends PersistentBase {
             mapper -> mapper.selectTableMetaById(id));
         String metaLocationInDatabase = updatedMetadata.getProperties().get(PROPERTIES_METADATA_LOCATION);
         if (Objects.equals(metaLocationInDatabase, newMetadataLocation)) {
-          TableMetadata updateIcebergMetadata = loadTable(catalog, updatedMetadata);
+          TableMetadata updateIcebergMetadata = loadTableMetadata(catalog, updatedMetadata);
           return LoadTableResponse.builder()
               .withTableMetadata(updateIcebergMetadata)
               .build();
         } else {
           io.deleteFile(newMetadataLocation);
           throw new CommitFailedException(
-              "commit conflict, some other commit happened during this commit. " );
+              "commit conflict, some other commit happened during this commit. ");
         }
       }
     });
@@ -380,7 +380,7 @@ public class IcebergRestCatalogService extends PersistentBase {
           Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
       TableMetadata lastMetadata = null;
       try {
-        lastMetadata = loadTable(catalog, tableMetadata);
+        lastMetadata = loadTableMetadata(catalog, tableMetadata);
       } catch (Exception e) {
         // pass
       }
@@ -425,7 +425,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
 
-  private TableMetadata loadTable(InternalCatalog catalog, com.netease.arctic.server.table.TableMetadata meta) {
+  private TableMetadata loadTableMetadata(InternalCatalog catalog, com.netease.arctic.server.table.TableMetadata meta) {
     String metadataFileLocation = meta.getProperties().get(PROPERTIES_METADATA_LOCATION);
     Preconditions.checkState(StringUtils.isNotBlank(metadataFileLocation),
         "metadata file info is lost.");

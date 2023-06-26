@@ -25,7 +25,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
-import com.netease.arctic.server.dashboard.response.IcebergRestErrorCode;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.http.Context;
