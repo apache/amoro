@@ -90,7 +90,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Table moudle controller.
+ * Table controller.
  */
 public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
@@ -117,7 +117,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime table detail.
+   * get table detail.
+   * @param ctx - context for handling the request and response
    */
   public void getTableDetail(Context ctx) {
 
@@ -181,7 +182,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime hive table detail.
+   * get hive table detail.
+   * @param ctx - context for handling the request and response
    */
   public void getHiveTableDetail(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -209,6 +211,7 @@ public class TableController {
 
   /**
    * upgrade hive table to arctic.
+   * @param ctx - context for handling the request and response
    */
   public void upgradeHiveTable(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -257,7 +260,8 @@ public class TableController {
   }
 
   /**
-   * upgrade hive table to arctic.
+   * get table properties for upgrading hive to arctic.
+   * @param ctx - context for handling the request and response
    */
   public void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
     Map<String, String> keyValues = new TreeMap<>();
@@ -282,7 +286,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime list of optimizing processes.
+   * get list of optimizing processes.
+   * @param ctx - context for handling the request and response
    */
   public void getOptimizingProcesses(Context ctx) {
 
@@ -315,7 +320,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime list of transactions.
+   * get list of transactions.
+   * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -333,7 +339,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime detail of transaction.
+   * get detail of transaction.
+   * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -352,7 +359,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime partition list.
+   * get partition list.
+   * @param ctx - context for handling the request and response
    */
   public void getTablePartitions(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -370,7 +378,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime file list of some partition.
+   * get file list of some partition.
+   * @param ctx - context for handling the request and response
    */
   public void getPartitionFileListInfo(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -389,7 +398,10 @@ public class TableController {
     ctx.json(OkResponse.of(amsPageResult));
   }
 
-  /* getRuntime  operations of some table*/
+  /**
+   * get table operations.
+   * @param ctx - context for handling the request and response
+   */
   public void getTableOperations(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
@@ -408,7 +420,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime table list of catalog.db.
+   * get table list of catalog.db.
+   * @param ctx - context for handling the request and response
    */
   public void getTableList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -444,7 +457,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime databases of some catalog.
+   * get databases of some catalog.
+   * @param ctx - context for handling the request and response
    */
   public void getDatabaseList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -457,7 +471,8 @@ public class TableController {
   }
 
   /**
-   * list catalogs.
+   * get list of catalogs.
+   * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
     List<CatalogMeta> catalogs = tableService.listCatalogMetas();
@@ -465,7 +480,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime single page query token
+   * get single page query token.
+   * @param ctx - context for handling the request and response
    */
   public void getTableDetailTabToken(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -524,7 +540,7 @@ public class TableController {
     }
   }
 
-  public ServerTableMeta getServerTableMeta(ArcticTable table) {
+  private ServerTableMeta getServerTableMeta(ArcticTable table) {
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableType(table.format().toString());
     serverTableMeta.setTableIdentifier(table.id());
