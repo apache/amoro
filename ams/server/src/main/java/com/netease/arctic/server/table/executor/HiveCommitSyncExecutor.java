@@ -50,7 +50,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return TableTypeUtil.isHive(loadTable(tableRuntime));
+    return true;
   }
 
   @Override
@@ -60,7 +60,10 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     try {
       LOG.info("{} start hive sync", tableIdentifier);
       ArcticTable arcticTable = loadTable(tableRuntime);
-
+      if (!TableTypeUtil.isHive(arcticTable)) {
+        LOG.debug("{} is not a support hive table", tableIdentifier);
+        return;
+      }
       syncIcebergToHive(arcticTable);
     } catch (Exception e) {
       LOG.error("{} hive sync failed", tableIdentifier, e);
