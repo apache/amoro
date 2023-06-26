@@ -18,58 +18,64 @@
 
 package com.netease.arctic.flink.catalog;
 
-import org.apache.flink.types.Row;
-import org.apache.flink.util.CollectionUtil;
-
-import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestBase;
+import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.UpdateProperties;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.StateBackend;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.TableResult;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
+import org.apache.flink.util.CloseableIterator;
+import org.apache.flink.util.CollectionUtil;
+import org.apache.iceberg.flink.MiniClusterResource;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
+import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class TestCatalog extends FlinkTestBase {
+public class TestCatalog extends CatalogTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
+  public TestCatalog() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG));
+  }
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
+  protected Map<String, String> props;
 
-  private static final String DB = PK_TABLE_ID.getDatabase();
-  private static final String TABLE = "test_keyed";
+  private static final String DB = TableTestHelper.TEST_DB_NAME;
+  private static final String TABLE = TableTestHelper.TEST_TABLE_NAME;
+  private volatile StreamExecutionEnvironment env = null;
+  private volatile StreamTableEnvironment tEnv = null;
 
+  @Before
   public void before() throws Exception {
-    super.before();
-    super.config(TEST_CATALOG_NAME);
-  }
-
-  @Test
-  public void testRefresh() {
-    ArcticTableLoader tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
-
-    tableLoader.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
-    boolean catchUp = true;
-    String catchUpTs = "1";
-
-    UpdateProperties updateProperties = arcticTable.updateProperties();
-    updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(catchUp));
-    updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), catchUpTs);
-    updateProperties.commit();
-
-    arcticTable.refresh();
-    Map<String, String> properties = arcticTable.properties();
-    Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
-    Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
+    props = Maps.newHashMap();
+    props.put("type", ArcticCatalogFactoryOptions.IDENTIFIER);
+    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
   }
 
   @Test
@@ -85,17 +91,16 @@ public class TestCatalog extends FlinkTestBase {
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(t) " +
         " WITH (" +
-        " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
+        " 'connector' = 'arctic'" +
         ")");
     sql("SHOW tables");
 
-    Assert.assertTrue(testCatalog.loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
+    Assert.assertTrue(getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
     sql("DROP TABLE " + DB + "." + TABLE);
 
     sql("DROP DATABASE " + DB);
 
-    Assert.assertTrue(CollectionUtil.isNullOrEmpty(testCatalog.listDatabases()));
+    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
     sql("DROP CATALOG arcticCatalog");
   }
 
@@ -117,6 +122,7 @@ public class TestCatalog extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
     sql("USE CATALOG arcticCatalog");
+    sql("CREATE DATABASE arcticCatalog." + DB);
     sql("CREATE TABLE arcticCatalog." + DB + "." + TABLE +
         " (" +
         " id INT," +
@@ -125,8 +131,7 @@ public class TestCatalog extends FlinkTestBase {
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(t) " +
         " WITH (" +
-        " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
+        " 'connector' = 'arctic'" +
         ")");
 
     sql("INSERT INTO arcticCatalog." + DB + "." + TABLE +
@@ -141,5 +146,77 @@ public class TestCatalog extends FlinkTestBase {
     sql("DROP CATALOG arcticCatalog");
 
     sql("DROP TABLE default_catalog.default_database." + TABLE);
+  }
+
+  protected List<Row> sql(String query, Object... args) {
+    TableResult tableResult = getTableEnv()
+      .executeSql(String.format(query, args));
+    tableResult.getJobClient().ifPresent(c -> {
+      try {
+        c.getJobExecutionResult().get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    try (CloseableIterator<Row> iter = tableResult.collect()) {
+      List<Row> results = Lists.newArrayList(iter);
+      return results;
+    } catch (Exception e) {
+      LOG.warn("Failed to collect table result", e);
+      return null;
+    }
+  }
+
+  protected StreamTableEnvironment getTableEnv() {
+    if (tEnv == null) {
+      synchronized (this) {
+        if (tEnv == null) {
+          this.tEnv = StreamTableEnvironment.create(getEnv(), EnvironmentSettings
+            .newInstance()
+            .inStreamingMode().build());
+          Configuration configuration = tEnv.getConfig().getConfiguration();
+          // set low-level key-value options
+          configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
+        }
+      }
+    }
+    return tEnv;
+  }
+
+  protected StreamExecutionEnvironment getEnv() {
+    if (env == null) {
+      synchronized (this) {
+        if (env == null) {
+          StateBackend backend = new FsStateBackend(
+            "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
+          env =
+            StreamExecutionEnvironment.getExecutionEnvironment(MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
+          env.setParallelism(1);
+          env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+          env.getCheckpointConfig().setCheckpointInterval(300);
+          env.getCheckpointConfig().enableExternalizedCheckpoints(
+            CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+          env.setStateBackend(backend);
+          env.setRestartStrategy(RestartStrategies.noRestart());
+        }
+      }
+    }
+    return env;
+  }
+
+  public static String toWithClause(Map<String, String> props) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("(");
+    int propCount = 0;
+    for (Map.Entry<String, String> entry : props.entrySet()) {
+      if (propCount > 0) {
+        builder.append(",");
+      }
+      builder.append("'").append(entry.getKey()).append("'").append("=")
+        .append("'").append(entry.getValue()).append("'");
+      propCount++;
+    }
+    builder.append(")");
+    return builder.toString();
   }
 }
