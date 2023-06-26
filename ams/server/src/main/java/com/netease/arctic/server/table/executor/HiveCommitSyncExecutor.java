@@ -58,12 +58,12 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     long startTime = System.currentTimeMillis();
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {
-      LOG.info("{} start hive sync", tableIdentifier);
       ArcticTable arcticTable = loadTable(tableRuntime);
       if (!TableTypeUtil.isHive(arcticTable)) {
         LOG.debug("{} is not a support hive table", tableIdentifier);
         return;
       }
+      LOG.info("{} start hive sync", tableIdentifier);
       syncIcebergToHive(arcticTable);
     } catch (Exception e) {
       LOG.error("{} hive sync failed", tableIdentifier, e);
