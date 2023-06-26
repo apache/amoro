@@ -52,10 +52,9 @@ public abstract class InternalCatalog extends ServerCatalog {
     }
   }
 
-  public ServerTableIdentifier createTable(TableMeta tableMeta) {
-    validateTableIdentifier(tableMeta.getTableIdentifier());
-    ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
-    TableMetadata tableMetadata = new TableMetadata(tableIdentifier, tableMeta, getMetadata());
+  public ServerTableIdentifier createTable(TableMetadata tableMetadata) {
+    validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
+    ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
@@ -66,8 +65,9 @@ public abstract class InternalCatalog extends ServerCatalog {
         () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
     return getAs(
         TableMetaMapper.class,
-        mapper -> mapper.selectTableIdentifier(tableMeta.getTableIdentifier().getCatalog(),
-            tableMeta.getTableIdentifier().getDatabase(), tableMeta.getTableIdentifier().getTableName()));
+        mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()));
   }
 
   public ServerTableIdentifier dropTable(String databaseName, String tableName) {

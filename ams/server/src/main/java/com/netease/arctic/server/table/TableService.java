@@ -36,7 +36,7 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @param tableMeta table metadata info
    */
-  void createTable(String catalogName, TableMeta tableMeta);
+  void createTable(String catalogName, TableMetadata tableMeta);
 
   /**
    * load the table metadata
@@ -44,7 +44,6 @@ public interface TableService extends CatalogService, TableManager {
    * @param tableIdentifier table id
    * @return table metadata info
    */
-  @Deprecated
   TableMetadata loadTableMetadata(TableIdentifier tableIdentifier);
 
   /**
@@ -53,7 +52,6 @@ public interface TableService extends CatalogService, TableManager {
    * @param tableIdentifier table id
    * @param deleteData      if delete the external table
    */
-  @Deprecated
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 
   /**

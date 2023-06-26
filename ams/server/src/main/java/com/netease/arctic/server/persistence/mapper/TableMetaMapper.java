@@ -44,14 +44,15 @@ public interface TableMetaMapper {
   @Select("SELECT table_count FROM database_metadata WHERE db_name = #{databaseName}")
   Integer selectTableCount(@Param("databaseName") String databaseName);
 
-  @Select("SELECT table_id, table_name, db_name, catalog_name, primary_key, " +
+  @Select("SELECT table_id, table_name, db_name, catalog_name, format, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM table_metadata")
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version FROM table_metadata")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+      @Result(property = "format", column = "format"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -65,21 +66,24 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+          typeHandler = Map2StringConverter.class),
+      @Result(property = "metaVersion", column = "meta_version")
   })
   List<TableMetadata> selectTableMetas();
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
-      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, primary_key, " +
+      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM table_metadata " +
-      "INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id WHERE " +
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
+      "FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id " +
+      "WHERE " +
       "table_identifier.catalog_name=#{catalogName} AND table_identifier.db_name=#{database}")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
+      @Result(property = "format", column = "format"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -93,21 +97,23 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+          typeHandler = Map2StringConverter.class),
+      @Result(property = "metaVersion", column = "meta_version")
   })
   List<TableMetadata> selectTableMetasByDb(
       @Param("catalogName") String catalogName,
       @Param("database") String database);
 
-  @Insert("INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key," +
+  @Insert("INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key, format," +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site," +
-      " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties)" +
+      " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version)" +
       " VALUES(" +
       " #{tableMeta.tableIdentifier.id}," +
       " #{tableMeta.tableIdentifier.tableName}," +
       " #{tableMeta.tableIdentifier.database}," +
       " #{tableMeta.tableIdentifier.catalog}," +
       " #{tableMeta.primaryKey, jdbcType=VARCHAR}," +
+      " #{tableMeta.format}," +
       " #{tableMeta.tableLocation, jdbcType=VARCHAR}," +
       " #{tableMeta.baseLocation, jdbcType=VARCHAR}," +
       " #{tableMeta.changeLocation, jdbcType=VARCHAR}," +
@@ -119,7 +125,8 @@ public interface TableMetaMapper {
       " #{tableMeta.krbKeytab, jdbcType=VARCHAR}," +
       " #{tableMeta.krbConf, jdbcType=VARCHAR}," +
       " #{tableMeta.krbPrincipal, jdbcType=VARCHAR}," +
-      " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
+      " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " #{tableMeta.metaVersion}" +
       " )")
   void insertTableMeta(@Param("tableMeta") TableMetadata tableMeta);
 
@@ -127,21 +134,24 @@ public interface TableMetaMapper {
   void deleteTableMetaById(@Param("tableId") long tableId);
 
   @Update("UPDATE table_metadata SET properties =" +
-      " #{properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
-      " WHERE table_id = #{tableId}")
-  void updateTableProperties(
+      " #{properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " meta_version=meta_version + 1 " +
+      " WHERE table_id = #{tableId} and meta_version = #{metaVersion}")
+  void commitTablePropertiesChange(
       @Param("tableId") long tableId,
-      @Param("properties") Map<String, String> properties);
+      @Param("properties") Map<String, String> properties,
+      @Param("metaVersion") long metadataVersion);
 
-  @Select("SELECT table_id, table_name, db_name, catalog_name, primary_key, " +
+  @Select("SELECT table_id, table_name, db_name, catalog_name, format, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
-      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties FROM " +
+      "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version FROM " +
       "table_metadata WHERE table_id = #{tableId}")
   @Results({
       @Result(property = "tableIdentifier.id", column = "table_id"),
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
+      @Result(property = "format", column = "format"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -155,14 +165,15 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+          typeHandler = Map2StringConverter.class),
+      @Result(property = "metaVersion", column = "meta_version")
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name," +
-      " table_identifier.db_name as db_name, table_identifier.table_name as table_name,  primary_key," +
+      " table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key," +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, auth_method," +
-      " hadoop_username, krb_keytab, krb_conf, krb_principal, properties" +
+      " hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
       " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
       " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{databaseName}" +
       " AND table_identifier.table_name = #{tableName}")
@@ -171,6 +182,7 @@ public interface TableMetaMapper {
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
       @Result(property = "tableIdentifier.database", column = "db_name"),
       @Result(property = "tableIdentifier.tableName", column = "table_name"),
+      @Result(property = "format", column = "format"),
       @Result(property = "primaryKey", column = "primary_key"),
       @Result(property = "tableLocation", column = "table_location"),
       @Result(property = "baseLocation", column = "base_location"),
@@ -184,7 +196,8 @@ public interface TableMetaMapper {
       @Result(property = "krbConf", column = "krb_conf"),
       @Result(property = "krbPrincipal", column = "krb_principal"),
       @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+          typeHandler = Map2StringConverter.class),
+      @Result(property = "metaVersion", column = "meta_version")
   })
   TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
       @Param("databaseName") String databaseName, @Param("tableName") String tableName);

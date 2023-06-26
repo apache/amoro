@@ -23,8 +23,10 @@ import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
@@ -395,6 +397,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
+          .withProperty(MetaTableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name())
           .withPrimaryKeySpec(this.primaryKeySpec);
 
       if (this.primaryKeySpec.primaryKeyExisted()) {

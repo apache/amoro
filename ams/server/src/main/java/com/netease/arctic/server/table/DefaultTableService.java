@@ -152,12 +152,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public void createTable(String catalogName, TableMeta tableMeta) {
+  public void createTable(String catalogName, TableMetadata tableMetadata) {
     checkStarted();
-    validateTableNotExists(tableMeta.getTableIdentifier());
+    validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMeta);
+    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
     ArcticTable table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);

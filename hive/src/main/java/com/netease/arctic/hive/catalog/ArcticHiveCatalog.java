@@ -20,7 +20,9 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
@@ -32,6 +34,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.IcebergSchemaUtil;
@@ -256,6 +259,12 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
           LOG.warn("Failed to drop hive table while rolling back create table operation", e);
         }
       }
+    }
+
+    @Override
+    protected ConvertStructUtil.TableMetaBuilder createTableMataBuilder() {
+      ConvertStructUtil.TableMetaBuilder builder = super.createTableMataBuilder();
+      return builder.withProperty(MetaTableProperties.TABLE_FORMAT, TableFormat.MIXED_HIVE.name());
     }
   }
 }

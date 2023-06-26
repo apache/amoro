@@ -5,15 +5,22 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.CatalogUtil;
-import org.apache.iceberg.IcebergSchemaUtil;
+import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -29,7 +36,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 
 public class IcebergRestCatalogServiceTest {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogServiceTest.class);
@@ -143,23 +156,54 @@ public class IcebergRestCatalogServiceTest {
 
     @Test
     public void testCreateTableAndListing() throws IOException {
-      try (RESTCatalog nsCatalog = loadCatalog(Maps.newHashMap())) {
-        Assertions.assertTrue(nsCatalog.listTables(ns).isEmpty());
+      Assertions.assertTrue(nsCatalog.listTables(ns).isEmpty());
 
-        LOG.info("Assert create iceberg table");
-        nsCatalog.createTable(identifier, schema);
-        Assertions.assertEquals(1, nsCatalog.listTables(ns).size());
-        Assertions.assertEquals(identifier, nsCatalog.listTables(ns).get(0));
+      LOG.info("Assert create iceberg table");
+      nsCatalog.createTable(identifier, schema);
+      Assertions.assertEquals(1, nsCatalog.listTables(ns).size());
+      Assertions.assertEquals(identifier, nsCatalog.listTables(ns).get(0));
 
-        LOG.info("Assert load iceberg table");
-        Table tbl = nsCatalog.loadTable(identifier);
-        Assertions.assertNotNull(tbl);
-        Assertions.assertEquals(schema.asStruct(), tbl.schema().asStruct());
+      LOG.info("Assert load iceberg table");
+      Table tbl = nsCatalog.loadTable(identifier);
+      Assertions.assertNotNull(tbl);
+      Assertions.assertEquals(schema.asStruct(), tbl.schema().asStruct());
 
-        LOG.info("Assert table exists");
-        Assertions.assertTrue(nsCatalog.tableExists(identifier));
-        nsCatalog.dropTable(identifier);
+      LOG.info("Assert table exists");
+      Assertions.assertTrue(nsCatalog.tableExists(identifier));
+      nsCatalog.dropTable(identifier);
+    }
+
+    @Test
+    public void testTableWriteAndCommit() throws IOException {
+      Table tbl = nsCatalog.createTable(identifier, schema);
+
+
+
+      try (FileIO io = tbl.io()) {
+        String dataLocation = tbl.locationProvider().newDataLocation("test.parquet");
+        OutputFile file = io.newOutputFile(dataLocation);
+        file.createOrOverwrite().close();
+
+        tbl.newAppend().appendFile(
+            DataFiles.builder(PartitionSpec.unpartitioned())
+                .withInputFile(file.toInputFile())
+                .withFileSizeInBytes(0)
+                .withFormat(FileFormat.PARQUET)
+                .withRecordCount(0)
+                .withPath(dataLocation)
+                .build()
+        ).commit();
+
+        tbl = nsCatalog.loadTable(identifier);
+        List<FileScanTask> files = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
+        Assertions.assertEquals(1, files.size());
       }
+
+
+    }
+
+    public void testTableTransaction() throws IOException {
+
     }
 
   }
@@ -167,10 +211,30 @@ public class IcebergRestCatalogServiceTest {
 
   private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
+    CatalogMeta catalogMeta = serverCatalog.getMetadata();
+    TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);
+
     return (RESTCatalog) CatalogUtil.loadCatalog(
         "org.apache.iceberg.rest.RESTCatalog", "test",
-        clientProperties, null
+        clientProperties, store.getConfiguration()
     );
   }
 
+
+  protected static OffsetDateTime ofDateWithZone(int year, int mon, int day, int hour) {
+    LocalDateTime dateTime = LocalDateTime.of(year, mon, day, hour, 0);
+    return OffsetDateTime.of(dateTime, ZoneOffset.ofHours(0));
+  }
+
+  protected static OffsetDateTime quickDateWithZone(int day) {
+    return ofDateWithZone(2022, 1, day, 0);
+  }
+
+  protected static Record newRecord(Schema schema, Object... val) {
+    GenericRecord record = GenericRecord.create(schema);
+    for (int i = 0; i < schema.columns().size(); i++) {
+      record.set(i, val[i]);
+    }
+    return record;
+  }
 }

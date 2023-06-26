@@ -54,7 +54,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private MixedTables mixedTables;
   private Catalog icebergCatalog;
   private CatalogMeta catalogMeta;
+
   private TableMeta tableMeta;
+  private TableMetadata tableMetadata;
 
   private final boolean autoInitTable;
   private ServerTableIdentifier serverTableIdentifier;
@@ -80,6 +82,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
     } else {
       mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
       tableMeta = buildTableMeta();
+      tableMetadata = new TableMetadata(serverTableIdentifier, tableMeta, catalogMeta);
     }
     tableService().createCatalog(catalogMeta);
     try {
@@ -147,7 +150,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
     } else {
       mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
-      tableService().createTable(catalogMeta.getCatalogName(), tableMeta);
+      tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     }
     serverTableIdentifier = tableService().listTables().get(0);
   }
@@ -172,6 +175,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected TableMeta tableMeta() {
     return tableMeta;
+  }
+
+  protected CatalogMeta catalogMeta() {
+    return catalogMeta;
+  }
+
+  protected TableMetadata tableMetadata() {
+    return tableMetadata;
   }
 
   protected ServerTableIdentifier serverTableIdentifier() {

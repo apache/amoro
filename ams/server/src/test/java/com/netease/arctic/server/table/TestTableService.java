@@ -91,26 +91,29 @@ public class TestTableService extends AMSTableTestBase {
 
     // test create duplicate table
     Assert.assertThrows(AlreadyExistsException.class, () -> tableService().createTable(TEST_CATALOG_NAME,
-        tableMeta()));
+        tableMetadata()));
 
-    TableMeta copyMeta = new TableMeta(tableMeta());
-    copyMeta.setTableIdentifier(new TableIdentifier("unknown", TEST_DB_NAME,
-        TableTestHelper.TEST_TABLE_NAME));
     // test create table with wrong catalog name
-    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().createTable(TEST_CATALOG_NAME,
-        copyMeta));
+    Assert.assertThrows(ObjectNotExistsException.class, () -> {
+      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+      copyMetadata.getTableIdentifier().setCatalog("unknown");
+      tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+    });
 
     // test create table in not existed catalog
-    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().createTable("unknown",
-        copyMeta));
+    Assert.assertThrows(ObjectNotExistsException.class, () -> {
+      tableService().createTable("unknown", tableMetadata());
+    });
 
     if (catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
-      copyMeta.setTableIdentifier(new TableIdentifier(TableTestHelper.TEST_CATALOG_NAME, "unknown",
-          TableTestHelper.TEST_TABLE_NAME));
       // test create table in not existed database
       Assert.assertThrows(
           ObjectNotExistsException.class,
-          () -> tableService().createTable(TEST_CATALOG_NAME, copyMeta));
+          () -> {
+            TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+            copyMetadata.getTableIdentifier().setDatabase("unknown");
+            tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+          });
     }
 
     // test drop table
