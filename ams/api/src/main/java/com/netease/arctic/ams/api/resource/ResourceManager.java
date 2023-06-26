@@ -10,8 +10,6 @@ public interface ResourceManager {
 
   void deleteResourceGroup(String groupName);
 
-  boolean canDeleteResourceGroup(String name);
-
   void createResource(Resource resource);
 
   void deleteResource(String resourceId);

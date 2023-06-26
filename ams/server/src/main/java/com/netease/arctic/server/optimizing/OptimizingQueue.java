@@ -22,6 +22,7 @@ import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
@@ -124,6 +125,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   public void releaseTable(TableRuntime tableRuntime) {
     schedulingPolicy.removeTable(tableRuntime);
     LOG.info("Release queue {} with table {}", optimizerGroup.getName(), tableRuntime.getTableIdentifier());
+  }
+
+  public boolean containsTable(ServerTableIdentifier identifier) {
+    return this.schedulingPolicy.containsTable(identifier);
   }
 
   public List<OptimizerInstance> getOptimizers() {

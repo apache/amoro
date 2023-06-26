@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceManager;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
-import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
 
@@ -18,8 +17,11 @@ public class DefaultResourceManager extends StatedPersistentBase implements Reso
 
   private final TableService tableService;
 
-  public DefaultResourceManager(List<ResourceGroup> groups, TableService tableService) {
+  public DefaultResourceManager(TableService tableService) {
     this.tableService = tableService;
+  }
+
+  public void init(List<ResourceGroup> groups) {
     Set<String> oldGroups = listResourceGroups()
         .stream()
         .map(ResourceGroup::getName)
@@ -47,19 +49,10 @@ public class DefaultResourceManager extends StatedPersistentBase implements Reso
     }
   }
 
-  @Override
   public boolean canDeleteResourceGroup(String name) {
     for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
       if (catalogMeta.getCatalogProperties() != null &&
           catalogMeta.getCatalogProperties()
-              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
-              .equals(name)) {
-        return false;
-      }
-    }
-    for (TableMetadata tableMeta : tableService.listTableMetas()) {
-      if (tableMeta.getProperties() != null &&
-          tableMeta.getProperties()
               .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
               .equals(name)) {
         return false;

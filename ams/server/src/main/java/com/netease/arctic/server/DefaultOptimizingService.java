@@ -37,8 +37,8 @@ import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.utils.Configurations;
@@ -74,18 +74,19 @@ public class DefaultOptimizingService extends DefaultResourceManager
   @StatedPersistentBase.StateField
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
-  private final TableManager tableManager;
+  private final DefaultTableService tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(
       Configurations serviceConfig, DefaultTableService tableService,
       List<ResourceGroup> resourceGroups) {
-    super(resourceGroups, tableService);
+    super(tableService);
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.tableManager = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
+    super.init(resourceGroups);
   }
 
   public RuntimeHandlerChain getTableRuntimeHandler() {
@@ -241,6 +242,11 @@ public class DefaultOptimizingService extends DefaultResourceManager
   public boolean canDeleteResourceGroup(String name) {
     for (OptimizerInstance optimizer : listOptimizers()) {
       if (optimizer.getGroupName().equals(name)) {
+        return false;
+      }
+    }
+    for (ServerTableIdentifier identifier : tableManager.listTables()) {
+      if (optimizingQueueByGroup.containsKey(name) && optimizingQueueByGroup.get(name).containsTable(identifier)) {
         return false;
       }
     }

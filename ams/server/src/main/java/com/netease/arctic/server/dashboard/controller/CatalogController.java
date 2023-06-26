@@ -211,7 +211,10 @@ public class CatalogController {
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
-    catalogMeta.getCatalogProperties().put(TableProperties.SELF_OPTIMIZING_GROUP, info.getOptimizerGroup());
+    catalogMeta.getCatalogProperties()
+        .put(
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+            info.getOptimizerGroup());
     if (info.getTableFormatList() == null || info.getTableFormatList().isEmpty()) {
       throw new RuntimeException("Invalid table format list");
     }
@@ -311,7 +314,9 @@ public class CatalogController {
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
       info.setProperties(Maps.newHashMap(catalogMeta.getCatalogProperties()));
-      info.setOptimizerGroup(info.getProperties().getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, "default"));
+      info.setOptimizerGroup(info.getProperties().getOrDefault(
+          CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+          TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT));
       info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));
       return;

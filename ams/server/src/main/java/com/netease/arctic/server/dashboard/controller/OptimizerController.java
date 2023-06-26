@@ -24,6 +24,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
+import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.dashboard.model.OptimizerResourceInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
@@ -31,7 +32,6 @@ import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
-import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
@@ -56,9 +56,9 @@ import java.util.stream.Collectors;
 public class OptimizerController {
   private static final String ALL_GROUP = "all";
   private final TableService tableService;
-  private final OptimizerManager optimizerManager;
+  private final DefaultOptimizingService optimizerManager;
 
-  public OptimizerController(TableService tableService, OptimizerManager optimizerManager) {
+  public OptimizerController(TableService tableService, DefaultOptimizingService optimizerManager) {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }
@@ -211,8 +211,8 @@ public class OptimizerController {
   }
 
   /**
-   * get optimizeGroups
-   * url = /optimize/resourceGroups/get
+   * get {@link List<OptimizerResourceInfo>}
+   * url = /optimize/resourceGroups
    */
   public void getResourceGroup(Context ctx) {
     List<OptimizerResourceInfo> result =
@@ -239,12 +239,12 @@ public class OptimizerController {
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
     if (optimizerManager.getResourceGroup(name) != null) {
-      throw new BadRequestException("optimize group already exists named: " + name);
+      throw new BadRequestException(String.format("Optimizer group:%s already existed." + name));
     }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.createResourceGroup(builder.build());
-    ctx.json(OkResponse.of("Success to create optimize group"));
+    ctx.json(OkResponse.of("Created optimizer group successfully"));
   }
 
   /**
@@ -264,11 +264,10 @@ public class OptimizerController {
 
   /**
    * delete optimizeGroup
-   * url = /optimize/resourceGroups/delete
+   * url = /optimize/resourceGroups/{resourceGroupName}
    */
   public void deleteResourceGroup(Context ctx) {
-    Map<String, Object> map = ctx.bodyAsClass(Map.class);
-    String name = (String) map.get("name");
+    String name = ctx.pathParam("resourceGroupName");
     optimizerManager.deleteResourceGroup(name);
     ctx.json(OkResponse.of("Success to delete optimize group"));
   }
