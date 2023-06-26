@@ -44,7 +44,11 @@ public class MixedIcebergPartitionPlan
   public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
                                    ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
-    this.evaluator = new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
+  }
+
+  @Override
+  protected MixedIcebergPartitionEvaluator buildEvaluator() {
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
   }
 
   @Override

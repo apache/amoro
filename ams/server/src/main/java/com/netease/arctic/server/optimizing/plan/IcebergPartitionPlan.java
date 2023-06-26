@@ -29,7 +29,11 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan<IcebergPartition
 
   protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
-    this.evaluator = new IcebergPartitionEvaluator(tableRuntime, partition, planTime);
+  }
+
+  @Override
+  protected IcebergPartitionEvaluator buildEvaluator() {
+    return new IcebergPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override

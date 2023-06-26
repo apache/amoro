@@ -40,7 +40,11 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
                                 ArcticTable table, String partition, String hiveLocation, long planTime) {
     super(tableRuntime, table, partition, planTime);
     this.hiveLocation = hiveLocation;
-    this.evaluator = new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
+  }
+
+  @Override
+  protected MixedIcebergPartitionEvaluator buildEvaluator() {
+    return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
   }
 
   @Override
