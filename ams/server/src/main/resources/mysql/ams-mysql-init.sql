@@ -46,7 +46,7 @@ CREATE TABLE `optimizer`
 
 CREATE TABLE `resource`
 (
-    `resource_id`               varchar(100) DEFAULT NULL  COMMENT 'optimizer instance id',
+    `resource_id`               varchar(100) NOT NULL  COMMENT 'optimizer instance id',
     `resource_type`             tinyint(4) DEFAULT 0 COMMENT 'resource type like optimizer/ingestor',
     `container_name`            varchar(100) DEFAULT NULL  COMMENT 'container name',
     `group_name`                varchar(50) DEFAULT NULL COMMENT 'queue name',

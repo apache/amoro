@@ -54,7 +54,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
-        configuration.getLong(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL);
+        configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
   }
 
@@ -302,7 +302,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     });
 
     if (headHandler != null) {
-      headHandler.startHandler(tableRuntimeMetaList);
+      headHandler.initialize(tableRuntimeMetaList);
     }
     tableExplorerTimer = new Timer("ExternalTableExplorer", true);
     tableExplorerTimer.scheduleAtFixedRate(
