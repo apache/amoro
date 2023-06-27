@@ -43,7 +43,7 @@ public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        latestPlanner.getOptimizingType() == OptimizingType.FULL_MAJOR &&
+        latestPlanner.getOptimizingType() == OptimizingType.FULL &&
         OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties())
             .getMoveFile2HiveLocation();
   }
