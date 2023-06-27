@@ -82,6 +82,7 @@ public class TestCatalog extends CatalogTestBase {
   public void testDDL() throws IOException {
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
     sql("USE CATALOG arcticCatalog");
+    sql("CREATE DATABASE arcticCatalog." + DB);
 
     sql("CREATE TABLE arcticCatalog." + DB + "." + TABLE +
         " (" +
