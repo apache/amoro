@@ -143,6 +143,7 @@ public class UpgradeHiveTableUtil {
       }
     }
     HiveMetaSynchronizer.syncHiveDataToArctic(arcticTable, arcticHiveCatalog.getHMSClient());
+    hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     fillPartitionProperties(arcticTable, arcticHiveCatalog, hiveTable);
   }
 
