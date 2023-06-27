@@ -38,6 +38,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
 import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -138,7 +139,15 @@ public class DashboardServer {
         //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
         get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
         // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
-        get("/{page}", ctx -> ctx.html(getFileContent()));
+        get("/{page}", ctx -> {
+          String fileName = ctx.pathParam("page");
+          if (fileName != null && fileName.endsWith("ico")) {
+            ctx.contentType(ContentType.IMAGE_ICO);
+            ctx.result(DashboardServer.class.getClassLoader().getResourceAsStream("static/" + fileName));
+          } else {
+            ctx.html(getFileContent());
+          }
+        });
         get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
       });
       path("/ams/v1", () -> {
