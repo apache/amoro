@@ -71,7 +71,7 @@ export function releaseResource(
 }
 
 export async function getResourceGroupsListAPI() {
-  const result = await request.get('ams/v1/optimize/resourceGroups/get')
+  const result = await request.get('ams/v1/optimize/resourceGroups')
   return result
 }
 
@@ -81,11 +81,11 @@ export const getGroupContainerListAPI = async() => {
 }
 
 export const addResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
-  return request.post('ams/v1/optimize/resourceGroups/create', params)
+  return request.post('ams/v1/optimize/resourceGroups', params)
 }
 
 export const updateResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
-  return request.post('ams/v1/optimize/resourceGroups/update', params)
+  return request.put('ams/v1/optimize/resourceGroups', params)
 }
 
 export const groupDeleteCheckAPI = (params: {name: string}) => {
@@ -93,5 +93,5 @@ export const groupDeleteCheckAPI = (params: {name: string}) => {
 }
 
 export const groupDeleteAPI = (params: {name: string}) => {
-  return request.post('/ams/v1/optimize/resourceGroups/delete', params)
+  return request.delete(`/ams/v1/optimize/resourceGroups/${params.name}`)
 }
