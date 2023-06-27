@@ -21,6 +21,7 @@ package com.netease.arctic.flink.read.hybrid.split;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.utils.FileScanTaskUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -50,7 +51,7 @@ public class SnapshotSplit extends ArcticSplit {
   @Override
   public String splitId() {
     return MoreObjects.toStringHelper(this)
-        .add("insertTasks", toString(insertScanTasks))
+        .add("insertTasks", FileScanTaskUtil.toString(insertScanTasks))
         .toString();
   }
 
@@ -97,7 +98,7 @@ public class SnapshotSplit extends ArcticSplit {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("insertTasks", toString(insertScanTasks))
+        .add("insertTasks", FileScanTaskUtil.toString(insertScanTasks))
         .add("dataTreeNode", dataTreeNode.toString())
         .toString();
   }

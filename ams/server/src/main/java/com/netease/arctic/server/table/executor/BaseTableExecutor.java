@@ -103,7 +103,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   @Override
   protected void doDispose() {
-    executor.shutdown();
+    executor.shutdownNow();
   }
 
   protected long getStartDelay() {

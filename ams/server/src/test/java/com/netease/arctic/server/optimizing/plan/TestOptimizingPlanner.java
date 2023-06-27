@@ -71,7 +71,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
     openFullOptimizing();
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
-    Assert.assertEquals(OptimizingType.FULL_MAJOR, optimizingEvaluator.getOptimizingType());
+    Assert.assertEquals(OptimizingType.FULL, optimizingEvaluator.getOptimizingType());
     taskDescriptors = optimizingEvaluator.planTasks();
     Assert.assertEquals(1, taskDescriptors.size());
     assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
