@@ -21,7 +21,7 @@ package com.netease.arctic.server.optimizing;
 import java.util.Map;
 
 /**
- * A simplified meta of optimizing process, not include input files.
+ * Meta of optimizing process.
  */
 public class OptimizingProcessMeta {
 
