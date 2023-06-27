@@ -165,7 +165,7 @@ public interface OptimizingMapper {
       @Result(property = "metricsSummary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
-  List<OptimizingTaskMeta> selectOptimizeTaskStats(@Param("processIds") List<Long> processIds);
+  List<OptimizingTaskMeta> selectOptimizeTaskMetas(@Param("processIds") List<Long> processIds);
 
   @Update("UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, " +
       "start_time = #{taskRuntime.startTime," +
