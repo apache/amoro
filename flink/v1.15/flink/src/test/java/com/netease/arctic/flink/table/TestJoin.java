@@ -252,7 +252,6 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -267,7 +266,7 @@ public class TestJoin extends FlinkTestBase {
       .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-      ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+      ArcticTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
