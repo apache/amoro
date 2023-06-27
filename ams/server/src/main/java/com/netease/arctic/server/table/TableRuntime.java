@@ -228,7 +228,7 @@ public class TableRuntime extends StatedPersistentBase {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
           lastMajorOptimizingTime = optimizingProcess.getPlanTime();
-        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL_MAJOR) {
+        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
