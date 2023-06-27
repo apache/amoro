@@ -19,6 +19,7 @@
 package com.netease.arctic.server.utils;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
@@ -26,20 +27,29 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class IcebergTableUtils {
+
+  public static final String DEFAULT_FILE_IO_IMPL = "org.apache.iceberg.io.ResolvingFileIO";
+
   public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
     if (currentSnapshot == null) {
@@ -87,5 +97,13 @@ public class IcebergTableUtils {
     }
 
     return validFilesPath;
+  }
+
+  public static FileIO newIcebergFileIo(CatalogMeta meta) {
+    Map<String, String> catalogProperties = meta.getCatalogProperties();
+    TableMetaStore store = CatalogUtil.buildMetaStore(meta);
+    Configuration conf = store.getConfiguration();
+    String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
+    return org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
   }
 }

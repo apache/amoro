@@ -17,15 +17,12 @@ import com.netease.arctic.server.iceberg.InternalIcebergTableOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
@@ -61,6 +58,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.server.utils.IcebergTableUtils.newIcebergFileIo;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.head;
@@ -72,7 +70,6 @@ public class IcebergRestCatalogService extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogService.class);
 
   public static final String REST_CATALOG_API_PREFIX = "/api/iceberg/rest/catalog";
-  public static final String DEFAULT_FILE_IO_IMPL = "org.apache.iceberg.io.ResolvingFileIO";
 
   private final TableService tableService;
 
@@ -272,7 +269,7 @@ public class IcebergRestCatalogService extends PersistentBase {
           location, request.properties()
       );
       ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
-      try (FileIO io = newFileIo(catalog);) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata());) {
         TableOperations ops = InternalIcebergTableOperations.buildForCreate(catalog.getMetadata(), identifier, io);
         ops.commit(null, tableMetadata);
         tableMetadata = ops.current();
@@ -289,7 +286,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;
-      try (FileIO io = newFileIo(catalog)) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMeta, io);
         tableMetadata = ops.current();
       }
@@ -311,7 +308,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void commitTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = ctx.bodyAsClass(UpdateTableRequest.class);
-      try (FileIO io = newFileIo(catalog)) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMeta, io);
         TableMetadata base = ops.current();
 
@@ -338,7 +335,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       boolean purge = Boolean.parseBoolean(
           Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
       TableMetadata current = null;
-      try (FileIO io = newFileIo(catalog)) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
           TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMetadata, io);
           current = ops.current();
@@ -445,15 +442,6 @@ public class IcebergRestCatalogService extends PersistentBase {
       throw new UnsupportedOperationException(message);
     }
   }
-
-  private FileIO newFileIo(InternalCatalog catalog) {
-    Map<String, String> catalogProperties = catalog.getMetadata().getCatalogProperties();
-    TableMetaStore store = CatalogUtil.buildMetaStore(catalog.getMetadata());
-    Configuration conf = store.getConfiguration();
-    String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
-    return org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-  }
-
 
   enum IcebergRestErrorCode {
     BadRequest(400),

@@ -34,7 +34,7 @@ public class CatalogBuilder {
         }
       case CATALOG_TYPE_HIVE:
         if (tableFormat.equals(TableFormat.ICEBERG)) {
-          return new IcebergCatalogImpl(catalogMeta);
+          return new InternalIcebergCatalogImpl(catalogMeta);
         } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         } else {
