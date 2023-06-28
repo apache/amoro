@@ -131,9 +131,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
   }
 
-  protected void createTableInternal(TableMetadata tableMetaData) {
-    //do nothing, create internal table default done on client side
-  }
+
 
   protected void createDatabaseInternal(String databaseName) {
     //do nothing, create internal table default done on client side

@@ -30,12 +30,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.CleanupMode;
-import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -45,10 +42,8 @@ import java.util.stream.Collectors;
 public class IcebergRestCatalogServiceTest {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogServiceTest.class);
 
-  @TempDir(cleanup = CleanupMode.ALWAYS)
-  public static File TEMP_DIR;
 
-  static AmsEnvironment ams;
+  static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
   static String restCatalogUri = "/api/iceberg/rest/catalog/" + AmsEnvironment.INTERNAL_ICEBERG_CATALOG;
 
 
@@ -65,8 +60,6 @@ public class IcebergRestCatalogServiceTest {
 
   @BeforeAll
   public static void beforeAll() throws Exception {
-    String rootPath = TEMP_DIR.getAbsolutePath();
-    ams = new AmsEnvironment(rootPath);
     ams.start();
   }
 
@@ -155,6 +148,7 @@ public class IcebergRestCatalogServiceTest {
 
     @AfterEach
     public void clean() {
+      nsCatalog.dropTable(identifier);
       if (serverCatalog.exist(database, table)) {
         serverCatalog.dropTable(database, table);
 
@@ -180,6 +174,7 @@ public class IcebergRestCatalogServiceTest {
       LOG.info("Assert table exists");
       Assertions.assertTrue(nsCatalog.tableExists(identifier));
       nsCatalog.dropTable(identifier);
+      Assertions.assertFalse(nsCatalog.tableExists(identifier));
     }
 
     @Test

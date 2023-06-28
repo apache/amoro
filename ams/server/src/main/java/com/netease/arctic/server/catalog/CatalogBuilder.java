@@ -34,17 +34,20 @@ public class CatalogBuilder {
         }
       case CATALOG_TYPE_HIVE:
         if (tableFormat.equals(TableFormat.ICEBERG)) {
-          return new InternalIcebergCatalogImpl(catalogMeta);
+          return new IcebergCatalogImpl(catalogMeta);
         } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
           return new MixedHiveCatalogImpl(catalogMeta);
         } else {
           throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
         }
       case CATALOG_TYPE_AMS:
-        Preconditions.checkArgument(
-            tableFormat.equals(TableFormat.MIXED_ICEBERG) || tableFormat.equals(TableFormat.ICEBERG),
-            "AMS catalog support iceberg/mixed-iceberg table only.");
-        return new MixedCatalogImpl(catalogMeta);
+        if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+          return new MixedCatalogImpl(catalogMeta);
+        } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+          return new InternalIcebergCatalogImpl(catalogMeta);
+        } else {
+          throw new IllegalStateException("AMS catalog support iceberg/mixed-iceberg table only.");
+        }
       case CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
             "Custom catalog support iceberg table only.");

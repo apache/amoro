@@ -4,7 +4,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOAdapter;
-import com.netease.arctic.server.iceberg.InternalIcebergTableOperations;
+import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.IcebergTableUtils;
@@ -29,7 +29,7 @@ public class InternalIcebergCatalogImpl extends MixedCatalogImpl {
     }
     FileIO io = IcebergTableUtils.newIcebergFileIo(getMetadata());
     ArcticFileIO fileIO = new ArcticFileIOAdapter(io);
-    TableOperations ops = InternalIcebergTableOperations.buildForLoad(this.getMetadata(), tableMetadata, io);
+    TableOperations ops = InternalTableOperations.buildForLoad(tableMetadata, io);
     BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());
     return new IcebergCatalogWrapper.BasicIcebergTable(
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName),

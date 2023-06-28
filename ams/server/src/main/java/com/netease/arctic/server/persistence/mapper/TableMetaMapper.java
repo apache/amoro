@@ -18,7 +18,6 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
-import java.util.Map;
 
 public interface TableMetaMapper {
 
@@ -134,13 +133,10 @@ public interface TableMetaMapper {
   void deleteTableMetaById(@Param("tableId") long tableId);
 
   @Update("UPDATE table_metadata SET properties =" +
-      " #{properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
+      " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
       " meta_version=meta_version + 1 " +
-      " WHERE table_id = #{tableId} and meta_version = #{metaVersion}")
-  void commitTablePropertiesChange(
-      @Param("tableId") long tableId,
-      @Param("properties") Map<String, String> properties,
-      @Param("metaVersion") long metadataVersion);
+      " WHERE table_id = #{tableId} and meta_version = #{tableMeta.metaVersion} ")
+  int commitTableChange(@Param("tableId") long tableId, @Param("tableMeta") TableMetadata tableMeta);
 
   @Select("SELECT table_id, table_name, db_name, catalog_name, format, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
@@ -200,7 +196,7 @@ public interface TableMetaMapper {
       @Result(property = "metaVersion", column = "meta_version")
   })
   TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
-      @Param("databaseName") String databaseName, @Param("tableName") String tableName);
+                                      @Param("databaseName") String databaseName, @Param("tableName") String tableName);
 
   @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
       " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")
@@ -336,9 +332,9 @@ public interface TableMetaMapper {
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
       @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
-      @Result(property = "planTime", column = "plan_time",  typeHandler = Long2TsConverter.class),
-      @Result(property = "fromSequence", column = "from_sequence",  typeHandler = MapLong2StringConverter.class),
-      @Result(property = "toSequence", column = "to_sequence",  typeHandler = MapLong2StringConverter.class)
+      @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "fromSequence", column = "from_sequence", typeHandler = MapLong2StringConverter.class),
+      @Result(property = "toSequence", column = "to_sequence", typeHandler = MapLong2StringConverter.class)
   })
   List<TableRuntimeMeta> selectTableRuntimeMetas();
 }

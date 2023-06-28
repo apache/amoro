@@ -13,10 +13,11 @@ import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.controller.IcebergRestCatalogController;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.iceberg.InternalIcebergTableOperations;
+import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
@@ -58,6 +59,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.server.utils.IcebergTableUtils.loadIcebergTableMetadata;
 import static com.netease.arctic.server.utils.IcebergTableUtils.newIcebergFileIo;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -269,14 +271,24 @@ public class IcebergRestCatalogService extends PersistentBase {
           location, request.properties()
       );
       ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
-      try (FileIO io = newIcebergFileIo(catalog.getMetadata());) {
-        TableOperations ops = InternalIcebergTableOperations.buildForCreate(catalog.getMetadata(), identifier, io);
-        ops.commit(null, tableMetadata);
-        tableMetadata = ops.current();
+
+      String newMetadataFileLocation = IcebergTableUtils.genNewMetadataFileLocation(null, tableMetadata);
+      FileIO io = newIcebergFileIo(catalog.getMetadata());
+      try {
+        com.netease.arctic.server.table.TableMetadata amsTableMeta = IcebergTableUtils.createTableInternal(
+            identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
+        );
+        tableService.createTable(catalog.name(), amsTableMeta);
+        TableMetadata current = loadIcebergTableMetadata(io, amsTableMeta);
+        return LoadTableResponse.builder()
+            .withTableMetadata(current)
+            .build();
+      } catch (RuntimeException e) {
+        io.deleteFile(newMetadataFileLocation);
+        throw e;
+      } finally {
+        io.close();
       }
-      return LoadTableResponse.builder()
-          .withTableMetadata(tableMetadata)
-          .build();
     });
   }
 
@@ -287,14 +299,11 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMeta, io);
-        tableMetadata = ops.current();
+        tableMetadata = IcebergTableUtils.loadIcebergTableMetadata(io, tableMeta);
       }
-
       if (tableMetadata == null) {
         throw new NoSuchTableException("failed to load table from metadata file.");
       }
-
       return LoadTableResponse.builder()
           .withTableMetadata(tableMetadata)
           .build();
@@ -309,15 +318,18 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = ctx.bodyAsClass(UpdateTableRequest.class);
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMeta, io);
+        TableOperations ops = InternalTableOperations.buildForLoad(tableMeta, io);
         TableMetadata base = ops.current();
+        if (base == null) {
+          throw new CommitFailedException("table metadata lost.");
+        }
 
         TableMetadata.Builder builder = TableMetadata.buildFrom(base);
         request.requirements().forEach(r -> r.validate(base));
         request.updates().forEach(u -> u.applyTo(builder));
         TableMetadata newMetadata = builder.build();
-        ops.commit(base, newMetadata);
 
+        ops.commit(base, newMetadata);
         TableMetadata current = ops.current();
         return LoadTableResponse.builder()
             .withTableMetadata(current)
@@ -337,13 +349,13 @@ public class IcebergRestCatalogService extends PersistentBase {
       TableMetadata current = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
-          TableOperations ops = InternalIcebergTableOperations.buildForLoad(catalog.getMetadata(), tableMetadata, io);
-          current = ops.current();
+          current = IcebergTableUtils.loadIcebergTableMetadata(io, tableMetadata);
         } catch (Exception e) {
-          // do nothing if we can't load iceberg table metadata.
+          LOG.warn("failed to load iceberg table metadata, metadata file maybe lost: " + e.getMessage());
         }
-        catalog.dropTable(tableMetadata.getTableIdentifier().getDatabase(),
-            tableMetadata.getTableIdentifier().getTableName());
+
+        tableService.dropTableMetadata(
+            tableMetadata.getTableIdentifier().getIdentifier(), true);
         if (purge && current != null) {
           org.apache.iceberg.CatalogUtil.dropTableData(io, current);
         }

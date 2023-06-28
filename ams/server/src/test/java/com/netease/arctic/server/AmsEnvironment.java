@@ -1,5 +1,6 @@
 package com.netease.arctic.server;
 
+import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AmsEnvironment {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsEnvironment.class);
+  private static AmsEnvironment integrationInstances = null;
   private final String rootPath;
   private static final String DEFAULT_ROOT_PATH = "/tmp/arctic_integration";
   private static final String OPTIMIZE_GROUP = "default";
@@ -58,6 +60,25 @@ public class AmsEnvironment {
   public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
   public static String MIXED_ICEBERG_CATALOG_DIR = "/mixed_iceberg/warehouse";
   public static final String MIXED_HIVE_CATALOG = "mixed_hive_catalog";
+  private boolean started = false;
+  private boolean optimizingStarted = false;
+  private boolean singleton = false;
+
+  public static AmsEnvironment getIntegrationInstances() {
+    synchronized (AmsEnvironment.class) {
+      if (integrationInstances == null) {
+        TemporaryFolder baseDir = new TemporaryFolder();
+        try {
+          baseDir.create();
+          integrationInstances = new AmsEnvironment(baseDir.newFolder().getAbsolutePath());
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+        integrationInstances.singleton();
+      }
+    }
+    return integrationInstances;
+  }
 
   public static void main(String[] args) throws Exception {
     AmsEnvironment amsEnvironment = new AmsEnvironment();
@@ -81,10 +102,18 @@ public class AmsEnvironment {
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();
     testHMS = new HMSMockServer(hiveDir.newFile());
-    testHMS.start();
+  }
+
+  public void singleton() {
+    this.singleton = true;
   }
 
   public void start() throws Exception {
+    if (started) {
+      return;
+    }
+
+    testHMS.start();
     startAms();
     DynFields.UnboundField<DefaultTableService> amsTableServiceField =
         DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableService").build();
@@ -107,9 +136,17 @@ public class AmsEnvironment {
     }
 
     initCatalog();
+    started = true;
   }
 
   public void stop() throws IOException {
+    if (!started) {
+      return;
+    }
+    if (singleton && SingletonResourceUtil.isUseSingletonResource()) {
+      return;
+    }
+
     stopOptimizer();
     if (this.arcticService != null) {
       this.arcticService.dispose();
@@ -120,6 +157,14 @@ public class AmsEnvironment {
 
   public ArcticCatalog catalog(String name) {
     return catalogs.get(name);
+  }
+
+  public void createDatabaseIfNotExists(String catalog, String database) {
+    ArcticCatalog arcticCatalog = catalogs.get(catalog);
+    if (arcticCatalog.listDatabases().contains(database)) {
+      return;
+    }
+    arcticCatalog.createDatabase(database);
   }
 
   public ArcticServiceContainer serviceContainer() {
@@ -193,6 +238,9 @@ public class AmsEnvironment {
   }
 
   public void startOptimizer() {
+    if (optimizingStarted) {
+      return;
+    }
     new Thread(() -> {
       String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
       try {
@@ -201,6 +249,7 @@ public class AmsEnvironment {
         throw new RuntimeException(e);
       }
     }).start();
+    optimizingStarted = true;
   }
 
   public void stopOptimizer() {
