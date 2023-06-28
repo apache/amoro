@@ -39,6 +39,7 @@ export default {
   field: 'Field',
   type: 'Type',
   implementation: 'Implementation',
+  required: 'Required',
   createTime: 'Create Time',
   primaryKey: 'Primary Key',
   partitionKey: 'Partition Key',

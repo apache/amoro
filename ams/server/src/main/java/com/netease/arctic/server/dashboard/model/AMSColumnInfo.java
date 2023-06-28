@@ -28,6 +28,7 @@ import org.apache.iceberg.types.Types;
 public class AMSColumnInfo {
   String field;
   String type;
+  boolean required;
   String comment;
 
   public String getField() {
@@ -46,6 +47,14 @@ public class AMSColumnInfo {
     this.type = type;
   }
 
+  public boolean isRequired() {
+    return required;
+  }
+
+  public void setRequired(boolean required) {
+    this.required = required;
+  }
+
   public String getComment() {
     return comment;
   }
@@ -57,9 +66,10 @@ public class AMSColumnInfo {
   public AMSColumnInfo() {
   }
 
-  public AMSColumnInfo(String field, String type, String comment) {
+  public AMSColumnInfo(String field, String type, boolean required, String comment) {
     this.field = field;
     this.type = type;
+    this.required = required;
     this.comment = comment;
   }
 
@@ -70,6 +80,7 @@ public class AMSColumnInfo {
     return new Builder()
             .field(field.name())
             .type(field.type().toString())
+            .required(field.isRequired())
             .comment(field.doc())
             .build();
   }
@@ -86,8 +97,8 @@ public class AMSColumnInfo {
   public static class Builder {
     String field;
     String type;
+    boolean required;
     String comment;
-
 
     public Builder field(String field) {
       this.field = field;
@@ -99,13 +110,18 @@ public class AMSColumnInfo {
       return this;
     }
 
+    public  Builder  required(Boolean isRequired) {
+      this.required = isRequired;
+      return this;
+    }
+
     public Builder comment(String comment) {
       this.comment = comment;
       return this;
     }
 
     public AMSColumnInfo build() {
-      return new AMSColumnInfo(field, type, comment);
+      return new AMSColumnInfo(field, type, required, comment);
     }
   }
 }
