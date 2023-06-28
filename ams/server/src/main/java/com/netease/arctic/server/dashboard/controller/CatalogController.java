@@ -337,7 +337,7 @@ public class CatalogController {
    */
   public void catalogDeleteCheck(Context ctx) {
     Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    int tblCount = tableService.listRunningTables(ctx.pathParam("catalogName")).size();
+    int tblCount = tableService.listSystemTables(ctx.pathParam("catalogName")).size();
     ctx.json(OkResponse.of(tblCount == 0));
   }
 
