@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceManager;
@@ -47,6 +48,7 @@ import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.CatalogProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,7 +290,9 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
     for (CatalogMeta catalogMeta : tableManager.listCatalogMetas()) {
       if (catalogMeta.getCatalogProperties() != null &&
           catalogMeta.getCatalogProperties()
-              .getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .getOrDefault(
+                  CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+                  TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
               .equals(name)) {
         return false;
       }
