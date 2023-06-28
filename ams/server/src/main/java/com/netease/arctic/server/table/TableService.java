@@ -64,21 +64,23 @@ public interface TableService extends CatalogService, TableManager {
   List<String> listDatabases(String catalogName);
 
   /**
-   * load all table identifiers from system database
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
    * @return {@link ServerTableIdentifier} list
    */
   List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * load table identifiers from system database
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
    * @return {@link ServerTableIdentifier} list
    */
   List<ServerTableIdentifier> listManagedTables(String catalogName);
 
   /**
-   * load table identifiers by server catalog
+   * Load table identifiers by server catalog
    *
    * @return {@link TableIdentifier} list
    */
