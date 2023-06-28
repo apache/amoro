@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -41,8 +45,12 @@ import java.util.List;
 import static com.netease.arctic.flink.write.TestArcticFileWriter.createArcticStreamWriter;
 
 public class TestArcticFileCommitter extends FlinkTestBase {
-
   public ArcticTableLoader tableLoader;
+
+  public TestArcticFileCommitter() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(true, true));
+  }
 
   public OneInputStreamOperatorTestHarness<WriteResult, Void> createArcticFileCommitter(
       ArcticTableLoader tableLoader, ArcticTable table, OperatorSubtaskState operatorSubtaskState) throws Exception {
@@ -79,7 +87,7 @@ public class TestArcticFileCommitter extends FlinkTestBase {
 
   @Test
   public void testCommit() throws Exception {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     KeyedTable table = ArcticUtils.loadArcticTable(tableLoader).asKeyedTable();
 
     List<WriteResult> completedFiles = prepareChangeFiles();
