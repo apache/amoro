@@ -68,14 +68,14 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listSystemTables();
+  List<ServerTableIdentifier> listManagedTables();
 
   /**
    * load table identifiers from system database
    *
    * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listSystemTables(String catalogName);
+  List<ServerTableIdentifier> listManagedTables(String catalogName);
 
   /**
    * load table identifiers by server catalog

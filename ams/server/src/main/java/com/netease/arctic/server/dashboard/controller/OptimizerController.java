@@ -72,7 +72,7 @@ public class OptimizerController {
     int offset = (page - 1) * pageSize;
 
     List<TableRuntime> tableRuntimes = new ArrayList<>();
-    List<ServerTableIdentifier> tables = tableService.listSystemTables();
+    List<ServerTableIdentifier> tables = tableService.listManagedTables();
     for (ServerTableIdentifier identifier : tables) {
       TableRuntime tableRuntime = tableService.getRuntime(identifier);
       if (tableRuntime == null) {

@@ -115,7 +115,7 @@ public class TestTableService extends AMSTableTestBase {
 
     // test drop table
     dropTable();
-    Assert.assertEquals(0, tableService().listSystemTables().size());
+    Assert.assertEquals(0, tableService().listManagedTables().size());
     Assert.assertEquals(0, tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME).size());
     Assert.assertEquals(0, tableService().listTableMetas().size());
     Assert.assertEquals(0, tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME).size());

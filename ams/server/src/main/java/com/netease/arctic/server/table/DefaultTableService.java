@@ -173,13 +173,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<ServerTableIdentifier> listSystemTables() {
+  public List<ServerTableIdentifier> listManagedTables() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers);
   }
 
   @Override
-  public List<ServerTableIdentifier> listSystemTables(String catalogName) {
+  public List<ServerTableIdentifier> listManagedTables(String catalogName) {
     checkStarted();
     return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByCatalog(catalogName));
   }
