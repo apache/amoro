@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-public class TableManagementService implements AmsClient, ArcticTableMetastore.Iface {
+public class TableManagementService implements ArcticTableMetastore.Iface {
 
   private final TableService tableService;
 

@@ -2,10 +2,14 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogUtil;
@@ -18,7 +22,9 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
@@ -39,8 +45,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-public class IcebergRestCatalogServiceTest {
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogServiceTest.class);
+public class TestIcebergRestCatalogService {
+  private static final Logger LOG = LoggerFactory.getLogger(TestIcebergRestCatalogService.class);
 
 
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
@@ -217,6 +223,34 @@ public class IcebergRestCatalogServiceTest {
       Assertions.assertEquals("v1", loadedTable.properties().get("k1"));
       tasks = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
       Assertions.assertEquals(files.size(), tasks.size());
+    }
+
+
+    @Test
+    public void testArcticCatalogLoader() {
+      Table tbl = nsCatalog.createTable(identifier, schema, spec);
+      List<DataFile> files = DataTestHelpers.writeIceberg(tbl, newRecords);
+      AppendFiles appendFiles = tbl.newAppend();
+      files.forEach(appendFiles::appendFile);
+      appendFiles.commit();
+
+      ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+      ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(
+          AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table));
+
+      Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
+      GenericIcebergDataReader reader = new GenericIcebergDataReader(
+          arcticTable.io(),
+          arcticTable.schema(),
+          arcticTable.schema(),
+          null,
+          false,
+          IdentityPartitionConverters::convertConstant,
+          false
+      );
+      List<Record> records = DataTestHelpers.readBaseStore(
+          arcticTable, reader, Expressions.alwaysTrue());
+      Assertions.assertEquals(newRecords.size(), records.size());
     }
 
   }

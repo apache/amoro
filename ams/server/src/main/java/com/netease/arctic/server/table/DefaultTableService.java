@@ -5,7 +5,9 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
@@ -21,6 +23,7 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -50,11 +53,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private Timer tableExplorerTimer;
 
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
+  private final int httpPort;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
         configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
+    this.httpPort = configuration.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
   }
 
   @Override
@@ -70,7 +75,15 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public CatalogMeta getCatalogMeta(String catalogName) {
     checkStarted();
-    return getServerCatalog(catalogName).getMetadata();
+    ServerCatalog catalog = getServerCatalog(catalogName);
+    CatalogMeta meta = catalog.getMetadata();
+    if (catalog instanceof InternalCatalog) {
+      Set<TableFormat> formats = CatalogUtil.tableFormats(meta);
+      if (formats.contains(TableFormat.ICEBERG)) {
+        meta.putToCatalogProperties(CatalogMetaProperties.HTTP_PORT, String.valueOf(httpPort));
+      }
+    }
+    return meta;
   }
 
   @Override

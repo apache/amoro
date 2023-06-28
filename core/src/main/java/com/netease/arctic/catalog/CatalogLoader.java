@@ -32,6 +32,7 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -52,6 +53,8 @@ public class CatalogLoader {
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
   public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+
+  public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
 
   /**
    * Entrypoint for loading Catalog.
@@ -132,7 +135,12 @@ public class CatalogLoader {
           if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (tableFormat.equals(TableFormat.ICEBERG)) {
-            catalogImpl = AMS_CATALOG_IMPL;
+            int httpPort = Integer.parseInt(catalogMeta.getCatalogProperties().get(CatalogMetaProperties.HTTP_PORT));
+            String uri = "http://" + client.getServiceInfo().getHost() + ":" + httpPort +
+                "/api/iceberg/rest/catalog/" + catalogName;
+            catalogMeta.putToCatalogProperties("uri", uri);
+            catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
+            catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {
             throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
           }
