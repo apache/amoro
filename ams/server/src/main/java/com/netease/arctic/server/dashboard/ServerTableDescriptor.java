@@ -231,14 +231,14 @@ public class ServerTableDescriptor extends PersistentBase {
 
   public List<OptimizingTaskMeta> getOptimizingTasks(long processId) {
     return getAs(OptimizingMapper.class,
-        mapper -> mapper.selectOptimizeTaskStats(Collections.singletonList(processId)));
+        mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
   }
 
   public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
     List<Long> processIds = processMetaList.stream()
         .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
     return getAs(OptimizingMapper.class,
-        mapper -> mapper.selectOptimizeTaskStats(processIds));
+        mapper -> mapper.selectOptimizeTaskMetas(processIds));
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {
