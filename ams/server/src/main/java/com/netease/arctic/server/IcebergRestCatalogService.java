@@ -11,7 +11,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
-import com.netease.arctic.server.dashboard.controller.IcebergRestCatalogController;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -123,7 +122,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   public boolean needHandleException(Context ctx) {
-    return ctx.req.getRequestURI().startsWith(IcebergRestCatalogController.REST_CATALOG_API_PREFIX);
+    return ctx.req.getRequestURI().startsWith(REST_CATALOG_API_PREFIX);
   }
 
   public void handleException(Exception e, Context ctx) {

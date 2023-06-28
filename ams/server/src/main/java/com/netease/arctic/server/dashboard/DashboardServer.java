@@ -19,9 +19,9 @@
 package com.netease.arctic.server.dashboard;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
-import com.netease.arctic.server.dashboard.controller.IcebergRestCatalogController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
 import com.netease.arctic.server.dashboard.controller.OptimizerController;
 import com.netease.arctic.server.dashboard.controller.PlatformFileInfoController;
@@ -325,7 +325,7 @@ public class DashboardServer {
       "/js/*",
       "/img/*",
       "/css/*",
-      IcebergRestCatalogController.REST_CATALOG_API_PREFIX + "/*"
+      IcebergRestCatalogService.REST_CATALOG_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
