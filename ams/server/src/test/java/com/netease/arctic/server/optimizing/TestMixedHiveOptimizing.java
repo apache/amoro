@@ -21,7 +21,6 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -58,7 +57,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
@@ -94,7 +93,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location

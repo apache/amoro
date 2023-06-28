@@ -192,7 +192,8 @@ public class DashboardServer {
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
         get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+            tableController::getOptimizingProcesses);
         get(
             "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
             tableController::getTableTransactions);
@@ -258,7 +259,8 @@ public class DashboardServer {
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
         get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+            tableController::getOptimizingProcesses);
         get(
             "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
             tableController::getTableTransactions);

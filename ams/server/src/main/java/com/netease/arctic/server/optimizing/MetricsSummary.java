@@ -26,7 +26,6 @@ public class MetricsSummary {
   protected MetricsSummary(RewriteFilesInput input) {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
     reRowDeletedDataFileCnt = input.rePosDeletedDataFiles().length;
-    ;
     for (IcebergDataFile rewriteFile : input.rewrittenDataFiles()) {
       rewriteDataSize += rewriteFile.fileSizeInBytes();
     }

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -56,7 +55,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     ), null);
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 4);
     assertIds(readRecords(table), 3, 4, 5, 6);
 
@@ -168,7 +167,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1000");
 
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 5, 4);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
 
@@ -226,7 +225,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
         newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
@@ -264,7 +263,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
         newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
@@ -322,7 +321,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
 
     // wait Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 1, 1);
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
