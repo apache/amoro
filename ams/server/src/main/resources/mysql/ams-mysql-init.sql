@@ -160,7 +160,7 @@ CREATE TABLE `task_runtime`
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
-    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
