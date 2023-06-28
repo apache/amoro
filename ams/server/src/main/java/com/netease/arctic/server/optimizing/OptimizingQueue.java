@@ -499,16 +499,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return new MetricsSummary(taskMap.values());
     }
 
-    @Override
-    public Map<String, Long> getFromSequence() {
-      return fromSequence;
-    }
-
-    @Override
-    public Map<String, Long> getToSequence() {
-      return toSequence;
-    }
-
     private UnKeyedTableCommit buildCommit() {
       ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       if (table.isUnkeyedTable()) {
@@ -538,7 +528,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
                   processId, targetSnapshotId, targetChangeSnapshotId, status, optimizingType, planTime, getSummary(),
-                  getFromSequence(), getToSequence())),
+                  fromSequence, toSequence)),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
