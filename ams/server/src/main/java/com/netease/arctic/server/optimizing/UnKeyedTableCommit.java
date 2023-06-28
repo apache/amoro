@@ -194,7 +194,7 @@ public class UnKeyedTableCommit {
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
         }
         dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        if (TableTypeUtil.isHive(table)) {
+        if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
           dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
         }
         dataFileRewrite.commit();

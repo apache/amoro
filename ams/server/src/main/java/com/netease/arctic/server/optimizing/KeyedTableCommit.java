@@ -141,7 +141,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     addedDataFiles.forEach(overwriteBaseFiles::addFile);
     addedDeleteFiles.forEach(overwriteBaseFiles::addFile);
     removedDataFiles.forEach(overwriteBaseFiles::deleteFile);
-    if (TableTypeUtil.isHive(table)) {
+    if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     }
     overwriteBaseFiles.skipEmptyCommit().commit();
