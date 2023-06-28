@@ -239,12 +239,12 @@ public class OptimizerController {
     String container = (String) map.get("container");
     Map<String, String> properties = (Map) map.get("properties");
     if (optimizerManager.getResourceGroup(name) != null) {
-      throw new BadRequestException(String.format("Optimizer group:%s already existed." + name));
+      throw new BadRequestException(String.format("Optimizer group:%s already existed.", name));
     }
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.createResourceGroup(builder.build());
-    ctx.json(OkResponse.of("Created optimizer group successfully"));
+    ctx.json(OkResponse.of("The optimizer group has been successfully created."));
   }
 
   /**
@@ -259,7 +259,7 @@ public class OptimizerController {
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.updateResourceGroup(builder.build());
-    ctx.json(OkResponse.of("Success to update optimize group"));
+    ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
   }
 
   /**
@@ -269,7 +269,7 @@ public class OptimizerController {
   public void deleteResourceGroup(Context ctx) {
     String name = ctx.pathParam("resourceGroupName");
     optimizerManager.deleteResourceGroup(name);
-    ctx.json(OkResponse.of("Success to delete optimize group"));
+    ctx.json(OkResponse.of("The optimizer group has been successfully deleted."));
   }
 
   /**
@@ -277,8 +277,7 @@ public class OptimizerController {
    * url = /optimize/resourceGroups/delete/check
    */
   public void deleteCheckResourceGroup(Context ctx) {
-    Map<String, Object> map = ctx.bodyAsClass(Map.class);
-    String name = (String) map.get("name");
+    String name = ctx.pathParam("resourceGroupName");
     ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
   }
 

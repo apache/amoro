@@ -77,7 +77,8 @@ public class DashboardServer {
   private final VersionController versionController;
   private final TerminalManager terminalManager;
 
-  public DashboardServer(Configurations serviceConfig, TableService tableService,
+  public DashboardServer(
+      Configurations serviceConfig, TableService tableService,
       DefaultOptimizingService optimizerManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.serviceConfig = serviceConfig;
@@ -156,7 +157,7 @@ public class DashboardServer {
           if (null == ctx.sessionAttribute("user")) {
             ctx.sessionAttributeMap();
             LOG.info("session info: {}", JSONObject.toJSONString(
-                            ctx.sessionAttributeMap()));
+                ctx.sessionAttributeMap()));
             throw new ForbiddenException();
           }
         }
@@ -220,7 +221,7 @@ public class DashboardServer {
         post("/optimize/resourceGroups", optimizerController::createResourceGroup);
         put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
         delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
-        post("/optimize/resourceGroups/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
         get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
@@ -282,7 +283,7 @@ public class DashboardServer {
         post("/optimize/resourceGroups", optimizerController::createResourceGroup);
         put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
         delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
-        post("/optimize/resourceGroups/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
         get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
