@@ -194,9 +194,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
-    Optional.ofNullable(executingTaskMap.remove(taskResult.getTaskId()))
+    Optional.ofNullable(executingTaskMap.get(taskResult.getTaskId()))
         .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
         .complete(thread, taskResult);
+    executingTaskMap.remove(taskResult.getTaskId());
   }
 
   @Override
