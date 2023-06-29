@@ -3,7 +3,7 @@ package com.netease.arctic.server.optimizing;
 public enum OptimizingType {
   MINOR(OptimizingStatus.MINOR_OPTIMIZING),
   MAJOR(OptimizingStatus.MAJOR_OPTIMIZING),
-  FULL_MAJOR(OptimizingStatus.FULL_OPTIMIZING);
+  FULL(OptimizingStatus.FULL_OPTIMIZING);
 
   private OptimizingStatus status;
 

@@ -97,7 +97,6 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
     List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    optimizers.forEach(optimizer -> optimizer.setTouchTime(System.currentTimeMillis()));
     Map<String, List<OptimizerInstance>> optimizersByGroup =
         optimizers.stream().collect(Collectors.groupingBy(OptimizerInstance::getGroupName));
     Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
@@ -347,7 +346,9 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
       optimizerMonitorTimer = new Timer("OptimizerMonitor", true);
       optimizerMonitorTimer.schedule(
           new SuspendingDetector(),
-          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL,
+          optimizerTouchTimeout,
+          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
+      LOG.info("init SuspendingDetector for Optimizer with delay {} ms, interval {} ms", optimizerTouchTimeout,
           ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
       LOG.info("OptimizerManagementService initializing has completed");
     }
