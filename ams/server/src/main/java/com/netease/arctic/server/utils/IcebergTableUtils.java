@@ -226,7 +226,7 @@ public class IcebergTableUtils {
     meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, icebergTableMetadata.location());
     meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, icebergTableMetadata.location());
 
-    meta.putToProperties(MetaTableProperties.TABLE_FORMAT, TableFormat.ICEBERG.name());
+    meta.setFormat(TableFormat.ICEBERG.name());
     meta.putToProperties(PROPERTIES_METADATA_LOCATION, metadataFileLocation);
     return new com.netease.arctic.server.table.TableMetadata(
         identifier, meta, catalogMeta);

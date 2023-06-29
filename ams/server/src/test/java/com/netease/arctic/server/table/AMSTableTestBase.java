@@ -118,6 +118,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
     return builder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
         .withProperties(tableTestHelper.tableProperties())
         .withTableLocation(tableLocation)
+        .withFormat(catalogTestHelper.tableFormat())
         .withChangeLocation(tableLocation + "/change")
         .withBaseLocation(tableLocation + "/base")
         .build();

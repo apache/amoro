@@ -50,10 +50,8 @@ public class TableMetadata implements Serializable {
   public TableMetadata(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
     this.tableIdentifier = identifier;
     Map<String, String> properties = Maps.newHashMap(tableMeta.getProperties());
-    Preconditions.checkArgument(properties.containsKey(MetaTableProperties.TABLE_FORMAT),
-        "lack require field: table format");
-    this.format = TableFormat.valueOf(properties.get(MetaTableProperties.TABLE_FORMAT));
-    properties.remove(MetaTableProperties.TABLE_FORMAT);
+    Preconditions.checkNotNull(tableMeta.getFormat(), "lack require field: table format");
+    this.format = TableFormat.valueOf(tableMeta.getFormat());
     if (tableMeta.getLocations() != null &&
         tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
       this.tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);

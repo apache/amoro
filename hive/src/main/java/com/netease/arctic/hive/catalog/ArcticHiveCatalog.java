@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
@@ -264,7 +263,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     @Override
     protected ConvertStructUtil.TableMetaBuilder createTableMataBuilder() {
       ConvertStructUtil.TableMetaBuilder builder = super.createTableMataBuilder();
-      return builder.withProperty(MetaTableProperties.TABLE_FORMAT, TableFormat.MIXED_HIVE.name());
+      return builder.withFormat(TableFormat.MIXED_HIVE);
     }
   }
 }

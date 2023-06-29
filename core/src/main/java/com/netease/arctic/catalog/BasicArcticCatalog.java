@@ -26,7 +26,6 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
@@ -294,7 +293,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
     }
 
     protected ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-        PartitionSpec partitionSpec) {
+                                            PartitionSpec partitionSpec) {
       return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
     }
 
@@ -399,7 +398,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
-          .withProperty(MetaTableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name())
+          .withFormat(TableFormat.MIXED_ICEBERG)
           .withPrimaryKeySpec(this.primaryKeySpec);
 
       if (this.primaryKeySpec.primaryKeyExisted()) {

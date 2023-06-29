@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
