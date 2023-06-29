@@ -188,7 +188,6 @@ public class ArcticServiceContainer {
       config.addStaticFiles(dashboardServer.configStaticFiles());
       config.sessionHandler(SessionHandler::new);
       config.enableCorsForAllOrigins();
-      config.jsonMapper(restCatalogService.jsonMapper());
     });
     httpServer.routes(() -> {
       dashboardServer.endpoints().addEndpoints();

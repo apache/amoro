@@ -30,7 +30,7 @@ public class InternalIcebergCatalogImpl extends MixedCatalogImpl {
   public CatalogMeta getMetadata() {
     CatalogMeta meta = super.getMetadata();
     meta.putToCatalogProperties(CatalogMetaProperties.HTTP_PORT, String.valueOf(httpPort));
-    return meta;
+    return meta.deepCopy();
   }
 
   @Override

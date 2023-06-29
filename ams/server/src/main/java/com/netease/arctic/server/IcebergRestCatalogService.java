@@ -19,6 +19,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.IcebergTableUtils;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
@@ -30,6 +31,7 @@ import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -42,6 +44,7 @@ import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
 import org.apache.iceberg.rest.responses.ErrorResponse;
+import org.apache.iceberg.rest.responses.GetNamespaceResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
@@ -82,22 +85,14 @@ public class IcebergRestCatalogService extends PersistentBase {
       Sets.newHashSet(CatalogMetaProperties.KEY_WAREHOUSE)
   );
 
+  private final JavalinJackson jsonMapper;
+
   private final TableService tableService;
 
   public IcebergRestCatalogService(TableService tableService) {
     this.tableService = tableService;
+    this.jsonMapper = jsonMapper();
   }
-
-
-  public JavalinJackson jsonMapper() {
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    mapper.setPropertyNamingStrategy(new PropertyNamingStrategy.KebabCaseStrategy());
-    RESTSerializers.registerAll(mapper);
-    return new JavalinJackson(mapper);
-  }
-
 
   public EndpointGroup endpoints() {
     return () -> {
@@ -134,7 +129,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         .withMessage(e.getMessage())
         .build();
     ctx.res.setStatus(code.code);
-    ctx.json(response);
+    jsonResponse(ctx, response);
     if (code.code >= 500) {
       LOG.warn("InternalServer Error", e);
     }
@@ -164,7 +159,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         .withDefaults(properties)
         .withOverrides(overwrites)
         .build();
-    ctx.json(configResponse);
+    jsonResponse(ctx, configResponse);
   }
 
 
@@ -191,12 +186,8 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void createNamespace(Context ctx) {
     handleCatalog(ctx, catalog -> {
-      CreateNamespaceRequest request = ctx.bodyAsClass(CreateNamespaceRequest.class);
+      CreateNamespaceRequest request = bodyAsClass(ctx, CreateNamespaceRequest.class);
       Namespace ns = request.namespace();
-      checkUnsupported(
-          request.properties() == null || request.properties().isEmpty(),
-          "create namespace with properties is not supported now."
-      );
       checkUnsupported(ns.length() == 1,
           "multi-level namespace is not supported now");
       catalog.createDatabase(ns.levels()[0]);
@@ -208,7 +199,14 @@ public class IcebergRestCatalogService extends PersistentBase {
    * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespaces}
    */
   public void getNamespace(Context ctx) {
-    throw new UnsupportedOperationException("namespace properties is not supported");
+    handleNamespace(ctx, (catalog, database) -> {
+      if (catalog.exist(database)) {
+        return GetNamespaceResponse.builder()
+            .withNamespace(Namespace.of(database))
+            .build();
+      }
+      throw new NoSuchNamespaceException("database:" + database + " doesn't exist.");
+    });
   }
 
   /**
@@ -252,7 +250,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void createTable(Context ctx) {
     handleNamespace(ctx, (catalog, database) -> {
       Preconditions.checkArgument(catalog.exist(database));
-      CreateTableRequest request = ctx.bodyAsClass(CreateTableRequest.class);
+      CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
       String tableName = request.name();
       Preconditions.checkArgument(!catalog.exist(database, tableName));
       String location = request.location();
@@ -319,7 +317,7 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void commitTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
-      UpdateTableRequest request = ctx.bodyAsClass(UpdateTableRequest.class);
+      UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         TableOperations ops = InternalTableOperations.buildForLoad(tableMeta, io);
         TableMetadata base = ops.current();
@@ -392,12 +390,21 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void metricReport(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
-      ReportMetricsRequest request = ctx.bodyAsClass(ReportMetricsRequest.class);
+      ReportMetricsRequest request = bodyAsClass(ctx, ReportMetricsRequest.class);
       LOG.debug(request.toString());
       return null;
     });
   }
 
+
+  private <T> T bodyAsClass(Context ctx, Class<T> clz) {
+    return jsonMapper.fromJsonString(ctx.body(), clz);
+  }
+
+  private void jsonResponse(Context ctx, RESTResponse rsp) {
+    ctx.contentType(ContentType.APPLICATION_JSON)
+        .result(jsonMapper.toJsonString(rsp));
+  }
 
   private void handleCatalog(Context ctx, Function<InternalCatalog, ? extends RESTResponse> handler) {
     String catalog = ctx.pathParam("catalog");
@@ -406,7 +413,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
     RESTResponse r = handler.apply(internalCatalog);
     if (r != null) {
-      ctx.json(r);
+      jsonResponse(ctx, r);
     }
   }
 
@@ -425,7 +432,9 @@ public class IcebergRestCatalogService extends PersistentBase {
       Context ctx,
       BiFunction<InternalCatalog, com.netease.arctic.server.table.TableMetadata, ? extends RESTResponse> handler) {
     handleNamespace(ctx, (catalog, database) -> {
-      Preconditions.checkArgument(catalog.exist(database));
+      if (!catalog.exist(database)) {
+        throw new NoSuchNamespaceException("database:" + database + " doesn't exists.");
+      }
       String tableName = ctx.pathParam("table");
       Preconditions.checkNotNull(tableName, "table name is null");
       com.netease.arctic.server.table.TableMetadata metadata = tableService.loadTableMetadata(
@@ -458,6 +467,15 @@ public class IcebergRestCatalogService extends PersistentBase {
     }
   }
 
+  private JavalinJackson jsonMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.setPropertyNamingStrategy(new PropertyNamingStrategy.KebabCaseStrategy());
+    RESTSerializers.registerAll(mapper);
+    return new JavalinJackson(mapper);
+  }
+
   enum IcebergRestErrorCode {
     BadRequest(400),
     NotAuthorized(401),
@@ -482,6 +500,8 @@ public class IcebergRestCatalogService extends PersistentBase {
       } else if (e instanceof CommitFailedException) {
         return Conflict;
       } else if (e instanceof NoSuchTableException) {
+        return NotFound;
+      } else if (e instanceof NoSuchNamespaceException) {
         return NotFound;
       }
       return InternalServerError;

@@ -82,7 +82,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     } else {
       mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
       tableMeta = buildTableMeta();
-      tableMetadata = new TableMetadata(serverTableIdentifier, tableMeta, catalogMeta);
+      tableMetadata = new TableMetadata(
+          ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
     }
     tableService().createCatalog(catalogMeta);
     try {
@@ -151,6 +152,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     } else {
       mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
+      TableMetadata tableMetadata = new TableMetadata(
+          ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     }
     serverTableIdentifier = tableService().listManagedTables().get(0);

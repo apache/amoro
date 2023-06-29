@@ -107,6 +107,7 @@ public class TableMetadata implements Serializable {
       keySpec.setFields(fields);
       meta.setKeySpec(keySpec);
     }
+    meta.setFormat(this.format.name());
     return meta;
   }
 
