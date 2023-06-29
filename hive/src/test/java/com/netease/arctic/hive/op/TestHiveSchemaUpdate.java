@@ -45,8 +45,6 @@ import java.util.Map;
 import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
 import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
-
-import static com.netease.arctic.hive.HiveTableTestBase.hms;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_D;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_DAY;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_TIME_WITH_ZONE;
