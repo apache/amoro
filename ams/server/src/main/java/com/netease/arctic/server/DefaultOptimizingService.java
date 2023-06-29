@@ -303,7 +303,7 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
         return false;
       }
     }
-    for (ServerTableIdentifier identifier : tableManager.listTables()) {
+    for (ServerTableIdentifier identifier : tableManager.listManagedTables()) {
       if (optimizingQueueByGroup.containsKey(name) && optimizingQueueByGroup.get(name).containsTable(identifier)) {
         return false;
       }
