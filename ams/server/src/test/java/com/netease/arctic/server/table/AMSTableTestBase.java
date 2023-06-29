@@ -152,7 +152,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
           tableTestHelper.partitionSpec());
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     }
-    serverTableIdentifier = tableService().listTables().get(0);
+    serverTableIdentifier = tableService().listManagedTables().get(0);
   }
 
   protected void dropTable() {

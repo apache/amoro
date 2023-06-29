@@ -61,18 +61,27 @@ public interface TableService extends CatalogService, TableManager {
   List<String> listDatabases(String catalogName);
 
   /**
-   * load table identifiers
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
-   * @return TableIdentifier list
+   * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listTables();
+  List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * load table identifiers
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
-   * @return TableIdentifier list
+   * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listTables(String catalogName, String dbName);
+  List<ServerTableIdentifier> listManagedTables(String catalogName);
+
+  /**
+   * Load table identifiers by server catalog
+   *
+   * @return {@link TableIdentifier} list
+   */
+  List<TableIdentifier> listTables(String catalogName, String dbName);
 
   /**
    * create arctic database
