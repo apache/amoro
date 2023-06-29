@@ -101,7 +101,9 @@ public class TestTableService extends AMSTableTestBase {
 
     // test create table in not existed catalog
     Assert.assertThrows(ObjectNotExistsException.class, () -> {
-      tableService().createTable("unknown", tableMetadata());
+      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+      copyMetadata.getTableIdentifier().setCatalog("unknown");
+      tableService().createTable("unknown", copyMetadata);
     });
 
     if (catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
