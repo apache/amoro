@@ -88,9 +88,17 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
         TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
     // delete files total size reach target_size * duplicate_ratio
     if (deleteFilesTotalSize > targetSize * duplicateRatio) {
-      LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
+      LOG.debug("{} ==== need native Full optimize plan by {} > {} * {} , partition is {}, " +
               "delete files totalSize is {}, target size is {}",
-          tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
+          tableId(), deleteFilesTotalSize, targetSize, duplicateRatio,
+        partitionToPath, deleteFilesTotalSize, targetSize);
+      return true;
+    }
+
+    if (checkOptimizeInterval(partitionToPath)) {
+      LOG.debug("{} ==== need native Full optimize plan by Optimize Interval, partition is {}, " +
+          "delete files totalSize is {}, target size is {}",
+        tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
       return true;
     }
 
