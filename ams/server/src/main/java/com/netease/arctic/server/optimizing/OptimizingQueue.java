@@ -55,7 +55,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
   private final Lock planLock = new ReentrantLock();
-  private final ResourceGroup optimizerGroup;
+  private ResourceGroup optimizerGroup;
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy schedulingPolicy;
@@ -235,6 +235,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       retryTask(task, false);
     });
     return expiredOptimizers;
+  }
+
+  public void updateOptimizerGroup(ResourceGroup optimizerGroup) {
+    Preconditions.checkArgument(
+        this.optimizerGroup.getName().equals(optimizerGroup.getName()),
+        "optimizer group name mismatch");
+    this.optimizerGroup = optimizerGroup;
   }
 
   @VisibleForTesting

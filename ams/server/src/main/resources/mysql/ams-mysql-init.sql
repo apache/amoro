@@ -20,14 +20,6 @@ CREATE TABLE `database_metadata`
     PRIMARY KEY (`catalog_name`, `db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
 
-CREATE TABLE `container_metadata`
-(
-    `container_name`       varchar(64) NOT NULL COMMENT 'container name',
-    `container_type`       varchar(64) NOT NULL COMMENT 'container type like flink/local',
-    `properties` mediumtext COMMENT 'container properties',
-    PRIMARY KEY (`container_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'container metadata';
-
 
 CREATE TABLE `optimizer`
 (

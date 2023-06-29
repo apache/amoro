@@ -48,7 +48,6 @@ import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.CatalogProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -246,6 +245,9 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
   @Override
   public void updateResourceGroup(ResourceGroup resourceGroup) {
+    Preconditions.checkNotNull(resourceGroup, "The resource group cannot be null.");
+    Optional.ofNullable(optimizingQueueByGroup.get(resourceGroup.getName()))
+        .ifPresent(queue -> queue.updateOptimizerGroup(resourceGroup));
     doAs(ResourceMapper.class, mapper -> mapper.updateResourceGroup(resourceGroup));
   }
 
