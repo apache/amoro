@@ -85,7 +85,7 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog.
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
    * @return arctic catalog object
    */
@@ -96,9 +96,9 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
-   * @param props client side catalog configs
+   * @param props       client side catalog configs
    * @return arctic catalog object
    */
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
@@ -136,9 +136,9 @@ public class CatalogLoader {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (tableFormat.equals(TableFormat.ICEBERG)) {
             int httpPort = Integer.parseInt(catalogMeta.getCatalogProperties().get(CatalogMetaProperties.HTTP_PORT));
-            String uri = "http://" + client.getServiceInfo().getHost() + ":" + httpPort +
-                "/api/iceberg/rest/catalog/" + catalogName;
+            String uri = "http://" + client.getServiceInfo().getHost() + ":" + httpPort + "/api/iceberg/rest";
             catalogMeta.putToCatalogProperties("uri", uri);
+            catalogMeta.putToCatalogProperties("warehouse", catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
             catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {

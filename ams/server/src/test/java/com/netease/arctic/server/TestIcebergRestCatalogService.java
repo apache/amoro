@@ -50,7 +50,7 @@ public class TestIcebergRestCatalogService {
 
 
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
-  static String restCatalogUri = "/api/iceberg/rest/catalog/" + AmsEnvironment.INTERNAL_ICEBERG_CATALOG;
+  static String restCatalogUri = IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
 
 
   private final String database = "test_ns";
@@ -258,6 +258,8 @@ public class TestIcebergRestCatalogService {
 
   private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
+    clientProperties.put("warehouse", AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);
 

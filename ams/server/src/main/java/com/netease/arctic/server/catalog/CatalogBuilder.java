@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 
@@ -17,7 +18,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 public class CatalogBuilder {
 
   //TODO: use internal or external concepts
-  public static ServerCatalog buildServerCatalog(CatalogMeta catalogMeta) {
+  public static ServerCatalog buildServerCatalog(CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
     TableFormat tableFormat = tableFormats.iterator().next();
@@ -44,7 +45,7 @@ public class CatalogBuilder {
         if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
           return new MixedCatalogImpl(catalogMeta);
         } else if (tableFormat.equals(TableFormat.ICEBERG)) {
-          return new InternalIcebergCatalogImpl(catalogMeta);
+          return new InternalIcebergCatalogImpl(catalogMeta, serverConfiguration);
         } else {
           throw new IllegalStateException("AMS catalog support iceberg/mixed-iceberg table only.");
         }

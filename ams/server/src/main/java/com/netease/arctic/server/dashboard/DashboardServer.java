@@ -325,7 +325,7 @@ public class DashboardServer {
       "/js/*",
       "/img/*",
       "/css/*",
-      IcebergRestCatalogService.REST_CATALOG_API_PREFIX + "/*"
+      IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {

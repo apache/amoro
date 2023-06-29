@@ -70,18 +70,19 @@ public class IcebergRestCatalogService extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogService.class);
 
-  public static final String REST_CATALOG_API_PREFIX = "/api/iceberg/rest/catalog";
+  public static final String ICEBERG_REST_API_PREFIX = "/api/iceberg/rest";
 
-  private final TableService tableService;
+  private static final String ICEBERG_CATALOG_PREFIX_KEY = "prefix";
 
-  private final Set<String> catalogPropertiesNotReturned = Collections.unmodifiableSet(
+  private static final Set<String> catalogPropertiesNotReturned = Collections.unmodifiableSet(
       Sets.newHashSet(CatalogMetaProperties.TABLE_FORMATS)
   );
 
-  private final Set<String> catalogPropertiesOverwrite = Collections.unmodifiableSet(
+  private static final Set<String> catalogPropertiesOverwrite = Collections.unmodifiableSet(
       Sets.newHashSet(CatalogMetaProperties.KEY_WAREHOUSE)
   );
 
+  private final TableService tableService;
 
   public IcebergRestCatalogService(TableService tableService) {
     this.tableService = tableService;
@@ -101,28 +102,28 @@ public class IcebergRestCatalogService extends PersistentBase {
   public EndpointGroup endpoints() {
     return () -> {
       // for iceberg rest catalog api
-      path(REST_CATALOG_API_PREFIX, () -> {
-        get("/{catalog}/v1/config", this::getCatalogConfig);
-        get("/{catalog}/v1/namespaces", this::listNamespaces);
-        post("/{catalog}/v1/namespaces", this::createNamespace);
-        get("/{catalog}/v1/namespaces/{namespace}", this::getNamespace);
-        delete("/{catalog}/v1/namespaces/{namespace}", this::dropNamespace);
-        post("/{catalog}/v1/namespaces/{namespace}", this::setNamespaceProperties);
-        get("/{catalog}/v1/namespaces/{namespace}/tables", this::listTablesInNamespace);
-        post("/{catalog}/v1/namespaces/{namespace}/tables", this::createTable);
-        get("/{catalog}/v1/namespaces/{namespace}/tables/{table}", this::loadTable);
-        post("/{catalog}/v1/namespaces/{namespace}/tables/{table}", this::commitTable);
-        delete("/{catalog}/v1/namespaces/{namespace}/tables/{table}", this::deleteTable);
-        head("/{catalog}/v1/namespaces/{namespace}/tables/{table}", this::tableExists);
-        post("/{catalog}/v1/tables/rename", this::renameTable);
-        post("/{catalog}/v1/namespaces/{namespace}/tables/{table}/metrics", this::metricReport);
+      path(ICEBERG_REST_API_PREFIX, () -> {
+        get("/v1/config", this::getCatalogConfig);
+        get("/v1/catalogs/{catalog}/namespaces", this::listNamespaces);
+        post("/v1/catalogs/{catalog}/namespaces", this::createNamespace);
+        get("/v1/catalogs/{catalog}/namespaces/{namespace}", this::getNamespace);
+        delete("/v1/catalogs/{catalog}/namespaces/{namespace}", this::dropNamespace);
+        post("/v1/catalogs/{catalog}/namespaces/{namespace}", this::setNamespaceProperties);
+        get("/v1/catalogs/{catalog}/namespaces/{namespace}/tables", this::listTablesInNamespace);
+        post("/v1/catalogs/{catalog}/namespaces/{namespace}/tables", this::createTable);
+        get("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::loadTable);
+        post("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::commitTable);
+        delete("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::deleteTable);
+        head("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::tableExists);
+        post("/v1/catalogs/{catalog}/tables/rename", this::renameTable);
+        post("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics", this::metricReport);
       });
     };
   }
 
 
   public boolean needHandleException(Context ctx) {
-    return ctx.req.getRequestURI().startsWith(REST_CATALOG_API_PREFIX);
+    return ctx.req.getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
   }
 
   public void handleException(Exception e, Context ctx) {
@@ -141,26 +142,29 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * GET PREFIX/{catalog}/v1/config?warehouse={warehouse}
+   * GET PREFIX/v1/config?warehouse={warehouse}
    */
   public void getCatalogConfig(Context ctx) {
-    handleCatalog(ctx, catalog -> {
-      Map<String, String> properties = Maps.newHashMap();
-      Map<String, String> overwrites = Maps.newHashMap();
-      catalog.getMetadata().getCatalogProperties().forEach((k, v) -> {
-        if (!catalogPropertiesNotReturned.contains(k)) {
-          if (catalogPropertiesOverwrite.contains(k)) {
-            overwrites.put(k, v);
-          } else {
-            properties.put(k, v);
-          }
+    String warehouse = ctx.req.getParameter("warehouse");
+    Preconditions.checkNotNull(warehouse, "lack required params: warehouse");
+    InternalCatalog catalog = getCatalog(warehouse);
+    Map<String, String> properties = Maps.newHashMap();
+    Map<String, String> overwrites = Maps.newHashMap();
+    catalog.getMetadata().getCatalogProperties().forEach((k, v) -> {
+      if (!catalogPropertiesNotReturned.contains(k)) {
+        if (catalogPropertiesOverwrite.contains(k)) {
+          overwrites.put(k, v);
+        } else {
+          properties.put(k, v);
         }
-      });
-      return ConfigResponse.builder()
-          .withDefaults(properties)
-          .withOverrides(overwrites)
-          .build();
+      }
     });
+    overwrites.put(ICEBERG_CATALOG_PREFIX_KEY, "catalogs/" + warehouse);
+    ConfigResponse configResponse = ConfigResponse.builder()
+        .withDefaults(properties)
+        .withOverrides(overwrites)
+        .build();
+    ctx.json(configResponse);
   }
 
 
@@ -201,14 +205,14 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
   /**
-   * GET /{catalog}/v1/namespaces/{namespaces}
+   * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespaces}
    */
   public void getNamespace(Context ctx) {
     throw new UnsupportedOperationException("namespace properties is not supported");
   }
 
   /**
-   * DELETE PREFIX/{catalog}/v1/namespaces/{namespace}
+   * DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}
    */
   public void dropNamespace(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -221,14 +225,14 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * POST PREFIX/{catalog}/v1/namespaces/{namespace}/properties
+   * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties
    */
   public void setNamespaceProperties(Context ctx) {
     throw new UnsupportedOperationException("namespace properties is not supported");
   }
 
   /**
-   * GET PREFIX/{catalog}/v1/namespaces/{namespace}/tables
+   * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables
    */
   public void listTablesInNamespace(Context ctx) {
     handleNamespace(ctx, (catalog, database) -> {
@@ -243,7 +247,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
   /**
-   * POST PREFIX/{catalog}/v1/namespaces/{namespace}/tables
+   * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables
    */
   public void createTable(Context ctx) {
     handleNamespace(ctx, (catalog, database) -> {
@@ -292,7 +296,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
   /**
-   * GET PREFIX/{catalog}/v1/namespaces/{namespace}/tables/{table}
+   * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
@@ -311,7 +315,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
   /**
-   * POST PREFIX/{catalog}/v1/namespaces/{namespace}/tables/{table}
+   * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void commitTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
@@ -339,7 +343,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * DELETE PREFIX/{catalog}/v1/namespaces/{namespace}/tables/{table}
+   * DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void deleteTable(Context ctx) {
     handleTable(ctx, (catalog, tableMetadata) -> {
@@ -368,7 +372,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * HEAD PREFIX/{catalog}/v1/namespaces/{namespace}/tables/{table}
+   * HEAD PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void tableExists(Context ctx) {
     handleTable(ctx, ((catalog, tableMeta) -> null));
@@ -376,7 +380,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * POST PREFIX/{catalog}/v1/tables/rename
+   * POST PREFIX/v1/catalogs/{catalog}/tables/rename
    */
   public void renameTable(Context ctx) {
     throw new UnsupportedOperationException("rename is not supported now.");
@@ -384,7 +388,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
 
   /**
-   * POST PREFIX/{catalog}/v1/namespaces/{namespace}/tables/{table}/metrics
+   * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics
    */
   public void metricReport(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
@@ -463,15 +467,12 @@ public class IcebergRestCatalogService extends PersistentBase {
     NotFound(404),
     Conflict(409),
     InternalServerError(500),
-    ServiceUnavailable(503),
-
-    ;
+    ServiceUnavailable(503);
     public final int code;
 
     IcebergRestErrorCode(int code) {
       this.code = code;
     }
-
 
     public static IcebergRestErrorCode exceptionToCode(Exception e) {
       if (e instanceof UnsupportedOperationException) {

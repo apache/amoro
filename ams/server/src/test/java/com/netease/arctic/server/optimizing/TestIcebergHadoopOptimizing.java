@@ -399,17 +399,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
 
   private Table createIcebergTable(String catalog, PartitionSpec spec, int formatVersion) {
-    String impl = null;
-    Map<String, String> properties = Maps.newHashMap();
-    if (catalog.equalsIgnoreCase(AmsEnvironment.ICEBERG_CATALOG)) {
-      impl = HadoopCatalog.class.getName();
-    } else if (catalog.equalsIgnoreCase(AmsEnvironment.INTERNAL_ICEBERG_CATALOG)) {
-      impl = RESTCatalog.class.getName();
-      properties.put("uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.REST_CATALOG_API_PREFIX + "/" + catalog);
-    } else {
-      throw new IllegalStateException("unknown catalog");
-    }
-
     ServerCatalog serverCatalog = amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
     if (serverCatalog instanceof InternalCatalog) {
       this.serverCatalog = (InternalCatalog) serverCatalog;
@@ -418,9 +407,22 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       }
     }
 
-    String warehouse = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+    String impl = null;
+    Map<String, String> properties = Maps.newHashMap();
+    if (catalog.equalsIgnoreCase(AmsEnvironment.ICEBERG_CATALOG)) {
+      impl = HadoopCatalog.class.getName();
+      String warehouse = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+      properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouse);
+    } else if (catalog.equalsIgnoreCase(AmsEnvironment.INTERNAL_ICEBERG_CATALOG)) {
+      impl = RESTCatalog.class.getName();
+      properties.put("uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+      properties.put(CatalogMetaProperties.KEY_WAREHOUSE, AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+    } else {
+      throw new IllegalStateException("unknown catalog");
+    }
+
+
     TableMetaStore tms = com.netease.arctic.utils.CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
-    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouse);
     Catalog icebergCatalog = CatalogUtil.loadCatalog(
         impl, catalog, properties, tms.getConfiguration()
     );
