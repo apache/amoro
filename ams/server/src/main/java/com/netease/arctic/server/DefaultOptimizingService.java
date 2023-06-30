@@ -19,29 +19,34 @@
 package com.netease.arctic.server;
 
 import com.google.common.base.Preconditions;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.ams.api.resource.ResourceManager;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.ResourceMapper;
-import com.netease.arctic.server.resource.DefaultResourceManager;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
-import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,22 +68,21 @@ import java.util.stream.Collectors;
  * <p>
  * The code also includes a TimerTask for detecting and removing expired optimizers and suspending tasks.
  */
-public class DefaultOptimizingService extends DefaultResourceManager
-    implements OptimizingService.Iface, OptimizerManager {
+public class DefaultOptimizingService extends StatedPersistentBase implements OptimizingService.Iface,
+    OptimizerManager, ResourceManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
+  @StatedPersistentBase.StateField
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
-  private final TableManager tableManager;
+  private final DefaultTableService tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
 
-  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService,
-      List<ResourceGroup> resourceGroups) {
-    super(resourceGroups);
+  public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.tableManager = tableService;
@@ -205,6 +209,106 @@ public class DefaultOptimizingService extends DefaultResourceManager
       optimizingQueueByToken.remove(token);
       doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     });
+  }
+
+  @Override
+  public void createResourceGroup(ResourceGroup resourceGroup) {
+    invokeConsisitency(() ->
+        doAsTransaction(() -> {
+          doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
+          String groupName = resourceGroup.getName();
+          OptimizingQueue optimizingQueue = new OptimizingQueue(
+              tableManager,
+              resourceGroup,
+              new ArrayList<>(),
+              new ArrayList<>(),
+              optimizerTouchTimeout,
+              taskAckTimeout);
+          optimizingQueueByGroup.put(groupName, optimizingQueue);
+        })
+    );
+  }
+
+  @Override
+  public void deleteResourceGroup(String groupName) {
+    if (canDeleteResourceGroup(groupName)) {
+      invokeConsisitency(() -> {
+        optimizingQueueByGroup.remove(groupName);
+        doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+      });
+    } else {
+      throw new RuntimeException(String.format("The resource group %s cannot be deleted because it is currently in " +
+          "use.", groupName));
+    }
+  }
+
+  @Override
+  public void updateResourceGroup(ResourceGroup resourceGroup) {
+    Preconditions.checkNotNull(resourceGroup, "The resource group cannot be null.");
+    Optional.ofNullable(optimizingQueueByGroup.get(resourceGroup.getName()))
+        .ifPresent(queue -> queue.updateOptimizerGroup(resourceGroup));
+    doAs(ResourceMapper.class, mapper -> mapper.updateResourceGroup(resourceGroup));
+  }
+
+  @Override
+  public void createResource(Resource resource) {
+    doAs(ResourceMapper.class, mapper -> mapper.insertResource(resource));
+  }
+
+  @Override
+  public void deleteResource(String resourceId) {
+    doAs(ResourceMapper.class, mapper -> mapper.deleteResource(resourceId));
+  }
+
+  @Override
+  public List<ResourceGroup> listResourceGroups() {
+    return getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+  }
+
+  @Override
+  public List<ResourceGroup> listResourceGroups(String containerName) {
+    return getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups).stream()
+        .filter(group -> group.getContainer().equals(containerName))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public ResourceGroup getResourceGroup(String groupName) {
+    return getAs(ResourceMapper.class, mapper -> mapper.selectResourceGroup(groupName));
+  }
+
+  @Override
+  public List<Resource> listResourcesByGroup(String groupName) {
+    return getAs(ResourceMapper.class, mapper -> mapper.selectResourcesByGroup(groupName));
+  }
+
+  @Override
+  public Resource getResource(String resourceId) {
+    return getAs(ResourceMapper.class, mapper -> mapper.selectResource(resourceId));
+  }
+
+  public boolean canDeleteResourceGroup(String name) {
+    for (CatalogMeta catalogMeta : tableManager.listCatalogMetas()) {
+      if (catalogMeta.getCatalogProperties() != null &&
+          catalogMeta.getCatalogProperties()
+              .getOrDefault(
+                  CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+                  TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
+              .equals(name)) {
+        return false;
+      }
+    }
+    for (OptimizerInstance optimizer : listOptimizers()) {
+      if (optimizer.getGroupName().equals(name)) {
+        return false;
+      }
+    }
+    for (ServerTableIdentifier identifier : tableManager.listManagedTables()) {
+      if (optimizingQueueByGroup.containsKey(name) && optimizingQueueByGroup.get(name).containsTable(identifier)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {

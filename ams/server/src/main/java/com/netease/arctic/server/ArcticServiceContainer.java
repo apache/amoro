@@ -121,7 +121,7 @@ public class ArcticServiceContainer {
 
   public void startService() throws Exception {
     tableService = new DefaultTableService(serviceConfig);
-    optimizingService = new DefaultOptimizingService(serviceConfig, tableService, resourceGroups);
+    optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
 
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -279,31 +279,6 @@ public class ArcticServiceContainer {
     public void init() throws IOException {
       initServiceConfig();
       initContainerConfig();
-      initResourceGroupConfig();
-    }
-
-    @SuppressWarnings("unchecked")
-    private void initResourceGroupConfig() {
-      LOG.info("initializing resource group configuration...");
-      JSONArray optimizeGroups = yamlConfig.getJSONArray(ArcticManagementConf.OPTIMIZER_GROUP_LIST);
-      for (int i = 0; i < optimizeGroups.size(); i++) {
-        JSONObject groupConfig = optimizeGroups.getJSONObject(i);
-        ResourceGroup.Builder groupBuilder = new ResourceGroup.Builder(
-            groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_NAME),
-            groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_CONTAINER));
-        if (!ResourceContainers.contains(groupBuilder.getContainer())) {
-          throw new IllegalStateException(
-              "can not find such container config named" +
-                  groupBuilder.getContainer());
-        }
-        if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) &&
-            groupConfig.get(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) != null) {
-          groupBuilder.addProperties(groupConfig.getObject(
-              ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES,
-              Map.class));
-        }
-        resourceGroups.add(groupBuilder.build());
-      }
     }
 
     @SuppressWarnings("unchecked")
