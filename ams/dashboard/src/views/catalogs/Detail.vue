@@ -10,7 +10,17 @@
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
             <span v-else class="config-value">{{formState.catalog.name}}</span>
           </a-form-item>
-          <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+          <a-form-item :label="$t('type')" :name="['catalog', 'typeshow']">
+            <a-select
+              v-if="isEdit && isNewCatalog"
+              v-model:value="formState.catalog.typeshow"
+              :options="typwShowOptions"
+              :placeholder="placeholder.selectPh"
+              @change="changeTypeShow"
+            />
+            <span v-else>{{formState.catalog.typeshow}}</span>
+          </a-form-item>
+          <a-form-item :label="$t('metastore')" v-if="formState.catalog.typeshow === typeShowMap['External Catalog']" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-select
               v-if="isEdit && isNewCatalog"
               v-model:value="formState.catalog.type"
@@ -22,10 +32,17 @@
           </a-form-item>
           <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
-              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.MIXED_HIVE">Mixed Hive</a-radio>
-              <a-radio v-if="!isArcticMetastore" :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
-              <a-radio v-if="isArcticMetastore" :value="tableFormatMap.MIXED_ICEBERG">Mixed Iceberg</a-radio>
+              <a-radio v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-radio>
             </a-radio-group>
+          </a-form-item>
+          <a-form-item :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']" :rules="[{ required: isEdit }]">
+            <a-select
+              v-if="isEdit"
+              v-model:value="formState.catalog.optimizerGroup"
+              :options="optimizerGroupList"
+              :placeholder="placeholder.selectPh"
+            />
+            <span v-else>{{formState.catalog.optimizerGroup}}</span>
           </a-form-item>
           <a-form-item>
             <p class="header">{{$t('storageConfig')}}</p>
@@ -114,12 +131,13 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
-import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
+import { ILableAndValue, ICatalogItem, IMap, IIOptimizeGroupItem } from '@/types/common.type'
 import { Modal, message, UploadChangeParam } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useRoute } from 'vue-router'
+import { getResourceGroupsListAPI } from '@/services/optimize.service'
 
 interface IStorageConfigItem {
   label: string
@@ -134,7 +152,7 @@ interface IStorageConfigItem {
 }
 
 interface FormState {
-  catalog: IMap<string>
+  catalog: IMap<string | undefined>
   tableFormat: string
   storageConfig: IMap<string>
   authConfig: IMap<string>
@@ -142,6 +160,8 @@ interface FormState {
   storageConfigArray: IStorageConfigItem[]
   authConfigArray: IStorageConfigItem[]
 }
+
+const typeShowMap = { 'Internal Catalog': 'Internal Catalog', 'External Catalog': 'External Catalog' }
 
 const props = defineProps<{ isEdit: boolean }>()
 const emit = defineEmits<{
@@ -181,6 +201,17 @@ const tableFormatMap = {
   ICEBERG: 'ICEBERG',
   MIXED_ICEBERG: 'MIXED_ICEBERG'
 }
+const tableFormatText = {
+  [tableFormatMap.ICEBERG]: 'Iceberg',
+  [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
+  [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg'
+}
+const storeSupportFormat: {[prop:string]: string[]} = {
+  ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.ICEBERG],
+  hadoop: [tableFormatMap.ICEBERG],
+  custom: [tableFormatMap.ICEBERG]
+}
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
   'hadoop.hdfs.site': 'hdfs-site.xml',
@@ -196,10 +227,16 @@ const newCatalogConfig = {
     'auth.kerberos.krb5': ''
   }
 }
+const typwShowOptions = ref([
+  { label: typeShowMap['Internal Catalog'], value: typeShowMap['Internal Catalog'] },
+  { label: typeShowMap['External Catalog'], value: typeShowMap['External Catalog'] }
+])
 const formState:FormState = reactive({
   catalog: {
     name: '',
-    type: 'ams'
+    type: 'ams',
+    typeshow: typeShowMap['Internal Catalog'],
+    optimizerGroup: undefined
   },
   tableFormat: '',
   storageConfig: {},
@@ -235,16 +272,24 @@ watch(() => route.query,
   }
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
+const optimizerGroupList = ref<ILableAndValue[]>([])
 function initData() {
   getConfigInfo()
+}
+const getOptimizerGroupList = async() => {
+  const res = await getResourceGroupsListAPI()
+  const list = (res || []).map((item: IIOptimizeGroupItem) => ({ lable: item.resourceGroup.name, value: item.resourceGroup.name }))
+  optimizerGroupList.value = list
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();
   (res || []).forEach(ele => {
-    catalogTypeOps.push({
-      label: ele.display,
-      value: ele.value
-    })
+    if (ele.value !== 'ams') {
+      catalogTypeOps.push({
+        label: ele.display,
+        value: ele.value
+      })
+    }
   })
   getMetastoreType()
 }
@@ -259,6 +304,7 @@ async function getConfigInfo() {
     if (isNewCatalog.value) {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
+      formState.catalog.optimizerGroup = undefined
       formState.tableFormat = tableFormatMap.MIXED_ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
@@ -268,17 +314,20 @@ async function getConfigInfo() {
     } else {
       const res = await getCatalogsSetting(catalogname)
       if (!res) { return }
-      const { name, type, tableFormatList, storageConfig, authConfig, properties } = res
+      const { name, type, tableFormatList, storageConfig, authConfig, properties, optimizerGroup } = res
       formState.catalog.name = name
       formState.catalog.type = type
+      formState.catalog.optimizerGroup = optimizerGroup
       formState.tableFormat = tableFormatList.join('')
       formState.authConfig = authConfig
       formState.storageConfig = storageConfig
       formState.properties = properties || {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
+      getMetastoreType()
     }
-    getMetastoreType()
+    formState.catalog.typeshow = formState.catalog.type === 'ams' ? typeShowMap['Internal Catalog'] : typeShowMap['External Catalog']
+
     const { storageConfig, authConfig } = formState
     Object.keys(storageConfig).forEach(key => {
       const configArr = ['hadoop.core.site', 'hadoop.hdfs.site']
@@ -322,8 +371,22 @@ async function getConfigInfo() {
   }
 }
 
+const changeTypeShow = (val: string) => {
+  if (val === typeShowMap['Internal Catalog']) {
+    formState.catalog.type = 'ams'
+  } else {
+    formState.catalog.type = catalogTypeOps[0].value
+  }
+  changeMetastore()
+}
+
+const formatOptions = computed(() => {
+  const type = formState.catalog.type
+  return storeSupportFormat[type] || []
+})
+
 function changeMetastore() {
-  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.MIXED_HIVE : isArcticMetastore.value ? tableFormatMap.MIXED_ICEBERG : tableFormatMap.ICEBERG
+  formState.tableFormat = formatOptions.value[0]
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
@@ -397,10 +460,11 @@ function handleSave() {
         return
       }
       loading.value = true
+      const { typeshow, ...catalogParams } = catalog
       getFileIdParams()
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
-        ...catalog,
+        ...catalogParams,
         tableFormatList: [tableFormat],
         storageConfig,
         authConfig,
@@ -468,6 +532,7 @@ function viewFileDetail(url: string) {
 }
 onMounted(() => {
   getCatalogTypeOps()
+  getOptimizerGroupList()
 })
 
 </script>

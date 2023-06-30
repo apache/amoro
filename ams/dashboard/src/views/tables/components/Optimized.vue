@@ -1,7 +1,7 @@
 <template>
   <div class="table-optinize">
     <a-table
-      rowKey="recordId"
+      rowKey="processId"
       :columns="columns"
       :data-source="dataSource"
       :pagination="pagination"
@@ -9,15 +9,32 @@
       :loading="loading"
 
     >
-      <!-- <template #headerCell="{ column }">
-        <template v-if="column.dataIndex === 'parallelism'">
-          {{column.title}}
-          <a-tooltip>
-            <template #title>prompt text</template>
-            <question-circle-outlined />
-          </a-tooltip>
+      <template #headerCell="{ column }">
+        <template v-if="column.dataIndex === 'tasks'">
+          <div class="g-text-center">{{column.title}}</div>
+          <div class="g-text-center">success / total</div>
         </template>
-      </template> -->
+        <template v-if="column.dataIndex === 'inputFiles'">
+          <div class="g-text-center">{{column.title}}</div>
+          <div class="g-text-center">size / count</div>
+        </template>
+        <template v-if="column.dataIndex === 'outputFiles'">
+          <div class="g-text-center">{{column.title}}</div>
+          <div class="g-text-center">size / count</div>
+        </template>
+      </template>
+      <template #bodyCell="{record, column }">
+        <template v-if="column.dataIndex === 'status'">
+          <div class="g-flex-ac">
+            <span :style="{'background-color': (STATUS_CONFIG[record.status] || {}).color}" class="status-icon"></span>
+            <span>{{ record.status }}</span>
+            <a-tooltip v-if="record.status === 'FAILED'" class="g-ml-4" overlayClassName="table-failed-tip">
+              <template #title><span class="tip-title">{{record.failReason}}</span></template>
+              <question-circle-outlined />
+            </a-tooltip>
+          </div>
+        </template>
+      </template>
     </a-table>
   </div>
 </template>
@@ -29,29 +46,29 @@ import { usePagination } from '@/hooks/usePagination'
 import { IColumns } from '@/types/common.type'
 import { getOptimizes } from '@/services/table.service'
 import { useRoute } from 'vue-router'
-// import { QuestionCircleOutlined } from '@ant-design/icons-vue'
+import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
+
+// const statusMap = { RUNNING: 'RUNNING', CLOSED: 'CLOSED', SUCCESS: 'SUCCESS', FAILED: 'FAILED' }
+const STATUS_CONFIG = shallowReactive({
+  RUNNING: { title: 'RUNNING', color: '#1890ff' },
+  CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
+  SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
+  FAILED: { title: 'FAILED', color: '#f5222d' }
+})
 
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
-  { title: t('commitTime'), dataIndex: 'commitTime' },
-  { title: t('optimizeType'), dataIndex: 'optimizeType' },
+  { title: t('processId'), dataIndex: 'processId' },
+  { title: t('startTime'), dataIndex: 'startTime' },
+  { title: t('type'), dataIndex: 'optimizingType' },
+  { title: t('status'), dataIndex: 'status' },
   { title: t('duration'), dataIndex: 'duration' },
-  // { title: t('parallelism'), dataIndex: 'parallelism' },
-  {
-    title: t('input'),
-    children: [
-      { title: t('count'), dataIndex: 'inputCount' },
-      { title: t('size'), dataIndex: 'inputSize' }
-    ]
-  },
-  {
-    title: t('output'),
-    children: [
-      { title: t('count'), dataIndex: 'outputCount' },
-      { title: t('size'), dataIndex: 'outputSize' }
-    ]
-  }
+  { title: t('tasks'), dataIndex: 'tasks' },
+  { title: t('finishTime'), dataIndex: 'finishTime' },
+  { title: t('input'), dataIndex: 'inputFiles' },
+  { title: t('output'), dataIndex: 'outputFiles' }
+
 ])
 
 const dataSource = reactive<any[]>([])
@@ -79,19 +96,21 @@ async function getTableInfo() {
     const { list, total = 0 } = result
     pagination.total = total
     dataSource.push(...[...list || []].map(item => {
-      const { recordId, totalFilesStatBeforeCompact, totalFilesStatAfterCompact } = item
+      const { inputFiles = {}, outputFiles = {} } = item
       return {
         ...item,
-        recordId,
+        // recordId,
         // startTime: item.commitTime ? d(new Date(item.commitTime), 'long') : '',
-        commitTime: item.commitTime ? dateFormat(item.commitTime) : '',
+        // commitTime: item.commitTime ? dateFormat(item.commitTime) : '',
+        startTime: item.startTime ? dateFormat(item.startTime) : '-',
+        finishTime: item.finishTime ? dateFormat(item.finishTime) : '-',
         duration: formatMS2Time(item.duration || 0),
-        inputCount: totalFilesStatBeforeCompact?.fileCnt,
-        inputSize: bytesToSize(totalFilesStatBeforeCompact?.totalSize),
-        outputCount: totalFilesStatAfterCompact?.fileCnt,
-        outputSize: bytesToSize(totalFilesStatAfterCompact?.totalSize)
+        inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
+        outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
+        tasks: `${item.successTasks} / ${item.totalTasks}（${item.runningTasks} running）`
       }
     }))
+    console.log(dataSource)
   } catch (error) {
   } finally {
     loading.value = false
@@ -124,6 +143,27 @@ onMounted(() => {
   }
   :deep(.ant-table-thead > tr > th) {
     padding: 4px 16px !important;
+  }
+  :deep(.ant-table-thead > tr > th) {
+    padding: 4px 16px !important;
+  }
+}
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  background-color: #c9cdd4;
+  display: inline-block;
+  margin-right: 8px;
+}
+</style>
+<style lang="less">
+.table-failed-tip{
+  .tip-title{
+    display: block;
+    max-height: 700px;
+    overflow: auto;
+    white-space: pre-wrap;
   }
 }
 </style>

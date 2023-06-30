@@ -20,14 +20,6 @@ CREATE TABLE `database_metadata`
     PRIMARY KEY (`catalog_name`, `db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
 
-CREATE TABLE `container_metadata`
-(
-    `container_name`       varchar(64) NOT NULL COMMENT 'container name',
-    `container_type`       varchar(64) NOT NULL COMMENT 'container type like flink/local',
-    `properties` mediumtext COMMENT 'container properties',
-    PRIMARY KEY (`container_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'container metadata';
-
 
 CREATE TABLE `optimizer`
 (
@@ -137,7 +129,7 @@ CREATE TABLE `table_optimizing_process`
     `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
     `end_time`                      datetime(3) DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
@@ -160,7 +152,7 @@ CREATE TABLE `task_runtime`
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
-    `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
