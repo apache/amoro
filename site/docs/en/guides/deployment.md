@@ -145,11 +145,11 @@ ams:
     zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183 # ZooKeeper server address.
 ```
 
-### 配置 Optimizer
+### Config Optimizer
 
-Self-optimizing requires configuration of optimizer resources, including containers configuration and optimizer group 
-configuration. Taking the configuration of Flink type optimizer as an example, the configuration is as follows. For 
-detailed parameter instructions and configuration of other types, please refer to [managing-optimizers](managing-optimizers.md)
+Self-optimizing requires configuration of optimizer resources, including containers configuration. Taking the 
+configuration of Flink type optimizer as an example, the configuration is as follows. For detailed parameter instructions
+and configuration of other types, please refer to [managing-optimizers](managing-optimizers.md)
 
 ```shell
 containers:
@@ -161,12 +161,6 @@ containers:
       export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop configuration file directory
       export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user
       export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink configuration file directory
-optimizer_groups:
-  - name: flinkGroup
-    container: flinkContainer
-    properties:
-      taskmanager.memory: "2048"
-      jobmanager.memory: "1024"
 ```
 
 An example of a complete configuration is as follows:
@@ -248,24 +242,9 @@ containers:
       export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
       export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
       export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
-
-optimizer_groups:
-  - name: default
-    container: localContainer
-    properties:
-      memory: "1024" # The size of memory allocated for each parallel
-
-  - name: external-group
-    container: external # The external container is used to host all externally launched optimizers.
-
-  - name: flinkGroup
-    container: flinkContainer
-    properties:
-      taskmanager.memory: "2048"
-      jobmanager.memory: "1024"
 ```
 
-### 配置 Terminal
+### Config Terminal
 
 When Terminal is executed in local mode, Spark-related parameters can be configured.
 
@@ -279,7 +258,7 @@ ams:
     local.using-session-catalog-for-hive: true
 ```
 
-## 启动 AMS
+## Start AMS
 
 Enter the directory arctic-x.y.z and execute bin/ams.sh start to start AMS.
 
