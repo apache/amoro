@@ -38,7 +38,7 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
-import com.netease.arctic.server.dashboard.model.OptimizedRecord;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -55,6 +55,8 @@ import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
+import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
+import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
@@ -76,7 +78,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +90,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Table moudle controller.
+ * Table controller.
  */
 public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
@@ -116,7 +117,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime table detail.
+   * get table detail.
+   * @param ctx - context for handling the request and response
    */
   public void getTableDetail(Context ctx) {
 
@@ -180,7 +182,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime hive table detail.
+   * get hive table detail.
+   * @param ctx - context for handling the request and response
    */
   public void getHiveTableDetail(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -208,6 +211,7 @@ public class TableController {
 
   /**
    * upgrade hive table to arctic.
+   * @param ctx - context for handling the request and response
    */
   public void upgradeHiveTable(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -256,7 +260,8 @@ public class TableController {
   }
 
   /**
-   * upgrade hive table to arctic.
+   * get table properties for upgrading hive to arctic.
+   * @param ctx - context for handling the request and response
    */
   public void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
     Map<String, String> keyValues = new TreeMap<>();
@@ -281,9 +286,10 @@ public class TableController {
   }
 
   /**
-   * getRuntime optimize info.
+   * get list of optimizing processes.
+   * @param ctx - context for handling the request and response
    */
-  public void getOptimizeInfo(Context ctx) {
+  public void getOptimizingProcesses(Context ctx) {
 
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
@@ -298,17 +304,24 @@ public class TableController {
     Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
         table)), "no such table");
 
-    List<OptimizedRecord> all = tableDescriptor.getOptimizeInfo(catalog, db, table);
-    List<OptimizedRecord> result =
-        all.stream().sorted(Comparator.comparingLong(OptimizedRecord::getCommitTime).reversed())
-            .skip(offset)
-            .limit(limit)
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(PageResult.of(result, all.size())));
+    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
+        .skip(offset)
+        .limit(limit)
+        .collect(Collectors.toList());
+    
+    Map<Long, List<OptimizingTaskMeta>> optimizingTasks = tableDescriptor.getOptimizingTasks(processMetaList).stream()
+        .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
+
+    List<OptimizingProcessInfo> result = processMetaList.stream()
+        .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
+        .collect(Collectors.toList());
+
+    ctx.json(OkResponse.of(result));
   }
 
   /**
-   * getRuntime list of transactions.
+   * get list of transactions.
+   * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -320,13 +333,14 @@ public class TableController {
     List<TransactionsOfTable> transactionsOfTables =
         tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
     int offset = (page - 1) * pageSize;
-    PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
+    PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
         offset, pageSize, AmsUtil::toTransactionsOfTable);
     ctx.json(OkResponse.of(pageResult));
   }
 
   /**
-   * getRuntime detail of transaction.
+   * get detail of transaction.
+   * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
@@ -339,13 +353,14 @@ public class TableController {
     List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
         tableName), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
-    PageResult<AMSDataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(result,
+    PageResult<AMSDataFileInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
-   * getRuntime partition list.
+   * get partition list.
+   * @param ctx - context for handling the request and response
    */
   public void getTablePartitions(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -357,13 +372,14 @@ public class TableController {
     ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
     List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(arcticTable);
     int offset = (page - 1) * pageSize;
-    PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
+    PageResult<PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
-   * getRuntime file list of some partition.
+   * get file list of some partition.
+   * @param ctx - context for handling the request and response
    */
   public void getPartitionFileListInfo(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -374,15 +390,17 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
-    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition,
-        page * pageSize);
+    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition);
     int offset = (page - 1) * pageSize;
-    PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
+    PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
-  /* getRuntime  operations of some table*/
+  /**
+   * get table operations.
+   * @param ctx - context for handling the request and response
+   */
   public void getTableOperations(Context ctx) {
     String catalogName = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
@@ -395,13 +413,14 @@ public class TableController {
     List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
         tableName));
     Collections.reverse(ddlInfoList);
-    PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfoList,
+    PageResult<TableOperation> amsPageResult = PageResult.of(ddlInfoList,
         offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
-   * getRuntime table list of catalog.db.
+   * get table list of catalog.db.
+   * @param ctx - context for handling the request and response
    */
   public void getTableList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -411,7 +430,7 @@ public class TableController {
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
-    List<ServerTableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
+    List<com.netease.arctic.ams.api.TableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     List<TableMeta> tables = new ArrayList<>();
 
@@ -425,7 +444,9 @@ public class TableController {
           ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
           db);
       Set<String> arcticTables =
-          tableIdentifiers.stream().map(ServerTableIdentifier::getTableName).collect(Collectors.toSet());
+          tableIdentifiers.stream()
+              .map(com.netease.arctic.ams.api.TableIdentifier::getTableName)
+              .collect(Collectors.toSet());
       hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
           e,
           TableMeta.TableType.HIVE.toString())));
@@ -437,7 +458,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime databases of some catalog.
+   * get databases of some catalog.
+   * @param ctx - context for handling the request and response
    */
   public void getDatabaseList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -450,7 +472,8 @@ public class TableController {
   }
 
   /**
-   * list catalogs.
+   * get list of catalogs.
+   * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
     List<CatalogMeta> catalogs = tableService.listCatalogMetas();
@@ -458,7 +481,8 @@ public class TableController {
   }
 
   /**
-   * getRuntime single page query token
+   * get single page query token.
+   * @param ctx - context for handling the request and response
    */
   public void getTableDetailTabToken(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -517,7 +541,7 @@ public class TableController {
     }
   }
 
-  public ServerTableMeta getServerTableMeta(ArcticTable table) {
+  private ServerTableMeta getServerTableMeta(ArcticTable table) {
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableType(table.format().toString());
     serverTableMeta.setTableIdentifier(table.id());

@@ -53,7 +53,7 @@ public class TestHiveTableTrashManagers extends TestTableTrashManagers {
   }
 
   protected String getTableTrashLocation(TableIdentifier id) {
-    return String.format("file:%s/%s.db/%s/%s", TEST_HMS.getWareHouseLocation(), id.getDatabase(), id.getTableName(),
+    return String.format("file:/%s/%s.db/%s/%s", TEST_HMS.getWareHouseLocation(), id.getDatabase(), id.getTableName(),
         TableTrashManagers.DEFAULT_TRASH_DIR);
   }
 }

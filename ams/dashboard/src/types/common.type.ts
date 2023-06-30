@@ -72,12 +72,14 @@ export interface IBaseDetailInfo {
 export interface DetailColumnItem {
   field: string
   type: string
+  required: boolean
   comment: string
 }
 
 export interface IField {
   field: string
   type: string
+  required: boolean
   description: string
 }
 

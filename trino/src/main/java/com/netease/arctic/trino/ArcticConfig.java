@@ -30,6 +30,10 @@ public class ArcticConfig {
   private boolean hdfsImpersonationEnabled;
   private boolean tableStatisticsEnabled = true;
 
+  private Double splitTaskByDeleteRatio = 0.05;
+
+  private boolean enableSplitTaskByDeleteRatio = true;
+
   public String getCatalogUrl() {
     return catalogUrl;
   }
@@ -40,6 +44,14 @@ public class ArcticConfig {
 
   public boolean isTableStatisticsEnabled() {
     return tableStatisticsEnabled;
+  }
+
+  public Double getSplitTaskByDeleteRatio() {
+    return splitTaskByDeleteRatio;
+  }
+
+  public boolean isEnableSplitTaskByDeleteRatio() {
+    return enableSplitTaskByDeleteRatio;
   }
 
   @Config("arctic.url")
@@ -56,5 +68,15 @@ public class ArcticConfig {
   @ConfigDescription("Enable use of table statistics to Arctic table")
   public void setTableStatisticsEnabled(boolean tableStatisticsEnabled) {
     this.tableStatisticsEnabled = tableStatisticsEnabled;
+  }
+
+  @Config("arctic.enable-split-task-by-delete-ratio")
+  public void setEnableSplitTaskByDeleteRatio(boolean enableSplitTaskByDeleteRatio) {
+    this.enableSplitTaskByDeleteRatio = enableSplitTaskByDeleteRatio;
+  }
+
+  @Config("arctic.split-task-by-delete-ratio")
+  public void setSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
+    this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
   }
 }

@@ -7,23 +7,23 @@ Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的�
 Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 
-| 配置名称                                             | 默认值            | 描述                                               |
-|-----------------------------------------------------|------------------|---------------------------------------------------|
-| self-optimizing.enabled                             | true             | 是否开启 self-optimizing                                    |
-| self-optimizing.group                               | default          | self-optimizing 所属的 optimizer 组                                     |
-| self-optimizing.quota                               | 0.1              | 表所能占用的 self-optimizing 资源量                             |
-| self-optimizing.num-retries                         | 5                | self-optimizing 失败时的重试次数                               |
-| self-optimizing.execute.timeout                     | 1800000（30分钟） | self-optimizing 执行超时时间，超时会失败重试                                  |
-| self-optimizing.target-size                         | 134217728（128MB）| self-optimizing 的目标文件大小                                |
-| self-optimizing.max-file-count                      | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
-| self-optimizing.max-file-size-bytes                 | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
-| self-optimizing.fragment-ratio                      | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
-| self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
-| self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
-| self-optimizing.major.trigger.file-count            | 12               | 触发 major optimizing 的最少文件数量                      |
-| self-optimizing.major.trigger.duplicate-ratio       | 0.5              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
-| self-optimizing.major.trigger.interval              | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
-| self-optimizing.full.trigger.interval               | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
+| 配置名称                                          | 默认值            | 描述                                               |
+|-----------------------------------------------|------------------|---------------------------------------------------|
+| self-optimizing.enabled                       | true             | 是否开启 self-optimizing                                    |
+| self-optimizing.group                         | default          | self-optimizing 所属的 optimizer 组                                     |
+| self-optimizing.quota                         | 0.1              | 表所能占用的 self-optimizing 资源量                             |
+| self-optimizing.execute.num-retries           | 5                | self-optimizing 失败时的重试次数                               |
+| self-optimizing.execute.timeout               | 1800000（30分钟） | self-optimizing 执行超时时间，超时会失败重试                                  |
+| self-optimizing.target-size                   | 134217728（128MB）| self-optimizing 的目标文件大小                                |
+| self-optimizing.max-file-count                | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
+| self-optimizing.max-file-size-bytes           | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
+| self-optimizing.fragment-ratio                | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
+| self-optimizing.minor.trigger.file-count      | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
+| self-optimizing.minor.trigger.interval        | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
+| self-optimizing.major.trigger.file-count      | 12               | 触发 major optimizing 的最少文件数量                      |
+| self-optimizing.major.trigger.duplicate-ratio | 0.5              | 在一个 target-size 空间内，在主键上重复的数据量占比到达 duplicate-ratio 阈值后出发 major optimizing  |
+| self-optimizing.major.trigger.interval        | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
+| self-optimizing.full.trigger.interval         | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
 
 ## 数据清理配置
 
@@ -44,11 +44,12 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 ### 表读取配置
 
-| 配置名称                            | 默认值             | 描述                                     |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                        |
-| read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数               |
-| read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                     |
+| 配置名称                            | 默认值             | 描述                                                                                                                                                       |
+| ---------------------------------- | ---------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                                                                                                                                  |
+| read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数                                                                                                                                       |
+| read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                                                                                                                                     |
+| read.split.delete-ratio            | 0.05             |Delete文件占比小于此阈值时，读取任务会拆分成更多的任务以提高查询速度。 |
 
 ### 表写入配置
 

@@ -54,7 +54,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
-        configuration.getLong(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL);
+        configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
   }
 
@@ -173,15 +173,21 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables() {
+  public List<ServerTableIdentifier> listManagedTables() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers);
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables(String catalogName, String dbName) {
+  public List<ServerTableIdentifier> listManagedTables(String catalogName) {
     checkStarted();
-    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByDb(catalogName, dbName));
+    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByCatalog(catalogName));
+  }
+
+  @Override
+  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+    checkStarted();
+    return getServerCatalog(catalogName).listTables(dbName);
   }
 
   @Override
@@ -302,7 +308,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     });
 
     if (headHandler != null) {
-      headHandler.startHandler(tableRuntimeMetaList);
+      headHandler.initialize(tableRuntimeMetaList);
     }
     tableExplorerTimer = new Timer("ExternalTableExplorer", true);
     tableExplorerTimer.scheduleAtFixedRate(

@@ -33,7 +33,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -351,7 +350,7 @@ public class TestTableHelper {
     );
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks =
-             keyedTable.changeTable().newChangeScan().planTasks()) {
+             keyedTable.changeTable().newScan().planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
         try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
           while (records.hasNext()) {
@@ -377,13 +376,5 @@ public class TestTableHelper {
     }
     r.set(columns.size() - 1, value);
     return r;
-  }
-
-  public static List<FileStatus> listFiles(ArcticTable table) {
-    if (table.isUnkeyedTable()) {
-      return table.io().list(table.asUnkeyedTable().location() + "/data");
-    }
-
-    return table.io().list(table.asKeyedTable().changeLocation() + "/data");
   }
 }

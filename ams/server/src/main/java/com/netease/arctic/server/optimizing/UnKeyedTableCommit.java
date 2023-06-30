@@ -25,6 +25,7 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -63,6 +64,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class UnKeyedTableCommit {
@@ -192,6 +194,9 @@ public class UnKeyedTableCommit {
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
         }
         dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
+          dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+        }
         dataFileRewrite.commit();
       }
       if (CollectionUtils.isNotEmpty(addDeleteFiles)) {
@@ -278,9 +283,9 @@ public class UnKeyedTableCommit {
     if (!table.io().exists(newFilePath)) {
       if (!table.io().exists(hiveLocation)) {
         LOG.debug("{} hive location {} does not exist and need to mkdir before rename", table.id(), hiveLocation);
-        table.io().mkdirs(hiveLocation);
+        table.io().asFileSystemIO().makeDirectories(hiveLocation);
       }
-      table.io().rename(oldFilePath, newFilePath);
+      table.io().asFileSystemIO().rename(oldFilePath, newFilePath);
       LOG.debug("{} move file from {} to {}", table.id(), oldFilePath, newFilePath);
     }
 

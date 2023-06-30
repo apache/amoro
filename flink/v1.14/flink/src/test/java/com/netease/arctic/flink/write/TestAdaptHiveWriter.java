@@ -18,8 +18,14 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -40,15 +46,17 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Assume;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,84 +64,122 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestAdaptHiveWriter extends HiveTableTestBase {
+@RunWith(Parameterized.class)
+public class TestAdaptHiveWriter extends TableTestBase {
 
-  @BeforeClass
-  public static void beforeClass() throws Exception {
-    HiveTableTestBase.startMetastore();
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
+
+  public TestAdaptHiveWriter(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(catalogTestHelper, tableTestHelper);
   }
 
-  @AfterClass
-  public static void afterClass() throws Exception {
-    HiveTableTestBase.stopMetastore();
+  @Parameterized.Parameters(name = "{0}, {1}")
+  public static Object[] parameters() {
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
-  public void testWriteTypeFromOperateKind(){
-    {
-      FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
-          .buildFor(testKeyedHiveTable)
-          .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
+  public void testKeyedTableWriteTypeFromOperateKind() {
+    Assume.assumeTrue(isKeyedTable());
+    ArcticTable testKeyedHiveTable = getArcticTable();
+    FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
+      .buildFor(testKeyedHiveTable)
+      .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
 
-      Assert.assertTrue(builder.buildWriter(ChangeLocationKind.INSTANT) instanceof FlinkChangeTaskWriter);
-      Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(ChangeLocationKind.INSTANT) instanceof FlinkChangeTaskWriter);
+    Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
 
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkChangeTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MINOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-    }
-    {
-      FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
-          .buildFor(testHiveTable)
-          .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkChangeTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.MINOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
+  }
 
-      Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+  @Test
+  public void testUnKeyedTableWriteTypeFromOperateKind() {
+    Assume.assumeFalse(isKeyedTable());
+    ArcticTable testHiveTable = getArcticTable();
+    FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
+      .buildFor(testHiveTable)
+      .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
 
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-    }
+    Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
+    Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
   }
 
   @Test
   public void testKeyedTableChangeWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, ChangeLocationKind.INSTANT, geneRowData(), "change");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
   @Test
   public void testKeyedTableBaseWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, BaseLocationKind.INSTANT, geneRowData(), "base");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, geneRowData(), "hive");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
   public void testUnPartitionKeyedTableChangeWriteByLocationKind() throws IOException {
-    testWrite(testUnPartitionKeyedHiveTable, ChangeLocationKind.INSTANT, geneRowData(), "change");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
+    testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
   @Test
   public void testUnPartitionKeyedTableBaseWriteByLocationKind() throws IOException {
-    testWrite(testUnPartitionKeyedHiveTable, BaseLocationKind.INSTANT, geneRowData(), "base");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
+    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnPartitionKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testUnPartitionKeyedHiveTable, HiveLocationKind.INSTANT, geneRowData(), "hive");
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
+    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
   public void testUnKeyedTableChangeWriteByLocationKind() throws IOException {
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
     try {
-      testWrite(testHiveTable, ChangeLocationKind.INSTANT, geneRowData(), "change");
+      testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     }catch (Exception e){
       Assert.assertTrue(e instanceof IllegalArgumentException);
     }
@@ -141,18 +187,24 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testUnKeyedTableBaseWriteByLocationKind() throws IOException {
-    testWrite(testHiveTable, BaseLocationKind.INSTANT, geneRowData(), "base");
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testHiveTable, HiveLocationKind.INSTANT, geneRowData(), "hive");
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   @Test
   public void testUnPartitionUnKeyedTableChangeWriteByLocationKind() throws IOException {
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
     try {
-      testWrite(testUnPartitionHiveTable, ChangeLocationKind.INSTANT, geneRowData(), "change");
+      testWrite(getArcticTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     }catch (Exception e){
       Assert.assertTrue(e instanceof IllegalArgumentException);
     }
@@ -160,12 +212,16 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testUnPartitionUnKeyedTableBaseWriteByLocationKind() throws IOException {
-    testWrite(testUnPartitionHiveTable, BaseLocationKind.INSTANT, geneRowData(), "base");
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
+    testWrite(getArcticTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
   @Test
   public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, geneRowData(), "hive");
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
+    testWrite(getArcticTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
   public void testWrite(ArcticTable table, LocationKind locationKind, List<RowData> records, String pathFeature) throws IOException {
@@ -200,13 +256,19 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   }
 
   private List<RowData> geneRowData(){
-    RowData rowData = GenericRowData.of(
-        1,
-        TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 1, 1 , 10, 0, 0)),
-        TimestampData.fromInstant(LocalDateTime.of(2022, 1, 1 , 10, 0, 0).toInstant(ZoneOffset.ofHours(8))),
-        DecimalData.fromBigDecimal(new BigDecimal("100"), 3, 0),
-        StringData.fromString("jack")
+    return Lists.newArrayList(geneRowData(1, "lily", 0, "2022-01-02T12:00:00"));
+  }
+
+  private RowData geneRowData(int id, String name, long ts, String timestamp) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    return GenericRowData.of(
+      id,
+      StringData.fromString(name),
+      ts,
+      TimestampData.fromLocalDateTime(LocalDateTime.parse(timestamp, formatter)),
+      TimestampData.fromLocalDateTime(LocalDateTime.parse(timestamp, formatter)),
+      DecimalData.fromBigDecimal(new BigDecimal("0"), 10, 0),
+      StringData.fromString(timestamp.substring(0, 10))
     );
-    return Lists.newArrayList(rowData);
   }
 }

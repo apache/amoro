@@ -72,7 +72,7 @@ public class OptimizerController {
     int offset = (page - 1) * pageSize;
 
     List<TableRuntime> tableRuntimes = new ArrayList<>();
-    List<ServerTableIdentifier> tables = tableService.listTables();
+    List<ServerTableIdentifier> tables = tableService.listManagedTables();
     for (ServerTableIdentifier identifier : tables) {
       TableRuntime tableRuntime = tableService.getRuntime(identifier);
       if (tableRuntime == null) {
@@ -93,7 +93,7 @@ public class OptimizerController {
         return statDiff;
       }
     });
-    PageResult<TableRuntime, TableOptimizingInfo> amsPageResult = PageResult.of(tableRuntimes,
+    PageResult<TableOptimizingInfo> amsPageResult = PageResult.of(tableRuntimes,
         offset, pageSize, OptimizingUtil::buildTableOptimizeInfo);
     ctx.json(OkResponse.of(amsPageResult));
   }
@@ -127,7 +127,7 @@ public class OptimizerController {
       return jsonObject;
     }).collect(Collectors.toList());
 
-    PageResult<JSONObject, JSONObject> amsPageResult = PageResult.of(result,
+    PageResult<JSONObject> amsPageResult = PageResult.of(result,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }

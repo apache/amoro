@@ -18,9 +18,11 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -51,7 +53,6 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -70,7 +71,8 @@ public class HiveMetaSynchronizer {
 
   /**
    * Synchronize the schema change of the hive table to arctic table
-   * @param table arctic table to accept the schema change
+   *
+   * @param table      arctic table to accept the schema change
    * @param hiveClient hive client
    */
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
@@ -89,7 +91,8 @@ public class HiveMetaSynchronizer {
     }
   }
 
-  private static boolean updateStructSchema(TableIdentifier tableIdentifier, UpdateSchema updateSchema,
+  private static boolean updateStructSchema(
+      TableIdentifier tableIdentifier, UpdateSchema updateSchema,
       String parentName, Types.StructType icebergStruct, Types.StructType hiveStruct) {
     boolean update = false;
     for (Types.NestedField hiveField : hiveStruct.fields()) {
@@ -133,16 +136,17 @@ public class HiveMetaSynchronizer {
     return update;
   }
 
-  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient) {
+  public static void syncHiveDataToArctic(SupportHive table, HMSClientPool hiveClient) {
     syncHiveDataToArctic(table, hiveClient, false);
   }
 
   /**
    * Synchronize the data change of the hive table to arctic table
-   * @param table arctic table to accept the data change
+   *
+   * @param table      arctic table to accept the data change
    * @param hiveClient hive client
    */
-  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient, boolean force) {
+  public static void syncHiveDataToArctic(SupportHive table, HMSClientPool hiveClient, boolean force) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -187,7 +191,8 @@ public class HiveMetaSynchronizer {
           StructLike partitionData = HivePartitionUtil.buildPartitionData(hivePartition.getValues(), table.spec());
           icebergPartitions.remove(partitionData);
           if (force || partitionHasModified(baseStore, hivePartition, partitionData)) {
-            List<DataFile> hiveDataFiles = listHivePartitionFiles(table,
+            List<DataFile> hiveDataFiles = listHivePartitionFiles(
+                table,
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
                 hivePartition.getSd().getLocation());
             if (filesMap.get(partitionData) != null) {
@@ -217,9 +222,11 @@ public class HiveMetaSynchronizer {
     }
   }
 
-  private static boolean partitionHasModified(UnkeyedTable arcticTable, Partition hivePartition,
+  @VisibleForTesting
+  static boolean partitionHasModified(
+      UnkeyedTable arcticTable, Partition hivePartition,
       StructLike partitionData) {
-    String hiveTransientTime =  hivePartition.getParameters().get("transient_lastDdlTime");
+    String hiveTransientTime = hivePartition.getParameters().get("transient_lastDdlTime");
     String arcticTransientTime = arcticTable.partitionProperty().containsKey(partitionData) ?
         arcticTable.partitionProperty().get(partitionData)
             .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
@@ -243,8 +250,9 @@ public class HiveMetaSynchronizer {
     return false;
   }
 
-  private static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
-    String hiveTransientTime =  table.getParameters().get("transient_lastDdlTime");
+  @VisibleForTesting
+  static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
+    String hiveTransientTime = table.getParameters().get("transient_lastDdlTime");
     StructLikeMap<Map<String, String>> structLikeMap = arcticTable.partitionProperty();
     String arcticTransientTime = null;
     if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
@@ -271,10 +279,12 @@ public class HiveMetaSynchronizer {
     return false;
   }
 
-  private static List<DataFile> listHivePartitionFiles(ArcticTable arcticTable, Map<String, String> partitionValueMap,
-                                                       String partitionLocation) {
+  private static List<DataFile> listHivePartitionFiles(
+      SupportHive arcticTable, Map<String, String> partitionValueMap,
+      String partitionLocation) {
     return arcticTable.io().doAs(() -> TableMigrationUtil.listPartition(partitionValueMap, partitionLocation,
-        arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        arcticTable.properties().getOrDefault(
+            TableProperties.DEFAULT_FILE_FORMAT,
             TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
         arcticTable.spec(), arcticTable.io().getConf(),
         MetricsConfig.fromProperties(arcticTable.properties()), NameMappingParser.fromJson(

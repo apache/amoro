@@ -18,8 +18,9 @@ package com.netease.arctic.server.optimizing;
  * limitations under the License.
  */
 
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -28,7 +29,9 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.thrift.TException;
 
 import java.io.IOException;
@@ -54,8 +57,8 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
     // assertIdRange(readHiveTableData(), 1, 100);
@@ -90,8 +93,8 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
     // assertIdRange(readHiveTableData(), 1, 100);
@@ -136,7 +139,9 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   private List<String> filesInLocation(String location) {
-    return arcticTable.io().list(location).stream().map(fileStatus -> fileStatus.getPath().toString())
+    ArcticHadoopFileIO io = ((SupportHive) arcticTable).io();
+    return Streams.stream(io.listDirectory(location))
+        .map(FileInfo::location)
         .collect(Collectors.toList());
   }
 }

@@ -26,7 +26,7 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.ChangeTableBasicIncrementalScan;
+import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -34,6 +34,7 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.ArcticChangeTableScan;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
@@ -66,6 +67,11 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   }
 
   @Override
+  public ArcticHadoopFileIO io() {
+    return (ArcticHadoopFileIO) super.io();
+  }
+
+  @Override
   public TableFormat format() {
     return TableFormat.MIXED_HIVE;
   }
@@ -81,10 +87,9 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     }
   }
 
-
   @Override
   public String hiveLocation() {
-    return ((SupportHive)baseTable()).hiveLocation();
+    return ((SupportHive) baseTable()).hiveLocation();
   }
 
   @Override
@@ -118,6 +123,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     return hiveClient;
   }
 
+
   public static class HiveChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public HiveChangeInternalTable(
@@ -127,24 +133,35 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
     }
 
     @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
+    }
+
+    @Override
     public UpdateSchema updateSchema() {
       return new BaseSchemaUpdate(this, super.updateSchema());
     }
 
     @Override
-    public ChangeTableIncrementalScan newChangeScan() {
-      return new ChangeTableBasicIncrementalScan(this);
+    public ChangeTableIncrementalScan newScan() {
+      return new ArcticChangeTableScan(operations(), this);
     }
   }
 
   public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
 
-    public HiveBaseInternalTable(TableIdentifier tableIdentifier, Table icebergTable,
-                                 ArcticFileIO arcticFileIO, String tableLocation, AmsClient client,
-                                 HMSClientPool hiveClient, Map<String, String> catalogProperties,
-                                 boolean syncHiveChange) {
+    public HiveBaseInternalTable(
+        TableIdentifier tableIdentifier, Table icebergTable,
+        ArcticHadoopFileIO arcticFileIO, String tableLocation, AmsClient client,
+        HMSClientPool hiveClient, Map<String, String> catalogProperties,
+        boolean syncHiveChange) {
       super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
           syncHiveChange);
+    }
+
+    @Override
+    public TableFormat format() {
+      return TableFormat.MIXED_HIVE;
     }
   }
 }

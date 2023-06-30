@@ -64,6 +64,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private final int lookBack;
   private final long openFileCost;
   private final long splitSize;
+  private Double splitTaskByDeleteRatio;
   private Expression expression;
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
@@ -121,13 +122,20 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         splitSize, lookBack, openFileCost);
   }
 
+  @Override
+  public KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio) {
+    this.splitTaskByDeleteRatio = splitTaskByDeleteRatio;
+    return this;
+  }
+
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
     TableScan scan = table.baseTable().newScan();
     if (this.expression != null) {
       scan = scan.filter(this.expression);
     }
     CloseableIterable<FileScanTask> fileScanTasks = scan.planFiles();
-    return CloseableIterable.transform(fileScanTasks,
+    return CloseableIterable.transform(
+        fileScanTasks,
         fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
             fileScanTask.deletes(), fileScanTask.spec(), expression));
   }
@@ -135,35 +143,60 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
     StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(table);
     StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
-    ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
-        .fromSequence(partitionOptimizedSequence)
-        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+    Expression partitionExpressions = Expressions.alwaysTrue();
     if (expression != null) {
       //Only push down filters related to partition
-      Expression partitionExpression = new BasicPartitionEvaluator(table.spec()).project(expression);
-      changeTableScan.filter(partitionExpression);
+      partitionExpressions = new BasicPartitionEvaluator(table.spec()).project(expression);
     }
+
+    ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
+        .fromSequence(partitionOptimizedSequence)
+        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+
+    changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
+
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }
 
   private void split() {
     fileScanTasks.forEach((structLike, fileScanTasks1) -> {
       for (NodeFileScanTask task : fileScanTasks1) {
-        if (task.cost() <= splitSize) {
-          splitTasks.add(task);
-          continue;
-        }
         if (task.dataTasks().size() < 2) {
           splitTasks.add(task);
           continue;
         }
-        CloseableIterable<NodeFileScanTask> tasksIterable = splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
-            task.arcticEquityDeletes(), splitSize, lookBack, openFileCost);
-        List<NodeFileScanTask> tasks =
-            Lists.newArrayList(tasksIterable);
-        splitTasks.addAll(tasks);
+
+        if (splitTaskByDeleteRatio != null) {
+          long deleteWeight = task.arcticEquityDeletes().stream().mapToLong(s -> s.file().fileSizeInBytes())
+              .map(s -> s + openFileCost)
+              .sum();
+
+          long dataWeight = task.dataTasks().stream().mapToLong(s -> s.file().fileSizeInBytes())
+              .map(s -> s + openFileCost)
+              .sum();
+          double deleteRatio = deleteWeight * 1.0 / dataWeight;
+
+          if (deleteRatio < splitTaskByDeleteRatio) {
+            long targetSize = Math.min(new Double(deleteWeight / splitTaskByDeleteRatio).longValue(), splitSize);
+            split(task, targetSize);
+            continue;
+          }
+        }
+
+        if (task.cost() <= splitSize) {
+          splitTasks.add(task);
+          continue;
+        }
+        split(task, splitSize);
       }
     });
+  }
+
+  private void split(NodeFileScanTask task, long targetSize) {
+    CloseableIterable<NodeFileScanTask> tasksIterable =
+        splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
+            task.arcticEquityDeletes(), targetSize, lookBack, openFileCost);
+    splitTasks.addAll(Lists.newArrayList(tasksIterable));
   }
 
   public CloseableIterable<NodeFileScanTask> splitNode(

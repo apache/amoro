@@ -18,29 +18,15 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
-
 import java.util.Map;
 
 public class TableTrashManagers {
   public static String DEFAULT_TRASH_DIR = ".trash";
-
-  /**
-   * Build {@link TableTrashManager} from {@link ArcticTable}.
-   *
-   * @param table - {@link ArcticTable}
-   * @return TableTrashManager
-   */
-  public static TableTrashManager build(ArcticTable table) {
-    String tableRootLocation = ArcticTableUtil.tableRootLocation(table);
-    return build(table.id(), tableRootLocation, table.properties(), table.io());
-  }
 
   /**
    * Build {@link TableTrashManager}.
@@ -51,8 +37,9 @@ public class TableTrashManagers {
    * @param fileIO          - table file io
    * @return - built table trash manager
    */
-  public static TableTrashManager build(TableIdentifier tableIdentifier, String tableLocation,
-                                        Map<String, String> tableProperties, ArcticFileIO fileIO) {
+  public static TableTrashManager build(
+      TableIdentifier tableIdentifier, String tableLocation,
+      Map<String, String> tableProperties, ArcticHadoopFileIO fileIO) {
     String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
     return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);
@@ -67,8 +54,9 @@ public class TableTrashManagers {
    * @return trash location
    */
   @VisibleForTesting
-  static String getTrashLocation(TableIdentifier tableIdentifier, String tableLocation,
-                                        String customTrashRootLocation) {
+  public static String getTrashLocation(
+      TableIdentifier tableIdentifier, String tableLocation,
+      String customTrashRootLocation) {
     String trashParentLocation;
     if (Strings.isNullOrEmpty(customTrashRootLocation)) {
       trashParentLocation = tableLocation;

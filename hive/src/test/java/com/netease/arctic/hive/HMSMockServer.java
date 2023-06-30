@@ -212,7 +212,7 @@ public class HMSMockServer {
   }
 
   public String getWareHouseLocation() {
-    return hiveLocalDir.getAbsolutePath();
+    return hiveLocalDir.getAbsolutePath().replace("\\", "/");
   }
 
   public String getDatabasePath(String dbName) {

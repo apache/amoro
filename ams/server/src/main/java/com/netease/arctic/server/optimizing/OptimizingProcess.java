@@ -1,7 +1,5 @@
 package com.netease.arctic.server.optimizing;
 
-import java.util.Map;
-
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -27,10 +25,6 @@ public interface OptimizingProcess {
   void commit();
 
   MetricsSummary getSummary();
-
-  Map<String, Long> getFromSequence();
-
-  Map<String, Long> getToSequence();
 
   enum Status {
     RUNNING,

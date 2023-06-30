@@ -1,14 +1,16 @@
 package com.netease.arctic.server.persistence.mapper;
 
 import com.netease.arctic.optimizing.RewriteFilesInput;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
+import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
+import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.apache.ibatis.annotations.Delete;
@@ -66,10 +68,13 @@ public interface OptimizingMapper {
       @Param("summary") MetricsSummary summary,
       @Param("failedReason") String failedReason);
 
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
-      " target_change_snapshot_id, status," +
-      " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
-      " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}")
+  @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id," +
+      " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time," +
+      " a.fail_reason, a.summary, a.from_sequence, a.to_sequence FROM table_optimizing_process a" +
+      " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
+      " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
+      " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}" +
+      " ORDER BY process_id desc")
   @Results({
       @Result(property = "processId", column = "process_id"),
       @Result(property = "tableId", column = "table_id"),
@@ -83,35 +88,12 @@ public interface OptimizingMapper {
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
       @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
+      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "fromSequence", column = "from_sequence",  typeHandler = MapLong2StringConverter.class),
+      @Result(property = "toSequence", column = "to_sequence",  typeHandler = MapLong2StringConverter.class)
   })
-  List<TableOptimizingProcess> selectOptimizingProcessesByTable(
-      @Param("catalogName") String catalogName, @Param(
-      "dbName") String dbName, @Param("tableName") String tableName);
-
-  @Select("SELECT process_id, table_id, catalog_name, db_name, table_name, target_snapshot_id," +
-      " target_change_snapshot_id, status," +
-      " optimizing_type, plan_time, end_time, fail_reason, summary FROM table_optimizing_process" +
-      " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} AND table_name = #{tableName}" +
-      " AND status = 'SUCCESS'")
-  @Results({
-      @Result(property = "processId", column = "process_id"),
-      @Result(property = "tableId", column = "table_id"),
-      @Result(property = "catalogName", column = "catalog_name"),
-      @Result(property = "dbName", column = "db_name"),
-      @Result(property = "tableName", column = "table_name"),
-      @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-      @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-      @Result(property = "status", column = "status"),
-      @Result(property = "optimizingType", column = "optimizing_type"),
-      @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class)
-  })
-  List<TableOptimizingProcess> selectSuccessOptimizingProcesses(
-      @Param("catalogName") String catalogName, @Param(
-      "dbName") String dbName, @Param("tableName") String tableName);
+  List<OptimizingProcessMeta> selectOptimizingProcesses(
+      @Param("catalogName") String catalogName, @Param("dbName") String dbName, @Param("tableName") String tableName);
 
   /**
    * Optimizing TaskRuntime operation below
@@ -157,6 +139,33 @@ public interface OptimizingMapper {
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
+
+  @Select("<script>" +
+      "SELECT process_id, task_id, retry_num, table_id, partition_data, create_time, start_time, end_time, " +
+      "cost_time, status, fail_reason, optimizer_token, thread_id, metrics_summary, properties FROM task_runtime " +
+      "WHERE process_id IN" +
+      "<foreach item='item' index='index' collection='processIds' open='(' separator=',' close=')'>" +
+      "#{item}" +
+      "</foreach>" +
+      "</script>")
+  @Results({
+      @Result(property = "processId", column = "process_id"),
+      @Result(property = "taskId", column = "task_id"),
+      @Result(property = "retryNum", column = "retry_num"),
+      @Result(property = "tableId", column = "table_id"),
+      @Result(property = "partitionData", column = "partition_data"),
+      @Result(property = "createTime", column = "create_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
+      @Result(property = "costTime", column = "cost_time"),
+      @Result(property = "status", column = "status"),
+      @Result(property = "failReason", column = "fail_reason"),
+      @Result(property = "optimizerToken", column = "optimizer_token"),
+      @Result(property = "threadId", column = "thread_id"),
+      @Result(property = "metricsSummary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
+  })
+  List<OptimizingTaskMeta> selectOptimizeTaskMetas(@Param("processIds") List<Long> processIds);
 
   @Update("UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, " +
       "start_time = #{taskRuntime.startTime," +

@@ -19,14 +19,9 @@
 package com.netease.arctic.flink.read.hybrid.split;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import org.apache.flink.api.connector.source.SourceSplit;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * An abstract arctic source split.
@@ -58,6 +53,10 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
     return getClass() == ChangelogSplit.class;
   }
 
+  public final boolean isMergeOnReadSplit() {
+    return getClass() == MergeOnReadSplit.class;
+  }
+
   /**
    * Casts this split into a {@link SnapshotSplit}.
    */
@@ -70,6 +69,10 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
    */
   public final ChangelogSplit asChangelogSplit() {
     return (ChangelogSplit) this;
+  }
+
+  public final MergeOnReadSplit asMergeOnReadSplit() {
+    return (MergeOnReadSplit) this;
   }
 
   /**
@@ -87,21 +90,6 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
     return this.taskIndex().compareTo(that.taskIndex());
   }
 
-  protected String toString(Collection<ArcticFileScanTask> fileScanTasks) {
-    if (fileScanTasks == null) {
-      return "[]";
-    }
-    return Iterables.toString(fileScanTasks.stream()
-        .map(ArcticFileScanTask::file)
-        .map(primaryKeyedFile ->
-            MoreObjects.toStringHelper(primaryKeyedFile)
-                .add("file", primaryKeyedFile.path().toString())
-                .add("type", primaryKeyedFile.type().shortName())
-                .add("mask", primaryKeyedFile.node().mask())
-                .add("index", primaryKeyedFile.node().index())
-                .add("transactionId", primaryKeyedFile.transactionId())
-                .toString()).collect(Collectors.toList()));
-  }
-
   public abstract ArcticSplit copy();
+
 }

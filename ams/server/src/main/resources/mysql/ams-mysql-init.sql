@@ -46,7 +46,7 @@ CREATE TABLE `optimizer`
 
 CREATE TABLE `resource`
 (
-    `resource_id`               varchar(100) DEFAULT NULL  COMMENT 'optimizer instance id',
+    `resource_id`               varchar(100) NOT NULL  COMMENT 'optimizer instance id',
     `resource_type`             tinyint(4) DEFAULT 0 COMMENT 'resource type like optimizer/ingestor',
     `container_name`            varchar(100) DEFAULT NULL  COMMENT 'container name',
     `group_name`                varchar(50) DEFAULT NULL COMMENT 'queue name',
@@ -135,9 +135,9 @@ CREATE TABLE `table_optimizing_process`
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      timestamp default CURRENT_TIMESTAMP COMMENT 'Execute cost time',
+    `end_time`                      datetime(3) DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
@@ -160,7 +160,7 @@ CREATE TABLE `task_runtime`
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
-    `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
