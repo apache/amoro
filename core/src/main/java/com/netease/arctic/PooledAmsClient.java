@@ -26,8 +26,6 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.client.AmsClientPools;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.ams.api.client.ServiceInfo;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -38,12 +36,9 @@ import java.util.Map;
  */
 public class PooledAmsClient implements AmsClient {
   private final String metastoreUrl;
-  private final ServiceInfo serviceInfo;
 
   public PooledAmsClient(String metastoreUrl) {
     this.metastoreUrl = metastoreUrl;
-    ArcticThriftUrl thriftUrl = ArcticThriftUrl.parse(metastoreUrl);
-    this.serviceInfo = new ServiceInfo(thriftUrl.host(), thriftUrl.port());
   }
 
   private ArcticTableMetastore.Iface getIface() {
@@ -134,10 +129,5 @@ public class PooledAmsClient implements AmsClient {
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
     return getIface().getBlockers(tableIdentifier);
-  }
-
-  @Override
-  public ServiceInfo getServiceInfo() {
-    return serviceInfo;
   }
 }

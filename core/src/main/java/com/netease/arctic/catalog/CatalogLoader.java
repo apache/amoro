@@ -135,10 +135,7 @@ public class CatalogLoader {
           if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (tableFormat.equals(TableFormat.ICEBERG)) {
-            int httpPort = Integer.parseInt(catalogMeta.getCatalogProperties().get(CatalogMetaProperties.HTTP_PORT));
-            String uri = "http://" + client.getServiceInfo().getHost() + ":" + httpPort + "/api/iceberg/rest";
-            catalogMeta.putToCatalogProperties("uri", uri);
-            catalogMeta.putToCatalogProperties("warehouse", catalogName);
+            catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
             catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {

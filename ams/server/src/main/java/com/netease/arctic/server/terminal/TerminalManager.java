@@ -39,7 +39,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.rest.RESTCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -336,9 +335,6 @@ public class TerminalManager {
     Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
     if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogMeta.getCatalogType())) {
       if (formats.contains(TableFormat.ICEBERG)) {
-        int httpPort = Integer.parseInt(catalogMeta.getCatalogProperties().get(CatalogMetaProperties.HTTP_PORT));
-        catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
-        catalogMeta.putToCatalogProperties("uri", "http://127.0.0.1:" + httpPort + "/api/iceberg/rest");
         catalogMeta.putToCatalogProperties(CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
       }
     } else if (formats.contains(TableFormat.ICEBERG)) {

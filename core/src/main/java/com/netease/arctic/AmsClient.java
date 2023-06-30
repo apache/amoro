@@ -19,7 +19,6 @@
 package com.netease.arctic;
 
 import com.netease.arctic.ams.api.ArcticTableMetastore;
-import com.netease.arctic.ams.api.client.ServiceInfo;
 
 import java.io.Serializable;
 
@@ -28,5 +27,4 @@ import java.io.Serializable;
  */
 public interface AmsClient extends ArcticTableMetastore.Iface, Serializable {
 
-  ServiceInfo getServiceInfo();
 }
