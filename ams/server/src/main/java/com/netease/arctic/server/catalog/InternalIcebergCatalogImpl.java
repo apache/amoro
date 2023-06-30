@@ -34,8 +34,8 @@ public class InternalIcebergCatalogImpl extends MixedCatalogImpl {
   public CatalogMeta getMetadata() {
     CatalogMeta meta = super.getMetadata();
     meta.putToCatalogProperties(
-        "uri", "http://" + exposedHost + ":" + httpPort
-            + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+        "uri", "http://" + exposedHost + ":" + httpPort +
+            IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
     meta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
     return meta.deepCopy();
   }
