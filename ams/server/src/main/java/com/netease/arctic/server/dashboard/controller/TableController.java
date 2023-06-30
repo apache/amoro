@@ -304,7 +304,10 @@ public class TableController {
     Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
         table)), "no such table");
 
-    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
+    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table);
+    int total = processMetaList.size();
+
+    processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
         .skip(offset)
         .limit(limit)
         .collect(Collectors.toList());
@@ -316,7 +319,7 @@ public class TableController {
         .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
         .collect(Collectors.toList());
 
-    ctx.json(OkResponse.of(result));
+    ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
 
   /**
