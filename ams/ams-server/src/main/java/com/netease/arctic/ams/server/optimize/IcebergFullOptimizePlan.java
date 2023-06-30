@@ -91,14 +91,14 @@ public class IcebergFullOptimizePlan extends AbstractIcebergOptimizePlan {
       LOG.debug("{} ==== need native Full optimize plan by {} > {} * {} , partition is {}, " +
               "delete files totalSize is {}, target size is {}",
           tableId(), deleteFilesTotalSize, targetSize, duplicateRatio,
-        partitionToPath, deleteFilesTotalSize, targetSize);
+          partitionToPath, deleteFilesTotalSize, targetSize);
       return true;
     }
 
     if (checkOptimizeInterval(partitionToPath)) {
       LOG.debug("{} ==== need native Full optimize plan by Optimize Interval, partition is {}, " +
           "delete files totalSize is {}, target size is {}",
-        tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
+          tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
       return true;
     }
 
