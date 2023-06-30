@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,21 +28,22 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.netease.arctic.flink.util.LookupUtil.convertLookupOptions;
 
-public class KVTableFactory implements Serializable {
+public class KVTableFactory implements TableFactory<RowData>, Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(KVTableFactory.class);
   private static final long serialVersionUID = 8090117643055858494L;
   public static final KVTableFactory INSTANCE = new KVTableFactory();
 
-  public KVTable create(
-      StateFactory stateFactory,
+  public KVTable<RowData> create(
+      RowDataStateFactory rowDataStateFactory,
       List<String> primaryKeys,
       List<String> joinKeys,
       Schema projectSchema,
       Configuration config,
-      RowDataPredicate rowDataPredicate) {
+      Predicate<RowData> rowDataPredicate) {
     Set<String> joinKeySet = new HashSet<>(joinKeys);
     Set<String> primaryKeySet = new HashSet<>(primaryKeys);
     if (primaryKeySet.equals(joinKeySet)) {
@@ -51,7 +52,7 @@ public class KVTableFactory implements Serializable {
           primaryKeys.toArray(),
           joinKeys.toArray());
       return new UniqueIndexTable(
-          stateFactory,
+          rowDataStateFactory,
           primaryKeys,
           projectSchema,
           convertLookupOptions(config),
@@ -62,7 +63,7 @@ public class KVTableFactory implements Serializable {
           primaryKeys.toArray(),
           joinKeys.toArray());
       return new SecondaryIndexTable(
-          stateFactory,
+          rowDataStateFactory,
           primaryKeys,
           joinKeys,
           projectSchema,

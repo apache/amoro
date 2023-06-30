@@ -269,7 +269,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     String filter = "id >= 2 and num < 5 and num > 2";
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(filter);
 
-    KVTable uniqueIndexTable = createTable(
+    KVTable<RowData> uniqueIndexTable = createTable(
         Lists.newArrayList("id", "grade"), rowDataPredicate);
     uniqueIndexTable.open();
     initTable(uniqueIndexTable,
@@ -387,9 +387,9 @@ public class TestKVTable extends TestRowDataPredicateBase {
     return expressions.get(0).accept(rowDataPredicateExpressionVisitor);
   }
 
-  private KVTable createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate) {
+  private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate) {
     return KVTableFactory.INSTANCE.create(
-        new StateFactory(dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
+        new RowDataStateFactory(dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
         primaryKeys,
         joinKeys,
         arcticSchema,
@@ -397,25 +397,25 @@ public class TestKVTable extends TestRowDataPredicateBase {
         rowDataPredicate.orElse(null));
   }
 
-  private KVTable createTable(List<String> joinKeys) {
+  private KVTable<RowData> createTable(List<String> joinKeys) {
     return createTable(joinKeys, Optional.empty());
   }
 
   private void initTable(
-      KVTable table, Iterator<RowData> initStream) throws IOException {
+      KVTable<RowData> table, Iterator<RowData> initStream) throws IOException {
     if (initStream != null) {
       table.initialize(initStream);
     }
   }
 
   private void upsertTable(
-      KVTable table, Iterator<RowData> upsertStream, RowData... rows) throws IOException {
+      KVTable<RowData> table, Iterator<RowData> upsertStream, RowData... rows) throws IOException {
     if (upsertStream != null) {
       table.upsert(upsertStream);
     }
   }
 
-  private void assertTable(KVTable table, RowData... rows) throws IOException {
+  private void assertTable(KVTable<RowData> table, RowData... rows) throws IOException {
     // Loop through the rows array in steps of 2
     for (int i = 0; i < rows.length; i = i + 2) {
       // Get the key and expected value at the current index and the next index
@@ -433,7 +433,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     }
   }
 
-  private void assertTableSet(KVTable table, RowData key, RowData... expects) throws IOException {
+  private void assertTableSet(KVTable<RowData> table, RowData key, RowData... expects) throws IOException {
     List<RowData> values = table.get(key);
     if (expects == null) {
       Assert.assertEquals(0, values.size());

@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.write.FlinkTaskWriterBaseTest;
@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBaseTest {
+  private String db;
 
   public LookupITCase() {
     super(
@@ -55,21 +56,28 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
 
   @Before
   public void setup() throws IOException {
+    List<String> dbs = getCatalog().listDatabases();
+    if (dbs.isEmpty()) {
+      db = "test_db";
+      getCatalog().createDatabase(db);
+    } else {
+      db = dbs.get(0);
+    }
     exec("create catalog arctic with ('type'='arctic', 'metastore.url'='%s')", getCatalogUrl());
     exec("create table arctic.%s.L (id int) " +
-        "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')", getDatabase());
+        "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')", db);
     exec("create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) " +
-        "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')", getDatabase());
-    exec("create view vi as select *, PROCTIME() as proc from arctic.%s.L", getDatabase());
+        "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')", db);
+    exec("create view vi as select *, PROCTIME() as proc from arctic.%s.L", db);
 
     writeAndCommit(
-        TableIdentifier.of(getCatalogName(), getDatabase(), "DIM"),
+        TableIdentifier.of(getCatalogName(), db, "DIM"),
         Lists.newArrayList(
             DataUtil.toRowData(1, "a"),
             DataUtil.toRowData(2, "b"))
     );
     writeAndCommit(
-        TableIdentifier.of(getCatalogName(), getDatabase(), "L"),
+        TableIdentifier.of(getCatalogName(), db, "L"),
         Lists.newArrayList(
             DataUtil.toRowData(1)
         )
@@ -78,8 +86,8 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
 
   @After
   public void drop() {
-    exec("drop table arctic.%s.L", getDatabase());
-    exec("drop table arctic.%s.DIM", getDatabase());
+    exec("drop table arctic.%s.L", db);
+    exec("drop table arctic.%s.DIM", db);
   }
 
   @Test()
@@ -87,12 +95,12 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     TableResult tableResult = exec(
         "select L.id, D.name from vi L LEFT JOIN arctic.%s.DIM " +
             "for system_time as of L.proc AS D ON L.id = D.id",
-        getDatabase());
+        db);
 
     tableResult.await(1, TimeUnit.MINUTES);// wait for the first row.
 
     writeToChangeAndCommit(
-        TableIdentifier.of(getCatalogName(), getDatabase(), "DIM"),
+        TableIdentifier.of(getCatalogName(), db, "DIM"),
         Lists.newArrayList(
             DataUtil.toRowData(2, "c"),
             DataUtil.toRowData(3, "d"),
@@ -103,7 +111,7 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     Thread.sleep(2000); // wait dim table commit and reload
 
     writeToChangeAndCommit(
-        TableIdentifier.of(getCatalogName(), getDatabase(), "L"),
+        TableIdentifier.of(getCatalogName(), db, "L"),
         Lists.newArrayList(
             DataUtil.toRowData(2),
             DataUtil.toRowData(3),

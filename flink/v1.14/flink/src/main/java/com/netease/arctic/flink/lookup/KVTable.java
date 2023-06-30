@@ -18,9 +18,7 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.Schema;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +31,7 @@ import java.util.List;
  * It includes methods for initializing and updating the lookup table,
  * as well as getting results by key and cleaning up the cache.
  */
-public interface KVTable extends Serializable, Closeable {
+public interface KVTable<T> extends Serializable, Closeable {
   /**
    * Initialize the lookup table
    */
@@ -44,14 +42,14 @@ public interface KVTable extends Serializable, Closeable {
    *
    * @throws IOException Serialize the rowData failed.
    */
-  List<RowData> get(RowData key) throws IOException;
+  List<T> get(RowData key) throws IOException;
 
   /**
    * Upsert the {@link KVTable} by the Change table dataStream.
    *
    * @throws IOException Serialize the rowData failed.
    */
-  void upsert(Iterator<RowData> dataStream) throws IOException;
+  void upsert(Iterator<T> dataStream) throws IOException;
 
   /**
    * Initial the {@link  KVTable} by the MoR dataStream.
@@ -59,12 +57,12 @@ public interface KVTable extends Serializable, Closeable {
    * @param dataStream
    * @throws IOException
    */
-  void initialize(Iterator<RowData> dataStream) throws IOException;
+  void initialize(Iterator<T> dataStream) throws IOException;
 
   /**
    * @return if the rowData is filtered, return true.
    */
-  boolean filter(RowData value);
+  boolean filter(T value);
 
   /**
    * @return if initialization is completed, return true.
@@ -84,14 +82,4 @@ public interface KVTable extends Serializable, Closeable {
   }
 
   void close();
-
-  default BinaryRowDataSerializerWrapper createKeySerializer(
-      Schema arcticTableSchema, List<String> keys) {
-    Schema keySchema = SchemaUtil.convertFieldsToSchema(arcticTableSchema, keys);
-    return new BinaryRowDataSerializerWrapper(keySchema);
-  }
-
-  default BinaryRowDataSerializerWrapper createValueSerializer(Schema projectSchema) {
-    return new BinaryRowDataSerializerWrapper(projectSchema);
-  }
 }

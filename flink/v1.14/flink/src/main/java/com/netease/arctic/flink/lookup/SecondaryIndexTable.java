@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
@@ -32,6 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.lookup.LookupMetrics.SECONDARY_CACHE_SIZE;
@@ -51,16 +51,16 @@ public class SecondaryIndexTable extends UniqueIndexTable {
   private final LookupOptions lookupOptions;
 
   public SecondaryIndexTable(
-      StateFactory stateFactory,
+      RowDataStateFactory rowDataStateFactory,
       List<String> primaryKeys,
       List<String> joinKeys,
       Schema projectSchema,
       LookupOptions lookupOptions,
-      RowDataPredicate rowDataPredicate) {
-    super(stateFactory, primaryKeys, projectSchema, lookupOptions, rowDataPredicate);
+      Predicate<RowData> rowDataPredicate) {
+    super(rowDataStateFactory, primaryKeys, projectSchema, lookupOptions, rowDataPredicate);
 
     this.setState =
-        stateFactory.createSetState(
+        rowDataStateFactory.createSetState(
             "secondaryIndex",
             createKeySerializer(projectSchema, joinKeys),
             createKeySerializer(projectSchema, primaryKeys),

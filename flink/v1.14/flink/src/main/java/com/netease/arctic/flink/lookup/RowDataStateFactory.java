@@ -26,13 +26,13 @@ import org.rocksdb.CompressionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StateFactory {
-  private static final Logger LOG = LoggerFactory.getLogger(StateFactory.class);
+public class RowDataStateFactory {
+  private static final Logger LOG = LoggerFactory.getLogger(RowDataStateFactory.class);
 
   private final RocksDBBackend db;
   private final MetricGroup metricGroup;
 
-  public StateFactory(String dbPath, MetricGroup metricGroup) {
+  public RowDataStateFactory(String dbPath, MetricGroup metricGroup) {
     Preconditions.checkNotNull(metricGroup);
 
     this.db = RocksDBBackend.getOrCreateInstance(dbPath);

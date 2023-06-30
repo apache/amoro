@@ -18,26 +18,19 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.utils.SerializationUtil;
-import com.netease.arctic.utils.map.DefaultSizeEstimator;
-import com.netease.arctic.utils.map.SimpleSpillableMap;
+import org.apache.flink.configuration.Configuration;
+import org.apache.iceberg.Schema;
 
-import javax.annotation.Nullable;
+import java.util.List;
+import java.util.function.Predicate;
 
-public class SecondarySpillableMap<K, T> extends SimpleSpillableMap<K, T> {
+public interface TableFactory<T> {
 
-  @SuppressWarnings("unchecked")
-  public SecondarySpillableMap(
-      Long maxInMemorySizeInBytes,
-      @Nullable String backendBaseDir) {
-    super(
-        maxInMemorySizeInBytes,
-        backendBaseDir,
-        true,
-        SerializationUtil.JavaSerializer.INSTANT,
-        SerializationUtil.JavaSerializer.INSTANT,
-        new DefaultSizeEstimator<>(),
-        new DefaultSizeEstimator<>());
-    // todo
-  }
+  KVTable<T> create(
+      RowDataStateFactory rowDataStateFactory,
+      List<String> primaryKeys,
+      List<String> joinKeys,
+      Schema projectSchema,
+      Configuration config,
+      Predicate<T> predicate);
 }

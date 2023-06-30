@@ -18,12 +18,16 @@
 
 package com.netease.arctic.flink.table;
 
-import com.netease.arctic.flink.lookup.ArcticLookupFunction;
+import com.netease.arctic.flink.lookup.ArcticRowDataLookupFunction;
 import com.netease.arctic.flink.lookup.KVTableFactory;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicateExpressionVisitor;
+import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
+import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
+import com.netease.arctic.flink.read.source.FlinkArcticMORDataReader;
 import com.netease.arctic.flink.util.FilterUtil;
 import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -50,18 +54,22 @@ import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -239,8 +247,12 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     properties.forEach(config::setString);
 
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(projectedSchema, flinkExpression);
+
+    AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader = generateMORReader(arcticTable, projectedSchema);
+    DataIteratorReaderFunction<RowData> readerFunction = generateReaderFunction(arcticTable, projectedSchema);
+
     return
-        new ArcticLookupFunction(
+        new ArcticRowDataLookupFunction(
             KVTableFactory.INSTANCE,
             arcticTable,
             joinKeyNames,
@@ -248,7 +260,36 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
             filters,
             tableLoader,
             config,
-            rowDataPredicate.orElse(null));
+            rowDataPredicate.orElse(null),
+            flinkArcticMORDataReader,
+            readerFunction);
+  }
+
+  private DataIteratorReaderFunction<RowData> generateReaderFunction(ArcticTable arcticTable, Schema projectedSchema) {
+    return new RowDataReaderFunction(
+        new Configuration(),
+        arcticTable.schema(),
+        projectedSchema,
+        arcticTable.asKeyedTable().primaryKeySpec(),
+        null,
+        true,
+        arcticTable.io(),
+        true
+    );
+  }
+
+  private AbstractAdaptHiveArcticDataReader<RowData> generateMORReader(
+      ArcticTable arcticTable, Schema projectedSchema) {
+    return new FlinkArcticMORDataReader(
+        arcticTable.io(),
+        arcticTable.schema(),
+        projectedSchema,
+        arcticTable.asKeyedTable().primaryKeySpec(),
+        null,
+        true,
+        (BiFunction<Type, Object, Object> & Serializable) RowDataUtil::convertConstant,
+        true
+    );
   }
 
   protected List<String> getJoinKeyNames(int[] joinKeys, Schema projectedSchema) {

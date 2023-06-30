@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
@@ -38,23 +39,23 @@ import static com.netease.arctic.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
 /**
  * Use a unique index to lookup. Working for the situation where the join keys include the arctic table's primary keys.
  */
-public class UniqueIndexTable implements KVTable {
+public class UniqueIndexTable implements KVTable<RowData> {
   private static final Logger LOG = LoggerFactory.getLogger(UniqueIndexTable.class);
   private static final long serialVersionUID = -6537777722200330050L;
   protected final RocksDBRecordState recordState;
 
   protected int[] uniqueKeyIndexMapping;
-  protected final RowDataPredicate rowDataPredicate;
+  protected final Predicate<RowData> rowDataPredicate;
 
   public UniqueIndexTable(
-      StateFactory stateFactory,
+      RowDataStateFactory rowDataStateFactory,
       List<String> primaryKeys,
       Schema projectSchema,
       LookupOptions lookupOptions,
-      RowDataPredicate rowDataPredicate) {
+      Predicate<RowData> rowDataPredicate) {
 
     recordState =
-        stateFactory.createRecordState(
+        rowDataStateFactory.createRecordState(
             "uniqueIndex",
             createKeySerializer(projectSchema, primaryKeys),
             createValueSerializer(projectSchema),
@@ -129,6 +130,16 @@ public class UniqueIndexTable implements KVTable {
     recordState.waitWriteRocksDBDone();
     LOG.info("The concurrent threads have finished writing data into the Record State.");
     recordState.initializationCompleted();
+  }
+
+  protected BinaryRowDataSerializerWrapper createKeySerializer(
+      Schema arcticTableSchema, List<String> keys) {
+    Schema keySchema = SchemaUtil.convertFieldsToSchema(arcticTableSchema, keys);
+    return new BinaryRowDataSerializerWrapper(keySchema);
+  }
+
+  protected BinaryRowDataSerializerWrapper createValueSerializer(Schema projectSchema) {
+    return new BinaryRowDataSerializerWrapper(projectSchema);
   }
 
   @Override

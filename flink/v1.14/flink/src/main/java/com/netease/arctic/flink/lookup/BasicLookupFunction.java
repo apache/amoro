@@ -18,12 +18,11 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import com.netease.arctic.flink.read.MixedIncrementalLoader;
 import com.netease.arctic.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
-import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
-import com.netease.arctic.flink.read.source.FlinkArcticMORDataReader;
+import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
@@ -31,23 +30,23 @@ import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 
 import static com.netease.arctic.flink.lookup.LookupMetrics.GROUP_NAME_LOOKUP;
 import static com.netease.arctic.flink.lookup.LookupMetrics.LOADING_TIME_MS;
@@ -56,13 +55,13 @@ import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * This is a lookup function for an arctic table.
+ * This is a basic lookup function for an arctic table.
  */
-public class ArcticLookupFunction extends TableFunction<RowData> {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticLookupFunction.class);
-  private static final long serialVersionUID = 1L;
+public class BasicLookupFunction<T> implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(BasicLookupFunction.class);
+  private static final long serialVersionUID = 1671720424494168710L;
   private ArcticTable arcticTable;
-  private KVTable kvTable;
+  private KVTable<T> kvTable;
   private final List<String> joinKeys;
   private final Schema projectSchema;
   private final List<Expression> filters;
@@ -70,34 +69,40 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
   private boolean loading = false;
   private long nextLoadTime = Long.MIN_VALUE;
   private final long reloadIntervalSeconds;
-  private MixedIncrementalLoader<RowData> incrementalLoader;
+  private MixedIncrementalLoader<T> incrementalLoader;
   private final Configuration config;
   private transient AtomicLong lookupLoadingTimeMs;
-  private final RowDataPredicate rowDataPredicate;
-  private final KVTableFactory kvTableFactory;
+  private final Predicate<T> predicate;
+  private final TableFactory<T> kvTableFactory;
+  private final AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader;
+  private final DataIteratorReaderFunction<T> readerFunction;
 
-  public ArcticLookupFunction(
-      KVTableFactory kvTableFactory,
+  public BasicLookupFunction(
+      TableFactory<T> tableFactory,
       ArcticTable arcticTable,
       List<String> joinKeys,
       Schema projectSchema,
       List<Expression> filters,
       ArcticTableLoader tableLoader,
       Configuration config,
-      RowDataPredicate rowDataPredicate) {
+      Predicate<T> predicate,
+      AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader,
+      DataIteratorReaderFunction<T> readerFunction) {
     checkArgument(
         arcticTable.isKeyedTable(),
         String.format(
             "Only keyed arctic table support lookup join, this table [%s] is an unkeyed table.", arcticTable.name()));
-    Preconditions.checkNotNull(kvTableFactory, "kvTableFactory cannot be null");
-    this.kvTableFactory = kvTableFactory;
+    Preconditions.checkNotNull(tableFactory, "kvTableFactory cannot be null");
+    this.kvTableFactory = tableFactory;
     this.joinKeys = joinKeys;
     this.projectSchema = projectSchema;
     this.filters = filters;
     this.loader = tableLoader;
     this.config = config;
     this.reloadIntervalSeconds = config.get(LOOKUP_RELOADING_INTERVAL).getSeconds();
-    this.rowDataPredicate = rowDataPredicate;
+    this.predicate = predicate;
+    this.flinkArcticMORDataReader = flinkArcticMORDataReader;
+    this.readerFunction = readerFunction;
   }
 
   /**
@@ -105,9 +110,8 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
    *
    * @throws IOException If serialize or deserialize failed
    */
-  @Override
   public void open(FunctionContext context) throws IOException {
-    LOG.info("lookup function rowDtaPredicate: {}.", rowDataPredicate);
+    LOG.info("lookup function rowDtaPredicate: {}.", predicate);
     MetricGroup metricGroup = context.getMetricGroup().addGroup(GROUP_NAME_LOOKUP);
     if (arcticTable == null) {
       arcticTable = loadArcticTable(loader).asKeyedTable();
@@ -122,47 +126,29 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
         projectSchema,
         arcticTable.schema());
     kvTable = kvTableFactory.create(
-        new StateFactory(generateRocksDBPath(context, arcticTable.name()), metricGroup),
+        new RowDataStateFactory(generateRocksDBPath(context, arcticTable.name()), metricGroup),
         arcticTable.asKeyedTable().primaryKeySpec().fieldNames(),
         joinKeys,
         projectSchema,
         config,
-        rowDataPredicate);
+        predicate);
     kvTable.open();
+
     this.incrementalLoader =
         new MixedIncrementalLoader<>(
             new MergeOnReadIncrementalPlanner(loader),
-            new FlinkArcticMORDataReader(
-                arcticTable.io(),
-                arcticTable.schema(),
-                projectSchema,
-                arcticTable.asKeyedTable().primaryKeySpec(),
-                null,
-                true,
-                RowDataUtil::convertConstant,
-                true
-            ),
-            new RowDataReaderFunction(
-                new Configuration(),
-                arcticTable.schema(),
-                projectSchema,
-                arcticTable.asKeyedTable().primaryKeySpec(),
-                null,
-                true,
-                arcticTable.io(),
-                true
-            ),
+            flinkArcticMORDataReader,
+            readerFunction,
             filters
         );
     checkAndLoad();
   }
 
-  public void eval(Object... values) {
+  public List<T> lookup(Object... values) {
     try {
       checkAndLoad();
       RowData lookupKey = GenericRowData.of(values);
-      List<RowData> results = kvTable.get(lookupKey);
-      results.forEach(this::collect);
+      return kvTable.get(lookupKey);
     } catch (Exception e) {
       throw new FlinkRuntimeException(e);
     }
@@ -171,10 +157,8 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
   /**
    * Check whether it is time to periodically load data to kvTable.
    * Support to use {@link Expression} filters to filter the data.
-   *
-   * @throws IOException If serialize or deserialize failed.
    */
-  private synchronized void checkAndLoad() throws IOException {
+  private synchronized void checkAndLoad() {
     if (nextLoadTime > System.currentTimeMillis()) {
       return;
     }
@@ -189,7 +173,7 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
     while (incrementalLoader.hasNext()) {
       long start = System.currentTimeMillis();
       arcticTable.io().doAs(() -> {
-        try (CloseableIterator<RowData> iterator = incrementalLoader.next()) {
+        try (CloseableIterator<T> iterator = incrementalLoader.next()) {
           if (kvTable.initialized()) {
             kvTable.upsert(iterator);
           } else {
@@ -212,7 +196,6 @@ public class ArcticLookupFunction extends TableFunction<RowData> {
     loading = false;
   }
 
-  @Override
   public void close() throws Exception {
     if (kvTable != null) {
       kvTable.close();
