@@ -71,6 +71,10 @@ public class SchedulingPolicy {
     }
   }
 
+  public boolean containsTable(ServerTableIdentifier tableIdentifier) {
+    return tableRuntimeMap.containsKey(tableIdentifier);
+  }
+
   @VisibleForTesting
   Map<ServerTableIdentifier, TableRuntime> getTableRuntimeMap() {
     return tableRuntimeMap;

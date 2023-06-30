@@ -1,9 +1,3 @@
--- container_metadata
-ALTER TABLE `container_metadata` CHANGE `name` `container_name` varchar(64);
-ALTER TABLE `container_metadata` CHANGE `type` `container_type` varchar(64);
-ALTER TABLE `container_metadata` DROP PRIMARY KEY;
-ALTER TABLE `container_metadata` ADD PRIMARY KEY(`container_name`);
-
 -- catalog_metadata
 ALTER TABLE `catalog_metadata` ADD `database_count` INT NOT NULL DEFAULT 0;
 ALTER TABLE `catalog_metadata` ADD `table_count` INT NOT NULL DEFAULT 0;

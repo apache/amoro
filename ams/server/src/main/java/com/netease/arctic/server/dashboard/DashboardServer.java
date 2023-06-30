@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
@@ -34,7 +35,6 @@ import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
-import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
@@ -78,8 +78,9 @@ public class DashboardServer {
   private final VersionController versionController;
   private final TerminalManager terminalManager;
 
-  public DashboardServer(Configurations serviceConfig, TableService tableService,
-                         OptimizerManager optimizerManager) {
+  public DashboardServer(
+      Configurations serviceConfig, TableService tableService,
+      DefaultOptimizingService optimizerManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.serviceConfig = serviceConfig;
     this.catalogController = new CatalogController(tableService, platformFileManager);
@@ -157,7 +158,7 @@ public class DashboardServer {
           if (null == ctx.sessionAttribute("user")) {
             ctx.sessionAttributeMap();
             LOG.info("session info: {}", JSONObject.toJSONString(
-                            ctx.sessionAttributeMap()));
+                ctx.sessionAttributeMap()));
             throw new ForbiddenException();
           }
         }
@@ -226,6 +227,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);
@@ -283,6 +290,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);

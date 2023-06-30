@@ -29,6 +29,11 @@ public class OkResponse<R> extends Response {
     this.result = result;
   }
 
+  protected OkResponse(String message, R result) {
+    super(200, message);
+    this.result = result;
+  }
+
   protected OkResponse() {
     this(null);
   }
@@ -39,6 +44,10 @@ public class OkResponse<R> extends Response {
 
   public static <R> OkResponse<R> of(R result) {
     return new OkResponse<>(result);
+  }
+
+  public static <R> OkResponse<R> of(String message, R result) {
+    return new OkResponse<>(message, result);
   }
 
   public R getResult() {
