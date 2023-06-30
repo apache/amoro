@@ -35,6 +35,7 @@ import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
@@ -76,9 +77,10 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
 
+
   public DashboardServer(
       Configurations serviceConfig, TableService tableService,
-      DefaultOptimizingService optimizerManager) {
+      DefaultOptimizingService optimizerManager, TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
