@@ -20,6 +20,9 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 
 public class InternalIcebergCatalogImpl extends InternalCatalog {
+
+  private static final String URI = "uri";
+
   final int httpPort;
   final String exposedHost;
 
@@ -33,11 +36,21 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
   @Override
   public CatalogMeta getMetadata() {
     CatalogMeta meta = super.getMetadata();
-    meta.putToCatalogProperties(
-        "uri", "http://" + exposedHost + ":" + httpPort +
-            IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+    if (!meta.getCatalogProperties().containsKey(URI)) {
+      meta.putToCatalogProperties(URI, defaultRestURI());
+    }
     meta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
     return meta.deepCopy();
+  }
+
+  @Override
+  public void updateMetadata(CatalogMeta metadata) {
+    String defaultUrl = defaultRestURI();
+    String uri = metadata.getCatalogProperties().getOrDefault(URI, defaultUrl);
+    if (defaultUrl.equals(uri)) {
+      metadata.getCatalogProperties().remove(URI);
+    }
+    super.updateMetadata(metadata);
   }
 
   @Override
@@ -55,5 +68,10 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName),
         table, fileIO, getMetadata().getCatalogProperties()
     );
+  }
+
+
+  private String defaultRestURI() {
+    return "http://" + exposedHost + ":" + httpPort + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
   }
 }
