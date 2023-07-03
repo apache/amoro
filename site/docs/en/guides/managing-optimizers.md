@@ -48,20 +48,20 @@ External Container of type external, starting from *0.4.0*, supports submitting 
 
 Users can submit optimizer tasks in their own Flink task development platform or local Flink environment with the following configuration. The main parameters include:
 ```shell
-flink run -m yarn-cluster  -ytm {EXECUTOR_TASKMANAGER_MEMORY} -yjm {EXECUTOR_JOBMANAGER_MEMORY}  -c com.netease.arctic.optimizer.flink.FlinkOptimizer  {ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar -a {AMS_THRIFT_SERVER_URL} -g {OPTIMIZE_GROUP_NAME} -p {EXECUTOR_PARALLELISM} -m {EXECUTOR_MEMORY}  --hb 60000
+flink run -m yarn-cluster  -ytm {EXECUTOR_TASKMANAGER_MEMORY} -yjm {EXECUTOR_JOBMANAGER_MEMORY}  -c com.netease.arctic.optimizer.flink.FlinkOptimizer  {ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar -a {AMS_THRIFT_SERVER_URL} -g {OPTIMIZE_GROUP_NAME} -p {EXECUTOR_PARALLELISM} -m {EXECUTOR_MEMORY}  --hb 10000
 ```
 The description of the relevant parameters is shown in the following table:
 
-| Property                         | Description                                           |
-|----------------------------------| ----------------------------------------------------------- |
-| -ytm EXECUTOR_TASKMANAGER_MEMORY | Flink Task TM Memory Size                                   |
-| -yjm EXECUTOR_JOBMANAGER_MEMORY  | Flink Task JM Memory Size                                   |
-| ARCTIC_HOME                      | Arctic  root directory                                         |
-| -a AMS_THRIFT_SERVER_URL         | The address of the AMS thrift service, for example: thrift://10.196.98.23:18112, can be obtained from the config.yaml configuration. |
-| -g OPTIMIZE_GROUP_NAME           | The name of the optimize group is configured in config.yaml and can also be found in the front-end Optimizer-->Optimizer group, the container in this group must be of external type. |
-| -p EXECUTOR_PARALLELISM          | Flink Task Parallelism                                      |
-| -m EXECUTOR_MEMORY               | Execution memory, the sum of JM's memory and TM's memory for the Flink task, is used to report to AMS to count the optimizer's resource usage. |
-
+| Property                         | Description                                                                                                                                                                                                                                                                                                        |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -ytm EXECUTOR_TASKMANAGER_MEMORY | Flink Task TM Memory Size                                                                                                                                                                                                                                                                                          |
+| -yjm EXECUTOR_JOBMANAGER_MEMORY  | Flink Task JM Memory Size                                                                                                                                                                                                                                                                                          |
+| ARCTIC_HOME                      | Arctic  root directory                                                                                                                                                                                                                                                                                             |
+| -a AMS_THRIFT_SERVER_URL         | The address of the AMS thrift service, for example: thrift://10.196.98.23:18112, can be obtained from the config.yaml configuration.                                                                                                                                                                               |
+| -g OPTIMIZE_GROUP_NAME           | The name of the optimize group is configured in config.yaml and can also be found in the front-end Optimizer-->Optimizer group, the container in this group must be of external type.                                                                                                                              |
+| -p EXECUTOR_PARALLELISM          | Flink Task Parallelism                                                                                                                                                                                                                                                                                             |
+| -m EXECUTOR_MEMORY               | Execution memory, the sum of JM's memory and TM's memory for the Flink task, is used to report to AMS to count the optimizer's resource usage.                                                                                                                                                                     |
+| -hb EXECUTOR_HEARTBEAT_INTERVAL  | optimizer heartbeat reporting interval. Note that the configured value cannot exceed the value of optimizer.heart-beat-timeout on the server side, otherwise it will cause the optimizer to have a longer heartbeat interval, which will be considered unhealthy by the server and suspend the execution of tasks. |
 ## Optimizer Group
 Optimizer Group (Optimizer resource group) is a concept introduced to divide Optimizer resources. An Optimizer Group can 
 contain several optimizers with the same container type to facilitate the expansion and contraction of the resource group.
