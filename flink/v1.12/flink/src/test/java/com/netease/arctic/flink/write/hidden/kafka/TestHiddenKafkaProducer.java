@@ -38,7 +38,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +68,6 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
     kafkaTestBase.shutDownServices();
   }
 
-  @Ignore
   @Test
   public void testInitTransactionId() {
     final String topic = "test-init-transactions";
