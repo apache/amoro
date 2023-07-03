@@ -168,6 +168,11 @@ CREATE TABLE `optimizing_task_quota`
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
+-- modify to timestamp
+ALTER TABLE `table_blocker` MODIFY `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time';
+ALTER TABLE `table_blocker` MODIFY `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time';
+ALTER TABLE `api_tokens` MODIFY `apply_time` timestamp NULL DEFAULT NULL COMMENT 'apply time';
+
 -- init table_runtime
 INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,
 last_optimized_snapshotId, last_optimized_change_snapshotId,
