@@ -17,6 +17,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.FileContent;
@@ -235,6 +236,9 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
+    if (CollectionUtils.isEmpty(processMetaList)) {
+      return Collections.emptyList();
+    }
     List<Long> processIds = processMetaList.stream()
         .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
     return getAs(OptimizingMapper.class,
