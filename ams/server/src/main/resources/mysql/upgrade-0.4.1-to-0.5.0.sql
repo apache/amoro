@@ -94,9 +94,9 @@ CREATE TABLE `table_runtime`
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
     `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
-    `last_major_optimizing_time`    timestamp COMMENT 'Latest Major Optimize time for all partitions',
-    `last_minor_optimizing_time`    timestamp COMMENT 'Latest Minor Optimize time for all partitions',
-    `last_full_optimizing_time`     timestamp COMMENT 'Latest Full Optimize time for all partitions',
+    `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
+    `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
+    `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
     `optimizing_status`             varchar(20) DEFAULT 'Idle' COMMENT 'Table optimize status: MajorOptimizing, MinorOptimizing, Pending, Idle',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
@@ -116,9 +116,9 @@ CREATE TABLE `task_runtime`
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
     `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
-    `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
-    `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
-    `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',
+    `create_time`               timestamp NULL DEFAULT NULL COMMENT 'Task create time',
+    `start_time`                timestamp NULL DEFAULT NULL COMMENT 'Time when task start waiting to execute',
+    `end_time`                  timestamp NULL DEFAULT NULL COMMENT 'Time when task finished',
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
@@ -143,8 +143,8 @@ CREATE TABLE `table_optimizing_process`
     `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
-    `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      datetime(3) DEFAULT NULL COMMENT 'finish time or failed time',
+    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
@@ -167,6 +167,11 @@ CREATE TABLE `optimizing_task_quota`
     PRIMARY KEY (`process_id`, `task_id`, `retry_num`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
+
+-- modify to timestamp
+ALTER TABLE `table_blocker` MODIFY `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time';
+ALTER TABLE `table_blocker` MODIFY `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time';
+ALTER TABLE `api_tokens` MODIFY `apply_time` timestamp NULL DEFAULT NULL COMMENT 'apply time';
 
 -- init table_runtime
 INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,
