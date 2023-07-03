@@ -61,6 +61,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public class ArcticServiceContainer {
 
@@ -73,7 +74,8 @@ public class ArcticServiceContainer {
   private DefaultTableService tableService;
   private DefaultOptimizingService optimizingService;
   private Configurations serviceConfig;
-  private TServer server;
+  private TServer tableManagementServer;
+  private TServer optimizingServer;
   private DashboardServer dashboardServer;
 
   public ArcticServiceContainer() throws Exception {
@@ -138,8 +140,11 @@ public class ArcticServiceContainer {
   }
 
   public void dispose() {
-    if (server != null) {
-      server.stop();
+    if (tableManagementServer != null) {
+      tableManagementServer.stop();
+    }
+    if (optimizingServer != null) {
+      optimizingServer.stop();
     }
     if (dashboardServer != null) {
       dashboardServer.stopRestServer();
@@ -158,11 +163,18 @@ public class ArcticServiceContainer {
 
   private void startThriftService() {
     Thread thread = new Thread(() -> {
-      server.serve();
-      LOG.info("Thrift services have been started");
-    }, "Thrift-server-thread");
+      tableManagementServer.serve();
+    }, "Thrift-table-management-server-thread");
     thread.setDaemon(true);
     thread.start();
+    LOG.info("Table management thrift services have been started");
+
+    Thread optimizingThread = new Thread(() -> {
+      optimizingServer.serve();
+    }, "Thrift-optimizing-server-thread");
+    optimizingThread.setDaemon(true);
+    optimizingThread.start();
+    LOG.info("Optimizing thrift services have been started");
   }
 
   private void startHttpService() {
@@ -183,37 +195,64 @@ public class ArcticServiceContainer {
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
 
     LOG.info("Starting thrift server on port:" + port);
+    TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
+    initTableManagementServer(serverTransport, maxMessageSize, workerThreads, selectorThreads, queueSizePerSelector);
+    initOptimizingServer(serverTransport, maxMessageSize, selectorThreads, queueSizePerSelector);
+  }
 
-    TMultiplexedProcessor processor = new TMultiplexedProcessor();
+  private void initTableManagementServer(
+      TNonblockingServerSocket serverTransport, long maxMessageSize,
+      int workerThreads, int selectorThreads, int queueSizePerSelector) {
     final TProtocolFactory protocolFactory;
     final TProtocolFactory inputProtoFactory;
     protocolFactory = new TBinaryProtocol.Factory();
     inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
-
-    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableMetastoreProcessor =
+    ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> processor =
         new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
             new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
-    processor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, tableMetastoreProcessor);
-
-    OptimizingService.Processor<OptimizingService.Iface> optimizerManagerProcessor =
-        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
-            optimizingService, ArcticRuntimeException::normalize));
-    processor.registerProcessor(Constants.THRIFT_OPTIMIZING_SERVICE_NAME, optimizerManagerProcessor);
-
-    TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
+    TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
+    multiplexedProcessor.registerProcessor(Constants.THRIFT_TABLE_SERVICE_NAME, processor);
     TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
-        .processor(processor)
+        .processor(multiplexedProcessor)
         .transportFactory(new TFramedTransport.Factory())
         .protocolFactory(protocolFactory)
         .inputProtocolFactory(inputProtoFactory)
-        .workerThreads(workerThreads)
+        .executorService(Executors.newFixedThreadPool(workerThreads))
         .selectorThreads(selectorThreads)
         .acceptQueueSizePerThread(queueSizePerSelector);
-    server = new TThreadedSelectorServer(args);
-    LOG.info("Initialized the thrift server on port [" + port + "]...");
-    LOG.info("Options.thriftWorkerThreads = " + workerThreads);
-    LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
-    LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);
+    tableManagementServer = new TThreadedSelectorServer(args);
+    LOG.info("The number of worker threads for the table management thrift server is: " + workerThreads);
+    LOG.info("The number of selector threads for the table management thrift server is: " + selectorThreads);
+    LOG.info("The size of per-selector queue for the table management thrift server is: " + queueSizePerSelector);
+  }
+
+  private void initOptimizingServer(
+      TNonblockingServerSocket serverTransport,
+      long maxMessageSize,
+      int selectorThreads,
+      int queueSizePerSelector) {
+    final TProtocolFactory protocolFactory;
+    final TProtocolFactory inputProtoFactory;
+    protocolFactory = new TBinaryProtocol.Factory();
+    inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
+    OptimizingService.Processor<OptimizingService.Iface> processor =
+        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
+            optimizingService, ArcticRuntimeException::normalize));
+    TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
+    multiplexedProcessor.registerProcessor(
+        Constants.THRIFT_OPTIMIZING_SERVICE_NAME,
+        processor);
+    TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
+        .processor(multiplexedProcessor)
+        .transportFactory(new TFramedTransport.Factory())
+        .protocolFactory(protocolFactory)
+        .inputProtocolFactory(inputProtoFactory)
+        .executorService(Executors.newCachedThreadPool())
+        .selectorThreads(selectorThreads)
+        .acceptQueueSizePerThread(queueSizePerSelector);
+    optimizingServer = new TThreadedSelectorServer(args);
+    LOG.info("The number of selector threads for the optimizing thrift server is: " + selectorThreads);
+    LOG.info("The size of per-selector queue for the optimizing thrift server is: " + queueSizePerSelector);
   }
 
   private class ConfigurationHelper {
@@ -288,7 +327,7 @@ public class ArcticServiceContainer {
         validateThreadCount(systemConfig, ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
       }
     }
-    
+
     private boolean enabled(Map<String, Object> systemConfig, ConfigOption<Boolean> config) {
       return (boolean) systemConfig.getOrDefault(config.key(), config.defaultValue());
     }
