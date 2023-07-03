@@ -128,4 +128,16 @@ public class ArcticDataFilesTest {
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
   }
+
+  @Test
+  public void testNullPartition() {
+    Schema schema = new Schema(
+        Types.NestedField.required(1, "name", Types.StringType.get())
+    );
+    PartitionSpec spec = PartitionSpec.builderFor(schema).identity("name").build();
+    PartitionKey partitionKey = new PartitionKey(spec, schema);
+    String partitionPath = "name=null";
+    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    Assert.assertNull(partitionData.get(0, Types.StringType.get().typeId().javaClass()));
+  }
 }
