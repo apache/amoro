@@ -3,7 +3,7 @@ package com.netease.arctic.server.iceberg;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.LocationProviders;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
@@ -61,7 +61,7 @@ public class InternalTableOperations extends PersistentBase implements TableOper
     if (this.tableMetadata == null) {
       return null;
     }
-    this.current = IcebergTableUtils.loadIcebergTableMetadata(io, this.tableMetadata);
+    this.current = IcebergTableUtil.loadIcebergTableMetadata(io, this.tableMetadata);
     return this.current;
   }
 
@@ -76,13 +76,13 @@ public class InternalTableOperations extends PersistentBase implements TableOper
       throw new CommitFailedException("Cannot commit: stale table metadata");
     }
 
-    String newMetadataFileLocation = IcebergTableUtils.genNewMetadataFileLocation(base, metadata);
+    String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(base, metadata);
 
     try {
-      IcebergTableUtils.commitTableInternal(
+      IcebergTableUtil.commitTableInternal(
           tableMetadata, base, metadata, newMetadataFileLocation, io);
       com.netease.arctic.server.table.TableMetadata updatedMetadata = doCommit();
-      IcebergTableUtils.checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
+      IcebergTableUtil.checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
     } catch (Exception e) {
       io.deleteFile(newMetadataFileLocation);
     } finally {
@@ -98,7 +98,7 @@ public class InternalTableOperations extends PersistentBase implements TableOper
 
   @Override
   public String metadataFileLocation(String fileName) {
-    return IcebergTableUtils.genMetadataFileLocation(current(), fileName);
+    return IcebergTableUtil.genMetadataFileLocation(current(), fileName);
   }
 
 

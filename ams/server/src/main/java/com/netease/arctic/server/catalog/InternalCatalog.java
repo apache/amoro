@@ -11,10 +11,18 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public abstract class InternalCatalog extends ServerCatalog {
 
   protected InternalCatalog(CatalogMeta metadata) {
     super(metadata);
+  }
+
+  @Override
+  public List<String> listDatabases() {
+    return getAs(TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));
   }
 
   public void createDatabase(String databaseName) {
@@ -49,6 +57,26 @@ public abstract class InternalCatalog extends ServerCatalog {
     } else {
       throw new ObjectNotExistsException("Database " + databaseName);
     }
+  }
+
+  @Override
+  public List<TableIdentifier> listTables(String database) {
+    return getAs(
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
+        .stream()
+        .map(ServerTableIdentifier::getIdentifier)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<TableIdentifier> listTables() {
+    return getAs(
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
+        .stream()
+        .map(ServerTableIdentifier::getIdentifier)
+        .collect(Collectors.toList());
   }
 
   public ServerTableIdentifier createTable(TableMetadata tableMetadata) {
@@ -91,6 +119,21 @@ public abstract class InternalCatalog extends ServerCatalog {
     return tableIdentifier;
   }
 
+
+  @Override
+  public boolean exist(String database) {
+    return getAs(TableMetaMapper.class, mapper ->
+        mapper.selectDatabase(getMetadata().getCatalogName(), database)) != null;
+  }
+
+  @Override
+  public boolean exist(String database, String tableName) {
+    ServerTableIdentifier tableIdentifier = getAs(TableMetaMapper.class, mapper ->
+        mapper.selectTableIdentifier(getMetadata().getCatalogName(), database, tableName));
+    return tableIdentifier != null && getAs(TableMetaMapper.class, mapper ->
+        mapper.selectTableMetaById(tableIdentifier.getId())) != null;
+  }
+
   private String getDatabaseDesc(String database) {
     return new StringBuilder()
         .append(name())
@@ -130,7 +173,6 @@ public abstract class InternalCatalog extends ServerCatalog {
         mapper -> mapper.incTableCount(1, databaseName),
         () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
   }
-
 
 
   protected void createDatabaseInternal(String databaseName) {

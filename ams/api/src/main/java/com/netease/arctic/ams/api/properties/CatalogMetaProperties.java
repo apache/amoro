@@ -69,6 +69,4 @@ public class CatalogMetaProperties {
   public static final String LOG_STORE_PROPERTIES_PREFIX = "log-store.";
   public static final String OPTIMIZE_PROPERTIES_PREFIX = "self-optimizing.";
 
-  // rest catalog
-  public static final String HTTP_PORT = "http.port";
 }

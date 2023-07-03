@@ -10,7 +10,7 @@ import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
@@ -19,7 +19,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 
-public class InternalIcebergCatalogImpl extends MixedCatalogImpl {
+public class InternalIcebergCatalogImpl extends InternalCatalog {
   final int httpPort;
   final String exposedHost;
 
@@ -47,7 +47,7 @@ public class InternalIcebergCatalogImpl extends MixedCatalogImpl {
     if (tableMetadata == null) {
       return null;
     }
-    FileIO io = IcebergTableUtils.newIcebergFileIo(getMetadata());
+    FileIO io = IcebergTableUtil.newIcebergFileIo(getMetadata());
     ArcticFileIO fileIO = new ArcticFileIOAdapter(io);
     TableOperations ops = InternalTableOperations.buildForLoad(tableMetadata, io);
     BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());

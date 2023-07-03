@@ -61,15 +61,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public class IcebergTableUtils {
+public class IcebergTableUtil {
 
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtils.class);
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
 
   public static final String DEFAULT_FILE_IO_IMPL = "org.apache.iceberg.io.ResolvingFileIO";
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
-  public static final String PROPERTIES_METADATA_VERSION = "iceberg.metadata.version";
 
   public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
