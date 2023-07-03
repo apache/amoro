@@ -82,7 +82,7 @@ public class TestIcebergRestCatalogService {
     service = ams.serviceContainer().getTableService();
     serverCatalog = (InternalCatalog) service.getServerCatalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
     location = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE) +
-        "/" + database + ".db/" + table;
+        "/" + database + "/" + table;
   }
 
 
