@@ -271,7 +271,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         Preconditions.checkState(StringUtils.isNotBlank(warehouse),
             "catalog warehouse is not configured");
         warehouse = LocationUtil.stripTrailingSlash(warehouse);
-        location = warehouse + "/" + database + ".db/" + tableName;
+        location = warehouse + "/" + database + "/" + tableName;
       } else {
         location = LocationUtil.stripTrailingSlash(location);
       }
