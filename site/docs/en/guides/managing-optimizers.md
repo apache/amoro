@@ -23,7 +23,7 @@ in the "export.{env_arg}" property of the container's properties. The commonly u
 
 - flink-home, download the Flink installation package and unzip it. Take Flink-1.12.7 as an example, 
 download https://archive.apache.org/dist/flink/flink-1.12.7/flink-1.12.7-bin-scala_2.12.tgz , assuming that it is 
-extracted to /opt/ directory, then configure the value /opt/ flink-1.12.7/. Since the Flink distribution does not come 
+extracted to /opt/ directory, then configure the value /opt/flink-1.12.7/. Since the Flink distribution does not come 
 with the hadoop compatible package flink-shaded-hadoop-2-uber-x.y.z.jar, you need to download it and copy it to the 
 FLINK_HOME/lib directory. The flink-shaded-hadoop-2-uber-2.7.5-10.0.jar is generally sufficient and can be downloaded 
 at: https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-10.0/flink-shaded-hadoop-2-uber-2.7.5-10.0.jar
