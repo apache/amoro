@@ -28,7 +28,6 @@ import com.netease.arctic.io.RecoverableHadoopFileIO;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.TableBlockerManager;
