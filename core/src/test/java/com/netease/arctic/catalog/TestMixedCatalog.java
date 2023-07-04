@@ -64,15 +64,10 @@ public class TestMixedCatalog extends CatalogTestBase {
     }
   }
 
-  protected void validateTableArcticProperties(TableIdentifier tableIdentifier)
-          throws TException {
-  }
-
   protected void validateCreatedTable(ArcticTable table) throws TException  {
     Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), table.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
-    validateTableArcticProperties(table.id());
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = (KeyedTable)table;
       Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());

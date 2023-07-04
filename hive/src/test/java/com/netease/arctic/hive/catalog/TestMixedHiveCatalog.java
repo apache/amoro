@@ -22,6 +22,7 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TestMixedCatalog;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.thrift.TException;
@@ -53,8 +54,7 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
     return IDENTIFY_SPEC;
   }
 
-  @Override
-  protected void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
+  private void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
     String dbName = tableIdentifier.getDatabase();
     String tbl = tableIdentifier.getTableName();
     Map<String,String> tableParameter =  TEST_HMS.getHiveClient()
@@ -63,5 +63,11 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
     Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
     Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
     Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+  }
+
+  @Override
+  protected void validateCreatedTable(ArcticTable table) throws TException {
+    super.validateCreatedTable(table);
+    validateTableArcticProperties(table.id());
   }
 }
