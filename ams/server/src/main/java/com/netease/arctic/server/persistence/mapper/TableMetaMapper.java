@@ -226,6 +226,15 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
+  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier WHERE table_id = #{tableId}")
+  @Results({
+      @Result(property = "id", column = "table_id"),
+      @Result(property = "tableName", column = "table_name"),
+      @Result(property = "database", column = "db_name"),
+      @Result(property = "catalog", column = "catalog_name")
+  })
+  ServerTableIdentifier selectTableIdentifier(@Param("tableId") Long tableId);
+
   @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({

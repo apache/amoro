@@ -21,6 +21,7 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
@@ -171,6 +172,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (task != null) {
       safelySchedule(task, new OptimizingThread(authToken, threadId));
       executingTaskMap.putIfAbsent(task.getTaskId(), task);
+      loadTableForTaskInput(task);
     }
     return task != null ? task.getOptimizingTask() : null;
   }
@@ -187,6 +189,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private void retryTask(TaskRuntime taskRuntime, boolean incRetryCount) {
     taskRuntime.reset(incRetryCount);
     retryQueue.offer(taskRuntime);
+  }
+
+  private void loadTableForTaskInput(TaskRuntime task) {
+    if (task.getInput().getTable() != null) {
+      return;
+    }
+    ServerTableIdentifier identifier = getAs(
+        TableMetaMapper.class, mapper -> mapper.selectTableIdentifier(task.getTableId()));
+    ArcticTable table = tableManager.loadTable(identifier);
+    task.getInput().setTable(table);
   }
 
   @Override
@@ -573,12 +585,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
 
       taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwnership(this);
         RewriteFilesInput input = inputs.get(taskRuntime.getTaskId().getTaskId());
-        input.setTable(table);
         taskRuntime.setInput(input);
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
       });

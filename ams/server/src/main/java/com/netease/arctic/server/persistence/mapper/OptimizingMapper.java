@@ -197,7 +197,7 @@ public interface OptimizingMapper {
    * Optimizing rewrite input and output operations below
    */
   @Update("UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}" +
+      " typeHandler=com.netease.arctic.server.persistence.converter.TaskRewriteInputMapHandler}" +
       " WHERE process_id = #{processId}")
   void updateProcessInputFiles(
       @Param("processId") long processId,
