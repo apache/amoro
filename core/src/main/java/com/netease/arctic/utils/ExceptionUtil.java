@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.util;
+package com.netease.arctic.utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
