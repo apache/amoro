@@ -248,6 +248,8 @@ public class ArcticServiceContainer {
     int workerThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_WORKER_THREADS);
     int queueSizePerSelector = serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
     int port = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
+    final TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
+    final TProtocolFactory inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
 
     LOG.info("Starting thrift server on port: {}", port);
@@ -258,33 +260,30 @@ public class ArcticServiceContainer {
             new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
     tableManagementServer =
         createThriftServer(tableManagementProcessor, Constants.THRIFT_TABLE_SERVICE_NAME, serverTransport,
-            maxMessageSize,
             Executors.newFixedThreadPool(workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector);
+            selectorThreads, queueSizePerSelector, protocolFactory, inputProtoFactory);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizingProcessor =
         new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
             optimizingService, ArcticRuntimeException::normalize));
     optimizingServiceServer =
         createThriftServer(optimizingProcessor, Constants.THRIFT_OPTIMIZING_SERVICE_NAME, serverTransport,
-            maxMessageSize,
             Executors.newCachedThreadPool(getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector);
+            selectorThreads, queueSizePerSelector,protocolFactory, inputProtoFactory);
   }
 
   private TServer createThriftServer(
       TProcessor processor, String processorName,
-      TNonblockingServerSocket serverTransport, long maxMessageSize,
-      ExecutorService executorService, int selectorThreads, int queueSizePerSelector) {
+      TNonblockingServerSocket serverTransport,
+      ExecutorService executorService, int selectorThreads, int queueSizePerSelector,
+      TProtocolFactory protocolFactory, TProtocolFactory inputProtoFactory) {
     LOG.info("Initializing thrift server: {}", processorName);
-    final TProtocolFactory inputProtoFactory;
-    inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
     multiplexedProcessor.registerProcessor(processorName, processor);
     TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
         .processor(multiplexedProcessor)
         .transportFactory(new TFramedTransport.Factory())
-        .protocolFactory(new TBinaryProtocol.Factory())
+        .protocolFactory(protocolFactory)
         .inputProtocolFactory(inputProtoFactory)
         .executorService(executorService)
         .selectorThreads(selectorThreads)
@@ -295,7 +294,7 @@ public class ArcticServiceContainer {
   }
 
   private ThreadFactory getThriftThreadFactory(String processorName) {
-    return new ThreadFactoryBuilder().setDaemon(false).setNameFormat("thrift-server" + processorName + "-%d").build();
+    return new ThreadFactoryBuilder().setDaemon(false).setNameFormat("thrift-server-" + processorName + "-%d").build();
   }
 
   private class ConfigurationHelper {
