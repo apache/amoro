@@ -32,6 +32,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterator;
@@ -44,8 +45,13 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static com.netease.arctic.flink.lookup.LookupMetrics.GROUP_NAME_LOOKUP;
@@ -76,6 +82,10 @@ public class BasicLookupFunction<T> implements Serializable {
   private final TableFactory<T> kvTableFactory;
   private final AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader;
   private final DataIteratorReaderFunction<T> readerFunction;
+
+  private transient ScheduledExecutorService executor;
+  private transient ScheduledFuture scheduledFuture;
+  private final AtomicReference<Throwable> failureThrowable = new AtomicReference<>();
 
   public BasicLookupFunction(
       TableFactory<T> tableFactory,
@@ -141,12 +151,32 @@ public class BasicLookupFunction<T> implements Serializable {
             readerFunction,
             filters
         );
+
+    // Keep the first-time synchronized loading to avoid a mass of null-match records during initialization
     checkAndLoad();
+
+    this.executor =
+        Executors.newScheduledThreadPool(
+            1, new ExecutorThreadFactory("Arctic-lookup-scheduled-loader"));
+    this.scheduledFuture =
+        this.executor.scheduleWithFixedDelay(
+            () -> {
+              try {
+                checkAndLoad();
+              } catch (Exception e) {
+                // fail the lookup and skip the rest of the items
+                // if the failure handler decides to throw an exception
+                failureThrowable.compareAndSet(null, e);
+              }
+            },
+            reloadIntervalSeconds,
+            0,
+            TimeUnit.MILLISECONDS);
   }
 
   public List<T> lookup(Object... values) {
+    checkErrorAndRethrow();
     try {
-      checkAndLoad();
       RowData lookupKey = GenericRowData.of(values);
       return kvTable.get(lookupKey);
     } catch (Exception e) {
@@ -199,6 +229,20 @@ public class BasicLookupFunction<T> implements Serializable {
   public void close() throws Exception {
     if (kvTable != null) {
       kvTable.close();
+    }
+    if (scheduledFuture != null) {
+      scheduledFuture.cancel(true);
+      scheduledFuture.isCancelled();
+      if (executor != null) {
+        executor.shutdownNow();
+      }
+    }
+  }
+
+  private void checkErrorAndRethrow() {
+    Throwable cause = failureThrowable.get();
+    if (cause != null) {
+      throw new RuntimeException("An error occurred in ArcticLookupFunction.", cause);
     }
   }
 
