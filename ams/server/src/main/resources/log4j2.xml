@@ -30,15 +30,22 @@
             <PatternLayout
                     pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
         </Console>
+
+        <!-- iceberg rest metric reporter logger -->
+        <Console name="icebergRestMetricReporter" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout pattern="%m%n"/>
+        </Console>
     </Appenders>
 
     <Loggers>
         <Root level="debug">
-            <!--By default, debug logs are not printed-->
-            <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="consoleAppender" level="info"/>
             <AppenderRef ref="consoleAppender" level="error"/>
         </Root>
+        <Logger name="iceberg.metric"  level="info">
+            <AppendRef ref="icebergRestMetricReporter" />
+        </Logger>
     </Loggers>
 
 </Configuration>

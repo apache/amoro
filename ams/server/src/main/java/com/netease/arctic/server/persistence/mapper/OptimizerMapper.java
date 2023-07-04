@@ -38,8 +38,9 @@ import java.util.List;
 @Mapper
 public interface OptimizerMapper {
 
-  @Insert("INSERT INTO optimizer (token, resource_id, group_name, start_time, touch_time, thread_count, total_memory," +
-      " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId, jdbcType=VARCHAR},  #{optimizer.groupName}," +
+  @Insert("INSERT INTO optimizer (token, resource_id, group_name,container_name, start_time, touch_time, " +
+      "thread_count, total_memory, properties) VALUES (#{optimizer.token}, #{optimizer.resourceId, jdbcType=VARCHAR}," +
+      " #{optimizer.groupName}, #{optimizer.containerName}," +
       " #{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{optimizer.threadCount}, #{optimizer.memoryMb}," +

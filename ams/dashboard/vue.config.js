@@ -24,7 +24,8 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const isProduction = ['production'].includes(process.env.NODE_ENV)
 const ENV = 'DEV'
 const ENV_HOST = {
-  DEV: 'http://sloth-commerce-test1.jd.163.org:29499/', // http://10.196.98.23:29099/
+  // DEV: 'http://sloth-commerce-test2.jd.163.org:29050/', // http://10.196.98.23:29099/
+  DEV: 'http://10.196.98.23:29091/', // http://10.196.98.23:29099/
   TEST: '',
   ONLINE: ''
 }
@@ -43,7 +44,7 @@ const devServer = {
       target: ENV_HOST[ENV],
       changeOrigin: true,
       onProxyReq (proxyReq) {
-        proxyReq.setHeader('cookie', '')
+        proxyReq.setHeader('cookie', 'JSESSIONID=node0cs7wregwrunaku05kci0g0ll2.node0')
       }
     }
   }

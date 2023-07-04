@@ -34,7 +34,7 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -209,15 +209,15 @@ public class CompleteOptimizingFlow {
 
   private long getCurrentSnapshotId() {
     if (table.isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
     } else {
-      return IcebergTableUtils.getSnapshotId(table.asUnkeyedTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asUnkeyedTable(), false);
     }
   }
 
   private long getCurrentChangeSnapshotId() {
     if (table.isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
     } else {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }

@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -46,6 +47,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +64,19 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class AbstractOptimizingTest {
+  protected static AmsEnvironment amsEnv = AmsEnvironment.getIntegrationInstances();
+
+  @BeforeAll
+  public static void before() throws Exception {
+    amsEnv.start();
+    amsEnv.startOptimizer();
+  }
+
+  @AfterAll
+  public static void after() throws IOException {
+    amsEnv.stop();
+  }
+
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingTest.class);
 
   protected static OffsetDateTime ofDateWithZone(int year, int mon, int day, int hour) {

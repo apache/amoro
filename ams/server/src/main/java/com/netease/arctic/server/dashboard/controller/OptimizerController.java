@@ -24,18 +24,20 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceType;
+import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.dashboard.model.OptimizerResourceInfo;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
+import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerInstance;
-import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
+import javax.ws.rs.BadRequestException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,9 +56,9 @@ import java.util.stream.Collectors;
 public class OptimizerController {
   private static final String ALL_GROUP = "all";
   private final TableService tableService;
-  private final OptimizerManager optimizerManager;
+  private final DefaultOptimizingService optimizerManager;
 
-  public OptimizerController(TableService tableService, OptimizerManager optimizerManager) {
+  public OptimizerController(TableService tableService, DefaultOptimizingService optimizerManager) {
     this.tableService = tableService;
     this.optimizerManager = optimizerManager;
   }
@@ -72,7 +74,7 @@ public class OptimizerController {
     int offset = (page - 1) * pageSize;
 
     List<TableRuntime> tableRuntimes = new ArrayList<>();
-    List<ServerTableIdentifier> tables = tableService.listTables();
+    List<ServerTableIdentifier> tables = tableService.listManagedTables();
     for (ServerTableIdentifier identifier : tables) {
       TableRuntime tableRuntime = tableService.getRuntime(identifier);
       if (tableRuntime == null) {
@@ -206,6 +208,88 @@ public class OptimizerController {
     ResourceContainers.get(resource.getContainerName()).requestResource(resource);
     optimizerManager.createResource(resource);
     ctx.json(OkResponse.of("success to scaleOut optimizer"));
+  }
+
+  /**
+   * get {@link List<OptimizerResourceInfo>}
+   * url = /optimize/resourceGroups
+   */
+  public void getResourceGroup(Context ctx) {
+    List<OptimizerResourceInfo> result =
+        optimizerManager.listResourceGroups().stream().map(group -> {
+          List<OptimizerInstance> optimizers = optimizerManager.listOptimizers(group.getName());
+          OptimizerResourceInfo optimizerResourceInfo = new OptimizerResourceInfo();
+          optimizerResourceInfo.setResourceGroup(optimizerManager.getResourceGroup(group.getName()));
+          optimizers.forEach(optimizer -> {
+            optimizerResourceInfo.addOccupationCore(optimizer.getThreadCount());
+            optimizerResourceInfo.addOccupationMemory(optimizer.getMemoryMb());
+          });
+          return optimizerResourceInfo;
+        }).collect(Collectors.toList());
+    ctx.json(OkResponse.of(result));
+  }
+
+  /**
+   * create optimizeGroup: name, container, schedulePolicy, properties
+   * url = /optimize/resourceGroups/create
+   */
+  public void createResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    String container = (String) map.get("container");
+    Map<String, String> properties = (Map) map.get("properties");
+    if (optimizerManager.getResourceGroup(name) != null) {
+      throw new BadRequestException(String.format("Optimizer group:%s already existed.", name));
+    }
+    ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
+    builder.addProperties(properties);
+    optimizerManager.createResourceGroup(builder.build());
+    ctx.json(OkResponse.of("The optimizer group has been successfully created."));
+  }
+
+  /**
+   * update optimizeGroup: name, container, schedulePolicy, properties
+   * url = /optimize/resourceGroups/update
+   */
+  public void updateResourceGroup(Context ctx) {
+    Map<String, Object> map = ctx.bodyAsClass(Map.class);
+    String name = (String) map.get("name");
+    String container = (String) map.get("container");
+    Map<String, String> properties = (Map) map.get("properties");
+    ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
+    builder.addProperties(properties);
+    optimizerManager.updateResourceGroup(builder.build());
+    ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
+  }
+
+  /**
+   * delete optimizeGroup
+   * url = /optimize/resourceGroups/{resourceGroupName}
+   */
+  public void deleteResourceGroup(Context ctx) {
+    String name = ctx.pathParam("resourceGroupName");
+    optimizerManager.deleteResourceGroup(name);
+    ctx.json(OkResponse.of("The optimizer group has been successfully deleted."));
+  }
+
+  /**
+   * check if optimizerGroup can be deleted
+   * url = /optimize/resourceGroups/delete/check
+   */
+  public void deleteCheckResourceGroup(Context ctx) {
+    String name = ctx.pathParam("resourceGroupName");
+    ctx.json(OkResponse.of(optimizerManager.canDeleteResourceGroup(name)));
+  }
+
+  /**
+   * check if optimizerGroup can be deleted
+   * url = /optimize/containers/get
+   */
+  public void getContainers(Context ctx) {
+    ctx.json(OkResponse.of(ResourceContainers.getMetadataList()
+        .stream()
+        .map(ContainerMetadata::getName)
+        .collect(Collectors.toList())));
   }
 }
 

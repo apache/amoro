@@ -17,6 +17,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.FileContent;
@@ -235,6 +236,9 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
+    if (CollectionUtils.isEmpty(processMetaList)) {
+      return Collections.emptyList();
+    }
     List<Long> processIds = processMetaList.stream()
         .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
     return getAs(OptimizingMapper.class,
@@ -246,7 +250,7 @@ public class ServerTableDescriptor extends PersistentBase {
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFile(arcticTable, null, Integer.MAX_VALUE).forEach(fileInfo -> {
+    getTableFile(arcticTable, null).forEach(fileInfo -> {
       if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartitionName())) {
         partitionBaseInfoHashMap.put(fileInfo.getPartitionName(), new PartitionBaseInfo());
         partitionBaseInfoHashMap.get(fileInfo.getPartitionName()).setPartition(fileInfo.getPartitionName());
@@ -262,18 +266,18 @@ public class ServerTableDescriptor extends PersistentBase {
     return new ArrayList<>(partitionBaseInfoHashMap.values());
   }
 
-  public List<PartitionFileBaseInfo> getTableFile(ArcticTable arcticTable, String partition, int limit) {
+  public List<PartitionFileBaseInfo> getTableFile(ArcticTable arcticTable, String partition) {
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, limit));
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, limit));
+      result.addAll(collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition));
+      result.addAll(collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition));
     } else {
-      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, limit));
+      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition));
     }
     return result;
   }
 
-  private List<PartitionFileBaseInfo> collectFileInfo(Table table, boolean isChangeTable, String partition, int limit) {
+  private List<PartitionFileBaseInfo> collectFileInfo(Table table, boolean isChangeTable, String partition) {
     PartitionSpec spec = table.spec();
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Table entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
@@ -305,9 +309,6 @@ public class ServerTableDescriptor extends PersistentBase {
         }
         result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
             partitionPath, filePath, fileSize));
-        if (result.size() >= limit) {
-          return result;
-        }
       }
     } catch (IOException exception) {
       LOG.error("close manifest file error", exception);

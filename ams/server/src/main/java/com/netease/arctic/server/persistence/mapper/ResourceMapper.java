@@ -57,8 +57,8 @@ public interface ResourceMapper {
       " #{resourceGroup.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
-  @Delete("DELETE FROM resource_group WHERE group_name = #{resourceGroup.name}")
-  void deleteResourceGroup(@Param("resourceGroup") String groupName);
+  @Delete("DELETE FROM resource_group WHERE group_name = #{name}")
+  void deleteResourceGroup(@Param("name") String groupName);
 
   @Insert("INSERT INTO resource (resource_id, group_name, container_name, thread_count, total_memory, properties)" +
       " VALUES (#{resource.resourceId}, #{resource.groupName}, #{resource.containerName}," +
