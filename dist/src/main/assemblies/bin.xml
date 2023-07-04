@@ -56,17 +56,17 @@
         <fileSet>
             <directory>src/main/arctic-bin/conf</directory>
             <outputDirectory>conf</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
             <directory>../ams/server/src/main/resources/mysql</directory>
             <outputDirectory>conf/mysql</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
             <directory>../ams/server/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
             <directory>../ams/server/target/arctic-ams-server-dependency/lib</directory>

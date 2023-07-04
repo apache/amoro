@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.split;
 
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.utils.FileScanTaskUtil;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -54,18 +55,18 @@ public class MergeOnReadSplit extends ArcticSplit {
   @Override
   public String splitId() {
     return MoreObjects.toStringHelper(this)
-        .add("insertTasks", toString(keyedTableScanTask.insertTasks()))
-        .add("baseTasks", toString(keyedTableScanTask.baseTasks()))
-        .add("arcticEquityDeletes", toString(keyedTableScanTask.arcticEquityDeletes()))
+        .add("insertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
+        .add("baseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
+        .add("arcticEquityDeletes", FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
         .toString();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("\ninsertTasks", toString(keyedTableScanTask.insertTasks()))
-        .add("\nbaseTasks", toString(keyedTableScanTask.baseTasks()))
-        .add("\narcticEquityDeletes", toString(keyedTableScanTask.arcticEquityDeletes()))
+        .add("\ninsertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
+        .add("\nbaseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
+        .add("\narcticEquityDeletes", FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
         .add("\ncost", keyedTableScanTask.cost() / 1024 + " KB")
         .add("\nrecordCount", keyedTableScanTask.recordCount())
         .toString();

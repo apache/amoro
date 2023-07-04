@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.read;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.DataUtil;
@@ -44,6 +48,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,6 +65,11 @@ import static com.netease.arctic.flink.write.TestArcticFileWriter.createUnkeyedT
 public class TestFlinkSource extends FlinkTestBase {
 
   protected static final FileFormat fileFormat = FileFormat.valueOf("parquet".toUpperCase(Locale.ENGLISH));
+
+  public TestFlinkSource() {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(false, true));
+  }
 
   protected static void commit(WriteResult result, Table table) {
     AppendFiles append = table.newAppend();
@@ -94,21 +104,23 @@ public class TestFlinkSource extends FlinkTestBase {
             CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000021, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000015, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    LocalDateTime localDateTime = LocalDateTime.parse("2022-06-18T10:10:11.0");
+    long timestamp = localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+    data.add(new Object[]{1000004, "a", timestamp, localDateTime});
+    data.add(new Object[]{1000015, "b", timestamp, localDateTime});
+    data.add(new Object[]{1000011, "c", timestamp, localDateTime});
+    data.add(new Object[]{1000014, "d", timestamp, localDateTime});
+    data.add(new Object[]{1000021, "d", timestamp, localDateTime});
+    data.add(new Object[]{1000015, "e", timestamp, localDateTime});
 
     Collection<RowData> expectedRecords = DataUtil.toRowData(data);
-    write(data, testTable, FLINK_ROW_TYPE);
+    write(data, getArcticTable().asUnkeyedTable(), FLINK_ROW_TYPE);
 
     final CloseableIterator<RowData> resultIterator = com.netease.arctic.flink.table.FlinkSource.forRowData()
         .env(env)
         .context(Optional::of)
         .project(FLINK_SCHEMA)
-        .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
+        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkConf(conf)
         .properties(new HashMap<String, String>() {{
           put("streaming", "false");
@@ -117,7 +129,7 @@ public class TestFlinkSource extends FlinkTestBase {
 
     Set<RowData> rowData = new HashSet<>();
     resultIterator.forEachRemaining(o ->
-        rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getTimestamp(2, 6))));
+        rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6))));
 
     Assert.assertEquals(new HashSet<>(expectedRecords), rowData);
   }
@@ -134,21 +146,23 @@ public class TestFlinkSource extends FlinkTestBase {
             CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000021, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{1000015, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    LocalDateTime localDateTime = LocalDateTime.parse("2022-06-18T10:10:11.0");
+    long timestamp = localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+    data.add(new Object[]{1000004, "a", timestamp, localDateTime});
+    data.add(new Object[]{1000015, "b", timestamp, localDateTime});
+    data.add(new Object[]{1000011, "c", timestamp, localDateTime});
+    data.add(new Object[]{1000014, "d", timestamp, localDateTime});
+    data.add(new Object[]{1000021, "d", timestamp, localDateTime});
+    data.add(new Object[]{1000015, "e", timestamp, localDateTime});
 
     Collection<RowData> expectedRecords = DataUtil.toRowData(data);
-    write(data, testTable, FLINK_ROW_TYPE);
+    write(data, getArcticTable().asUnkeyedTable(), FLINK_ROW_TYPE);
 
     DataStream<RowData> ds = com.netease.arctic.flink.table.FlinkSource.forRowData()
         .env(env)
         .context(Optional::of)
         .project(FLINK_SCHEMA)
-        .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
+        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkConf(conf)
         .build();
 
@@ -161,7 +175,7 @@ public class TestFlinkSource extends FlinkTestBase {
     Set<RowData> rowData = new HashSet<>();
     while (iterator.hasNext()) {
       RowData o = iterator.next();
-      rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getTimestamp(2, 6)));
+      rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6)));
       if (rowData.size() == expectedRecords.size()) {
         break;
       }
@@ -174,6 +188,7 @@ public class TestFlinkSource extends FlinkTestBase {
   @Test
   public void testUnkeyedSnapshotRead() throws Exception {
     Configuration conf = new Configuration();
+    final Table testTable = getArcticTable().asUnkeyedTable();
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
 
     env.enableCheckpointing(2000, CheckpointingMode.EXACTLY_ONCE);
@@ -183,20 +198,24 @@ public class TestFlinkSource extends FlinkTestBase {
             CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
     List<Object[]> s1 = new LinkedList<>();
-    s1.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s1.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s1.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s1.add(new Object[]{1000014, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s1.add(new Object[]{1000021, "d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s1.add(new Object[]{1000015, "e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    LocalDateTime localDateTime1 = LocalDateTime.parse("2022-06-18T10:10:11.0");
+    long timestamp1 = localDateTime1.toInstant(ZoneOffset.UTC).toEpochMilli();
+    s1.add(new Object[]{1000004, "a", timestamp1, localDateTime1});
+    s1.add(new Object[]{1000015, "b", timestamp1, localDateTime1});
+    s1.add(new Object[]{1000011, "c", timestamp1, localDateTime1});
+    s1.add(new Object[]{1000014, "d", timestamp1, localDateTime1});
+    s1.add(new Object[]{1000021, "d", timestamp1, localDateTime1});
+    s1.add(new Object[]{1000015, "e", timestamp1, localDateTime1});
 
     write(s1, testTable, FLINK_ROW_TYPE);
 
     List<Object[]> s2 = new LinkedList<>();
-    s2.add(new Object[]{12, "ac", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    s2.add(new Object[]{52, "ad", LocalDateTime.parse("2022-06-19T10:10:11.0")});
-    s2.add(new Object[]{15, "ad", LocalDateTime.parse("2022-06-19T10:10:11.0")});
-    s2.add(new Object[]{26, "ae", LocalDateTime.parse("2022-06-19T10:10:11.0")});
+    LocalDateTime localDateTime2 = LocalDateTime.parse("2022-06-19T10:10:11.0");
+    long timestamp2 = localDateTime2.toInstant(ZoneOffset.UTC).toEpochMilli();
+    s2.add(new Object[]{12, "ac", timestamp2, localDateTime2});
+    s2.add(new Object[]{52, "ad", timestamp2, localDateTime2});
+    s2.add(new Object[]{15, "ad", timestamp2, localDateTime2});
+    s2.add(new Object[]{26, "ae", timestamp2, localDateTime2});
 
     Collection<RowData> expectedRecords = DataUtil.toRowData(s2);
     write(s2, testTable, FLINK_ROW_TYPE);
@@ -208,7 +227,7 @@ public class TestFlinkSource extends FlinkTestBase {
         .env(env)
         .context(Optional::of)
         .project(FLINK_SCHEMA)
-        .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
+        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkConf(conf)
         .properties(new HashMap<String, String>() {{
           put("streaming", "true");
@@ -225,7 +244,7 @@ public class TestFlinkSource extends FlinkTestBase {
     Set<RowData> rowData = new HashSet<>();
     while (iterator.hasNext()) {
       RowData o = iterator.next();
-      rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getTimestamp(2, 6)));
+      rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6)));
       if (rowData.size() == expectedRecords.size()) {
         break;
       }
@@ -238,7 +257,7 @@ public class TestFlinkSource extends FlinkTestBase {
         .env(env)
         .context(Optional::of)
         .project(FLINK_SCHEMA)
-        .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
+        .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
         .flinkConf(conf)
         .properties(new HashMap<String, String>() {{
           put("streaming", "false");
@@ -248,7 +267,7 @@ public class TestFlinkSource extends FlinkTestBase {
 
     rowData.clear();
     resultIterator.forEachRemaining(o ->
-        rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getTimestamp(2, 6))));
+        rowData.add(GenericRowData.of(o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6))));
 
     expectedRecords = DataUtil.toRowData(s1);
     Assert.assertEquals(new HashSet<>(expectedRecords), rowData);

@@ -22,6 +22,7 @@ import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
@@ -54,7 +55,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
   private final Lock planLock = new ReentrantLock();
-  private final ResourceGroup optimizerGroup;
+  private ResourceGroup optimizerGroup;
   private final Queue<TaskRuntime> taskQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy schedulingPolicy;
@@ -126,6 +127,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     LOG.info("Release queue {} with table {}", optimizerGroup.getName(), tableRuntime.getTableIdentifier());
   }
 
+  public boolean containsTable(ServerTableIdentifier identifier) {
+    return this.schedulingPolicy.containsTable(identifier);
+  }
+
   public List<OptimizerInstance> getOptimizers() {
     return ImmutableList.copyOf(authOptimizers.values());
   }
@@ -194,9 +199,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
-    Optional.ofNullable(executingTaskMap.remove(taskResult.getTaskId()))
+    Optional.ofNullable(executingTaskMap.get(taskResult.getTaskId()))
         .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
         .complete(thread, taskResult);
+    executingTaskMap.remove(taskResult.getTaskId());
   }
 
   @Override
@@ -230,6 +236,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       retryTask(task, false);
     });
     return expiredOptimizers;
+  }
+
+  public void updateOptimizerGroup(ResourceGroup optimizerGroup) {
+    Preconditions.checkArgument(
+        this.optimizerGroup.getName().equals(optimizerGroup.getName()),
+        "optimizer group name mismatch");
+    this.optimizerGroup = optimizerGroup;
   }
 
   @VisibleForTesting
@@ -499,16 +512,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return new MetricsSummary(taskMap.values());
     }
 
-    @Override
-    public Map<String, Long> getFromSequence() {
-      return fromSequence;
-    }
-
-    @Override
-    public Map<String, Long> getToSequence() {
-      return toSequence;
-    }
-
     private UnKeyedTableCommit buildCommit() {
       ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       if (table.isUnkeyedTable()) {
@@ -538,7 +541,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
                   processId, targetSnapshotId, targetChangeSnapshotId, status, optimizingType, planTime, getSummary(),
-                  getFromSequence(), getToSequence())),
+                  fromSequence, toSequence)),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),

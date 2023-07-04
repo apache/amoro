@@ -4,22 +4,20 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.dashboard.model.FilesStatistics;
-import com.netease.arctic.server.dashboard.model.OptimizedRecord;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
-import com.netease.arctic.server.optimizing.MetricsSummary;
+import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
+import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.FileContent;
@@ -43,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -225,29 +224,25 @@ public class ServerTableDescriptor extends PersistentBase {
     return result;
   }
 
-  public List<OptimizedRecord> getOptimizeInfo(String catalog, String db, String table) {
-    List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
+  public List<OptimizingProcessMeta> getOptimizingProcesses(String catalog, String db, String table) {
+    return getAs(
         OptimizingMapper.class,
-        mapper -> mapper.selectSuccessOptimizingProcesses(catalog, db, table));
-    return tableOptimizingProcesses.stream().map(optimizingProcess -> {
-      OptimizedRecord record = new OptimizedRecord();
-      record.setCommitTime(optimizingProcess.getEndTime());
-      record.setPlanTime(optimizingProcess.getPlanTime());
-      record.setDuration(optimizingProcess.getEndTime() - optimizingProcess.getPlanTime());
-      record.setTableIdentifier(TableIdentifier.of(optimizingProcess.getCatalogName(), optimizingProcess.getDbName(),
-          optimizingProcess.getTableName()));
-      record.setOptimizeType(optimizingProcess.getOptimizingType());
-      MetricsSummary metricsSummary = optimizingProcess.getSummary();
-      record.setTotalFilesStatBeforeCompact(FilesStatistics.builder()
-          .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
-          .addFiles(metricsSummary.getPositionalDeleteSize(), metricsSummary.getPosDeleteFileCnt())
-          .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
-          .build());
-      record.setTotalFilesStatAfterCompact(FilesStatistics.build(
-          metricsSummary.getNewFileCnt(),
-          metricsSummary.getNewFileSize()));
-      return record;
-    }).collect(Collectors.toList());
+        mapper -> mapper.selectOptimizingProcesses(catalog, db, table));
+  }
+
+  public List<OptimizingTaskMeta> getOptimizingTasks(long processId) {
+    return getAs(OptimizingMapper.class,
+        mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+  }
+
+  public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
+    if (CollectionUtils.isEmpty(processMetaList)) {
+      return Collections.emptyList();
+    }
+    List<Long> processIds = processMetaList.stream()
+        .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
+    return getAs(OptimizingMapper.class,
+        mapper -> mapper.selectOptimizeTaskMetas(processIds));
   }
 
   public List<PartitionBaseInfo> getTablePartition(ArcticTable arcticTable) {
@@ -255,7 +250,7 @@ public class ServerTableDescriptor extends PersistentBase {
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFile(arcticTable, null, Integer.MAX_VALUE).forEach(fileInfo -> {
+    getTableFile(arcticTable, null).forEach(fileInfo -> {
       if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartitionName())) {
         partitionBaseInfoHashMap.put(fileInfo.getPartitionName(), new PartitionBaseInfo());
         partitionBaseInfoHashMap.get(fileInfo.getPartitionName()).setPartition(fileInfo.getPartitionName());
@@ -271,18 +266,18 @@ public class ServerTableDescriptor extends PersistentBase {
     return new ArrayList<>(partitionBaseInfoHashMap.values());
   }
 
-  public List<PartitionFileBaseInfo> getTableFile(ArcticTable arcticTable, String partition, int limit) {
+  public List<PartitionFileBaseInfo> getTableFile(ArcticTable arcticTable, String partition) {
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, limit));
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, limit));
+      result.addAll(collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition));
+      result.addAll(collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition));
     } else {
-      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, limit));
+      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition));
     }
     return result;
   }
 
-  private List<PartitionFileBaseInfo> collectFileInfo(Table table, boolean isChangeTable, String partition, int limit) {
+  private List<PartitionFileBaseInfo> collectFileInfo(Table table, boolean isChangeTable, String partition) {
     PartitionSpec spec = table.spec();
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Table entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
@@ -314,9 +309,6 @@ public class ServerTableDescriptor extends PersistentBase {
         }
         result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
             partitionPath, filePath, fileSize));
-        if (result.size() >= limit) {
-          return result;
-        }
       }
     } catch (IOException exception) {
       LOG.error("close manifest file error", exception);

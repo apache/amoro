@@ -365,7 +365,7 @@ public class TaskRuntime extends StatedPersistentBase {
     ACKED,
     FAILED,
     SUCCESS,
-    CANCELED
+    CANCELED // If Optimizing process failed, all tasks will be CANCELED except for SUCCESS tasks
   }
 
   public static class TaskQuota {

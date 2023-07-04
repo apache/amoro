@@ -33,7 +33,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
@@ -228,7 +228,7 @@ public class TableRuntime extends StatedPersistentBase {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
           lastMajorOptimizingTime = optimizingProcess.getPlanTime();
-        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL_MAJOR) {
+        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
@@ -247,8 +247,8 @@ public class TableRuntime extends StatedPersistentBase {
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
-      currentSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
+      currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
         LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
             currentSnapshotId, currentChangeSnapshotId);

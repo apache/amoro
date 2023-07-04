@@ -23,7 +23,7 @@ import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -133,7 +133,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
         // getRuntime valid files in the change store which shouldn't physically delete when expire the snapshot
         // in the base store
-        Set<String> baseExcludePaths = IcebergTableUtils.getAllContentFilePath(changeTable);
+        Set<String> baseExcludePaths = IcebergTableUtil.getAllContentFilePath(changeTable);
         baseExcludePaths.addAll(finalHiveLocations);
         long latestBaseFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(baseTable);
         long optimizingSnapshotTime = fetchOptimizingSnapshotTime(baseTable, tableRuntime);
@@ -156,7 +156,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
         // getRuntime valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
-        Set<String> changeExclude = IcebergTableUtils.getAllContentFilePath(baseTable);
+        Set<String> changeExclude = IcebergTableUtil.getAllContentFilePath(baseTable);
         changeExclude.addAll(finalHiveLocations);
 
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);

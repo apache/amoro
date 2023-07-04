@@ -42,7 +42,7 @@ public class FlinkClassReflectionUtil {
     }
     try {
       return getField(
-          (Class<ReaderOutput>) ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[1],
+          (Class<ReaderOutput>) ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[2],
           readerOutput, "splitLocalOutputs");
     } catch (Exception e) {
       LOG.warn("extract internal watermark error", e);
@@ -55,7 +55,7 @@ public class FlinkClassReflectionUtil {
       return;
     }
     try {
-      Method method = ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[0]
+      Method method = ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[1]
           .getDeclaredMethod("emitPeriodicWatermark");
       method.setAccessible(true);
       method.invoke(splitLocalOutput);
