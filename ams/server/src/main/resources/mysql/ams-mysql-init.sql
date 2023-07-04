@@ -74,6 +74,7 @@ CREATE TABLE `table_metadata`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
+    `format`          varchar(32)  NOT NULL COMMENT "format",
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
@@ -89,6 +90,7 @@ CREATE TABLE `table_metadata`
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
     `current_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
+    `meta_version`    bigint(20) NOT NULL DEFAULT 0,
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
 
