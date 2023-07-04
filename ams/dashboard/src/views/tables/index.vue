@@ -30,7 +30,7 @@
           <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
           </a-tab-pane>
-          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.key}`">
+          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
             <component :is="`U${tab.key}`"></component>
           </a-tab-pane>
         </a-tabs>
@@ -69,12 +69,12 @@ export default defineComponent({
     const route = useRoute()
     const store = useStore()
 
-    const tabConfigs: IMap<string>[] = shallowReactive([
+    const tabConfigs = shallowReactive([
       // { key: 'Details' },
       // { key: 'Files' },
-      { key: 'Transactions' },
-      { key: 'Optimized' },
-      { key: 'Operations' }
+      { key: 'Transactions', label: 'Transactions' },
+      { key: 'Optimized', label: 'Optimizing' },
+      { key: 'Operations', label: 'Operations' }
     ])
 
     const state = reactive({

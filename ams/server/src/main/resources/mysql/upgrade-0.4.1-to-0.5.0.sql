@@ -1,9 +1,3 @@
--- container_metadata
-ALTER TABLE `container_metadata` CHANGE `name` `container_name` varchar(64);
-ALTER TABLE `container_metadata` CHANGE `type` `container_type` varchar(64);
-ALTER TABLE `container_metadata` DROP PRIMARY KEY;
-ALTER TABLE `container_metadata` ADD PRIMARY KEY(`container_name`);
-
 -- catalog_metadata
 ALTER TABLE `catalog_metadata` ADD `database_count` INT NOT NULL DEFAULT 0;
 ALTER TABLE `catalog_metadata` ADD `table_count` INT NOT NULL DEFAULT 0;
@@ -55,16 +49,23 @@ INSERT INTO `table_identifier` (`catalog_name`, `db_name`, `table_name`) SELECT 
 
 -- table_metadata
 ALTER TABLE `table_metadata` ADD `table_id` bigint(20) NOT NULL COMMENT 'table id' FIRST;
+ALTER TABLE `table_metadata` ADD COLUMN `format` VARCHAR(32) COMMENT "table format" AFTER `table_name` ;
 ALTER TABLE `table_metadata` drop PRIMARY KEY;
 ALTER TABLE `table_metadata` CHANGE `delta_location` `change_location` varchar(256) DEFAULT NULL;
 ALTER TABLE `table_metadata` CHANGE `cur_schema_id` `current_schema_id` int(11) NOT NULL DEFAULT 0;
 ALTER TABLE `table_metadata` DROP COLUMN `hbase_site`;
 ALTER TABLE `table_metadata` DROP COLUMN `current_tx_id`;
+ALTER TABLE `table_metadata` ADD COLLATE `meta_version` bigint(20) NOT NULL DEFAULT 0;
 UPDATE `table_metadata` JOIN `table_identifier`
 ON `table_metadata`.`catalog_name` = `table_identifier`.`catalog_name`
 AND `table_metadata`.`db_name` = `table_identifier`.`db_name`
 AND `table_metadata`.`table_name` = `table_identifier`.`table_name` SET `table_metadata`.`table_id` = `table_identifier`.`table_id`;
 ALTER TABLE `table_metadata` ADD PRIMARY KEY (`table_id`);
+UPDATE `table_metadata` JOIN `catalog_metadata`
+ON `table_metadata`.`catalog_name` = `table_identifier`.`catalog_name`
+SET `format` = CASE WHEN `catalog_metadata`.`catalog_metastore` = "hive" THEN "MIXED_HIVE" ELSE "MIXED_ICEBERG" END
+ALTER TABLE `table_metadata` MODIFY `format` VARCHAR(32) NOT NULL ;
+
 
 -- platform_file
 RENAME TABLE `platform_file_info` to `platform_file`;
@@ -100,9 +101,9 @@ CREATE TABLE `table_runtime`
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
     `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
-    `last_major_optimizing_time`    timestamp COMMENT 'Latest Major Optimize time for all partitions',
-    `last_minor_optimizing_time`    timestamp COMMENT 'Latest Minor Optimize time for all partitions',
-    `last_full_optimizing_time`     timestamp COMMENT 'Latest Full Optimize time for all partitions',
+    `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
+    `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
+    `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
     `optimizing_status`             varchar(20) DEFAULT 'Idle' COMMENT 'Table optimize status: MajorOptimizing, MinorOptimizing, Pending, Idle',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
@@ -122,15 +123,15 @@ CREATE TABLE `task_runtime`
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
     `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
-    `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
-    `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
-    `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',
+    `create_time`               timestamp NULL DEFAULT NULL COMMENT 'Task create time',
+    `start_time`                timestamp NULL DEFAULT NULL COMMENT 'Time when task start waiting to execute',
+    `end_time`                  timestamp NULL DEFAULT NULL COMMENT 'Time when task finished',
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
-    `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
@@ -149,10 +150,10 @@ CREATE TABLE `table_optimizing_process`
     `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
-    `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      datetime(3) DEFAULT NULL COMMENT 'finish time or failed time',
+    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
@@ -173,6 +174,11 @@ CREATE TABLE `optimizing_task_quota`
     PRIMARY KEY (`process_id`, `task_id`, `retry_num`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
+
+-- modify to timestamp
+ALTER TABLE `table_blocker` MODIFY `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time';
+ALTER TABLE `table_blocker` MODIFY `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time';
+ALTER TABLE `api_tokens` MODIFY `apply_time` timestamp NULL DEFAULT NULL COMMENT 'apply time';
 
 -- init table_runtime
 INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId,

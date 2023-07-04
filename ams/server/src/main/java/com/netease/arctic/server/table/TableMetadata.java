@@ -20,6 +20,7 @@ package com.netease.arctic.server.table;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -28,6 +29,8 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -46,6 +49,9 @@ public class TableMetadata implements Serializable {
 
   public TableMetadata(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
     this.tableIdentifier = identifier;
+    Map<String, String> properties = Maps.newHashMap(tableMeta.getProperties());
+    Preconditions.checkNotNull(tableMeta.getFormat(), "lack require field: table format");
+    this.format = TableFormat.valueOf(tableMeta.getFormat());
     if (tableMeta.getLocations() != null &&
         tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
       this.tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
@@ -78,7 +84,7 @@ public class TableMetadata implements Serializable {
     this.krbKeytab = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
     this.krbConf = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
     this.krbPrincipal = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
-    this.properties = tableMeta.getProperties();
+    this.properties = properties;
   }
 
   public TableMeta buildTableMeta() {
@@ -101,10 +107,13 @@ public class TableMetadata implements Serializable {
       keySpec.setFields(fields);
       meta.setKeySpec(keySpec);
     }
+    meta.setFormat(this.format.name());
     return meta;
   }
 
   private ServerTableIdentifier tableIdentifier;
+
+  private TableFormat format;
 
   private String tableLocation;
 
@@ -132,7 +141,17 @@ public class TableMetadata implements Serializable {
 
   private Map<String, String> properties;
 
+  private long metaVersion;
+
   private volatile TableMetaStore metaStore;
+
+  public TableFormat getFormat() {
+    return format;
+  }
+
+  public void setFormat(TableFormat format) {
+    this.format = format;
+  }
 
   public String getTableLocation() {
     return tableLocation;
@@ -264,5 +283,13 @@ public class TableMetadata implements Serializable {
 
   public void setKrbPrincipal(String krbPrincipal) {
     this.krbPrincipal = krbPrincipal;
+  }
+
+  public long getMetaVersion() {
+    return metaVersion;
+  }
+
+  public void setMetaVersion(long metaVersion) {
+    this.metaVersion = metaVersion;
   }
 }

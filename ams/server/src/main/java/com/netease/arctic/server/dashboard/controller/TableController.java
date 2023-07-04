@@ -27,6 +27,7 @@ import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.server.catalog.IcebergCatalogImpl;
+import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
@@ -304,7 +305,10 @@ public class TableController {
     Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
         table)), "no such table");
 
-    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
+    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table);
+    int total = processMetaList.size();
+
+    processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
         .skip(offset)
         .limit(limit)
         .collect(Collectors.toList());
@@ -316,7 +320,7 @@ public class TableController {
         .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
         .collect(Collectors.toList());
 
-    ctx.json(OkResponse.of(result));
+    ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
 
   /**
@@ -390,8 +394,7 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
-    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition,
-        page * pageSize);
+    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
@@ -431,11 +434,11 @@ public class TableController {
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
-    List<ServerTableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
+    List<com.netease.arctic.ams.api.TableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     List<TableMeta> tables = new ArrayList<>();
 
-    if (serverCatalog instanceof IcebergCatalogImpl) {
+    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(
           e.getTableName(),
           TableMeta.TableType.ICEBERG.toString())));
@@ -445,7 +448,9 @@ public class TableController {
           ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
           db);
       Set<String> arcticTables =
-          tableIdentifiers.stream().map(ServerTableIdentifier::getTableName).collect(Collectors.toSet());
+          tableIdentifiers.stream()
+              .map(com.netease.arctic.ams.api.TableIdentifier::getTableName)
+              .collect(Collectors.toSet());
       hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
           e,
           TableMeta.TableType.HIVE.toString())));

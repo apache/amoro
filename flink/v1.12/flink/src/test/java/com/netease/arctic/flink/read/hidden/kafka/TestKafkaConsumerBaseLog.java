@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.TestBaseLog;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
@@ -27,10 +28,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,14 +48,15 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.topic;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Ignore
 public class TestKafkaConsumerBaseLog extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumerBaseLog.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
+  @Rule
+  public TestName testName = new TestName();
+  private static String topic;
 
   @BeforeClass
   public static void prepare() throws Exception {
@@ -62,6 +66,11 @@ public class TestKafkaConsumerBaseLog extends TestBaseLog {
   @AfterClass
   public static void shutdown() throws Exception {
     kafkaTestBase.shutDownServices();
+  }
+
+  @Before
+  public void before() {
+    topic = TestUtil.getUtMethodName(testName);
   }
 
   @Test

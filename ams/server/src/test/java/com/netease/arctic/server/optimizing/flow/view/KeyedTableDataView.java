@@ -248,7 +248,11 @@ public class KeyedTableDataView extends AbstractTableDataView {
       Object o1 = r1.get(i);
       Object o2 = r2.get(i);
       boolean equals;
-      if (o1 instanceof OffsetDateTime) {
+      if (o1 == null && o2 == null) {
+        return true;
+      } else if (o1 == null || o2 == null) {
+        return false;
+      } else if (o1 instanceof OffsetDateTime) {
         equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
       } else {
         equals = o1.equals(o2);

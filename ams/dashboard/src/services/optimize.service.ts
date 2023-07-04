@@ -69,3 +69,29 @@ export function releaseResource(
   const { optimizerGroup, jobId } = params
   return request.delete(`ams/v1/optimize/optimizerGroups/${optimizerGroup}/optimizers/${jobId}`)
 }
+
+export async function getResourceGroupsListAPI() {
+  const result = await request.get('ams/v1/optimize/resourceGroups')
+  return result
+}
+
+export const getGroupContainerListAPI = async() => {
+  const result = await request.get('ams/v1/optimize/containers/get')
+  return result
+}
+
+export const addResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
+  return request.post('ams/v1/optimize/resourceGroups', params)
+}
+
+export const updateResourceGroupsAPI = (params: {name: string; container: string; properties: {[prop: string]: string}}) => {
+  return request.put('ams/v1/optimize/resourceGroups', params)
+}
+
+export const groupDeleteCheckAPI = (params: {name: string}) => {
+  return request.get(`/ams/v1/optimize/resourceGroups/${params.name}/delete/check`)
+}
+
+export const groupDeleteAPI = (params: {name: string}) => {
+  return request.delete(`/ams/v1/optimize/resourceGroups/${params.name}`)
+}
