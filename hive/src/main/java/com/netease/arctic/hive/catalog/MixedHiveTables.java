@@ -156,7 +156,7 @@ public class MixedHiveTables extends MixedTables {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
               tableIdentifier.getTableName());
           Map<String, String> hiveParameters = hiveTable.getParameters();
-          hiveParameters.putAll(constructProperties(primaryKeySpec));
+          hiveParameters.putAll(constructProperties(primaryKeySpec, tableMeta));
           hiveTable.setParameters(hiveParameters);
           client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
         } else {
@@ -164,7 +164,7 @@ public class MixedHiveTables extends MixedTables {
           hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
               FileFormat.valueOf(PropertyUtil.propertyAsString(metaProperties, TableProperties.DEFAULT_FILE_FORMAT,
                   TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          setProToHive(hiveTable, primaryKeySpec);
+          setProToHive(hiveTable, primaryKeySpec, tableMeta);
           client.createTable(hiveTable);
         }
         return null;
@@ -203,7 +203,7 @@ public class MixedHiveTables extends MixedTables {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
               tableIdentifier.getTableName());
           Map<String, String> hiveParameters = hiveTable.getParameters();
-          hiveParameters.putAll(constructProperties(primaryKeySpec));
+          hiveParameters.putAll(constructProperties(primaryKeySpec, tableMeta));
           hiveTable.setParameters(hiveParameters);
           client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
         } else {
@@ -212,7 +212,7 @@ public class MixedHiveTables extends MixedTables {
               FileFormat.valueOf(PropertyUtil.propertyAsString(tableMeta.getProperties(),
                   TableProperties.BASE_FILE_FORMAT,
                   TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          setProToHive(hiveTable, primaryKeySpec);
+          setProToHive(hiveTable, primaryKeySpec, tableMeta);
           client.createTable(hiveTable);
         }
         return null;
@@ -254,10 +254,12 @@ public class MixedHiveTables extends MixedTables {
     meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
   }
 
-  private Map<String, String> constructProperties(PrimaryKeySpec primaryKeySpec) {
+  private Map<String, String> constructProperties(PrimaryKeySpec primaryKeySpec, TableMeta meta) {
     Map<String, String> parameters = new HashMap<>();
     parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
     parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
+    parameters.put(HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION,
+            meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE));
     return parameters;
   }
 
@@ -283,8 +285,9 @@ public class MixedHiveTables extends MixedTables {
     return newTable;
   }
 
-  private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable, PrimaryKeySpec primaryKeySpec) {
-    Map<String, String> parameters = constructProperties(primaryKeySpec);
+  private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable, PrimaryKeySpec primaryKeySpec,
+                            TableMeta meta) {
+    Map<String, String> parameters = constructProperties(primaryKeySpec, meta);
     hiveTable.setParameters(parameters);
   }
 
