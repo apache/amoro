@@ -285,6 +285,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
               optimizingProcess.getTaskMap().size());
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
+          break;
         } else {
           tableRuntime.cleanPendingInput();
         }
