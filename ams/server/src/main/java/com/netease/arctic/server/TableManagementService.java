@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -28,6 +27,7 @@ import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
 import org.apache.thrift.TException;
@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
-public class TableManagementService implements AmsClient, ArcticTableMetastore.Iface {
+public class TableManagementService implements ArcticTableMetastore.Iface {
 
   private final TableService tableService;
 
@@ -79,8 +79,10 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
-
-    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta);
+    ServerTableIdentifier identifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
+    CatalogMeta catalogMeta = getCatalog(identifier.getCatalog());
+    TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
+    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMetadata);
   }
 
   @Override

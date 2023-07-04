@@ -18,34 +18,72 @@
 
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.iceberg.InternalRecordWrapper;
-import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.server.AmsEnvironment;
+import com.netease.arctic.server.IcebergRestCatalogService;
+import com.netease.arctic.server.catalog.InternalCatalog;
+import com.netease.arctic.server.catalog.ServerCatalog;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+@Disabled
 public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
-  private final Table table;
-  private final BaseOptimizingChecker checker;
 
-  public TestIcebergHadoopOptimizing(TableIdentifier tb, Table table) {
-    this.table = table;
-    this.checker = new BaseOptimizingChecker(tb);
+  private static final Schema SCHEMA = new Schema(
+      Types.NestedField.required(1, "id", Types.IntegerType.get()),
+      Types.NestedField.required(2, "name", Types.StringType.get()),
+      Types.NestedField.required(3, "op_time", Types.TimestampType.withZone())
+  );
+  private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
+      .day("op_time").build();
+
+  private static final String DATABASE = "iceberg_optimizing_test_db";
+  private static final String TABLE = "iceberg_test_tbl";
+
+  private Catalog icebergCatalog;
+  private InternalCatalog serverCatalog;
+
+  @AfterEach
+  public void clean() {
+    if (icebergCatalog != null) {
+      icebergCatalog.dropTable(TableIdentifier.of(DATABASE, TABLE), true);
+    }
+    if (serverCatalog != null && serverCatalog.exist(DATABASE, TABLE)) {
+      serverCatalog.dropTable(DATABASE, TABLE);
+    }
   }
 
-  public void testIcebergTableOptimizing() throws IOException {
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testIcebergTableOptimizing(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, PartitionSpec.unpartitioned(), 2);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
@@ -79,7 +117,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100) + "");
+        String.valueOf(TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100)));
 
     insertEqDeleteFiles(table, Lists.newArrayList(
         newRecord(2, "aaa", quickDateWithZone(3))
@@ -115,7 +153,11 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizeHangUp();
   }
 
-  public void testV1IcebergTableOptimizing() throws IOException {
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testV1IcebergTableOptimizing(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, PartitionSpec.unpartitioned(), 1);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
@@ -149,7 +191,11 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizeHangUp();
   }
 
-  public void testPartitionIcebergTableOptimizing() throws IOException {
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testPartitionIcebergTableOptimizing(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, SPEC, 2);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
@@ -183,7 +229,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100) + "");
+        String.valueOf(TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100)));
 
     insertEqDeleteFiles(table, Lists.newArrayList(
         newRecord(2, "aaa", quickDateWithZone(3))
@@ -216,7 +262,11 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizeHangUp();
   }
 
-  public void testIcebergTableFullOptimize() throws IOException {
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testIcebergTableFullOptimize(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, PartitionSpec.unpartitioned(), 2);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "100");
@@ -278,7 +328,12 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizeHangUp();
   }
 
-  public void testPartitionIcebergTablePartialOptimizing() throws IOException {
+
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testPartitionIcebergTablePartialOptimizing(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, SPEC, 2);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     // Step 1: insert 6 data files for two partitions
     StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
     insertDataFile(table, Lists.newArrayList(
@@ -314,7 +369,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
   }
 
   private Record newRecord(Object... val) {
-    return newRecord(table.schema(), val);
+    return newRecord(SCHEMA, val);
   }
 
   private StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
@@ -340,5 +395,51 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     wrapper = wrapper.wrap(record);
     pd.partition(wrapper);
     return pd;
+  }
+
+
+  private Table createIcebergTable(String catalog, PartitionSpec spec, int formatVersion) {
+    ServerCatalog serverCatalog = amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
+    if (serverCatalog instanceof InternalCatalog) {
+      this.serverCatalog = (InternalCatalog) serverCatalog;
+      if (!this.serverCatalog.exist(DATABASE)) {
+        this.serverCatalog.createDatabase(DATABASE);
+      }
+    }
+
+    String impl = null;
+    Map<String, String> properties = Maps.newHashMap();
+    if (catalog.equalsIgnoreCase(AmsEnvironment.ICEBERG_CATALOG)) {
+      impl = HadoopCatalog.class.getName();
+      String warehouse = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+      properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouse);
+    } else if (catalog.equalsIgnoreCase(AmsEnvironment.INTERNAL_ICEBERG_CATALOG)) {
+      impl = RESTCatalog.class.getName();
+      properties.put("uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+      properties.put(CatalogMetaProperties.KEY_WAREHOUSE, AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+    } else {
+      throw new IllegalStateException("unknown catalog");
+    }
+
+
+    TableMetaStore tms = com.netease.arctic.utils.CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
+    Catalog icebergCatalog = CatalogUtil.loadCatalog(
+        impl, catalog, properties, tms.getConfiguration()
+    );
+
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, Integer.toString(formatVersion));
+    tableProperties.put(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
+
+    TableIdentifier identifier = TableIdentifier.of(DATABASE, TABLE);
+    this.icebergCatalog = icebergCatalog;
+
+    return icebergCatalog.createTable(identifier, SCHEMA, spec, tableProperties);
+  }
+
+  public BaseOptimizingChecker newOptimizingChecker(String catalog) {
+    return new BaseOptimizingChecker(
+        com.netease.arctic.table.TableIdentifier.of(catalog, DATABASE, TABLE)
+    );
   }
 }

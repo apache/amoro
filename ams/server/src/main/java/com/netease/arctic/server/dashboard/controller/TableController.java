@@ -27,6 +27,7 @@ import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.server.catalog.IcebergCatalogImpl;
+import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
@@ -437,7 +438,7 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     List<TableMeta> tables = new ArrayList<>();
 
-    if (serverCatalog instanceof IcebergCatalogImpl) {
+    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(
           e.getTableName(),
           TableMeta.TableType.ICEBERG.toString())));
