@@ -55,15 +55,14 @@ ALTER TABLE `table_metadata` CHANGE `delta_location` `change_location` varchar(2
 ALTER TABLE `table_metadata` CHANGE `cur_schema_id` `current_schema_id` int(11) NOT NULL DEFAULT 0;
 ALTER TABLE `table_metadata` DROP COLUMN `hbase_site`;
 ALTER TABLE `table_metadata` DROP COLUMN `current_tx_id`;
-ALTER TABLE `table_metadata` ADD COLLATE `meta_version` bigint(20) NOT NULL DEFAULT 0;
+ALTER TABLE `table_metadata` ADD COLUMN `meta_version` bigint(20) NOT NULL DEFAULT 0;
 UPDATE `table_metadata` JOIN `table_identifier`
 ON `table_metadata`.`catalog_name` = `table_identifier`.`catalog_name`
 AND `table_metadata`.`db_name` = `table_identifier`.`db_name`
 AND `table_metadata`.`table_name` = `table_identifier`.`table_name` SET `table_metadata`.`table_id` = `table_identifier`.`table_id`;
 ALTER TABLE `table_metadata` ADD PRIMARY KEY (`table_id`);
-UPDATE `table_metadata` JOIN `catalog_metadata`
-ON `table_metadata`.`catalog_name` = `table_identifier`.`catalog_name`
-SET `format` = CASE WHEN `catalog_metadata`.`catalog_metastore` = "hive" THEN "MIXED_HIVE" ELSE "MIXED_ICEBERG" END
+UPDATE `table_metadata` JOIN `catalog_metadata` ON `table_metadata`.`catalog_name` = `catalog_metadata`.`catalog_name`
+SET `format` = CASE WHEN `catalog_metadata`.`catalog_metastore` = "hive" THEN "MIXED_HIVE" ELSE "MIXED_ICEBERG" END;
 ALTER TABLE `table_metadata` MODIFY `format` VARCHAR(32) NOT NULL ;
 
 
