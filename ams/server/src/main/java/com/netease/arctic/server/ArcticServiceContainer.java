@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
@@ -38,6 +39,7 @@ import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
+import java.util.concurrent.ThreadFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
@@ -192,7 +194,7 @@ public class ArcticServiceContainer {
     int port = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
 
-    LOG.info("Starting thrift server on port:" + port);
+    LOG.info("Starting thrift server on port: {}", port);
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
 
     ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableManagementProcessor =
@@ -200,21 +202,25 @@ public class ArcticServiceContainer {
             new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
     tableManagementServer =
         createThriftServer(tableManagementProcessor, Constants.THRIFT_TABLE_SERVICE_NAME, serverTransport,
-            maxMessageSize, Executors.newFixedThreadPool(workerThreads), selectorThreads, queueSizePerSelector);
+            maxMessageSize,
+            Executors.newFixedThreadPool(workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
+            selectorThreads, queueSizePerSelector);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizingProcessor =
         new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
             optimizingService, ArcticRuntimeException::normalize));
     optimizingServiceServer =
         createThriftServer(optimizingProcessor, Constants.THRIFT_OPTIMIZING_SERVICE_NAME, serverTransport,
-            maxMessageSize, Executors.newCachedThreadPool(), selectorThreads, queueSizePerSelector);
+            maxMessageSize,
+            Executors.newCachedThreadPool(getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
+            selectorThreads, queueSizePerSelector);
   }
 
   private TServer createThriftServer(
       TProcessor processor, String processorName,
       TNonblockingServerSocket serverTransport, long maxMessageSize,
       ExecutorService executorService, int selectorThreads, int queueSizePerSelector) {
-    LOG.info(String.format("Initializing thrift server: %s", processorName));
+    LOG.info("Initializing thrift server: {}", processorName);
     final TProtocolFactory inputProtoFactory;
     inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
@@ -227,11 +233,13 @@ public class ArcticServiceContainer {
         .executorService(executorService)
         .selectorThreads(selectorThreads)
         .acceptQueueSizePerThread(queueSizePerSelector);
-    LOG.info(String.format("The number of selector threads for the %s thrift server is: %d", processorName,
-        selectorThreads));
-    LOG.info(String.format("The size of per-selector queue for the %s thrift server is: %d", processorName,
-        queueSizePerSelector));
+    LOG.info("The number of selector threads for the {} thrift server is: {}", processorName, selectorThreads);
+    LOG.info("The size of per-selector queue for the {} thrift server is: {}", processorName, queueSizePerSelector);
     return new TThreadedSelectorServer(args);
+  }
+
+  private ThreadFactory getThriftThreadFactory(String processorName) {
+    return new ThreadFactoryBuilder().setDaemon(false).setNameFormat("thrift-server" + processorName + "-%d").build();
   }
 
   private class ConfigurationHelper {
