@@ -307,7 +307,7 @@ public class ServerTableDescriptor extends PersistentBase {
         if (table.snapshot(snapshotId) != null) {
           commitTime = table.snapshot(snapshotId).timestampMillis();
         }
-        result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
+        result.add(new PartitionFileBaseInfo(String.valueOf(snapshotId), dataFileType, commitTime,
             partitionPath, filePath, fileSize));
       }
     } catch (IOException exception) {
