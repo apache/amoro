@@ -29,6 +29,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -511,7 +512,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       } catch (Exception e) {
         LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
-        failedReason = e.getMessage();
+        failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
       } finally {
