@@ -25,8 +25,6 @@ import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TestBasicArcticCatalog;
 import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.hive.table.KeyedHiveTable;
-import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.thrift.TException;
 import org.junit.Assert;
