@@ -37,7 +37,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   private final IcebergDataFile[] rePosDeletedDataFiles;
   private final IcebergContentFile<?>[] readOnlyDeleteFiles;
   private final IcebergContentFile<?>[] rewrittenDeleteFiles;
-  private ArcticTable table;
+  private transient ArcticTable table;
 
   public RewriteFilesInput(
       IcebergDataFile[] rewrittenDataFiles,
@@ -151,6 +151,10 @@ public class RewriteFilesInput extends BaseOptimizingInput {
 
   public ArcticTable getTable() {
     return table;
+  }
+
+  public void setTable(ArcticTable table) {
+    this.table = table;
   }
 
   @Override
