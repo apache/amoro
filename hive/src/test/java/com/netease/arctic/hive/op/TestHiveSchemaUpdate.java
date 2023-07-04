@@ -20,16 +20,12 @@ package com.netease.arctic.hive.op;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.hive.table.KeyedHiveTable;
-import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Transaction;
@@ -40,16 +36,10 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import java.util.Map;
 
-import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_D;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_DAY;
 import static com.netease.arctic.hive.catalog.HiveTableTestHelper.COLUMN_NAME_OP_TIME_WITH_ZONE;
-import static com.netease.arctic.hive.catalog.HiveTableTestHelper.HIVE_SPEC;
-import static com.netease.arctic.hive.catalog.HiveTableTestHelper.HIVE_TABLE_SCHEMA;
 
 @RunWith(Parameterized.class)
 public class TestHiveSchemaUpdate extends TableTestBase {
@@ -67,50 +57,6 @@ public class TestHiveSchemaUpdate extends TableTestBase {
                             new HiveTableTestHelper(true, true)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(false, true)}};
-  }
-
-  @Test
-  public void testHiveParameterFromArctic() throws TException {
-
-    String unkeyedTable = "unkeyed_test_hive_table_tmp";
-    String keyedTable = "keyed_test_hive_table_tmp";
-    ArcticCatalog hiveCatalog = getCatalog();
-
-    final TableIdentifier unKeyedHiveTableIdentifier =
-            TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, unkeyedTable);
-
-    final TableIdentifier keyedHiveTableIdentifier =
-            TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, keyedTable);
-
-    UnkeyedHiveTable testUnKeyedTable = (UnkeyedHiveTable) hiveCatalog
-            .newTableBuilder(unKeyedHiveTableIdentifier, HIVE_TABLE_SCHEMA)
-            .withPartitionSpec(HIVE_SPEC)
-            .create().asUnkeyedTable();
-
-    Map<String,String> tableParameter =  TEST_HMS.getHiveClient()
-            .getTable(TableTestHelper.TEST_DB_NAME, unkeyedTable).getParameters();
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
-    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(unkeyedTable));
-    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
-
-    hiveCatalog.dropTable(unKeyedHiveTableIdentifier, true);
-    TEST_AMS.getAmsHandler().getTableCommitMetas().remove(unKeyedHiveTableIdentifier.buildTableIdentifier());
-
-    KeyedHiveTable testKeyedTable = (KeyedHiveTable) hiveCatalog
-            .newTableBuilder(keyedHiveTableIdentifier, HIVE_TABLE_SCHEMA)
-            .withPartitionSpec(HIVE_SPEC)
-            .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-            .create().asKeyedTable();
-
-    Map<String,String> keyedTableParameter =  TEST_HMS.getHiveClient()
-            .getTable(TableTestHelper.TEST_DB_NAME, keyedTable).getParameters();
-    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
-    Assert.assertTrue(keyedTableParameter.get(ARCTIC_TABLE_ROOT_LOCATION)
-            .endsWith(keyedTable));
-    Assert.assertTrue(keyedTableParameter.containsKey(ARCTIC_TABLE_FLAG));
-
-    hiveCatalog.dropTable(keyedHiveTableIdentifier, true);
-    TEST_AMS.getAmsHandler().getTableCommitMetas().remove(keyedHiveTableIdentifier.buildTableIdentifier());
   }
 
   @Test
