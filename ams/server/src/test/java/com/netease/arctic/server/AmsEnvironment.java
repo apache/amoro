@@ -309,7 +309,7 @@ public class AmsEnvironment {
     amsRunner.start();
 
     DynFields.UnboundField<TServer> amsServerField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "thriftServer").build();
+        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableManagementServer").build();
     while (true) {
       if (amsExit.get()) {
         LOG.error("ams exit");
