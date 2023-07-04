@@ -573,10 +573,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+      ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+
       taskRuntimes.forEach(taskRuntime -> {
         taskRuntime.claimOwnership(this);
         RewriteFilesInput input = inputs.get(taskRuntime.getTaskId().getTaskId());
-        ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         input.setTable(table);
         taskRuntime.setInput(input);
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
