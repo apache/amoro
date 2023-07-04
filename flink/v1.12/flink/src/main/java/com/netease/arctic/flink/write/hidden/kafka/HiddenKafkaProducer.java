@@ -144,7 +144,9 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   @Override
   public void close() throws Exception {
     try {
-      producer.close(Duration.ofSeconds(0));
+      if (producer != null) {
+        producer.close(Duration.ofSeconds(0));
+      }
       transactionalProducer.close(Duration.ofSeconds(0));
     } catch (Exception e) {
       asyncException = ExceptionUtils.firstOrSuppressed(e, asyncException);
