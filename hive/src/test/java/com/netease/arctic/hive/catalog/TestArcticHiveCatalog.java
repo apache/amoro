@@ -58,7 +58,7 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
   }
 
   private void checkTableArcticPropertiesAndDropTable(ArcticCatalog catalog, TableIdentifier tableIdentifier)
-          throws TException{
+          throws TException {
     String dbName = tableIdentifier.getDatabase();
     String tbl = tableIdentifier.getTableName();
     Map<String,String> tableParameter =  TEST_HMS.getHiveClient()
