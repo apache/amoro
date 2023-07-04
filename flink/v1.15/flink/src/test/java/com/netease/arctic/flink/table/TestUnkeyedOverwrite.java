@@ -25,7 +25,6 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
-import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -49,8 +48,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-
 @RunWith(Parameterized.class)
 public class TestUnkeyedOverwrite extends FlinkTestBase {
 
@@ -66,9 +63,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
 
-  private String catalog;
   private String db;
-  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
   public boolean isHive;
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
@@ -94,10 +89,8 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   public void before() throws Exception {
     if (isHive) {
-      catalog = HiveTableTestHelper.TEST_CATALOG_NAME;
       db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
-      catalog = TEST_CATALOG_NAME;
       db = DB;
     }
     super.before();
