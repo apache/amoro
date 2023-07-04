@@ -222,28 +222,6 @@ public class TableProperties {
   public static final String BASE_REFRESH_INTERVAL = "base.refresh-interval";
   public static final long BASE_REFRESH_INTERVAL_DEFAULT = -1L;
 
-  /**
-   * table read related properties
-   * TODO
-   * This Configuration will be removed in the v0.5.0 version.
-   */
-  @Deprecated
-  public static final String READ_DISTRIBUTION_MODE = "read.distribution-mode";
-  public static final String READ_DISTRIBUTION_MODE_NONE = "none";
-  public static final String READ_DISTRIBUTION_MODE_HASH = "hash";
-  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_NONE;
-  /**
-   * TODO
-   * This Configuration will be removed in the v0.5.0 version.
-   */
-  @Deprecated
-  public static final String READ_DISTRIBUTION_HASH_MODE = "read.distribution.hash-mode";
-  public static final String READ_DISTRIBUTION_HASH_PARTITION = "partition-key";
-  public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
-  public static final String READ_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
-  public static final String READ_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String READ_DISTRIBUTION_HASH_MODE_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
-
   public static final String SPLIT_SIZE = org.apache.iceberg.TableProperties.SPLIT_SIZE;
   public static final long SPLIT_SIZE_DEFAULT = 134217728; // 128 MB
 
