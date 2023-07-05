@@ -55,6 +55,6 @@ public class OptimizingClientPools {
         return false;
       }
       return true;
-    }, poolConfig);
+    }, poolConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME);
   }
 }

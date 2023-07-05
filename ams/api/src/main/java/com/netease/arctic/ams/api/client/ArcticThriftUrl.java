@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.api.client;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -69,12 +70,12 @@ public class ArcticThriftUrl {
    * @param url - thrift url
    * @return -
    */
-  public static ArcticThriftUrl parse(String url) {
+  public static ArcticThriftUrl parse(String url, String serviceName) {
     if (url == null) {
       throw new IllegalArgumentException("thrift url is null");
     }
     if (url.startsWith(ZOOKEEPER_FLAG)) {
-      return parserZookeeperUrl(url);
+      return parserZookeeperUrl(url, serviceName);
     } else {
       return parserThriftUrl(url);
     }
@@ -108,7 +109,7 @@ public class ArcticThriftUrl {
     }
   }
 
-  private static ArcticThriftUrl parserZookeeperUrl(String url) {
+  private static ArcticThriftUrl parserZookeeperUrl(String url, String serviceName) {
     String thriftUrl = url;
     String query = "";
     if (url.contains("?")) {
@@ -131,10 +132,7 @@ public class ArcticThriftUrl {
       int retryCount = 0;
       while (retryCount < maxRetries) {
         try {
-          AmsServerInfo serverInfo = JSONObject.parseObject(
-              ZookeeperService.getInstance(zkServerAddress)
-                  .getData(AmsHAProperties.getMasterPath(cluster)),
-              AmsServerInfo.class);
+          AmsServerInfo serverInfo = findAmsServerInfo(serviceName, zkServerAddress, cluster);
           url = String.format(THRIFT_URL_FORMAT, serverInfo.getHost(),
               serverInfo.getThriftBindPort(), catalog, query);
           int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
@@ -176,6 +174,23 @@ public class ArcticThriftUrl {
       throw new RuntimeException(String.format("invalid ams url %s", url));
     }
     return null;
+  }
+
+  private static AmsServerInfo findAmsServerInfo(String serviceName, String zkServerAddress, String cluster)
+      throws Exception {
+    switch (serviceName) {
+      case Constants.THRIFT_TABLE_SERVICE_NAME:
+        return JSONObject.parseObject(
+            ZookeeperService.getInstance(zkServerAddress).getData(AmsHAProperties.getTableServiceMasterPath(cluster)),
+            AmsServerInfo.class);
+      case Constants.THRIFT_OPTIMIZING_SERVICE_NAME:
+        return JSONObject.parseObject(
+            ZookeeperService.getInstance(zkServerAddress)
+                .getData(AmsHAProperties.getOptimizingServiceMasterPath(cluster)),
+            AmsServerInfo.class);
+      default:
+        throw new RuntimeException(String.format("invalid service name %s", serviceName));
+    }
   }
 
   public String schema() {

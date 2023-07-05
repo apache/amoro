@@ -26,7 +26,6 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.PropertyNames;
-import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.dashboard.DashboardServer;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -34,6 +33,7 @@ import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
+import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
@@ -57,6 +57,7 @@ import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift.transport.TTransportFactory;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,6 @@ public class ArcticServiceContainer {
 
   public static final String SERVER_CONFIG_PATH = "/conf/config.yaml";
 
-  private final List<ResourceGroup> resourceGroups = new ArrayList<>();
   private final HighAvailabilityContainer haContainer;
   private DefaultTableService tableService;
   private DefaultOptimizingService optimizingService;
@@ -190,7 +190,6 @@ public class ArcticServiceContainer {
     LOG.info(threadName + " has been started");
   }
 
-
   private void initHttpService() {
     DashboardServer dashboardServer = new DashboardServer(
         serviceConfig, tableService, optimizingService, terminalManager);
@@ -247,42 +246,42 @@ public class ArcticServiceContainer {
     int selectorThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_SELECTOR_THREADS);
     int workerThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_WORKER_THREADS);
     int queueSizePerSelector = serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
-    int port = serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT);
-    final TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
-    final TProtocolFactory inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
-
-    LOG.info("Starting thrift server on port: {}", port);
-    TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
 
     ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableManagementProcessor =
         new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
             new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
     tableManagementServer =
-        createThriftServer(tableManagementProcessor, Constants.THRIFT_TABLE_SERVICE_NAME, serverTransport,
+        createThriftServer(tableManagementProcessor, Constants.THRIFT_TABLE_SERVICE_NAME, bindHost,
+            serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
             Executors.newFixedThreadPool(workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector, protocolFactory, inputProtoFactory);
+            selectorThreads, queueSizePerSelector, maxMessageSize);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizingProcessor =
         new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
             optimizingService, ArcticRuntimeException::normalize));
     optimizingServiceServer =
-        createThriftServer(optimizingProcessor, Constants.THRIFT_OPTIMIZING_SERVICE_NAME, serverTransport,
+        createThriftServer(optimizingProcessor, Constants.THRIFT_OPTIMIZING_SERVICE_NAME, bindHost,
+            serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
             Executors.newCachedThreadPool(getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector,protocolFactory, inputProtoFactory);
+            selectorThreads, queueSizePerSelector, maxMessageSize);
   }
 
   private TServer createThriftServer(
-      TProcessor processor, String processorName,
-      TNonblockingServerSocket serverTransport,
-      ExecutorService executorService, int selectorThreads, int queueSizePerSelector,
-      TProtocolFactory protocolFactory, TProtocolFactory inputProtoFactory) {
+      TProcessor processor, String processorName, String bindHost, int port,
+      ExecutorService executorService, int selectorThreads, int queueSizePerSelector, long maxMessageSize)
+      throws TTransportException {
     LOG.info("Initializing thrift server: {}", processorName);
+    LOG.info("Starting {} thrift server on port: {}", processorName, port);
+    TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
+    final TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
+    final TProtocolFactory inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
+    TTransportFactory transportFactory = new TFramedTransport.Factory();
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
     multiplexedProcessor.registerProcessor(processorName, processor);
     TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
         .processor(multiplexedProcessor)
-        .transportFactory(new TFramedTransport.Factory())
+        .transportFactory(transportFactory)
         .protocolFactory(protocolFactory)
         .inputProtocolFactory(inputProtoFactory)
         .executorService(executorService)
@@ -394,7 +393,9 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
         containerProperties.put(PropertyNames.AMS_HOME, Environments.getArcticHome());
-        containerProperties.put(PropertyNames.OPTIMIZER_AMS_URL, AmsUtil.getAMSThriftAddress(serviceConfig));
+        containerProperties.put(
+            PropertyNames.OPTIMIZER_AMS_URL,
+            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
         if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
           containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
         }
@@ -426,9 +427,13 @@ public class ArcticServiceContainer {
     }
   }
 
-
   @VisibleForTesting
   public TableService getTableService() {
     return this.tableService;
+  }
+
+  @VisibleForTesting
+  public OptimizerManager getOptimizingService() {
+    return this.optimizingService;
   }
 }

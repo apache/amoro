@@ -42,15 +42,18 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
-  private final String masterPath;
-  private final AmsServerInfo serverInfo;
+  private final String tableServiceMasterPath;
+  private final String optimizingServiceMasterPath;
+  private final AmsServerInfo tableServiceServerInfo;
+  private final AmsServerInfo optimizingServiceServerInfo;
   private transient CountDownLatch followerLath;
 
   public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(ArcticManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS);
       String haClusterName = serviceConfig.getString(ArcticManagementConf.HA_CLUSTER_NAME);
-      masterPath = AmsHAProperties.getMasterPath(haClusterName);
+      tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
+      optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
       ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
       this.zkClient = CuratorFrameworkFactory.builder()
           .connectString(zkServerAddress)
@@ -59,19 +62,26 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
           .retryPolicy(retryPolicy)
           .build();
       zkClient.start();
-      createPathIfNeeded(masterPath);
+      createPathIfNeeded(tableServiceMasterPath);
+      createPathIfNeeded(optimizingServiceMasterPath);
       String leaderPath = AmsHAProperties.getLeaderPath(haClusterName);
       createPathIfNeeded(leaderPath);
       leaderLatch = new LeaderLatch(zkClient, leaderPath);
       leaderLatch.addListener(this);
       leaderLatch.start();
-      serverInfo = buildServerInfo(serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-          serviceConfig.getInteger(ArcticManagementConf.THRIFT_BIND_PORT));
+      this.tableServiceServerInfo = buildServerInfo(
+          serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+          serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
+      this.optimizingServiceServerInfo = buildServerInfo(
+          serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+          serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
     } else {
       leaderLatch = null;
       zkClient = null;
-      masterPath = null;
-      serverInfo = null;
+      tableServiceMasterPath = null;
+      optimizingServiceMasterPath = null;
+      tableServiceServerInfo = null;
+      optimizingServiceServerInfo = null;
       // block follower latch forever when ha is disabled
       followerLath = new CountDownLatch(1);
     }
@@ -82,7 +92,14 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     if (leaderLatch != null) {
       leaderLatch.await();
       if (leaderLatch.hasLeadership()) {
-        zkClient.setData().forPath(masterPath, JSONObject.toJSONString(serverInfo).getBytes(StandardCharsets.UTF_8));
+        zkClient.setData()
+            .forPath(
+                tableServiceMasterPath,
+                JSONObject.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
+        zkClient.setData()
+            .forPath(
+                optimizingServiceMasterPath,
+                JSONObject.toJSONString(optimizingServiceServerInfo).getBytes(StandardCharsets.UTF_8));
       }
     }
     LOG.info("Became the leader of AMS");
@@ -109,13 +126,15 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   @Override
   public void isLeader() {
-    LOG.info("Server {} got leadership", serverInfo.toString());
+    LOG.info("Table service server {} and optimizing service server {} got leadership",
+        tableServiceServerInfo.toString(), optimizingServiceServerInfo.toString());
     followerLath = new CountDownLatch(1);
   }
 
   @Override
   public void notLeader() {
-    LOG.info("Server {} lost leadership", serverInfo.toString());
+    LOG.info("Table service server {} and optimizing service server {} lost leadership",
+        tableServiceServerInfo.toString(), optimizingServiceServerInfo.toString());
     followerLath.countDown();
   }
 
