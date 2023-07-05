@@ -11,6 +11,7 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -24,18 +25,22 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 @RunWith(Parameterized.class)
 public class TestOptimizingQueue extends AMSTableTestBase {
@@ -158,8 +163,12 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 3.poll again
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     OptimizingTask task2 = pollTaskAndCheck(authToken, thread, queue);
-    Assert.assertEquals(task1, task2);
-
+//    Assert.assertEquals(task1, task2);
+    Assert.assertEquals(task1.getTaskId(), task2.getTaskId());
+    Assert.assertEquals(task1.getProperties(), task2.getProperties());
+    RewriteFilesInput input1 = SerializationUtil.simpleDeserialize(task1.getTaskInput());
+    RewriteFilesInput input2 = SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    assertRewriteFilesInput(input1, input2);
   }
 
   @Test
@@ -433,6 +442,24 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   private static class Persistency extends PersistentBase {
     public List<TableRuntimeMeta> selectTableRuntimeMetas() {
       return getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    }
+  }
+
+
+  private static void assertRewriteFilesInput(RewriteFilesInput expect, RewriteFilesInput actual) {
+    assertArray(expect.rewrittenDataFiles(), actual.rewrittenDataFiles());
+    assertArray(expect.rewrittenDeleteFiles(), actual.rewrittenDeleteFiles());
+    assertArray(expect.rePosDeletedDataFiles(), actual.rePosDeletedDataFiles());
+    assertArray(expect.readOnlyDeleteFiles(), actual.readOnlyDeleteFiles());
+    Assertions.assertEquals(expect.getTable().id(), actual.getTable().id());
+  }
+
+  private static <T> void assertArray(T[] expect, T[] actual) {
+    Assertions.assertEquals(expect != null, actual != null);
+    if (expect != null && actual != null) {
+      Assertions.assertEquals(expect.length, actual.length);
+      Streams.zip(Stream.of(expect), Stream.of(actual), Pair::of)
+          .forEach(p -> Assertions.assertEquals(p.getLeft(), p.getRight()));
     }
   }
 }
