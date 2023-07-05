@@ -126,11 +126,17 @@ public class ArcticManagementConf {
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
 
-  public static final ConfigOption<Integer> THRIFT_BIND_PORT =
-      ConfigOptions.key("thrift-server.bind-port")
+  public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
+      ConfigOptions.key("thrift-server.table-service.bind-port")
           .intType()
-          .defaultValue(9090)
-          .withDescription("Port that the Thrift server is bound to.");
+          .defaultValue(1260)
+          .withDescription("Port that the table service thrift server is bound to.");
+
+  public static final ConfigOption<Integer> OPTIMIZING_SERVICE_THRIFT_BIND_PORT =
+      ConfigOptions.key("thrift-server.optimizing-service.bind-port")
+          .intType()
+          .defaultValue(1261)
+          .withDescription("Port that the optimizing service thrift server is bound to.");
 
   public static final ConfigOption<Long> THRIFT_MAX_MESSAGE_SIZE =
       ConfigOptions.key("thrift-server.max-message-size")
@@ -139,7 +145,7 @@ public class ArcticManagementConf {
           .withDescription("Maximum message size that the Thrift server can accept.");
 
   public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
-      ConfigOptions.key("thrift-server.worker-thread-count")
+      ConfigOptions.key("thrift-server.table-service.worker-thread-count")
           .intType()
           .defaultValue(20)
           .withDescription("The number of worker threads for the Thrift server.");

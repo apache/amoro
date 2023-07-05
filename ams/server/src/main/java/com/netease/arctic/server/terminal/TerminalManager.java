@@ -19,6 +19,7 @@
 package com.netease.arctic.server.terminal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -107,7 +108,8 @@ public class TerminalManager {
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), connectorType);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSThriftAddress(serviceConfig));
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSThriftAddress(serviceConfig,
+        Constants.THRIFT_TABLE_SERVICE_NAME));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
