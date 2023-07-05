@@ -5,11 +5,13 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.utils.Configurations;
@@ -241,6 +243,11 @@ public class AmsEnvironment {
     if (optimizingStarted) {
       return;
     }
+    OptimizerManager optimizerManager = arcticService.getOptimizingService();
+    optimizerManager.createResourceGroup(
+        new ResourceGroup.Builder("default", "localContainer")
+            .addProperty("memory", "1024")
+            .build());
     new Thread(() -> {
       String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
       try {
@@ -379,11 +386,6 @@ public class AmsEnvironment {
         "      memory: \"1024\"\n" +
         "      hadoop_home: /opt/hadoop\n" +
         "      # java_home: /opt/java\n" +
-        "\n" +
-        "optimizer_groups:\n" +
-        "  - name: " + OPTIMIZE_GROUP + "\n" +
-        "    container: localContainer\n" +
-        "    properties:\n" +
-        "      memory: 1024 # MB\n";
+        "\n" ;
   }
 }

@@ -33,6 +33,7 @@ import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
+import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
@@ -405,5 +406,10 @@ public class ArcticServiceContainer {
   @VisibleForTesting
   public TableService getTableService() {
     return this.tableService;
+  }
+
+  @VisibleForTesting
+  public OptimizerManager getOptimizingService() {
+    return this.optimizingService;
   }
 }
