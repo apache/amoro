@@ -460,7 +460,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
       Assertions.assertEquals(expect.length, actual.length);
       Streams.zip(Stream.of(expect), Stream.of(actual), Pair::of)
           .forEach(p -> Assertions.assertEquals(p.getLeft(), p.getRight()));
-
     }
   }
 }
