@@ -19,6 +19,7 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
@@ -166,6 +167,8 @@ public class ConvertStructUtil {
     Map<String, String> properties = new HashMap<>();
     Map<String, String> locations = new HashMap<>();
 
+    TableFormat format;
+
     public TableMetaBuilder(TableIdentifier identifier, Schema schema) {
       meta.setTableIdentifier(identifier.buildTableIdentifier());
       this.schema = schema;
@@ -210,9 +213,16 @@ public class ConvertStructUtil {
       return this;
     }
 
+    public TableMetaBuilder withFormat(TableFormat format) {
+      this.format = format;
+      return this;
+    }
+
     public TableMeta build() {
+      Preconditions.checkNotNull(this.format, "table format must set.");
       meta.setLocations(locations);
       meta.setProperties(this.properties);
+      meta.setFormat(this.format.name());
       return meta;
     }
   }

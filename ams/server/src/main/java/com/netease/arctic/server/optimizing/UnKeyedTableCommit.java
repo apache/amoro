@@ -30,7 +30,7 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -295,7 +295,7 @@ public class UnKeyedTableCommit {
   }
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
-    long currentSnapshotId = IcebergTableUtils.getSnapshotId(table, true);
+    long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
     if (currentSnapshotId == INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }

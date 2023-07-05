@@ -114,6 +114,10 @@ public class ArcticDataFiles {
               field.name().equals(parts[0]),
           "Invalid partition: %s", partitions[i]);
 
+      if ("null".equals(parts[1])) {
+        parts[1] = null;
+      }
+
       data.set(i, ArcticDataFiles.fromPartitionString(field, spec.partitionType().fieldType(parts[0]), parts[1]));
     }
 

@@ -72,7 +72,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       tableRuntime.refresh(table);
       if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
           changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
-        if (tableRuntime.isOptimizingEnabled()) {
+        if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
           tryEvaluatingPendingInput(tableRuntime, table);
         }
       }
