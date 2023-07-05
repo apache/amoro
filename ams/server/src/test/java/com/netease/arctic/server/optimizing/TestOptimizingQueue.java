@@ -445,7 +445,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     }
   }
 
-
   private static void assertRewriteFilesInput(RewriteFilesInput expect, RewriteFilesInput actual) {
     assertArray(expect.rewrittenDataFiles(), actual.rewrittenDataFiles());
     assertArray(expect.rewrittenDeleteFiles(), actual.rewrittenDeleteFiles());
