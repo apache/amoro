@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.google.common.base.Strings;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -34,13 +35,17 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
+import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +55,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -122,6 +128,17 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         arcticTable = catalog.loadTable(tableIdentifier);
         // clear metadata files
         cleanMetadata(arcticTable, System.currentTimeMillis() - keepTime);
+
+        boolean needIndependentClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+            TableProperties.ENABLE_INDEPENDENT_CLEAN,
+            TableProperties.ENABLE_INDEPENDENT_CLEAN_DEFAULT);
+
+        if (!needIndependentClean) {
+          return;
+        }
+
+        // clear independent files
+        cleanIndependentFiles(arcticTable);
       } catch (Throwable t) {
         LOG.error("{} orphan file clean unexpected error", tableIdentifier, t);
       }
@@ -165,6 +182,14 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     }
   }
 
+  public static void cleanIndependentFiles(ArcticTable arcticTable) {
+    if (!arcticTable.isKeyedTable()) {
+      LOG.info("{} start delete independent files", arcticTable.id());
+      int independentFilesCnt = clearInternalTableIndependentFiles(arcticTable.asUnkeyedTable());
+      LOG.info("{} total delete {} independent files", arcticTable.id(), independentFilesCnt);
+    }
+  }
+
   private static int clearInternalTableContentsFiles(UnkeyedTable internalTable, long lastTime,
                                                      Set<String> exclude) {
     int deleteFilesCnt = 0;
@@ -196,6 +221,24 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
           excludeFileNameRegex);
     }
     return deleteFilesCnt;
+  }
+
+  private static int clearInternalTableIndependentFiles(UnkeyedTable internalTable) {
+    Set<DeleteFile> independentFiles = UnKeyedTableUtil.getIndependentFiles(internalTable);
+    if (independentFiles.isEmpty()) {
+      return 0;
+    }
+    RewriteFiles rewriteFiles = internalTable.newRewrite();
+    rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+    rewriteFiles.rewriteFiles(Collections.emptySet(), independentFiles,
+        Collections.emptySet(), Collections.emptySet());
+    try {
+      rewriteFiles.commit();
+    } catch (ValidationException e) {
+      LOG.warn("Iceberg RewriteFiles commit failed on clear independentFiles, but ignore", e);
+      return 0;
+    }
+    return independentFiles.size();
   }
 
   private static Pattern getExcludeFileNameRegex(UnkeyedTable table) {
