@@ -386,6 +386,6 @@ public class AmsEnvironment {
         "      memory: \"1024\"\n" +
         "      hadoop_home: /opt/hadoop\n" +
         "      # java_home: /opt/java\n" +
-        "\n" ;
+        "\n";
   }
 }

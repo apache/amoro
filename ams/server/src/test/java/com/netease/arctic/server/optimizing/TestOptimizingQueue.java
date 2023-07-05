@@ -163,7 +163,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 3.poll again
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     OptimizingTask task2 = pollTaskAndCheck(authToken, thread, queue);
-//    Assert.assertEquals(task1, task2);
     Assert.assertEquals(task1.getTaskId(), task2.getTaskId());
     Assert.assertEquals(task1.getProperties(), task2.getProperties());
     RewriteFilesInput input1 = SerializationUtil.simpleDeserialize(task1.getTaskInput());
