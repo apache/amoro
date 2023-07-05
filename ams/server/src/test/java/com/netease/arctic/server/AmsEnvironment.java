@@ -51,7 +51,8 @@ public class AmsEnvironment {
   private Configurations serviceConfig;
   private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
-  private int thriftBindPort;
+  private int tableServiceBindPort;
+  private int optimizingServiceBindPort;
   private final HMSMockServer testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
 
@@ -197,7 +198,7 @@ public class AmsEnvironment {
         CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.ICEBERG);
 
     tableService.createCatalog(catalogMeta);
-    catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
+    catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
   private void createIcebergCatalog() {
@@ -208,7 +209,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + ICEBERG_CATALOG));
+    catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + ICEBERG_CATALOG));
   }
 
   private void createMixIcebergCatalog() {
@@ -219,7 +220,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(MIXED_ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_ICEBERG_CATALOG));
+    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_ICEBERG_CATALOG));
   }
 
   private void createMixHiveCatalog() {
@@ -227,7 +228,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(MIXED_HIVE_CATALOG,
         properties, testHMS.hiveConf(), TableFormat.MIXED_HIVE);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_HIVE_CATALOG));
+    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_HIVE_CATALOG));
   }
 
   private void createDirIfNotExist(String warehouseDir) {
@@ -249,7 +250,7 @@ public class AmsEnvironment {
             .addProperty("memory", "1024")
             .build());
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-m", "1024", "-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {
@@ -268,8 +269,12 @@ public class AmsEnvironment {
         });
   }
 
-  public String getAmsUrl() {
-    return "thrift://127.0.0.1:" + thriftBindPort;
+  public String getTableServiceUrl() {
+    return "thrift://127.0.0.1:" + tableServiceBindPort;
+  }
+
+  public String getOptimizingServiceUrl() {
+    return "thrift://127.0.0.1:" + optimizingServiceBindPort;
   }
 
   public String getHttpUrl() {
@@ -287,9 +292,9 @@ public class AmsEnvironment {
             DynFields.UnboundField<Configurations> field =
                 DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "serviceConfig").build();
             serviceConfig = field.bind(arcticService).get();
-            serviceConfig.set(ArcticManagementConf.THRIFT_BIND_PORT, thriftBindPort);
+            serviceConfig.set(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
+            serviceConfig.set(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
             serviceConfig.set(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
-            // when AMS is successfully running, this thread will wait here
             arcticService.startService();
             break;
           } catch (TTransportException e) {
@@ -315,15 +320,19 @@ public class AmsEnvironment {
     }, "ams-runner");
     amsRunner.start();
 
-    DynFields.UnboundField<TServer> amsServerField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "thriftServer").build();
+    DynFields.UnboundField<TServer> tableManagementServerField =
+        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableManagementServer").build();
+    DynFields.UnboundField<TServer> optimizingServiceServerField =
+        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "optimizingServiceServer").build();
     while (true) {
       if (amsExit.get()) {
         LOG.error("ams exit");
         break;
       }
-      TServer thriftServer = amsServerField.bind(arcticService).get();
-      if (thriftServer != null && thriftServer.isServing()) {
+      TServer tableManagementServer = tableManagementServerField.bind(arcticService).get();
+      TServer optimizingServiceServer = optimizingServiceServerField.bind(arcticService).get();
+      if (tableManagementServer != null && tableManagementServer.isServing() && optimizingServiceServer != null &&
+          optimizingServiceServer.isServing()) {
         LOG.info("ams start");
         break;
       }
@@ -339,8 +348,9 @@ public class AmsEnvironment {
 
   private void genThriftBindPort() {
     // create a random port between 14000 - 18000
-    int port = new Random().nextInt(4000);
-    this.thriftBindPort = port + 14000;
+    Random random = new Random();
+    this.tableServiceBindPort = random.nextInt(4000) + 14000;
+    this.optimizingServiceBindPort = random.nextInt(4000) + 14000;
   }
 
   private String getAmsConfig() {
@@ -357,11 +367,14 @@ public class AmsEnvironment {
         "  sync-hive-tables-thread-count: 10\n" +
         "\n" +
         "  thrift-server:\n" +
-        "    bind-port: 1260\n" +
         "    max-message-size: 104857600 # 100MB\n" +
-        "    worker-thread-count: 20\n" +
         "    selector-thread-count: 2\n" +
         "    selector-queue-size: 4\n" +
+        "    table-service:\n" +
+        "      bind-port: 1260\n" +
+        "      worker-thread-count: 20\n" +
+        "    optimizing-service:\n" +
+        "      bind-port: 1261\n" +
         "\n" +
         "  http-server:\n" +
         "    bind-port: 1630\n" +
