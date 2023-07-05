@@ -233,7 +233,7 @@ public interface TableMetaMapper {
       @Result(property = "database", column = "db_name"),
       @Result(property = "catalog", column = "catalog_name")
   })
-  ServerTableIdentifier selectTableIdentifier(@Param("tableId") Long tableId);
+  ServerTableIdentifier selectTableIdentifierByTableId(@Param("tableId") Long tableId);
 
   @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")

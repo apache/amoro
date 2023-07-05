@@ -197,7 +197,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return;
     }
     ServerTableIdentifier identifier = getAs(
-        TableMetaMapper.class, mapper -> mapper.selectTableIdentifier(task.getTableId()));
+        TableMetaMapper.class, mapper -> mapper.selectTableIdentifierByTableId(task.getTableId()));
     ArcticTable table = tableManager.loadTable(identifier);
     task.getInput().setTable(table);
   }
