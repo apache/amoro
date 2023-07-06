@@ -86,6 +86,9 @@ public class UnKeyedTableUtil {
   }
 
   public static Set<DeleteFile> getIndependentFiles(UnkeyedTable internalTable) {
+    if (internalTable.currentSnapshot() == null) {
+      return Collections.emptySet();
+    }
     Set<String> deleteFilesPath = new HashSet<>();
     TableScan tableScan = internalTable.newScan();
     try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
