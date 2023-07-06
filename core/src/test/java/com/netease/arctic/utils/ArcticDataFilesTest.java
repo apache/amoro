@@ -128,4 +128,40 @@ public class ArcticDataFilesTest {
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
   }
+
+  @Test
+  public void testNullPartition() {
+    Schema schema = new Schema(
+        Types.NestedField.required(1, "name", Types.StringType.get())
+    );
+    PartitionSpec spec = PartitionSpec.builderFor(schema).identity("name").build();
+    PartitionKey partitionKey = new PartitionKey(spec, schema);
+    String partitionPath = "name=null";
+    StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
+    Assert.assertNull(partitionData.get(0, Types.StringType.get().typeId().javaClass()));
+  }
+
+  @Test
+  public void testSpecialCharactersPartition() {
+    Schema schema = new Schema(
+        Types.NestedField.required(1, "day", Types.StringType.get()),
+        Types.NestedField.required(2, "name", Types.StringType.get())
+    );
+    PartitionSpec spec = PartitionSpec.builderFor(schema).identity("day").identity("name").build();
+    PartitionKey partitionKey = new PartitionKey(spec, schema);
+    GenericRecord record = GenericRecord.create(schema);
+    InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(schema.asStruct());
+    partitionKey.partition(internalRecordWrapper.wrap(record.copy("day", "2023-01-01")
+        .copy("name", "AAA BBB/CCC=_*-\\%")));
+
+    String partitionToPath = spec.partitionToPath(partitionKey);
+    Assert.assertEquals("day=2023-01-01/name=AAA+BBB%2FCCC%3D_*-%5C%25", partitionToPath);
+    GenericRecord partitionData = ArcticDataFiles.data(spec, partitionToPath);
+    StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
+    p1.set(partitionKey);
+    StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
+    p2.set(partitionData);
+
+    Assert.assertEquals(p1, p2);
+  }
 }

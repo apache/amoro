@@ -8,7 +8,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -114,7 +116,22 @@ public class ArcticDataFiles {
               field.name().equals(parts[0]),
           "Invalid partition: %s", partitions[i]);
 
-      data.set(i, ArcticDataFiles.fromPartitionString(field, spec.partitionType().fieldType(parts[0]), parts[1]));
+      String value;
+      if ("null".equals(parts[1])) {
+        value = null;
+      } else {
+        try {
+          /*
+          Decode URL with UTF-8, because in org.apache.iceberg.PartitionSpec#escape,
+          the value is encoded to URL with UTF-8
+           */
+          value = URLDecoder.decode(parts[1], "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          throw new IllegalStateException(String.format("failed to decode %s of %s", parts[1], partitionPath), e);
+        }
+      }
+
+      data.set(i, ArcticDataFiles.fromPartitionString(field, spec.partitionType().fieldType(parts[0]), value));
     }
 
     return data;
