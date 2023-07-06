@@ -37,6 +37,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                |
 | clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                       |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 存在时间超过 min-existing-time-minutes 未被引用的孤儿文件会被自动清理 |
+| clean-independent-delete-files.enabled      | true      | 是否开启游离文件删除                |
 
 ## Mixed streaming format
 

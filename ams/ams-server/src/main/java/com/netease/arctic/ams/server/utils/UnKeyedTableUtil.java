@@ -18,16 +18,23 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
@@ -36,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -75,6 +83,40 @@ public class UnKeyedTableUtil {
     }
 
     return validFilesPath;
+  }
+
+  public static Set<DeleteFile> getIndependentFiles(UnkeyedTable internalTable) {
+    if (internalTable.currentSnapshot() == null) {
+      return Collections.emptySet();
+    }
+    Set<String> deleteFilesPath = new HashSet<>();
+    TableScan tableScan = internalTable.newScan();
+    try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
+      for (FileScanTask fileScanTask : fileScanTasks) {
+        for (DeleteFile delete : fileScanTask.deletes()) {
+          deleteFilesPath.add(delete.path().toString());
+        }
+      }
+    } catch (IOException e) {
+      LOG.error("table scna plan files error", e);
+      return Collections.emptySet();
+    }
+
+    Set<DeleteFile> independentFiles = new HashSet<>();
+    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
+        .useSnapshot(internalTable.currentSnapshot().snapshotId())
+        .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
+        .build();
+
+    for (IcebergFileEntry entry : entriesScan.entries()) {
+      ContentFile<?> file = entry.getFile();
+      String path = file.path().toString();
+      if (!deleteFilesPath.contains(path)) {
+        independentFiles.add((DeleteFile) file);
+      }
+    }
+
+    return independentFiles;
   }
 
   private static String metadataTableName(String tableName, MetadataTableType type) {
