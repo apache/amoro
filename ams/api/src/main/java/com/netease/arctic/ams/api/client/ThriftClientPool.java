@@ -47,18 +47,9 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
   private final PoolConfig poolConfig;
+  private final String serviceName;
   private String url;
   private boolean serviceReset = false;
-
-  /**
-   * Construct a new pool using default config
-   *
-   * @param url
-   * @param factory
-   */
-  public ThriftClientPool(String url, ThriftClientFactory factory, ThriftPingFactory pingFactory) {
-    this(url, factory, pingFactory, new PoolConfig());
-  }
 
   /**
    * Construct a new pool using
@@ -69,7 +60,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
    */
   public ThriftClientPool(
       String url, ThriftClientFactory factory, ThriftPingFactory pingFactory,
-      PoolConfig config) {
+      PoolConfig config, String serviceName) {
     if (url == null || url.isEmpty()) {
       throw new IllegalArgumentException("url is empty!");
     }
@@ -87,13 +78,14 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
     // test if config change
     this.poolConfig.setTestOnReturn(true);
     this.poolConfig.setTestOnBorrow(true);
+    this.serviceName = serviceName;
     this.pool = new GenericObjectPool<>(new BasePooledObjectFactory<ThriftClient<T>>() {
 
       @Override
       public ThriftClient<T> create() throws Exception {
 
         // get from global list first
-        ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url);
+        ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url, serviceName);
         ServiceInfo serviceInfo = new ServiceInfo(arcticThriftUrl.host(), arcticThriftUrl.port());
         TTransport transport = getTransport(serviceInfo);
 
@@ -105,7 +97,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
           if (poolConfig.isFailover()) {
             for (int i = 0; i < 5; i++) {
               try {
-                arcticThriftUrl = ArcticThriftUrl.parse(url);
+                arcticThriftUrl = ArcticThriftUrl.parse(url, serviceName);
                 serviceInfo.setHost(arcticThriftUrl.host());
                 serviceInfo.setPort(arcticThriftUrl.port());
                 transport = getTransport(serviceInfo); // while break here
