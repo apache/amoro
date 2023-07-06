@@ -26,19 +26,31 @@ import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableScan;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
@@ -46,6 +58,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,6 +84,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
 public class TestOrphanFileClean extends TestBaseOptimizeBase {
+  
+  private static final Logger LOG = LoggerFactory.getLogger(TestOrphanFileClean.class);
 
   @Before
   public void mock() {
@@ -237,6 +253,64 @@ public class TestOrphanFileClean extends TestBaseOptimizeBase {
 
     assertMetadataExists(testKeyedTable.changeTable());
     assertMetadataExists(testKeyedTable.baseTable());
+  }
+  
+  @Test
+  public void cleanIndependentFiles() throws IOException {
+    assertIndependentFiles(testTable, 0);
+    testTable.newAppend().appendFile(FILE_B).commit();
+    testTable.newAppend().appendFile(FILE_C).commit();
+    
+    SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(testTable)
+        .buildBasePosDeleteWriter(0, 0, FILE_C.partition());
+    posDeleteWriter.delete(FILE_C.path(), 0);
+    List<DeleteFile> posDelete = posDeleteWriter.complete();
+    testTable.newRowDelta().addDeletes(posDelete.get(0)).commit();
+    assertIndependentFiles(testTable, 0);
+    
+    testTable.newRewrite().rewriteFiles(Collections.singleton(FILE_C), Collections.singleton(FILE_D))
+        .validateFromSnapshot(testTable.currentSnapshot().snapshotId()).commit();
+
+    assertIndependentFiles(testTable, 1);
+    
+    OrphanFilesCleanService.cleanIndependentFiles(testTable);
+    assertIndependentFiles(testTable, 0);
+  }
+  
+  private void assertIndependentFiles(UnkeyedTable unkeyedTable, int count) {
+    TableScan tableScan = unkeyedTable.newScan();
+    Set<String> files = new HashSet<>();
+    for (FileScanTask task : tableScan.planFiles()) {
+      files.add(task.file().path().toString());
+      for (DeleteFile delete : task.deletes()) {
+        files.add(delete.path().toString());
+      }
+    }
+    Set<String> independentFiles = new HashSet<>();
+    Table manifestTable =
+        MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) unkeyedTable).operations(),
+            unkeyedTable.name(), metadataTableName(unkeyedTable.name(), MetadataTableType.ENTRIES),
+            MetadataTableType.ENTRIES);
+    try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
+      for (Record entry : entries) {
+        GenericRecord dataFile = (GenericRecord) entry.get(ManifestEntryFields.DATA_FILE_ID);
+        int status = (int) entry.getField("status");
+        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
+        if (status != 2 && !files.contains(filePath)) {
+          independentFiles.add(filePath);
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    for (String independentFile : independentFiles) {
+      LOG.info("find independent files " + independentFile);
+    }
+    Assert.assertEquals(count, independentFiles.size());
+  }
+
+  private static String metadataTableName(String tableName, MetadataTableType type) {
+    return tableName + (tableName.contains("/") ? "#" : ".") + type;
   }
 
   private void assertMetadataExists(Table table) {
