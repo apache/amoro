@@ -29,6 +29,9 @@ public class LookupUtil {
         .lruMaximumSize(config.get(ArcticValidator.LOOKUP_CACHE_MAX_ROWS))
         .writeRecordThreadNum(config.get(ArcticValidator.ROCKSDB_WRITING_THREADS))
         .ttlAfterWrite(config.get(ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE))
+        .blockCacheCapacity(config.get(ArcticValidator.ROCKSDB_BLOCK_CACHE_CAPACITY))
+        .blockCacheNumShardBits(config.get(ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS))
         .build();
   }
+
 }

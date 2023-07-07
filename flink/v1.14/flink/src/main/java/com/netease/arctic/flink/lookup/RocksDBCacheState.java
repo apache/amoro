@@ -106,10 +106,8 @@ public abstract class RocksDBCacheState<V> {
       if (lookupOptions.isTTLAfterWriteValidated()) {
         cacheBuilder.expireAfterWrite(lookupOptions.ttlAfterWrite());
       }
-      guavaCache = cacheBuilder.build();
-    } else {
-      guavaCache = CacheBuilder.newBuilder().maximumSize(lookupOptions.lruMaximumSize()).build();
     }
+    guavaCache = CacheBuilder.newBuilder().maximumSize(lookupOptions.lruMaximumSize()).build();
 
     addGauge(columnFamilyName + "_queue_size", () -> lookupRecordsQueue.size());
 

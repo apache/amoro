@@ -236,6 +236,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .defaultValue(Duration.ofSeconds(10))
       .withDescription("Configuration option for specifying the interval in seconds to reload lookup data in RocksDB.\n" +
           "The default value is 10 seconds.");
+
   public static final ConfigOption<Boolean> ROCKSDB_AUTO_COMPACTIONS = ConfigOptions
       .key("rocksdb.auto-compactions")
       .booleanType()
@@ -248,6 +249,22 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .intType()
       .defaultValue(5)
       .withDescription("Writing data into rocksDB thread number.");
+
+  public static final ConfigOption<Long> ROCKSDB_BLOCK_CACHE_CAPACITY = ConfigOptions
+      .key("rocksdb.block-cache.capacity")
+      .longType()
+      .defaultValue(32 * 1024 * 1024L)
+      .withDescription("Use the LRUCache strategy for blocks, the size of the BlockCache can be configured based on " +
+          "your memory requirements and available system resources. Default is 32MB.");
+
+
+  public static final ConfigOption<Integer> ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS = ConfigOptions
+      .key("rocksdb.block-cache.numShardBits")
+      .intType()
+      .defaultValue(-1)
+      .withDescription("Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash of" +
+          " the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and" +
+          " number of shard bits will not exceed 6.");
 
   @Override
   public void validate(DescriptorProperties properties) {

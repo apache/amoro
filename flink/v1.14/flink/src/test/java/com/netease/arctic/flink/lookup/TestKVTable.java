@@ -22,6 +22,7 @@ package com.netease.arctic.flink.lookup;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicateExpressionVisitor;
 import com.netease.arctic.flink.lookup.filter.TestRowDataPredicateBase;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.memory.DataInputDeserializer;
@@ -53,6 +54,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +76,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@RunWith(value = Parameterized.class)
 public class TestKVTable extends TestRowDataPredicateBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestKVTable.class);
   @Rule
@@ -82,6 +86,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
   private final Configuration config = new Configuration();
   private final List<String> primaryKeys = Lists.newArrayList("id", "grade");
 
+  private boolean guavaCacheEnabled;
+
   private final Schema arcticSchema = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "grade", Types.StringType.get()),
@@ -89,9 +95,23 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
   private String dbPath;
 
+  @Parameterized.Parameters(name = "guavaCacheEnabled = {0}")
+  public static Object[][] parameters() {
+    return new Object[][]{
+        {true},
+        {false}};
+  }
+
+  public TestKVTable(boolean guavaCacheEnabled) {
+    this.guavaCacheEnabled = guavaCacheEnabled;
+  }
+
   @Before
   public void before() throws IOException {
     dbPath = temp.newFolder().getPath();
+    if (!guavaCacheEnabled) {
+      config.set(ArcticValidator.LOOKUP_CACHE_MAX_ROWS, 0L);
+    }
   }
 
   @Test

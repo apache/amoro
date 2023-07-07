@@ -73,6 +73,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_AUTO_COMPACTIONS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_BLOCK_CACHE_CAPACITY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
@@ -248,10 +250,12 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     // lookup
     options.add(LOOKUP_CACHE_MAX_ROWS);
     options.add(LOOKUP_RELOADING_INTERVAL);
+    options.add(LOOKUP_CACHE_TTL_AFTER_WRITE);
 
     options.add(ROCKSDB_AUTO_COMPACTIONS);
     options.add(ROCKSDB_WRITING_THREADS);
-    options.add(LOOKUP_CACHE_TTL_AFTER_WRITE);
+    options.add(ROCKSDB_BLOCK_CACHE_CAPACITY);
+    options.add(ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS);
     return options;
   }
 

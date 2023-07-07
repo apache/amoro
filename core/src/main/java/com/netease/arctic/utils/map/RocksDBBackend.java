@@ -23,6 +23,7 @@ import com.netease.arctic.utils.LocalFileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.lang.Validate;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.rocksdb.AbstractImmutableNativeReference;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -35,6 +36,7 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Statistics;
+import org.rocksdb.TtlDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,56 +59,57 @@ public class RocksDBBackend {
       new ThreadLocal<>();
 
   public static RocksDBBackend getOrCreateInstance() {
-    RocksDBBackend backend = instance.get();
-    if (backend == null) {
-      backend = create(BACKEND_BASE_DIR);
-      instance.set(backend);
-    }
-    if (backend.closed) {
-      backend = create(BACKEND_BASE_DIR);
-      instance.set(backend);
-    }
-    return backend;
+    Preconditions.checkNotNull(BACKEND_BASE_DIR, "The default rocksdb path is null.");
+    return getOrCreateInstance(BACKEND_BASE_DIR);
   }
 
   public static RocksDBBackend getOrCreateInstance(@Nullable String backendBaseDir) {
     if (backendBaseDir == null) {
-      return getOrCreateInstance();
+      Preconditions.checkNotNull(BACKEND_BASE_DIR, "The default rocksdb path is null.");
+      return getOrCreateInstance(BACKEND_BASE_DIR);
     }
+    return createIfNull(backendBaseDir, null);
+  }
+
+  public static RocksDBBackend getOrCreateInstance(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
+    if (backendBaseDir == null) {
+      Preconditions.checkNotNull(BACKEND_BASE_DIR, "The default rocksdb path is null.");
+      return getOrCreateInstance(BACKEND_BASE_DIR, ttlSeconds);
+    }
+    return createIfNull(backendBaseDir, ttlSeconds);
+  }
+
+  private final Map<String, ColumnFamilyHandle> handleMap = new HashMap<>();
+  private final Map<String, ColumnFamilyDescriptor> descriptorMap = new HashMap<>();
+  private RocksDB rocksDB;
+  private boolean closed = false;
+  private final String rocksDBBasePath;
+  private long totalBytesWritten;
+
+  private static RocksDBBackend createIfNull(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
     RocksDBBackend backend = instance.get();
     if (backend == null) {
-      backend = create(backendBaseDir);
+      backend = new RocksDBBackend(backendBaseDir, ttlSeconds);
       instance.set(backend);
     }
     if (backend.closed) {
-      backend = create(backendBaseDir);
+      backend = new RocksDBBackend(backendBaseDir, ttlSeconds);
       instance.set(backend);
     }
     return backend;
   }
 
-  private Map<String, ColumnFamilyHandle> handlesMap = new HashMap<>();
-  private Map<String, ColumnFamilyDescriptor> descriptorMap = new HashMap<>();
-  public RocksDB rocksDB;
-  private boolean closed = false;
-  private final String rocksDBBasePath;
-  private long totalBytesWritten;
-
-  private static RocksDBBackend create(@Nullable String backendBaseDir) {
-    return new RocksDBBackend(backendBaseDir);
-  }
-
-  private RocksDBBackend(@Nullable String backendBaseDir) {
+  private RocksDBBackend(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
     this.rocksDBBasePath = backendBaseDir == null ? UUID.randomUUID().toString() :
         String.format("%s/%s", backendBaseDir, UUID.randomUUID());
     totalBytesWritten = 0L;
-    setup();
+    setup(ttlSeconds);
   }
 
   /**
    * Initialized Rocks DB instance.
    */
-  private void setup() {
+  private void setup(@Nullable Integer ttlSeconds) {
     try {
       LOG.info("DELETING RocksDB instance persisted at " + rocksDBBasePath);
       LocalFileUtil.deleteDirectory(new File(rocksDBBasePath));
@@ -120,9 +123,16 @@ public class RocksDBBackend {
         }
       });
       final List<ColumnFamilyDescriptor> managedColumnFamilies = loadManagedColumnFamilies(dbOptions);
-      final List<ColumnFamilyHandle> managedHandles = new ArrayList<>();
+      List<ColumnFamilyHandle> managedHandles = new ArrayList<>();
       LocalFileUtil.mkdir(new File(rocksDBBasePath));
-      rocksDB = RocksDB.open(dbOptions, rocksDBBasePath, managedColumnFamilies, managedHandles);
+
+      if (ttlSeconds != null && ttlSeconds > 0) {
+        Options ttlDBOptions = new Options(dbOptions, new ColumnFamilyOptions());
+        rocksDB = TtlDB.open(ttlDBOptions, rocksDBBasePath, ttlSeconds, false);
+        managedHandles = rocksDB.createColumnFamilies(managedColumnFamilies);
+      } else {
+        rocksDB = RocksDB.open(dbOptions, rocksDBBasePath, managedColumnFamilies, managedHandles);
+      }
 
       Validate.isTrue(managedHandles.size() == managedColumnFamilies.size(),
           "Unexpected number of handles are returned");
@@ -134,7 +144,7 @@ public class RocksDBBackend {
 
         Validate.isTrue(familyNameFromDescriptor.equals(familyNameFromHandle),
             "Family Handles not in order with descriptors");
-        handlesMap.put(familyNameFromHandle, handle);
+        handleMap.put(familyNameFromHandle, handle);
         descriptorMap.put(familyNameFromDescriptor, descriptor);
       }
       addShutDownHook();
@@ -192,7 +202,7 @@ public class RocksDBBackend {
       Validate.isTrue(key != null && value != null,
           "values or keys in rocksdb can not be null!");
       byte[] payload = serializePayload(value);
-      rocksDB.put(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key), payload);
+      rocksDB.put(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key), payload);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -209,7 +219,7 @@ public class RocksDBBackend {
     try {
       Validate.isTrue(key != null && value != null,
           "values or keys in rocksdb can not be null!");
-      ColumnFamilyHandle cfHandler = handlesMap.get(columnFamilyName);
+      ColumnFamilyHandle cfHandler = handleMap.get(columnFamilyName);
       Validate.isTrue(cfHandler != null, "column family " +
           columnFamilyName + " does not exists in rocksdb");
       rocksDB.put(cfHandler, key, payload(value));
@@ -239,7 +249,7 @@ public class RocksDBBackend {
   public <K extends Serializable> void delete(String columnFamilyName, K key) {
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      rocksDB.delete(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
+      rocksDB.delete(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -254,7 +264,7 @@ public class RocksDBBackend {
   public void delete(String columnFamilyName, byte[] key) {
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      rocksDB.delete(handlesMap.get(columnFamilyName), key);
+      rocksDB.delete(handleMap.get(columnFamilyName), key);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -271,7 +281,7 @@ public class RocksDBBackend {
     Validate.isTrue(!closed);
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
+      byte[] val = rocksDB.get(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
       return val == null ? null : SerializationUtil.kryoDeserialize(val);
     } catch (Exception e) {
       throw new ArcticIOException(e);
@@ -288,7 +298,7 @@ public class RocksDBBackend {
     Validate.isTrue(!closed);
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), key);
+      byte[] val = rocksDB.get(handleMap.get(columnFamilyName), key);
       return val;
     } catch (Exception e) {
       throw new ArcticIOException(e);
@@ -318,7 +328,7 @@ public class RocksDBBackend {
    */
   @VisibleForTesting
   public <T extends Serializable> Iterator<T> valuesForTest(String columnFamilyName) {
-    return new ValueIteratorForTest<>(rocksDB.newIterator(handlesMap.get(columnFamilyName)));
+    return new ValueIteratorForTest<>(rocksDB.newIterator(handleMap.get(columnFamilyName)));
   }
 
   /**
@@ -327,7 +337,7 @@ public class RocksDBBackend {
    * @param columnFamilyName Column Family Name
    */
   public Iterator<byte[]> values(String columnFamilyName) {
-    return new ValueIterator(rocksDB.newIterator(handlesMap.get(columnFamilyName)));
+    return new ValueIterator(rocksDB.newIterator(handleMap.get(columnFamilyName)));
   }
 
   /**
@@ -338,7 +348,7 @@ public class RocksDBBackend {
    */
   public Iterator<byte[]> values(String columnFamilyName, byte[] seekOffset) {
     return new ValueIterator(
-        rocksDB.newIterator(handlesMap.get(columnFamilyName)),
+        rocksDB.newIterator(handleMap.get(columnFamilyName)),
         seekOffset);
   }
 
@@ -358,7 +368,7 @@ public class RocksDBBackend {
       try {
         ColumnFamilyDescriptor descriptor = getColumnFamilyDescriptor(colFamilyName.getBytes(), columnFamilyOptions);
         ColumnFamilyHandle handle = rocksDB.createColumnFamily(descriptor);
-        handlesMap.put(colFamilyName, handle);
+        handleMap.put(colFamilyName, handle);
         return descriptor;
       } catch (RocksDBException e) {
         throw new ArcticIOException(e);
@@ -375,14 +385,14 @@ public class RocksDBBackend {
     Validate.isTrue(!closed);
 
     descriptorMap.computeIfPresent(columnFamilyName, (colFamilyName, descriptor) -> {
-      ColumnFamilyHandle handle = handlesMap.get(colFamilyName);
+      ColumnFamilyHandle handle = handleMap.get(colFamilyName);
       try {
         rocksDB.dropColumnFamily(handle);
         handle.close();
       } catch (RocksDBException e) {
         throw new ArcticIOException(e);
       }
-      handlesMap.remove(columnFamilyName);
+      handleMap.remove(columnFamilyName);
       return null;
     });
   }
@@ -392,7 +402,7 @@ public class RocksDBBackend {
   }
 
   public ColumnFamilyHandle getColumnFamilyHandle(String columnFamilyName) {
-    return handlesMap.get(columnFamilyName);
+    return handleMap.get(columnFamilyName);
   }
 
   /**
@@ -401,8 +411,8 @@ public class RocksDBBackend {
   public void close() {
     if (!closed) {
       closed = true;
-      handlesMap.values().forEach(AbstractImmutableNativeReference::close);
-      handlesMap.clear();
+      handleMap.values().forEach(AbstractImmutableNativeReference::close);
+      handleMap.clear();
       descriptorMap.clear();
       rocksDB.close();
       try {

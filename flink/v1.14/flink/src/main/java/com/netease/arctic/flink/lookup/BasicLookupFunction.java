@@ -169,8 +169,8 @@ public class BasicLookupFunction<T> implements Serializable {
                 failureThrowable.compareAndSet(null, e);
               }
             },
-            reloadIntervalSeconds,
             0,
+            reloadIntervalSeconds,
             TimeUnit.MILLISECONDS);
   }
 

@@ -71,27 +71,6 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     this.valueSizeEstimator = valueSizeEstimator;
   }
 
-  protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
-                               @Nullable String backendBaseDir,
-                               boolean concurrent,
-                               SerializationUtil.SimpleSerializer<K> keySerializer,
-                               SerializationUtil.SimpleSerializer<T> valueSerializer,
-                               SizeEstimator<K> keySizeEstimator,
-                               SizeEstimator<T> valueSizeEstimator) {
-    if (concurrent) {
-      this.memoryMap = Maps.newConcurrentMap();
-    } else {
-      this.memoryMap = Maps.newHashMap();
-    }
-    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
-    this.backendBaseDir = backendBaseDir;
-    this.currentInMemoryMapSize = 0L;
-    this.keySerializer = keySerializer;
-    this.valueSerializer = valueSerializer;
-    this.keySizeEstimator = keySizeEstimator;
-    this.valueSizeEstimator = valueSizeEstimator;
-  }
-
   /**
    * Number of bytes spilled to disk.
    */

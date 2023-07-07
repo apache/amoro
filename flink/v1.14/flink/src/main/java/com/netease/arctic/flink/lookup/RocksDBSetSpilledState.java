@@ -19,24 +19,29 @@
 package com.netease.arctic.flink.lookup;
 
 import com.netease.arctic.utils.map.RocksDBBackend;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * A class that stores the secondary index in the cache. For {@link SecondaryIndexTable}.
  * <p>Support update the secondary index in the cache.
  */
-public class RocksDBSetMemoryState extends RocksDBCacheState<Set<ByteArrayWrapper>> {
+public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapper>> {
   protected BinaryRowDataSerializerWrapper joinKeySerializer;
+  /**
+   * Multi-threads would put and delete the joinKeys and Set<ByteArrayWrapper> in the rocksdb.
+   */
+  private final Object rocksDBLock = new Object();
 
-  public RocksDBSetMemoryState(
+  public RocksDBSetSpilledState(
       RocksDBBackend rocksDB,
       String columnFamilyName,
       BinaryRowDataSerializerWrapper joinKeySerializer,
@@ -93,16 +98,25 @@ public class RocksDBSetMemoryState extends RocksDBCacheState<Set<ByteArrayWrappe
   /**
    * Retrieve the elements of the key.
    * <p>Fetch the Collection from guava cache,
-   * if not present, return empty list.
+   * if not present, fetch the result from RocksDB.
    * if present, just return the result.
    *
    * @return not null, but may be empty.
    */
   public Collection<ByteArrayWrapper> get(RowData key) throws IOException {
-    final byte[] keyBytes = serializeKey(key);
-    ByteArrayWrapper keyWrap = wrap(keyBytes);
-    Set<ByteArrayWrapper> result = guavaCache.getIfPresent(keyWrap);
+    final byte[] joinKeyBytes = serializeKey(key);
+    ByteArrayWrapper joinKeyWrap = wrap(joinKeyBytes);
+    Set<ByteArrayWrapper> result = guavaCache.getIfPresent(joinKeyWrap);
     if (result == null) {
+      byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
+      if (uniqueKeysDeserialized != null) {
+        result = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
+      }
+
+      if (CollectionUtils.isNotEmpty(result)) {
+        guavaCache.put(joinKeyWrap, result);
+        return result;
+      }
       return Collections.emptyList();
     }
     return result;
@@ -111,27 +125,44 @@ public class RocksDBSetMemoryState extends RocksDBCacheState<Set<ByteArrayWrappe
   @Override
   public void putCacheValue(Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache,
                             ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-    guavaCache.asMap().compute(keyWrap, (keyWrapper, oldSet) -> {
-      if (oldSet == null) {
-        oldSet = Sets.newHashSet();
+    byte[] joinKeyBytes = keyWrap.bytes;
+
+    synchronized (rocksDBLock) {
+      byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
+      if (uniqueKeysDeserialized != null) {
+        Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
+        if (!set.contains(valueWrap)) {
+          set.add(valueWrap);
+          uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
+          rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
+        }
+      } else {
+        Set<ByteArrayWrapper> set = new HashSet<>();
+        set.add(valueWrap);
+        uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
+        rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
       }
-      oldSet.add(valueWrap);
-      return oldSet;
-    });
+    }
   }
 
   @Override
   public void removeValue(
       Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-    guavaCache.asMap().compute(keyWrap, (keyWrapper, oldSet) -> {
-      if (oldSet == null) {
-        return null;
+    byte[] joinKeyBytes = keyWrap.bytes;
+
+    synchronized (rocksDBLock) {
+      byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
+      if (uniqueKeysDeserialized == null) {
+        return;
       }
-      oldSet.remove(valueWrap);
-      if (oldSet.isEmpty()) {
-        return null;
+      Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
+      if (set.contains(valueWrap)) {
+        set.remove(valueWrap);
+        if (!set.isEmpty()) {
+          uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
+          rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
+        }
       }
-      return oldSet;
-    });
+    }
   }
 }

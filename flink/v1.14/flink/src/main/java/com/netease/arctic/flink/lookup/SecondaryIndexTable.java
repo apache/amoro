@@ -46,7 +46,7 @@ public class SecondaryIndexTable extends UniqueIndexTable {
   private static final Logger LOG = LoggerFactory.getLogger(SecondaryIndexTable.class);
   private static final long serialVersionUID = 8707586070315884365L;
   private final int[] secondaryKeyIndexMapping;
-  private final RocksDBSetMemoryState setState;
+  private final RocksDBSetSpilledState setState;
 
   private final LookupOptions lookupOptions;
 
@@ -126,8 +126,8 @@ public class SecondaryIndexTable extends UniqueIndexTable {
       RowData joinKey = new KeyRowData(secondaryKeyIndexMapping, value);
       byte[] uniqueKeyBytes = recordState.serializeKey(uniqueKey);
 
-      recordState.batchWrite(value.getRowKind(), uniqueKeyBytes, value);
-      setState.batchWrite(joinKey, uniqueKeyBytes);
+      recordState.asyncWrite(value.getRowKind(), uniqueKeyBytes, value);
+      setState.asyncWrite(joinKey, uniqueKeyBytes);
     }
     recordState.checkConcurrentFailed();
     setState.checkConcurrentFailed();

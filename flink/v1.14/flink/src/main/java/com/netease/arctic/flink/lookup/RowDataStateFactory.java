@@ -21,21 +21,22 @@ package com.netease.arctic.flink.lookup;
 import com.netease.arctic.utils.map.RocksDBBackend;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.Preconditions;
+import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyOptions;
-import org.rocksdb.CompressionType;
+import org.rocksdb.LRUCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RowDataStateFactory {
   private static final Logger LOG = LoggerFactory.getLogger(RowDataStateFactory.class);
 
-  private final RocksDBBackend db;
+  private final String dbPath;
+  private RocksDBBackend db;
   private final MetricGroup metricGroup;
 
   public RowDataStateFactory(String dbPath, MetricGroup metricGroup) {
     Preconditions.checkNotNull(metricGroup);
-
-    this.db = RocksDBBackend.getOrCreateInstance(dbPath);
+    this.dbPath = dbPath;
     this.metricGroup = metricGroup;
   }
 
@@ -44,10 +45,8 @@ public class RowDataStateFactory {
       BinaryRowDataSerializerWrapper keySerializer,
       BinaryRowDataSerializerWrapper valueSerializer,
       LookupOptions lookupOptions) {
-    ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-    configColumnFamilyOption(columnFamilyOptions);
+    db = createDB(lookupOptions, columnFamilyName);
 
-    db.addColumnFamily(columnFamilyName, columnFamilyOptions);
     return
         new RocksDBRecordState(
             db,
@@ -58,19 +57,15 @@ public class RowDataStateFactory {
             lookupOptions);
   }
 
-  public RocksDBSetMemoryState createSetState(
+  public RocksDBSetSpilledState createSetState(
       String columnFamilyName,
       BinaryRowDataSerializerWrapper keySerialization,
       BinaryRowDataSerializerWrapper elementSerialization,
       BinaryRowDataSerializerWrapper valueSerializer,
       LookupOptions lookupOptions) {
-    ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-    configColumnFamilyOption(columnFamilyOptions);
-    columnFamilyOptions.setCompressionType(CompressionType.NO_COMPRESSION);
+    db = createDB(lookupOptions, columnFamilyName);
 
-    db.addColumnFamily(columnFamilyName, columnFamilyOptions);
-
-    return new RocksDBSetMemoryState(
+    return new RocksDBSetSpilledState(
         db,
         columnFamilyName,
         keySerialization,
@@ -80,9 +75,26 @@ public class RowDataStateFactory {
         lookupOptions);
   }
 
+  RocksDBBackend createDB(final LookupOptions lookupOptions, final String columnFamilyName) {
+    if (lookupOptions.isTTLAfterWriteValidated()) {
+      db = RocksDBBackend.getOrCreateInstance(dbPath, (int) lookupOptions.ttlAfterWrite().getSeconds());
+    } else {
+      db = RocksDBBackend.getOrCreateInstance(dbPath);
+    }
+    ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+    configColumnFamilyOption(columnFamilyOptions, lookupOptions);
+    db.addColumnFamily(columnFamilyName, columnFamilyOptions);
+    return db;
+  }
 
-  private void configColumnFamilyOption(ColumnFamilyOptions columnFamilyOptions) {
+  private void configColumnFamilyOption(ColumnFamilyOptions columnFamilyOptions, LookupOptions lookupOptions) {
     columnFamilyOptions.setDisableAutoCompactions(true);
+
+    BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig();
+    blockBasedTableConfig.setBlockCache(new LRUCache(lookupOptions.blockCacheCapacity(), lookupOptions.numShardBits()));
+    columnFamilyOptions.setTableFormatConfig(blockBasedTableConfig);
+
     LOG.info("set db options[disable_auto_compactions={}]", true);
+    LOG.info("{}", lookupOptions);
   }
 }

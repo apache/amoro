@@ -34,7 +34,7 @@ import java.util.List;
  */
 public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
 
-  protected BinaryRowDataSerializerWrapper keySerializer;
+  protected BinaryRowDataSerializerWrapper joinKeySerializer;
 
   private static final byte[] EMPTY = new byte[0];
 
@@ -54,7 +54,7 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
         metricGroup,
         lookupOptions,
         false);
-    this.keySerializer = keySerialization;
+    this.joinKeySerializer = keySerialization;
   }
 
   /**
@@ -134,6 +134,6 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
   }
 
   public byte[] serializeKey(RowData key) throws IOException {
-    return serializeKey(keySerializer, key);
+    return serializeKey(joinKeySerializer, key);
   }
 }

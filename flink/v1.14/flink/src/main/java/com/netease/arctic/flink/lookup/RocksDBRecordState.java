@@ -58,12 +58,12 @@ public class RocksDBRecordState extends RocksDBCacheState<byte[]> {
    * @param key   The key of the pair.
    * @param value The value of the pair.
    */
-  public void batchWrite(RowData key, RowData value) throws IOException {
+  public void asyncWrite(RowData key, RowData value) throws IOException {
     byte[] keyBytes = serializeKey(key);
-    batchWrite(key.getRowKind(), keyBytes, value);
+    asyncWrite(key.getRowKind(), keyBytes, value);
   }
 
-  public void batchWrite(RowKind rowKind, byte[] keyBytes, RowData value) throws IOException {
+  public void asyncWrite(RowKind rowKind, byte[] keyBytes, RowData value) throws IOException {
     byte[] valueBytes = serializeValue(value);
     LookupRecord.OpType opType = convertToOpType(rowKind);
     putIntoQueue(LookupRecord.of(opType, keyBytes, valueBytes));

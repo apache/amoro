@@ -104,7 +104,7 @@ public class UniqueIndexTable implements KVTable<RowData> {
       }
 
       RowData key = new KeyRowData(uniqueKeyIndexMapping, value);
-      recordState.batchWrite(key, value);
+      recordState.asyncWrite(key, value);
     }
     recordState.checkConcurrentFailed();
   }

@@ -47,10 +47,6 @@
                     <groupId>org.ow2.asm</groupId>
                     <artifactId>asm</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.rocksdb</groupId>
-                    <artifactId>rocksdbjni</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
 
@@ -136,12 +132,6 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.ververica</groupId>
-            <artifactId>frocksdbjni</artifactId>
-            <version>6.20.3-ververica-1.0</version>
         </dependency>
 
         <!-- format dependencies -->
