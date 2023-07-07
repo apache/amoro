@@ -252,6 +252,8 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void dropCatalog(String catalogName) {
+      tables.removeIf(tableMeta -> tableMeta.getTableIdentifier().getCatalog().equals(catalogName));
+      databases.remove(catalogName);
       catalogs.removeIf(catalogMeta -> catalogMeta.getCatalogName().equals(catalogName));
     }
 

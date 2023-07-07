@@ -39,11 +39,15 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
@@ -55,6 +59,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -117,6 +122,40 @@ public class IcebergTableUtil {
     }
 
     return validFilesPath;
+  }
+
+  public static Set<DeleteFile> getIndependentFiles(UnkeyedTable internalTable) {
+    if (internalTable.currentSnapshot() == null) {
+      return Collections.emptySet();
+    }
+    Set<String> deleteFilesPath = new HashSet<>();
+    TableScan tableScan = internalTable.newScan();
+    try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
+      for (FileScanTask fileScanTask : fileScanTasks) {
+        for (DeleteFile delete : fileScanTask.deletes()) {
+          deleteFilesPath.add(delete.path().toString());
+        }
+      }
+    } catch (IOException e) {
+      LOG.error("table scna plan files error", e);
+      return Collections.emptySet();
+    }
+
+    Set<DeleteFile> independentFiles = new HashSet<>();
+    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
+        .useSnapshot(internalTable.currentSnapshot().snapshotId())
+        .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
+        .build();
+
+    for (IcebergFileEntry entry : entriesScan.entries()) {
+      ContentFile<?> file = entry.getFile();
+      String path = file.path().toString();
+      if (!deleteFilesPath.contains(path)) {
+        independentFiles.add((DeleteFile) file);
+      }
+    }
+
+    return independentFiles;
   }
 
 
