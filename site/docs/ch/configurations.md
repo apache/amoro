@@ -29,14 +29,15 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 数据清理配置对 Iceberg format, Mixed streaming format 都会生效。
 
-| 配置名称                                        | 默认值       | 描述                                 |
-|---------------------------------------------|-----------|------------------------------------|
-| table-expire.enabled                        | true      | 是否开启的表过期数据自动清理                     |
-| change.data.ttl.minutes                     | 10080（7天） | ChangeStore 数据的过期时间                |
-| snapshot.change.keep.minutes                | 10080（7天） | ChangeStore 历史快照的保留时间              |
-| snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                |
-| clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                       |
+| 配置名称                                        | 默认值       | 描述                                               |
+|---------------------------------------------|-----------|--------------------------------------------------|
+| table-expire.enabled                        | true      | 是否开启的表过期数据自动清理                                   |
+| change.data.ttl.minutes                     | 10080（7天） | ChangeStore 数据的过期时间                              |
+| snapshot.change.keep.minutes                | 10080（7天） | ChangeStore 历史快照的保留时间                            |
+| snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                              |
+| clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                                     |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 存在时间超过 min-existing-time-minutes 未被引用的孤儿文件会被自动清理 |
+| clean-independent-delete-files.enabled      | true      | 是否开启游离 delete 文件自动清理                             |
 
 ## Mixed streaming format
 
