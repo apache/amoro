@@ -11,16 +11,16 @@
     >
       <template #headerCell="{ column }">
         <template v-if="column.dataIndex === 'tasks'">
-          <div class="g-text-center">{{column.title}}</div>
-          <div class="g-text-center">success / total</div>
+          <div class="">{{column.title}}</div>
+          <div class="">success / total</div>
         </template>
         <template v-if="column.dataIndex === 'inputFiles'">
-          <div class="g-text-center">{{column.title}}</div>
-          <div class="g-text-center">size / count</div>
+          <div class="">{{column.title}}</div>
+          <div class="">size / count</div>
         </template>
         <template v-if="column.dataIndex === 'outputFiles'">
-          <div class="g-text-center">{{column.title}}</div>
-          <div class="g-text-center">size / count</div>
+          <div class="">{{column.title}}</div>
+          <div class="">size / count</div>
         </template>
       </template>
       <template #bodyCell="{record, column }">
@@ -28,8 +28,8 @@
           <div class="g-flex-ac">
             <span :style="{'background-color': (STATUS_CONFIG[record.status] || {}).color}" class="status-icon"></span>
             <span>{{ record.status }}</span>
-            <a-tooltip v-if="record.status === 'FAILED'" class="g-ml-4" overlayClassName="table-failed-tip">
-              <template #title><span class="tip-title">{{record.failReason}}</span></template>
+            <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
+              <template #title><div class="tip-title">{{record.failReason}}</div></template>
               <question-circle-outlined />
             </a-tooltip>
           </div>
@@ -159,6 +159,9 @@ onMounted(() => {
 </style>
 <style lang="less">
 .table-failed-tip{
+  .ant-tooltip-content{
+    width: 800px;
+  }
   .tip-title{
     display: block;
     max-height: 700px;
