@@ -91,8 +91,6 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     records.add(tableTestHelper().generateTestRecord(3, "test3", 0, "2022-01-02T00:00:00"));
     List<DataFile> dataFiles2 = tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L,
         records, false);
-    appendFiles = testTable.newAppend();
-    dataFiles2.forEach(appendFiles::appendFile);
     testTable.newRewrite().rewriteFiles(Collections.singleton(dataFiles1.get(0)),
             Collections.singleton(dataFiles2.get(0)))
       .validateFromSnapshot(testTable.currentSnapshot().snapshotId()).commit();

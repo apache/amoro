@@ -290,7 +290,6 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       return 0;
     }
     RewriteFiles rewriteFiles = internalTable.newRewrite();
-    rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
     rewriteFiles.rewriteFiles(Collections.emptySet(), independentFiles,
         Collections.emptySet(), Collections.emptySet());
     try {
