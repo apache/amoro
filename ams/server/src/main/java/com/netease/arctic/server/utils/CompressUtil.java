@@ -48,11 +48,11 @@ public class CompressUtil {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     byte[] buffer = new byte[1024];
     int len;
-    try (GZIPInputStream gzipInputStream = new GZIPInputStream(byteArrayInputStream)){
+    try (GZIPInputStream gzipInputStream = new GZIPInputStream(byteArrayInputStream)) {
       while ((len = gzipInputStream.read(buffer)) > 0) {
         byteArrayOutputStream.write(buffer, 0, len);
       }
-    }catch (IOException e){
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
     return byteArrayOutputStream.toByteArray();
