@@ -55,6 +55,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
   @Test
   public void testCreateAndDropDatabase() {
     String createDbName = TableTestHelper.TEST_DB_NAME;
+    if (getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    }
     Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
     getCatalog().createDatabase(createDbName);
     Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
@@ -65,6 +68,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
   @Test
   public void testCreateDuplicateDatabase() {
     String createDbName = TableTestHelper.TEST_DB_NAME;
+    if (getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    }
     Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
     getCatalog().createDatabase(createDbName);
     Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
