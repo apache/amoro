@@ -1,5 +1,6 @@
 package com.netease.arctic.server.persistence.converter;
 
+import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
@@ -19,7 +20,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
       return;
     }
 
-    ps.setBytes(i, SerializationUtil.simpleSerialize(parameter).array());
+    ps.setBytes(i, CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array()));
   }
 
   @Override
@@ -28,7 +29,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 
   @Override
@@ -37,7 +38,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 
   @Override
@@ -46,6 +47,6 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 }
