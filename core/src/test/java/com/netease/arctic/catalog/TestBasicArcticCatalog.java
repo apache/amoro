@@ -34,13 +34,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RunWith(Parameterized.class)
 public class TestBasicArcticCatalog extends CatalogTestBase {
-
-  private static final Logger LOG = LoggerFactory.getLogger(TestBasicArcticCatalog.class);
 
   public TestBasicArcticCatalog(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper);
@@ -108,14 +104,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
 
   @After
   public void after() {
-    try {
-      getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    } catch (Throwable t) {
-      LOG.warn("failed to drop table {} ", TableTestHelper.TEST_TABLE_ID, t);
-    } finally {
-      if (getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-        getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
-      }
+    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    if (getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
     }
   }
 
