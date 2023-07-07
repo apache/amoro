@@ -2,6 +2,7 @@ package com.netease.arctic.server.persistence.converter;
 
 import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
+import java.io.ByteArrayInputStream;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
@@ -20,7 +21,8 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
       return;
     }
 
-    ps.setBytes(i, CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array()));
+    ps.setBinaryStream(i,
+        new ByteArrayInputStream(CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array())));
   }
 
   @Override
