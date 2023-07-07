@@ -137,7 +137,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   public void removeOptimizer(String resourceId) {
-    authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
+    authOptimizers.entrySet().removeIf(op -> op.getValue().getResourceId().equals(resourceId));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
