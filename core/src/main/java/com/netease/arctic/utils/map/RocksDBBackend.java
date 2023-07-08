@@ -21,7 +21,7 @@ package com.netease.arctic.utils.map;
 import com.netease.arctic.ArcticIOException;
 import com.netease.arctic.utils.LocalFileUtil;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.rocksdb.AbstractImmutableNativeReference;
 import org.rocksdb.ColumnFamilyDescriptor;
