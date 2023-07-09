@@ -21,6 +21,7 @@
 
 package com.netease.arctic.flink.read.source;
 
+import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
@@ -50,6 +51,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private final String scanStartupMode;
+  private RuntimeExecutionMode runtimeExecutionMode;
 
   protected ArcticScanContext(
       boolean caseSensitive,
@@ -67,13 +69,15 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       String nameMapping,
       Schema schema,
       List<Expression> filters,
+      RuntimeExecutionMode runtimeExecutionMode,
       long limit,
       boolean includeColumnStats,
       boolean exposeLocality,
       Integer planParallelism,
       int maxPlanningSnapshotCount,
       String scanStartupMode) {
-    super(caseSensitive,
+    super(
+        caseSensitive,
         snapshotId,
         startingStrategy,
         startSnapshotTimestamp,
@@ -93,7 +97,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
         exposeLocality,
         planParallelism,
         maxPlanningSnapshotCount);
+    this.runtimeExecutionMode = runtimeExecutionMode;
     this.scanStartupMode = scanStartupMode;
+  }
+
+  public boolean isBatchRuntime() {
+    return runtimeExecutionMode.equals(RuntimeExecutionMode.BATCH);
   }
 
   public boolean caseSensitive() {
@@ -179,6 +188,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private String nameMapping;
     private Schema projectedSchema;
     private List<Expression> filters;
+    private RuntimeExecutionMode runtimeExecutionMode = RuntimeExecutionMode.STREAMING;
     private long limit = -1L;
     private boolean exposeLocality;
     private Integer planParallelism =
@@ -265,6 +275,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    public Builder runtimeExecutionMode(RuntimeExecutionMode runtimeExecutionMode) {
+      this.runtimeExecutionMode = runtimeExecutionMode;
+      return this;
+    }
+
     public Builder limit(long newLimit) {
       this.limit = newLimit;
       return this;
@@ -319,7 +334,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public ArcticScanContext build() {
       scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
-      Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
+      Preconditions.checkArgument(
+          Objects.isNull(scanStartupMode) ||
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
           String.format("only support %s, %s when %s is %s",
@@ -340,6 +356,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           nameMapping,
           projectedSchema,
           filters,
+          runtimeExecutionMode,
           limit,
           includeColumnStats,
           exposeLocality,

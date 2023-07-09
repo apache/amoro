@@ -69,7 +69,12 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (shouldEnumerate) {
       keyedTable.baseTable().refresh();
       keyedTable.changeTable().refresh();
-      List<ArcticSplit> splits = FlinkSplitPlanner.planFullTable(keyedTable, new AtomicInteger());
+      List<ArcticSplit> splits;
+      if (scanContext.isBatchRuntime()) {
+        splits = FlinkSplitPlanner.mergeOnReadPlan(keyedTable, scanContext.filters(), new AtomicInteger());
+      } else {
+        splits = FlinkSplitPlanner.planFullTable(keyedTable, new AtomicInteger());
+      }
       assigner.onDiscoveredSplits(splits);
       LOG.info("Discovered {} splits from table {} during job initialization",
           splits.size(), keyedTable.name());

@@ -96,7 +96,11 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.context = enumContext;
     this.splitAssigner = splitAssigner;
     this.scanContext = scanContext;
-    this.continuousSplitPlanner = new ContinuousSplitPlannerImpl(loader);
+    if (scanContext.isBatchRuntime()) {
+      this.continuousSplitPlanner = new MergeOnReadIncrementalPlanner(loader);
+    } else {
+      this.continuousSplitPlanner = new ContinuousSplitPlannerImpl(loader);
+    }
     this.snapshotDiscoveryIntervalMs = scanContext.monitorInterval().toMillis();
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {

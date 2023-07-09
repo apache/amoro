@@ -87,7 +87,7 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 
 public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
-  
+
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
       MiniClusterResource.createWithClassloaderCheckDisabled();
@@ -139,12 +139,19 @@ public class FlinkTestBase extends TableTestBase {
   }
 
   protected StreamTableEnvironment getTableEnv() {
+    return getTableEnv(null);
+  }
+
+  protected StreamTableEnvironment getTableEnv(EnvironmentSettings environmentSettings) {
     if (tEnv == null) {
       synchronized (this) {
         if (tEnv == null) {
-          this.tEnv = StreamTableEnvironment.create(getEnv(), EnvironmentSettings
-              .newInstance()
-              .inStreamingMode().build());
+          if (null == environmentSettings) {
+            environmentSettings = EnvironmentSettings
+                .newInstance()
+                .inStreamingMode().build();
+          }
+          this.tEnv = StreamTableEnvironment.create(getEnv(), environmentSettings);
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
@@ -176,7 +183,11 @@ public class FlinkTestBase extends TableTestBase {
   }
 
   protected List<Row> sql(String query, Object... args) {
-    TableResult tableResult = getTableEnv()
+    return sql(getTableEnv(), query, args);
+  }
+
+  protected List<Row> sql(TableEnvironment env, String query, Object... args) {
+    TableResult tableResult = env
         .executeSql(String.format(query, args));
     tableResult.getJobClient().ifPresent(c -> {
       try {
@@ -232,7 +243,7 @@ public class FlinkTestBase extends TableTestBase {
     ImmutableSet.Builder<Record> b = ImmutableSet.builder();
     rows.forEach(r ->
         b.add(record.copy(ImmutableMap.of("id", r.getField(0), "name", r.getField(1),
-          "ts", r.getField(2), "op_time", r.getField(3)))));
+            "ts", r.getField(2), "op_time", r.getField(3)))));
     return b.build();
   }
 
@@ -286,13 +297,15 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType,
+      boolean base) {
     return createKeyedTaskWriter(keyedTable, rowType, base, 3);
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base, long mask) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType,
+      boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setMask(mask);

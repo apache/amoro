@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
+import com.netease.arctic.flink.read.hybrid.assigner.StaticSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumStateSerializer;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumerator;
@@ -76,7 +77,8 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
 
   @Override
   public Boundedness getBoundedness() {
-    return scanContext.isStreaming() ? Boundedness.CONTINUOUS_UNBOUNDED : Boundedness.BOUNDED;
+    return (scanContext.isBatchRuntime() || !scanContext.isStreaming()) ? Boundedness.BOUNDED :
+        Boundedness.CONTINUOUS_UNBOUNDED;
   }
 
   @Override
@@ -93,19 +95,28 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   private SplitEnumerator<ArcticSplit, ArcticSourceEnumState> createEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext, ArcticSourceEnumState enumState) {
     SplitAssigner splitAssigner;
+
     if (enumState == null) {
-      splitAssigner = new ShuffleSplitAssigner(enumContext);
+      if (scanContext.isBatchRuntime()) {
+        splitAssigner = new StaticSplitAssigner(enumContext);
+      } else {
+        splitAssigner = new ShuffleSplitAssigner(enumContext);
+      }
     } else {
       LOG.info("Arctic source restored {} splits from state for table {}",
           enumState.pendingSplits().size(), tableName);
-      splitAssigner = new ShuffleSplitAssigner(enumContext, enumState.pendingSplits(),
-          enumState.shuffleSplitRelation());
+      if (scanContext.isBatchRuntime()) {
+        splitAssigner = new StaticSplitAssigner(enumContext, enumState.pendingSplits());
+      } else {
+        splitAssigner = new ShuffleSplitAssigner(enumContext, enumState.pendingSplits(),
+            enumState.shuffleSplitRelation());
+      }
     }
 
-    if (scanContext.isStreaming()) {
-      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
+    if (scanContext.isBatchRuntime() || !scanContext.isStreaming()) {
+      return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState);
     } else {
-      return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
+      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
     }
   }
 

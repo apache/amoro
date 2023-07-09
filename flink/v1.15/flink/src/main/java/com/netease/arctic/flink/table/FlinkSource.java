@@ -27,10 +27,12 @@ import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ExecutionOptions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -73,6 +75,7 @@ public class FlinkSource {
   public static final class Builder {
 
     private static final String ARCTIC_FILE_TRANSFORMATION = "arctic-file";
+    private RuntimeExecutionMode runtimeExecutionMode;
     private ProviderContext context;
     private StreamExecutionEnvironment env;
     private ArcticTable arcticTable;
@@ -111,6 +114,12 @@ public class FlinkSource {
 
     public Builder project(TableSchema tableSchema) {
       this.projectedSchema = tableSchema;
+      return this;
+    }
+
+    public Builder runtimeExecutionMode(RuntimeExecutionMode runtimeExecutionMode) {
+      this.runtimeExecutionMode = runtimeExecutionMode;
+      contextBuilder.runtimeExecutionMode(runtimeExecutionMode);
       return this;
     }
 
@@ -168,6 +177,7 @@ public class FlinkSource {
         }
       }
       contextBuilder.fromProperties(properties);
+      contextBuilder.runtimeExecutionMode(env.getConfiguration().get(ExecutionOptions.RUNTIME_MODE));
       ArcticScanContext scanContext = contextBuilder.build();
 
       RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(

@@ -20,8 +20,10 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ExecutionOptions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -37,6 +39,7 @@ import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushD
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.expressions.ResolvedExpression;
+import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
@@ -72,6 +75,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   private final ArcticTableLoader loader;
   private final TableSchema tableSchema;
   private final ReadableConfig readableConfig;
+  private final DynamicTableFactory.Context context;
 
   private ArcticFileSource(ArcticFileSource toCopy) {
     this.loader = toCopy.loader;
@@ -81,15 +85,18 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.filters = toCopy.filters;
     this.readableConfig = toCopy.readableConfig;
     this.table = toCopy.table;
+    this.context = toCopy.context;
   }
 
-  public ArcticFileSource(ArcticTableLoader loader,
-                          TableSchema tableSchema,
-                          int[] projectedFields,
-                          ArcticTable table,
-                          long limit,
-                          List<Expression> filters,
-                          ReadableConfig readableConfig) {
+  public ArcticFileSource(
+      ArcticTableLoader loader,
+      TableSchema tableSchema,
+      int[] projectedFields,
+      ArcticTable table,
+      long limit,
+      List<Expression> filters,
+      ReadableConfig readableConfig,
+      DynamicTableFactory.Context context) {
     this.loader = loader;
     this.tableSchema = tableSchema;
     this.projectedFields = projectedFields;
@@ -97,11 +104,14 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.table = table;
     this.filters = filters;
     this.readableConfig = readableConfig;
+    this.context = context;
   }
 
-  public ArcticFileSource(ArcticTableLoader loader, TableSchema tableSchema, ArcticTable table,
-                          ReadableConfig readableConfig) {
-    this(loader, tableSchema, null, table, -1, ImmutableList.of(), readableConfig);
+  public ArcticFileSource(
+      ArcticTableLoader loader, TableSchema tableSchema, ArcticTable table,
+      ReadableConfig readableConfig, DynamicTableFactory.Context context) {
+    this(loader, tableSchema, null, table, -1, ImmutableList.of(), readableConfig,
+        context);
   }
 
   @Override
@@ -121,6 +131,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
         .tableLoader(loader)
         .arcticTable(table)
         .project(getProjectedSchema())
+        .runtimeExecutionMode(execEnv.getConfiguration().get(ExecutionOptions.RUNTIME_MODE))
         .limit(limit)
         .filters(filters)
         .flinkConf(readableConfig)
@@ -179,9 +190,17 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     return false;
   }
 
+  private boolean isBounded() {
+    return context.getConfiguration().get(ExecutionOptions.RUNTIME_MODE).equals(RuntimeExecutionMode.BATCH) ||
+        org.apache.iceberg.flink.source.FlinkSource.isBounded(table.properties());
+  }
+
   @Override
   public ChangelogMode getChangelogMode() {
     if (table.isUnkeyedTable()) {
+      return ChangelogMode.insertOnly();
+    }
+    if (context.getConfiguration().get(ExecutionOptions.RUNTIME_MODE).equals(RuntimeExecutionMode.BATCH)) {
       return ChangelogMode.insertOnly();
     }
     return ChangelogMode.newBuilder()
@@ -204,7 +223,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
 
       @Override
       public boolean isBounded() {
-        return org.apache.iceberg.flink.source.FlinkSource.isBounded(table.properties());
+        return ArcticFileSource.this.isBounded();
       }
     };
   }

@@ -158,7 +158,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         LOG.info("build file reader");
-        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll);
+        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll, context);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
@@ -360,5 +360,4 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
                 helper.discoverDecodingFormat(
                     DeserializationFormatFactory.class, VALUE_FORMAT));
   }
-
 }

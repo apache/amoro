@@ -21,8 +21,10 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
+import com.netease.arctic.flink.read.hybrid.split.MergeOnReadSplit;
 import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
 import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.MORDataIterator;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.iceberg.io.CloseableIterator;
 
@@ -41,7 +43,11 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
   @Override
   public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(ArcticSplit split) {
     DataIterator<T> inputIterator = createDataIterator(split);
-    if (inputIterator instanceof ChangeLogDataIterator) {
+    if (inputIterator instanceof MORDataIterator) {
+      MORDataIterator<T> morDataIterator = (MORDataIterator<T>) inputIterator;
+      MergeOnReadSplit mergeOnReadSplit = split.asMergeOnReadSplit();
+      morDataIterator.seek(1, mergeOnReadSplit.recordOffset());
+    } else if (inputIterator instanceof ChangeLogDataIterator) {
       ChangeLogDataIterator<T> changelogInputIterator = (ChangeLogDataIterator<T>) inputIterator;
       ChangelogSplit changelogSplit = split.asChangelogSplit();
       changelogInputIterator.seek(

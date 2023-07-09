@@ -36,13 +36,17 @@ public class ArcticSplitState {
   }
 
   public ArcticSplit toSourceSplit() {
-    if (arcticSplit.isSnapshotSplit()) {
+    if (arcticSplit.isMergeOnReadSplit()) {
+      MergeOnReadSplit mergeOnReadSplit = (MergeOnReadSplit) arcticSplit;
+      mergeOnReadSplit.updateOffset(new Object[] {currentInsertFileOffset, currentInsertRecordOffset});
+      return mergeOnReadSplit;
+    } else if (arcticSplit.isSnapshotSplit()) {
       SnapshotSplit snapshotSplit = (SnapshotSplit) arcticSplit;
-      snapshotSplit.updateOffset(new Object[]{currentInsertFileOffset, currentInsertRecordOffset});
+      snapshotSplit.updateOffset(new Object[] {currentInsertFileOffset, currentInsertRecordOffset});
       return snapshotSplit;
     } else if (arcticSplit.isChangelogSplit()) {
       ChangelogSplit changelogSplit = (ChangelogSplit) arcticSplit;
-      changelogSplit.updateOffset(new Object[]{
+      changelogSplit.updateOffset(new Object[] {
           currentInsertFileOffset,
           currentInsertRecordOffset,
           currentDeleteFileOffset,
@@ -52,10 +56,12 @@ public class ArcticSplitState {
     }
 
     throw new FlinkRuntimeException(
-        String.format("As of now this source split is unsupported %s, available split are %s, %s",
+        String.format(
+            "As of now this source split is unsupported %s, available split are %s, %s, %s",
             arcticSplit.getClass().getSimpleName(),
             SnapshotSplit.class.getSimpleName(),
-            ChangelogSplit.class.getSimpleName()));
+            ChangelogSplit.class.getSimpleName(),
+            MergeOnReadSplit.class.getSimpleName()));
   }
 
   public void updateOffset(Object[] offsets) {

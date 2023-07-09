@@ -20,13 +20,14 @@ package com.netease.arctic.flink.read.hybrid.split;
 
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.utils.FileScanTaskUtil;
-import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class MergeOnReadSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final KeyedTableScanTask keyedTableScanTask;
+  private long recordOffset;
 
   public MergeOnReadSplit(int taskIndex, KeyedTableScanTask keyedTableScanTask) {
     this.taskIndex = taskIndex;
@@ -37,14 +38,19 @@ public class MergeOnReadSplit extends ArcticSplit {
     return keyedTableScanTask;
   }
 
+  public long recordOffset() {
+    return recordOffset;
+  }
+
   @Override
   public Integer taskIndex() {
     return taskIndex;
   }
 
   @Override
-  public void updateOffset(Object[] recordOffsets) {
-    throw new FlinkRuntimeException("Merge On Read not support offset state right now.");
+  public void updateOffset(Object[] offsets) {
+    Preconditions.checkArgument(offsets.length == 2);
+    recordOffset = (long) offsets[1];
   }
 
   @Override
