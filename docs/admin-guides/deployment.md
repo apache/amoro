@@ -93,7 +93,10 @@ ams:
   server-expose-host: "127.0.0.1" #The IP address for service external exposure, default is 127.0.0.1.
   
   thrift-server:
-    bind-port: 1260 #The port for accessing AMS Thrift service.
+    table-service:
+      bind-port: 1260 #The port for accessing AMS table service Thrift server.
+    optimizing-service:
+      bind-port: 1261 #The port for accessing AMS optimizing service Thrift server.
 
   http-server:
     bind-port: 1630 #The port for accessing AMS Dashboard.
@@ -200,11 +203,14 @@ ams:
     timeout: 60000 # 1min
 
   thrift-server:
-    bind-port: 1260
     max-message-size: 104857600 # 100MB
-    worker-thread-count: 20
     selector-thread-count: 2
     selector-queue-size: 4
+    table-service:
+      bind-port: 1260
+      worker-thread-count: 20
+    optimizing-service:
+      bind-port: 1261
 
   http-server:
     bind-port: 1630
