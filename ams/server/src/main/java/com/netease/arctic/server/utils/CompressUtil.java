@@ -26,6 +26,9 @@ import java.util.zip.GZIPOutputStream;
 
 public class CompressUtil {
 
+  /**
+   * Compress the given data using gzip.
+   */
   public static byte[] gzip(byte[] bytes) {
     if (bytes == null) {
       return null;
@@ -40,6 +43,9 @@ public class CompressUtil {
     return byteArrayOutputStream.toByteArray();
   }
 
+  /**
+   * Decompress the given data using gzip.
+   */
   public static byte[] unGzip(byte[] bytes) {
     if (bytes == null) {
       return null;
