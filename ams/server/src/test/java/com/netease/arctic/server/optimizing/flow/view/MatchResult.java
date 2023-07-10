@@ -60,7 +60,8 @@ public class MatchResult {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("notInView", notInView)
+    return MoreObjects.toStringHelper(this)
+        .add("notInView", notInView)
         .add("inViewButCountError", inViewButCountError)
         .add("inViewButMiss", inViewButMiss)
         .toString();
