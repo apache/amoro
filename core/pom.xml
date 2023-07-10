@@ -116,6 +116,11 @@
             <classifier>nohive</classifier>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
         <!-- test dependencies -->
 
         <dependency>
