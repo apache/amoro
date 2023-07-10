@@ -277,13 +277,19 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkOrphanFilesAndDelete() {
     List<String> partitionsToCheck = this.partitionToCreate.values()
         .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+    partitionsToCheck.addAll(
+        this.partitionToAlter.values().stream()
+            .map(partition -> partition.getSd().getLocation())
+            .collect(Collectors.toList())
+    );
+    Set<String> addFilesPathCollect = addFiles.stream()
+        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toSet());
+    Set<String> deleteFilesPathCollect = deleteFiles.stream()
+        .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toSet());
     for (String partitionLocation : partitionsToCheck) {
-      List<String> addFilesPathCollect = addFiles.stream()
-          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-      List<String> deleteFilesPathCollect = deleteFiles.stream()
-          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
-      List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
-      for (FileStatus filePath : exisitedFiles) {
+      LOG.info("CheckOrphanFiles for partition location:{}", partitionLocation);
+      List<FileStatus> existedFiles = table.io().list(partitionLocation);
+      for (FileStatus filePath : existedFiles) {
         if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
             !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
           table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
