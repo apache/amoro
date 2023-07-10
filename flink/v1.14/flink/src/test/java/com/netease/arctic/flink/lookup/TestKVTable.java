@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
 import static org.junit.Assert.assertEquals;
 
@@ -209,6 +210,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   @Test
   public void testInitialSecondaryKeyTable() throws IOException {
     config.setInteger(ROCKSDB_WRITING_THREADS, 10);
+    config.set(LOOKUP_CACHE_TTL_AFTER_WRITE, Duration.ofMinutes(1000));
     // primary keys are id and grade.
     List<String> joinKeys = Lists.newArrayList("id");
     try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTable(joinKeys)) {

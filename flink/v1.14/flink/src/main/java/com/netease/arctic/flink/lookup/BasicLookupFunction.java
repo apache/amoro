@@ -121,6 +121,16 @@ public class BasicLookupFunction<T> implements Serializable {
    * @throws IOException If serialize or deserialize failed
    */
   public void open(FunctionContext context) throws IOException {
+    init(context);
+    start();
+  }
+
+  /**
+   * Initialize the arcticTable, kvTable and incrementalLoader.
+   *
+   * @param context
+   */
+  public void init(FunctionContext context) {
     LOG.info("lookup function rowDtaPredicate: {}.", predicate);
     MetricGroup metricGroup = context.getMetricGroup().addGroup(GROUP_NAME_LOOKUP);
     if (arcticTable == null) {
@@ -151,7 +161,9 @@ public class BasicLookupFunction<T> implements Serializable {
             readerFunction,
             filters
         );
+  }
 
+  public void start() {
     // Keep the first-time synchronized loading to avoid a mass of null-match records during initialization
     checkAndLoad();
 
@@ -224,6 +236,10 @@ public class BasicLookupFunction<T> implements Serializable {
         arcticTable.name(), lookupLoadingTimeMs.get());
 
     loading = false;
+  }
+
+  public KVTable<T> getKVTable() {
+    return kvTable;
   }
 
   public void close() throws Exception {

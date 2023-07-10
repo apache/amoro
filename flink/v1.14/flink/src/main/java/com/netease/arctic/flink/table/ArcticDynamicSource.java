@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
 public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushDown,
     SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown, LookupTableSource {
 
-  public static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
 
   protected final String tableName;
 
@@ -265,7 +265,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
             readerFunction);
   }
 
-  private DataIteratorReaderFunction<RowData> generateReaderFunction(ArcticTable arcticTable, Schema projectedSchema) {
+  protected DataIteratorReaderFunction<RowData> generateReaderFunction(ArcticTable arcticTable, Schema projectedSchema) {
     return new RowDataReaderFunction(
         new Configuration(),
         arcticTable.schema(),
@@ -278,8 +278,10 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     );
   }
 
-  private AbstractAdaptHiveArcticDataReader<RowData> generateMORReader(
+  protected AbstractAdaptHiveArcticDataReader<RowData> generateMORReader(
       ArcticTable arcticTable, Schema projectedSchema) {
+    BiFunction<Type, Object, Object> convertConstant = new ConvertTask();
+
     return new FlinkArcticMORDataReader(
         arcticTable.io(),
         arcticTable.schema(),
@@ -287,10 +289,20 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
         arcticTable.asKeyedTable().primaryKeySpec(),
         null,
         true,
-        (BiFunction<Type, Object, Object> & Serializable) RowDataUtil::convertConstant,
+        convertConstant,
         true
     );
   }
+
+  static class ConvertTask implements BiFunction<Type, Object, Object>, Serializable {
+    private static final long serialVersionUID = 4607513893568225789L;
+
+    @Override
+    public Object apply(Type t, Object u) {
+      return RowDataUtil.convertConstant(t, u);
+    }
+  }
+
 
   protected List<String> getJoinKeyNames(int[] joinKeys, Schema projectedSchema) {
     return Arrays

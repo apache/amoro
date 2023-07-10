@@ -106,7 +106,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
     this.convertConstant = convertConstant;
-    this.sourceNodes = sourceNodes == null ? Collections.emptySet() : Collections.unmodifiableSet(sourceNodes);
+    this.sourceNodes = sourceNodes != null ? Collections.unmodifiableSet(sourceNodes) : null;
     this.reuseContainer = reuseContainer;
   }
 

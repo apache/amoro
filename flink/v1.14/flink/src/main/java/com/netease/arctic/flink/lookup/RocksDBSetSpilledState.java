@@ -23,23 +23,30 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;
 import org.apache.flink.table.data.RowData;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A class that stores the secondary index in the cache. For {@link SecondaryIndexTable}.
  * <p>Support update the secondary index in the cache.
  */
 public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapper>> {
+  private static final Logger LOG = LoggerFactory.getLogger(RocksDBSetSpilledState.class);
   protected BinaryRowDataSerializerWrapper joinKeySerializer;
   /**
    * Multi-threads would put and delete the joinKeys and Set<ByteArrayWrapper> in the rocksdb.
    */
   private final Object rocksDBLock = new Object();
+  private final Map<ByteArrayWrapper, Set<ByteArrayWrapper>> tmpInitializationMap = new ConcurrentHashMap<>();
 
   public RocksDBSetSpilledState(
       RocksDBBackend rocksDB,
@@ -125,44 +132,85 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
   @Override
   public void putCacheValue(Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache,
                             ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-    byte[] joinKeyBytes = keyWrap.bytes;
-
-    synchronized (rocksDBLock) {
-      byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
-      if (uniqueKeysDeserialized != null) {
-        Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
-        if (!set.contains(valueWrap)) {
+    if (initialized()) {
+      byte[] joinKeyBytes = keyWrap.bytes;
+      synchronized (rocksDBLock) {
+        byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
+        if (uniqueKeysDeserialized != null) {
+          Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
+          if (!set.contains(valueWrap)) {
+            set.add(valueWrap);
+            uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
+            rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
+          }
+        } else {
+          Set<ByteArrayWrapper> set = new HashSet<>();
           set.add(valueWrap);
           uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
           rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
         }
-      } else {
-        Set<ByteArrayWrapper> set = new HashSet<>();
-        set.add(valueWrap);
-        uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
-        rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
       }
+      return;
     }
+    tmpInitializationMap.compute(keyWrap, (keyWrapper, oldSet) -> {
+      if (oldSet == null) {
+        oldSet = Sets.newHashSet();
+      }
+      oldSet.add(valueWrap);
+      return oldSet;
+    });
+
   }
 
   @Override
   public void removeValue(
       Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-    byte[] joinKeyBytes = keyWrap.bytes;
-
-    synchronized (rocksDBLock) {
-      byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
-      if (uniqueKeysDeserialized == null) {
-        return;
-      }
-      Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
-      if (set.contains(valueWrap)) {
-        set.remove(valueWrap);
-        if (!set.isEmpty()) {
-          uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
-          rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
+    if (initialized()) {
+      byte[] joinKeyBytes = keyWrap.bytes;
+      synchronized (rocksDBLock) {
+        byte[] uniqueKeysDeserialized = rocksDB.get(columnFamilyHandle, joinKeyBytes);
+        if (uniqueKeysDeserialized == null) {
+          return;
+        }
+        Set<ByteArrayWrapper> set = ByteArraySetSerializer.deserialize(uniqueKeysDeserialized);
+        if (set.contains(valueWrap)) {
+          set.remove(valueWrap);
+          if (!set.isEmpty()) {
+            uniqueKeysDeserialized = ByteArraySetSerializer.serialize(set);
+            rocksDB.put(columnFamilyHandle, joinKeyBytes, uniqueKeysDeserialized);
+          }
         }
       }
+      return;
     }
+    tmpInitializationMap.compute(keyWrap, (keyWrapper, oldSet) -> {
+      if (oldSet == null) {
+        return null;
+      }
+      oldSet.remove(valueWrap);
+      if (oldSet.isEmpty()) {
+        return null;
+      }
+      return oldSet;
+    });
+
+  }
+
+  public void bulkIntoRocksDB() {
+    LOG.info("Total size={} in the tmp map, try to bulk into rocksdb", tmpInitializationMap.size());
+    int[] count = {0};
+    long start = System.currentTimeMillis();
+
+    tmpInitializationMap.forEach((byteArrayWrapper, set) -> {
+      rocksDB.put(columnFamilyHandle, byteArrayWrapper.bytes, ByteArraySetSerializer.serialize(set));
+      set = null;
+      count[0] = count[0] + 1;
+      if (count[0] % 100000 == 0) {
+        LOG.info("Ingested {} into rocksdb.", count[0]);
+      }
+    });
+    tmpInitializationMap.clear();
+
+    LOG.info("Ingested {} completely, cost:{} ms.", count, System.currentTimeMillis() - start);
   }
 }

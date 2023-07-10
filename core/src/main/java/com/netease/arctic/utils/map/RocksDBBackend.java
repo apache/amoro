@@ -122,15 +122,16 @@ public class RocksDBBackend {
           LOG.debug("From Rocks DB : " + logMsg);
         }
       });
-      final List<ColumnFamilyDescriptor> managedColumnFamilies = loadManagedColumnFamilies(dbOptions);
+      List<ColumnFamilyDescriptor> managedColumnFamilies;
       List<ColumnFamilyHandle> managedHandles = new ArrayList<>();
       LocalFileUtil.mkdir(new File(rocksDBBasePath));
 
       if (ttlSeconds != null && ttlSeconds > 0) {
         Options ttlDBOptions = new Options(dbOptions, new ColumnFamilyOptions());
         rocksDB = TtlDB.open(ttlDBOptions, rocksDBBasePath, ttlSeconds, false);
-        managedHandles = rocksDB.createColumnFamilies(managedColumnFamilies);
+        managedColumnFamilies = new ArrayList<>();
       } else {
+        managedColumnFamilies = loadManagedColumnFamilies(dbOptions);
         rocksDB = RocksDB.open(dbOptions, rocksDBBasePath, managedColumnFamilies, managedHandles);
       }
 

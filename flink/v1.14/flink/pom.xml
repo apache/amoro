@@ -36,7 +36,7 @@
         <testcontainers.version>1.16.2</testcontainers.version>
         <flink.version>1.14.6</flink.version>
     </properties>
-    å
+
     <dependencies>
         <!--arctic-->
         <dependency>
