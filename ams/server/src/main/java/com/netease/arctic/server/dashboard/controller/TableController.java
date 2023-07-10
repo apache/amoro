@@ -147,7 +147,11 @@ public class TableController {
     baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
-    baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
+    if (tableBasicInfo.getChangeStatistics() == null) {
+      baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+    } else {
+      baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
+    }
     tableSize += baseFilesStatistics.getTotalSize();
     tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
