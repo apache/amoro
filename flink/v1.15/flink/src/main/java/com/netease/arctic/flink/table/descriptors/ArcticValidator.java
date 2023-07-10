@@ -100,7 +100,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .withDescription("Flag hidden kafka reading compatible with legacy Kafka Source API enable or not" +
               " when restoring Flink application from a checkpoint." +
               " If a task should be restored from checkpoint which made in Arctic version less than 0.4.1");
-  
+
   public static final ConfigOption<String> ARCTIC_LOG_CONSUMER_CHANGELOG_MODE =
       ConfigOptions.key("log.consumer.changelog.modes")
           .stringType()
@@ -218,6 +218,56 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .defaultValue(0L)
       .withDescription("Mark the time to start double writing (the logstore of arctic table catches up with the" +
           " historical data).");
+
+  public static final ConfigOption<Long> LOOKUP_CACHE_MAX_ROWS = ConfigOptions
+      .key("lookup.cache.max-rows")
+      .longType()
+      .defaultValue(10000L)
+      .withDescription("The maximum number of rows in the lookup cache, beyond which the oldest row will expire." +
+          " By default, lookup cache is 10000.");
+
+  public static final ConfigOption<Duration> LOOKUP_CACHE_TTL_AFTER_WRITE = ConfigOptions
+      .key("lookup.cache.ttl-after-write")
+      .durationType()
+      .defaultValue(Duration.ZERO)
+      .withDescription("The TTL after which the row will expire in the lookup cache.");
+
+  public static final ConfigOption<Duration> LOOKUP_RELOADING_INTERVAL = ConfigOptions
+      .key("lookup.reloading.interval")
+      .durationType()
+      .defaultValue(Duration.ofSeconds(10))
+      .withDescription("Configuration option for specifying the interval in seconds to reload lookup data in RocksDB.\n" +
+          "The default value is 10 seconds.");
+
+  public static final ConfigOption<Boolean> ROCKSDB_AUTO_COMPACTIONS = ConfigOptions
+      .key("rocksdb.auto-compactions")
+      .booleanType()
+      .defaultValue(false)
+      .withDescription("Enable automatic compactions during the initialization process." +
+          "\nAfter the initialization completed, will enable the auto_compaction.");
+
+  public static final ConfigOption<Integer> ROCKSDB_WRITING_THREADS = ConfigOptions
+      .key("rocksdb.writing-threads")
+      .intType()
+      .defaultValue(5)
+      .withDescription("Writing data into rocksDB thread number.");
+
+  public static final ConfigOption<Long> ROCKSDB_BLOCK_CACHE_CAPACITY = ConfigOptions
+      .key("rocksdb.block-cache.capacity")
+      .longType()
+      .defaultValue(32 * 1024 * 1024L)
+      .withDescription("Use the LRUCache strategy for blocks, the size of the BlockCache can be configured based on " +
+          "your memory requirements and available system resources. Default is 32MB.");
+
+
+  public static final ConfigOption<Integer> ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS = ConfigOptions
+      .key("rocksdb.block-cache.numShardBits")
+      .intType()
+      .defaultValue(-1)
+      .withDescription("Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash of" +
+          " the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and" +
+          " number of shard bits will not exceed 6.");
+
 
   @Override
   public void validate(DescriptorProperties properties) {

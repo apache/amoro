@@ -158,6 +158,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
         filters -> filters.forEach(
             expression -> LOG.info("Arctic source filter expression: {}.", expression.toString())));
     return continuousSplitPlanner.planSplits(enumeratorPosition.get(), scanContext.filters());
+
   }
 
   private void handleResultOfSplits(ContinuousEnumerationResult enumerationResult, Throwable t) {

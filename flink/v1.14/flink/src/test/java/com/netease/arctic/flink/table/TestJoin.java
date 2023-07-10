@@ -234,7 +234,6 @@ public class TestJoin extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
-
   @Test(timeout = 180000)
   public void testLookupJoinWithPartialFields() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();

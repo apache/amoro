@@ -19,13 +19,9 @@
 package com.netease.arctic.flink.read;
 
 
-import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
@@ -70,37 +66,6 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
         FlinkSplitPlanner.planChangeTable(entriesScan, fromSequence, spec, new AtomicInteger());
 
     Assert.assertEquals(1, changeSplits.size());
-  }
-
-  @Test
-  public void testZhiqiTableIncrementalChangelog() throws IOException {
-    KeyedTable testZhiqiTable = testZhiqiTable();
-    testZhiqiTable.baseTable().refresh();
-    testZhiqiTable.changeTable().refresh();
-    long startSnapshotId = 5235799534530471019L;
-
-    long nowSnapshotId = testZhiqiTable.changeTable().currentSnapshot().snapshotId();
-    Snapshot snapshot = testZhiqiTable.changeTable().snapshot(startSnapshotId);
-    long fromSequence = snapshot.sequenceNumber();
-    TableEntriesScan entriesScan = TableEntriesScan.builder(testZhiqiTable.changeTable())
-        .useSnapshot(nowSnapshotId)
-        .includeFileContent(FileContent.DATA)
-        .fromSequence(fromSequence)
-        .build();
-    PartitionSpec spec = testZhiqiTable.changeTable().spec();
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planChangeTable(entriesScan, fromSequence, spec, new AtomicInteger());
-    Assert.assertNotNull(splitList);
-  }
-
-  private KeyedTable testZhiqiTable() {
-    InternalCatalogBuilder catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl("thrift://10.196.85.29:18312/arctic_nisp");
-    ArcticTable arcticTable =
-        catalogBuilder.build().loadTable(TableIdentifier.of("arctic_nisp", "credit", "dws_yidun_account_rt_feature_min"));
-
-    if (arcticTable.isKeyedTable()) {
-      return arcticTable.asKeyedTable();
-    }
-    throw new IllegalArgumentException("This is not keyedTable");
   }
 
 }
