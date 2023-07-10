@@ -34,7 +34,7 @@
     <properties>
         <fastjson.version>1.2.58</fastjson.version>
         <avro.version>1.10.1</avro.version>
-        <optimizer-flink.version>1.12.7</optimizer-flink.version>
+        <optimizer-flink.version>1.14.6</optimizer-flink.version>
     </properties>
 
     <dependencies>
@@ -262,4 +262,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>flink1.16</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <optimizer-flink.version>1.16.2</optimizer-flink.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>
