@@ -26,7 +26,7 @@ format is used for this purpose. Self-optimizing involves various procedures suc
 
 The architecture and working mechanism of Self-optimizing are shown in the figure below:
 
-![Self-optimizing architecture](../images/concepts/self-optimizing_arch.png){:height="80%" width="80%"}
+![Self-optimizing architecture](../images/concepts/self-optimizing_arch.png)
 
 The Optimizer is a component responsible for executing Self-optimizing tasks. It is a resident process managed by AMS. AMS is responsible for
 detecting and planning Self-optimizing tasks for tables, and then scheduling them to Optimizers for distributed execution in real-time. Finally, AMS
@@ -66,7 +66,7 @@ defines the ratio of the fragment file threshold to the target-size, with a valu
 target-size, or 16 MB for a default target-size of 128 MB. Files smaller than 16 MB are considered fragments, while files larger than 16 MB are
 considered segments, as shown in the diagram below:
 
-![Minor optimizing](../images/concepts/minor_optimizing.png){:height="80%" width="80%"}
+![Minor optimizing](../images/concepts/minor_optimizing.png)
 
 The goal of Minor optimizing is to alleviate read amplification issues, which entails two tasks：
 
@@ -88,8 +88,7 @@ reading. Minor optimizing has already performed multiple rounds of deduplication
 amplification issues. Additionally, Full optimizing merges all files in the target space into a single file, which is a special case of
 major optimizing.
 
-![Major optimizing](../images/concepts/major_optimizing.png){:height="80%" width="80%"}
-
+![Major optimizing](../images/concepts/major_optimizing.png)
 
 The design of Major optimizing and Minor optimizing takes inspiration from the Generational Garbage Collection algorithm of JVM. The execution
 logic of both optimizing is consistent, as they both involve file compaction, data deduplication, and conversion from write-friendly format to
@@ -112,7 +111,7 @@ the Quota and Quota occupation for each table's Self-optimizing:
 ![quota_and_occupation](../images/concepts/quota-occupation.png)
 
 Different optimizer groups can be configured with different scheduling policies to meet various optimization requirements.
-See: [Optimizer Group Configuration](../guides/managing-optimizers.md#optimizer-group)。
+See: [Optimizer Group Configuration](../managing-optimizers#optimizer-group)。
 
 Users can also disable the Self-optimizing for a table by configuring the following settings on the table, which will prevent it from being scheduled
 for optimizing.
@@ -131,7 +130,6 @@ Currently, there are two main scheduling policies available: `Quota` and `Balanc
 
 ### Quota
 
-
 The `Quota` strategy is a scheduling policy that schedules based on resource usage. The Self-optimizing resource usage of a single table is managed
 by configuring the quota configuration on the table:
 
@@ -139,7 +137,6 @@ by configuring the quota configuration on the table:
 -- Quota for Self-optimizing, indicating the CPU resource the table can take up
 self-optimizing.quota = 0.1;
 ```
-
 Quota defines the maximum CPU usage that a single table can use, but Self-optimizing is actually executed in a distributed manner, and actual resource
 usage is dynamically managed based on actual execution time.In the optimizing management Web UI, the dynamic quota usage of a single table can be
 viewed through the "Quota Occupy" metric. From a design perspective, the quota occupy metric should dynamically approach 100%.
@@ -148,7 +145,7 @@ In a platform, two situations may occur: overselling and overbuying.
 
 - Overselling — If all optimizer configurations exceed the total quota of all table configurations, the quota occupy metric may dynamically approach
   above 100%
-- overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
+- Overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
   approach below 100%
 
 ### Balanced
@@ -160,4 +157,3 @@ scheduling strategy.
 
 If there is no special requirement for resource usage among the tables in an optimizer group, and all tables are expected to have decent query
 efficiency, then the `Balanced` strategy is a good choice.
-

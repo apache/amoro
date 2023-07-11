@@ -2,7 +2,7 @@
 title: "Flink Getting Started"
 url: flink-getting-started
 aliases:
-    - "engines/flink/getting-started"
+    - "flink/getting-started"
 menu:
     main:
         parent: Flink

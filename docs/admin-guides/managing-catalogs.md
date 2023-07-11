@@ -14,11 +14,13 @@ In the default AMS configuration, we have initialized a cluster named `local_cat
 Users can import more test or online clusters through the Catalog management function provided by the AMS Dashboard. Before adding a new Catalog,
 please read the following guidelines and select the appropriate creation according to your actual needs.
 
-
 ## Create catalog
-In Arctic, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables. The name of a table in Arctic is uniquely identified by the format catalog.database.table. In practical applications, a catalog generally corresponds to a metadata service, such as the commonly used Hive Metastore in big data. Arctic MetaService can also serve as a metadata service. In order to differentiate the storage method of metadata, Arctic classifies the Catalog type into Internal Catalog and External Catalog. Catalogs that use Arctic MetaService as the metadata service are Internal Catalogs, while others are External Catalogs. When creating an External Catalog, you need to select the storage backend for its metadata, such as Hive, Hadoop, or Custom.
+In Arctic, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables.The name of a table in Arctic is uniquely identified by the format catalog.database.table. In practical applications, a catalog generally corresponds to a metadata service, such as the commonly used Hive Metastore in big data.
+
+AMS can also serve as a metadata service. In order to differentiate the storage method of metadata, Arctic classifies the Catalog type into `Internal Catalog` and `External Catalog`. Catalogs that use AMS as the metadata service are Internal Catalogs, while others are External Catalogs. When creating an External Catalog, you need to select the storage backend for its metadata, such as Hive, Hadoop, or Custom.
+
 In addition, when defining a catalog, you also need to select the table format used under it. Currently, Arctic supports the following table formats:
-：[Iceberg](../concepts/table-formats.md#iceberg-format) 、[Mixed Hive](../concepts/table-formats.md#mixed-hive-format)、[Mixed Iceberg](../concepts/table-formats.md#mixed-iceberg-format)。The creation method is as follows:
+：[Iceberg](../iceberg-format) 、[Mixed Hive](../mixed-hive-format)、[Mixed Iceberg](../mixed-iceberg-format).
 
 Recommend users to create a Catalog following the guidelines below：
 

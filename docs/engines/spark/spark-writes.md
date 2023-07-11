@@ -2,7 +2,7 @@
 title: "Spark Writes"
 url: spark-writes
 aliases:
-    - "engines/spark/writes"
+    - "spark/writes"
 menu:
     main:
         parent: Spark

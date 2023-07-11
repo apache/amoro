@@ -1,12 +1,12 @@
 ---
-title: "Flink DML"
-url: flink-dml
+title: "Flink DataStream"
+url: flink-datastream
 aliases:
-    - "engines/flink/dml"
+    - "flink/datastream"
 menu:
     main:
         parent: Flink
-        weight: 300
+        weight: 400
 ---
 # Flink DML
 ## Real-Time Data in LogStore

@@ -2,7 +2,7 @@
 title: "Flink DML"
 url: flink-dml
 aliases:
-    - "engines/flink/dml"
+    - "flink/dml"
 menu:
     main:
         parent: Flink

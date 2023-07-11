@@ -2,7 +2,7 @@
 title: "Spark Queries"
 url: spark-queries
 aliases:
-    - "engines/spark/queries"
+    - "spark/queries"
 menu:
     main:
         parent: Spark

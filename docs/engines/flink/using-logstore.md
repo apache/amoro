@@ -1,8 +1,8 @@
 ---
-title: ""
+title: "Using Logstore"
 url: flink-using-logstore
 aliases:
-    - "engines/flink/using-logstore"
+    - "flink/using-logstore"
 menu:
     main:
         parent: Flink

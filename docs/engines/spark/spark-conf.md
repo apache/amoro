@@ -2,7 +2,7 @@
 title: "Spark Conriguration"
 url: spark-configuration
 aliases:
-    - "engines/spark/configuration"
+    - "spark/configuration"
 menu:
     main:
         parent: Spark

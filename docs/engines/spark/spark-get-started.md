@@ -2,7 +2,7 @@
 title: "Spark Getting Started"
 url: spark-getting-started
 aliases:
-    - "engines/spark/getting-started"
+    - "spark/getting-started"
 menu:
     main:
         parent: Spark
