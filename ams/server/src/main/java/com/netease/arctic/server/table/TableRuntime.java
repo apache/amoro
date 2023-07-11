@@ -170,6 +170,7 @@ public class TableRuntime extends StatedPersistentBase {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
         this.currentChangeSnapshotId = System.currentTimeMillis();
+        this.currentStatusStartTime = System.currentTimeMillis();
         this.optimizingStatus = OptimizingStatus.PENDING;
         persistUpdatingRuntime();
         LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
