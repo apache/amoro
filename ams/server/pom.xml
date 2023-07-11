@@ -37,7 +37,7 @@
         <powermock.version>2.0.2</powermock.version>
         <fastjson.version>1.2.83</fastjson.version>
         <netty.version>4.1.56.Final</netty.version>
-        <spark.version>3.1.1</spark.version>
+        <spark.version>3.3.2</spark.version>
         <junit5.version>5.9.1</junit5.version>
         <mybatis.version>3.5.6</mybatis.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
@@ -129,7 +129,7 @@
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark-3.1</artifactId>
+            <artifactId>arctic-spark-3.3</artifactId>
             <version>${project.version}</version>
         </dependency>
 
