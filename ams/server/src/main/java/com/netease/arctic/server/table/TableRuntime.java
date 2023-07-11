@@ -150,6 +150,7 @@ public class TableRuntime extends StatedPersistentBase {
       this.processId = optimizingProcess.getProcessId();
       this.currentStatusStartTime = System.currentTimeMillis();
       this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
+      this.pendingInput = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -233,11 +234,7 @@ public class TableRuntime extends StatedPersistentBase {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      if (pendingInput != null) {
-        optimizingStatus = OptimizingStatus.PENDING;
-      } else {
-        optimizingStatus = OptimizingStatus.IDLE;
-      }
+      optimizingStatus = OptimizingStatus.IDLE;
       optimizingProcess = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
