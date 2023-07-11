@@ -43,7 +43,7 @@ public class OptimizingUtil {
   }
 
   public static long getFileSize(RewriteFilesOutput output) {
-    int size = 0;
+    long size = 0;
     if (output.getDataFiles() != null) {
       for (DataFile dataFile : output.getDataFiles()) {
         size += dataFile.fileSizeInBytes();
