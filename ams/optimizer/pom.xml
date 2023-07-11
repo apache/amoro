@@ -278,6 +278,21 @@
             </properties>
         </profile>
         <profile>
+            <id>flink1.15</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <optimizer-flink.version>1.15.4</optimizer-flink.version>
+                <flink.table-api-java-bridge.id>flink-table-api-java-bridge</flink.table-api-java-bridge.id>
+                <flink.table-runtime.id>flink-table-runtime</flink.table-runtime.id>
+                <flink.streaming-java.id>flink-streaming-java</flink.streaming-java.id>
+                <flink.clients.id>flink-clients</flink.clients.id>
+                <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
+                <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
+            </properties>
+        </profile>
+        <profile>
             <id>flink1.16</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
@@ -291,7 +306,6 @@
                 <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
                 <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
             </properties>
-
         </profile>
     </profiles>
 </project>
