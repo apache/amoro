@@ -162,7 +162,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     }
 
     try {
-      ServiceContainer.getOptimizeService().clearRemovedTable(tableMetadata.getTableIdentifier());
+      ServiceContainer.getOptimizeService().clearRemovedTable(tableMetadata.getTableIdentifier(), true, true);
     } catch (Exception e) {
       LOG.warn("dropTable success but failed to refresh optimize table cache", e);
     }
