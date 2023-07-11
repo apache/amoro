@@ -260,6 +260,8 @@ public class CatalogController {
         if (fillUseOld) {
           String fileSite = oldCatalogMeta.getStorageConfigs().get(metaKeyList.get(idx));
           metaStorageConfig.put(metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
+        } else {
+          metaStorageConfig.put(metaKeyList.get(idx), EMPTY_XML_BASE64);
         }
       }
     }

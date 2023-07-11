@@ -5,11 +5,14 @@ ams:
   server-expose-host: "127.0.0.1"
 
   thrift-server:
-    bind-port: 1260
     max-message-size: 104857600 # 100MB
-    worker-thread-count: 20
     selector-thread-count: 2
     selector-queue-size: 4
+    table-service:
+      bind-port: 1260
+      worker-thread-count: 20
+    optimizing-service:
+      bind-port: 1261
 
   http-server:
     bind-port: 1630

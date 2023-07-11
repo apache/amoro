@@ -63,57 +63,45 @@ public class TestMixedCatalog extends CatalogTestBase {
     }
   }
 
-  @Test
-  public void testCreateUnkeyedTable() {
+  protected void validateCreatedTable(ArcticTable table) throws TException  {
+    Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
+    Assert.assertEquals(getCreateTableSpec(), table.spec());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = (KeyedTable)table;
+      Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());
+      Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.baseTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.baseTable().spec());
+      Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.changeTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.changeTable().spec());
+    }
+  }
 
+  @Test
+  public void testCreateUnkeyedTable() throws TException {
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
+    validateCreatedTable(createTable);
 
     UnkeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
+    validateCreatedTable(loadTable);
   }
 
   @Test
-  public void testCreateKeyedTable() {
+  public void testCreateKeyedTable() throws TException {
     KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
         .withPartitionSpec(getCreateTableSpec())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .create()
         .asKeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, createTable.primaryKeySpec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.changeTable().spec());
+    validateCreatedTable(createTable);
 
     KeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asKeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, loadTable.primaryKeySpec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.changeTable().spec());
+    validateCreatedTable(loadTable);
   }
 
   @Test

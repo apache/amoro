@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -27,6 +28,7 @@ import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.server.catalog.IcebergCatalogImpl;
+import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
@@ -118,6 +120,7 @@ public class TableController {
 
   /**
    * get table detail.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableDetail(Context ctx) {
@@ -183,6 +186,7 @@ public class TableController {
 
   /**
    * get hive table detail.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getHiveTableDetail(Context ctx) {
@@ -211,6 +215,7 @@ public class TableController {
 
   /**
    * upgrade hive table to arctic.
+   *
    * @param ctx - context for handling the request and response
    */
   public void upgradeHiveTable(Context ctx) {
@@ -223,7 +228,9 @@ public class TableController {
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/", AmsUtil.getAMSThriftAddress(serviceConfig), catalog));
+        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/",
+        AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
+        catalog));
 
     tableUpgradeExecutor.execute(() -> {
       TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
@@ -261,6 +268,7 @@ public class TableController {
 
   /**
    * get table properties for upgrading hive to arctic.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
@@ -287,6 +295,7 @@ public class TableController {
 
   /**
    * get list of optimizing processes.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getOptimizingProcesses(Context ctx) {
@@ -311,7 +320,7 @@ public class TableController {
         .skip(offset)
         .limit(limit)
         .collect(Collectors.toList());
-    
+
     Map<Long, List<OptimizingTaskMeta>> optimizingTasks = tableDescriptor.getOptimizingTasks(processMetaList).stream()
         .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
 
@@ -324,6 +333,7 @@ public class TableController {
 
   /**
    * get list of transactions.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
@@ -343,6 +353,7 @@ public class TableController {
 
   /**
    * get detail of transaction.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
@@ -363,6 +374,7 @@ public class TableController {
 
   /**
    * get partition list.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTablePartitions(Context ctx) {
@@ -382,6 +394,7 @@ public class TableController {
 
   /**
    * get file list of some partition.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getPartitionFileListInfo(Context ctx) {
@@ -402,6 +415,7 @@ public class TableController {
 
   /**
    * get table operations.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableOperations(Context ctx) {
@@ -423,6 +437,7 @@ public class TableController {
 
   /**
    * get table list of catalog.db.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableList(Context ctx) {
@@ -437,7 +452,7 @@ public class TableController {
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     List<TableMeta> tables = new ArrayList<>();
 
-    if (serverCatalog instanceof IcebergCatalogImpl) {
+    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(
           e.getTableName(),
           TableMeta.TableType.ICEBERG.toString())));
@@ -462,6 +477,7 @@ public class TableController {
 
   /**
    * get databases of some catalog.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getDatabaseList(Context ctx) {
@@ -476,6 +492,7 @@ public class TableController {
 
   /**
    * get list of catalogs.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
@@ -485,6 +502,7 @@ public class TableController {
 
   /**
    * get single page query token.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableDetailTabToken(Context ctx) {

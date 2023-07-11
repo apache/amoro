@@ -66,7 +66,6 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
 
-  private String catalog;
   private String db;
   public boolean isHive;
 
@@ -89,10 +88,8 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
   @Before
   public void before() throws Exception {
     if (isHive) {
-      catalog = HiveTableTestHelper.TEST_CATALOG_NAME;
       db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
-      catalog = TEST_CATALOG_NAME;
       db = DB;
     }
     super.before();

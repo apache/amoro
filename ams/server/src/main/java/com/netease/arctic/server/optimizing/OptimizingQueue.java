@@ -28,6 +28,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -136,7 +137,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   public void removeOptimizer(String resourceId) {
-    authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
+    authOptimizers.entrySet().removeIf(op -> op.getValue().getResourceId().equals(resourceId));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
@@ -285,6 +286,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
               optimizingProcess.getTaskMap().size());
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
+          break;
         } else {
           tableRuntime.cleanPendingInput();
         }
@@ -499,7 +501,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       } catch (Exception e) {
         LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
-        failedReason = e.getMessage();
+        failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
       } finally {
