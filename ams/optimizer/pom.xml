@@ -273,7 +273,7 @@
 
     <profiles>
         <profile>
-            <id>flink1.14</id>
+            <id>optimizer.flink1.14</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -282,7 +282,7 @@
             </properties>
         </profile>
         <profile>
-            <id>flink1.15</id>
+            <id>optimizer.flink1.15</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -297,7 +297,7 @@
             </properties>
         </profile>
         <profile>
-            <id>flink1.16</id>
+            <id>optimizer.flink1.16</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
