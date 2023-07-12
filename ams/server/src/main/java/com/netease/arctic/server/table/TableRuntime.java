@@ -148,8 +148,7 @@ public class TableRuntime extends StatedPersistentBase {
       OptimizingStatus originalStatus = optimizingStatus;
       this.optimizingProcess = optimizingProcess;
       this.processId = optimizingProcess.getProcessId();
-      this.currentStatusStartTime = System.currentTimeMillis();
-      this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
+      updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
       this.pendingInput = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
@@ -159,8 +158,7 @@ public class TableRuntime extends StatedPersistentBase {
   public void beginCommitting() {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
-      this.currentStatusStartTime = System.currentTimeMillis();
-      this.optimizingStatus = OptimizingStatus.COMMITTING;
+      updateOptimizingStatus(OptimizingStatus.COMMITTING);
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -171,7 +169,7 @@ public class TableRuntime extends StatedPersistentBase {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
         this.currentChangeSnapshotId = System.currentTimeMillis();
-        this.optimizingStatus = OptimizingStatus.PENDING;
+        updateOptimizingStatus(OptimizingStatus.PENDING);
         persistUpdatingRuntime();
         LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
         tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
@@ -197,8 +195,7 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       pendingInput = null;
       if (optimizingStatus == OptimizingStatus.PENDING) {
-        this.currentStatusStartTime = System.currentTimeMillis();
-        this.optimizingStatus = OptimizingStatus.IDLE;
+        updateOptimizingStatus(OptimizingStatus.IDLE);
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
       }
@@ -221,7 +218,6 @@ public class TableRuntime extends StatedPersistentBase {
   public void completeProcess(boolean success) {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
-      currentStatusStartTime = System.currentTimeMillis();
       if (success) {
         lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
         lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
@@ -233,11 +229,16 @@ public class TableRuntime extends StatedPersistentBase {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      optimizingStatus = OptimizingStatus.IDLE;
+      updateOptimizingStatus(OptimizingStatus.IDLE);
       optimizingProcess = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
+  }
+
+  private void updateOptimizingStatus(OptimizingStatus status) {
+    this.optimizingStatus = status;
+    this.currentStatusStartTime = System.currentTimeMillis();
   }
 
   private boolean refreshSnapshots(ArcticTable table) {
