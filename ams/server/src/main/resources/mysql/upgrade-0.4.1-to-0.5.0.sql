@@ -109,6 +109,7 @@ CREATE TABLE `table_runtime`
     `optimizer_group`               varchar(64) NOT NULL,
     `table_config`                  mediumtext,
     `optimizing_config`             mediumtext,
+    `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
 

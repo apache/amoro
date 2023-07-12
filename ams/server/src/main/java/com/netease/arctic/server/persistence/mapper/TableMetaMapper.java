@@ -273,6 +273,8 @@ public interface TableMetaMapper {
       " optimizing_process_id = #{runtime.processId}," +
       " optimizer_group = #{runtime.optimizerGroup}," +
       " table_config = #{runtime.tableConfiguration," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " pending_input = #{runtime.pendingInput," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
       " WHERE table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
@@ -284,7 +286,8 @@ public interface TableMetaMapper {
       " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId," +
       " last_major_optimizing_time, last_minor_optimizing_time," +
       " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id," +
-      " optimizer_group, table_config) VALUES (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
+      " optimizer_group, table_config, pending_input) VALUES" +
+      " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
       " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}," +
       " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}," +
       " #{runtime.lastOptimizedChangeSnapshotId}, #{runtime.lastMajorOptimizingTime," +
@@ -298,14 +301,16 @@ public interface TableMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.processId}, #{runtime.optimizerGroup}," +
       " #{runtime.tableConfiguration," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " #{runtime.pendingInput," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
   @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a" +
       ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId," +
       " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status," +
-      " a.optimizing_status_start_time," +
-      " a.optimizing_process_id, a.optimizer_group, a.table_config, b.optimizing_type, b.target_snapshot_id," +
+      " a.optimizing_status_start_time, a.optimizing_process_id," +
+      " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id," +
       " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a" +
       " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
@@ -329,6 +334,7 @@ public interface TableMetaMapper {
       @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
       @Result(property = "optimizerGroup", column = "optimizer_group"),
       @Result(property = "tableConfig", column = "table_config", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "pendingInput", column = "pending_input", typeHandler = JsonSummaryConverter.class),
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
       @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
