@@ -4,6 +4,8 @@ import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.sql.CallableStatement;
@@ -13,6 +15,8 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(Object2ByteArrayConvert.class);
 
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
@@ -32,7 +36,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
+    return SerializationUtil.simpleDeserialize(getUnZippedBytes(bytes));
   }
 
   @Override
@@ -41,7 +45,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
+    return SerializationUtil.simpleDeserialize(getUnZippedBytes(bytes));
   }
 
   @Override
@@ -50,6 +54,15 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
+    return SerializationUtil.simpleDeserialize(getUnZippedBytes(bytes));
+  }
+
+  private byte[] getUnZippedBytes(byte[] bytes) {
+    try {
+      return CompressUtil.unGzip(bytes);
+    } catch (RuntimeException e) {
+      LOG.warn("Fail to unzip, use original bytes", e);
+      return bytes;
+    }
   }
 }
