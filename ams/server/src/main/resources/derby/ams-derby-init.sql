@@ -119,7 +119,7 @@ CREATE TABLE table_optimizing_process (
     plan_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time            TIMESTAMP DEFAULT NULL,
     fail_reason         VARCHAR(4096),
-    rewrite_input       BLOB(64m),
+    rewrite_input       BLOB,
     summary             CLOB(64m),
     from_sequence       CLOB(64m),
     to_sequence         CLOB(64m),
