@@ -18,19 +18,13 @@
 
 package com.netease.arctic.server.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipException;
 
 public class CompressUtil {
-
-  private static final Logger LOG = LoggerFactory.getLogger(CompressUtil.class);
 
   /**
    * Compress the given data using gzip.
@@ -64,9 +58,6 @@ public class CompressUtil {
       while ((len = gzipInputStream.read(buffer)) > 0) {
         byteArrayOutputStream.write(buffer, 0, len);
       }
-    } catch (ZipException e) {
-      LOG.warn("Fail to unzip, return original bytes", e);
-      return bytes;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
