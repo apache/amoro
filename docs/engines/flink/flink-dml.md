@@ -9,30 +9,6 @@ menu:
         weight: 300
 ---
 # Flink DML
-## Real-Time Data in LogStore
-Arctic tables provide two types of storage: FileStore and LogStore. FileStore stores massive full data, while LogStore stores real-time incremental data.
-
-Real-time data can provide second-level data visibility and ensure data consistency without enabling LogStore transactions.
-
-Its underlying storage system can be connected to external message queuing middleware, currently supporting only Kafka and Pulsar.
-
-Users can enable LogStore by configuring the following parameters when creating an Arctic table. For specific configurations, please refer to [LogStore related configurations](../configurations.md#logstore).
-
-[Examples](using-logstore.md) of using Apache Kafka as the LogStore storage system can be found in Using LogStore.
-
-For detailed usage, please refer to [SQL Read](#logstore), [Java Read](flink-ds.md#logstore), [SQL Write](#insert-into), and [Java Write](flink-ds.md#appending-data).
-
-## Changelog Data
-
-For Arctic primary key tables, FileStore is divided into BaseStore and ChangeStore. The ChangeStore stores the real-time CDC data written and this data is regularly merged into the Arctic BaseStore, see [Optimize](../concepts/table-formats.md) for details.
-
-The submission of ChangeStore data depends on the periodic time of Flink checkpoint, and data visibility may be delayed by minutes.
-
-Subsequently, Flink engine can read the ChangeStore for data playback for calculation and analysis, supporting four types of changelog data: +I, -D, -U and +U.
-
-For Arctic non-primary key tables, FileStore only has BaseStore data.
-
-For detailed usage, please refer to [SQL Read](#sql-change-store-read), [Java Read](flink-ds.md#filestore), [SQL Write](#insert-into), and [Java Write](flink-ds.md#appending-data).
 
 ## Querying With SQL
 Arctic tables support reading data in stream or batch mode through Flink SQL. You can switch modes using the following methods:
@@ -45,8 +21,6 @@ SET execution.runtime-mode = batch;
 ```
 ### Batch Mode
 Use batch mode to read full and incremental data from FileStore.
-#### Bounded Source
-Non-primary key tables support reading full data in batch mode, specifying snapshot data with snapshot-id or timestamp, and incremental data in
 
 > **TIPS**
 >
@@ -60,7 +34,10 @@ SET execution.runtime-mode = batch;
 SET table.dynamic-table-options.enabled=true;
 ```
 
-#### Bounded Source(non-primary key table)
+### Batch Mode (non-primary key table)
+
+Non-primary key tables support reading full data in batch mode, specifying snapshot data with snapshot-id or timestamp, and specifying the incremental data of the snapshot interval.
+
 ```sql
 -- Read full data
 SELECT * FROM unkeyed /*+ OPTIONS('streaming'='false')*/;
@@ -78,7 +55,7 @@ The supported parameters for bounded reads of non-primary-key tables in BaseStor
 | end-snapshot-id             | (none)        | Long   | No       | When streaming is set to false, you need to specify the start-snapshot-id to read the incremental data within two intervals (snapshot1, snapshot2].                                                                                                                                                                                                                                                |
 | other table parameters      | (none)        | String | No       | All parameters of an Arctic table can be dynamically modified through SQL Hint, but only for the current task. For a list of specific parameters, please refer to [Table Configurations](../configurations.md). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](./flink-ddl.md#Flink SQL) |
 
-#### Bounded Source(primary key table)
+### Batch Mode (primary key table)
 ```sql
 -- Read the current full amount and possibly unmerged ChangeStore data
 -- TODO: In the future, bounded full amount data will be read using the MOR method.
@@ -88,7 +65,7 @@ SELECT * FROM keyed /*+ OPTIONS('streaming'='false', 'scan.startup.mode'='earlie
 ### Streaming Mode
 Arctic supports reading incremental data from FileStore or LogStore in streaming mode.
 
-#### LogStore Data
+### Streaming Mode (LogStore)
 
 ```sql
 -- Run Flink tasks in streaming mode in the current session
@@ -118,7 +95,7 @@ The following Hint Options are supported:
 > - When the number of topic partitions in log-store is less than the parallelism of the Flink task, some Flink subtasks will be idle. At this time, if the task has a watermark, the parameter table.exec.source.idle-timeout must be configured, otherwise the watermark will not advance. See [official documentation](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/table/config/#table-exec-source-idle-timeout) for details.
 
 
-#### FileStore Data(non-primary key table)
+### Streaming Mode (FileStore non-primary key table)
 
 ```sql
 -- Run Flink tasks in streaming mode in the current session
@@ -140,7 +117,7 @@ Hint Options
 | start-snapshot-id                | (none)        | Long     | No       | To read incremental data starting from a specified snapshot (excluding the data in the start-snapshot-id snapshot), specify the snapshot ID using the start-snapshot-id parameter. If not specified, the reader will start reading from the snapshot after the current one (excluding the data in the current snapshot).                                                                                                |
 | other table parameters           | (none)        | String   | No       | All parameters of an Arctic table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations.md). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](./flink-ddl.md#Flink SQL) |
 
-#### FileStore Data(primary key table)
+### Streaming Mode (FileStore primary key table)
 
 
 After using CDC (Change Data Capture) to ingest data into the lake, you can use the Flink engine to read both stock data and incremental data in the same task without restarting the task, and ensure consistent data reading. Arctic Source will save the file offset information in the Flink state.
@@ -207,39 +184,3 @@ Hint Options
 | properties.pulsar.admin.adminUrl                 | (none)        | String   | If the LogStore is Pulsar and it is required for querying, it must be filled in, otherwise it can be left empty.<img width=100/> | The HTTP URL for Pulsar Admin is in the format: http://my-broker.example.com:8080.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | properties.*                                     | (none)        | String   | No                                                                                                                               | Parameters for Logstore: For Logstore with Kafka ('log-store.type'='kafka' default value), all other parameters supported by the Kafka Consumer can be set by prefixing properties. to the parameter name, for example, 'properties.batch.size'='16384'. The complete parameter information can be found in the [Kafka official documentation](https://kafka.apache.org/documentation/#consumerconfigs); For LogStore set to Pulsar ('log-store.type'='pulsar'), all relevant configurations supported by Pulsar can be set by prefixing properties. to the parameter name, for example: 'properties.pulsar.client.requestTimeoutMs'='60000'. For complete parameter information, refer to the [Flink-Pulsar-Connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar) |
 | other table parameters                           | (none)        | String   | No                                                                                                                               | All parameters of an Arctic table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations.md). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](./flink-ddl.md#Flink SQL)                                                                                                                                                                                                                                                                                                                                                                                                             |
-
-### CDC Into the Lake
-The following is a simple example demonstrating how to write MySQL CDC (Change Data Capture) data to the Arctic data lake:
-
-Firstly, create an ingestion task through the Flink engine, which automatically writes data to the LogStore without the need to manually restart the task. This approach is suitable for both stock and incremental data ingestion from the database, where the stock data is written to FileStore for batch processing, and the latest data is written to LogStore for real-time processing.
-
-In addition, when UPSERT functionality is enabled, multiple insertions of data with the same primary key will be merged during the table optimization process, and the last inserted data will be retained.
-```sql
-CREATE TABLE user_info (
-    id int,
-    name string,
-    insert_time timestamp,
-    primary key (id) not enforced)
-WITH (
- 'connector'='mysql-cdc',
- 'hostname'='localhost',
- 'port' = '3306',
- 'username' = 'root',
- 'password' = '123456',
- 'database-name' = 'testdb',
- 'table-name'='user_info');
- 
-CREATE TABLE IF NOT EXISTS arctic.db.user_info(
-    id int,
-    name string, 
-    insert_time timestamp,
-    primary key (id) not enforced
-);
-
-INSERT INTO arctic.db.user_info 
-/*+ OPTIONS(
-    'arctic.emit.mode'='auto',
-    'arctic.emit.auto-write-to-logstore.watermark-gap'='60s',
-    'write.upsert.enabled'='true') */
- SELECT * FROM source;
-```

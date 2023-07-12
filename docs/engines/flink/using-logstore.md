@@ -13,6 +13,15 @@ Due to the limitations of traditional offline data warehouse architectures in su
 
 Developers often need to pay attention to data stored in HDFS as well as data in Kafka, which increases the complexity of business development. Therefore, Arctic proposes the addition of an optional parameter, "LogStore enabled" (`log-store.enabled`), to the table configuration. This allows for retrieving data with sub-second and minute-level latency by operating on a single table while ensuring the eventual consistency of data from both sources.
 
+## Real-Time Data in LogStore
+Arctic tables provide two types of storage: FileStore and LogStore. FileStore stores massive full data, while LogStore stores real-time incremental data.
+
+Real-time data can provide second-level data visibility and ensure data consistency without enabling LogStore transactions.
+
+Its underlying storage system can be connected to external message queuing middleware, currently supporting only Kafka and Pulsar.
+
+Users can enable LogStore by configuring the following parameters when creating an Arctic table. For specific configurations, please refer to [LogStore related configurations](../configurations.md#logstore).
+
 ## overview
 
 |	Flink    |	Kafka    |  Pulsar	|	
@@ -20,6 +29,16 @@ Developers often need to pay attention to data stored in HDFS as well as data in
 |	Flink 1.12	|	&#x2714	|	&#x2714	|
 |	Flink 1.14	|	&#x2714	|	&#x2716	|
 |	Flink 1.15	|	&#x2714	|	&#x2716	|
+
+Kafka as LogStore Version Description:
+
+| Flink Version | Kafka Versions |
+|---------------|  ----------------- |
+| 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+
+
 
 ### Prerequisites for using LogStore
 
