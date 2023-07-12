@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 public class RewriteFilesInput extends BaseOptimizingInput implements Serializable {
 
-  private static final long serialVersionUID = 5032208817700335945L;
+  private static final long serialVersionUID = 1106605615053484570L;
 
   private final IcebergDataFile[] rewrittenDataFiles;
   private final IcebergDataFile[] rePosDeletedDataFiles;
