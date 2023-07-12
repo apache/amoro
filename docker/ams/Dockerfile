@@ -16,10 +16,9 @@
 # limitations under the License.
 
 FROM openjdk:8u332-jdk
-
-ARG ARCTIC_VERSION=0.4.0-SNAPSHOT
-ARG RELEASE=v0.3.2-rc1
+ARG ARCTIC_VERSION=0.5.0
 ARG DEBIAN_MIRROR=http://deb.debian.org
+ARG PROMETHEUS_AGENT_VERSION=0.18.0
 
 WORKDIR /usr/local/ams
 
@@ -30,25 +29,28 @@ RUN apt update \
     && apt-get install -y net-tools \
     && apt-get install -y telnet \
     && apt-get install -y dos2unix \
+    && apt-get install -y wget \
     && apt-get clean
 
 ARG AMS_FILE
 WORKDIR /usr/local/ams
 
 ADD arctic-${ARCTIC_VERSION}-bin.zip /usr/local/ams/arctic-${ARCTIC_VERSION}-bin.zip
-RUN unzip arctic-${ARCTIC_VERSION}-bin.zip \
-  && sed -i '/local_catalog/d' /usr/local/ams/arctic-${ARCTIC_VERSION}/conf/derby/ams-init.sql
+RUN unzip arctic-${ARCTIC_VERSION}-bin.zip
+RUN mv arctic-${ARCTIC_VERSION}/ arctic/
 
-WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
+WORKDIR /usr/local/ams/arctic
 
 COPY config.sh  ./bin/config.sh
 RUN find ./bin -name "*.sh" | xargs dos2unix
 RUN mkdir -p ./logs && touch ./logs/ams-info.log
 
+RUN wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/$PROMETHEUS_AGENT_VERSION/jmx_prometheus_javaagent-$PROMETHEUS_AGENT_VERSION.jar
+RUN mv jmx_prometheus_javaagent-$PROMETHEUS_AGENT_VERSION.jar ./plugin
+ADD conf/prometheus-jmx-config.yaml ./conf/prometheus-jmx-config.yaml
 
 EXPOSE 1630/tcp
-EXPOSE 1260/tcp
+EXPOSE 9093/tcp
+EXPOSE 8088/tcp
 
 CMD ["bash","-c","./bin/ams.sh start && tail -f ./logs/ams-info.log"]
-
-
