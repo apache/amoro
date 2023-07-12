@@ -25,7 +25,7 @@ public class OptimizingUtil {
     tableOptimizeInfo.setOptimizeStatus(optimizingTableRuntime.getOptimizingStatus().displayValue());
     tableOptimizeInfo.setDuration(System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     tableOptimizeInfo.setQuota(optimizingTableRuntime.getTargetQuota());
-    tableOptimizeInfo.setQuotaOccupation(process == null ? 0 : optimizingTableRuntime.calculateQuotaOccupy());
+    tableOptimizeInfo.setQuotaOccupation(optimizingTableRuntime.calculateQuotaOccupy());
     FilesStatistics optimizeFileInfo;
     if (optimizingTableRuntime.getOptimizingStatus().isProcessing()) {
       optimizeFileInfo = collectOptimizingFileInfo(process == null ? null : process.getSummary());
