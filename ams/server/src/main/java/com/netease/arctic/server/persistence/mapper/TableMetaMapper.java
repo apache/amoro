@@ -1,6 +1,6 @@
 package com.netease.arctic.server.persistence.mapper;
 
-import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
+import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
@@ -273,9 +273,9 @@ public interface TableMetaMapper {
       " optimizing_process_id = #{runtime.processId}," +
       " optimizer_group = #{runtime.optimizerGroup}," +
       " table_config = #{runtime.tableConfiguration," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
       " pending_input = #{runtime.pendingInput," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}" +
       " WHERE table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
 
@@ -301,9 +301,9 @@ public interface TableMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.processId}, #{runtime.optimizerGroup}," +
       " #{runtime.tableConfiguration," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
       " #{runtime.pendingInput," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
   @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a" +
@@ -333,8 +333,8 @@ public interface TableMetaMapper {
           Long2TsConverter.class),
       @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
       @Result(property = "optimizerGroup", column = "optimizer_group"),
-      @Result(property = "tableConfig", column = "table_config", typeHandler = JsonSummaryConverter.class),
-      @Result(property = "pendingInput", column = "pending_input", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "tableConfig", column = "table_config", typeHandler = JsonObjectConverter.class),
+      @Result(property = "pendingInput", column = "pending_input", typeHandler = JsonObjectConverter.class),
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
       @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
