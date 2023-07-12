@@ -106,12 +106,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   private String internalCatalogName;
 
   public DynamicTableFactory(
-      ArcticCatalog arcticCatalog,
-      InternalCatalogBuilder internalCatalogBuilder,
-      String internalCatalogName) {
+      ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
-    this.internalCatalogBuilder = internalCatalogBuilder;
-    this.internalCatalogName = internalCatalogName;
+    this.internalCatalogBuilder = arcticCatalog.catalogBuilder();
+    this.internalCatalogName = arcticCatalog.amsCatalogName();
   }
 
   public DynamicTableFactory() {

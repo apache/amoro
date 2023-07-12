@@ -68,7 +68,7 @@ public class ArcticRowDataLookupFunction extends TableFunction<RowData> {
     basicLookupFunction.open(context);
   }
 
-  public void eval(Object rowKey) throws IOException {
+  public void eval(Object... rowKey) throws IOException {
     List<RowData> results = basicLookupFunction.lookup(rowKey);
     results.forEach(this::collect);
   }

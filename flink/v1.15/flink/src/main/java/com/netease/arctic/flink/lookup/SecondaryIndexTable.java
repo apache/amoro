@@ -150,6 +150,8 @@ public class SecondaryIndexTable extends UniqueIndexTable {
     super.waitInitializationCompleted();
     LOG.info("Waiting for Set State initialization");
     setState.waitWriteRocksDBDone();
+    LOG.info("Queue is empty row, try to bulk tmp map into rocksdb");
+    setState.bulkIntoRocksDB();
     LOG.info("The concurrent threads have finished writing data into the Set State.");
     setState.initializationCompleted();
   }
