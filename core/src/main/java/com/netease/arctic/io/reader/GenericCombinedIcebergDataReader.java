@@ -199,8 +199,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     if (!hasPosDelete && eqDeleteIds == null) {
       return requestedSchema;
     }
-    List<Integer> requiredEqDeleteIds = TypeUtil.select(tableSchema, eqDeleteIds).columns().
-        stream().map(Types.NestedField::fieldId).collect(Collectors.toList());
+    List<Integer> requiredEqDeleteIds = TypeUtil.select(tableSchema, eqDeleteIds).columns()
+        .stream().map(Types.NestedField::fieldId).collect(Collectors.toList());
     Set<Integer> requiredIds = Sets.newLinkedHashSet();
     if (hasPosDelete) {
       requiredIds.add(MetadataColumns.FILE_PATH.fieldId());
