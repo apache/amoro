@@ -274,7 +274,7 @@ public interface TableMetaMapper {
       " optimizer_group = #{runtime.optimizerGroup}," +
       " table_config = #{runtime.tableConfiguration," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
-      " pending_input = #{runtime.pendingInput," +
+      " pending_input = #{runtime.pendingInput, jdbcType=VARCHAR," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}" +
       " WHERE table_id = #{runtime.tableIdentifier.id}")
   void updateTableRuntime(@Param("runtime") TableRuntime runtime);
@@ -302,7 +302,7 @@ public interface TableMetaMapper {
       " #{runtime.processId}, #{runtime.optimizerGroup}," +
       " #{runtime.tableConfiguration," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
-      " #{runtime.pendingInput," +
+      " #{runtime.pendingInput, jdbcType=VARCHAR," +
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
