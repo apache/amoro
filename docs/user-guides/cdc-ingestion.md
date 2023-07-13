@@ -15,6 +15,11 @@ This section will show how to practice one table into the lake and multiple tabl
 ## One table into the lake
 ### Native Iceberg format
 The following example will show how MySQL CDC data is written to a Native-Iceberg table.
+
+**Requirements**
+
+Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Iceberg](https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.14/1.1.0/iceberg-flink-1.14-1.1.0.jar) Jars to the lib directory of the Flink engine package.
+
 ```sql
 CREATE TABLE products (
     id INT,
@@ -50,6 +55,11 @@ insert into `iceberg_hadoop_catalog`.`default`.`sample` select * from products;
 
 ### Mixed Iceberg format
 The following example will show how MySQL CDC data is written to a Mixed-Iceberg table.
+
+**Requirements**
+
+Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Arctic](https://repo1.maven.org/maven2/com/netease/arctic/arctic-flink-runtime-1.14/0.4.1/arctic-flink-runtime-1.14-0.4.1.jar) Jars to the lib directory of the Flink engine package.
+
 ```sql
 CREATE TABLE products (
     id INT,
@@ -84,55 +94,12 @@ insert into `arctic_catalog`.`db`.`test_tb` select * from products;
 ## Multiple tables into the lake
 ### Native Iceberg format
 The following example will show how to write CDC data from multiple MySQL tables into the corresponding Native-Iceberg table.
+
+**Requirements**
+
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.14/1.1.0) dependencies to your Maven project's pom.xml file.
+
 ```java
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
-import com.ververica.cdc.debezium.table.MetadataConverter;
-import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.catalog.CatalogTable;
-import org.apache.flink.table.catalog.Column;
-import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.ResolvedCatalogTable;
-import org.apache.flink.table.catalog.ResolvedSchema;
-import org.apache.flink.table.catalog.UniqueConstraint;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.data.conversion.RowRowConverter;
-import org.apache.flink.table.data.utils.JoinedRowData;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.util.Collector;
-import org.apache.flink.util.OutputTag;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.catalog.Namespace;
-import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.flink.CatalogLoader;
-import org.apache.iceberg.flink.TableLoader;
-import org.apache.iceberg.flink.sink.FlinkSink;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.source.SourceRecord;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
-import static java.util.stream.Collectors.toMap;
-
 public class MySqlCDC2IcebergExample {
   public static void main(String[] args) throws Exception {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = initSourceTables();
@@ -168,13 +135,13 @@ public class MySqlCDC2IcebergExample {
     properties.put(CatalogProperties.URI, "yourThriftUri");
     CatalogLoader catalogLoader = CatalogLoader.hadoop("hadoop_catalog", new Configuration(), properties);
     Catalog icebergHadoopCatalog = catalogLoader.loadCatalog();
-    Map<String, TableSchema> tableSchemas = new HashMap<>();
-    tableSchemas.put("user", TableSchema.builder().field("id", DataTypes.INT())
+    Map<String, TableSchema> sinkTableSchemas = new HashMap<>();
+    sinkTableSchemas.put("user", TableSchema.builder().field("id", DataTypes.INT())
       .field("name", DataTypes.STRING()).field("op_time", DataTypes.TIMESTAMP()).build());
-    tableSchemas.put("product", TableSchema.builder().field("productId", DataTypes.INT())
+    sinkTableSchemas.put("product", TableSchema.builder().field("productId", DataTypes.INT())
       .field("price", DataTypes.DECIMAL(12, 6)).field("saleCount", DataTypes.INT()).build());
 
-    for (Map.Entry<String, TableSchema> entry : tableSchemas.entrySet()) {
+    for (Map.Entry<String, TableSchema> entry : sinkTableSchemas.entrySet()) {
       TableIdentifier identifier = TableIdentifier.of(Namespace.of("test_db"), entry.getKey());
       Table table = icebergHadoopCatalog.loadTable(identifier);
       TableLoader tableLoader = TableLoader.fromCatalog(catalogLoader, identifier);
@@ -228,8 +195,10 @@ public class MySqlCDC2IcebergExample {
     public void processElement(final RowData rowData,
                                final ProcessFunction<RowData, Void>.Context ctx, final Collector<Void> out)
       throws Exception {
-      final String key = rowData.getString(rowData.getArity() - 2).toString();
-      ctx.output(new OutputTag<RowData>(key) {},
+      // JoinedRowData like +I{row1=+I(1,2.340000,3), row2=+I(product,test_db)}
+      // so rowData.getArity() - 2 is the tableName field index
+      final String tableName = rowData.getString(rowData.getArity() - 2).toString();
+      ctx.output(new OutputTag<RowData>(tableName) {},
         getField(JoinedRowData.class, (JoinedRowData) rowData, "row1"));
     }
 
@@ -248,33 +217,34 @@ public class MySqlCDC2IcebergExample {
   private static List<Tuple2<ObjectPath, ResolvedCatalogTable>> initSourceTables() {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = new ArrayList<>();
     // build table "user"
-    Schema.Builder userTableBuilder = Schema.newBuilder();
-    List<Column> userTableCols = new ArrayList<>();
-    userTableCols.add(Column.physical("id", DataTypes.INT().notNull()));
-    userTableBuilder.column("id", DataTypes.INT().notNull());
-    userTableCols.add(Column.physical("name", DataTypes.STRING()));
-    userTableBuilder.column("name", DataTypes.STRING());
-    userTableCols.add(Column.physical("op_time", DataTypes.TIMESTAMP()));
-    userTableBuilder.column("op_time", DataTypes.TIMESTAMP());
-    userTableBuilder.primaryKey("id");
-    Schema userSchema = userTableBuilder.build();
+    Schema userSchema = Schema.newBuilder()
+      .column("id", DataTypes.INT().notNull())
+      .column("name", DataTypes.STRING())
+      .column("op_time", DataTypes.TIMESTAMP())
+      .primaryKey("id")
+      .build();
+    List<Column> userTableCols = Stream.of(
+      Column.physical("id", DataTypes.INT().notNull()),
+      Column.physical("name", DataTypes.STRING()),
+      Column.physical("op_time", DataTypes.TIMESTAMP())).collect(Collectors.toList());
     Schema.UnresolvedPrimaryKey userPrimaryKey = userSchema.getPrimaryKey().orElseThrow(() -> new RuntimeException("table user required pk "));
     ResolvedSchema userResolvedSchema = new ResolvedSchema(userTableCols, Collections.emptyList(), UniqueConstraint.primaryKey(
       userPrimaryKey.getConstraintName(), userPrimaryKey.getColumnNames()));
     ResolvedCatalogTable userTable = new ResolvedCatalogTable(
       CatalogTable.of(userSchema, "", Collections.emptyList(), new HashMap<>()), userResolvedSchema);
     pathAndTable.add(Tuple2.of(new ObjectPath("test_db", "user"), userTable));
+
     // build table "product"
-    Schema.Builder productTableBuilder = Schema.newBuilder();
-    List<Column> productTableCols = new ArrayList<>();
-    productTableCols.add(Column.physical("productId", DataTypes.INT().notNull()));
-    productTableBuilder.column("productId", DataTypes.INT().notNull());
-    productTableCols.add(Column.physical("price", DataTypes.DECIMAL(12, 6)));
-    productTableBuilder.column("price", DataTypes.DECIMAL(12, 6));
-    productTableCols.add(Column.physical("saleCount", DataTypes.INT()));
-    productTableBuilder.column("saleCount", DataTypes.INT());
-    productTableBuilder.primaryKey("productId");
-    Schema productSchema = productTableBuilder.build();
+    Schema productSchema = Schema.newBuilder()
+      .column("productId", DataTypes.INT().notNull())
+      .column("price", DataTypes.DECIMAL(12, 6))
+      .column("saleCount", DataTypes.INT())
+      .primaryKey("productId")
+      .build();
+    List<Column> productTableCols = Stream.of(
+      Column.physical("productId", DataTypes.INT().notNull()),
+      Column.physical("price", DataTypes.DECIMAL(12, 6)),
+      Column.physical("saleCount", DataTypes.INT())).collect(Collectors.toList());
     Schema.UnresolvedPrimaryKey productPrimaryKey = productSchema.getPrimaryKey().orElseThrow(() -> new RuntimeException("table product required pk "));
     ResolvedSchema productResolvedSchema = new ResolvedSchema(productTableCols, Collections.emptyList(), UniqueConstraint.primaryKey(
       productPrimaryKey.getConstraintName(), productPrimaryKey.getColumnNames()));
@@ -300,50 +270,12 @@ public class MySqlCDC2IcebergExample {
 
 ### Mixed Iceberg format
 The following example will show how to write CDC data from multiple MySQL tables into the corresponding Mixed-Iceberg table.
+
+**Requirements**
+
+Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Arctic](https://mvnrepository.com/artifact/com.netease.arctic/arctic-flink-runtime-1.14/0.4.1) dependencies to your Maven project's pom.xml file.
+
 ```java
-import com.netease.arctic.flink.InternalCatalogBuilder;
-import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.flink.write.FlinkSink;
-import com.netease.arctic.table.TableIdentifier;
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
-import com.ververica.cdc.debezium.table.MetadataConverter;
-import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.catalog.CatalogTable;
-import org.apache.flink.table.catalog.Column;
-import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.ResolvedCatalogTable;
-import org.apache.flink.table.catalog.ResolvedSchema;
-import org.apache.flink.table.catalog.UniqueConstraint;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.data.conversion.RowRowConverter;
-import org.apache.flink.table.data.utils.JoinedRowData;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.util.Collector;
-import org.apache.flink.util.OutputTag;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.source.SourceRecord;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
-import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
-import static java.util.stream.Collectors.toMap;
-
 public class MySqlCDC2ArcticExample {
   public static void main(String[] args) throws Exception {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = initSourceTables();
@@ -376,13 +308,13 @@ public class MySqlCDC2ArcticExample {
     // create Arctic sink and insert into cdc data
     InternalCatalogBuilder catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(
       "thrift://<ip>:<port>/<catalog_name_in_metastore>");
-    Map<String, TableSchema> tableSchemas = new HashMap<>();
-    tableSchemas.put("user", TableSchema.builder().field("id", DataTypes.INT())
+    Map<String, TableSchema> sinkTableSchemas = new HashMap<>();
+    sinkTableSchemas.put("user", TableSchema.builder().field("id", DataTypes.INT())
       .field("name", DataTypes.STRING()).field("op_time", DataTypes.TIMESTAMP()).build());
-    tableSchemas.put("product", TableSchema.builder().field("productId", DataTypes.INT())
+    sinkTableSchemas.put("product", TableSchema.builder().field("productId", DataTypes.INT())
       .field("price", DataTypes.DECIMAL(12, 6)).field("saleCount", DataTypes.INT()).build());
 
-    for (Map.Entry<String, TableSchema> entry : tableSchemas.entrySet()) {
+    for (Map.Entry<String, TableSchema> entry : sinkTableSchemas.entrySet()) {
       TableIdentifier tableId =
         TableIdentifier.of("yourCatalogName", "yourDatabaseName", entry.getKey());
       ArcticTableLoader tableLoader = ArcticTableLoader.of(tableId, catalogBuilder);
@@ -436,8 +368,10 @@ public class MySqlCDC2ArcticExample {
     public void processElement(final RowData rowData,
                                final ProcessFunction<RowData, Void>.Context ctx, final Collector<Void> out)
       throws Exception {
-      final String key = rowData.getString(rowData.getArity() - 2).toString();
-      ctx.output(new OutputTag<RowData>(key) {},
+      // JoinedRowData like +I{row1=+I(1,2.340000,3), row2=+I(product,test_db)}
+      // so rowData.getArity() - 2 is the tableName field index
+      final String tableName = rowData.getString(rowData.getArity() - 2).toString();
+      ctx.output(new OutputTag<RowData>(tableName) {},
         getField(JoinedRowData.class, (JoinedRowData) rowData, "row1"));
     }
 
@@ -456,33 +390,34 @@ public class MySqlCDC2ArcticExample {
   private static List<Tuple2<ObjectPath, ResolvedCatalogTable>> initSourceTables() {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = new ArrayList<>();
     // build table "user"
-    Schema.Builder userTableBuilder = Schema.newBuilder();
-    List<Column> userTableCols = new ArrayList<>();
-    userTableCols.add(Column.physical("id", DataTypes.INT().notNull()));
-    userTableBuilder.column("id", DataTypes.INT().notNull());
-    userTableCols.add(Column.physical("name", DataTypes.STRING()));
-    userTableBuilder.column("name", DataTypes.STRING());
-    userTableCols.add(Column.physical("op_time", DataTypes.TIMESTAMP()));
-    userTableBuilder.column("op_time", DataTypes.TIMESTAMP());
-    userTableBuilder.primaryKey("id");
-    Schema userSchema = userTableBuilder.build();
+    Schema userSchema = Schema.newBuilder()
+      .column("id", DataTypes.INT().notNull())
+      .column("name", DataTypes.STRING())
+      .column("op_time", DataTypes.TIMESTAMP())
+      .primaryKey("id")
+      .build();
+    List<Column> userTableCols = Stream.of(
+      Column.physical("id", DataTypes.INT().notNull()),
+      Column.physical("name", DataTypes.STRING()),
+      Column.physical("op_time", DataTypes.TIMESTAMP())).collect(Collectors.toList());
     Schema.UnresolvedPrimaryKey userPrimaryKey = userSchema.getPrimaryKey().orElseThrow(() -> new RuntimeException("table user required pk "));
     ResolvedSchema userResolvedSchema = new ResolvedSchema(userTableCols, Collections.emptyList(), UniqueConstraint.primaryKey(
       userPrimaryKey.getConstraintName(), userPrimaryKey.getColumnNames()));
     ResolvedCatalogTable userTable = new ResolvedCatalogTable(
       CatalogTable.of(userSchema, "", Collections.emptyList(), new HashMap<>()), userResolvedSchema);
     pathAndTable.add(Tuple2.of(new ObjectPath("test_db", "user"), userTable));
+    
     // build table "product"
-    Schema.Builder productTableBuilder = Schema.newBuilder();
-    List<Column> productTableCols = new ArrayList<>();
-    productTableCols.add(Column.physical("productId", DataTypes.INT().notNull()));
-    productTableBuilder.column("productId", DataTypes.INT().notNull());
-    productTableCols.add(Column.physical("price", DataTypes.DECIMAL(12, 6)));
-    productTableBuilder.column("price", DataTypes.DECIMAL(12, 6));
-    productTableCols.add(Column.physical("saleCount", DataTypes.INT()));
-    productTableBuilder.column("saleCount", DataTypes.INT());
-    productTableBuilder.primaryKey("productId");
-    Schema productSchema = productTableBuilder.build();
+    Schema productSchema = Schema.newBuilder()
+      .column("productId", DataTypes.INT().notNull())
+      .column("price", DataTypes.DECIMAL(12, 6))
+      .column("saleCount", DataTypes.INT())
+      .primaryKey("productId")
+      .build();
+    List<Column> productTableCols = Stream.of(
+      Column.physical("productId", DataTypes.INT().notNull()),
+      Column.physical("price", DataTypes.DECIMAL(12, 6)),
+      Column.physical("saleCount", DataTypes.INT())).collect(Collectors.toList());
     Schema.UnresolvedPrimaryKey productPrimaryKey = productSchema.getPrimaryKey().orElseThrow(() -> new RuntimeException("table product required pk "));
     ResolvedSchema productResolvedSchema = new ResolvedSchema(productTableCols, Collections.emptyList(), UniqueConstraint.primaryKey(
       productPrimaryKey.getConstraintName(), productPrimaryKey.getColumnNames()));
