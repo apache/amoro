@@ -33,7 +33,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.apache.iceberg.Snapshot;
@@ -148,8 +148,8 @@ public class TableRuntime extends StatedPersistentBase {
       OptimizingStatus originalStatus = optimizingStatus;
       this.optimizingProcess = optimizingProcess;
       this.processId = optimizingProcess.getProcessId();
-      this.currentStatusStartTime = System.currentTimeMillis();
-      this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
+      updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
+      this.pendingInput = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -158,8 +158,7 @@ public class TableRuntime extends StatedPersistentBase {
   public void beginCommitting() {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
-      this.currentStatusStartTime = System.currentTimeMillis();
-      this.optimizingStatus = OptimizingStatus.COMMITTING;
+      updateOptimizingStatus(OptimizingStatus.COMMITTING);
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -170,7 +169,7 @@ public class TableRuntime extends StatedPersistentBase {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
         this.currentChangeSnapshotId = System.currentTimeMillis();
-        this.optimizingStatus = OptimizingStatus.PENDING;
+        updateOptimizingStatus(OptimizingStatus.PENDING);
         persistUpdatingRuntime();
         LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
         tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
@@ -196,8 +195,7 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       pendingInput = null;
       if (optimizingStatus == OptimizingStatus.PENDING) {
-        this.currentStatusStartTime = System.currentTimeMillis();
-        this.optimizingStatus = OptimizingStatus.IDLE;
+        updateOptimizingStatus(OptimizingStatus.IDLE);
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
       }
@@ -220,7 +218,6 @@ public class TableRuntime extends StatedPersistentBase {
   public void completeProcess(boolean success) {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
-      currentStatusStartTime = System.currentTimeMillis();
       if (success) {
         lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
         lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
@@ -228,27 +225,28 @@ public class TableRuntime extends StatedPersistentBase {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
           lastMajorOptimizingTime = optimizingProcess.getPlanTime();
-        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL_MAJOR) {
+        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      if (pendingInput != null) {
-        optimizingStatus = OptimizingStatus.PENDING;
-      } else {
-        optimizingStatus = OptimizingStatus.IDLE;
-      }
+      updateOptimizingStatus(OptimizingStatus.IDLE);
       optimizingProcess = null;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
   }
 
+  private void updateOptimizingStatus(OptimizingStatus status) {
+    this.optimizingStatus = status;
+    this.currentStatusStartTime = System.currentTimeMillis();
+  }
+
   private boolean refreshSnapshots(ArcticTable table) {
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
-      currentSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId = IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
+      currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
         LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
             currentSnapshotId, currentChangeSnapshotId);

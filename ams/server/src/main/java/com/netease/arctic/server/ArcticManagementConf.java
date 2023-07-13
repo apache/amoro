@@ -48,38 +48,56 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
-  public static final ConfigOption<Long> EXTERNAL_CATALOG_REFRESH_INTERVAL =
-      ConfigOptions.key("refresh-external-catalog-interval")
+  public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
+      ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
           .defaultValue(3 * 60 * 1000L)
           .withDescription("Interval to refresh the external catalog.");
 
-  public static final ConfigOption<Integer> EXPIRE_THREAD_POOL_SIZE =
-      ConfigOptions.key("expire-table-thread-count")
+  public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
+      ConfigOptions.key("expire-snapshots.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable snapshots expiring.");
+
+  public static final ConfigOption<Integer> EXPIRE_SNAPSHOTS_THREAD_COUNT =
+      ConfigOptions.key("expire-snapshots.thread-count")
           .intType()
           .defaultValue(10)
-          .withDescription("The number of threads used for table expiring.");
+          .withDescription("The number of threads used for snapshots expiring.");
 
-  public static final ConfigOption<Integer> ORPHAN_CLEAN_THREAD_POOL_SIZE =
-      ConfigOptions.key("clean-orphan-file-thread-count")
+  public static final ConfigOption<Boolean> CLEAN_ORPHAN_FILES_ENABLED =
+      ConfigOptions.key("clean-orphan-files.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable orphan files cleaning.");
+
+  public static final ConfigOption<Integer> CLEAN_ORPHAN_FILES_THREAD_COUNT =
+      ConfigOptions.key("clean-orphan-files.thread-count")
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for orphan files cleaning.");
 
-  public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
-      ConfigOptions.key("sync-hive-tables-thread-count")
+  public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
+      ConfigOptions.key("sync-hive-tables.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable synchronizing Hive tables.");
+
+  public static final ConfigOption<Integer> SYNC_HIVE_TABLES_THREAD_COUNT =
+      ConfigOptions.key("sync-hive-tables.thread-count")
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for synchronizing Hive tables.");
 
-  public static final ConfigOption<Integer> SNAPSHOTS_REFRESHING_THREAD_POOL_SIZE =
-      ConfigOptions.key("refresh-table-thread-count")
+  public static final ConfigOption<Integer> REFRESH_TABLES_THREAD_COUNT =
+      ConfigOptions.key("refresh-tables.thread-count")
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for refreshing tables.");
 
-  public static final ConfigOption<Long> SNAPSHOTS_REFRESHING_INTERVAL =
-      ConfigOptions.key("refresh-table-interval")
+  public static final ConfigOption<Long> REFRESH_TABLES_INTERVAL =
+      ConfigOptions.key("refresh-tables.interval")
           .longType()
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
@@ -108,11 +126,17 @@ public class ArcticManagementConf {
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
 
-  public static final ConfigOption<Integer> THRIFT_BIND_PORT =
-      ConfigOptions.key("thrift-server.bind-port")
+  public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
+      ConfigOptions.key("thrift-server.table-service.bind-port")
           .intType()
-          .defaultValue(9090)
-          .withDescription("Port that the Thrift server is bound to.");
+          .defaultValue(1260)
+          .withDescription("Port that the table service thrift server is bound to.");
+
+  public static final ConfigOption<Integer> OPTIMIZING_SERVICE_THRIFT_BIND_PORT =
+      ConfigOptions.key("thrift-server.optimizing-service.bind-port")
+          .intType()
+          .defaultValue(1261)
+          .withDescription("Port that the optimizing service thrift server is bound to.");
 
   public static final ConfigOption<Long> THRIFT_MAX_MESSAGE_SIZE =
       ConfigOptions.key("thrift-server.max-message-size")
@@ -121,7 +145,7 @@ public class ArcticManagementConf {
           .withDescription("Maximum message size that the Thrift server can accept.");
 
   public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
-      ConfigOptions.key("thrift-server.worker-thread-count")
+      ConfigOptions.key("thrift-server.table-service.worker-thread-count")
           .intType()
           .defaultValue(20)
           .withDescription("The number of worker threads for the Thrift server.");
@@ -144,7 +168,7 @@ public class ArcticManagementConf {
           .defaultValue(19090)
           .withDescription("Port that the Http server is bound to.");
 
-  public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_POOL_SIZE =
+  public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
           .intType()
           .defaultValue(10)

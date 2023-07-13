@@ -6,7 +6,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.runner.RunWith;
@@ -30,7 +30,7 @@ public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelp
 
   @Override
   protected TableFileScanHelper buildFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
     return new IcebergTableFileScanHelper(getArcticTable(), baseSnapshotId);
   }
 

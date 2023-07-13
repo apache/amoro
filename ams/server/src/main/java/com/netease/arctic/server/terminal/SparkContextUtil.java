@@ -44,7 +44,6 @@ public class SparkContextUtil {
       String connector = sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog));
       if ("iceberg".equalsIgnoreCase(connector)) {
         sparkConf.put("spark.sql.catalog." + catalog, SparkCatalog.class.getName());
-
         Map<String, String> properties =
             TerminalSessionFactory.SessionConfigOptions.getCatalogProperties(sessionConfig, catalog);
         for (String key : properties.keySet()) {

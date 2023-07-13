@@ -28,6 +28,11 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
+
+/**
+ * A base class of interface {@link TableBuilder}
+ * @param <ThisT> self class
+ */
 public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements TableBuilder {
   protected PartitionSpec spec = PartitionSpec.unpartitioned();
   protected SortOrder sortOrder = SortOrder.unsorted();

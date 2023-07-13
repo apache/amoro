@@ -23,6 +23,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
@@ -32,6 +33,7 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
 
 import java.util.Arrays;
@@ -54,6 +56,8 @@ public class CatalogLoader {
   static final String EXTERNAL_CATALOG_IMPL = BasicExternalCatalog.class.getName();
   static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
 
+  public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
+
   /**
    * Entrypoint for loading Catalog.
    *
@@ -62,7 +66,7 @@ public class CatalogLoader {
    * @return arctic catalog object
    */
   public static ArcticCatalog load(String catalogUrl, Map<String, String> properties) {
-    ArcticThriftUrl url = ArcticThriftUrl.parse(catalogUrl);
+    ArcticThriftUrl url = ArcticThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
     if (url.catalogName() == null || url.catalogName().contains("/")) {
       throw new IllegalArgumentException("invalid catalog name " + url.catalogName());
     }
@@ -113,10 +117,16 @@ public class CatalogLoader {
           }
           break;
         case CATALOG_TYPE_AMS:
-          Preconditions.checkArgument(
-              formatCheck(tableFormats, TableFormat.MIXED_ICEBERG),
-              "AMS catalog support mixed iceberg table only.");
-          catalogImpl = AMS_CATALOG_IMPL;
+          if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+            catalogImpl = AMS_CATALOG_IMPL;
+          } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+            catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
+            catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
+            catalogImpl = ICEBERG_CATALOG_IMPL;
+          } else {
+            throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
+          }
+
           break;
         case CATALOG_TYPE_CUSTOM:
           Preconditions.checkArgument(

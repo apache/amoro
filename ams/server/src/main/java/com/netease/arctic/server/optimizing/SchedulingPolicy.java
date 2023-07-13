@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -26,7 +27,9 @@ public class SchedulingPolicy {
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
-    String schedulingPolicy = group.getProperties().get(SCHEDULING_POLICY_PROPERTY_NAME);
+    String schedulingPolicy = Optional.ofNullable(group.getProperties())
+            .orElseGet(Maps::newHashMap)
+            .get(SCHEDULING_POLICY_PROPERTY_NAME);
     if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
@@ -66,6 +69,10 @@ public class SchedulingPolicy {
     } finally {
       tableLock.unlock();
     }
+  }
+
+  public boolean containsTable(ServerTableIdentifier tableIdentifier) {
+    return tableRuntimeMap.containsKey(tableIdentifier);
   }
 
   @VisibleForTesting

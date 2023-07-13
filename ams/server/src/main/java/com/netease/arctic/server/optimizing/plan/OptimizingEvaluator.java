@@ -26,7 +26,7 @@ import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -56,7 +56,7 @@ public class OptimizingEvaluator {
   public OptimizingEvaluator(TableRuntime tableRuntime, ArcticTable table) {
     this.tableRuntime = tableRuntime;
     this.arcticTable = table;
-    this.currentSnapshot = IcebergTableUtils.getSnapshot(table, tableRuntime);
+    this.currentSnapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
   }
 
   public ArcticTable getArcticTable() {

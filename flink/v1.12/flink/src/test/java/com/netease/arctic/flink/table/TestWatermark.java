@@ -50,6 +50,7 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -83,7 +84,9 @@ public class TestWatermark extends FlinkTestBase {
       new BasicTableTestHelper(true, true));
   }
 
+  @Before
   public void before() throws Exception {
+    super.before();
     super.config();
   }
 

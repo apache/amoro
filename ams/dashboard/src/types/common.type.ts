@@ -72,12 +72,14 @@ export interface IBaseDetailInfo {
 export interface DetailColumnItem {
   field: string
   type: string
+  required: boolean
   comment: string
 }
 
 export interface IField {
   field: string
   type: string
+  required: boolean
   description: string
 }
 
@@ -200,6 +202,19 @@ export interface IOptimizeTableItem {
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
   tableNameOnly?: string
+}
+
+export interface IIOptimizeGroupItem {
+  resourceGroup: {
+    name: string;
+    container: string;
+    properties: {[prop: string]: string};
+  }
+  occupationCore: number;
+  occupationMemory: number;
+  name: string;
+  container: string;
+  resourceOccupation: string
 }
 
 export interface IOptimizeResourceTableItem {

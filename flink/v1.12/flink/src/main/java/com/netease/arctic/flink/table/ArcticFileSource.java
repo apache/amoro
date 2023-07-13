@@ -137,9 +137,14 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
       TableSchema.Builder builder = TableSchema.builder().fields(
           projectedColumns,
           Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
+      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(table.properties(), DIM_TABLE_ENABLE.key(),
+          DIM_TABLE_ENABLE.defaultValue());
+      if (dimTable) {
+        builder.watermark(tableSchema.getWatermarkSpecs().get(0));
+      }
 
       TableSchema ts = builder.build();
-      LOG.info("TableSchema builder after addPrimaryKey, schema:{}", ts);
+      LOG.info("TableSchema after projection:{}", ts);
       return ts;
     }
   }

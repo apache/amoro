@@ -33,6 +33,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.IcebergSchemaUtil;
@@ -262,6 +263,12 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
           LOG.warn("Failed to drop hive table while rolling back create table operation", e);
         }
       }
+    }
+
+    @Override
+    protected ConvertStructUtil.TableMetaBuilder createTableMataBuilder() {
+      ConvertStructUtil.TableMetaBuilder builder = super.createTableMataBuilder();
+      return builder.withFormat(TableFormat.MIXED_HIVE);
     }
   }
 }

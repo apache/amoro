@@ -10,7 +10,7 @@ import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -62,7 +62,7 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
     return new IcebergTableFileScanHelper(getArcticTable(), baseSnapshotId);
   }
 

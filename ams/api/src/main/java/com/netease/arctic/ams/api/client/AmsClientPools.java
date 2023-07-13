@@ -49,6 +49,6 @@ public class AmsClientPools {
             return false;
           }
           return true;
-        }, poolConfig);
+        }, poolConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
   }
 }

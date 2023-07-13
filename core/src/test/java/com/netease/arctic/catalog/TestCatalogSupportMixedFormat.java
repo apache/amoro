@@ -68,6 +68,22 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
     }
   }
 
+  protected void validateCreatedTable(ArcticTable table) throws TException  {
+    Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
+    Assert.assertEquals(getCreateTableSpec(), table.spec());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
+    assertIcebergTableStore(table.baseTable());
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = (KeyedTable)table;
+      Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());
+      Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.baseTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.baseTable().spec());
+      Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.changeTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.changeTable().spec());
+      assertIcebergTableStore(table.changeTable());
+    }
+  }
+
   @Test
   public void testCreateUnkeyedTable() {
     UnkeyedTable createTable = getCatalog()
@@ -75,52 +91,24 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
         .withPartitionSpec(getCreateTableSpec())
         .create()
         .asUnkeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
+    validateCreatedTable(createTable);
 
     UnkeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
-    assertIcebergTableStore(loadTable);
+    validateCreatedTable(loadTable);
   }
 
   @Test
-  public void testCreateKeyedTable() {
+  public void testCreateKeyedTable() throws TException {
     KeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
         .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
         .create()
         .asKeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, createTable.primaryKeySpec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.changeTable().spec());
+    validateCreatedTable(createTable);
 
     KeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asKeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, loadTable.primaryKeySpec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.changeTable().spec());
-    assertIcebergTableStore(loadTable.baseTable());
-    assertIcebergTableStore(loadTable.changeTable());
+    validateCreatedTable(loadTable);
   }
 
   @Test
@@ -143,6 +131,41 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
     createTable = getCatalog()
         .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema(), TableFormat.MIXED_ICEBERG)
         .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+  }
+
+  @Test
+  public void testCreateTableWithNewCatalogLogProperties() throws TException {
+    UnkeyedTable createTable = getCatalog()
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .create()
+        .asUnkeyedTable();
+    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
+        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+
+    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_ADDRESS,
+        "1.1.1.1");
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_MESSAGE_TOPIC,
+        "test-topic");
+    TEST_AMS.getAmsHandler().updateMeta(
+        testCatalogMeta,
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+        "false");
+    getCatalog().refresh();
+    createTable = getCatalog()
+        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+        .withPartitionSpec(getCreateTableSpec())
+        .withProperty(TableProperties.ENABLE_LOG_STORE, "true")
         .create()
         .asUnkeyedTable();
     Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),

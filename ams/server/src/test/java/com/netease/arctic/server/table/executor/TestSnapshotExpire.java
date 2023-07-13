@@ -29,7 +29,7 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -169,7 +169,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         testKeyedTable, changeTableFiles, testKeyedTable.changeTable().currentSnapshot().sequenceNumber());
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
-    Set<String> exclude = IcebergTableUtils.getAllContentFilePath(testKeyedTable.baseTable());
+    Set<String> exclude = IcebergTableUtil.getAllContentFilePath(testKeyedTable.baseTable());
     insertChangeDataFiles(testKeyedTable, 2);
     Snapshot expectedSnapshot = testKeyedTable.changeTable().currentSnapshot();
     SnapshotsExpiringExecutor.expireSnapshots(testKeyedTable.changeTable(), System.currentTimeMillis(), exclude);

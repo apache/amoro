@@ -24,6 +24,7 @@ import java.util.Map;
 public class CatalogRegisterInfo {
   String name;
   String type;
+  String optimizerGroup;
   List<String> tableFormatList;
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
@@ -47,6 +48,14 @@ public class CatalogRegisterInfo {
 
   public void setType(String type) {
     this.type = type;
+  }
+
+  public String getOptimizerGroup() {
+    return optimizerGroup;
+  }
+
+  public void setOptimizerGroup(String optimizerGroup) {
+    this.optimizerGroup = optimizerGroup;
   }
 
   public Map<String, String> getStorageConfig() {

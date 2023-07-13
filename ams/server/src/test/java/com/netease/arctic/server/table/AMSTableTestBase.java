@@ -54,6 +54,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private MixedTables mixedTables;
   private Catalog icebergCatalog;
   private CatalogMeta catalogMeta;
+
   private TableMeta tableMeta;
 
   private final boolean autoInitTable;
@@ -115,6 +116,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
     return builder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
         .withProperties(tableTestHelper.tableProperties())
         .withTableLocation(tableLocation)
+        .withFormat(catalogTestHelper.tableFormat())
         .withChangeLocation(tableLocation + "/change")
         .withBaseLocation(tableLocation + "/base")
         .build();
@@ -147,9 +149,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
     } else {
       mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
-      tableService().createTable(catalogMeta.getCatalogName(), tableMeta);
+      TableMetadata tableMetadata = tableMetadata();
+      tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     }
-    serverTableIdentifier = tableService().listTables().get(0);
+    serverTableIdentifier = tableService().listManagedTables().get(0);
   }
 
   protected void dropTable() {
@@ -172,6 +175,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected TableMeta tableMeta() {
     return tableMeta;
+  }
+
+  protected CatalogMeta catalogMeta() {
+    return catalogMeta;
+  }
+
+  protected TableMetadata tableMetadata() {
+    return new TableMetadata(ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
   }
 
   protected ServerTableIdentifier serverTableIdentifier() {

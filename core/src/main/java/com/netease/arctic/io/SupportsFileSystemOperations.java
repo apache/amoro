@@ -20,6 +20,10 @@ package com.netease.arctic.io;
 
 import org.apache.iceberg.io.SupportsPrefixOperations;
 
+/**
+ * A mixed-in interface for {@link ArcticFileIO} indicate that the storage system
+ * supports the file system operations such as directories operations.
+ */
 public interface SupportsFileSystemOperations extends ArcticFileIO, SupportsPrefixOperations {
 
   /**
