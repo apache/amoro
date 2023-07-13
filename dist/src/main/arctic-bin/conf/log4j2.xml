@@ -63,7 +63,7 @@
                 <Delete basePath="${LOG_HOME}/history" maxDepth="1">
                     <IfFileName glob="*.log.gz"/>
                     <IfLastModified age="7d"/>
-                    <IfAccumulatedFileSize exceeds="20 GB" />
+                    <IfAccumulatedFileSize exceeds="20GB" />
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
