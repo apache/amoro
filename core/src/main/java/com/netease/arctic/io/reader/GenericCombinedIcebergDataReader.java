@@ -199,7 +199,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     if (!hasPosDelete && eqDeleteIds == null) {
       return requestedSchema;
     }
-
+    List<Integer> requiredEqDeleteIds = TypeUtil.select(tableSchema, eqDeleteIds).columns().
+        stream().map(Types.NestedField::fieldId).collect(Collectors.toList());
     Set<Integer> requiredIds = Sets.newLinkedHashSet();
     if (hasPosDelete) {
       requiredIds.add(MetadataColumns.FILE_PATH.fieldId());
@@ -207,7 +208,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     }
 
     if (eqDeleteIds != null) {
-      requiredIds.addAll(eqDeleteIds);
+      requiredIds.addAll(requiredEqDeleteIds);
       requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
     }
 
