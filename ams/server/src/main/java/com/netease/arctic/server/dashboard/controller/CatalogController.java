@@ -32,6 +32,7 @@ import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo.ConfigFileItem;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
@@ -210,6 +211,10 @@ public class CatalogController {
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
+    catalogMeta.getCatalogProperties()
+        .put(
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+            info.getOptimizerGroup());
     if (info.getTableFormatList() == null || info.getTableFormatList().isEmpty()) {
       throw new RuntimeException("Invalid table format list");
     }
@@ -255,6 +260,8 @@ public class CatalogController {
         if (fillUseOld) {
           String fileSite = oldCatalogMeta.getStorageConfigs().get(metaKeyList.get(idx));
           metaStorageConfig.put(metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
+        } else {
+          metaStorageConfig.put(metaKeyList.get(idx), EMPTY_XML_BASE64);
         }
       }
     }
@@ -309,6 +316,9 @@ public class CatalogController {
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
       info.setProperties(Maps.newHashMap(catalogMeta.getCatalogProperties()));
+      info.setOptimizerGroup(info.getProperties().getOrDefault(
+          CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+          TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT));
       info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));
       return;
@@ -337,7 +347,7 @@ public class CatalogController {
    */
   public void catalogDeleteCheck(Context ctx) {
     Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    int tblCount = tableService.listDatabases(ctx.pathParam("catalogName")).size();
+    int tblCount = tableService.listManagedTables(ctx.pathParam("catalogName")).size();
     ctx.json(OkResponse.of(tblCount == 0));
   }
 

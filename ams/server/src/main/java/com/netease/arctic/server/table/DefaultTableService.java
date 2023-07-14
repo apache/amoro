@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
@@ -51,11 +50,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private Timer tableExplorerTimer;
 
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
+  private final Configurations serverConfiguration;
 
   public DefaultTableService(Configurations configuration) {
     this.externalCatalogRefreshingInterval =
         configuration.getLong(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL);
     this.blockerTimeout = configuration.getLong(ArcticManagementConf.BLOCKER_TIMEOUT);
+    this.serverConfiguration = configuration;
   }
 
   @Override
@@ -71,7 +72,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public CatalogMeta getCatalogMeta(String catalogName) {
     checkStarted();
-    return getServerCatalog(catalogName).getMetadata();
+    ServerCatalog catalog = getServerCatalog(catalogName);
+    return catalog.getMetadata();
   }
 
   @Override
@@ -99,7 +101,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   private void initServerCatalog(CatalogMeta catalogMeta) {
-    ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta);
+    ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
     if (catalog instanceof InternalCatalog) {
       internalCatalogMap.put(catalogMeta.getCatalogName(), (InternalCatalog) catalog);
     } else {
@@ -152,12 +154,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public void createTable(String catalogName, TableMeta tableMeta) {
+  public void createTable(String catalogName, TableMetadata tableMetadata) {
     checkStarted();
-    validateTableNotExists(tableMeta.getTableIdentifier());
+    validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMeta);
+    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
     ArcticTable table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
@@ -173,15 +175,21 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables() {
+  public List<ServerTableIdentifier> listManagedTables() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers);
   }
 
   @Override
-  public List<ServerTableIdentifier> listTables(String catalogName, String dbName) {
+  public List<ServerTableIdentifier> listManagedTables(String catalogName) {
     checkStarted();
-    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByDb(catalogName, dbName));
+    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiersByCatalog(catalogName));
+  }
+
+  @Override
+  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+    checkStarted();
+    return getServerCatalog(catalogName).listTables(dbName);
   }
 
   @Override
@@ -203,14 +211,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
-  @Deprecated
   @Override
   public List<TableMetadata> listTableMetas() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectTableMetas);
   }
-
-  @Deprecated
+ 
   @Override
   public List<TableMetadata> listTableMetas(String catalogName, String database) {
     checkStarted();

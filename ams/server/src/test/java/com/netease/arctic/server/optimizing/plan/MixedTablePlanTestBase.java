@@ -35,7 +35,7 @@ import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
@@ -81,15 +81,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   private long getCurrentSnapshotId() {
     if (getArcticTable().isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), false);
+      return IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), false);
     } else {
-      return IcebergTableUtils.getSnapshotId(getArcticTable().asUnkeyedTable(), false);
+      return IcebergTableUtil.getSnapshotId(getArcticTable().asUnkeyedTable(), false);
     }
   }
 
   private long getCurrentChangeSnapshotId() {
     if (getArcticTable().isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), false);
+      return IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), false);
     } else {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }

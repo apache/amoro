@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
@@ -42,10 +43,14 @@ import java.util.stream.Collectors;
 import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
 import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
 import static com.netease.arctic.server.ArcticManagementConf.HA_ZOOKEEPER_ADDRESS;
+import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT;
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
-import static com.netease.arctic.server.ArcticManagementConf.THRIFT_BIND_PORT;
+import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
 
 public class AmsUtil {
+
+  private static final String ZOOKEEPER_ADDRESS_FORMAT = "zookeeper://%s/%s";
+  private static final String THRIFT_ADDRESS_FORMAT = "thrift://%s:%s";
 
   public static TableIdentifier toTableIdentifier(com.netease.arctic.table.TableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
@@ -159,11 +164,20 @@ public class AmsUtil {
     }
   }
 
-  public static String getAMSThriftAddress(Configurations conf) {
+  public static String getAMSThriftAddress(Configurations conf, String serviceName) {
     if (conf.getBoolean(HA_ENABLE)) {
-      return "zookeeper://" + conf.getString(HA_ZOOKEEPER_ADDRESS) + "/" + conf.getString(HA_CLUSTER_NAME);
+      return String.format(ZOOKEEPER_ADDRESS_FORMAT, conf.getString(HA_ZOOKEEPER_ADDRESS),
+          conf.getString(HA_CLUSTER_NAME));
     } else {
-      return "thrift://" + conf.getString(SERVER_EXPOSE_HOST) + ":" + conf.getInteger(THRIFT_BIND_PORT);
+      if (Constants.THRIFT_TABLE_SERVICE_NAME.equals(serviceName)) {
+        return String.format(THRIFT_ADDRESS_FORMAT, conf.getString(SERVER_EXPOSE_HOST),
+            conf.getInteger(TABLE_SERVICE_THRIFT_BIND_PORT));
+      } else if (Constants.THRIFT_OPTIMIZING_SERVICE_NAME.equals(serviceName)) {
+        return String.format(THRIFT_ADDRESS_FORMAT, conf.getString(SERVER_EXPOSE_HOST),
+            conf.getInteger(OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+      } else {
+        throw new IllegalArgumentException(String.format("Unknown service name %s", serviceName));
+      }
     }
   }
 

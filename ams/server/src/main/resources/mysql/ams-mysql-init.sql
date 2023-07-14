@@ -20,14 +20,6 @@ CREATE TABLE `database_metadata`
     PRIMARY KEY (`catalog_name`, `db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
 
-CREATE TABLE `container_metadata`
-(
-    `container_name`       varchar(64) NOT NULL COMMENT 'container name',
-    `container_type`       varchar(64) NOT NULL COMMENT 'container type like flink/local',
-    `properties` mediumtext COMMENT 'container properties',
-    PRIMARY KEY (`container_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'container metadata';
-
 
 CREATE TABLE `optimizer`
 (
@@ -82,6 +74,7 @@ CREATE TABLE `table_metadata`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
+    `format`          varchar(32)  NOT NULL COMMENT "format",
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
@@ -97,6 +90,7 @@ CREATE TABLE `table_metadata`
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
     `current_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
+    `meta_version`    bigint(20) NOT NULL DEFAULT 0,
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
 
@@ -110,9 +104,9 @@ CREATE TABLE `table_runtime`
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
     `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
-    `last_major_optimizing_time`    timestamp COMMENT 'Latest Major Optimize time for all partitions',
-    `last_minor_optimizing_time`    timestamp COMMENT 'Latest Minor Optimize time for all partitions',
-    `last_full_optimizing_time`     timestamp COMMENT 'Latest Full Optimize time for all partitions',
+    `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
+    `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
+    `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
     `optimizing_status`             varchar(20) DEFAULT 'Idle' COMMENT 'Table optimize status: MajorOptimizing, MinorOptimizing, Pending, Idle',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
@@ -134,10 +128,10 @@ CREATE TABLE `table_optimizing_process`
     `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
     `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
-    `plan_time`                     timestamp default CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      timestamp default CURRENT_TIMESTAMP COMMENT 'Execute cost time',
+    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
-    `rewrite_input`                 mediumblob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
@@ -152,15 +146,15 @@ CREATE TABLE `task_runtime`
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
     `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
-    `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
-    `start_time`                datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
-    `end_time`                  datetime(3) DEFAULT NULL COMMENT 'Time when task finished',
+    `create_time`               timestamp NULL DEFAULT NULL COMMENT 'Task create time',
+    `start_time`                timestamp NULL DEFAULT NULL COMMENT 'Time when task start waiting to execute',
+    `end_time`                  timestamp NULL DEFAULT NULL COMMENT 'Time when task finished',
     `cost_time`                 bigint(20) DEFAULT NULL,
     `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
-    `rewrite_output`            blob DEFAULT NULL COMMENT 'rewrite files input',
+    `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
     PRIMARY KEY (`process_id`, `task_id`),
@@ -186,7 +180,7 @@ CREATE TABLE `api_tokens`
     `id`         int(11) NOT NULL AUTO_INCREMENT,
     `apikey`     varchar(256) NOT NULL COMMENT 'openapi client public key',
     `secret`     varchar(256) NOT NULL COMMENT 'The key used by the client to generate the request signature',
-    `apply_time` datetime DEFAULT NULL COMMENT 'apply time',
+    `apply_time` timestamp NULL DEFAULT NULL COMMENT 'apply time',
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE KEY `account_unique` (`apikey`) USING BTREE COMMENT 'account unique'
 ) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='Openapi  secret';
@@ -206,8 +200,8 @@ CREATE TABLE `table_blocker` (
   `db_name` varchar(128) NOT NULL COMMENT 'Database name',
   `table_name` varchar(128) NOT NULL COMMENT 'Table name',
   `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
-  `create_time` datetime(3) DEFAULT NULL COMMENT 'Blocker create time',
-  `expiration_time` datetime(3) DEFAULT NULL COMMENT 'Blocker expiration time',
+  `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time',
+  `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time',
   `properties` mediumtext COMMENT 'Blocker properties',
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)

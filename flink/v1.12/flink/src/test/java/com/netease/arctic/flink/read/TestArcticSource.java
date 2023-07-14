@@ -77,7 +77,6 @@ import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -175,13 +174,11 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     assertArrayEquals(excepts(), actualResult);
   }
 
-  @Ignore
   @Test
   public void testArcticSourceStaticJobManagerFailover() throws Exception {
     testArcticSource(FailoverTestUtil.FailoverType.JM);
   }
 
-  @Ignore
   @Test
   public void testArcticSourceStaticTaskManagerFailover() throws Exception {
     testArcticSource(FailoverTestUtil.FailoverType.TM);
@@ -516,13 +513,11 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     jobClient.cancel();
   }
 
-  @Ignore
   @Test
   public void testArcticContinuousSourceJobManagerFailover() throws Exception {
     testArcticContinuousSource(FailoverTestUtil.FailoverType.JM);
   }
 
-  @Ignore
   @Test
   public void testArcticContinuousSourceTaskManagerFailover() throws Exception {
     testArcticContinuousSource(FailoverTestUtil.FailoverType.TM);

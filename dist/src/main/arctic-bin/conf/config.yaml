@@ -5,11 +5,14 @@ ams:
   server-expose-host: "127.0.0.1"
 
   thrift-server:
-    bind-port: 1260
     max-message-size: 104857600 # 100MB
-    worker-thread-count: 20
     selector-thread-count: 2
     selector-queue-size: 4
+    table-service:
+      bind-port: 1260
+      worker-thread-count: 20
+    optimizing-service:
+      bind-port: 1261
 
   http-server:
     bind-port: 1630
@@ -89,18 +92,3 @@ containers:
 #      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
 #      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
 #      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
-
-optimizer_groups:
-  - name: default
-    container: localContainer
-    properties:
-      memory: "1024" # The size of memory allocated for each parallel
-
-  - name: external-group
-    container: external # The external container is used to host all externally launched optimizers.
-
-#  - name: flinkGroup
-#    container: flinkContainer
-#    properties:
-#      taskmanager.memory: "2048"
-#      jobmanager.memory: "1024"

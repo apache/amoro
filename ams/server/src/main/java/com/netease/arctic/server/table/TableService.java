@@ -21,7 +21,6 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.catalog.CatalogService;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @param tableMeta table metadata info
    */
-  void createTable(String catalogName, TableMeta tableMeta);
+  void createTable(String catalogName, TableMetadata tableMeta);
 
   /**
    * load the table metadata
@@ -44,7 +43,6 @@ public interface TableService extends CatalogService, TableManager {
    * @param tableIdentifier table id
    * @return table metadata info
    */
-  @Deprecated
   TableMetadata loadTableMetadata(TableIdentifier tableIdentifier);
 
   /**
@@ -53,7 +51,6 @@ public interface TableService extends CatalogService, TableManager {
    * @param tableIdentifier table id
    * @param deleteData      if delete the external table
    */
-  @Deprecated
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 
   /**
@@ -64,18 +61,27 @@ public interface TableService extends CatalogService, TableManager {
   List<String> listDatabases(String catalogName);
 
   /**
-   * load table identifiers
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
-   * @return TableIdentifier list
+   * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listTables();
+  List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * load table identifiers
+   * Load all managed tables.
+   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
    *
-   * @return TableIdentifier list
+   * @return {@link ServerTableIdentifier} list
    */
-  List<ServerTableIdentifier> listTables(String catalogName, String dbName);
+  List<ServerTableIdentifier> listManagedTables(String catalogName);
+
+  /**
+   * Load table identifiers by server catalog
+   *
+   * @return {@link TableIdentifier} list
+   */
+  List<TableIdentifier> listTables(String catalogName, String dbName);
 
   /**
    * create arctic database

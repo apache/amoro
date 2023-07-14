@@ -19,7 +19,8 @@
 package com.netease.arctic.server.dashboard;
 
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.DefaultOptimizingService;
+import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
@@ -30,20 +31,19 @@ import com.netease.arctic.server.dashboard.controller.TableController;
 import com.netease.arctic.server.dashboard.controller.TerminalController;
 import com.netease.arctic.server.dashboard.controller.VersionController;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
-import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
-import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
-import io.javalin.Javalin;
+import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
+import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +55,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -66,7 +67,6 @@ public class DashboardServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
-  private final Configurations serviceConfig;
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -76,12 +76,12 @@ public class DashboardServer {
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
-  private final TerminalManager terminalManager;
 
-  public DashboardServer(Configurations serviceConfig, TableService tableService,
-                         OptimizerManager optimizerManager) {
+
+  public DashboardServer(
+      Configurations serviceConfig, TableService tableService,
+      DefaultOptimizingService optimizerManager, TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
-    this.serviceConfig = serviceConfig;
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
@@ -90,12 +90,10 @@ public class DashboardServer {
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
-    this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
   }
 
-  private Javalin app;
   private String indexHtml = "";
 
   // read index.html content
@@ -103,7 +101,7 @@ public class DashboardServer {
     if ("".equals(indexHtml)) {
       try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
         try (InputStreamReader isr = new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
-            BufferedReader br = new BufferedReader(isr)) {
+             BufferedReader br = new BufferedReader(isr)) {
           StringBuilder sb = new StringBuilder();
           String line;
           while ((line = br.readLine()) != null) {
@@ -117,54 +115,27 @@ public class DashboardServer {
     return indexHtml;
   }
 
-  public void startRestServer() {
-    app = Javalin.create(config -> {
-      config.addStaticFiles(staticFiles -> {
-        staticFiles.hostedPath = "/";
-        // change to host files on a sub path, like '/assets'
-        staticFiles.directory = "/static";
-        // the directory where your files are located
-        staticFiles.location = Location.CLASSPATH;
-        // Location.CLASSPATH (jar) or Location.EXTERNAL (file system)
-        staticFiles.precompress = false;
-        // if the files should be pre-compressed and cached in memory (optimization)
-        staticFiles.aliasCheck = null;
-        // you can configure this to enable symlinks (= ContextHandler.ApproveAliases())
-        //staticFiles.headers = Map.of(...);
-        // headers that will be set for the files
-        staticFiles.skipFileFunction = req -> false;
-        // you can use this to skip certain files in the dir, based on the HttpServletRequest
-      });
-      config.sessionHandler(SessionHandler::new);
-      config.enableCorsForAllOrigins();
-    });
-    int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
-    app.start(port);
-    LOG.info("Javalin Rest server start at {}!!!", port);
+  public Consumer<StaticFileConfig> configStaticFiles() {
+    return staticFiles -> {
+      staticFiles.hostedPath = "/";
+      // change to host files on a sub path, like '/assets'
+      staticFiles.directory = "/static";
+      // the directory where your files are located
+      staticFiles.location = Location.CLASSPATH;
+      // Location.CLASSPATH (jar) or Location.EXTERNAL (file system)
+      staticFiles.precompress = false;
+      // if the files should be pre-compressed and cached in memory (optimization)
+      staticFiles.aliasCheck = null;
+      // you can configure this to enable symlinks (= ContextHandler.ApproveAliases())
+      //staticFiles.headers = Map.of(...);
+      // headers that will be set for the files
+      staticFiles.skipFileFunction = req -> false;
+      // you can use this to skip certain files in the dir, based on the HttpServletRequest
+    };
+  }
 
-    // before
-    app.before(ctx -> {
-      String uriPath = ctx.path();
-      String token = ctx.queryParam("token");
-      // if token of api request is not empty, so we check the query by token first
-      if (StringUtils.isNotEmpty(token)) {
-        CommonUtil.checkSinglePageToken(ctx);
-      } else {
-        if (needApiKeyCheck(uriPath)) {
-          checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
-              ctx.queryParam("signature"), ctx.queryParamMap());
-        } else if (needLoginCheck(uriPath)) {
-          if (null == ctx.sessionAttribute("user")) {
-            ctx.sessionAttributeMap();
-            LOG.info("session info: {}", JSONObject.toJSONString(
-                            ctx.sessionAttributeMap()));
-            throw new ForbiddenException();
-          }
-        }
-      }
-    });
-
-    app.routes(() -> {
+  public EndpointGroup endpoints() {
+    return () -> {
       /*backend routers*/
       path("", () -> {
         //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
@@ -192,7 +163,8 @@ public class DashboardServer {
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
         get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+            tableController::getOptimizingProcesses);
         get(
             "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
             tableController::getTableTransactions);
@@ -225,6 +197,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);
@@ -258,7 +236,8 @@ public class DashboardServer {
         post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
         get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+            tableController::getOptimizingProcesses);
         get(
             "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
             tableController::getTableTransactions);
@@ -281,6 +260,12 @@ public class DashboardServer {
         get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
         delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
         post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
+        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
+        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
+        get("/optimize/containers/get", optimizerController::getContainers);
 
         // console controller
         get("/terminal/examples", terminalController::getExamples);
@@ -297,49 +282,45 @@ public class DashboardServer {
         // version controller
         get("/versionInfo", versionController::getVersionInfo);
       });
-    });
+    };
+  }
 
-    // after-handler
-    app.after(ctx -> {
-    });
-
-    // exception-handler
-    app.exception(Exception.class, (e, ctx) -> {
-      if (e instanceof ForbiddenException) {
-        try {
-          // request doesn't start with /ams is  page request. we return index.html
-          if (!ctx.req.getRequestURI().startsWith("/ams")) {
-            ctx.html(getFileContent());
-          } else {
-            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
-          }
-        } catch (Exception fe) {
-          LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
-        }
-      } else if (e instanceof SignatureCheckException) {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
-      } else {
-        LOG.error("Failed to handle request", e);
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
+  public void preHandleRequest(Context ctx) {
+    String uriPath = ctx.path();
+    if (needApiKeyCheck(uriPath)) {
+      checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
+          ctx.queryParam("signature"), ctx.queryParamMap());
+    } else if (needLoginCheck(uriPath)) {
+      if (null == ctx.sessionAttribute("user")) {
+        ctx.sessionAttributeMap();
+        LOG.info("session info: {}", JSONObject.toJSONString(
+            ctx.sessionAttributeMap()));
+        throw new ForbiddenException();
       }
-    });
-
-    // default response handle
-    app.error(HttpCode.NOT_FOUND.getStatus(), ctx ->
-        ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", "")));
-
-    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx ->
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", "")));
-  }
-
-  public void stopRestServer() {
-    if (app != null) {
-      app.stop();
-    }
-    if (terminalManager != null) {
-      terminalManager.dispose();
     }
   }
+
+
+  public void handleException(Exception e, Context ctx) {
+    if (e instanceof ForbiddenException) {
+      try {
+        // request doesn't start with /ams is  page request. we return index.html
+        if (!ctx.req.getRequestURI().startsWith("/ams")) {
+          ctx.html(getFileContent());
+        } else {
+          ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
+        }
+      } catch (Exception fe) {
+        LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
+      }
+    } else if (e instanceof SignatureCheckException) {
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
+    } else {
+      LOG.error("Failed to handle request", e);
+      ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
+    }
+  }
+
 
   private static final String[] urlWhiteList = {
       "/ams/v1/versionInfo",
@@ -357,7 +338,8 @@ public class DashboardServer {
       "/favicon.ico",
       "/js/*",
       "/img/*",
-      "/css/*"
+      "/css/*",
+      IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
@@ -376,7 +358,7 @@ public class DashboardServer {
   }
 
   private boolean needApiKeyCheck(String uri) {
-    return uri.startsWith("/api");
+    return uri.startsWith("/api/ams");
   }
 
   private void checkApiToken(

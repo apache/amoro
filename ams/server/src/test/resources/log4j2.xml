@@ -31,6 +31,10 @@
         </Root>
         <Logger name="com.netease.arctic" level="INFO" additivity="false">
             <AppenderRef ref="stdout"/>
-        </Logger>TableMetaStore
+        </Logger>
+        <!-- iceberg rest catalog tests -->
+        <Logger name="org.apache.hc.client5.http.headers" level="DEBUG" additivity="false">
+            <AppenderRef ref="stdout"/>
+        </Logger>
     </Loggers>
 </Configuration>

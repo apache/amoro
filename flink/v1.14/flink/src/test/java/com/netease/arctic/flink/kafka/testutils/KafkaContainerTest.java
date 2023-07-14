@@ -52,7 +52,7 @@ public class KafkaContainerTest {
   private static Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
   public static String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
   public static Network NETWORK = Network.newNetwork();
-  public static String KAFKA = "confluentinc/cp-kafka:6.2.2";
+  public static String KAFKA = "confluentinc/cp-kafka:latest";
 
   @Container
   public static KafkaContainer KAFKA_CONTAINER =
