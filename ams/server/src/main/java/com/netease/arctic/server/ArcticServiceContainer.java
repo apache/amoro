@@ -237,7 +237,7 @@ public class ArcticServiceContainer {
             groupConfig.getString(ArcticManagementConf.OPTIMIZER_GROUP_CONTAINER));
         if (!ResourceContainers.contains(groupBuilder.getContainer())) {
           throw new IllegalStateException(
-              "can not find such container config named " +
+              "can not find such container config named" +
                   groupBuilder.getContainer());
         }
         if (groupConfig.containsKey(ArcticManagementConf.OPTIMIZER_GROUP_PROPERTIES) &&
