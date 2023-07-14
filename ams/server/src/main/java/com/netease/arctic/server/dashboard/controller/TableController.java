@@ -582,7 +582,7 @@ public class TableController {
         .collect(Collectors.toList()));
 
     serverTableMeta.setFilter(null);
-    LOG.debug("Table {} is keyedTable: {}", table.name() , table instanceof KeyedTable);
+    LOG.debug("Table {} is keyedTable: {}", table.name(), table instanceof KeyedTable);
     if (table.isKeyedTable()) {
       KeyedTable kt = table.asKeyedTable();
       if (kt.primaryKeySpec() != null) {

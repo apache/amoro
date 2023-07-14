@@ -55,7 +55,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
     if (evaluator.isNecessary()) {
       OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
-      LOG.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+      logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
           pendingInput);
       tableRuntime.setPendingInput(pendingInput);
     }
@@ -75,7 +75,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
         }
       }
     } catch (Throwable throwable) {
-      LOG.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
+      logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
   }
 }

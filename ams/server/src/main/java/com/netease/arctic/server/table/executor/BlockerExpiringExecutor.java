@@ -48,7 +48,7 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("table {} expire blocker failed.", tableRuntime.getTableIdentifier(), t);
+      logger.error("table {} expire blocker failed.", tableRuntime.getTableIdentifier(), t);
     }
   }
 
