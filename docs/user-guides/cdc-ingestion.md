@@ -9,9 +9,9 @@ menu:
         weight: 400
 ---
 # CDC Ingestion
-CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. Flink CDC is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the Arctic data lake. The Arctic data lake can then be queried by other engines.
+CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/ververica/flink-cdc-connectors) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the Arctic data lake. The Arctic data lake can then be queried by other engines.
 
-This section will show how to practice one table into the lake and multiple tables into the lake for both Native-Iceberg and Mixed-Iceberg format.
+This section will show how to practice one table into the lake and multiple tables into the lake for both [Native-Iceberg](../formats/iceberg.md) and [Mixed-Iceberg](../formats/mixed-iceberg.md) format.
 ## One table into the lake
 ### Native Iceberg format
 The following example will show how MySQL CDC data is written to a Native-Iceberg table.
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `iceberg_hadoop_catalog`.`default`.`sample` (
     PRIMARY KEY (id) NOT ENFORCED
 );
 
-insert into `iceberg_hadoop_catalog`.`default`.`sample` select * from products;
+INSERT INTO `iceberg_hadoop_catalog`.`default`.`sample` SELECT * FROM products;
 ```
 
 ### Mixed Iceberg format
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `arctic_catalog`.`db`.`test_tb`(
     PRIMARY KEY (id) NOT ENFORCED
 );
 
-insert into `arctic_catalog`.`db`.`test_tb` select * from products;
+INSERT INTO `arctic_catalog`.`db`.`test_tb` SELECT * FROM products;
 ```
 
 ## Multiple tables into the lake
