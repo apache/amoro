@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.terminal;
 
-
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.sql.ResultSet;
