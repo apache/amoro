@@ -18,13 +18,13 @@
 
 package com.netease.arctic.spark.test.helper;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 

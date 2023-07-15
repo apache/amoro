@@ -18,7 +18,8 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.clearspring.analytics.util.Lists;
+
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
