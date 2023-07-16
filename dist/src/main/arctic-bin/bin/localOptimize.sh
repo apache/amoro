@@ -18,16 +18,27 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 export ARCTIC_HOME
 
 LIB_PATH=$ARCTIC_HOME/lib
 LOG_DIR=$ARCTIC_HOME/logs
-export CLASSPATH=$CLASSPATH:$ARCTIC_HOME/conf/optimize
-
+STDERR_LOG=${LOG_DIR}/localOptimize.log.err
+export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$ARCTIC_HOME/conf/optimize
+if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
+  echo "启动 localOptimize 任务缺少相关 jar,请检查" >&2
+  exit -1
+fi
 if [[ -d $JAVA_HOME ]]; then
     JAVA_RUN=$JAVA_HOME/bin/java
 else
     JAVA_RUN=java
 fi
 
-$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-$(date +%s) -Xmx$2m com.netease.arctic.optimizer.local.LocalOptimizer "$@" &
+if [ ! -f $STDERR_LOG ];then
+    touch $STDERR_LOG
+fi
+JAVA_OPTS="-Xmx$2m -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-$(date +%s)"
+RUN_SERVER="com.netease.arctic.optimizer.local.LocalOptimizer"
+CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $@"
+nohup ${CMDS} >/dev/null 2>${STDERR_LOG} &

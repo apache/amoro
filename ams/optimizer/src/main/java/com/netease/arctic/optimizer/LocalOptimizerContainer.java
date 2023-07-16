@@ -19,14 +19,12 @@
 package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.optimizer.util.ExecUtil;
 import com.netease.arctic.optimizer.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
@@ -44,8 +42,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
     try {
       String[] cmd = {"/bin/sh", "-c", startUpArgs};
       LOG.info("Starting local optimizer using command:" + startUpArgs);
-      Process process = runtime.exec(cmd);
-      printProcessErrorStream(process.getErrorStream());
+      ExecUtil.exec(cmd, new ArrayList<>());
       return Collections.emptyMap();
     } catch (Exception e) {
       throw new RuntimeException("Failed to scale out optimizer.", e);
@@ -82,28 +79,6 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
       runtime.exec(finalCmd);
     } catch (Exception e) {
       throw new RuntimeException("Failed to release optimizer.", e);
-    }
-  }
-
-  private void printProcessErrorStream(InputStream errorStream) {
-    try (InputStreamReader isr = new InputStreamReader(errorStream)) {
-      try (BufferedReader br = new BufferedReader(isr)) {
-        StringBuilder error = null;
-        String readError = null;
-        while ((readError = br.readLine()) != null) {
-          if (error == null) {
-            error = new StringBuilder();
-            error.append(readError);
-          } else {
-            error.append("\r\n" + readError);
-          }
-        }
-        if (error != null) {
-          LOG.error("start local optimize failed: {}", error.toString());
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("print process error failed", e);
     }
   }
 }
