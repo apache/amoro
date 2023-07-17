@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.terminal.local;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.server.terminal.SimpleResultSet;
 import com.netease.arctic.server.terminal.TerminalSession;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
