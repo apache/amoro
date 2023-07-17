@@ -19,11 +19,12 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -77,23 +78,23 @@ public class ConvertStructUtil {
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
       // if we can't parse file type from file name, handle it as base file
-      DataFileType dataFileType = FileNameGenerator.parseFileType(filePath, tableType);
+      DataFileType dataFileType = FileNameRules.parseFileType(filePath, tableType);
       validateArcticFileType(content, filePath, dataFileType);
       amsDataFile.setFileType(dataFileType.name());
 
-      DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(filePath);
+      DataTreeNode node = FileNameRules.parseFileNodeFromFileName(filePath);
       amsDataFile.setIndex(node.index());
       amsDataFile.setMask(node.mask());
     } else if (content == FileContent.POSITION_DELETES) {
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
 
-      DataFileType dataFileType = FileNameGenerator.parseFileType(filePath, tableType);
+      DataFileType dataFileType = FileNameRules.parseFileType(filePath, tableType);
       if (dataFileType == DataFileType.POS_DELETE_FILE) {
-        DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(filePath);
+        DataTreeNode node = FileNameRules.parseFileNodeFromFileName(filePath);
         amsDataFile.setIndex(node.index());
         amsDataFile.setMask(node.mask());
       } else {
-        if (!FileNameGenerator.isArcticFileFormat(filePath)) {
+        if (!FileNameRules.isArcticFileFormat(filePath)) {
           amsDataFile.setIndex(DataTreeNode.ROOT.getIndex());
           amsDataFile.setMask(DataTreeNode.ROOT.getMask());
         } else {
@@ -166,7 +167,9 @@ public class ConvertStructUtil {
     Map<String, String> properties = new HashMap<>();
     Map<String, String> locations = new HashMap<>();
 
-    public TableMetaBuilder(TableIdentifier identifier, org.apache.iceberg.Schema schema) {
+    TableFormat format;
+
+    public TableMetaBuilder(TableIdentifier identifier, Schema schema) {
       meta.setTableIdentifier(identifier.buildTableIdentifier());
       this.schema = schema;
     }
@@ -210,9 +213,16 @@ public class ConvertStructUtil {
       return this;
     }
 
+    public TableMetaBuilder withFormat(TableFormat format) {
+      this.format = format;
+      return this;
+    }
+
     public TableMeta build() {
+      Preconditions.checkNotNull(this.format, "table format must set.");
       meta.setLocations(locations);
       meta.setProperties(this.properties);
+      meta.setFormat(this.format.name());
       return meta;
     }
   }

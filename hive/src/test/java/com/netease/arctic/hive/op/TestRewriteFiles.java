@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.TestHMS;
@@ -136,7 +136,7 @@ public class TestRewriteFiles extends TableTestBase {
     TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(), "new_table", hiveTable);
     String tableRootLocation = ArcticTableUtil.tableRootLocation(getArcticTable());
     String newTableLocation = tableRootLocation.replace(getArcticTable().id().getTableName(), "new_table");
-    getArcticTable().io().deleteDirectoryRecursively(newTableLocation);
+    getArcticTable().io().asFileSystemIO().deletePrefix(newTableLocation);
   }
 
   @Test

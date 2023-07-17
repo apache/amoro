@@ -31,6 +31,11 @@ public class Split {
     AVAILABLE,
 
     /**
+     * Assigner has pending splits. But current subtask doesn't have pending splits.
+     */
+    SUBTASK_UNAVAILABLE,
+
+    /**
      * Assigner doesn't have pending splits.
      */
     UNAVAILABLE
@@ -59,14 +64,23 @@ public class Split {
     return status == Status.AVAILABLE;
   }
 
+  public boolean isUnavailable() {
+    return status == Status.UNAVAILABLE;
+  }
+
   public ArcticSplit split() {
     return split;
   }
 
   private static final Split UNAVAILABLE = new Split(Status.UNAVAILABLE);
+  private static final Split SUBTASK_UNAVAILABLE = new Split(Status.SUBTASK_UNAVAILABLE);
 
   public static Split unavailable() {
     return UNAVAILABLE;
+  }
+
+  public static Split subtaskUnavailable() {
+    return SUBTASK_UNAVAILABLE;
   }
 
   public static Split of(ArcticSplit arcticSplit) {

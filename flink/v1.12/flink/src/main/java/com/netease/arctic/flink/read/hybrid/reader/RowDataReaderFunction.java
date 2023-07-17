@@ -7,13 +7,14 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.netease.arctic.flink.read.hybrid.reader;
@@ -60,14 +61,22 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * Refer to {@link this#wrapArcticFileOffsetColumnMeta}
    */
   private final int arcticFileOffsetIndex;
+  private final boolean reuse;
 
   public RowDataReaderFunction(
       ReadableConfig config, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
       String nameMapping, boolean caseSensitive, ArcticFileIO io) {
+    this(config, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, io,
+        false);
+  }
+
+  public RowDataReaderFunction(
+      ReadableConfig config, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
+      String nameMapping, boolean caseSensitive, ArcticFileIO io, boolean reuse) {
     super(new ArrayPoolDataIteratorBatcher<>(config, new RowDataRecordFactory(
         FlinkSchemaUtil.convert(readSchema(tableSchema, projectedSchema)))));
     this.tableSchema = tableSchema;
-    this.readSchema = fillUpReadSchema(tableSchema, projectedSchema);
+    this.readSchema = fillUpReadSchema(tableSchema, projectedSchema, primaryKeySpec);
     this.primaryKeySpec = primaryKeySpec;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
@@ -75,6 +84,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     // Add file offset column after readSchema.
     this.arcticFileOffsetIndex = readSchema.columns().size();
     this.columnSize = projectedSchema == null ? readSchema.columns().size() : projectedSchema.columns().size();
+    this.reuse = reuse;
   }
 
   @Override
@@ -84,7 +94,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
       FileScanTaskReader<RowData> rowDataReader =
           new FlinkArcticDataReader(
               io, tableSchema, readSchema, primaryKeySpec, nameMapping, caseSensitive, RowDataUtil::convertConstant,
-              Collections.singleton(split.dataTreeNode()), false);
+              Collections.singleton(split.dataTreeNode()), reuse);
       return new DataIterator<>(
           rowDataReader,
           split.asSnapshotSplit().insertTasks(),
@@ -95,7 +105,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
           new FlinkArcticDataReader(
               io, wrapArcticFileOffsetColumnMeta(tableSchema), wrapArcticFileOffsetColumnMeta(readSchema),
               primaryKeySpec, nameMapping, caseSensitive, RowDataUtil::convertConstant,
-              Collections.singleton(split.dataTreeNode()), false);
+              Collections.singleton(split.dataTreeNode()), reuse);
       return new ChangeLogDataIterator<>(
           rowDataReader,
           split.asChangelogSplit().insertTasks(),
@@ -142,9 +152,9 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * @param projectedSchema projected schema
    * @return a new Schema on which include the identifier fields.
    */
-  private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema) {
+  private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec) {
     Preconditions.checkNotNull(tableSchema, "Table schema can't be null");
-    return projectedSchema == null ? tableSchema : fillUpIdentifierFields(tableSchema, projectedSchema);
+    return projectedSchema == null ? tableSchema : fillUpIdentifierFields(tableSchema, projectedSchema, primaryKeySpec);
   }
 
   private static Schema readSchema(Schema tableSchema, Schema projectedSchema) {

@@ -19,7 +19,7 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.ArcticUtils;
@@ -50,6 +50,7 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -68,7 +69,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.LOCATION;
 
 public class TestWatermark extends FlinkTestBase {
   public static final Logger LOG = LoggerFactory.getLogger(TestWatermark.class);
@@ -84,7 +84,9 @@ public class TestWatermark extends FlinkTestBase {
       new BasicTableTestHelper(true, true));
   }
 
+  @Before
   public void before() throws Exception {
+    super.before();
     super.config();
   }
 

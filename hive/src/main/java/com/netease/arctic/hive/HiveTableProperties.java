@@ -35,6 +35,8 @@ public class HiveTableProperties {
   public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
+  // save the root location of arctic table.
+  public static final String ARCTIC_TABLE_ROOT_LOCATION = "arctic.table.root-location";
 
   public static final String PARTITION_PROPERTIES_KEY_HIVE_LOCATION = "hive-location";
 
@@ -47,6 +49,9 @@ public class HiveTableProperties {
 
   public static final String AUTO_SYNC_HIVE_DATA_WRITE = "base.hive.auto-sync-data-write";
   public static final boolean AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT = false;
+
+  public static final String REFRESH_HIVE_INTERVAL = "base.hive.refresh-interval";
+  public static final long REFRESH_HIVE_INTERVAL_DEFAULT = -1L;
 
   public static final String ALLOW_HIVE_TABLE_EXISTED = "allow-hive-table-existed";
 

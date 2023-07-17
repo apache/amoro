@@ -18,18 +18,23 @@
 
 package com.netease.arctic.flink.table;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
-import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,12 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
 @RunWith(Parameterized.class)
 public class TestUnkeyedOverwrite extends FlinkTestBase {
@@ -60,50 +61,45 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
       MiniClusterResource.createWithClassloaderCheckDisabled();
   
   private static final String TABLE = "test_unkeyed";
-  private static final String DB = TABLE_ID.getDatabase();
+  private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
 
-  private String catalog;
   private String db;
-  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
-
-  @Parameterized.Parameter
   public boolean isHive;
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
 
-  @Parameterized.Parameters(name = "isHive = {0}")
-  public static Collection<Boolean> parameters() {
-    return Arrays.asList(false);
+  public TestUnkeyedOverwrite(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive) {
+    super(catalogTestHelper, tableTestHelper);
+    this.isHive = isHive;
   }
 
-  @BeforeClass
-  public static void beforeClass() throws Exception {
-    HiveTableTestBase.startMetastore();
-    FlinkTestBase.prepare();
-  }
-
-  @AfterClass
-  public static void afterClass() throws Exception {
-    FlinkTestBase.shutdown();
+  @Parameterized.Parameters(name = "{0}, {1}, {2}")
+  public static Object[] parameters() {
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+      new HiveTableTestHelper(true, true), true
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true), false
+      }
+    };
   }
 
   public void before() throws Exception {
     if (isHive) {
-      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
-      db = HiveTableTestBase.HIVE_DB_NAME;
-      hiveTableTestBase.setupTables();
+      db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
-      catalog = TEST_CATALOG_NAME;
       db = DB;
-      super.before();
     }
-    super.config(catalog);
+    super.before();
+    super.config();
   }
 
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
-    if (isHive) {
-      hiveTableTestBase.clearTable();
-    }
   }
 
   @Test(timeout = 30000)

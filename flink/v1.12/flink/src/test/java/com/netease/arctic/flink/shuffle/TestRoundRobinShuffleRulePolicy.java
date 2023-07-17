@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.shuffle;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.FlinkTestBase;

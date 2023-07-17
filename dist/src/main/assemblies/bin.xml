@@ -29,13 +29,13 @@
 
     <files>
         <file>
-            <source>../optimizer/target/arctic-optimizer-${project.version}-jar-with-dependencies.jar</source>
+            <source>../ams/optimizer/target/arctic-ams-optimizer-${project.version}-jar-with-dependencies.jar</source>
             <outputDirectory>plugin/optimize</outputDirectory>
             <destName>OptimizeJob.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../ams/ams-server/target/arctic-ams-server-${project.version}.jar</source>
+            <source>../ams/server/target/arctic-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
             <destName>arctic-ams-server-${project.version}.jar</destName>
             <fileMode>0644</fileMode>
@@ -56,20 +56,20 @@
         <fileSet>
             <directory>src/main/arctic-bin/conf</directory>
             <outputDirectory>conf</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../ams/ams-server/src/main/resources/sql/mysql</directory>
+            <directory>../ams/server/src/main/resources/mysql</directory>
             <outputDirectory>conf/mysql</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../ams/ams-server/src/main/resources/sql/derby</directory>
+            <directory>../ams/server/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
-            <fileMode>0555</fileMode>
+            <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../ams/ams-server/target/arctic-ams-server-dependency/lib</directory>
+            <directory>../ams/server/target/arctic-ams-server-dependency/lib</directory>
             <outputDirectory>lib/</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>

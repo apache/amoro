@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.catalog;
 
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestBase;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
@@ -76,6 +76,9 @@ public class TestCatalog extends CatalogTestBase{
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogValidator.CATALOG_TYPE_VALUE_ARCTIC);
     props.put(ArcticCatalogValidator.METASTORE_URL, getCatalogUrl());
+    if (getCatalog().listDatabases().contains(DB)) {
+      getCatalog().dropDatabase(DB);
+    }
   }
 
   @Test

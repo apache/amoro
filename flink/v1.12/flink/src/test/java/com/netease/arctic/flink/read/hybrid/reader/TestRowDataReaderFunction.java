@@ -20,7 +20,7 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;

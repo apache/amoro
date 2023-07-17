@@ -20,7 +20,7 @@ package com.netease.arctic.flink.write;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
@@ -29,8 +29,8 @@ import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
-import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
+import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.io.DataTestHelpers;
