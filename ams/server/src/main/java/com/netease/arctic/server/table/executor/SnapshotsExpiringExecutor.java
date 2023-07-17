@@ -291,7 +291,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     if (keyedTable.baseTable().spec().isUnpartitioned()) {
       List<IcebergFileEntry> partitionDataFiles =
-          partitionDataFileMap.get(keyedTable.spec().partitionToPath(expiredDataFileEntries.get(0).getFile().partition()));
+          partitionDataFileMap.get(keyedTable.spec().partitionToPath(
+              expiredDataFileEntries.get(0).getFile().partition()));
 
       Long optimizedSequence = partitionMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
