@@ -9,12 +9,12 @@ menu:
         weight: 400
 ---
 # CDC Ingestion
-CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/ververica/flink-cdc-connectors) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the Arctic data lake. The Arctic data lake can then be queried by other engines.
+CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. [Flink CDC](https://github.com/ververica/flink-cdc-connectors) is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake. The data lake can then be queried by other engines.
 
-This section will show how to practice one table into the lake and multiple tables into the lake for both [Native-Iceberg](../formats/iceberg.md) and [Mixed-Iceberg](../formats/mixed-iceberg.md) format.
-## One table into the lake
-### Native Iceberg format
-The following example will show how MySQL CDC data is written to a Native-Iceberg table.
+This section will show how to ingest one table or multiple tables into the data lake for both [Iceberg](../formats/iceberg.md) format and [Mixed-Iceberg](../formats/mixed-iceberg.md) format.
+## Ingest into one table
+### Iceberg format
+The following example will show how MySQL CDC data is written to an Iceberg table.
 
 **Requirements**
 
@@ -58,7 +58,7 @@ The following example will show how MySQL CDC data is written to a Mixed-Iceberg
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Arctic](https://repo1.maven.org/maven2/com/netease/arctic/arctic-flink-runtime-1.14/0.4.1/arctic-flink-runtime-1.14-0.4.1.jar) Jars to the lib directory of the Flink engine package.
+Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Arctic](../../download) Jars to the lib directory of the Flink engine package.
 
 ```sql
 CREATE TABLE products (
@@ -91,15 +91,52 @@ CREATE TABLE IF NOT EXISTS `arctic_catalog`.`db`.`test_tb`(
 INSERT INTO `arctic_catalog`.`db`.`test_tb` SELECT * FROM products;
 ```
 
-## Multiple tables into the lake
-### Native Iceberg format
-The following example will show how to write CDC data from multiple MySQL tables into the corresponding Native-Iceberg table.
+## Ingest Into multiple tables
+### Iceberg format
+The following example will show how to write CDC data from multiple MySQL tables into the corresponding Iceberg table.
 
 **Requirements**
 
 Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.14/1.1.0) dependencies to your Maven project's pom.xml file.
 
 ```java
+import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
+import com.ververica.cdc.debezium.table.MetadataConverter;
+import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.table.api.*;
+import org.apache.flink.table.catalog.*;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.conversion.RowRowConverter;
+import org.apache.flink.table.data.utils.JoinedRowData;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.flink.CatalogLoader;
+import org.apache.iceberg.flink.TableLoader;
+import org.apache.iceberg.flink.sink.FlinkSink;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.source.SourceRecord;
+import java.util.*;
+
+import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
+import static java.util.stream.Collectors.toMap;
+
 public class MySqlCDC2IcebergExample {
   public static void main(String[] args) throws Exception {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = initSourceTables();
@@ -124,7 +161,7 @@ public class MySqlCDC2IcebergExample {
     SingleOutputStreamOperator<Void> process = env
       .fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source")
       .setParallelism(4)
-      .process(new RowDataVoidProcessFunction(pathAndTable.stream()
+      .process(new SplitCdcStreamFunction(pathAndTable.stream()
           .collect(toMap(e -> e.f0.toString(),
               e -> RowRowConverter.create(e.f1.getResolvedSchema().toPhysicalRowDataType())))))
       .name("split stream");
@@ -152,7 +189,7 @@ public class MySqlCDC2IcebergExample {
         .append();
     }
 
-    env.execute("Sync MySQL to Native Iceberg table");
+    env.execute("Sync MySQL to the Iceberg table");
   }
 
   static class CompositeDebeziumDeserializationSchema
@@ -184,10 +221,10 @@ public class MySqlCDC2IcebergExample {
     }
   }
 
-  static class RowDataVoidProcessFunction extends ProcessFunction<RowData, Void> {
+  static class SplitCdcStreamFunction extends ProcessFunction<RowData, Void> {
     private final Map<String, RowRowConverter> converters;
 
-    public RowDataVoidProcessFunction(final Map<String, RowRowConverter> converterMap) {
+    public SplitCdcStreamFunction(final Map<String, RowRowConverter> converterMap) {
       this.converters = converterMap;
     }
 
@@ -276,6 +313,40 @@ The following example will show how to write CDC data from multiple MySQL tables
 Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/com.ververica/flink-connector-mysql-cdc/2.3.0) and [Arctic](https://mvnrepository.com/artifact/com.netease.arctic/arctic-flink-runtime-1.14/0.4.1) dependencies to your Maven project's pom.xml file.
 
 ```java
+import com.netease.arctic.flink.InternalCatalogBuilder;
+import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.write.FlinkSink;
+import com.netease.arctic.table.TableIdentifier;
+import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import com.ververica.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
+import com.ververica.cdc.debezium.table.MetadataConverter;
+import com.ververica.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.table.api.*;
+import org.apache.flink.table.catalog.*;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.conversion.RowRowConverter;
+import org.apache.flink.table.data.utils.JoinedRowData;
+import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.source.SourceRecord;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+import static com.ververica.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
+import static java.util.stream.Collectors.toMap;
+
 public class MySqlCDC2ArcticExample {
   public static void main(String[] args) throws Exception {
     List<Tuple2<ObjectPath, ResolvedCatalogTable>> pathAndTable = initSourceTables();
@@ -300,7 +371,7 @@ public class MySqlCDC2ArcticExample {
     // Split CDC streams by table name
     SingleOutputStreamOperator<Void> process = env
       .fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source").setParallelism(4)
-      .process(new RowDataVoidProcessFunction(pathAndTable.stream()
+      .process(new SplitCdcStreamFunction(pathAndTable.stream()
         .collect(toMap(e -> e.f0.toString(),
           e -> RowRowConverter.create(e.f1.getResolvedSchema().toPhysicalRowDataType())))))
       .name("split stream");
@@ -357,10 +428,10 @@ public class MySqlCDC2ArcticExample {
     }
   }
 
-  static class RowDataVoidProcessFunction extends ProcessFunction<RowData, Void> {
+  static class SplitCdcStreamFunction extends ProcessFunction<RowData, Void> {
     private final Map<String, RowRowConverter> converters;
 
-    public RowDataVoidProcessFunction(final Map<String, RowRowConverter> converterMap) {
+    public SplitCdcStreamFunction(final Map<String, RowRowConverter> converterMap) {
       this.converters = converterMap;
     }
 
