@@ -41,7 +41,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
     Runtime runtime = Runtime.getRuntime();
     try {
       String[] cmd = {"/bin/sh", "-c", startUpArgs};
-      LOG.info("Starting local optimizer using command:" + startUpArgs);
+      LOG.info("Starting local optimizer using command : {}", startUpArgs);
       ExecUtil.exec(cmd, new ArrayList<>());
       return Collections.emptyMap();
     } catch (Exception e) {
