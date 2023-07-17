@@ -117,12 +117,15 @@ public class CatalogLoader {
           }
           break;
         case CATALOG_TYPE_AMS:
+          Preconditions.checkArgument(tableFormats.size() == 1,
+              "Internal Catalog only support one format");
+          TableFormat tableFormat = tableFormats.iterator().next();;
           if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (tableFormat.equals(TableFormat.ICEBERG)) {
             catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
-            catalogImpl = ICEBERG_CATALOG_IMPL;
+            catalogImpl = EXTERNAL_CATALOG_IMPL;
           } else {
             throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
           }

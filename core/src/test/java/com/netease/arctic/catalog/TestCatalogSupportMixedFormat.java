@@ -68,11 +68,10 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
     }
   }
 
-  protected void validateCreatedTable(ArcticTable table) throws TException  {
+  protected void validateCreatedTable(ArcticTable table) {
     Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), table.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
-    assertIcebergTableStore(table.baseTable());
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = (KeyedTable)table;
       Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());
@@ -80,7 +79,10 @@ public class TestCatalogSupportMixedFormat extends CatalogTestBase {
       Assert.assertEquals(getCreateTableSpec(), keyedTable.baseTable().spec());
       Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.changeTable().schema().asStruct());
       Assert.assertEquals(getCreateTableSpec(), keyedTable.changeTable().spec());
-      assertIcebergTableStore(table.changeTable());
+      assertIcebergTableStore(table.asKeyedTable().changeTable());
+      assertIcebergTableStore(table.asKeyedTable().baseTable());
+    } else {
+      assertIcebergTableStore(table.asUnkeyedTable());
     }
   }
 

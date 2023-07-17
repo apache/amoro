@@ -54,11 +54,16 @@ public class TestHiveCatalogSupportMixedFormat extends TestCatalogSupportMixedFo
     return IDENTIFY_SPEC;
   }
 
-  private void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
+  private void validateTableArcticProperties(TableIdentifier tableIdentifier) {
     String dbName = tableIdentifier.getDatabase();
     String tbl = tableIdentifier.getTableName();
-    Map<String,String> tableParameter =  TEST_HMS.getHiveClient()
-            .getTable(dbName, tbl).getParameters();
+    Map<String,String> tableParameter = null;
+    try {
+      tableParameter = TEST_HMS.getHiveClient()
+          .getTable(dbName, tbl).getParameters();
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
 
     Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
     Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
@@ -66,7 +71,7 @@ public class TestHiveCatalogSupportMixedFormat extends TestCatalogSupportMixedFo
   }
 
   @Override
-  protected void validateCreatedTable(ArcticTable table) throws TException {
+  protected void validateCreatedTable(ArcticTable table)  {
     super.validateCreatedTable(table);
     validateTableArcticProperties(table.id());
   }

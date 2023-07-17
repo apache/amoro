@@ -80,6 +80,6 @@ public class ArcticTableUtil {
     String[] databaseAndTable = change.split("\\.");
     Preconditions.checkArgument(databaseAndTable.length == 2,
         "invalid table identifier: " + change);
-    return TableIdentifier.of(base.id().getCatalog(), base.id().getTableName(), databaseAndTable[1]);
+    return TableIdentifier.of(base.id().getCatalog(), base.id().getDatabase(), databaseAndTable[1]);
   }
 }
