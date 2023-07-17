@@ -46,6 +46,7 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.util.Pair;
+import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -342,8 +343,8 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   private void insertUnKeyedTablePosDeleteFiles(ArcticTable arcticTable) throws Exception {
     List<DataFile> dataFiles = insertUnKeyedTableDataFiles(arcticTable);
 
-    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
-        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    StructLikeMap<List<DataFile>> dataFilesPartitionMap = StructLikeMap.create(arcticTable.spec().partitionType());
+    dataFilesPartitionMap.putAll(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
     for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
       StructLike partition = dataFilePartitionMap.getKey();

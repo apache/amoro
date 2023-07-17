@@ -149,8 +149,8 @@ public interface TestOptimizeBase {
     if (arcticTable.isKeyedTable()) {
       transactionId = arcticTable.asKeyedTable().beginTransaction(null);
     }
-    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
-        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    StructLikeMap<List<DataFile>> dataFilesPartitionMap = StructLikeMap.create(arcticTable.spec().partitionType());
+    dataFilesPartitionMap.putAll(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
     for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
       StructLike partition = dataFilePartitionMap.getKey();
@@ -191,8 +191,8 @@ public interface TestOptimizeBase {
   default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,
                                                            List<PrimaryKeyedFile> dataFiles,
                                                            long transactionId) throws IOException {
-    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
-        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    StructLikeMap<List<DataFile>> dataFilesPartitionMap = StructLikeMap.create(arcticTable.spec().partitionType());
+    dataFilesPartitionMap.putAll(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
     for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
       StructLike partition = dataFilePartitionMap.getKey();
