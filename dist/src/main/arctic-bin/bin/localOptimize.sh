@@ -26,7 +26,7 @@ LOG_DIR=$ARCTIC_HOME/logs
 STDERR_LOG=${LOG_DIR}/localOptimize.log.err
 export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$ARCTIC_HOME/conf/optimize
 if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
-  echo "启动 localOptimize 任务缺少相关 jar,请检查" >&2
+  echo "Launching the localOptimize task lacks relevant jars, please check" >&2
   exit -1
 fi
 if [[ -d $JAVA_HOME ]]; then
