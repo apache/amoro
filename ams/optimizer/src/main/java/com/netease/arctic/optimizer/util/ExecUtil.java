@@ -32,7 +32,6 @@ public class ExecUtil {
   private static final Logger LOG = LoggerFactory.getLogger(ExecUtil.class);
 
   public static int exec(String[] command, List<String> output) {
-    int retCode = 1;
     Runtime runtime = Runtime.getRuntime();
     try {
       Process process = runtime.exec(command);
@@ -40,7 +39,7 @@ public class ExecUtil {
       OutputBufferThread stdErr = new OutputBufferThread(process.getErrorStream());
       stdOut.start();
       stdErr.start();
-      retCode = process.waitFor();
+      int retCode = process.waitFor();
       if (retCode != 0) {
         String error = stdErr.getOutput().stream().collect(Collectors.joining("\n"));
         LOG.error("exec {} failed, reason is {}", command, error);
