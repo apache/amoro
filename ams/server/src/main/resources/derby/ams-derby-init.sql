@@ -96,12 +96,13 @@ CREATE TABLE table_runtime (
     last_major_optimizing_time  TIMESTAMP,
     last_minor_optimizing_time  TIMESTAMP,
     last_full_optimizing_time   TIMESTAMP,
-    optimizing_status           VARCHAR(20) DEFAULT 'Idle',
+    optimizing_status           VARCHAR(20) DEFAULT 'IDLE',
     optimizing_status_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     optimizing_process_id       BIGINT NOT NULL,
     optimizer_group             VARCHAR(64) NOT NULL,
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
+    pending_input               CLOB(64m),
     CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
     CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
