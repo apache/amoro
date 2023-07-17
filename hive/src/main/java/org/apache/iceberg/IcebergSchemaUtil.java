@@ -30,7 +30,7 @@ public class IcebergSchemaUtil {
   public static PartitionSpec copyPartitionSpec(PartitionSpec partitionSpec, Schema copySchema) {
     PartitionSpec.Builder builder = PartitionSpec.builderFor(copySchema);
     partitionSpec.fields().forEach(partitionField -> {
-      builder.add(partitionField.sourceId(), partitionField.name(), partitionField.transform());
+      builder.add(partitionField.sourceId(), partitionField.name().toLowerCase(), partitionField.transform());
     });
     return builder.build();
   }
