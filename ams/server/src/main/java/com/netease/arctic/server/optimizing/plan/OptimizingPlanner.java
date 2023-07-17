@@ -111,9 +111,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       initEvaluator();
     }
     if (!super.isNecessary()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
-      }
+      LOG.debug("Table {} skip planning", tableRuntime.getTableIdentifier());
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
