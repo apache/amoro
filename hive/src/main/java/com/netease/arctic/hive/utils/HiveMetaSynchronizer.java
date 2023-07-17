@@ -43,10 +43,8 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.data.TableMigrationUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.mapping.NameMappingParser;
-import org.apache.iceberg.relocated.com.google.common.collect.ListMultimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -173,17 +171,18 @@ public class HiveMetaSynchronizer {
         List<Partition> hivePartitions = hiveClient.run(client -> client.listPartitions(table.id().getDatabase(),
             table.id().getTableName(), Short.MAX_VALUE));
         // group arctic files by partition.
-        ListMultimap<StructLike, DataFile> filesGroupedByPartition
-            = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
+        StructLikeMap<Collection<DataFile>> filesGroupedByPartition
+            = StructLikeMap.create(table.spec().partitionType());
         TableScan tableScan = baseStore.newScan();
         try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
           for (org.apache.iceberg.FileScanTask fileScanTask : fileScanTasks) {
-            filesGroupedByPartition.put(fileScanTask.file().partition(), fileScanTask.file());
+            filesGroupedByPartition.computeIfAbsent(fileScanTask.file().partition(), k -> Lists.newArrayList())
+                    .add(fileScanTask.file());
           }
         } catch (IOException e) {
           throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
         }
-        Map<StructLike, Collection<DataFile>> filesMap = filesGroupedByPartition.asMap();
+        StructLikeMap<Collection<DataFile>> filesMap = filesGroupedByPartition;
         List<DataFile> filesToDelete = Lists.newArrayList();
         List<DataFile> filesToAdd = Lists.newArrayList();
         List<StructLike> icebergPartitions = Lists.newArrayList(filesMap.keySet());
