@@ -118,9 +118,9 @@ public class UpgradeHiveTableUtil {
 
       try {
         HiveTableUtil.alterTableLocation(arcticHiveCatalog.getHMSClient(), arcticTable.id(), newPath);
-        LOG.info("table{" + arcticTable.name() + "} alter hive table location " + hiveDataLocation + " success");
+        LOG.info("Table {} alter hive table location {}", arcticTable.name(), hiveDataLocation);
       } catch (IOException e) {
-        LOG.warn("table{" + arcticTable.name() + "} alter hive table location failed", e);
+        LOG.warn("Table {} alter hive table location failed", arcticTable.name(), e);
         throw new RuntimeException(e);
       }
     } else {
