@@ -46,6 +46,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.GenericRecord;
@@ -158,6 +159,14 @@ public class DataTestHelpers {
       builder.withOrdered();
     }
     try (GenericBaseTaskWriter writer = builder.buildBaseWriter()) {
+      return writeRecords(writer, records);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static List<DataFile> writeIceberg(Table table, List<Record> records) {
+    try (TaskWriter<Record> writer = IcebergTaskWriters.buildFor(table)) {
       return writeRecords(writer, records);
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -21,6 +21,8 @@ package com.netease.arctic.scan;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.FileScanTaskUtil;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,5 +143,14 @@ public class NodeFileScanTask implements KeyedTableScanTask {
 
   public DataTreeNode treeNode() {
     return treeNode;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("\nbaseTasks", FileScanTaskUtil.toString(baseTasks))
+        .add("\ninsertTasks", FileScanTaskUtil.toString(insertTasks))
+        .add("\ndeleteFiles", FileScanTaskUtil.toString(deleteFiles))
+        .toString();
   }
 }

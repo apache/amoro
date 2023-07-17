@@ -71,6 +71,7 @@ struct TableMeta {
     2:PrimaryKeySpec keySpec;
     3:optional map<string, string> properties;
     4:map<string, string> locations ;
+    5:string format;
 }
 
 struct PrimaryKeySpec {

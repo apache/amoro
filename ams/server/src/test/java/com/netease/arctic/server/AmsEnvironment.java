@@ -1,14 +1,17 @@
 package com.netease.arctic.server;
 
+import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
 import com.netease.arctic.server.utils.Configurations;
@@ -40,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AmsEnvironment {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsEnvironment.class);
+  private static AmsEnvironment integrationInstances = null;
   private final String rootPath;
   private static final String DEFAULT_ROOT_PATH = "/tmp/arctic_integration";
   private static final String OPTIMIZE_GROUP = "default";
@@ -47,14 +51,37 @@ public class AmsEnvironment {
   private Configurations serviceConfig;
   private DefaultTableService tableService;
   private final AtomicBoolean amsExit;
-  private int thriftBindPort;
+  private int tableServiceBindPort;
+  private int optimizingServiceBindPort;
   private final HMSMockServer testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
+
+  public static final String INTERNAL_ICEBERG_CATALOG = "internal_iceberg";
+  public static final String INTERNAL_ICEBERG_CATALOG_WAREHOUSE = "/internal_iceberg/warehouse";
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
   public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
   public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
   public static String MIXED_ICEBERG_CATALOG_DIR = "/mixed_iceberg/warehouse";
   public static final String MIXED_HIVE_CATALOG = "mixed_hive_catalog";
+  private boolean started = false;
+  private boolean optimizingStarted = false;
+  private boolean singleton = false;
+
+  public static AmsEnvironment getIntegrationInstances() {
+    synchronized (AmsEnvironment.class) {
+      if (integrationInstances == null) {
+        TemporaryFolder baseDir = new TemporaryFolder();
+        try {
+          baseDir.create();
+          integrationInstances = new AmsEnvironment(baseDir.newFolder().getAbsolutePath());
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+        integrationInstances.singleton();
+      }
+    }
+    return integrationInstances;
+  }
 
   public static void main(String[] args) throws Exception {
     AmsEnvironment amsEnvironment = new AmsEnvironment();
@@ -78,10 +105,18 @@ public class AmsEnvironment {
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();
     testHMS = new HMSMockServer(hiveDir.newFile());
-    testHMS.start();
+  }
+
+  public void singleton() {
+    this.singleton = true;
   }
 
   public void start() throws Exception {
+    if (started) {
+      return;
+    }
+
+    testHMS.start();
     startAms();
     DynFields.UnboundField<DefaultTableService> amsTableServiceField =
         DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableService").build();
@@ -104,9 +139,17 @@ public class AmsEnvironment {
     }
 
     initCatalog();
+    started = true;
   }
 
   public void stop() throws IOException {
+    if (!started) {
+      return;
+    }
+    if (singleton && SingletonResourceUtil.isUseSingletonResource()) {
+      return;
+    }
+
     stopOptimizer();
     if (this.arcticService != null) {
       this.arcticService.dispose();
@@ -119,6 +162,18 @@ public class AmsEnvironment {
     return catalogs.get(name);
   }
 
+  public void createDatabaseIfNotExists(String catalog, String database) {
+    ArcticCatalog arcticCatalog = catalogs.get(catalog);
+    if (arcticCatalog.listDatabases().contains(database)) {
+      return;
+    }
+    arcticCatalog.createDatabase(database);
+  }
+
+  public ArcticServiceContainer serviceContainer() {
+    return this.arcticService;
+  }
+
   public boolean tableExist(TableIdentifier tableIdentifier) {
     return tableService.tableExist(tableIdentifier.buildTableIdentifier());
   }
@@ -129,8 +184,21 @@ public class AmsEnvironment {
 
   private void initCatalog() {
     createIcebergCatalog();
+    createInternalIceberg();
     createMixIcebergCatalog();
     createMixHiveCatalog();
+  }
+
+  private void createInternalIceberg() {
+    String warehouseDir = rootPath + INTERNAL_ICEBERG_CATALOG_WAREHOUSE;
+    Map<String, String> properties = Maps.newHashMap();
+    createDirIfNotExist(warehouseDir);
+    properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
+    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(INTERNAL_ICEBERG_CATALOG,
+        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.ICEBERG);
+
+    tableService.createCatalog(catalogMeta);
+    catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
   private void createIcebergCatalog() {
@@ -141,7 +209,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + ICEBERG_CATALOG));
+    catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + ICEBERG_CATALOG));
   }
 
   private void createMixIcebergCatalog() {
@@ -152,7 +220,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(MIXED_ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_ICEBERG_CATALOG));
+    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_ICEBERG_CATALOG));
   }
 
   private void createMixHiveCatalog() {
@@ -160,7 +228,7 @@ public class AmsEnvironment {
     CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(MIXED_HIVE_CATALOG,
         properties, testHMS.hiveConf(), TableFormat.MIXED_HIVE);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getAmsUrl() + "/" + MIXED_HIVE_CATALOG));
+    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_HIVE_CATALOG));
   }
 
   private void createDirIfNotExist(String warehouseDir) {
@@ -173,14 +241,23 @@ public class AmsEnvironment {
   }
 
   public void startOptimizer() {
+    if (optimizingStarted) {
+      return;
+    }
+    OptimizerManager optimizerManager = arcticService.getOptimizingService();
+    optimizerManager.createResourceGroup(
+        new ResourceGroup.Builder("default", "localContainer")
+            .addProperty("memory", "1024")
+            .build());
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024", "-a", getAmsUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-m", "1024", "-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {
         throw new RuntimeException(e);
       }
     }).start();
+    optimizingStarted = true;
   }
 
   public void stopOptimizer() {
@@ -192,8 +269,16 @@ public class AmsEnvironment {
         });
   }
 
-  public String getAmsUrl() {
-    return "thrift://127.0.0.1:" + thriftBindPort;
+  public String getTableServiceUrl() {
+    return "thrift://127.0.0.1:" + tableServiceBindPort;
+  }
+
+  public String getOptimizingServiceUrl() {
+    return "thrift://127.0.0.1:" + optimizingServiceBindPort;
+  }
+
+  public String getHttpUrl() {
+    return "http://127.0.0.1:1630";
   }
 
   private void startAms() throws Exception {
@@ -207,9 +292,9 @@ public class AmsEnvironment {
             DynFields.UnboundField<Configurations> field =
                 DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "serviceConfig").build();
             serviceConfig = field.bind(arcticService).get();
-            serviceConfig.set(ArcticManagementConf.THRIFT_BIND_PORT, thriftBindPort);
-            serviceConfig.set(ArcticManagementConf.EXTERNAL_CATALOG_REFRESH_INTERVAL, 1000L);
-            // when AMS is successfully running, this thread will wait here
+            serviceConfig.set(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
+            serviceConfig.set(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
+            serviceConfig.set(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
             arcticService.startService();
             break;
           } catch (TTransportException e) {
@@ -235,15 +320,19 @@ public class AmsEnvironment {
     }, "ams-runner");
     amsRunner.start();
 
-    DynFields.UnboundField<TServer> amsServerField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "server").build();
+    DynFields.UnboundField<TServer> tableManagementServerField =
+        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableManagementServer").build();
+    DynFields.UnboundField<TServer> optimizingServiceServerField =
+        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "optimizingServiceServer").build();
     while (true) {
       if (amsExit.get()) {
         LOG.error("ams exit");
         break;
       }
-      TServer thriftServer = amsServerField.bind(arcticService).get();
-      if (thriftServer != null && thriftServer.isServing()) {
+      TServer tableManagementServer = tableManagementServerField.bind(arcticService).get();
+      TServer optimizingServiceServer = optimizingServiceServerField.bind(arcticService).get();
+      if (tableManagementServer != null && tableManagementServer.isServing() && optimizingServiceServer != null &&
+          optimizingServiceServer.isServing()) {
         LOG.info("ams start");
         break;
       }
@@ -259,8 +348,9 @@ public class AmsEnvironment {
 
   private void genThriftBindPort() {
     // create a random port between 14000 - 18000
-    int port = new Random().nextInt(4000);
-    this.thriftBindPort = port + 14000;
+    Random random = new Random();
+    this.tableServiceBindPort = random.nextInt(4000) + 14000;
+    this.optimizingServiceBindPort = random.nextInt(4000) + 14000;
   }
 
   private String getAmsConfig() {
@@ -277,11 +367,14 @@ public class AmsEnvironment {
         "  sync-hive-tables-thread-count: 10\n" +
         "\n" +
         "  thrift-server:\n" +
-        "    bind-port: 1260\n" +
         "    max-message-size: 104857600 # 100MB\n" +
-        "    worker-thread-count: 20\n" +
         "    selector-thread-count: 2\n" +
         "    selector-queue-size: 4\n" +
+        "    table-service:\n" +
+        "      bind-port: 1260\n" +
+        "      worker-thread-count: 20\n" +
+        "    optimizing-service:\n" +
+        "      bind-port: 1261\n" +
         "\n" +
         "  http-server:\n" +
         "    bind-port: 1630\n" +

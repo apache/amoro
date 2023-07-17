@@ -1,43 +1,8 @@
 <template>
   <div class="border-wrap">
     <div class="optimize-wrap">
-      <div class="optimize-group g-flex-ac">
-        <div class="left-group">
-          <span class="g-mr-16">{{$t('optimzerGroup')}}</span>
-          <a-select
-            v-model:value="curGroupName"
-            :showSearch="true"
-            :options="groupList"
-            :placeholder="placeholder.selectOptGroupPh"
-            @change="onChangeGroup"
-            style="width: 240px"
-          />
-        </div>
-        <div class="btn-wrap">
-          <span class="g-ml-16 f-shink-0">{{$t('resourceOccupation')}}  <span class="text-color">{{groupInfo.occupationCore}}</span> {{$t('core')}} <span class="text-color">{{groupInfo.occupationMemory}}</span> {{groupInfo.unit}}</span>
-          <a-button type="primary" @click="expansionJob" class="g-ml-8">{{$t('scaleOut')}}</a-button>
-        </div>
-      </div>
-      <div class="content">
-        <a-tabs v-if="showTab" v-model:activeKey="activeTab" destroyInactiveTabPane @change="onChangeTab">
-          <a-tab-pane
-            v-for="tab in tabConfig"
-            :key="tab.value"
-            :tab="tab.label"
-            :class="[activeTab === tab.value ? 'active' : '']"
-            >
-            <List :curGroupName="curGroupName" :type="tab.value" @refreshCurGroupInfo="refreshCurGroupInfo" />
-          </a-tab-pane>
-        </a-tabs>
-      </div>
+      <List curGroupName="all" type="tables" />
     </div>
-    <scale-out-modal
-      v-if="showScaleOutModal"
-      :visible="showScaleOutModal"
-      :resourceGroup="curGroupName === 'all' ? '' : curGroupName"
-      @cancel="showScaleOutModal = false"
-      @refreshOptimizersTab="refreshOptimizersTab"
-    />
   </div>
 </template>
 
@@ -49,15 +14,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import { getOptimizerGroups, getQueueResourceInfo } from '@/services/optimize.service'
-import ScaleOutModal from './components/ScaleOut.vue'
+// import ScaleOutModal from './components/ScaleOut.vue'
 import List from './components/List.vue'
 import { mbToSize } from '@/utils'
 
 export default defineComponent({
   name: 'Optimize',
   components: {
-    List,
-    ScaleOutModal
+    List
   },
   setup() {
     const { t } = useI18n()
@@ -176,8 +140,6 @@ export default defineComponent({
   height: 100%;
 }
 .optimize-wrap {
-  border: 1px solid #e5e5e5;
-  padding: 12px 0;
   height: 100%;
   overflow-y: auto;
   .optimize-group {

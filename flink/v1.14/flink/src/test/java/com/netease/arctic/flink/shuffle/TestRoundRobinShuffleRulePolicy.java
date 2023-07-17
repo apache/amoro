@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.FlinkTestBase;
 import org.apache.flink.api.common.functions.Partitioner;
@@ -25,16 +28,37 @@ import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Map;
 import java.util.Set;
 
+@RunWith(Parameterized.class)
 public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
+
+  public TestRoundRobinShuffleRulePolicy(boolean keyedTable,
+                                         boolean partitionedTable) {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(keyedTable, partitionedTable));
+  }
+
+  @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
+  public static Object[][] parameters() {
+    return new Object[][] {
+      {true, true},
+      {true, false},
+      {false, true},
+      {false, false}};
+  }
 
   @Test
   public void testPrimaryKeyPartitionedTable() throws Exception {
-    ShuffleHelper helper = ShuffleHelper.build(testKeyedTable, testKeyedTable.schema(), FLINK_ROW_TYPE);
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
+    ShuffleHelper helper = ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
@@ -65,8 +89,10 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
 
   @Test
   public void testPrimaryKeyTableWithoutPartition() throws Exception {
+    Assume.assumeTrue(isKeyedTable());
+    Assume.assumeFalse(isPartitionedTable());
     ShuffleHelper helper =
-        ShuffleHelper.build(testKeyedNoPartitionTable, testKeyedNoPartitionTable.schema(), FLINK_ROW_TYPE);
+        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
@@ -102,8 +128,10 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
 
   @Test
   public void testPartitionedTableWithoutPrimaryKey() throws Exception {
+    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeTrue(isPartitionedTable());
     ShuffleHelper helper =
-        ShuffleHelper.build(testPartitionTable, testPartitionTable.schema(), FLINK_ROW_TYPE);
+        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
     RoundRobinShuffleRulePolicy policy =
         new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();

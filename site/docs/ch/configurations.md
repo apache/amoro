@@ -29,14 +29,15 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 数据清理配置对 Iceberg format, Mixed streaming format 都会生效。
 
-| 配置名称                                        | 默认值       | 描述                                 |
-|---------------------------------------------|-----------|------------------------------------|
-| table-expire.enabled                        | true      | 是否开启的表过期数据自动清理                     |
-| change.data.ttl.minutes                     | 10080（7天） | ChangeStore 数据的过期时间                |
-| snapshot.change.keep.minutes                | 10080（7天） | ChangeStore 历史快照的保留时间              |
-| snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                |
-| clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                       |
+| 配置名称                                        | 默认值       | 描述                                               |
+|---------------------------------------------|-----------|--------------------------------------------------|
+| table-expire.enabled                        | true      | 是否开启的表过期数据自动清理                                   |
+| change.data.ttl.minutes                     | 10080（7天） | ChangeStore 数据的过期时间                              |
+| snapshot.change.keep.minutes                | 10080（7天） | ChangeStore 历史快照的保留时间                            |
+| snapshot.base.keep.minutes                  | 720（12小时） | BaseStore 历史快照的保留时间                              |
+| clean-orphan-file.enabled                   | false     | 是否开启孤儿文件自动清理                                     |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 存在时间超过 min-existing-time-minutes 未被引用的孤儿文件会被自动清理 |
+| clean-independent-delete-files.enabled      | true      | 是否开启游离 delete 文件自动清理                             |
 
 ## Mixed streaming format
 
@@ -44,11 +45,12 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 ### 表读取配置
 
-| 配置名称                            | 默认值             | 描述                                     |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                        |
-| read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数               |
-| read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                     |
+| 配置名称                            | 默认值             | 描述                                                                                                                                                       |
+| ---------------------------------- | ---------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                                                                                                                                  |
+| read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数                                                                                                                                       |
+| read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                                                                                                                                     |
+| read.split.delete-ratio            | 0.05             |Delete文件占比小于此阈值时，读取任务会拆分成更多的任务以提高查询速度。 |
 
 ### 表写入配置
 

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
@@ -221,7 +222,8 @@ public class HiveMetaSynchronizer {
     }
   }
 
-  private static boolean partitionHasModified(
+  @VisibleForTesting
+  static boolean partitionHasModified(
       UnkeyedTable arcticTable, Partition hivePartition,
       StructLike partitionData) {
     String hiveTransientTime = hivePartition.getParameters().get("transient_lastDdlTime");
@@ -248,7 +250,8 @@ public class HiveMetaSynchronizer {
     return false;
   }
 
-  private static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
+  @VisibleForTesting
+  static boolean tableHasModified(UnkeyedTable arcticTable, Table table) {
     String hiveTransientTime = table.getParameters().get("transient_lastDdlTime");
     StructLikeMap<Map<String, String>> structLikeMap = arcticTable.partitionProperty();
     String arcticTransientTime = null;

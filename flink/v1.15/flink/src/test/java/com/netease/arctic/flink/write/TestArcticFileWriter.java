@@ -18,10 +18,14 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
+import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
@@ -35,6 +39,7 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,15 +56,20 @@ public class TestArcticFileWriter extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
   private final boolean submitEmptySnapshots;
 
-  @Parameterized.Parameters(name = "submitEmptySnapshots = {0}")
+
+  @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][]{
-        {false},
-        {true}
+      {true, false},
+      {true, true},
+      {false, false},
+      {false, true}
     };
   }
 
-  public TestArcticFileWriter(boolean submitEmptySnapshots) {
+  public TestArcticFileWriter(boolean isKeyed, boolean submitEmptySnapshots) {
+    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+      new BasicTableTestHelper(isKeyed, true));
     this.submitEmptySnapshots = submitEmptySnapshots;
   }
 
@@ -108,7 +118,8 @@ public class TestArcticFileWriter extends FlinkTestBase {
 
   @Test
   public void testInsertWrite() throws Exception {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    Assume.assumeTrue(isKeyedTable());
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
@@ -146,7 +157,7 @@ public class TestArcticFileWriter extends FlinkTestBase {
     long checkpointId = 1;
     long timestamp = 1;
 
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(tableLoader)) {
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), timestamp++);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), timestamp);
@@ -171,7 +182,8 @@ public class TestArcticFileWriter extends FlinkTestBase {
 
   @Test
   public void testInsertWriteWithoutPk() throws Exception {
-    tableLoader = ArcticTableLoader.of(TABLE_ID, catalogBuilder);
+    Assume.assumeFalse(isKeyedTable());
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
@@ -202,7 +214,8 @@ public class TestArcticFileWriter extends FlinkTestBase {
 
   @Test
   public void testDeleteWrite() throws Exception {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    Assume.assumeTrue(isKeyedTable());
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(tableLoader)) {
@@ -232,7 +245,8 @@ public class TestArcticFileWriter extends FlinkTestBase {
 
   @Test
   public void testUpdateWrite() throws Exception {
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    Assume.assumeTrue(isKeyedTable());
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
@@ -272,8 +286,8 @@ public class TestArcticFileWriter extends FlinkTestBase {
 
   @Test
   public void testEmitEmptyResults() throws Exception {
-
-    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    Assume.assumeTrue(isKeyedTable());
+    tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     long excepted = submitEmptySnapshots ? 1 : 0;
     try (

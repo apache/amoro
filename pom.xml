@@ -77,7 +77,7 @@
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
         <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
-        <maven-scala-plugin.version>4.3.0</maven-scala-plugin.version>
+        <maven-scala-plugin.version>4.8.1</maven-scala-plugin.version>
         <maven-antlr4-plugin.version>4.3</maven-antlr4-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>

@@ -25,11 +25,12 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingCommitException;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
@@ -63,6 +64,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class UnKeyedTableCommit {
@@ -192,6 +194,9 @@ public class UnKeyedTableCommit {
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
         }
         dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
+          dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+        }
         dataFileRewrite.commit();
       }
       if (CollectionUtils.isNotEmpty(addDeleteFiles)) {
@@ -290,7 +295,7 @@ public class UnKeyedTableCommit {
   }
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
-    long currentSnapshotId = IcebergTableUtils.getSnapshotId(table, true);
+    long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
     if (currentSnapshotId == INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }

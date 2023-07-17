@@ -12,7 +12,7 @@
   * Unless required by applicable law or agreed to in writing, software
   * distributed under the License is distributed on an "AS IS" BASIS,
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and 
+  * See the License for the specific language governing permissions and
   * limitations under the License.
   */
 
@@ -24,7 +24,7 @@ module.exports = {
       result: null
     })
   },
-  'GET /api/catalog': (req, res) => {
+  'GET /mock/api/catalog': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -38,7 +38,7 @@ module.exports = {
       ]
     })
   },
-  'GET /api/database': (req, res) => {
+  'GET /mock/api/database': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -50,64 +50,64 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: ['database1', 'database2',
-      "arctic_spark_test267",
-      "arctic_spark_test3",
-      "arctic_test",
-      "arctic_test_2",
-      "chbenchmark1",
-      "hellowrld",
-      "hwtest1",
-      "arctic_spark_test36",
-      "uu",
-      "arctic_test_2sw",
-      "chbenchmark2",
-      "tt",
-      "yuyu",
-      "arctic_spark_test32",
-      "arctic_testty",
-      "arctic_test_2ty",
-      "chbenchmark",
-      "hellowrltd",
-      "rt",
-      "arctic_spark_test3",
-      "arctic_test_2yy",
-      "chbenchmark5",
-      "hellowrld7",
-      "hwtesrtrt1"
-    ]
+        'arctic_spark_test267',
+        'arctic_spark_test3',
+        'arctic_test',
+        'arctic_test_2',
+        'chbenchmark1',
+        'hellowrld',
+        'hwtest1',
+        'arctic_spark_test36',
+        'uu',
+        'arctic_test_2sw',
+        'chbenchmark2',
+        'tt',
+        'yuyu',
+        'arctic_spark_test32',
+        'arctic_testty',
+        'arctic_test_2ty',
+        'chbenchmark',
+        'hellowrltd',
+        'rt',
+        'arctic_spark_test3',
+        'arctic_test_2yy',
+        'chbenchmark5',
+        'hellowrld7',
+        'hwtesrtrt1'
+      ]
     })
   },
   'GET mock/ams/v1/catalogs/opensource_arctic/databases/arctic_test/tables': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
-      result: ['table11', 'table22',"arctic_spark_test267",
-      "arctic_spark_test3",
-      "arctic_test",
-      "arctic_test_2",
-      "chbenchmark1",
-      "hellowrld",
-      "hwtest1",
-      "arctic_spark_test36",
-      "uu",
-      "arctic_test_2sw",
-      "chbenchmark2",
-      "tt",
-      "yuyu",
-      "arctic_spark_test32",
-      "arctic_testty",
-      "arctic_test_2ty",
-      "chbenchmark",
-      "hellowrltd",
-      "rt",
-      "arctic_spark_test3",
-      "arctic_test_2yy",
-      "chbenchmark5",
-      "hellowrld7",
-      "hwtesrtrt1"]
+      result: ['table11', 'table22', 'arctic_spark_test267',
+        'arctic_spark_test3',
+        'arctic_test',
+        'arctic_test_2',
+        'chbenchmark1',
+        'hellowrld',
+        'hwtest1',
+        'arctic_spark_test36',
+        'uu',
+        'arctic_test_2sw',
+        'chbenchmark2',
+        'tt',
+        'yuyu',
+        'arctic_spark_test32',
+        'arctic_testty',
+        'arctic_test_2ty',
+        'chbenchmark',
+        'hellowrltd',
+        'rt',
+        'arctic_spark_test3',
+        'arctic_test_2yy',
+        'chbenchmark5',
+        'hellowrld7',
+        'hwtesrtrt1']
     })
   },
-  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wdynamic/tables': (req, res) => {
+  'GET /mock/ams/v1/catalogs/trino_online_env/databases/arctic100wdynamic/tables': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -121,7 +121,7 @@ module.exports = {
       ]
     })
   },
-  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wfileSize/tables': (req, res) => {
+  'GET /mock/ams/v1/catalogs/trino_online_env/databases/arctic100wfileSize/tables': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -135,7 +135,7 @@ module.exports = {
       ]
     })
   },
-  'GET /ams/v1/catalogs/local_catalog/databases/db/tables': (req, res) => {
+  'GET /mock/ams/v1/catalogs/local_catalog/databases/db/tables': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -149,7 +149,7 @@ module.exports = {
       ]
     })
   },
-  'GET /api/v1/as/db/t1/detail': (req, res) => {
+  'GET /mock/api/v1/as/db/t1/detail': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -237,7 +237,7 @@ module.exports = {
       }
     })
   },
-  'GET /api/v1/as/db/t1/2022-03-02/detail': (req, res) => {
+  'GET /mock/api/v1/as/db/t1/2022-03-02/detail': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -263,7 +263,7 @@ module.exports = {
       ]
     })
   },
-  'GET /api/v1/as/db/t1/transactions': (req, res) => {
+  'GET /mock/api/v1/as/db/t1/transactions': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -288,7 +288,7 @@ module.exports = {
       }
     })
   },
-  'GET /api/v1/tables/as/db/t1/optimize': (req, res) => {
+  'GET /mock/api/v1/tables/as/db/t1/optimize': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -532,8 +532,8 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: {
-        status: "upgrade",
-        errorMessage: "errorMessage"
+        status: 'upgrade',
+        errorMessage: 'errorMessage'
       }
     })
   },
@@ -542,68 +542,68 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: {
-        "tableType": "HIVE",
-        "tableIdentifier": {
-          "catalog": "bdmstest_arctic",
-          "database": "default",
-          "tableName": "zyxtest"
+        tableType: 'HIVE',
+        tableIdentifier: {
+          catalog: 'bdmstest_arctic',
+          database: 'default',
+          tableName: 'zyxtest'
         },
-        "schema": [
+        schema: [
           {
-            "field": "id1",
-            "type": "int",
-            "description": "rZiGhjpbqj"
+            field: 'id1',
+            type: 'int',
+            description: 'rZiGhjpbqj'
           },
           {
-            "field": "id2",
-            "type": "int",
-            "description": "x6T9Y8D7wi"
+            field: 'id2',
+            type: 'int',
+            description: 'x6T9Y8D7wi'
           },
           {
-            "field": "id3",
-            "type": "int",
-            "description": "AWpoSVLR6f"
+            field: 'id3',
+            type: 'int',
+            description: 'AWpoSVLR6f'
           },
           {
-            "field": "id4",
-            "type": "int",
-            "description": "rZiGhjpbqj"
+            field: 'id4',
+            type: 'int',
+            description: 'rZiGhjpbqj'
           },
           {
-            "field": "id5",
-            "type": "int",
-            "description": "x6T9Y8D7wi"
+            field: 'id5',
+            type: 'int',
+            description: 'x6T9Y8D7wi'
           },
           {
-            "field": "id6",
-            "type": "int",
-            "description": "AWpoSVLR6f"
+            field: 'id6',
+            type: 'int',
+            description: 'AWpoSVLR6f'
           }
         ],
-        "partitionColumnList": [
+        partitionColumnList: [
           {
-            "field": "TqgUCqOfr0",
-            "type": "bZpDUpDo2l",
-            "description": "D3SVsvwmuD"
+            field: 'TqgUCqOfr0',
+            type: 'bZpDUpDo2l',
+            description: 'D3SVsvwmuD'
           },
           {
-            "field": "g1tpuaWFg6",
-            "type": "tJr2zYltbL",
-            "description": "F5z48Arinv"
+            field: 'g1tpuaWFg6',
+            type: 'tJr2zYltbL',
+            description: 'F5z48Arinv'
           },
           {
-            "field": "I61mT0lDBP",
-            "type": "dSDu69M3Ph",
-            "description": "X6Nx4K7S8t"
+            field: 'I61mT0lDBP',
+            type: 'dSDu69M3Ph',
+            description: 'X6Nx4K7S8t'
           },
           {
-            "field": "I61mT0welDBP",
-            "type": "dSDu69M3Ph",
-            "description": "X6Nwex4K7S8t"
+            field: 'I61mT0welDBP',
+            type: 'dSDu69M3Ph',
+            description: 'X6Nwex4K7S8t'
           }
         ],
-        "properties": {
-          "xxxx": "148"
+        properties: {
+          xxxx: '148'
         }
       }
     })
@@ -613,8 +613,8 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: {
-        "key1": "koYg4SDRzM",
-        "key2": "T3ScQHN0hE"
+        key1: 'koYg4SDRzM',
+        key2: 'T3ScQHN0hE'
       }
     })
   },
@@ -633,7 +633,7 @@ module.exports = {
         list: [
           {
             ts: 11234567890123,
-            operation: "sdsd"
+            operation: 'sdsd'
           }
         ]
       }
@@ -644,11 +644,11 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: {
-        "catalogCnt": 2,
-        "tableCnt": 37944,
-        "tableTotalSize": 10585900,
-        "totalCpu": "6",
-        "totalMemory": 62464
+        catalogCnt: 2,
+        tableCnt: 37944,
+        tableTotalSize: 10585900,
+        totalCpu: '6',
+        totalMemory: 62464
       }
     })
   },
@@ -658,14 +658,14 @@ module.exports = {
       msg: 'success',
       result: [
         {
-          "tableName": "trino_online_env_hive.spark_test.ctpri",
-          "size": 12938982,
-          "fileCnt": 57889
+          tableName: 'trino_online_env_hive.spark_test.ctpri',
+          size: 12938982,
+          fileCnt: 57889
         },
         {
-          "tableName": "trino_online_env_hive.spark_test.ctpp_col",
-          "size": 329043290,
-          "fileCnt": 79910
+          tableName: 'trino_online_env_hive.spark_test.ctpp_col',
+          size: 329043290,
+          fileCnt: 79910
         }
       ]
     })
@@ -675,26 +675,26 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: {
-        "timeLine": [
-          "10-09 14:48"
+        timeLine: [
+          '10-09 14:48'
         ],
-        "usedCpu": [
-          "83.24"
+        usedCpu: [
+          '83.24'
         ],
-        "usedCpuDivision": [
-          "1828核/2196核"
+        usedCpuDivision: [
+          '1828核/2196核'
         ],
-        "usedCpuPercent": [
-          "83.24%"
+        usedCpuPercent: [
+          '83.24%'
         ],
-        "usedMem": [
-          "83.24"
+        usedMem: [
+          '83.24'
         ],
-        "usedMemDivision": [
-          "1828核/2196核10364G"
+        usedMemDivision: [
+          '1828核/2196核10364G'
         ],
-        "usedMemPercent": [
-          "83.24%"
+        usedMemPercent: [
+          '83.24%'
         ]
       }
     })
@@ -717,35 +717,35 @@ module.exports = {
         name: 'bdms_test_catalog_hive',
         type: 'hive',
         storageConfig: {
-          "storage_config.storage.type": "hdfs",
-          "storage_config.core-site": {
-            "fileName": "fileName1",
-		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          'storage_config.storage.type': 'hdfs',
+          'storage_config.core-site': {
+            fileName: 'fileName1',
+		        filrUrl: 'http://afk.qqzdvuzccctprn.bkfj'
           },
-          "storage_config.hdfs-site": {
-            "fileName": "fileName2",
-		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          'storage_config.hdfs-site': {
+            fileName: 'fileName2',
+		        filrUrl: 'http://afk.qqzdvuzccctprn.bkfj'
           },
-          "storage_config.hive-site": {
-            "fileName": "fileName3",
-		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          'storage_config.hive-site': {
+            fileName: 'fileName3',
+		        filrUrl: 'http://afk.qqzdvuzccctprn.bkfj'
           }
         },
         authConfig: {
-          "auth_config.type": "simpel",
-          "auth_config.hadoop_username": "omPRZh6bc8",
-          "auth_config.principal": "L2TeTS0OzC",
-          "auth_config.keytab":  {
-            "fileName": "fileNamekeytab",
-            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          'auth_config.type': 'simpel',
+          'auth_config.hadoop_username': 'omPRZh6bc8',
+          'auth_config.principal': 'L2TeTS0OzC',
+          'auth_config.keytab': {
+            fileName: 'fileNamekeytab',
+            fileUrl: 'http://bfu.qynoircxcut.civkj'
           },
-          "auth_config.krb5": {
-            "fileName": "fileNamekrb5",
-            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          'auth_config.krb5': {
+            fileName: 'fileNamekrb5',
+            fileUrl: 'http://bfu.qynoircxcut.civkj'
           }
         },
         properties: {
-          'key1': 'value1'
+          key1: 'value1'
         }
       }
     })
@@ -809,7 +809,7 @@ module.exports = {
             tmMemory: '1024',
             jmMemory: 'sdsa2'
           }]
-        },
+        }
       ]
     })
   },
@@ -818,6 +818,22 @@ module.exports = {
       code: 200,
       msg: 'success',
       result: true
+    })
+  },
+  'GET /mock/ams/v1/optimize/resourceGroups/get': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        { occupationCore: 1, occupationMemory: 12, resourceGroup: { name: 'testName', container: 'container1', properties: { key1: 'value1' } } }
+      ]
+    })
+  },
+  'GET /mock/ams/v1/optimize/containers/get': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: ['container1', 'container2']
     })
   }
 }

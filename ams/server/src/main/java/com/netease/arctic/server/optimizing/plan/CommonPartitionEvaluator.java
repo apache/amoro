@@ -193,7 +193,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public OptimizingType getOptimizingType() {
     if (optimizingType == null) {
-      optimizingType = isFullNecessary() ? OptimizingType.FULL_MAJOR :
+      optimizingType = isFullNecessary() ? OptimizingType.FULL :
           isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
       LOG.debug("{} optimizingType = {} ", name(), optimizingType);
     }
