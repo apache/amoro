@@ -157,6 +157,31 @@
                     <generator>java</generator>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <relocations>org.apache.zookeeper
+                        <relocation>
+                            <pattern>org.apache.curator</pattern>
+                            <shadedPattern>com.netease.arctic.shade.org.apache.curator</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.zookeeper</pattern>
+                            <shadedPattern>com.netease.arctic.shade.org.apache.zookeeper</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
