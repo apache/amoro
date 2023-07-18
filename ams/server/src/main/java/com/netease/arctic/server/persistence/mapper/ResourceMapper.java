@@ -48,13 +48,13 @@ public interface ResourceMapper {
 
   @Update("UPDATE resource_group SET container_name = #{resourceGroup.container}," +
       " properties = #{resourceGroup.properties," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}" +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}" +
       " WHERE group_name = #{resourceGroup.name}")
   void updateResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
   @Insert("INSERT INTO resource_group (group_name, container_name, properties)" +
       " VALUES (#{resourceGroup.name}, #{resourceGroup.container}," +
-      " #{resourceGroup.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " #{resourceGroup.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertResourceGroup(@Param("resourceGroup") ResourceGroup resourceGroup);
 
   @Delete("DELETE FROM resource_group WHERE group_name = #{name}")
@@ -63,7 +63,7 @@ public interface ResourceMapper {
   @Insert("INSERT INTO resource (resource_id, group_name, container_name, thread_count, total_memory, properties)" +
       " VALUES (#{resource.resourceId}, #{resource.groupName}, #{resource.containerName}," +
       " #{resource.threadCount}, #{resource.memoryMb}," +
-      " #{resource.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter})")
+      " #{resource.properties, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertResource(@Param("resource") Resource resource);
 
   @Delete("DELETE FROM resource WHERE resource_id = #{resourceId}")

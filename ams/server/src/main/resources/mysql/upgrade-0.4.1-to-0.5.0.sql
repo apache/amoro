@@ -103,12 +103,13 @@ CREATE TABLE `table_runtime`
     `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
     `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
     `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
-    `optimizing_status`             varchar(20) DEFAULT 'Idle' COMMENT 'Table optimize status: MajorOptimizing, MinorOptimizing, Pending, Idle',
+    `optimizing_status`             varchar(20) DEFAULT 'IDLE' COMMENT 'Table optimize status: FULL_OPTIMIZING, MAJOR_OPTIMIZING, MINOR_OPTIMIZING, COMMITTING, PENDING, IDLE',
     `optimizing_status_start_time`  timestamp default CURRENT_TIMESTAMP COMMENT 'Table optimize status start time',
     `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
     `optimizer_group`               varchar(64) NOT NULL,
     `table_config`                  mediumtext,
     `optimizing_config`             mediumtext,
+    `pending_input`                 mediumtext,
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table';
 
@@ -126,7 +127,7 @@ CREATE TABLE `task_runtime`
     `start_time`                timestamp NULL DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `end_time`                  timestamp NULL DEFAULT NULL COMMENT 'Time when task finished',
     `cost_time`                 bigint(20) DEFAULT NULL,
-    `status`                    varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
+    `status`                    varchar(16) DEFAULT NULL  COMMENT 'Optimize Status: PLANNED, SCHEDULED, ACKED, FAILED, SUCCESS, CANCELED',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `optimizer_token`           varchar(50) DEFAULT NULL COMMENT 'Job type',
     `thread_id`                 int(11) DEFAULT NULL COMMENT 'Job id',
