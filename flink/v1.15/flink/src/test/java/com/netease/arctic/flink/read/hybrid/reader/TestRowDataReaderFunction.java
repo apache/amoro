@@ -28,7 +28,7 @@ import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.TableEntriesScan;
@@ -87,7 +87,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     List<RowData> actual = new ArrayList<>();
     arcticSplits.forEach(split -> {
       LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+      ScanTaskDataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
       while (dataIterator.hasNext()) {
         RowData rowData = dataIterator.next();
         LOG.info("{}", rowData);
@@ -136,7 +136,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     ChangelogSplit changelogSplit = new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
     LOG.info("ArcticSplit {}.", changelogSplit);
     actual.clear();
-    DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(changelogSplit);
+    ScanTaskDataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(changelogSplit);
     while (dataIterator.hasNext()) {
       RowData rowData = dataIterator.next();
       LOG.info("{}", rowData);
@@ -164,7 +164,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     List<RowData> actual = new ArrayList<>();
     arcticSplits.forEach(split -> {
       LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+      ScanTaskDataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
       while (dataIterator.hasNext()) {
         RowData rowData = dataIterator.next();
         LOG.info("{}", rowData);

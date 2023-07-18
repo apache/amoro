@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 
 /**
  * This class contains the file offset and record offset with actual record.
@@ -33,7 +33,7 @@ public class RecordPosition {
   public RecordPosition() {
   }
 
-  void set(DataIterator dataIterator) {
+  void set(ScanTaskDataIterator dataIterator) {
     if (dataIterator instanceof ChangeLogDataIterator) {
       ChangeLogDataIterator changelog = (ChangeLogDataIterator) dataIterator;
       currentInsertFileOffset = changelog.insertFileOffset();

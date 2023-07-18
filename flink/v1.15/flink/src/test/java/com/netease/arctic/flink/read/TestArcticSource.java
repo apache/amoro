@@ -26,7 +26,7 @@ import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
@@ -37,7 +37,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
-import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -660,7 +659,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     List<RowData> actual = new ArrayList<>();
     arcticSplits.forEach(split -> {
       LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+      ScanTaskDataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
       while (dataIterator.hasNext()) {
         RowData rowData = dataIterator.next();
         LOG.info("{}", rowData);

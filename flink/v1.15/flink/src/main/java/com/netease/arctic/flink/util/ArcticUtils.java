@@ -92,9 +92,10 @@ public class ArcticUtils {
         .collect(Collectors.toList());
   }
 
-  public static MetricsGenerator getMetricsGenerator(boolean metricsEventLatency, boolean metricsEnable,
-                                                     ArcticTable arcticTable, RowType flinkSchemaRowType,
-                                                     Schema writeSchema) {
+  public static MetricsGenerator getMetricsGenerator(
+      boolean metricsEventLatency, boolean metricsEnable,
+      ArcticTable arcticTable, RowType flinkSchemaRowType,
+      Schema writeSchema) {
     MetricsGenerator metricsGenerator;
     if (metricsEventLatency) {
       String modifyTimeColumn = arcticTable.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD);
@@ -117,7 +118,8 @@ public class ArcticUtils {
       }
       return true;
     } else if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
-      LOG.info("arctic emit mode is auto, and the arctic table {} is {}",
+      LOG.info(
+          "arctic emit mode is auto, and the arctic table {} is {}",
           ENABLE_LOG_STORE,
           streamEnable);
       return streamEnable;
@@ -139,14 +141,15 @@ public class ArcticUtils {
    * @param watermarkWriteGap watermark gap that triggers automatic writing to log storage
    * @return ArcticLogWriter
    */
-  public static ArcticLogWriter buildArcticLogWriter(Map<String, String> properties,
-                                                     @Nullable Properties producerConfig,
-                                                     @Nullable String topic,
-                                                     TableSchema tableSchema,
-                                                     String arcticEmitMode,
-                                                     ShuffleHelper helper,
-                                                     ArcticTableLoader tableLoader,
-                                                     Duration watermarkWriteGap) {
+  public static ArcticLogWriter buildArcticLogWriter(
+      Map<String, String> properties,
+      @Nullable Properties producerConfig,
+      @Nullable String topic,
+      TableSchema tableSchema,
+      String arcticEmitMode,
+      ShuffleHelper helper,
+      ArcticTableLoader tableLoader,
+      Duration watermarkWriteGap) {
     if (!arcticWALWriterEnable(properties, arcticEmitMode)) {
       return null;
     }
@@ -154,7 +157,8 @@ public class ArcticUtils {
     if (topic == null) {
       topic = CompatibleFlinkPropertyUtil.propertyAsString(properties, LOG_STORE_MESSAGE_TOPIC, null);
     }
-    Preconditions.checkNotNull(topic, String.format("Topic should be specified. It can be set by '%s'",
+    Preconditions.checkNotNull(topic, String.format(
+        "Topic should be specified. It can be set by '%s'",
         LOG_STORE_MESSAGE_TOPIC));
 
     producerConfig = combineTableAndUnderlyingLogstoreProperties(properties, producerConfig);
@@ -192,12 +196,14 @@ public class ArcticUtils {
 
   /**
    * Extract and combine the properties for underlying log store queue.
+   *
    * @param tableProperties arctic table properties
-   * @param producerConfig can be set by java API
+   * @param producerConfig  can be set by java API
    * @return properties with tableProperties and producerConfig which has higher priority.
    */
-  private static Properties combineTableAndUnderlyingLogstoreProperties(Map<String, String> tableProperties,
-                                                    Properties producerConfig) {
+  private static Properties combineTableAndUnderlyingLogstoreProperties(
+      Map<String, String> tableProperties,
+      Properties producerConfig) {
     Properties finalProp;
     Properties underlyingLogStoreProps = fetchLogstorePrefixProperties(tableProperties);
     if (producerConfig == null) {
@@ -214,20 +220,25 @@ public class ArcticUtils {
     String logType = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties, LOG_STORE_TYPE,
         LOG_STORE_STORAGE_TYPE_DEFAULT);
     if (logType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)) {
-      finalProp.putIfAbsent("key.serializer",
+      finalProp.putIfAbsent(
+          "key.serializer",
           "org.apache.kafka.common.serialization.ByteArraySerializer");
-      finalProp.putIfAbsent("value.serializer",
+      finalProp.putIfAbsent(
+          "value.serializer",
           "org.apache.kafka.common.serialization.ByteArraySerializer");
-      finalProp.putIfAbsent("key.deserializer",
+      finalProp.putIfAbsent(
+          "key.deserializer",
           "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-      finalProp.putIfAbsent("value.deserializer",
+      finalProp.putIfAbsent(
+          "value.deserializer",
           "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
       if (logStoreAddress != null) {
         finalProp.putIfAbsent(BOOTSTRAP_SERVERS_CONFIG, logStoreAddress);
       }
 
-      Preconditions.checkArgument(finalProp.containsKey(BOOTSTRAP_SERVERS_CONFIG), String.format("%s should be set",
+      Preconditions.checkArgument(finalProp.containsKey(BOOTSTRAP_SERVERS_CONFIG), String.format(
+          "%s should be set",
           LOG_STORE_ADDRESS));
     }
 
@@ -259,5 +270,4 @@ public class ArcticUtils {
             "Can't remove arctic meta column from this RowData %s",
             rowData.getClass().getSimpleName()));
   }
-
 }

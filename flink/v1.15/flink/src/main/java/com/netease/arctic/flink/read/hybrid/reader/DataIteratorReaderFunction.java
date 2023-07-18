@@ -23,13 +23,14 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.hybrid.split.MergeOnReadSplit;
 import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
-import com.netease.arctic.flink.read.source.DataIterator;
-import com.netease.arctic.flink.read.source.MORDataIterator;
+import com.netease.arctic.flink.read.source.FileDataIterator;
+import com.netease.arctic.flink.read.source.MergeOnReadDataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.iceberg.io.CloseableIterator;
 
 /**
- * A {@link ReaderFunction} implementation that uses {@link DataIterator}.
+ * A {@link ReaderFunction} implementation that uses {@link FileDataIterator}.
  */
 public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T> {
   private final DataIteratorBatcher<T> batcher;
@@ -38,15 +39,15 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
     this.batcher = batcher;
   }
 
-  public abstract DataIterator<T> createDataIterator(ArcticSplit split);
+  public abstract ScanTaskDataIterator<T> createDataIterator(ArcticSplit split);
 
   @Override
   public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(ArcticSplit split) {
-    DataIterator<T> inputIterator = createDataIterator(split);
-    if (inputIterator instanceof MORDataIterator) {
-      MORDataIterator<T> morDataIterator = (MORDataIterator<T>) inputIterator;
+    ScanTaskDataIterator<T> inputIterator = createDataIterator(split);
+    if (inputIterator instanceof MergeOnReadDataIterator) {
+      MergeOnReadDataIterator mergeOnReadDataIterator = (MergeOnReadDataIterator) inputIterator;
       MergeOnReadSplit mergeOnReadSplit = split.asMergeOnReadSplit();
-      morDataIterator.seek(1, mergeOnReadSplit.recordOffset());
+      mergeOnReadDataIterator.seek(0, mergeOnReadSplit.recordOffset());
     } else if (inputIterator instanceof ChangeLogDataIterator) {
       ChangeLogDataIterator<T> changelogInputIterator = (ChangeLogDataIterator<T>) inputIterator;
       ChangelogSplit changelogSplit = split.asChangelogSplit();

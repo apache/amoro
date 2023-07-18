@@ -19,7 +19,7 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SourceReaderOptions;
@@ -50,7 +50,7 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
 
   @Override
   public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
-      String splitId, DataIterator<T> inputIterator) {
+      String splitId, ScanTaskDataIterator<T> inputIterator) {
     Preconditions.checkArgument(inputIterator != null, "Input data iterator can't be null");
     // lazily create pool as it is not serializable
     if (pool == null) {
@@ -72,10 +72,10 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   private class ArrayPoolBatchIterator implements CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> {
 
     private final String splitId;
-    private final DataIterator<T> inputIterator;
+    private final ScanTaskDataIterator<T> inputIterator;
     private final Pool<T[]> pool;
 
-    ArrayPoolBatchIterator(String splitId, DataIterator<T> inputIterator, Pool<T[]> pool) {
+    ArrayPoolBatchIterator(String splitId, ScanTaskDataIterator<T> inputIterator, Pool<T[]> pool) {
       this.splitId = splitId;
       this.inputIterator = inputIterator;
       this.pool = pool;

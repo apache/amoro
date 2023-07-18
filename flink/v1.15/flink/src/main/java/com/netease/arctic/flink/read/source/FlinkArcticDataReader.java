@@ -48,7 +48,7 @@ import java.util.function.Function;
  * The RowData read from this reader may have more columns than the original schema.
  * The additional columns are added after the original columns,
  * see {@link DeleteFilter}.
- * It shall be projected before sent to downstream. This can be processed in {@link DataIterator#next()}
+ * It shall be projected before sent to downstream. This can be processed in {@link FileDataIterator#next()}
  */
 public class FlinkArcticDataReader extends AbstractAdaptHiveIcebergDataReader<RowData>
     implements FileScanTaskReader<RowData> {

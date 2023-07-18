@@ -23,7 +23,7 @@ import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import org.apache.flink.api.connector.source.ReaderInfo;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
@@ -170,7 +170,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     do {
       split = assigner.getNext(subtaskId);
       if (split.isAvailable()) {
-        DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split.split());
+        ScanTaskDataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split.split());
         while (dataIterator.hasNext()) {
           RowData rowData = dataIterator.next();
           LOG.info("{}", rowData);

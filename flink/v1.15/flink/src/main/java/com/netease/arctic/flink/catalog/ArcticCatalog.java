@@ -30,6 +30,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.partition.PartitionUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.WatermarkSpec;
@@ -48,6 +49,7 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotPartitionedException;
 import org.apache.flink.table.catalog.stats.CatalogColumnStatistics;
 import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
@@ -63,11 +65,15 @@ import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
@@ -77,6 +83,9 @@ import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
  * Catalogs for arctic data lake.
  */
 public class ArcticCatalog extends AbstractCatalog {
+
+  public static final Logger LOG = LoggerFactory.getLogger(ArcticCatalog.class);
+
   public static final String DEFAULT_DB = "default";
 
   /**
@@ -328,7 +337,6 @@ public class ArcticCatalog extends AbstractCatalog {
         throw new UnsupportedOperationException("Creating table with computed columns is not supported yet.");
       }
     });
-
   }
 
   @Override
@@ -338,8 +346,30 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath) throws CatalogException {
-    throw new UnsupportedOperationException();
+  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath)
+      throws CatalogException, TableNotExistException, TableNotPartitionedException {
+    TableIdentifier tableIdentifier = TableIdentifier.of(
+        internalCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
+    if (!internalCatalog.tableExists(tableIdentifier)) {
+      throw new TableNotExistException(internalCatalog.name(), tablePath);
+    }
+
+    ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
+    if (arcticTable.spec() == null || arcticTable.spec().isUnpartitioned()) {
+      throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
+    }
+
+    Set<CatalogPartitionSpec> set = Sets.newHashSet();
+    PartitionUtil.getTablePartition(arcticTable).forEach(partitionBaseInfo -> {
+      Map<String, String> map = Maps.newHashMap();
+      for (String partitionField : partitionBaseInfo.getPartition().split("/")) {
+        String[] fieldKV = partitionField.split("=");
+        map.put(fieldKV[0], fieldKV[1]);
+      }
+      set.add(new CatalogPartitionSpec(map));
+    });
+
+    return Lists.newArrayList(set);
   }
 
   @Override

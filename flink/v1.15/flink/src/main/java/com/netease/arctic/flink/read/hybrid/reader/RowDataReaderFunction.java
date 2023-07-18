@@ -21,11 +21,12 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.FileDataIterator;
 import com.netease.arctic.flink.read.source.FileScanTaskReader;
 import com.netease.arctic.flink.read.source.FlinkArcticDataReader;
 import com.netease.arctic.flink.read.source.FlinkArcticMORDataReader;
-import com.netease.arctic.flink.read.source.MORDataIterator;
+import com.netease.arctic.flink.read.source.MergeOnReadDataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -44,7 +45,7 @@ import static com.netease.arctic.utils.SchemaUtil.changeWriteSchema;
 import static com.netease.arctic.utils.SchemaUtil.fillUpIdentifierFields;
 
 /**
- * This Function accept a {@link ArcticSplit} and produces an {@link DataIterator} of {@link RowData}.
+ * This Function accept a {@link ArcticSplit} and produces an {@link FileDataIterator} of {@link RowData}.
  */
 public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   private static final long serialVersionUID = 1446614576495721883L;
@@ -90,21 +91,22 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   }
 
   @Override
-  public DataIterator<RowData> createDataIterator(ArcticSplit split) {
+  public ScanTaskDataIterator<RowData> createDataIterator(ArcticSplit split) {
     if (split.isMergeOnReadSplit()) {
       FlinkArcticMORDataReader flinkArcticMORDataReader = new FlinkArcticMORDataReader(
           io, tableSchema, readSchema, primaryKeySpec, nameMapping, caseSensitive,
           RowDataUtil::convertConstant, reuse
       );
-      return new MORDataIterator<>(
-          flinkArcticMORDataReader.readData(split.asMergeOnReadSplit().keyedTableScanTask())
+      return new MergeOnReadDataIterator(
+          flinkArcticMORDataReader,
+          split.asMergeOnReadSplit().keyedTableScanTask()
       );
     } else if (split.isSnapshotSplit()) {
       FileScanTaskReader<RowData> rowDataReader =
           new FlinkArcticDataReader(
               io, tableSchema, readSchema, primaryKeySpec, nameMapping, caseSensitive, RowDataUtil::convertConstant,
               Collections.singleton(split.dataTreeNode()), reuse);
-      return new DataIterator<>(
+      return new FileDataIterator<>(
           rowDataReader,
           split.asSnapshotSplit().insertTasks(),
           rowData -> Long.MIN_VALUE,

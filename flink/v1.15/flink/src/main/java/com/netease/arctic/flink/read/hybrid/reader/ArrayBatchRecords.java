@@ -19,7 +19,7 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.FileDataIterator;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.file.src.util.Pool;
@@ -159,14 +159,14 @@ class ArrayBatchRecords<T> implements RecordsWithSplitIds<ArcticRecordWithOffset
    *
    * @param splitId         Iceberg source only read from one split a time.
    *                        We never have multiple records from multiple splits.
-   * @param recycler        Because {@link DataIterator} with {@link RowData}
+   * @param recycler        Because {@link FileDataIterator} with {@link RowData}
    *                        returns an iterator of reused RowData object,
    *                        we need to clone RowData eagerly when constructing a batch of records.
    *                        We can use object pool to reuse the RowData array object
    *                        which can be expensive to create.
    *                        This recycler can be provided to recycle the array object back to pool
    *                        after read is exhausted.
-   *                        If the {@link DataIterator} returns an iterator of non-reused objects,
+   *                        If the {@link FileDataIterator} returns an iterator of non-reused objects,
    *                        we don't need to clone objects. It is cheap to just create the batch array.
    *                        Hence, we don't need object pool and recycler can be set to null.
    * @param records         an array (maybe reused) holding a batch of records

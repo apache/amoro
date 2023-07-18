@@ -34,9 +34,9 @@ import static com.netease.arctic.data.ChangeAction.UPDATE_BEFORE;
 /**
  * This is a change log data iterator that replays the change log data appended to arctic change table with ordered.
  */
-public class ChangeLogDataIterator<T> extends DataIterator<T> {
-  private final DataIterator<T> insertDataIterator;
-  private DataIterator<T> deleteDataIterator = DataIterator.empty();
+public class ChangeLogDataIterator<T> extends FileDataIterator<T> {
+  private final FileDataIterator<T> insertDataIterator;
+  private FileDataIterator<T> deleteDataIterator = FileDataIterator.empty();
 
   private final Function<T, T> arcticMetaColumnRemover;
   private final Function<ChangeActionTrans<T>, T> changeActionTransformer;
@@ -53,10 +53,10 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
       Function<ChangeActionTrans<T>, T> changeActionTransformer) {
     super(fileScanTaskReader, Collections.emptyList(), arcticFileOffsetGetter, arcticMetaColumnRemover);
     this.insertDataIterator =
-        new DataIterator<>(fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+        new FileDataIterator<>(fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     if (deleteTasks != null && !deleteTasks.isEmpty()) {
       this.deleteDataIterator =
-          new DataIterator<>(fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+          new FileDataIterator<>(fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     }
     this.arcticMetaColumnRemover = arcticMetaColumnRemover;
     this.changeActionTransformer = changeActionTransformer;
@@ -77,7 +77,7 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
   }
 
   private void loadQueueHolder(boolean insert) {
-    DataIterator<T> dataIterator = insert ? insertDataIterator : deleteDataIterator;
+    FileDataIterator<T> dataIterator = insert ? insertDataIterator : deleteDataIterator;
     QueueHolder<T> holder = insert ? insertHolder : deleteHolder;
     if (dataIterator.hasNext() && holder.isEmpty()) {
       T next = dataIterator.next();

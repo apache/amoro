@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @param <T> is the output data type returned by this iterator.
  */
 @Internal
-public class DataIterator<T> implements CloseableIterator<T> {
+public class FileDataIterator<T> implements ScanTaskDataIterator<T> {
 
   private final FileScanTaskReader<T> fileScanTaskReader;
   private final int taskSize;
@@ -51,7 +51,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private final Function<T, Long> arcticFileOffsetGetter;
   private final Function<T, T> arcticMetaColumnRemover;
 
-  public DataIterator(
+  public FileDataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
       Collection<ArcticFileScanTask> tasks,
       Function<T, Long> arcticFileOffsetGetter,
@@ -157,10 +157,12 @@ public class DataIterator<T> implements CloseableIterator<T> {
     tasks = null;
   }
 
+  @Override
   public int fileOffset() {
     return fileOffset;
   }
 
+  @Override
   public long recordOffset() {
     return recordOffset;
   }
@@ -169,11 +171,11 @@ public class DataIterator<T> implements CloseableIterator<T> {
     return currentArcticFileOffset;
   }
 
-  static <T> DataIterator<T> empty() {
+  static <T> FileDataIterator<T> empty() {
     return new EmptyIterator<>();
   }
 
-  private static class EmptyIterator<T> extends DataIterator<T> {
+  private static class EmptyIterator<T> extends FileDataIterator<T> {
 
     public EmptyIterator() {
       super(null, Collections.emptyList(), t -> Long.MIN_VALUE, t -> t);

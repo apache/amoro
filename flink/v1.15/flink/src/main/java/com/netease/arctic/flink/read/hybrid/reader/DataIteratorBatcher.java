@@ -19,7 +19,7 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
-import com.netease.arctic.flink.read.source.DataIterator;
+import com.netease.arctic.flink.read.source.ScanTaskDataIterator;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.iceberg.io.CloseableIterator;
@@ -33,5 +33,5 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface DataIteratorBatcher<T> extends Serializable {
   CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> batch(
-      String splitId, DataIterator<T> inputIterator);
+      String splitId, ScanTaskDataIterator<T> inputIterator);
 }
