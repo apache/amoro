@@ -4,6 +4,7 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 
 import java.util.Collection;
@@ -27,7 +28,7 @@ public class TaskFilesPersistence {
     if (bytes == null) {
       return Collections.emptyMap();
     } else {
-      return SerializationUtil.simpleDeserialize(bytes.get(0));
+      return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes.get(0)));
     }
   }
 
