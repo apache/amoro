@@ -27,7 +27,7 @@
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
                      fileName="${LOG_HOME}/ams-debug.log"
-                     filePattern="${LOG_HOME}/history/ams-debug-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-debug-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -46,7 +46,7 @@
         <!--Logs with a grade of info-->
         <RollingFile name="infoFileAppender"
                      fileName="${LOG_HOME}/ams-info.log"
-                     filePattern="${LOG_HOME}/history/ams-info-%d{yyyy-MM-dd}-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-info-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -54,13 +54,16 @@
             <Policies>
                 <!--Set the time for rolling updates of log files, depending on the file naming filePattern setting-->
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
+                <SizeBasedTriggeringPolicy size="2048MB"/>
             </Policies>
             <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
              it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7">
                 <Delete basePath="${LOG_HOME}/history" maxDepth="1">
-                    <IfFileName glob="*.log"/>
+                    <IfFileName glob="*.log.gz"/>
                     <IfLastModified age="7d"/>
+                    <IfAccumulatedFileSize exceeds="20GB" />
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
@@ -68,7 +71,7 @@
         <!--Logs with a grade of error-->
         <RollingFile name="errorFileAppender"
                      fileName="${LOG_HOME}/ams-error.log"
-                     filePattern="${LOG_HOME}/history/ams-error-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-error-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -87,7 +90,7 @@
         <!--Logs for iceberg metrics report -->
         <RollingFile name="icebergRestMetricReporter"
                      fileName="${LOG_HOME}/iceberg-metrics.log"
-                     filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log">
+                     filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log.gz">
             <PatternLayout>
                 <pattern>%m%n</pattern>
             </PatternLayout>
