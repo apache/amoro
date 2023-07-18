@@ -46,6 +46,7 @@ public class OptimizingClientPools {
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
+    poolConfig.setMaxTotal(-1);
     return new ThriftClientPool<>(url,
         s -> new OptimizingService.Client(
             new TMultiplexedProtocol(new TBinaryProtocol(s), Constants.THRIFT_OPTIMIZING_SERVICE_NAME)), c -> {
