@@ -25,7 +25,6 @@ import io.trino.spi.classloader.ThreadContextClassLoader;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import javax.inject.Inject;
-import java.util.Collections;
 import java.util.Map;
 
 /**

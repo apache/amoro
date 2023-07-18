@@ -27,7 +27,6 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
-import com.netease.arctic.server.catalog.IcebergCatalogImpl;
 import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.CommonExternalCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
