@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -263,7 +264,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       entries.forEach(entry -> {
-        if (changeTable.snapshot(entry.getSnapshotId()).timestampMillis() <= ttlPoint) {
+        Snapshot snapshot = changeTable.snapshot(entry.getSnapshotId());
+        if (snapshot == null || snapshot.timestampMillis() <= ttlPoint) {
           changeTTLFileEntries.add(entry);
         }
       });
@@ -289,26 +291,28 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
             keyedTable.spec().partitionToPath(entry.getFile().partition()), Collectors.toList()));
 
     List<DataFile> changeDeleteFiles = new ArrayList<>();
-    if (keyedTable.baseTable().spec().isUnpartitioned()) {
+    if (keyedTable.spec().isUnpartitioned()) {
       List<IcebergFileEntry> partitionDataFiles =
           partitionDataFileMap.get(keyedTable.spec().partitionToPath(
               expiredDataFileEntries.get(0).getFile().partition()));
 
       Long optimizedSequence = partitionMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
-      if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
+      if (optimizedSequence != null && CollectionUtils.isNotEmpty(partitionDataFiles)) {
         changeDeleteFiles.addAll(partitionDataFiles.stream()
-            .filter(entry -> entry.getSequenceNumber() <= optimizedSequence)
+            .filter(entry -> FileNameRules.parseChangeTransactionId(
+                entry.getFile().path().toString(), entry.getSequenceNumber()) <= optimizedSequence)
             .map(entry -> (DataFile) entry.getFile())
             .collect(Collectors.toList()));
       }
     } else {
       partitionMaxTransactionId.forEach((key, value) -> {
         List<IcebergFileEntry> partitionDataFiles =
-            partitionDataFileMap.get(keyedTable.baseTable().spec().partitionToPath(key));
+            partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
 
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           changeDeleteFiles.addAll(partitionDataFiles.stream()
-              .filter(entry -> entry.getSequenceNumber() <= value)
+              .filter(entry -> FileNameRules.parseChangeTransactionId(
+                  entry.getFile().path().toString(), entry.getSequenceNumber()) <= value)
               .map(entry -> (DataFile) entry.getFile())
               .collect(Collectors.toList()));
         }
@@ -318,6 +322,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   }
 
   public static void tryClearChangeFiles(KeyedTable keyedTable, List<DataFile> changeFiles) {
+    if (CollectionUtils.isEmpty(changeFiles)) {
+      return;
+    }
     try {
       if (keyedTable.primaryKeySpec().primaryKeyExisted()) {
         for (int startIndex = 0; startIndex < changeFiles.size(); startIndex += DATA_FILE_LIST_SPLIT) {
