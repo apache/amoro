@@ -286,7 +286,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       return;
     }
 
-    Map<Object, List<IcebergFileEntry>> partitionDataFileMap = expiredDataFileEntries.stream()
+    Map<String, List<IcebergFileEntry>> partitionDataFileMap = expiredDataFileEntries.stream()
         .collect(Collectors.groupingBy(entry ->
             keyedTable.spec().partitionToPath(entry.getFile().partition()), Collectors.toList()));
 
