@@ -34,7 +34,6 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
-import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -364,10 +363,10 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
+    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
         tableName), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
-    PageResult<AMSDataFileInfo> amsPageResult = PageResult.of(result,
+    PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
