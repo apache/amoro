@@ -19,41 +19,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
+        <artifactId>arctic-flink</artifactId>
         <version>0.5.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-flink</artifactId>
-    <packaging>pom</packaging>
-    <name>Arctic Project Flink Parent</name>
+    <artifactId>arctic-flink-format-1.17</artifactId>
+    <name>Arctic Project Flink 1.17 Format</name>
     <url>https://arctic.netease.com</url>
 
-    <modules>
-        <module>v1.12/flink</module>
-        <module>v1.12/flink-format</module>
-        <module>v1.12/flink-runtime</module>
-        <module>v1.12/arctic-flink-1.12-iceberg-bridge</module>
-        <module>v1.12/arctic-flink-1.12-pulsar-bridge</module>
-        <module>v1.14/flink</module>
-        <module>v1.14/flink-format</module>
-        <module>v1.14/flink-runtime</module>
-        <module>v1.14/arctic-flink-1.14-iceberg-bridge</module>
-        <module>v1.15/flink</module>
-        <module>v1.15/flink-format</module>
-        <module>v1.15/flink-runtime</module>
-        <module>v1.15/arctic-flink-1.15-iceberg-bridge</module>
-        <module>v1.17/flink</module>
-        <module>v1.17/flink-format</module>
-        <module>v1.17/flink-runtime</module>
-        <module>v1.17/arctic-flink-1.17-iceberg-bridge</module>
-    </modules>
-
     <properties>
-        <kafka.version>2.4.1</kafka.version>
+        <flink.version>1.17.1</flink.version>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-core</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-common</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
 </project>
