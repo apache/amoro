@@ -109,6 +109,9 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
+  public static final String SELF_OPTIMIZING_TASK_PROCESS_ORDER = "self-optimizing.task-process-order";
+  public static final String SELF_OPTIMIZING_TASK_PROCESS_ORDER_DEFAULT = "none";
+
 
   /**
    * deprecated table optimize related properties

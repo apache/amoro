@@ -108,12 +108,12 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 7.commit
     OptimizingProcess optimizingProcess = tableRuntimeMeta.getTableRuntime().getOptimizingProcess();
     Assert.assertEquals(OptimizingProcess.Status.RUNNING, optimizingProcess.getStatus());
-    optimizingProcess.commit();
+    optimizingProcess.commit(tableService().loadTable(tableRuntimeMeta.getTableRuntime().getTableIdentifier()));
     Assert.assertEquals(OptimizingProcess.Status.SUCCESS, optimizingProcess.getStatus());
     Assert.assertNull(tableRuntimeMeta.getTableRuntime().getOptimizingProcess());
 
     // 8.commit again
-    optimizingProcess.commit();
+    optimizingProcess.commit(tableService().loadTable(tableRuntimeMeta.getTableRuntime().getTableIdentifier()));
     Assert.assertEquals(OptimizingProcess.Status.FAILED, optimizingProcess.getStatus());
 
     // 9.close

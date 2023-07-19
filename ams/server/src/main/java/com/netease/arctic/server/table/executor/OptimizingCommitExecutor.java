@@ -29,7 +29,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   protected void execute(TableRuntime tableRuntime) {
     Optional.ofNullable(tableRuntime.getOptimizingProcess())
         .orElseThrow(() -> new IllegalStateException("OptimizingProcess is null while committing:" + tableRuntime))
-        .commit();
+        .commit(loadTable(tableRuntime));
   }
 
   @Override

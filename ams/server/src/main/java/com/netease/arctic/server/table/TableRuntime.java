@@ -24,6 +24,7 @@ import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.server.optimizing.OptimizingProcessIterator;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
@@ -36,6 +37,7 @@ import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
+import java.util.function.Consumer;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -95,6 +97,7 @@ public class TableRuntime extends StatedPersistentBase {
   private volatile OptimizingEvaluator.PendingInput pendingInput;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
+  private volatile OptimizingProcessIterator processIterator;
 
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
@@ -237,9 +240,14 @@ public class TableRuntime extends StatedPersistentBase {
       } else {
         optimizingStatus = OptimizingStatus.IDLE;
       }
-      optimizingProcess = null;
-      persistUpdatingRuntime();
-      tableHandler.handleTableChanged(this, originalStatus);
+      if (processIterator.hasNext()) {
+        optimizingProcess = processIterator.next();
+        beginProcess(optimizingProcess);
+      } else {
+        optimizingProcess = null;
+        persistUpdatingRuntime();
+        tableHandler.handleTableChanged(this, originalStatus);
+      }
     });
   }
 
@@ -543,5 +551,24 @@ public class TableRuntime extends StatedPersistentBase {
     propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
     tableBlocker.setProperties(propertiesOfTableBlocker);
     return tableBlocker;
+  }
+
+  public void chainOptimizingProcesses(OptimizingProcessIterator processIterator) {
+    this.processIterator = processIterator;
+  }
+
+  public void startProcess() {
+    if (processIterator == null) {
+      LOG.warn("No optimizing process to start");
+      return;
+    }
+    if (optimizingProcess != null) {
+      beginProcess(optimizingProcess);
+      return;
+    }
+    if (processIterator.hasNext()) {
+      this.optimizingProcess = processIterator.next();
+      beginProcess(optimizingProcess);
+    }
   }
 }

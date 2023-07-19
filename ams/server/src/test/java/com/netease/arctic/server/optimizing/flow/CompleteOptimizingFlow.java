@@ -172,7 +172,7 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
-    return new OptimizingPlanner(tableRuntime, table, availableCore);
+    return new OptimizingPlanner(tableRuntime, table, availableCore, 1);
   }
 
   private OptimizingConfig optimizingConfig() {

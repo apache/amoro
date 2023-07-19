@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.server.optimizing.plan.PlannedTasks;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -54,6 +55,9 @@ public class OptimizingConfig {
 
   //self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
+
+  //self-optimizing.task-process-order
+  private String taskProcessOrder;
 
   //base.file-index.hash-bucket
   private int baseHashBucket;
@@ -219,6 +223,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public OptimizingConfig setTaskProcessOrder(String taskProcessOrder) {
+    this.taskProcessOrder = taskProcessOrder;
+    return this;
+  }
+
+  public String getTaskProcessOrder() {
+    return taskProcessOrder;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -319,6 +332,10 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setTaskProcessOrder(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.SELF_OPTIMIZING_TASK_PROCESS_ORDER,
+            TableProperties.SELF_OPTIMIZING_TASK_PROCESS_ORDER_DEFAULT))
         .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.BASE_FILE_INDEX_HASH_BUCKET,

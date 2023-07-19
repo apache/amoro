@@ -362,8 +362,74 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 3);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
+
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
+
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
+
+    checker.assertOptimizeHangUp();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
+  public void testPartitionIcebergTableOrderedOptimizing(String catalog) throws IOException {
+    Table table = createIcebergTable(catalog, SPEC, 2);
+    BaseOptimizingChecker checker = newOptimizingChecker(catalog);
+    // Step 1: insert 6 data files for two partitions
+    StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(1))
+    ), partitionData1);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(2, "bbb", quickDateWithZone(1))
+    ), partitionData1);
+    StructLike partitionData2 = partitionData(table.schema(), table.spec(), quickDateWithZone(2));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(3, "ccc", quickDateWithZone(2))
+    ), partitionData2);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(4, "ddd", quickDateWithZone(2))
+    ), partitionData2);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(5, "eee", quickDateWithZone(2))
+    ), partitionData2);
+    StructLike partitionData3 = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(6, "fff", quickDateWithZone(3))
+    ), partitionData3);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(7, "ggg", quickDateWithZone(3))
+    ), partitionData3);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(8, "hhh", quickDateWithZone(3))
+    ), partitionData3);
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(9, "iii", quickDateWithZone(3))
+    ), partitionData3);
+
+
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_TASK_PROCESS_ORDER, "sequence-desc");
+
+    // wait Minor Optimize result
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
     checker.assertOptimizeHangUp();
   }

@@ -27,6 +27,9 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,20 +47,22 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
-  protected long processId;
+  // protected long processId;
   private final double availableCore;
+  private final int totalParallelism;
   private final long planTime;
-  private OptimizingType optimizingType;
+  private final Map<String, OptimizingType> optimizingTypes = Maps.newHashMap();
   private final PartitionPlannerFactory partitionPlannerFactory;
-  private List<TaskDescriptor> tasks;
+  private Map<String, List<TaskDescriptor>> partitionTaskDescriptors = Maps.newHashMap();;
 
-  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore, int totalParallelism) {
     super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
         null : tableRuntime.getPendingInput().getPartitions()::contains;
     this.availableCore = availableCore;
+    this.totalParallelism = totalParallelism;
     this.planTime = System.currentTimeMillis();
-    this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
+    // this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
     this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
   }
 
@@ -102,8 +107,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public List<TaskDescriptor> planTasks() {
-    if (this.tasks != null) {
-      return this.tasks;
+    return planPartitionedTasks().entrySet().stream()
+        .flatMap(kv -> kv.getValue().stream())
+        .collect(Collectors.toList());
+  }
+
+  public Map<String, List<TaskDescriptor>> planPartitionedTasks() {
+    if (!this.partitionTaskDescriptors.isEmpty()) {
+      return this.partitionTaskDescriptors;
     }
     long startTime = System.nanoTime();
 
@@ -114,12 +125,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       if (LOG.isDebugEnabled()) {
         LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
       }
-      return cacheAndReturnTasks(Collections.emptyList());
+      return cacheAndReturnTasks(Collections.emptyMap());
     }
 
     List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
-    evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight));
-    Collections.reverse(evaluators);
+    evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Collections.reverseOrder()));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
@@ -133,28 +143,27 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     double avgThreadCost = actualInputSize / availableCore;
-    List<TaskDescriptor> tasks = Lists.newArrayList();
     for (PartitionEvaluator evaluator : inputPartitions) {
-      tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
-    }
-    if (!tasks.isEmpty()) {
-      if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL)) {
-        optimizingType = OptimizingType.FULL;
-      } else if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
-        optimizingType = OptimizingType.MAJOR;
-      } else {
-        optimizingType = OptimizingType.MINOR;
+      List<TaskDescriptor> tasks = ((AbstractPartitionPlan) evaluator)
+          .splitTasks(Math.max(Math.min((int) (actualInputSize / avgThreadCost), 1), totalParallelism));
+      if (!tasks.isEmpty()) {
+        optimizingTypes.put(evaluator.getPartition(), evaluator.getOptimizingType());
       }
+      partitionTaskDescriptors.put(evaluator.getPartition(), tasks);
     }
     long endTime = System.nanoTime();
-    LOG.info("{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
-        getOptimizingType(), tasks.size(), endTime - startTime, (endTime - startTime) / 1_000_000);
-    return cacheAndReturnTasks(tasks);
+    LOG.info("{} finish plan, get tasks: {}, cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
+        partitionTaskDescriptors.entrySet().stream()
+            .map(kv -> (StringUtils.isBlank(kv.getKey()) ? "null" : kv.getKey()) + " => " + kv.getValue().size())
+            .collect(Collectors.joining(", ", "[", "]")),
+        endTime - startTime,
+        (endTime - startTime) / 1_000_000);
+    return cacheAndReturnTasks(partitionTaskDescriptors);
   }
 
-  private List<TaskDescriptor> cacheAndReturnTasks(List<TaskDescriptor> tasks) {
-    this.tasks = tasks;
-    return this.tasks;
+  private Map<String, List<TaskDescriptor>> cacheAndReturnTasks(Map<String, List<TaskDescriptor>> tasks) {
+    this.partitionTaskDescriptors = tasks;
+    return this.partitionTaskDescriptors;
   }
 
   public long getPlanTime() {
@@ -162,11 +171,25 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public OptimizingType getOptimizingType() {
-    return optimizingType;
+    Preconditions.checkArgument(!partitionTaskDescriptors.isEmpty(),
+        "Optimizing tasks are empty, optimizing is not started");
+    if (optimizingTypes.values().stream()
+        .anyMatch(t -> t == OptimizingType.FULL)) {
+      return OptimizingType.FULL;
+    } else if (optimizingTypes.values().stream()
+        .anyMatch(t -> t == OptimizingType.MAJOR)) {
+      return OptimizingType.MAJOR;
+    } else {
+      return OptimizingType.MINOR;
+    }
   }
 
-  public long getProcessId() {
-    return processId;
+  public OptimizingType getOptTypeByPartition(String partition) {
+    return optimizingTypes.get(partition);
+  }
+
+  public long getNewProcessId() {
+    return Math.max(tableRuntime.getNewestProcessId() + 1, System.currentTimeMillis());
   }
 
   private static class PartitionPlannerFactory {
