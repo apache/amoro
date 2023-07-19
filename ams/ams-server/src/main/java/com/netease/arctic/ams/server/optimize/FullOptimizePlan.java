@@ -111,9 +111,13 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   protected List<BasicOptimizeTask> collectTask(String partition) {
     List<BasicOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      result = collectUnKeyedTableTasks(partition);
+      result = collectTasksWithBinPack(partition);
     } else {
-      result = collectKeyedTableTasks(partition);
+      if (canBinPackKeyedTableTasks(partition)) {
+        result = collectTasksWithBinPack(partition);
+      } else {
+        result = collectTasksWithNodes(partition);
+      }
     }
 
     return result;
@@ -181,7 +185,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2;
   }
 
-  private List<BasicOptimizeTask> collectUnKeyedTableTasks(String partition) {
+  private List<BasicOptimizeTask> collectTasksWithBinPack(String partition) {
     List<BasicOptimizeTask> collector = new ArrayList<>();
 
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partition);
@@ -211,7 +215,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     return collector;
   }
 
-  private List<BasicOptimizeTask> collectKeyedTableTasks(String partition) {
+  private List<BasicOptimizeTask> collectTasksWithNodes(String partition) {
     FileTree treeRoot = partitionFileTree.get(partition);
     if (treeRoot == null) {
       return Collections.emptyList();
@@ -243,6 +247,24 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return collector;
+  }
+
+  /**
+   * If all files in the Node(0,0) and only base files exist, binPack is supported.
+   *
+   * @param partition -
+   * @return true if support binPack
+   */
+  private boolean canBinPackKeyedTableTasks(String partition) {
+    FileTree treeRoot = partitionFileTree.get(partition);
+    if (treeRoot == null) {
+      return false;
+    }
+    if (!treeRoot.isLeaf()) {
+      return false;
+    }
+    return !treeRoot.getBaseFiles().isEmpty() && treeRoot.getInsertFiles().isEmpty() &&
+        treeRoot.getDeleteFiles().isEmpty() && treeRoot.getPosDeleteFiles().isEmpty();
   }
 
   private long getMaxTransactionId(List<DataFile> dataFiles) {
