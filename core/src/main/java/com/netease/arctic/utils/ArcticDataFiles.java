@@ -151,6 +151,6 @@ public class ArcticDataFiles {
         return s.name();
       }
     }).collect(Collectors.toList());
-    return GenericRecord.create(spec.schema().caseInsensitiveSelect(collect));
+    return GenericRecord.create(spec.schema().select(collect));
   }
 }
