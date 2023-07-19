@@ -3,6 +3,7 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class TableRuntimeMeta {
   private long currentStatusStartTime;
   private String optimizerGroup;
   private TableConfiguration tableConfig;
+  private OptimizingEvaluator.PendingInput pendingInput;
   private long optimizingProcessId = 0;
   private OptimizingProcess.Status processStatus;
   private OptimizingType optimizingType;
@@ -259,5 +261,13 @@ public class TableRuntimeMeta {
 
   public void setSummary(String summary) {
     this.summary = summary;
+  }
+
+  public OptimizingEvaluator.PendingInput getPendingInput() {
+    return pendingInput;
+  }
+
+  public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
+    this.pendingInput = pendingInput;
   }
 }

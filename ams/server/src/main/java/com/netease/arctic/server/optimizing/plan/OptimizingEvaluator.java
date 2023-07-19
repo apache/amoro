@@ -158,6 +158,9 @@ public class OptimizingEvaluator {
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
 
+    public PendingInput() {
+    }
+
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator evaluator : evaluators) {
         partitions.add(evaluator.getPartition());

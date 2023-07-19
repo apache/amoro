@@ -57,7 +57,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       String exportCmd = String.join(" && ", exportSystemProperties());
       String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
       String[] cmd = {"/bin/sh", "-c", startUpCmd};
-      LOG.info("Starting flink optimizer using command:" + startUpCmd);
+      LOG.info("Starting flink optimizer using command : {}", startUpCmd);
       Process exec = runtime.exec(cmd);
       Map<String, String> startUpStatesMap = Maps.newHashMap();
       String applicationId = readApplicationId(exec);

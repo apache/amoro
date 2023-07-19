@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.util;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.spark.SparkAdapterLoader;
 import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket;
 import com.netease.arctic.table.ArcticTable;
@@ -30,6 +29,7 @@ import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.transforms.SortOrderVisitor;
 import org.apache.iceberg.util.PropertyUtil;
