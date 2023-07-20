@@ -150,9 +150,8 @@
                         <configuration>
                             <artifactSet>
                                 <includes>
-                                    <include>org.apache.zookeeper:zookeeper</include>
-                                    <include>org.apache.curator:curator-framework</include>
-                                    <include>org.apache.curator:curator-recipes</include>
+                                    <include>org.apache.curator:*</include>
+                                    <include>org.apache.zookeeper:*</include>
                                 </includes>
                             </artifactSet>
                             <filters>
