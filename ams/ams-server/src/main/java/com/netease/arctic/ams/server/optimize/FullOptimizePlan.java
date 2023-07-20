@@ -61,6 +61,11 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
+    // check should split root node
+    if (needSplitRootNode(partitionToPath)) {
+      return true;
+    }
+
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath)) {
       return true;
@@ -111,10 +116,11 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   protected List<BasicOptimizeTask> collectTask(String partition) {
     List<BasicOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      result = collectTasksWithBinPack(partition);
+      result = collectTasksWithBinPack(partition, getOptimizingTargetSize());
     } else {
       if (canBinPackKeyedTableTasks(partition)) {
-        result = collectTasksWithBinPack(partition);
+        // TO avoid too big task size leading to optimizer OOM, we limit the max task size to 4 * optimizing target size
+        result = collectTasksWithBinPack(partition, getOptimizingTargetSize() * Math.min(4, getBaseBucketSize()));
       } else {
         result = collectTasksWithNodes(partition);
       }
@@ -175,31 +181,29 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   /**
    * check whether node task need to build
    *
+   * @param partition     partition
    * @param posDeleteFiles pos-delete files in node
    * @param baseFiles      base files in node
    * @return whether the node task need to build. If true, build task, otherwise skip.
    */
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     List<DataFile> smallFiles = baseFiles.stream().filter(file -> file.fileSizeInBytes() <=
         getSmallFileSize(arcticTable.properties())).collect(Collectors.toList());
-    return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2;
+    return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2 || needSplitRootNode(partition);
   }
 
-  private List<BasicOptimizeTask> collectTasksWithBinPack(String partition) {
+  private List<BasicOptimizeTask> collectTasksWithBinPack(String partition, long taskSize) {
     List<BasicOptimizeTask> collector = new ArrayList<>();
 
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partition);
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partition);
-    if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
+    if (nodeTaskNeedBuild(partition, posDeleteFiles, baseFiles)) {
       String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(getOptimizeType(), partition, commitGroup, planGroup, createTime,
           false, constructCustomHiveSubdirectory(baseFiles)
       );
 
-      long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
-              TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-              TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
       Long sum = baseFiles.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
       int taskCnt = (int) (sum / taskSize) + 1;
       List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
@@ -213,6 +217,18 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return collector;
+  }
+
+  private long getOptimizingTargetSize() {
+    return CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+  }
+
+  private int getBaseBucketSize() {
+    return CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
   }
 
   private List<BasicOptimizeTask> collectTasksWithNodes(String partition) {
@@ -239,7 +255,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
         subTree.collectPosDeleteFiles(posDeleteFiles);
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
 
-        if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
+        if (nodeTaskNeedBuild(partition, posDeleteFiles, baseFiles)) {
           collector.add(buildOptimizeTask(sourceNodes,
               Collections.emptyList(), Collections.emptyList(), baseFiles, posDeleteFiles, taskPartitionConfig));
         }
@@ -247,6 +263,30 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return collector;
+  }
+
+  /**
+   * If all files in root node, but target base hash bucket > 1, we should split the root node.
+   *
+   * @param partitionToPath - partition
+   * @return true - if it needs to split
+   */
+  protected boolean needSplitRootNode(String partitionToPath) {
+    if (arcticTable.spec().isPartitioned()) {
+      // To limit the scope of this feature and avoid optimizing a large number of historical partitions, 
+      // it only applies to unpartitioned tables.
+      return false;
+    }
+    int baseBucket = PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+    if (baseBucket <= 1) {
+      return false;
+    }
+    FileTree fileTree = partitionFileTree.get(partitionToPath);
+    if (fileTree == null) {
+      return false;
+    }
+    return !fileTree.isRootEmpty() && fileTree.isLeaf();
   }
 
   /**

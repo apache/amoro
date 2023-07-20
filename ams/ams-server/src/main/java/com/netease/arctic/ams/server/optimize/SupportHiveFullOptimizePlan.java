@@ -19,19 +19,16 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
-import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,40 +60,39 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
+    // check should split root node
+    if (needSplitRootNode(partitionToPath)) {
+      return true;
+    }
 
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
     Map<DataTreeNode, Long> nodeSmallFileCount = new HashMap<>();
     boolean nodeHaveTwoSmallFiles = false;
     boolean notInHiveFile = false;
-    boolean needSplitRootNode = needSplitRootNode(partitionToPath);
-    if (!needSplitRootNode) {
-      for (DataFile baseFile : baseFiles) {
-        boolean inHive = baseFile.path().toString().contains(((SupportHive) arcticTable).hiveLocation());
-        if (!inHive) {
-          notInHiveFile = true;
-          LOG.info("table {} has in not hive location files", arcticTable.id());
+    for (DataFile baseFile : baseFiles) {
+      boolean inHive = baseFile.path().toString().contains(((SupportHive) arcticTable).hiveLocation());
+      if (!inHive) {
+        notInHiveFile = true;
+        LOG.info("table {} has in not hive location files", arcticTable.id());
+        break;
+      } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
+        DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
+        if (nodeSmallFileCount.get(node) != null) {
+          nodeHaveTwoSmallFiles = true;
+          LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",
+              arcticTable.id(), node.mask(), node.index());
           break;
-        } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
-          DataTreeNode node = FileNameGenerator.parseFileNodeFromFileName(baseFile.path().toString());
-          if (nodeSmallFileCount.get(node) != null) {
-            nodeHaveTwoSmallFiles = true;
-            LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",
-                arcticTable.id(), node.mask(), node.index());
-            break;
-          } else {
-            nodeSmallFileCount.put(node, 1L);
-          }
+        } else {
+          nodeSmallFileCount.put(node, 1L);
         }
       }
     }
     // check whether partition need plan by files info.
-    // if partition need split root node to target node
     // if partition has no pos-delete file, and there are files in not hive location or
     // small file count greater than 2 in hive location, partition need plan
     // if partition has pos-delete, partition need plan
-    boolean partitionNeedPlan =
-        needSplitRootNode || CollectionUtils.isNotEmpty(posDeleteFiles) || nodeHaveTwoSmallFiles || notInHiveFile;
+    boolean partitionNeedPlan = CollectionUtils.isNotEmpty(posDeleteFiles) || nodeHaveTwoSmallFiles || notInHiveFile;
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {
@@ -113,32 +109,8 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     return false;
   }
 
-  /**
-   * If all files in root node, but target base hash bucket  1, we should split the root node.
-   *
-   * @param partitionToPath - partition
-   * @return true if need split
-   */
-  private boolean needSplitRootNode(String partitionToPath) {
-    if (arcticTable.spec().isPartitioned()) {
-      // To limit the scope of this feature and avoid optimizing a large number of historical partitions, 
-      // it only applies to unpartitioned tables.
-      return false;
-    }
-    int baseBucket = PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
-    if (baseBucket <= 1) {
-      return false;
-    }
-    FileTree fileTree = partitionFileTree.get(partitionToPath);
-    if (fileTree == null) {
-      return false;
-    }
-    return !fileTree.isRootEmpty() && fileTree.isLeaf();
-  }
-
   @Override
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return true;
   }
 }
