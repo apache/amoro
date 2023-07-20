@@ -10,7 +10,6 @@ import java.util.Map;
 public class TableConfiguration {
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
-  private long changeSnapshotTTLMinutes;
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
@@ -25,10 +24,6 @@ public class TableConfiguration {
 
   public long getSnapshotTTLMinutes() {
     return snapshotTTLMinutes;
-  }
-
-  public long getChangeSnapshotTTLMinutes() {
-    return changeSnapshotTTLMinutes;
   }
 
   public long getChangeDataTTLMinutes() {
@@ -62,11 +57,6 @@ public class TableConfiguration {
     return this;
   }
 
-  public TableConfiguration setChangeSnapshotTTLMinutes(long changeSnapshotTTLMinutes) {
-    this.changeSnapshotTTLMinutes = changeSnapshotTTLMinutes;
-    return this;
-  }
-
   public TableConfiguration setChangeDataTTLMinutes(long changeDataTTLMinutes) {
     this.changeDataTTLMinutes = changeDataTTLMinutes;
     return this;
@@ -92,7 +82,6 @@ public class TableConfiguration {
     }
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
-        changeSnapshotTTLMinutes == that.changeSnapshotTTLMinutes &&
         changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
         orphanExistingMinutes == that.orphanExistingMinutes && Objects.equal(optimizingConfig, that.optimizingConfig);
   }
