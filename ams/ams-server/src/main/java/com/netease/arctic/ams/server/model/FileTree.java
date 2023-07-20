@@ -221,6 +221,10 @@ public class FileTree {
     return baseFiles.isEmpty() && insertFiles.isEmpty() && deleteFiles.isEmpty() && posDeleteFiles.isEmpty();
   }
   
+  public boolean onlyContainsBaseFiles() {
+    return baseFiles.size() > 0 && insertFiles.isEmpty() && deleteFiles.isEmpty() && posDeleteFiles.isEmpty();
+  }
+  
   public boolean isLeaf() {
     return left == null && right == null;
   }

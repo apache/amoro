@@ -118,7 +118,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     if (arcticTable.isUnkeyedTable()) {
       result = collectTasksWithBinPack(partition, getOptimizingTargetSize());
     } else {
-      if (canBinPackKeyedTableTasks(partition)) {
+      if (allBaseFilesInRootNode(partition)) {
         // TO avoid too big task size leading to optimizer OOM, we limit the max task size to 4 * optimizing target size
         result = collectTasksWithBinPack(partition, getOptimizingTargetSize() * Math.min(4, getBaseBucketSize()));
       } else {
@@ -282,29 +282,15 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     if (baseBucket <= 1) {
       return false;
     }
-    FileTree fileTree = partitionFileTree.get(partitionToPath);
-    if (fileTree == null) {
-      return false;
-    }
-    return !fileTree.isRootEmpty() && fileTree.isLeaf();
+    return allBaseFilesInRootNode(partitionToPath);
   }
 
-  /**
-   * If all files in the Node(0,0) and only base files exist, binPack is supported.
-   *
-   * @param partition -
-   * @return true if support binPack
-   */
-  private boolean canBinPackKeyedTableTasks(String partition) {
+  private boolean allBaseFilesInRootNode(String partition) {
     FileTree treeRoot = partitionFileTree.get(partition);
     if (treeRoot == null) {
       return false;
     }
-    if (!treeRoot.isLeaf()) {
-      return false;
-    }
-    return !treeRoot.getBaseFiles().isEmpty() && treeRoot.getInsertFiles().isEmpty() &&
-        treeRoot.getDeleteFiles().isEmpty() && treeRoot.getPosDeleteFiles().isEmpty();
+    return treeRoot.isLeaf() && treeRoot.onlyContainsBaseFiles();
   }
 
   private long getMaxTransactionId(List<DataFile> dataFiles) {
