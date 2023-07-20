@@ -132,7 +132,7 @@
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark-3.3</artifactId>
+            <artifactId>arctic-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 

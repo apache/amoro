@@ -88,7 +88,7 @@
         <maven-scalastyle-plugin.version>1.0.0</maven-scalastyle-plugin.version>
 
         <iceberg.version>1.1.0</iceberg.version>
-        <hadoop.version>2.9.2</hadoop.version>
+        <hadoop.version>3.2.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
@@ -109,8 +109,9 @@
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
-        <terminal.spark.version>3.1.2</terminal.spark.version>
         <guava.version>32.1.1-jre</guava.version>
+        <terminal.spark.version>3.3.2</terminal.spark.version>
+        <terminal.spark.major.version>3.3</terminal.spark.major.version>
     </properties>
 
     <dependencyManagement>
@@ -659,6 +660,7 @@
             <properties>
                 <hadoop.version>2.9.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
+                <terminal.spark.major.version>3.1</terminal.spark.major.version>
             </properties>
         </profile>
         <profile>
@@ -669,6 +671,7 @@
             <properties>
                 <hadoop.version>3.2.2</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
+                <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
         </profile>
         <profile>
