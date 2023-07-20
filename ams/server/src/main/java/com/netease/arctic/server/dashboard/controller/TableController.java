@@ -20,6 +20,7 @@ package com.netease.arctic.server.dashboard.controller;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -33,7 +34,6 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
-import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -119,6 +119,7 @@ public class TableController {
 
   /**
    * get table detail.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableDetail(Context ctx) {
@@ -184,6 +185,7 @@ public class TableController {
 
   /**
    * get hive table detail.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getHiveTableDetail(Context ctx) {
@@ -212,6 +214,7 @@ public class TableController {
 
   /**
    * upgrade hive table to arctic.
+   *
    * @param ctx - context for handling the request and response
    */
   public void upgradeHiveTable(Context ctx) {
@@ -224,7 +227,9 @@ public class TableController {
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/", AmsUtil.getAMSThriftAddress(serviceConfig), catalog));
+        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/",
+        AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
+        catalog));
 
     tableUpgradeExecutor.execute(() -> {
       TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
@@ -262,6 +267,7 @@ public class TableController {
 
   /**
    * get table properties for upgrading hive to arctic.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
@@ -288,6 +294,7 @@ public class TableController {
 
   /**
    * get list of optimizing processes.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getOptimizingProcesses(Context ctx) {
@@ -312,7 +319,7 @@ public class TableController {
         .skip(offset)
         .limit(limit)
         .collect(Collectors.toList());
-    
+
     Map<Long, List<OptimizingTaskMeta>> optimizingTasks = tableDescriptor.getOptimizingTasks(processMetaList).stream()
         .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
 
@@ -325,6 +332,7 @@ public class TableController {
 
   /**
    * get list of transactions.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
@@ -344,6 +352,7 @@ public class TableController {
 
   /**
    * get detail of transaction.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
@@ -354,16 +363,17 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<AMSDataFileInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
+    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
         tableName), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
-    PageResult<AMSDataFileInfo> amsPageResult = PageResult.of(result,
+    PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**
    * get partition list.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTablePartitions(Context ctx) {
@@ -383,6 +393,7 @@ public class TableController {
 
   /**
    * get file list of some partition.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getPartitionFileListInfo(Context ctx) {
@@ -403,6 +414,7 @@ public class TableController {
 
   /**
    * get table operations.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableOperations(Context ctx) {
@@ -424,6 +436,7 @@ public class TableController {
 
   /**
    * get table list of catalog.db.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableList(Context ctx) {
@@ -463,6 +476,7 @@ public class TableController {
 
   /**
    * get databases of some catalog.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getDatabaseList(Context ctx) {
@@ -477,6 +491,7 @@ public class TableController {
 
   /**
    * get list of catalogs.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
@@ -486,6 +501,7 @@ public class TableController {
 
   /**
    * get single page query token.
+   *
    * @param ctx - context for handling the request and response
    */
   public void getTableDetailTabToken(Context ctx) {
@@ -565,9 +581,7 @@ public class TableController {
         .collect(Collectors.toList()));
 
     serverTableMeta.setFilter(null);
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Table " + table.name() + " is keyedTable: {}", table instanceof KeyedTable);
-    }
+    LOG.debug("Table {} is keyedTable: {}", table.name(), table instanceof KeyedTable);
     if (table.isKeyedTable()) {
       KeyedTable kt = table.asKeyedTable();
       if (kt.primaryKeySpec() != null) {

@@ -35,6 +35,8 @@ public class HiveTableProperties {
   public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
+  // save the root location of arctic table.
+  public static final String ARCTIC_TABLE_ROOT_LOCATION = "arctic.table.root-location";
 
   public static final String PARTITION_PROPERTIES_KEY_HIVE_LOCATION = "hive-location";
 

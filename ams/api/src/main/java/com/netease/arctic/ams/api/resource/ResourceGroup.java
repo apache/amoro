@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.api.resource;
 
 import com.netease.arctic.ams.api.Constants;
-import org.apache.curator.shaded.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;

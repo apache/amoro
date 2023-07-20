@@ -28,6 +28,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -136,7 +137,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   public void removeOptimizer(String resourceId) {
-    authOptimizers.values().removeIf(op -> op.getResourceId().equals(resourceId));
+    authOptimizers.entrySet().removeIf(op -> op.getValue().getResourceId().equals(resourceId));
   }
 
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
@@ -151,9 +152,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void touch(String authToken) {
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
-    }
+    LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
@@ -208,9 +207,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, optimizerGroup.getContainer());
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Register optimizer: " + optimizer);
-    }
+    LOG.debug("Register optimizer: {}", optimizer);
     doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
@@ -264,14 +261,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void planTasks() {
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Calculating and sorting tables by quota:" + scheduledTables);
-    }
+    LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
 
     for (TableRuntime tableRuntime : scheduledTables) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
-      }
+      LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
@@ -285,6 +278,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
               optimizingProcess.getTaskMap().size());
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
+          break;
         } else {
           tableRuntime.cleanPendingInput();
         }
@@ -480,10 +474,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
     @Override
     public void commit() {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
-            taskMap.size(), taskMap.values());
-      }
+      LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
+          taskMap.size(), taskMap.values());
 
       lock.lock();
       try {
@@ -499,7 +491,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       } catch (Exception e) {
         LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
-        failedReason = e.getMessage();
+        failedReason = ExceptionUtil.getErrorMessage(e, 4000);
         endTime = System.currentTimeMillis();
         persistProcessCompleted(false);
       } finally {

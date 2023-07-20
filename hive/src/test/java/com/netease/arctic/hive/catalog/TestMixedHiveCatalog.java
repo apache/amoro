@@ -22,10 +22,19 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TestMixedCatalog;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.thrift.TException;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.util.Map;
+
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
 
 @RunWith(JUnit4.class)
 public class TestMixedHiveCatalog extends TestMixedCatalog {
@@ -43,5 +52,22 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   @Override
   protected PartitionSpec getCreateTableSpec() {
     return IDENTIFY_SPEC;
+  }
+
+  private void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
+    String dbName = tableIdentifier.getDatabase();
+    String tbl = tableIdentifier.getTableName();
+    Map<String,String> tableParameter =  TEST_HMS.getHiveClient()
+            .getTable(dbName, tbl).getParameters();
+
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
+    Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
+    Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_FLAG));
+  }
+
+  @Override
+  protected void validateCreatedTable(ArcticTable table) throws TException {
+    super.validateCreatedTable(table);
+    validateTableArcticProperties(table.id());
   }
 }

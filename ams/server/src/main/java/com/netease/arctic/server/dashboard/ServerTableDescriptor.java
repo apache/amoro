@@ -2,7 +2,6 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.server.dashboard.model.AMSDataFileInfo;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -20,7 +19,6 @@ import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.MetadataTableType;
@@ -52,15 +50,8 @@ import java.util.stream.Collectors;
 public class ServerTableDescriptor extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(ServerTableDescriptor.class);
-  private static final Map<Integer, DataFileType> ICEBERG_FILE_TYPE_MAP = new HashMap<>();
 
   private final TableService tableService;
-
-  static {
-    ICEBERG_FILE_TYPE_MAP.put(FileContent.DATA.id(), DataFileType.BASE_FILE);
-    ICEBERG_FILE_TYPE_MAP.put(FileContent.POSITION_DELETES.id(), DataFileType.POS_DELETE_FILE);
-    ICEBERG_FILE_TYPE_MAP.put(FileContent.EQUALITY_DELETES.id(), DataFileType.EQ_DELETE_FILE);
-  }
 
   public ServerTableDescriptor(TableService tableService) {
     this.tableService = tableService;
@@ -109,8 +100,8 @@ public class ServerTableDescriptor extends PersistentBase {
     return transactionsOfTables;
   }
 
-  public List<AMSDataFileInfo> getTransactionDetail(ServerTableIdentifier tableIdentifier, long transactionId) {
-    List<AMSDataFileInfo> result = new ArrayList<>();
+  public List<PartitionFileBaseInfo> getTransactionDetail(ServerTableIdentifier tableIdentifier, long transactionId) {
+    List<PartitionFileBaseInfo> result = new ArrayList<>();
     ArcticTable arcticTable = tableService.loadTable(tableIdentifier);
     Snapshot snapshot;
     if (arcticTable.isKeyedTable()) {
@@ -125,40 +116,45 @@ public class ServerTableDescriptor extends PersistentBase {
       throw new IllegalArgumentException("unknown snapshot " + transactionId + " of " + tableIdentifier);
     }
     final long snapshotTime = snapshot.timestampMillis();
+    String commitId = String.valueOf(transactionId);
     snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
-      result.add(new AMSDataFileInfo(
-          f.path().toString(),
-          arcticTable.spec(), f.partition(),
-          f.content(),
-          f.fileSizeInBytes(),
+      result.add(new PartitionFileBaseInfo(
+          commitId,
+          DataFileType.ofContentId(f.content().id()),
           snapshotTime,
+          arcticTable.spec().partitionToPath(f.partition()),
+          f.path().toString(),
+          f.fileSizeInBytes(),
           "add"));
     });
     snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
-      result.add(new AMSDataFileInfo(
-          f.path().toString(),
-          arcticTable.spec(), f.partition(),
-          f.content(),
-          f.fileSizeInBytes(),
+      result.add(new PartitionFileBaseInfo(
+          commitId,
+          DataFileType.ofContentId(f.content().id()),
           snapshotTime,
+          arcticTable.spec().partitionToPath(f.partition()),
+          f.path().toString(),
+          f.fileSizeInBytes(),
           "remove"));
     });
     snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> {
-      result.add(new AMSDataFileInfo(
-          f.path().toString(),
-          arcticTable.spec(), f.partition(),
-          f.content(),
-          f.fileSizeInBytes(),
+      result.add(new PartitionFileBaseInfo(
+          commitId,
+          DataFileType.ofContentId(f.content().id()),
           snapshotTime,
+          arcticTable.spec().partitionToPath(f.partition()),
+          f.path().toString(),
+          f.fileSizeInBytes(),
           "add"));
     });
     snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> {
-      result.add(new AMSDataFileInfo(
-          f.path().toString(),
-          arcticTable.spec(), f.partition(),
-          f.content(),
-          f.fileSizeInBytes(),
+      result.add(new PartitionFileBaseInfo(
+          commitId,
+          DataFileType.ofContentId(f.content().id()),
           snapshotTime,
+          arcticTable.spec().partitionToPath(f.partition()),
+          f.path().toString(),
+          f.fileSizeInBytes(),
           "remove"));
     });
     return result;
@@ -251,11 +247,11 @@ public class ServerTableDescriptor extends PersistentBase {
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
     getTableFile(arcticTable, null).forEach(fileInfo -> {
-      if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartitionName())) {
-        partitionBaseInfoHashMap.put(fileInfo.getPartitionName(), new PartitionBaseInfo());
-        partitionBaseInfoHashMap.get(fileInfo.getPartitionName()).setPartition(fileInfo.getPartitionName());
+      if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
+        partitionBaseInfoHashMap.put(fileInfo.getPartition(), new PartitionBaseInfo());
+        partitionBaseInfoHashMap.get(fileInfo.getPartition()).setPartition(fileInfo.getPartition());
       }
-      PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartitionName());
+      PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartition());
       partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
       partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
       partitionInfo.setLastCommitTime(partitionInfo.getLastCommitTime() > fileInfo.getCommitTime() ?
@@ -302,12 +298,12 @@ public class ServerTableDescriptor extends PersistentBase {
         }
         Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
         DataFileType dataFileType =
-            isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : ICEBERG_FILE_TYPE_MAP.get(contentId);
+            isChangeTable ? FileNameRules.parseFileTypeForChange(filePath) : DataFileType.ofContentId(contentId);
         long commitTime = -1;
         if (table.snapshot(snapshotId) != null) {
           commitTime = table.snapshot(snapshotId).timestampMillis();
         }
-        result.add(new PartitionFileBaseInfo(snapshotId, dataFileType, commitTime,
+        result.add(new PartitionFileBaseInfo(String.valueOf(snapshotId), dataFileType, commitTime,
             partitionPath, filePath, fileSize));
       }
     } catch (IOException exception) {

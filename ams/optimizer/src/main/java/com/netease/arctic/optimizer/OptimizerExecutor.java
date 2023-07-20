@@ -2,11 +2,11 @@ package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.optimizer.util.ExceptionUtil;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.TableOptimizing;
+import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.thrift.TException;

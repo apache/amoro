@@ -11,13 +11,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class JsonSummaryConverter<T> extends BaseTypeHandler<T> {
+public class JsonObjectConverter<T> extends BaseTypeHandler<T> {
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
   private final Class<T> clazz;
 
-  public JsonSummaryConverter(Class<T> clazz) {
+  public JsonObjectConverter(Class<T> clazz) {
     if (clazz == null) {
       throw new IllegalArgumentException("Type argument cannot be null");
     }
