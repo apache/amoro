@@ -261,7 +261,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     }
     return Streams.stream(changeTable.snapshots())
         .filter(snapshot -> snapshot.timestampMillis() < ttlPoint)
-        .min(Comparator.comparingLong(snapshot -> Math.abs(ttlPoint - snapshot.timestampMillis())))
+        .max(Comparator.comparingLong(Snapshot::timestampMillis))
         .orElse(null);
   }
 
