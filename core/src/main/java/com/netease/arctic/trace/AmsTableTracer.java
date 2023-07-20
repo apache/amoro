@@ -37,7 +37,6 @@ import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,10 +124,6 @@ public class AmsTableTracer implements TableTracer {
     return table;
   }
 
-  public String innerTable() {
-    return innerTable;
-  }
-
   @Override
   public void commit() {
     TableCommitMeta commitMeta = new TableCommitMeta();
@@ -185,7 +180,7 @@ public class AmsTableTracer implements TableTracer {
           commitMeta.setProperties(this.properties);
         }
         update = true;
-      } catch (TException e) {
+      } catch (Exception e) {
         LOG.warn("get catalog properties error", e);
       }
     }

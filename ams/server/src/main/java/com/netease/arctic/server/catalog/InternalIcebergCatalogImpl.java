@@ -1,7 +1,7 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.catalog.IcebergCatalogWrapper;
+import com.netease.arctic.iceberg.BasicIcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -64,7 +64,7 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     ArcticFileIO fileIO = new ArcticFileIOAdapter(io);
     TableOperations ops = InternalTableOperations.buildForLoad(tableMetadata, io);
     BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());
-    return new IcebergCatalogWrapper.BasicIcebergTable(
+    return new BasicIcebergTable(
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName),
         table, fileIO, getMetadata().getCatalogProperties()
     );

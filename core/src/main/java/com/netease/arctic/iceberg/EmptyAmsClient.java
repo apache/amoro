@@ -54,7 +54,7 @@ public class EmptyAmsClient implements AmsClient {
 
   @Override
   public CatalogMeta getCatalog(String name) throws NoSuchObjectException, TException {
-    throw new UnsupportedOperationException("empty ams client can't load catalog meta");
+    return new CatalogMeta();
   }
 
   @Override
