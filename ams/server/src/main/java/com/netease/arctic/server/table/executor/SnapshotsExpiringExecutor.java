@@ -255,13 +255,13 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
-  public static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long TTLPoint) {
+  public static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long ttlPoint) {
     if (changeTable.snapshots() == null) {
       return null;
     }
     return Streams.stream(changeTable.snapshots())
-        .filter(snapshot -> snapshot.timestampMillis() < TTLPoint)
-        .min(Comparator.comparingLong(snapshot -> Math.abs(TTLPoint - snapshot.timestampMillis())))
+        .filter(snapshot -> snapshot.timestampMillis() < ttlPoint)
+        .min(Comparator.comparingLong(snapshot -> Math.abs(ttlPoint - snapshot.timestampMillis())))
         .orElse(null);
   }
 
