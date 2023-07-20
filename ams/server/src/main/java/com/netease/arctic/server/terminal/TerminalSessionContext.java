@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

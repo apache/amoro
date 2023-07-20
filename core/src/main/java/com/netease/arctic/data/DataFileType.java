@@ -18,6 +18,8 @@
 
 package com.netease.arctic.data;
 
+import org.apache.iceberg.FileContent;
+
 /**
  * Data file type, one of:
  * <ul>
@@ -59,6 +61,20 @@ public enum DataFileType {
       }
     }
     throw new IllegalArgumentException("Unknown file type id:" + id);
+  }
+
+  public static DataFileType ofContentId(Integer id) {
+    if (id == null) {
+      // For v1 iceberg table
+      return DataFileType.BASE_FILE;
+    } else if (id == FileContent.DATA.id()) {
+      return DataFileType.BASE_FILE;
+    } else if (id == FileContent.POSITION_DELETES.id()) {
+      return DataFileType.POS_DELETE_FILE;
+    } else if (id == FileContent.EQUALITY_DELETES.id()) {
+      return DataFileType.EQ_DELETE_FILE;
+    }
+    throw new IllegalArgumentException("Unknown file content id:" + id);
   }
 
   public static DataFileType ofShortName(String shortName) {

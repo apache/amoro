@@ -61,7 +61,7 @@ public class MetricsGenerator implements Serializable {
       return;
     }
     if (modifyTimeColumn == null || this.schema.findField(modifyTimeColumn) == null) {
-      LOG.warn("can't find event time column " + modifyTimeColumn);
+      LOG.warn("can't find event time column {}", modifyTimeColumn);
       findColumn = false;
     } else {
       findColumn = true;
@@ -112,7 +112,7 @@ public class MetricsGenerator implements Serializable {
         } else if (value instanceof Long) {
           this.currentLatency = System.currentTimeMillis() - (Long) value;
         } else {
-          LOG.warn("eventTimeColumn is not LocalDateTime/Long, " + value.getClass());
+          LOG.warn("eventTimeColumn is not LocalDateTime/Long, {}", value.getClass());
         }
       } else if (element.hasTimestamp()) {
         this.currentLatency = System.currentTimeMillis() - element.getTimestamp();

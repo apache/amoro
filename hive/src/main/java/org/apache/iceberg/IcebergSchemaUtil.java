@@ -29,8 +29,10 @@ public class IcebergSchemaUtil {
    */
   public static PartitionSpec copyPartitionSpec(PartitionSpec partitionSpec, Schema copySchema) {
     PartitionSpec.Builder builder = PartitionSpec.builderFor(copySchema);
+    // For all tables in the mixed hive format it is necessary to also lowercase the partition name value in the iceberg
+    // table, otherwise some case-matching exceptions will be thrown.
     partitionSpec.fields().forEach(partitionField -> {
-      builder.add(partitionField.sourceId(), partitionField.name(), partitionField.transform());
+      builder.add(partitionField.sourceId(), partitionField.name().toLowerCase(), partitionField.transform());
     });
     return builder.build();
   }
