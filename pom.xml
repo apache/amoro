@@ -109,6 +109,7 @@
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
+        <terminal.spark.version>3.1.2</terminal.spark.version>
         <guava.version>32.1.1-jre</guava.version>
     </properties>
 
@@ -648,6 +649,26 @@
             </activation>
             <properties>
                 <hive.version>2.1.1</hive.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>hadoop2</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <hadoop.version>2.9.2</hadoop.version>
+                <terminal.spark.version>3.1.2</terminal.spark.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>hadoop3</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <hadoop.version>3.2.2</hadoop.version>
+                <terminal.spark.version>3.3.2</terminal.spark.version>
             </properties>
         </profile>
         <profile>
