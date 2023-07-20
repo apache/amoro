@@ -42,7 +42,6 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -147,12 +145,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         LOG.info("{} base expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
         // delete ttl files
         long changeTTLPoint = startTime - changeDataTTL;
-        Snapshot closestExpireSnapshot = getClosestExpireSnapshot(changeTable, changeTTLPoint);
-        if (closestExpireSnapshot != null) {
-          List<IcebergFileEntry> expiredDataFileEntries = getExpiredDataFileEntries(
-              changeTable, closestExpireSnapshot);
-          deleteChangeFile(keyedArcticTable, expiredDataFileEntries);
-        }
+        List<IcebergFileEntry> expiredDataFileEntries = getExpiredDataFileEntries(
+            changeTable, System.currentTimeMillis() - changeDataTTL);
+        deleteChangeFile(keyedArcticTable, expiredDataFileEntries);
 
         // getRuntime valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
@@ -255,26 +250,20 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
-  public static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long ttlPoint) {
-    if (changeTable.snapshots() == null) {
-      return null;
-    }
-    return Streams.stream(changeTable.snapshots())
-        .filter(snapshot -> snapshot.timestampMillis() < ttlPoint)
-        .max(Comparator.comparingLong(Snapshot::timestampMillis))
-        .orElse(null);
-  }
 
-  public static List<IcebergFileEntry> getExpiredDataFileEntries(
-      UnkeyedTable changeTable, Snapshot snapshot) {
+  public static List<IcebergFileEntry> getExpiredDataFileEntries(UnkeyedTable changeTable, long ttlPoint) {
     TableEntriesScan entriesScan = TableEntriesScan.builder(changeTable)
         .includeFileContent(FileContent.DATA)
-        .useSnapshot(snapshot.snapshotId())
         .build();
-
     List<IcebergFileEntry> changeTTLFileEntries = new ArrayList<>();
+
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
-      entries.forEach(entry -> changeTTLFileEntries.add(entry));
+      entries.forEach(entry -> {
+        Snapshot snapshot = changeTable.snapshot(entry.getSnapshotId());
+        if (snapshot == null || snapshot.timestampMillis() < ttlPoint) {
+          changeTTLFileEntries.add(entry);
+        }
+      });
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close manifest entry scan of " + changeTable.name(), e);
     }
