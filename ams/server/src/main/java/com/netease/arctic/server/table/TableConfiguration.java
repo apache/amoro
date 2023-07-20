@@ -106,10 +106,6 @@ public class TableConfiguration {
             properties,
             TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
             TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
-        .setChangeSnapshotTTLMinutes(CompatiblePropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
-            TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
         .setChangeDataTTLMinutes(CompatiblePropertyUtil.propertyAsLong(
             properties,
             TableProperties.CHANGE_DATA_TTL,
