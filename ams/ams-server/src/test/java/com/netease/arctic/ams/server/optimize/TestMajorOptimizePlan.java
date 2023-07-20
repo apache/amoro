@@ -280,6 +280,35 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   }
 
   @Test
+  public void testNoPartitionKeyedTableSplitRootNode() throws IOException {
+    testNoPartitionTable.updateProperties()
+        .set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, "1")
+        .commit();
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
+    long fileSize = baseDataFiles.get(0).fileSizeInBytes();
+    // set task_size to be 2.5 * file_size, task_size = base_bucket * target_size = 2.5 * file_size
+    // base_bucket = 4, so target_size = file_size * 2.5 / 4 = file_size * 5 / 8
+    testNoPartitionTable.updateProperties()
+        .set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, "4")
+        .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, fileSize * 5 / 8 + "")
+        .commit();
+
+    List<FileScanTask> baseFiles = planBaseFiles(testNoPartitionTable);
+    FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,
+        new TableOptimizeRuntime(testNoPartitionTable.id()), baseFiles,
+        1, System.currentTimeMillis(), TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+    List<BasicOptimizeTask> tasks = fullOptimizePlan.plan().getOptimizeTasks();
+
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(5, tasks.size());
+    Assert.assertEquals(2, tasks.get(0).getBaseFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
   public void testPartitionWeight() {
     List<AbstractOptimizePlan.PartitionWeightWrapper> partitionWeights = new ArrayList<>();
     partitionWeights.add(new AbstractOptimizePlan.PartitionWeightWrapper("p1",
