@@ -296,10 +296,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
               .handleTaskRetry(this::retryTask)
               .handleTaskOffer(taskQueue::offer)
               .iterator();
-          LOG.info("{} after plan get {} processes", tableRuntime.getTableIdentifier(),
-              processIterator.size());
-          tableRuntime.chainOptimizingProcesses(processIterator);
-          tableRuntime.startProcess();
+          LOG.info("{} after plan get {} processes", tableRuntime.getTableIdentifier(), processIterator.size());
+          tableRuntime.startProcess(processIterator);
           break;
         } else {
           tableRuntime.cleanPendingInput();

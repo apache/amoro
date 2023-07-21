@@ -143,13 +143,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     double avgThreadCost = actualInputSize / availableCore;
+    int limitCost = (int) (actualInputSize / avgThreadCost);
     for (PartitionEvaluator evaluator : inputPartitions) {
       List<TaskDescriptor> tasks = ((AbstractPartitionPlan) evaluator)
-          .splitTasks(Math.max(Math.min((int) (actualInputSize / avgThreadCost), 1), totalParallelism));
+          .splitTasks(totalParallelism);
       if (!tasks.isEmpty()) {
         optimizingTypes.put(evaluator.getPartition(), evaluator.getOptimizingType());
+        partitionTaskDescriptors.put(evaluator.getPartition(), tasks);
       }
-      partitionTaskDescriptors.put(evaluator.getPartition(), tasks);
     }
     long endTime = System.nanoTime();
     LOG.info("{} finish plan, get tasks: {}, cost {} ns, {} ms", tableRuntime.getTableIdentifier(),

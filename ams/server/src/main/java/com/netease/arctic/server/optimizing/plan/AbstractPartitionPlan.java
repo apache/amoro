@@ -27,6 +27,7 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import java.util.function.Function;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -125,7 +126,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     evaluator().addPartitionProperties(properties);
   }
 
-  // split tasks inner partition
+  // split tasks inner group
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
     if (taskSplitter == null) {
       taskSplitter = buildTaskSplitter();
@@ -183,11 +184,13 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   /**
    * split task with bin-packing
    */
-  class BinPackingTaskSplitter implements TaskSplitter {
+  abstract class BinPackingTaskSplitter implements TaskSplitter {
+
+    abstract List<List<FileTask>> createBinPacking(List<FileTask> fileTasks, int cnt);
 
     @Override
-    public List<SplitTask> splitTasks(int taskPerBin) {
-      Preconditions.checkArgument(taskPerBin > 0, "Target split tasks count must be positive");
+    public List<SplitTask> splitTasks(int targetTaskCount) {
+      Preconditions.checkArgument(targetTaskCount > 0, "Number of task each bin must be positive");
       // bin-packing
       List<FileTask> allDataFiles = Lists.newArrayList();
       segmentFiles.forEach((dataFile, deleteFiles) ->
@@ -195,9 +198,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       fragmentFiles.forEach((dataFile, deleteFiles) ->
           allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
 
-      long taskSize = config.getTargetSize();
-      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskPerBin, true)
-          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
+      List<List<FileTask>> packed = createBinPacking(allDataFiles, targetTaskCount);
 
       // collect
       List<SplitTask> results = Lists.newArrayList();
@@ -211,6 +212,31 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
         results.add(new SplitTask(fragmentFiles, segmentFiles));
       }
       return results;
+    }
+  }
+
+  class FileBytesTaskSplitter extends BinPackingTaskSplitter {
+    @Override
+    List<List<FileTask>> createBinPacking(List<FileTask> fileTasks, int taskPerBin) {
+      long taskSize = config.getTargetSize();
+      return new BinPacking.ListPacker<FileTask>(taskSize, Integer.MAX_VALUE, true)
+          .pack(fileTasks, f -> f.getFile().fileSizeInBytes());
+    }
+  }
+
+  class FixedTaskSplitter extends BinPackingTaskSplitter {
+    @Override
+    List<List<FileTask>> createBinPacking(List<FileTask> fileTasks, int targetBinCount) {
+      long totalFileSize = fileTasks.stream().mapToLong(f -> f.getFile().fileSizeInBytes()).sum();
+
+      int fixedFileCount;
+      if (totalFileSize < config.getTargetSize()) {
+        fixedFileCount = fileTasks.size() + 1;
+      } else {
+        fixedFileCount = fileTasks.size() / targetBinCount + 1;
+      }
+      return new BinPacking.ListPacker<FileTask>(fixedFileCount, Integer.MAX_VALUE, false)
+          .pack(fileTasks, f -> 1L);
     }
   }
 

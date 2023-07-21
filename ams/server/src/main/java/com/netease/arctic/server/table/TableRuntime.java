@@ -553,11 +553,8 @@ public class TableRuntime extends StatedPersistentBase {
     return tableBlocker;
   }
 
-  public void chainOptimizingProcesses(OptimizingProcessIterator processIterator) {
+  public void startProcess(OptimizingProcessIterator processIterator) {
     this.processIterator = processIterator;
-  }
-
-  public void startProcess() {
     if (processIterator == null) {
       LOG.warn("No optimizing process to start");
       return;

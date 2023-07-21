@@ -40,7 +40,7 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected TaskSplitter buildTaskSplitter() {
-    return new BinPackingTaskSplitter();
+    return new FixedTaskSplitter();
     // TODO not split tasks in a partition now
     // return targetTaskCount -> Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
   }

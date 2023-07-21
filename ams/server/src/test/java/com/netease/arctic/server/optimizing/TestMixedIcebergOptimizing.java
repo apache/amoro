@@ -22,10 +22,13 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import java.io.IOException;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -225,8 +228,13 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
         newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
+    // start optimizing partition quickDateWithZone(4), there are 2 base files inside
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
+    // start optimizing partition quickDateWithZone(3), there are 2 base files inside
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
 
     // Step 3: insert data
@@ -237,8 +245,13 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
         newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
+    // start optimizing partition quickDateWithZone(4), there are 1 new base file and 1 optimized base file inside
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+    // start optimizing partition quickDateWithZone(3), there are 1 new base file and 1 optimized base file inside
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 
     checker.assertOptimizeHangUp();

@@ -1,20 +1,30 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
-import com.netease.arctic.server.optimizing.plan.PlannedTasks;
+import com.netease.arctic.server.optimizing.plan.ProcessGroup;
+import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 
-import com.netease.arctic.utils.TableTypeUtil;
+import com.netease.arctic.table.TableProperties;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
+  private final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
   private final OptimizingPlanner planner;
-  private Queue<PlannedTasks> orderedTasks;
+  private final Queue<ProcessGroup> orderedTasks;
+  private final static String uuidForKeyedTable = UUID.randomUUID().toString();
   private final Consumer<OptimizingProcess> clearTask;
   private final BiConsumer<TaskRuntime, Boolean> retryTask;
   private final Consumer<TaskRuntime> taskOffer;
@@ -25,12 +35,25 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       BiConsumer<TaskRuntime, Boolean> retryTask,
       Consumer<TaskRuntime> taskOffer) {
       this.planner = planner;
-      orderedTasks = planner.planPartitionedTasks()
-          .entrySet()
-          .stream()
-          .map(kv -> new PlannedTasks(kv.getKey(), kv.getValue(), planner.getFromSequence().get(kv.getKey())))
-          .sorted(PlannedTasks.processComparator(planner.getTableRuntime().getOptimizingConfig().getTaskProcessOrder()))
-          .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+    Comparator<TaskDescriptor> taskComparator = ProcessGroup.taskComparator(
+        Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getTaskOrder())
+            .orElse(TableProperties.SELF_OPTIMIZING_TASK_ORDER_DEFAULT));
+      if  (planner.getArcticTable().isKeyedTable()) {
+        orderedTasks = new ConcurrentLinkedQueue<>();
+        orderedTasks.add(new ProcessGroup(uuidForKeyedTable, planner.planTasks(),
+            planner.getFromSequence().values().stream().reduce(Math::min).get(), taskComparator));
+      } else {
+        Comparator<ProcessGroup> groupComparator = ProcessGroup.processComparator(
+            Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getProcessOrder())
+                .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
+        orderedTasks = planner.planPartitionedTasks()
+            .entrySet()
+            .stream()
+            .map(kv -> new ProcessGroup(kv.getKey(), kv.getValue(),
+                planner.getFromSequence().get(kv.getKey()), taskComparator))
+            .sorted(groupComparator)
+            .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+      }
       this.clearTask = clearTask;
       this.retryTask = retryTask;
       this.taskOffer = taskOffer;
@@ -47,22 +70,25 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
 
   @Override
   public OptimizingProcess next() {
-  PlannedTasks pts = orderedTasks.poll();
-    TableOptimizingProcess process = new TableOptimizingProcess(
-        planner.getNewProcessId(),
-        planner.getOptTypeByPartition(pts.partition()),
-        planner.getTableRuntime(),
-        planner.getPlanTime(),
-        planner.getTargetSnapshotId(),
-        planner.getTargetChangeSnapshotId(),
-        pts.getTaskDescriptors(),
-        planner.getFromSequence(),
-        planner.getToSequence())
-        .handleTaskRetry(retryTask)
-        .handleTaskClear(clearTask);
+    ProcessGroup group = orderedTasks.poll();
+      TableOptimizingProcess process = new TableOptimizingProcess(
+          planner.getNewProcessId(),
+          group.id().equals(uuidForKeyedTable)
+              ? planner.getOptimizingType()
+              : planner.getOptTypeByPartition(group.id()),
+          planner.getTableRuntime(),
+          planner.getPlanTime(),
+          planner.getTargetSnapshotId(),
+          planner.getTargetChangeSnapshotId(),
+          group.getTaskDescriptors(),
+          planner.getFromSequence(),
+          planner.getToSequence())
+          .handleTaskRetry(retryTask)
+          .handleTaskClear(clearTask);
 
-    process.getTaskMap().values().forEach(taskOffer);
-    return process;
+      process.getTaskMap().values().forEach(taskOffer);
+      LOG.info("Create new optimizing process {} belong to group {}", process.getProcessId(), group.id());
+      return process;
   }
 
   public static class Builder {

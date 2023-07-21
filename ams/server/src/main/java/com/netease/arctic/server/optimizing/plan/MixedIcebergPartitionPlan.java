@@ -87,7 +87,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     if (isKeyedTable()) {
       return new TreeNodeTaskSplitter();
     } else {
-      return new BinPackingTaskSplitter();
+      return new FileBytesTaskSplitter();
     }
   }
 
