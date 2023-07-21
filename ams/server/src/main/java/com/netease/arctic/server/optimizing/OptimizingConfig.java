@@ -58,6 +58,9 @@ public class OptimizingConfig {
   //self-optimizing.process-order
   private String processOrder;
 
+  //self-optimizing.process-splitter
+  private String processSplitter;
+
   //self-optimizing.task-order
   private String taskOrder;
 
@@ -234,6 +237,16 @@ public class OptimizingConfig {
     return processOrder;
   }
 
+
+  public OptimizingConfig setProcessSplitter(String processSplitter) {
+    this.processSplitter = processSplitter;
+    return this;
+  }
+
+  public String getProcessSplitter() {
+    return processSplitter;
+  }
+
   private OptimizingConfig setTaskOrder(String taskOrder) {
     this.taskOrder = taskOrder;
     return this;
@@ -347,6 +360,10 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_PROCESS_ORDER,
             TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT))
+        .setProcessSplitter(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER,
+            TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))
         .setTaskOrder(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.SELF_OPTIMIZING_TASK_ORDER,

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
@@ -68,11 +69,16 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
       long changeSnapshotBeforeRefresh = tableRuntime.getCurrentChangeSnapshotId();
+      boolean optimizingEnabledBeforeRefresh = tableRuntime.getOptimizingConfig().isEnabled();
       ArcticTable table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
-          changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
-        if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
+      if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
+        boolean snapshotChanged = snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
+            changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId();
+        if (snapshotChanged || !optimizingEnabledBeforeRefresh) {
+          if (!snapshotChanged) {
+            logger.info("table {} self-optimizing just been enabled", tableRuntime.getTableIdentifier());
+          }
           tryEvaluatingPendingInput(tableRuntime, table);
         }
       }

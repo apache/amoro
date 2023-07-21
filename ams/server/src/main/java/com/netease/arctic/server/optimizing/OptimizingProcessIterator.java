@@ -7,6 +7,7 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.table.TableProperties;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -35,24 +36,26 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       BiConsumer<TaskRuntime, Boolean> retryTask,
       Consumer<TaskRuntime> taskOffer) {
       this.planner = planner;
+      OptimizingConfig config = planner.getTableRuntime().getOptimizingConfig();
+
     Comparator<TaskDescriptor> taskComparator = ProcessGroup.taskComparator(
-        Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getTaskOrder())
+        Optional.ofNullable(config.getTaskOrder())
             .orElse(TableProperties.SELF_OPTIMIZING_TASK_ORDER_DEFAULT));
-      if  (planner.getArcticTable().isKeyedTable()) {
-        orderedTasks = new ConcurrentLinkedQueue<>();
-        orderedTasks.add(new ProcessGroup(uuidForKeyedTable, planner.planTasks(),
-            planner.getFromSequence().values().stream().reduce(Math::min).get(), taskComparator));
-      } else {
-        Comparator<ProcessGroup> groupComparator = ProcessGroup.processComparator(
-            Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getProcessOrder())
-                .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
-        orderedTasks = planner.planPartitionedTasks()
-            .entrySet()
-            .stream()
-            .map(kv -> new ProcessGroup(kv.getKey(), kv.getValue(),
-                planner.getFromSequence().get(kv.getKey()), taskComparator))
-            .sorted(groupComparator)
-            .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+    Comparator<ProcessGroup> groupComparator = ProcessGroup.processComparator(
+        Optional.ofNullable(config.getProcessOrder())
+            .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
+
+      switch (ProcessSplitter.fromName(Optional.ofNullable(config.getProcessSplitter())
+          .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))) {
+        case PARTITION:
+          if (planner.getArcticTable().isKeyedTable()) {
+            orderedTasks = getFlatGroup(taskComparator);
+          } else {
+            orderedTasks = getPartitionedGroup(groupComparator, taskComparator);
+          }
+          break;
+        default:
+          orderedTasks = getFlatGroup(taskComparator);
       }
       this.clearTask = clearTask;
       this.retryTask = retryTask;
@@ -71,13 +74,14 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
   @Override
   public OptimizingProcess next() {
     ProcessGroup group = orderedTasks.poll();
+    long newProcessId = planner.getNewProcessId();
       TableOptimizingProcess process = new TableOptimizingProcess(
-          planner.getNewProcessId(),
+          newProcessId,
           group.id().equals(uuidForKeyedTable)
               ? planner.getOptimizingType()
               : planner.getOptTypeByPartition(group.id()),
           planner.getTableRuntime(),
-          planner.getPlanTime(),
+          newProcessId,
           planner.getTargetSnapshotId(),
           planner.getTargetChangeSnapshotId(),
           group.getTaskDescriptors(),
@@ -87,8 +91,27 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
           .handleTaskClear(clearTask);
 
       process.getTaskMap().values().forEach(taskOffer);
-      LOG.info("Create new optimizing process {} belong to group {}", process.getProcessId(), group.id());
+      LOG.info("Create new optimizing process {} belong to {} and the group is {}", process.getProcessId(),
+          planner.getArcticTable().id(), group.id());
       return process;
+  }
+
+  private Queue<ProcessGroup> getFlatGroup(Comparator<TaskDescriptor> taskComparator) {
+    Queue<ProcessGroup> group = new ConcurrentLinkedQueue<>();
+    group.add(new ProcessGroup(uuidForKeyedTable, planner.planTasks(),
+        planner.getFromSequence().values().stream().reduce(Math::min).get(), taskComparator));
+    return group;
+  }
+
+  private Queue<ProcessGroup> getPartitionedGroup(Comparator<ProcessGroup> groupComparator,
+      Comparator<TaskDescriptor> taskComparator) {
+    return planner.planPartitionedTasks()
+        .entrySet()
+        .stream()
+        .map(kv -> new ProcessGroup(kv.getKey(), kv.getValue(),
+            planner.getFromSequence().get(kv.getKey()), taskComparator))
+        .sorted(groupComparator)
+        .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
   }
 
   public static class Builder {
@@ -123,6 +146,31 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       Preconditions.checkArgument(retryTask != null, "Retry task function is required");
       Preconditions.checkArgument(taskOffer != null, "Offer task function is required");
       return new OptimizingProcessIterator(planner, clearTask, retryTask, taskOffer);
+    }
+  }
+
+  public enum ProcessSplitter {
+    PARTITION("partition"),
+    NONE("none");
+
+    private final String splitterName;
+
+    ProcessSplitter(String splitterName) {
+      this.splitterName = splitterName;
+    }
+
+    public String splitterName() {
+      return splitterName;
+    }
+
+    public static ProcessSplitter fromName(String splitterName) {
+      Preconditions.checkArgument(splitterName != null, "Invalid process splitter name: null");
+      try {
+        return ProcessSplitter.valueOf(splitterName.replaceFirst("-", "_").toUpperCase(Locale.ENGLISH));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            String.format("Invalid process splitter name: %s", splitterName), e);
+      }
     }
   }
 }
