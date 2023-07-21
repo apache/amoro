@@ -22,13 +22,10 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.IOException;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -211,6 +208,45 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
 
   public void testNoPkPartitionTableOptimizing() {
     UnkeyedTable table = arcticTable.asUnkeyedTable();
+
+    // Step 1: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord(6, "ddd", quickDateWithZone(4))
+    ));
+
+    // Step 2: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3)),
+        newRecord(9, "hhh", quickDateWithZone(4)),
+        newRecord(10, "iii", quickDateWithZone(4))
+    ));
+    // wait Major Optimize result
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
+    assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10);
+
+    // Step 3: insert data
+    writeBase(table, Lists.newArrayList(
+        newRecord(11, "jjj", quickDateWithZone(3)),
+        newRecord(12, "kkk", quickDateWithZone(3)),
+        newRecord(13, "lll", quickDateWithZone(4)),
+        newRecord(14, "mmm", quickDateWithZone(4))
+    ));
+    // wait Major Optimize result
+    optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 4, 2);
+    assertIds(readRecords(table), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+
+    checker.assertOptimizeHangUp();
+  }
+
+  public void testNoPkPartitionTableGroupedOptimizing() {
+    UnkeyedTable table = arcticTable.asUnkeyedTable();
+    updateProperties(arcticTable, TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER, "patition");
 
     // Step 1: insert data
     writeBase(table, Lists.newArrayList(

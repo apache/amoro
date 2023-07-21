@@ -2,26 +2,31 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.data.IcebergDataFile;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class ProcessGroup {
   private final String id;
   private final List<TaskDescriptor> taskDescriptors;
-  private final Long fromSequence;
+  private final Map<String, Long> fromSequence;
+  private final Map<String, Long> toSequence;
   public ProcessGroup(
       String id,
       List<TaskDescriptor> taskDescriptors,
-      Long fromSequence,
+      Map<String, Long> fromSequence,
+      Map<String, Long> toSequence,
       Comparator<TaskDescriptor> taskComparator) {
     this.id = id;
     this.taskDescriptors = taskDescriptors.stream()
         .sorted(taskComparator)
         .collect(Collectors.toList());
     this.fromSequence = fromSequence;
+    this.toSequence = toSequence;
   }
 
   public long dataFileBytes() {
@@ -46,8 +51,20 @@ public class ProcessGroup {
     return id;
   }
 
-  public Long fromSequence() {
+  public Long earliestSequence() {
+    return Collections.min(fromSequence.values());
+  }
+
+  public Long latestSequence() {
+    return Collections.max(toSequence.values());
+  }
+
+  public Map<String, Long> getFromSequence() {
     return fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
   }
 
   public List<TaskDescriptor> getTaskDescriptors() {
@@ -69,9 +86,9 @@ public class ProcessGroup {
       case FILES_DESC:
         return Comparator.comparing(ProcessGroup::dataFileCount, Comparator.reverseOrder());
       case SEQUENCE_ASC:
-        return Comparator.comparing(ProcessGroup::fromSequence);
+        return Comparator.comparing(ProcessGroup::earliestSequence);
       case SEQUENCE_DESC:
-        return Comparator.comparing(ProcessGroup::fromSequence, Comparator.reverseOrder());
+        return Comparator.comparing(ProcessGroup::latestSequence, Comparator.reverseOrder());
       default:
         return (fileGroupOne, fileGroupTwo) -> 0;
     }

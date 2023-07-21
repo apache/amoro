@@ -62,7 +62,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     this.availableCore = availableCore;
     this.totalParallelism = totalParallelism;
     this.planTime = System.currentTimeMillis();
-    // this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
     this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
   }
 

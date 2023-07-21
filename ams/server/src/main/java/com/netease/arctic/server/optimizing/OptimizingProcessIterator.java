@@ -1,5 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.ProcessGroup;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
@@ -25,7 +26,7 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
   private final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
   private final OptimizingPlanner planner;
   private final Queue<ProcessGroup> orderedTasks;
-  private final static String uuidForKeyedTable = UUID.randomUUID().toString();
+  private final static String ungroupedId = UUID.randomUUID().toString();
   private final Consumer<OptimizingProcess> clearTask;
   private final BiConsumer<TaskRuntime, Boolean> retryTask;
   private final Consumer<TaskRuntime> taskOffer;
@@ -35,8 +36,8 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       Consumer<OptimizingProcess> clearTask,
       BiConsumer<TaskRuntime, Boolean> retryTask,
       Consumer<TaskRuntime> taskOffer) {
-      this.planner = planner;
-      OptimizingConfig config = planner.getTableRuntime().getOptimizingConfig();
+    this.planner = planner;
+    OptimizingConfig config = planner.getTableRuntime().getOptimizingConfig();
 
     Comparator<TaskDescriptor> taskComparator = ProcessGroup.taskComparator(
         Optional.ofNullable(config.getTaskOrder())
@@ -62,7 +63,7 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       this.taskOffer = taskOffer;
     }
 
-    public int size() {
+  public int size() {
     return orderedTasks.size();
     }
 
@@ -77,7 +78,7 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
     long newProcessId = planner.getNewProcessId();
       TableOptimizingProcess process = new TableOptimizingProcess(
           newProcessId,
-          group.id().equals(uuidForKeyedTable)
+          group.id().equals(ungroupedId)
               ? planner.getOptimizingType()
               : planner.getOptTypeByPartition(group.id()),
           planner.getTableRuntime(),
@@ -85,21 +86,21 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
           planner.getTargetSnapshotId(),
           planner.getTargetChangeSnapshotId(),
           group.getTaskDescriptors(),
-          planner.getFromSequence(),
-          planner.getToSequence())
+          group.getFromSequence(),
+          group.getToSequence())
           .handleTaskRetry(retryTask)
           .handleTaskClear(clearTask);
 
       process.getTaskMap().values().forEach(taskOffer);
-      LOG.info("Create new optimizing process {} belong to {} and the group is {}", process.getProcessId(),
+      LOG.info("Iterate new optimizing process {} belong to {} and the group is {}", process.getProcessId(),
           planner.getArcticTable().id(), group.id());
       return process;
   }
 
   private Queue<ProcessGroup> getFlatGroup(Comparator<TaskDescriptor> taskComparator) {
     Queue<ProcessGroup> group = new ConcurrentLinkedQueue<>();
-    group.add(new ProcessGroup(uuidForKeyedTable, planner.planTasks(),
-        planner.getFromSequence().values().stream().reduce(Math::min).get(), taskComparator));
+    group.add(new ProcessGroup(ungroupedId, planner.planTasks(),
+        planner.getFromSequence(), planner.getToSequence(), taskComparator));
     return group;
   }
 
@@ -109,7 +110,9 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
         .entrySet()
         .stream()
         .map(kv -> new ProcessGroup(kv.getKey(), kv.getValue(),
-            planner.getFromSequence().get(kv.getKey()), taskComparator))
+            Maps.filterEntries(planner.getFromSequence(), e -> e.getKey().equals(kv.getKey())),
+            Maps.filterEntries(planner.getToSequence(), e -> e.getKey().equals(kv.getKey())),
+            taskComparator))
         .sorted(groupComparator)
         .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
   }

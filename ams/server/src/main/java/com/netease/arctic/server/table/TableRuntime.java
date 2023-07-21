@@ -235,19 +235,25 @@ public class TableRuntime extends StatedPersistentBase {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      if (pendingInput != null) {
-        optimizingStatus = OptimizingStatus.PENDING;
-      } else {
-        optimizingStatus = OptimizingStatus.IDLE;
-      }
       if (processIterator != null && processIterator.hasNext()) {
-        optimizingProcess = processIterator.next();
-        beginProcess(optimizingProcess);
-      } else {
-        optimizingProcess = null;
+        this.optimizingProcess = processIterator.next();
+        this.processId = optimizingProcess.getProcessId();
+        this.currentStatusStartTime = System.currentTimeMillis();
+        this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
         persistUpdatingRuntime();
-        tableHandler.handleTableChanged(this, originalStatus);
+        return;
+      } else {
+        if (pendingInput != null) {
+          optimizingStatus = OptimizingStatus.PENDING;
+        }  else {
+          optimizingStatus = OptimizingStatus.IDLE;
+        }
+        optimizingProcess = null;
+        processIterator = null;
       }
+
+      persistUpdatingRuntime();
+      tableHandler.handleTableChanged(this, originalStatus);
     });
   }
 

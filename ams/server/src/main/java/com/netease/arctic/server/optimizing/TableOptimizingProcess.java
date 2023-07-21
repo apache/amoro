@@ -40,7 +40,7 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
   private final long planTime;
   private final long targetSnapshotId;
   private final long targetChangeSnapshotId;
-  private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
+  private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newConcurrentMap();
   private final Lock lock = new ReentrantLock();
   private volatile Status status = OptimizingProcess.Status.RUNNING;
   private volatile String failedReason;
@@ -75,20 +75,6 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
     this.toSequence = toSequence;
     persistProcess();
   }
-
-  // public TableOptimizingProcess(OptimizingPlanner planner) {
-  //   processId = planner.getNewProcessId();
-  //   tableRuntime = planner.getTableRuntime();
-  //   optimizingType = planner.getOptimizingType("");
-  //   planTime = planner.getPlanTime();
-  //   targetSnapshotId = planner.getTargetSnapshotId();
-  //   targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
-  //   Map<String, List<TaskDescriptor>> tasks = planner.planTasks();
-  //   loadTaskRuntimes();
-  //   fromSequence = planner.getFromSequence();
-  //   toSequence = planner.getToSequence();
-  //   beginAndPersistProcess();
-  // }
 
   public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
     processId = tableRuntimeMeta.getOptimizingProcessId();
@@ -236,10 +222,8 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
 
   @Override
   public void commit(ArcticTable table) {
-    if (LOG.isDebugEnabled()) {
       LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
           taskMap.size(), taskMap.values());
-    }
 
     lock.lock();
     try {
@@ -339,7 +323,7 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
     for (TaskDescriptor taskDescriptor : taskDescriptors) {
       TaskRuntime taskRuntime = new TaskRuntime(new OptimizingTaskId(processId, taskId++),
           taskDescriptor, taskDescriptor.properties());
-      LOG.info("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
+      LOG.debug("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
           taskRuntime.getSummary());
       taskMap.put(taskRuntime.getTaskId(), taskRuntime.claimOwnership(this));
     }

@@ -252,14 +252,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void planTasks() {
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Calculating and sorting tables by quota:" + scheduledTables);
-    }
+    LOG.debug("Calculating and sorting tables by quota:" + scheduledTables);
 
     for (TableRuntime tableRuntime : scheduledTables) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
+      if (tableRuntime.getOptimizingStatus().isProcessing()) {
+        continue;
       }
+      LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(

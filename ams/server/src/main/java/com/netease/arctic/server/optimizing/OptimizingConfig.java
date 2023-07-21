@@ -258,26 +258,51 @@ public class OptimizingConfig {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    OptimizingConfig that = (OptimizingConfig) o;
-    return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
-        maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
-        targetSize == that.targetSize && maxFileCount == that.maxFileCount && openFileCost == that.openFileCost &&
-        fragmentRatio == that.fragmentRatio && minorLeastFileCount == that.minorLeastFileCount &&
-        minorLeastInterval == that.minorLeastInterval &&
-        Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
-        fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
-        baseHashBucket == that.baseHashBucket && baseRefreshInterval == that.baseRefreshInterval &&
-        hiveRefreshInterval == that.hiveRefreshInterval &&
-        Objects.equal(optimizerGroup, that.optimizerGroup);
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof OptimizingConfig)) {
+      return false;
+    }
+    OptimizingConfig config = (OptimizingConfig) o;
+    return enabled == config.enabled && Double.compare(config.targetQuota, targetQuota) == 0 &&
+        maxExecuteRetryCount == config.maxExecuteRetryCount && maxCommitRetryCount == config.maxCommitRetryCount &&
+        targetSize == config.targetSize && maxFileCount == config.maxFileCount && openFileCost == config.openFileCost &&
+        fragmentRatio == config.fragmentRatio && minorLeastFileCount == config.minorLeastFileCount &&
+        minorLeastInterval == config.minorLeastInterval &&
+        Double.compare(config.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
+        fullTriggerInterval == config.fullTriggerInterval && fullRewriteAllFiles == config.fullRewriteAllFiles &&
+        baseHashBucket == config.baseHashBucket && baseRefreshInterval == config.baseRefreshInterval &&
+        hiveRefreshInterval == config.hiveRefreshInterval &&
+        Objects.equal(optimizerGroup, config.optimizerGroup) &&
+        Objects.equal(processOrder, config.processOrder) &&
+        Objects.equal(processSplitter, config.processSplitter) &&
+        Objects.equal(taskOrder, config.taskOrder);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
-        maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorDuplicateRatio,
-        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval, hiveRefreshInterval);
+    return Objects.hashCode(
+        enabled,
+        targetQuota,
+        optimizerGroup,
+        maxExecuteRetryCount,
+        maxCommitRetryCount,
+        targetSize,
+        maxFileCount,
+        openFileCost,
+        fragmentRatio,
+        minorLeastFileCount,
+        minorLeastInterval,
+        majorDuplicateRatio,
+        fullTriggerInterval,
+        fullRewriteAllFiles,
+        processOrder,
+        processSplitter,
+        taskOrder,
+        baseHashBucket,
+        baseRefreshInterval,
+        hiveRefreshInterval);
   }
 
   @Override

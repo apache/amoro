@@ -112,6 +112,14 @@ public class TestOptimizingIntegration {
   }
 
   @Test
+  public void testNoPkPartitionTableGroupedOptimizing() {
+    ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_5, PrimaryKeySpec.noPrimaryKey(), SPEC);
+    assertTableExist(MIXED_ICEBERG_TB_5);
+    TestMixedIcebergOptimizing testCase = new TestMixedIcebergOptimizing(arcticTable);
+    testCase.testNoPkPartitionTableGroupedOptimizing();
+  }
+
+  @Test
   public void testKeyedTableTxIdNotInOrder() {
     ArcticTable arcticTable = createArcticTable(MIXED_ICEBERG_TB_6, PRIMARY_KEY, PartitionSpec.unpartitioned());
     assertTableExist(MIXED_ICEBERG_TB_6);
