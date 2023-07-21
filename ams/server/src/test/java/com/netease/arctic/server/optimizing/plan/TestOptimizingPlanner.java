@@ -80,6 +80,6 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
 
   @Override
   protected OptimizingPlanner buildOptimizingEvaluator() {
-    return new OptimizingPlanner(getTableRuntime(), getArcticTable(), 1);
+    return new OptimizingPlanner(getTableRuntime(), getArcticTable(), 1, 1);
   }
 }

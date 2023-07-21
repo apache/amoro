@@ -18,14 +18,21 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-
-import java.util.Collections;
+import java.util.List;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
+
+  @Override
+  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    super.addFile(dataFile, deletes);
+    markSequence(dataFile.getSequenceNumber());
+  }
 
   protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
@@ -33,8 +40,9 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected TaskSplitter buildTaskSplitter() {
+    return new FixedTaskSplitter();
     // TODO not split tasks in a partition now
-    return targetTaskCount -> Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
+    // return targetTaskCount -> Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
   }
 
   @Override

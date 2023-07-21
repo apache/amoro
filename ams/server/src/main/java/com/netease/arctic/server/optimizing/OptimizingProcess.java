@@ -1,5 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.table.ArcticTable;
+
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -22,7 +24,7 @@ public interface OptimizingProcess {
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
-  void commit();
+  void commit(ArcticTable table);
 
   MetricsSummary getSummary();
 

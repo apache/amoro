@@ -1,0 +1,128 @@
+package com.netease.arctic.server.optimizing;
+
+import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
+import com.netease.arctic.server.optimizing.plan.ProcessGroup;
+import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
+
+import com.netease.arctic.table.TableProperties;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
+  private final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
+  private final OptimizingPlanner planner;
+  private final Queue<ProcessGroup> orderedTasks;
+  private final static String uuidForKeyedTable = UUID.randomUUID().toString();
+  private final Consumer<OptimizingProcess> clearTask;
+  private final BiConsumer<TaskRuntime, Boolean> retryTask;
+  private final Consumer<TaskRuntime> taskOffer;
+
+  private OptimizingProcessIterator(
+      OptimizingPlanner planner,
+      Consumer<OptimizingProcess> clearTask,
+      BiConsumer<TaskRuntime, Boolean> retryTask,
+      Consumer<TaskRuntime> taskOffer) {
+      this.planner = planner;
+    Comparator<TaskDescriptor> taskComparator = ProcessGroup.taskComparator(
+        Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getTaskOrder())
+            .orElse(TableProperties.SELF_OPTIMIZING_TASK_ORDER_DEFAULT));
+      if  (planner.getArcticTable().isKeyedTable()) {
+        orderedTasks = new ConcurrentLinkedQueue<>();
+        orderedTasks.add(new ProcessGroup(uuidForKeyedTable, planner.planTasks(),
+            planner.getFromSequence().values().stream().reduce(Math::min).get(), taskComparator));
+      } else {
+        Comparator<ProcessGroup> groupComparator = ProcessGroup.processComparator(
+            Optional.ofNullable(planner.getTableRuntime().getOptimizingConfig().getProcessOrder())
+                .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
+        orderedTasks = planner.planPartitionedTasks()
+            .entrySet()
+            .stream()
+            .map(kv -> new ProcessGroup(kv.getKey(), kv.getValue(),
+                planner.getFromSequence().get(kv.getKey()), taskComparator))
+            .sorted(groupComparator)
+            .collect(Collectors.toCollection(ConcurrentLinkedQueue::new));
+      }
+      this.clearTask = clearTask;
+      this.retryTask = retryTask;
+      this.taskOffer = taskOffer;
+    }
+
+    public int size() {
+    return orderedTasks.size();
+    }
+
+  @Override
+  public boolean hasNext() {
+    return !orderedTasks.isEmpty();
+  }
+
+  @Override
+  public OptimizingProcess next() {
+    ProcessGroup group = orderedTasks.poll();
+      TableOptimizingProcess process = new TableOptimizingProcess(
+          planner.getNewProcessId(),
+          group.id().equals(uuidForKeyedTable)
+              ? planner.getOptimizingType()
+              : planner.getOptTypeByPartition(group.id()),
+          planner.getTableRuntime(),
+          planner.getPlanTime(),
+          planner.getTargetSnapshotId(),
+          planner.getTargetChangeSnapshotId(),
+          group.getTaskDescriptors(),
+          planner.getFromSequence(),
+          planner.getToSequence())
+          .handleTaskRetry(retryTask)
+          .handleTaskClear(clearTask);
+
+      process.getTaskMap().values().forEach(taskOffer);
+      LOG.info("Create new optimizing process {} belong to group {}", process.getProcessId(), group.id());
+      return process;
+  }
+
+  public static class Builder {
+    private OptimizingPlanner planner;
+    private Consumer<OptimizingProcess> clearTask;
+    private BiConsumer<TaskRuntime, Boolean> retryTask;
+    private Consumer<TaskRuntime> taskOffer;
+
+    public Builder fromPlanner(OptimizingPlanner planner) {
+      this.planner = planner;
+      return this;
+    }
+
+    public Builder handleTaskClear(Consumer<OptimizingProcess> clearTask) {
+      this.clearTask = clearTask;
+      return this;
+    }
+
+    public Builder handleTaskRetry(BiConsumer<TaskRuntime, Boolean> retryTask) {
+      this.retryTask = retryTask;
+      return this;
+    }
+
+    public Builder handleTaskOffer(Consumer<TaskRuntime> taskOffer) {
+      this.taskOffer = taskOffer;
+      return this;
+    }
+
+    public OptimizingProcessIterator iterator() {
+      Preconditions.checkArgument(planner != null, "Optimizing planner is required");
+      Preconditions.checkArgument(clearTask != null, "Clear task function is required");
+      Preconditions.checkArgument(retryTask != null, "Retry task function is required");
+      Preconditions.checkArgument(taskOffer != null, "Offer task function is required");
+      return new OptimizingProcessIterator(planner, clearTask, retryTask, taskOffer);
+    }
+  }
+}

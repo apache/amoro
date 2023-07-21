@@ -160,7 +160,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     }
 
     LOG.info("{} optimize committed, delete {} files [{} posDelete files], " +
-            "add {} new files [{} posDelete files]",
+            "add {} new files [{} base files]",
         table.id(), removedDataFiles.size(), removedDeleteFiles.size(), addedDataFiles.size(),
         addedDataFiles.size());
   }

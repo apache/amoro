@@ -55,6 +55,12 @@ public class OptimizingConfig {
   //self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
 
+  //self-optimizing.process-order
+  private String processOrder;
+
+  //self-optimizing.task-order
+  private String taskOrder;
+
   //base.file-index.hash-bucket
   private int baseHashBucket;
 
@@ -219,6 +225,24 @@ public class OptimizingConfig {
     return this;
   }
 
+  public OptimizingConfig setProcessOrder(String processOrder) {
+    this.processOrder = processOrder;
+    return this;
+  }
+
+  public String getProcessOrder() {
+    return processOrder;
+  }
+
+  private OptimizingConfig setTaskOrder(String taskOrder) {
+    this.taskOrder = taskOrder;
+    return this;
+  }
+
+  public String getTaskOrder() {
+    return taskOrder;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -319,6 +343,14 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
             TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setProcessOrder(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.SELF_OPTIMIZING_PROCESS_ORDER,
+            TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT))
+        .setTaskOrder(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.SELF_OPTIMIZING_TASK_ORDER,
+            TableProperties.SELF_OPTIMIZING_TASK_ORDER_DEFAULT))
         .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
             properties,
             TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
