@@ -237,7 +237,7 @@ public class TableRuntime extends StatedPersistentBase {
       } else {
         updateOptimizingStatus(OptimizingStatus.IDLE);
       }
-      if (processIterator.hasNext()) {
+      if (processIterator != null && processIterator.hasNext()) {
         optimizingProcess = processIterator.next();
         beginProcess(optimizingProcess);
       } else {
@@ -556,7 +556,9 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void startProcess(OptimizingProcessIterator processIterator) {
-    this.processIterator = processIterator;
+    if (this.processIterator == null || !this.processIterator.hasNext()) {
+      this.processIterator = processIterator;
+    }
     if (processIterator == null) {
       LOG.warn("No optimizing process to start");
       return;

@@ -244,7 +244,7 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
     lock.lock();
     try {
       if (hasCommitted) {
-        LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
+        LOG.warn("{} process {} has already committed, give up", tableRuntime.getTableIdentifier(), processId);
         throw new IllegalStateException("repeat commit, and last error " + failedReason);
       }
       hasCommitted = true;
@@ -301,10 +301,6 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
             mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
         () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values())
     );
-  }
-
-  private void beginProcess() {
-    tableRuntime.beginProcess(this);
   }
 
   private void persistProcessCompleted(boolean success) {

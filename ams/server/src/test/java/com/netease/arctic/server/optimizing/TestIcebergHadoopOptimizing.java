@@ -362,15 +362,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // wait Minor Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
-    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
-
-    optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
-    assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
-
-    optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 3);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     checker.assertOptimizeHangUp();
@@ -378,7 +370,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   @ParameterizedTest
   @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
-  public void testPartitionIcebergTableOrderedOptimizing(String catalog) throws IOException {
+  public void testPartitionIcebergTableGroupedOptimizing(String catalog) throws IOException {
     Table table = createIcebergTable(catalog, SPEC, 2);
     BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     // Step 1: insert 6 data files for two partitions
@@ -416,6 +408,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER, "partition");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_PROCESS_ORDER, "sequence-desc");
 
     // wait Minor Optimize result
