@@ -21,7 +21,10 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * Defines how the optimization process itself and the tasks it contains are organized and in what order they are
+ * executed.
+ */
 public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
   private final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
   private final OptimizingPlanner planner;

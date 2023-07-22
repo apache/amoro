@@ -560,15 +560,15 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void startProcess(OptimizingProcessIterator processIterator) {
-    if (this.processIterator == null || !this.processIterator.hasNext()) {
+    if (this.processIterator == null) {
       this.processIterator = processIterator;
     }
     if (processIterator == null) {
       LOG.warn("No optimizing process to start");
       return;
     }
-    if (optimizingProcess != null) {
-      beginProcess(optimizingProcess);
+    if (optimizingProcess != null && optimizingStatus.isProcessing()) {
+      LOG.warn("Current optimizing process is running, start iterate new batch processes until it finish");
       return;
     }
     if (processIterator.hasNext()) {
