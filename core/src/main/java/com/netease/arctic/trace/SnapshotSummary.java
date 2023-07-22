@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.CommitMetaProducer;
 
 public class SnapshotSummary {
   public static final String SNAPSHOT_PRODUCER = "snapshot.producer";
+  public static final String SNAPSHOT_PROCESS_ID = "snapshot.process-id";
   public static final String SNAPSHOT_PRODUCER_DEFAULT = CommitMetaProducer.INGESTION.name();
 
   public static final String TRANSACTION_BEGIN_SIGNATURE = "tx.begin.signature";

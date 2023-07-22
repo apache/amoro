@@ -196,12 +196,13 @@ public class CompleteOptimizingFlow {
       Long formSnapshotId) {
 
     if (table.isUnkeyedTable()) {
-      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes);
+      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes, System.currentTimeMillis());
     } else {
       return new KeyedTableCommit(
           table,
           taskRuntimes,
           formSnapshotId,
+          System.currentTimeMillis(),
           getStructLike(fromSequence),
           getStructLike(toSequence));
     }

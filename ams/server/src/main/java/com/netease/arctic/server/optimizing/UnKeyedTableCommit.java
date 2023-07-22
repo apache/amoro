@@ -44,6 +44,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.ValidationException;
@@ -73,11 +74,13 @@ public class UnKeyedTableCommit {
   private final Long targetSnapshotId;
   private final ArcticTable table;
   private final Collection<TaskRuntime> tasks;
+  private final Long processId;
 
-  public UnKeyedTableCommit(Long targetSnapshotId, ArcticTable table, Collection<TaskRuntime> tasks) {
+  public UnKeyedTableCommit(Long targetSnapshotId, ArcticTable table, Collection<TaskRuntime> tasks, Long processId) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;
+    this.processId = processId;
   }
 
   protected List<DataFile> moveFile2HiveIfNeed() {
@@ -186,14 +189,16 @@ public class UnKeyedTableCommit {
       if (CollectionUtils.isNotEmpty(removedDataFiles) ||
           CollectionUtils.isNotEmpty(addedDataFiles)) {
         RewriteFiles dataFileRewrite = transaction.newRewrite();
-        if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+        // original snapshot might be expired
+        Snapshot targetSnapshot = table.asUnkeyedTable().snapshot(targetSnapshotId);
+        if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID && targetSnapshot != null) {
           dataFileRewrite.validateFromSnapshot(targetSnapshotId);
-          long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
+          long sequenceNumber = targetSnapshot.sequenceNumber();
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles, sequenceNumber);
         } else {
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
         }
-        dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        tagSnapshot(dataFileRewrite);
         if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
           dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
         }
@@ -202,7 +207,7 @@ public class UnKeyedTableCommit {
       if (CollectionUtils.isNotEmpty(addDeleteFiles)) {
         RowDelta addDeleteFileRowDelta = transaction.newRowDelta();
         addDeleteFiles.forEach(addDeleteFileRowDelta::addDeletes);
-        addDeleteFileRowDelta.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        tagSnapshot(addDeleteFileRowDelta);
         addDeleteFileRowDelta.commit();
       }
       transaction.commitTransaction();
@@ -215,6 +220,11 @@ public class UnKeyedTableCommit {
     }
   }
 
+  protected <T> void tagSnapshot(SnapshotUpdate<T> snapshotUpdate) {
+    snapshotUpdate.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+    snapshotUpdate.set(SnapshotSummary.SNAPSHOT_PROCESS_ID, processId.toString());
+  }
+
   protected void removeOldDeleteFiles(
       UnkeyedTable icebergTable,
       Set<DeleteFile> removedDeleteFiles) {
@@ -225,7 +235,7 @@ public class UnKeyedTableCommit {
     RewriteFiles deleteFileRewrite = icebergTable.newRewrite();
     deleteFileRewrite.rewriteFiles(Collections.emptySet(),
         removedDeleteFiles, Collections.emptySet(), Collections.emptySet());
-    deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+    tagSnapshot(deleteFileRewrite);
 
     try {
       deleteFileRewrite.commit();

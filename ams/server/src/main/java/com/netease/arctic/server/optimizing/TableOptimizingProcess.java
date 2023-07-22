@@ -254,9 +254,9 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
 
   private UnKeyedTableCommit buildCommit(ArcticTable table) {
     if (table.isUnkeyedTable()) {
-      return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+      return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values(), processId);
     } else {
-      return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId,
+      return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId, processId,
           convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
     }
   }
