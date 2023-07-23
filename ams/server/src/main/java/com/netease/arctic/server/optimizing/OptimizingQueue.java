@@ -264,8 +264,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         OptimizingPlanner planner = new OptimizingPlanner(
             tableRuntime.refresh(table),
             table,
-            getAvailableCore(tableRuntime),
-            getTotalOptimizerParallelism());
+            new TaskSplitVisitor.Builder()
+                .setAvailableCore(getAvailableCore(tableRuntime))
+                .setParallelism(getTotalOptimizerParallelism())
+                .build()
+        );
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;

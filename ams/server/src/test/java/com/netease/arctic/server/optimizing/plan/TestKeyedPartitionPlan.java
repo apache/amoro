@@ -132,7 +132,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     Assert.assertEquals(fromSnapshot.sequenceNumber(), plan.getFromSequence());
     Assert.assertEquals(toSnapshot.sequenceNumber(), plan.getToSequence());
 
-    List<TaskDescriptor> taskDescriptors = plan.splitTasks(0);
+    List<TaskDescriptor> taskDescriptors = plan.splitTasks(null);
 
     Assert.assertEquals(1, taskDescriptors.size());
 

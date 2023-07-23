@@ -32,6 +32,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
@@ -277,7 +278,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected List<TaskDescriptor> planWithCurrentFiles() {
     AbstractPartitionPlan partitionPlan = buildPlanWithCurrentFiles();
     if (partitionPlan.isNecessary()) {
-      return partitionPlan.splitTasks(0);
+      return partitionPlan.splitTasks(null);
     } else {
       return Collections.emptyList();
     }
