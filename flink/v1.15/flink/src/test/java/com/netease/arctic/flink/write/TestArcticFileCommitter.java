@@ -34,6 +34,7 @@ import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
@@ -54,8 +55,8 @@ public class TestArcticFileCommitter extends FlinkTestBase {
 
   public OneInputStreamOperatorTestHarness<WriteResult, Void> createArcticFileCommitter(
       ArcticTableLoader tableLoader, ArcticTable table, OperatorSubtaskState operatorSubtaskState) throws Exception {
-    OneInputStreamOperator<WriteResult, Void> committer = FlinkSink.createFileCommitter(table, tableLoader,
-        false);
+    OneInputStreamOperator<WriteResult, Void> committer = FlinkSink.createFileCommitter(
+        table, tableLoader, false, SnapshotRef.MAIN_BRANCH, table.spec());
     OneInputStreamOperatorTestHarness<WriteResult, Void> harness =
         new OneInputStreamOperatorTestHarness<>(
             committer, 1, 1, 0);
