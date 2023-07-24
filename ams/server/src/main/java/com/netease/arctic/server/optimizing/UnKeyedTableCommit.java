@@ -194,7 +194,7 @@ public class UnKeyedTableCommit {
             table.asUnkeyedTable().currentSnapshot() :
             table.asUnkeyedTable().snapshot(targetSnapshotId);
         if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-          dataFileRewrite.validateFromSnapshot(targetSnapshotId);
+          dataFileRewrite.validateFromSnapshot(targetSnapshot.snapshotId());
           long sequenceNumber = targetSnapshot.sequenceNumber();
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles, sequenceNumber);
         } else {

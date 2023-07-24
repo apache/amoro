@@ -27,16 +27,12 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RewriteFilesInput extends BaseOptimizingInput implements Serializable {
-
-  private static final long serialVersionUID = 1106605615053484570L;
-
+public class RewriteFilesInput extends BaseOptimizingInput {
   private final IcebergDataFile[] rewrittenDataFiles;
   private final IcebergDataFile[] rePosDeletedDataFiles;
   private final IcebergContentFile<?>[] readOnlyDeleteFiles;

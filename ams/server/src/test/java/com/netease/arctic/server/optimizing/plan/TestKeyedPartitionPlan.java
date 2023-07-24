@@ -25,6 +25,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.table.KeyedTable;
@@ -132,7 +133,7 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     Assert.assertEquals(fromSnapshot.sequenceNumber(), plan.getFromSequence());
     Assert.assertEquals(toSnapshot.sequenceNumber(), plan.getToSequence());
 
-    List<TaskDescriptor> taskDescriptors = plan.splitTasks(null);
+    List<TaskDescriptor> taskDescriptors = plan.splitTasks(TaskSplitVisitor.asDefault());
 
     Assert.assertEquals(1, taskDescriptors.size());
 

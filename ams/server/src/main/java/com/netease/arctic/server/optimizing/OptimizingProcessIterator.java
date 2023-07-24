@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -42,7 +41,6 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       Consumer<TaskRuntime> taskOffer) {
     this.planner = planner;
     OptimizingConfig config = planner.getTableRuntime().getOptimizingConfig();
-
     Comparator<TaskDescriptor> taskComparator = ProcessGroup.taskComparator(
         Optional.ofNullable(config.getTaskOrder())
             .orElse(TableProperties.SELF_OPTIMIZING_TASK_ORDER_DEFAULT));
@@ -50,18 +48,15 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
         Optional.ofNullable(config.getProcessOrder())
             .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
 
-    switch (ProcessSplitter.fromName(Optional.ofNullable(config.getProcessSplitter())
-        .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))) {
-      case PARTITION:
-        if (planner.getArcticTable().isKeyedTable()) {
-          orderedTasks = getFlatGroup(taskComparator);
-        } else {
-          orderedTasks = getPartitionedGroup(groupComparator, taskComparator);
-        }
-        break;
-      default:
-        orderedTasks = getFlatGroup(taskComparator);
+    int partitionedThreshold = Optional.of(config.getProcessPartitionedThreshold())
+        .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_PARTITIONED_THRESHOLD_DEFAULT);
+
+    if (planner.getPendingInput().getEqualityDeleteFileCount() > partitionedThreshold) {
+      orderedTasks = getPartitionedGroup(groupComparator, taskComparator);
+    } else {
+      orderedTasks = getFlatGroup(taskComparator);
     }
+
     this.clearTask = clearTask;
     this.retryTask = retryTask;
     this.taskOffer = taskOffer;
@@ -153,31 +148,6 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
       Preconditions.checkArgument(retryTask != null, "Retry task function is required");
       Preconditions.checkArgument(taskOffer != null, "Offer task function is required");
       return new OptimizingProcessIterator(planner, clearTask, retryTask, taskOffer);
-    }
-  }
-
-  public enum ProcessSplitter {
-    PARTITION("partition"),
-    NONE("none");
-
-    private final String splitterName;
-
-    ProcessSplitter(String splitterName) {
-      this.splitterName = splitterName;
-    }
-
-    public String splitterName() {
-      return splitterName;
-    }
-
-    public static ProcessSplitter fromName(String splitterName) {
-      Preconditions.checkArgument(splitterName != null, "Invalid process splitter name: null");
-      try {
-        return ProcessSplitter.valueOf(splitterName.replaceFirst("-", "_").toUpperCase(Locale.ENGLISH));
-      } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(
-            String.format("Invalid process splitter name: %s", splitterName), e);
-      }
     }
   }
 }

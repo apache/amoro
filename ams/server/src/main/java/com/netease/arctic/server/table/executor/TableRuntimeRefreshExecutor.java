@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
