@@ -37,7 +37,6 @@ import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
-import java.util.function.Consumer;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;

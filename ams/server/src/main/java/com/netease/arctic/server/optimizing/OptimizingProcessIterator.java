@@ -1,11 +1,14 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.ProcessGroup;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
-
 import com.netease.arctic.table.TableProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
@@ -17,22 +20,20 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Defines how the optimization process itself and the tasks it contains are organized and in what order they are
  * executed.
  */
 public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
-  private final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
+
+  private static final Logger LOG = LoggerFactory.getLogger(OptimizingProcessIterator.class);
+
   private final OptimizingPlanner planner;
   private final Queue<ProcessGroup> orderedTasks;
-  private final static String ungroupedId = UUID.randomUUID().toString();
   private final Consumer<OptimizingProcess> clearTask;
   private final BiConsumer<TaskRuntime, Boolean> retryTask;
   private final Consumer<TaskRuntime> taskOffer;
+  private static final String ungroupedId = UUID.randomUUID().toString();
 
   private OptimizingProcessIterator(
       OptimizingPlanner planner,
@@ -49,26 +50,26 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
         Optional.ofNullable(config.getProcessOrder())
             .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT));
 
-      switch (ProcessSplitter.fromName(Optional.ofNullable(config.getProcessSplitter())
-          .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))) {
-        case PARTITION:
-          if (planner.getArcticTable().isKeyedTable()) {
-            orderedTasks = getFlatGroup(taskComparator);
-          } else {
-            orderedTasks = getPartitionedGroup(groupComparator, taskComparator);
-          }
-          break;
-        default:
+    switch (ProcessSplitter.fromName(Optional.ofNullable(config.getProcessSplitter())
+        .orElse(TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))) {
+      case PARTITION:
+        if (planner.getArcticTable().isKeyedTable()) {
           orderedTasks = getFlatGroup(taskComparator);
-      }
-      this.clearTask = clearTask;
-      this.retryTask = retryTask;
-      this.taskOffer = taskOffer;
+        } else {
+          orderedTasks = getPartitionedGroup(groupComparator, taskComparator);
+        }
+        break;
+      default:
+        orderedTasks = getFlatGroup(taskComparator);
     }
+    this.clearTask = clearTask;
+    this.retryTask = retryTask;
+    this.taskOffer = taskOffer;
+  }
 
   public int size() {
     return orderedTasks.size();
-    }
+  }
 
   @Override
   public boolean hasNext() {
@@ -79,25 +80,25 @@ public class OptimizingProcessIterator implements Iterator<OptimizingProcess> {
   public OptimizingProcess next() {
     ProcessGroup group = orderedTasks.poll();
     long newProcessId = planner.getNewProcessId();
-      TableOptimizingProcess process = new TableOptimizingProcess(
-          newProcessId,
-          group.id().equals(ungroupedId)
-              ? planner.getOptimizingType()
-              : planner.getOptTypeByPartition(group.id()),
-          planner.getTableRuntime(),
-          newProcessId,
-          planner.getTargetSnapshotId(),
-          planner.getTargetChangeSnapshotId(),
-          group.getTaskDescriptors(),
-          group.getFromSequence(),
-          group.getToSequence())
-          .handleTaskRetry(retryTask)
-          .handleTaskClear(clearTask);
+    TableOptimizingProcess process = new TableOptimizingProcess(
+        newProcessId,
+        group.id().equals(ungroupedId) ?
+            planner.getOptimizingType() :
+            planner.getOptTypeByPartition(group.id()),
+        planner.getTableRuntime(),
+        newProcessId,
+        planner.getTargetSnapshotId(),
+        planner.getTargetChangeSnapshotId(),
+        group.getTaskDescriptors(),
+        group.getFromSequence(),
+        group.getToSequence())
+        .handleTaskRetry(retryTask)
+        .handleTaskClear(clearTask);
 
-      process.getTaskMap().values().forEach(taskOffer);
-      LOG.info("Iterate new optimizing process {} belong to {} and the group is {}", process.getProcessId(),
-          planner.getArcticTable().id(), group.id());
-      return process;
+    process.getTaskMap().values().forEach(taskOffer);
+    LOG.info("Iterate new optimizing process {} belong to {} and the group is {}", process.getProcessId(),
+        planner.getArcticTable().id(), group.id());
+    return process;
   }
 
   private Queue<ProcessGroup> getFlatGroup(Comparator<TaskDescriptor> taskComparator) {

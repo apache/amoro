@@ -29,13 +29,13 @@ import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import java.math.RoundingMode;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.BinPacking;
 
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

@@ -190,9 +190,10 @@ public class UnKeyedTableCommit {
           CollectionUtils.isNotEmpty(addedDataFiles)) {
         RewriteFiles dataFileRewrite = transaction.newRewrite();
         // original snapshot might be expired
-        table.refresh();
-        Snapshot targetSnapshot = table.asUnkeyedTable().snapshot(targetSnapshotId);
-        if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID && targetSnapshot != null) {
+        Snapshot targetSnapshot = table.asUnkeyedTable().snapshot(targetSnapshotId) == null ?
+            table.asUnkeyedTable().currentSnapshot() :
+            table.asUnkeyedTable().snapshot(targetSnapshotId);
+        if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
           dataFileRewrite.validateFromSnapshot(targetSnapshotId);
           long sequenceNumber = targetSnapshot.sequenceNumber();
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles, sequenceNumber);

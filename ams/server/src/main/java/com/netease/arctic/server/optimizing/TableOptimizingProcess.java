@@ -1,5 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -15,6 +16,11 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.StructLikeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -23,17 +29,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.StructLikeMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class TableOptimizingProcess extends PersistentBase implements OptimizingProcess, TaskRuntime.TaskOwner {
 
-  private final Logger LOG = LoggerFactory.getLogger(TableOptimizingProcess.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TableOptimizingProcess.class);
+
   private final long processId;
   private final OptimizingType optimizingType;
   private final TableRuntime tableRuntime;
@@ -222,8 +221,8 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
 
   @Override
   public void commit(ArcticTable table) {
-      LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
-          taskMap.size(), taskMap.values());
+    LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
+        taskMap.size(), taskMap.values());
 
     lock.lock();
     try {

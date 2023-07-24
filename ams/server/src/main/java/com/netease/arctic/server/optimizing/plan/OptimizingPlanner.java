@@ -52,7 +52,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private final long planTime;
   private final Map<String, OptimizingType> optimizingTypes = Maps.newHashMap();
   private final PartitionPlannerFactory partitionPlannerFactory;
-  private Map<String, List<TaskDescriptor>> partitionTaskDescriptors = Maps.newHashMap();;
+  private Map<String, List<TaskDescriptor>> partitionTaskDescriptors = Maps.newHashMap();
 
   public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TaskSplitVisitor splitVisitor) {
     super(tableRuntime, table);
