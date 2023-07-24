@@ -139,7 +139,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void touch(String authToken) {
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
-    LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
+    }
     doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
@@ -194,7 +196,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, optimizerGroup.getContainer());
-    LOG.debug("Register optimizer: {}", optimizer);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Register optimizer: " + optimizer);
+    }
     doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
@@ -248,17 +252,23 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void planTasks() {
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
-    LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
+    LOG.debug("Calculating and sorting tables by quota:" + scheduledTables);
 
     for (TableRuntime tableRuntime : scheduledTables) {
-      LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
+      if (tableRuntime.getOptimizingStatus().isProcessing()) {
+        continue;
+      }
+      LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(
             tableRuntime.refresh(table),
             table,
-            getAvailableCore(tableRuntime),
-            getTotalOptimizerParallelism());
+            new TaskSplitVisitor.Builder()
+                .setAvailableCore(getAvailableCore(tableRuntime))
+                .setParallelism(getTotalOptimizerParallelism())
+                .build()
+        );
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;

@@ -147,6 +147,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
         Arrays.asList(taskRuntime),
         Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot()).map(Snapshot::snapshotId)
             .orElse(null),
+        System.currentTimeMillis(),
         fromSequence,
         toSequence);
     commit.commit();

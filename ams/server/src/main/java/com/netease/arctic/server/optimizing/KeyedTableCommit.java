@@ -48,9 +48,9 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   protected StructLikeMap<Long> toSequenceOfPartitions;
 
   public KeyedTableCommit(
-      ArcticTable table, Collection<TaskRuntime> tasks, Long fromSnapshotId,
+      ArcticTable table, Collection<TaskRuntime> tasks, Long fromSnapshotId, Long processId,
       StructLikeMap<Long> fromSequenceOfPartitions, StructLikeMap<Long> toSequenceOfPartitions) {
-    super(fromSnapshotId, table, tasks);
+    super(fromSnapshotId, table, tasks, processId);
     this.table = table;
     this.tasks = tasks;
     this.fromSnapshotId = fromSnapshotId == null ? INVALID_SNAPSHOT_ID : fromSnapshotId;

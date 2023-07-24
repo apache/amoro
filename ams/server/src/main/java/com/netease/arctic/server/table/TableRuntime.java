@@ -126,7 +126,6 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
-    this.pendingInput = tableRuntimeMeta.getPendingInput();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -151,8 +150,8 @@ public class TableRuntime extends StatedPersistentBase {
       OptimizingStatus originalStatus = optimizingStatus;
       this.optimizingProcess = optimizingProcess;
       this.processId = optimizingProcess.getProcessId();
-      updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
-      this.pendingInput = null;
+      this.currentStatusStartTime = System.currentTimeMillis();
+      this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -161,7 +160,8 @@ public class TableRuntime extends StatedPersistentBase {
   public void beginCommitting() {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
-      updateOptimizingStatus(OptimizingStatus.COMMITTING);
+      this.currentStatusStartTime = System.currentTimeMillis();
+      this.optimizingStatus = OptimizingStatus.COMMITTING;
       persistUpdatingRuntime();
       tableHandler.handleTableChanged(this, originalStatus);
     });
@@ -172,7 +172,7 @@ public class TableRuntime extends StatedPersistentBase {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
         this.currentChangeSnapshotId = System.currentTimeMillis();
-        updateOptimizingStatus(OptimizingStatus.PENDING);
+        this.optimizingStatus = OptimizingStatus.PENDING;
         persistUpdatingRuntime();
         LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
         tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
@@ -198,7 +198,8 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       pendingInput = null;
       if (optimizingStatus == OptimizingStatus.PENDING) {
-        updateOptimizingStatus(OptimizingStatus.IDLE);
+        this.currentStatusStartTime = System.currentTimeMillis();
+        this.optimizingStatus = OptimizingStatus.IDLE;
         persistUpdatingRuntime();
         tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
       }
@@ -221,6 +222,7 @@ public class TableRuntime extends StatedPersistentBase {
   public void completeProcess(boolean success) {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
+      currentStatusStartTime = System.currentTimeMillis();
       if (success) {
         lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
         lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
@@ -232,25 +234,26 @@ public class TableRuntime extends StatedPersistentBase {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      if (pendingInput != null) {
-        updateOptimizingStatus(OptimizingStatus.PENDING);
-      } else {
-        updateOptimizingStatus(OptimizingStatus.IDLE);
-      }
       if (processIterator != null && processIterator.hasNext()) {
-        optimizingProcess = processIterator.next();
-        beginProcess(optimizingProcess);
-      } else {
-        optimizingProcess = null;
+        this.optimizingProcess = processIterator.next();
+        this.processId = optimizingProcess.getProcessId();
+        this.currentStatusStartTime = System.currentTimeMillis();
+        this.optimizingStatus = optimizingProcess.getOptimizingType().getStatus();
         persistUpdatingRuntime();
-        tableHandler.handleTableChanged(this, originalStatus);
+        return;
+      } else {
+        if (pendingInput != null) {
+          optimizingStatus = OptimizingStatus.PENDING;
+        }  else {
+          optimizingStatus = OptimizingStatus.IDLE;
+        }
+        optimizingProcess = null;
+        processIterator = null;
       }
-    });
-  }
 
-  private void updateOptimizingStatus(OptimizingStatus status) {
-    this.optimizingStatus = status;
-    this.currentStatusStartTime = System.currentTimeMillis();
+      persistUpdatingRuntime();
+      tableHandler.handleTableChanged(this, originalStatus);
+    });
   }
 
   private boolean refreshSnapshots(ArcticTable table) {
@@ -556,15 +559,15 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void startProcess(OptimizingProcessIterator processIterator) {
-    if (this.processIterator == null || !this.processIterator.hasNext()) {
+    if (this.processIterator == null) {
       this.processIterator = processIterator;
     }
     if (processIterator == null) {
       LOG.warn("No optimizing process to start");
       return;
     }
-    if (optimizingProcess != null) {
-      beginProcess(optimizingProcess);
+    if (optimizingProcess != null && optimizingStatus.isProcessing()) {
+      LOG.warn("Current optimizing process is running, start iterate new batch processes until it finish");
       return;
     }
     if (processIterator.hasNext()) {

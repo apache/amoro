@@ -25,6 +25,7 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -229,7 +230,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
    */
   private class TreeNodeTaskSplitter implements TaskSplitter {
     @Override
-    public List<SplitTask> splitTasks(int targetTaskCount) {
+    public List<SplitTask> splitTasks(TaskSplitVisitor splitVisitor) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
       segmentFiles.forEach(rootTree::addSegmentFile);

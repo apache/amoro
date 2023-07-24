@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing.plan;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
@@ -47,22 +48,18 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
-  // protected long processId;
-  private final double availableCore;
-  private final int totalParallelism;
+  protected final TaskSplitVisitor splitVisitor;
   private final long planTime;
   private final Map<String, OptimizingType> optimizingTypes = Maps.newHashMap();
   private final PartitionPlannerFactory partitionPlannerFactory;
-  private Map<String, List<TaskDescriptor>> partitionTaskDescriptors = Maps.newHashMap();;
+  private Map<String, List<TaskDescriptor>> partitionTaskDescriptors = Maps.newHashMap();
 
-  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore, int totalParallelism) {
+  public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, TaskSplitVisitor splitVisitor) {
     super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
         null : tableRuntime.getPendingInput().getPartitions()::contains;
-    this.availableCore = availableCore;
-    this.totalParallelism = totalParallelism;
+    this.splitVisitor = splitVisitor;
     this.planTime = System.currentTimeMillis();
-    // this.processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
     this.partitionPlannerFactory = new PartitionPlannerFactory(arcticTable, tableRuntime, planTime);
   }
 
@@ -129,7 +126,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Collections.reverseOrder()));
 
-    double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
+    double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * splitVisitor.getAvailableCore();
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
     for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
@@ -139,12 +136,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         actualInputSize += evaluator.getCost();
       }
     }
+    splitVisitor.setActualInputSize(actualInputSize);
 
-    double avgThreadCost = actualInputSize / availableCore;
-    int limitCost = (int) (actualInputSize / avgThreadCost);
     for (PartitionEvaluator evaluator : inputPartitions) {
       List<TaskDescriptor> tasks = ((AbstractPartitionPlan) evaluator)
-          .splitTasks(totalParallelism);
+          .splitTasks(splitVisitor);
       if (!tasks.isEmpty()) {
         optimizingTypes.put(evaluator.getPartition(), evaluator.getOptimizingType());
         partitionTaskDescriptors.put(evaluator.getPartition(), tasks);

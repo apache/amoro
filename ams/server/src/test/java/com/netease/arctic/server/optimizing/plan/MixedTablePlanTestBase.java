@@ -277,7 +277,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected List<TaskDescriptor> planWithCurrentFiles() {
     AbstractPartitionPlan partitionPlan = buildPlanWithCurrentFiles();
     if (partitionPlan.isNecessary()) {
-      return partitionPlan.splitTasks(0);
+      return partitionPlan.splitTasks(null);
     } else {
       return Collections.emptyList();
     }

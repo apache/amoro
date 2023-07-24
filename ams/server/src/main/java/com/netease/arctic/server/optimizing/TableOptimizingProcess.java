@@ -1,5 +1,6 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -15,6 +16,11 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.StructLikeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -23,24 +29,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.StructLikeMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class TableOptimizingProcess extends PersistentBase implements OptimizingProcess, TaskRuntime.TaskOwner {
 
-  private final Logger LOG = LoggerFactory.getLogger(TableOptimizingProcess.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TableOptimizingProcess.class);
+
   private final long processId;
   private final OptimizingType optimizingType;
   private final TableRuntime tableRuntime;
   private final long planTime;
   private final long targetSnapshotId;
   private final long targetChangeSnapshotId;
-  private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
+  private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newConcurrentMap();
   private final Lock lock = new ReentrantLock();
   private volatile Status status = OptimizingProcess.Status.RUNNING;
   private volatile String failedReason;
@@ -75,20 +74,6 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
     this.toSequence = toSequence;
     persistProcess();
   }
-
-  // public TableOptimizingProcess(OptimizingPlanner planner) {
-  //   processId = planner.getNewProcessId();
-  //   tableRuntime = planner.getTableRuntime();
-  //   optimizingType = planner.getOptimizingType("");
-  //   planTime = planner.getPlanTime();
-  //   targetSnapshotId = planner.getTargetSnapshotId();
-  //   targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
-  //   Map<String, List<TaskDescriptor>> tasks = planner.planTasks();
-  //   loadTaskRuntimes();
-  //   fromSequence = planner.getFromSequence();
-  //   toSequence = planner.getToSequence();
-  //   beginAndPersistProcess();
-  // }
 
   public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
     processId = tableRuntimeMeta.getOptimizingProcessId();
@@ -236,10 +221,8 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
 
   @Override
   public void commit(ArcticTable table) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
-          taskMap.size(), taskMap.values());
-    }
+    LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
+        taskMap.size(), taskMap.values());
 
     lock.lock();
     try {
@@ -270,9 +253,9 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
 
   private UnKeyedTableCommit buildCommit(ArcticTable table) {
     if (table.isUnkeyedTable()) {
-      return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+      return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values(), processId);
     } else {
-      return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId,
+      return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId, processId,
           convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
     }
   }
@@ -339,7 +322,7 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
     for (TaskDescriptor taskDescriptor : taskDescriptors) {
       TaskRuntime taskRuntime = new TaskRuntime(new OptimizingTaskId(processId, taskId++),
           taskDescriptor, taskDescriptor.properties());
-      LOG.info("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
+      LOG.debug("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
           taskRuntime.getSummary());
       taskMap.put(taskRuntime.getTaskId(), taskRuntime.claimOwnership(this));
     }

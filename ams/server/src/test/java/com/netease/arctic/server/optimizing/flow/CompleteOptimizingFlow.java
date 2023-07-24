@@ -28,6 +28,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.KeyedTableCommit;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
@@ -172,7 +173,7 @@ public class CompleteOptimizingFlow {
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
-    return new OptimizingPlanner(tableRuntime, table, availableCore, 1);
+    return new OptimizingPlanner(tableRuntime, table, TaskSplitVisitor.asDefault());
   }
 
   private OptimizingConfig optimizingConfig() {
@@ -196,12 +197,13 @@ public class CompleteOptimizingFlow {
       Long formSnapshotId) {
 
     if (table.isUnkeyedTable()) {
-      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes);
+      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes, System.currentTimeMillis());
     } else {
       return new KeyedTableCommit(
           table,
           taskRuntimes,
           formSnapshotId,
+          System.currentTimeMillis(),
           getStructLike(fromSequence),
           getStructLike(toSequence));
     }
