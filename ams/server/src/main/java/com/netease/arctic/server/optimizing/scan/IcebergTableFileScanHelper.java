@@ -31,12 +31,14 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
@@ -62,7 +64,8 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     long startTime = System.currentTimeMillis();
     PartitionSpec partitionSpec = table.spec();
     try (CloseableIterable<FileScanTask> filesIterable =
-             table.newScan().useSnapshot(snapshotId).planFiles()) {
+        table.newScan().useSnapshot(snapshotId).planFiles()) {
+      IcebergDeleteFileCacheGenerator deleteFilesGenerator = new IcebergDeleteFileCacheGenerator();
       for (FileScanTask task : filesIterable) {
         if (partitionFilter != null) {
           StructLike partition = task.file().partition();
@@ -73,7 +76,9 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
         }
         IcebergDataFile dataFile = createDataFile(task.file());
         List<IcebergContentFile<?>> deleteFiles =
-            task.deletes().stream().map(this::createDeleteFile).collect(Collectors.toList());
+            task.deletes().stream()
+                .map(deleteFilesGenerator::generate)
+                .collect(Collectors.toList());
         results.add(new FileScanResult(dataFile, deleteFiles));
       }
     } catch (IOException e) {
@@ -94,7 +99,15 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     return new IcebergDataFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
   }
 
-  private IcebergDeleteFile createDeleteFile(DeleteFile deleteFile) {
-    return new IcebergDeleteFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
+  private class IcebergDeleteFileCacheGenerator {
+    private final Map<DeleteFile, IcebergDeleteFile> deleteFilesCache = Maps.newHashMap();
+
+    IcebergDeleteFile generate(DeleteFile deleteFile) {
+      return deleteFilesCache.computeIfAbsent(
+          deleteFile,
+          file ->
+              new IcebergDeleteFile(
+                  file, sequenceNumberFetcher.sequenceNumberOf(file.path().toString())));
+    }
   }
 }
