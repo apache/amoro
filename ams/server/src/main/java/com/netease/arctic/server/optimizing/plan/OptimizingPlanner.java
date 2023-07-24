@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
@@ -27,10 +30,7 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
