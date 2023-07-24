@@ -55,13 +55,13 @@ public class OptimizingConfig {
   //self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
 
-  //self-optimizing.process-order
+  //self-optimizing.process.process-order
   private String processOrder;
 
-  //self-optimizing.process-splitter
-  private String processSplitter;
+  //self-optimizing.process.partitioned-threshold
+  private int processPartitionedThreshold;
 
-  //self-optimizing.task-order
+  //self-optimizing.process.task-order
   private String taskOrder;
 
   //base.file-index.hash-bucket
@@ -237,14 +237,13 @@ public class OptimizingConfig {
     return processOrder;
   }
 
-
-  public OptimizingConfig setProcessSplitter(String processSplitter) {
-    this.processSplitter = processSplitter;
+  public OptimizingConfig setProcessPartitionedThreshold(int processPartitionedThreshold) {
+    this.processPartitionedThreshold = processPartitionedThreshold;
     return this;
   }
 
-  public String getProcessSplitter() {
-    return processSplitter;
+  public int getProcessPartitionedThreshold() {
+    return processPartitionedThreshold;
   }
 
   private OptimizingConfig setTaskOrder(String taskOrder) {
@@ -276,7 +275,7 @@ public class OptimizingConfig {
         hiveRefreshInterval == config.hiveRefreshInterval &&
         Objects.equal(optimizerGroup, config.optimizerGroup) &&
         Objects.equal(processOrder, config.processOrder) &&
-        Objects.equal(processSplitter, config.processSplitter) &&
+        processPartitionedThreshold == config.processPartitionedThreshold &&
         Objects.equal(taskOrder, config.taskOrder);
   }
 
@@ -298,7 +297,7 @@ public class OptimizingConfig {
         fullTriggerInterval,
         fullRewriteAllFiles,
         processOrder,
-        processSplitter,
+        processPartitionedThreshold,
         taskOrder,
         baseHashBucket,
         baseRefreshInterval,
@@ -385,10 +384,10 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_PROCESS_ORDER,
             TableProperties.SELF_OPTIMIZING_PROCESS_ORDER_DEFAULT))
-        .setProcessSplitter(CompatiblePropertyUtil.propertyAsString(
+        .setProcessPartitionedThreshold(CompatiblePropertyUtil.propertyAsInt(
             properties,
-            TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER,
-            TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER_DEFAULT))
+            TableProperties.SELF_OPTIMIZING_PROCESS_PARTITIONED_THRESHOLD,
+            TableProperties.SELF_OPTIMIZING_PROCESS_PARTITIONED_THRESHOLD_DEFAULT))
         .setTaskOrder(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.SELF_OPTIMIZING_TASK_ORDER,

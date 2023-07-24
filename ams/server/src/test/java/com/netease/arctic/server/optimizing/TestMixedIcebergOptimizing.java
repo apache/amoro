@@ -246,7 +246,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
 
   public void testNoPkPartitionTableGroupedOptimizing() {
     UnkeyedTable table = arcticTable.asUnkeyedTable();
-    updateProperties(arcticTable, TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER, "patition");
+    updateProperties(arcticTable, TableProperties.SELF_OPTIMIZING_PROCESS_PARTITIONED_THRESHOLD, "-1");
 
     // Step 1: insert data
     writeBase(table, Lists.newArrayList(

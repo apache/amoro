@@ -408,7 +408,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_PROCESS_SPLITTER, "partition");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_PROCESS_PARTITIONED_THRESHOLD, "-1");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_PROCESS_ORDER, "sequence-desc");
 
     // wait Minor Optimize result
