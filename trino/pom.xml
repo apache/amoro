@@ -34,9 +34,16 @@
         <maven.compiler.target>17</maven.compiler.target>
         <dep.airlift.version>214</dep.airlift.version>
         <presto.version>406</presto.version>
+        <guava.version>31.1-jre</guava.version>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>io.airlift</groupId>
