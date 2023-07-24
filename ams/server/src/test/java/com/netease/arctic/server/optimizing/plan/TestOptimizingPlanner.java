@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.TaskSplitVisitor;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
@@ -80,6 +81,6 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
 
   @Override
   protected OptimizingPlanner buildOptimizingEvaluator() {
-    return new OptimizingPlanner(getTableRuntime(), getArcticTable(), 1, 1);
+    return new OptimizingPlanner(getTableRuntime(), getArcticTable(), TaskSplitVisitor.asDefault());
   }
 }

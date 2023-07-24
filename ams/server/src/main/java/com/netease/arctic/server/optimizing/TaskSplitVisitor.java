@@ -1,5 +1,9 @@
 package com.netease.arctic.server.optimizing;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.netease.arctic.table.TableProperties;
+
 public class TaskSplitVisitor {
   private final double availableCore;
   private final int parallelism;
@@ -8,6 +12,11 @@ public class TaskSplitVisitor {
   private TaskSplitVisitor(double availableCore, int parallelism) {
     this.availableCore = availableCore;
     this.parallelism = parallelism;
+  }
+
+  @VisibleForTesting
+  public static TaskSplitVisitor asDefault() {
+    return new TaskSplitVisitor(TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT, 1);
   }
 
   public double getAvailableCore() {
@@ -42,6 +51,8 @@ public class TaskSplitVisitor {
     }
 
     TaskSplitVisitor build() {
+      Preconditions.checkArgument(availableCore != 0, "Available core must be positive");
+      Preconditions.checkArgument(parallelism != 0, "Available core must be positive");
       return new TaskSplitVisitor(availableCore, parallelism);
     }
   }
