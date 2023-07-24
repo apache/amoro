@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -30,7 +31,6 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.write.FlinkTaskWriterBaseTest;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
