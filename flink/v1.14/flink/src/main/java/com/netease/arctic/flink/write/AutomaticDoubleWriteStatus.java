@@ -86,8 +86,7 @@ public class AutomaticDoubleWriteStatus implements Serializable {
     table.refresh();
     Map<String, String> properties = table.properties();
     shouldDoubleWrite =
-        Boolean.parseBoolean(
-            properties.getOrDefault(LOG_STORE_CATCH_UP.key(), String.valueOf(LOG_STORE_CATCH_UP.defaultValue())));
+        !properties.containsKey(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
     LOG.info("AutomaticDoubleWriteStatus sync, subTaskId: {}, should double write: {}", subtaskId, shouldDoubleWrite);
   }
 }
