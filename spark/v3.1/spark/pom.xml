@@ -163,10 +163,6 @@
                     <groupId>org.apache.arrow</groupId>
                     <artifactId>arrow-vector</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hive</groupId>
-                    <artifactId>hive-common</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
 
@@ -303,13 +299,6 @@
                     <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-common</artifactId>
-            <version>${hive.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
