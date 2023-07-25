@@ -121,11 +121,6 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-
         <!-- test dependencies -->
 
         <dependency>
@@ -187,12 +182,6 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-network-common_2.12</artifactId>
-            <version>3.5.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
