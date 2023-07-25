@@ -34,7 +34,6 @@
     <properties>
         <root.dir>${project.basedir}</root.dir>
         <spark.mysql.version>5.1.40</spark.mysql.version>
-        <guava.version>14.0.1</guava.version>
         <spark.version>3.1.1</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
