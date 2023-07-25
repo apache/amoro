@@ -64,19 +64,23 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
 
   @Override
   public void checkHiveSyncTasks() {
-    LOG.info("Schedule Support Hive Sync");
-    if (syncTasks == null) {
-      syncTasks = new ScheduledTasks<>(ThreadPool.Type.HIVE_SYNC);
+    try {
+      LOG.info("Schedule Support Hive Sync");
+      if (syncTasks == null) {
+        syncTasks = new ScheduledTasks<>(ThreadPool.Type.HIVE_SYNC);
+      }
+      List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
+      Set<TableIdentifier> ids =
+          tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
+      syncTasks.checkRunningTask(ids,
+          () -> 0L,
+          () -> SYNC_INTERVAL,
+          SupportHiveSyncService.SupportHiveSyncTask::new,
+          false);
+      LOG.info("Schedule Support Hive Sync finished with {} valid ids", ids.size());
+    } catch (Throwable t) {
+      LOG.error("Schedule Support Hive Sync failed", t);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids =
-        tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    syncTasks.checkRunningTask(ids,
-        () -> 0L,
-        () -> SYNC_INTERVAL,
-        SupportHiveSyncService.SupportHiveSyncTask::new,
-        false);
-    LOG.info("Schedule Support Hive Sync finished with {} valid ids", ids.size());
   }
 
   @Override

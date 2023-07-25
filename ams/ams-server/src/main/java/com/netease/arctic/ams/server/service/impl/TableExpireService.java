@@ -74,19 +74,23 @@ public class TableExpireService implements ITableExpireService {
 
   @Override
   public synchronized void checkTableExpireTasks() {
-    LOG.info("Schedule Expired Cleaner");
-    if (cleanTasks == null) {
-      cleanTasks = new ScheduledTasks<>(ThreadPool.Type.EXPIRE);
+    try {
+      LOG.info("Schedule Expired Cleaner");
+      if (cleanTasks == null) {
+        cleanTasks = new ScheduledTasks<>(ThreadPool.Type.EXPIRE);
+      }
+      List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
+      Set<TableIdentifier> ids =
+          tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
+      cleanTasks.checkRunningTask(ids,
+          () -> 0L,
+          () -> EXPIRE_INTERVAL,
+          TableExpireTask::new,
+          false);
+      LOG.info("Schedule Expired Cleaner finished with {} valid ids", ids.size());
+    } catch (Throwable t) {
+      LOG.error("unexpected error when checkTableExpireTasks", t);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids =
-        tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
-        () -> 0L,
-        () -> EXPIRE_INTERVAL,
-        TableExpireTask::new,
-        false);
-    LOG.info("Schedule Expired Cleaner finished with {} valid ids", ids.size());
   }
 
   @Override

@@ -69,18 +69,22 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
 
   @Override
   public synchronized void checkOrphanFilesCleanTasks() {
-    LOG.info("Schedule Orphan Cleaner");
-    if (cleanTasks == null) {
-      cleanTasks = new ScheduledTasks<>(ThreadPool.Type.ORPHAN);
+    try {
+      LOG.info("Schedule Orphan Cleaner");
+      if (cleanTasks == null) {
+        cleanTasks = new ScheduledTasks<>(ThreadPool.Type.ORPHAN);
+      }
+      List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
+      Set<TableIdentifier> ids = tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
+      cleanTasks.checkRunningTask(ids,
+          () -> 0L,
+          () -> CHECK_INTERVAL,
+          TableOrphanFileClean::new,
+          true);
+      LOG.info("Schedule Orphan Cleaner finished with {} tasks", ids.size());
+    } catch (Throwable t) {
+      LOG.error("unexpected error when checkOrphanFilesCleanTasks", t);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids = tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
-        () -> 0L,
-        () -> CHECK_INTERVAL,
-        TableOrphanFileClean::new,
-        true);
-    LOG.info("Schedule Orphan Cleaner finished with {} tasks", ids.size());
   }
 
   @Override
