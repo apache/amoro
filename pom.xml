@@ -647,7 +647,7 @@
                 </property>
             </activation>
             <properties>
-                <!--                <guava.version>14.0.1</guava.version>-->
+                <guava.version>14.0.1</guava.version>
                 <hive.version>2.1.1</hive.version>
                 <hadoop.version>2.9.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
@@ -662,7 +662,7 @@
                 </property>
             </activation>
             <properties>
-                <!--                <guava.version>32.1.1-jre</guava.version>-->
+                <guava.version>32.1.1-jre</guava.version>
                 <hive.version>3.1.1</hive.version>
                 <hadoop.version>3.2.2</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
