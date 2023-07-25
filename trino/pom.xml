@@ -30,6 +30,7 @@
     <url>https://arctic.netease.com</url>
 
     <properties>
+        <hive.version>2.1.1</hive.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <dep.airlift.version>214</dep.airlift.version>
