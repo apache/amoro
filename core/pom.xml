@@ -189,6 +189,12 @@
             <artifactId>log4j-1.2-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-network-common_2.12</artifactId>
+            <version>3.5.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

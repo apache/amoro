@@ -78,7 +78,6 @@
             <property name="allowByTailComment" value="true"/>
             <property name="allowNonPrintableEscapes" value="true"/>
         </module>
-        <module name="AvoidStarImport"/>
         <module name="OneTopLevelClass"/>
         <module name="NoLineWrap">
             <property name="tokens" value="PACKAGE_DEF, IMPORT, STATIC_IMPORT"/>
@@ -91,7 +90,7 @@
         <module name="NeedBraces">
             <property name="tokens"
                       value="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_IF, LITERAL_WHILE"/>
-            <property name = "allowSingleLineStatement" value="true"/>
+            <property name="allowSingleLineStatement" value="true"/>
         </module>
         <module name="LeftCurly">
             <property name="tokens"
@@ -248,14 +247,6 @@
                     PARAMETER_DEF, VARIABLE_DEF, METHOD_DEF"/>
         </module>
         <module name="OverloadMethodsDeclarationOrder"/>
-        <module name="CustomImportOrder">
-            <property name="customImportOrderRules"
-                      value="THIRD_PARTY_PACKAGE###SPECIAL_IMPORTS###STANDARD_JAVA_PACKAGE###STATIC"/>
-            <property name="specialImportsRegExp" value="^javax\."/>
-            <property name="standardPackageRegExp" value="^java\."/>
-            <property name="sortImportsInGroupAlphabetically" value="true"/>
-            <property name="separateLineBetweenGroups" value="false"/>
-        </module>
         <module name="MethodParamPad">
             <property name="tokens"
                       value="CTOR_DEF, LITERAL_NEW, METHOD_CALL, METHOD_DEF,
@@ -335,6 +326,22 @@
                       default="checkstyle-xpath-suppressions.xml"/>
             <property name="optional" value="true"/>
         </module>
+
+        <!-- IMPORT CHECKS -->
         <module name="UnusedImports"/>
+        <module name="CustomImportOrder">
+            <property name="customImportOrderRules"
+                      value="THIRD_PARTY_PACKAGE###SPECIAL_IMPORTS###STANDARD_JAVA_PACKAGE###STATIC"/>
+            <property name="specialImportsRegExp" value="^javax\."/>
+            <property name="standardPackageRegExp" value="^java\."/>
+            <property name="sortImportsInGroupAlphabetically" value="true"/>
+            <property name="separateLineBetweenGroups" value="false"/>
+        </module>
+        <module name="AvoidStarImport"/>
+        <!--        <module name="IllegalImport">-->
+        <!--            <property name="illegalPkgs" value="com.google.common"/>-->
+        <!--            <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>-->
+        <!--        </module>-->
+
     </module>
 </module>
