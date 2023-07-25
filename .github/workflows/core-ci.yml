@@ -47,6 +47,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Print maven depend tree
+        run: mvn dependency:tree -B -ntp
+
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
 
