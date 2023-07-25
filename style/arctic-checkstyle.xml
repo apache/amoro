@@ -338,10 +338,6 @@
             <property name="separateLineBetweenGroups" value="false"/>
         </module>
         <module name="AvoidStarImport"/>
-        <!--        <module name="IllegalImport">-->
-        <!--            <property name="illegalPkgs" value="com.google.common"/>-->
-        <!--            <message key="import.illegal" value="{0}; Use iceberg-shaded-guava instead."/>-->
-        <!--        </module>-->
 
     </module>
 </module>
