@@ -52,12 +52,14 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
-    OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
-    if (evaluator.isNecessary()) {
-      OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
-      logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
-          pendingInput);
-      tableRuntime.setPendingInput(pendingInput);
+    if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
+      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+      if (evaluator.isNecessary()) {
+        OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
+        logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+            pendingInput);
+        tableRuntime.setPendingInput(pendingInput);
+      }
     }
   }
 
@@ -70,9 +72,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       tableRuntime.refresh(table);
       if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
           changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
-        if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-          tryEvaluatingPendingInput(tableRuntime, table);
-        }
+        tryEvaluatingPendingInput(tableRuntime, table);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
