@@ -356,8 +356,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       // collect
       List<SplitTask> results = Lists.newArrayList();
       for (List<FileTask> fileTasks : packed) {
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = com.google.common.collect.Maps.newHashMap();
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = com.google.common.collect.Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
         fileTasks.stream().filter(FileTask::isFragment)
             .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
         fileTasks.stream().filter(FileTask::isSegment)
