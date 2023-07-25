@@ -22,7 +22,6 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
