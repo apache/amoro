@@ -44,7 +44,7 @@
             <AppenderRef ref="consoleAppender" level="error"/>
         </Root>
         <Logger name="iceberg.metric"  level="info">
-            <AppendRef ref="icebergRestMetricReporter" />
+            <AppenderRef ref="icebergRestMetricReporter"/>
         </Logger>
     </Loggers>
 
