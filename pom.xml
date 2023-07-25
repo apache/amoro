@@ -110,7 +110,7 @@
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
-        <guava.version>32.1.1-jre</guava.version>
+        <!--        <guava.version>32.1.1-jre</guava.version>-->
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
     </properties>
@@ -352,11 +352,11 @@
                 <version>${awssdk.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
-            </dependency>
+            <!--            <dependency>-->
+            <!--                <groupId>com.google.guava</groupId>-->
+            <!--                <artifactId>guava</artifactId>-->
+            <!--                <version>${guava.version}</version>-->
+            <!--            </dependency>-->
 
             <dependency>
                 <groupId>junit</groupId>
@@ -647,7 +647,7 @@
                 </property>
             </activation>
             <properties>
-                <guava.version>14.0.1</guava.version>
+                <!--                <guava.version>14.0.1</guava.version>-->
                 <hive.version>2.1.1</hive.version>
                 <hadoop.version>2.9.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
@@ -662,7 +662,7 @@
                 </property>
             </activation>
             <properties>
-                <guava.version>32.1.1-jre</guava.version>
+                <!--                <guava.version>32.1.1-jre</guava.version>-->
                 <hive.version>3.1.1</hive.version>
                 <hadoop.version>3.2.2</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
