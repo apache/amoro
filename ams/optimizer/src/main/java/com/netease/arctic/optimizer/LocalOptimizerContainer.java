@@ -19,10 +19,12 @@
 package com.netease.arctic.optimizer;
 
 import com.netease.arctic.ams.api.resource.Resource;
+import com.netease.arctic.optimizer.util.ExecUtil;
 import com.netease.arctic.optimizer.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
@@ -40,7 +42,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
     try {
       String[] cmd = {"/bin/sh", "-c", startUpArgs};
       LOG.info("Starting local optimizer using command : {}", startUpArgs);
-      runtime.exec(cmd);
+      ExecUtil.exec(cmd, new ArrayList<>());
       return Collections.emptyMap();
     } catch (Exception e) {
       throw new RuntimeException("Failed to scale out optimizer.", e);
