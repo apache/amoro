@@ -26,6 +26,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
@@ -329,8 +330,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     // mock tableRuntime which has optimizing task not committed
     long optimizeSnapshotId = table.currentSnapshot().snapshotId();
+    OptimizingProcess optimizingProcess = Mockito.mock(OptimizingProcess.class);
+    Mockito.when(optimizingProcess.getTargetSnapshotId()).thenReturn(optimizeSnapshotId);
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.COMMITTING);
-    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenReturn(optimizeSnapshotId);
+    Mockito.when(tableRuntime.getOptimizingProcess()).thenReturn(optimizingProcess);
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
     expectedSnapshots.add(table.currentSnapshot());
 
