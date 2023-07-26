@@ -70,6 +70,7 @@ public class PuffinUtil {
     private final long sequenceNumber;
     private StructLikeMap<Long> optimizedSequence;
     private StructLikeMap<Long> baseOptimizedTime;
+    private boolean overwrite = false;
 
     private Writer(Table table, long snapshotId, long sequenceNumber) {
       this.table = table;
@@ -86,12 +87,25 @@ public class PuffinUtil {
       this.baseOptimizedTime = baseOptimizedTime;
       return this;
     }
+    
+    public Writer overwrite() {
+      this.overwrite = true;
+      return this;
+    }
 
     public StatisticsFile write() {
       if (optimizedSequence == null && baseOptimizedTime == null) {
         throw new IllegalArgumentException("No statistics to write");
       }
       OutputFile outputFile = table.io().newOutputFile(table.location() + "/metadata/" + snapshotId + ".puffin");
+      if (outputFile.toInputFile().exists()) {
+        if (overwrite) {
+          // overwrite the old puffin file for retry
+          table.io().deleteFile(outputFile);
+        } else {
+          throw new IllegalStateException("Puffin file already exists: " + outputFile.location());
+        }
+      }
       List<BlobMetadata> blobMetadata;
       long fileSize;
       long footerSize;

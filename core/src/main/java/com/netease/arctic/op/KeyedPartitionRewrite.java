@@ -82,6 +82,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     return PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
         .addOptimizedSequence(optimizedSequence)
+        .overwrite()
         .write();
   }
 
