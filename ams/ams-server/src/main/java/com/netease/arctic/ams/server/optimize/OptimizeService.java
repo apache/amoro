@@ -112,11 +112,15 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   @Override
   public synchronized void checkOptimizeCheckTasks(long checkInterval) {
-    this.optimizeStatusCheckInterval = checkInterval;
-    if (checkTasks == null) {
-      checkTasks = new ScheduledTasks<>(ThreadPool.Type.OPTIMIZE_CHECK);
+    try {
+      this.optimizeStatusCheckInterval = checkInterval;
+      if (checkTasks == null) {
+        checkTasks = new ScheduledTasks<>(ThreadPool.Type.OPTIMIZE_CHECK);
+      }
+      internalCheckOptimizeChecker(checkInterval);
+    } catch (Throwable t) {
+      LOG.error("Failed to check optimize check tasks", t);
     }
-    internalCheckOptimizeChecker(checkInterval);
   }
 
   private void internalCheckOptimizeChecker(long checkInterval) {

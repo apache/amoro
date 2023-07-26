@@ -53,20 +53,24 @@ public class TrashCleanService implements Closeable {
   private ScheduledTasks<TableIdentifier, TableTrashCleanTask> cleanTasks;
 
   public synchronized void checkTrashCleanTasks() {
-    LOG.info("Schedule Trash Cleaner");
-    if (cleanTasks == null) {
-      cleanTasks = new ScheduledTasks<>(ThreadPool.Type.TRASH_CLEAN);
-    }
+    try {
+      LOG.info("Schedule Trash Cleaner");
+      if (cleanTasks == null) {
+        cleanTasks = new ScheduledTasks<>(ThreadPool.Type.TRASH_CLEAN);
+      }
 
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids =
-        tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
-        () -> RandomUtils.nextLong(0, CHECK_INTERVAL),
-        () -> CHECK_INTERVAL,
-        TableTrashCleanTask::new,
-        true);
-    LOG.info("Schedule Trash Cleaner finished with {} tasks", ids.size());
+      List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
+      Set<TableIdentifier> ids =
+          tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
+      cleanTasks.checkRunningTask(ids,
+          () -> RandomUtils.nextLong(0, CHECK_INTERVAL),
+          () -> CHECK_INTERVAL,
+          TableTrashCleanTask::new,
+          true);
+      LOG.info("Schedule Trash Cleaner finished with {} tasks", ids.size());
+    } catch (Throwable t) {
+      LOG.error("Schedule Trash Cleaner unexpected error", t);
+    }
   }
 
   @Override
