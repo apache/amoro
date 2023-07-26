@@ -51,11 +51,8 @@ public class OptimizingTestHelpers {
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
-    StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId, partitionOptimizedSequence);
   }
 
   public static List<Record> generateRecord(TableTestHelper tableTestHelper, int from, int to, String opTime) {

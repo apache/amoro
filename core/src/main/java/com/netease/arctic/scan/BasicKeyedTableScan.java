@@ -141,7 +141,6 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
     StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(table);
-    StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
     Expression partitionExpressions = Expressions.alwaysTrue();
     if (expression != null) {
       //Only push down filters related to partition
@@ -149,8 +148,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     }
 
     ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
-        .fromSequence(partitionOptimizedSequence)
-        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+        .fromSequence(partitionOptimizedSequence);
 
     changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
 
