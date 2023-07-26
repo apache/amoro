@@ -24,8 +24,8 @@
       </div>
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
-          <a-tab-pane key="Details" tab="Details">
-            <u-details @setBaseDetailInfo="setBaseDetailInfo" />
+          <a-tab-pane key="Details" tab="Details" forceRender>
+            <u-details @setBaseDetailInfo="setBaseDetailInfo"  ref="detailRef"/>
           </a-tab-pane>
           <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted } from 'vue'
+import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted, ref, nextTick } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -68,6 +68,8 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const store = useStore()
+
+    const detailRef = ref()
 
     const tabConfigs = shallowReactive([
       // { key: 'Details' },
@@ -139,6 +141,9 @@ export default defineComponent({
 
     onMounted(() => {
       state.activeKey = (route.query?.tab as string) || 'Details'
+      nextTick(() => {
+        detailRef.value.getTableDetails()
+      })
     })
 
     return {
