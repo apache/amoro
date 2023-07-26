@@ -20,8 +20,8 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -30,21 +30,21 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
@@ -152,7 +152,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   @Override
-  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
+  protected StatisticsFile apply(Transaction transaction) {
     Preconditions.checkState(this.dynamic != null,
         "updateOptimizedSequence() or updateOptimizedSequenceDynamically() must be invoked");
     applyDeleteExpression();
@@ -163,6 +163,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     UnkeyedTable baseTable = keyedTable.baseTable();
+    CreateSnapshotEvent newSnapshot = null;
 
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
@@ -190,6 +191,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         properties.forEach(overwriteFiles::set);
       }
       overwriteFiles.commit();
+      newSnapshot = (CreateSnapshotEvent) overwriteFiles.updateEvent();
     }
 
     // step2: RowDelta/Rewrite pos-delete files
@@ -211,6 +213,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           properties.forEach(rowDelta::set);
         }
         rowDelta.commit();
+        if (newSnapshot == null) {
+          newSnapshot = (CreateSnapshotEvent) rowDelta.updateEvent();
+        }
       } else {
         RewriteFiles rewriteFiles = transaction.newRewrite();
         if (baseTable.currentSnapshot() != null) {
@@ -231,13 +236,29 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           properties.forEach(rewriteFiles::set);
         }
         rewriteFiles.commit();
+        if (newSnapshot == null) {
+          newSnapshot = (CreateSnapshotEvent) rewriteFiles.updateEvent();
+        }
       }
+    }
+    if (newSnapshot == null) {
+      return null;
     }
 
     // step3: set optimized sequence id, optimized time
-    String commitTime = String.valueOf(System.currentTimeMillis());
+    long commitTime = System.currentTimeMillis();
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
+    PuffinUtil.Reader reader = PuffinUtil.reader(transaction.table());
+    StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
+    StructLikeMap<Long> oldOptimizedTime = reader.readBaseOptimizedTime();
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
+    StructLikeMap<Long> optimizedTime = StructLikeMap.create(spec.partitionType());
+    if (oldOptimizedSequence != null) {
+      optimizedSequence.putAll(oldOptimizedSequence);
+    }
+    if (oldOptimizedTime != null) {
+      optimizedTime.putAll(oldOptimizedTime);
+    }
     StructLikeMap<Long> toChangePartitionSequence;
     if (this.dynamic) {
       toChangePartitionSequence = sequenceForChangedPartitions;
@@ -245,12 +266,15 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       toChangePartitionSequence = this.partitionOptimizedSequence;
     }
     toChangePartitionSequence.forEach((partition, sequence) -> {
-      Map<String, String> properties = partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap());
-      properties.put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence));
-      properties.put(TableProperties.PARTITION_BASE_OPTIMIZED_TIME, commitTime);
+      optimizedSequence.put(partition, sequence);
+      optimizedTime.put(partition, commitTime);
     });
 
-    return partitionProperties;
+
+    return PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+        .addOptimizedSequence(optimizedSequence)
+        .addBaseOptimizedTime(optimizedTime)
+        .write();
   }
 
   private void applyDeleteExpression() {

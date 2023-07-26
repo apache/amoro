@@ -20,18 +20,18 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Replace {@link BaseTable} partition files and change max transaction id map
@@ -58,23 +58,31 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
+  protected StatisticsFile apply(Transaction transaction) {
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
     if (this.addFiles.isEmpty()) {
-      return partitionProperties;
+      return null;
     }
 
-    Preconditions.checkNotNull(optimizedSequence, "optimized sequence must be set.");
-    Preconditions.checkArgument(optimizedSequence > 0, "optimized sequence must > 0.");
+    Preconditions.checkNotNull(this.optimizedSequence, "optimized sequence must be set.");
+    Preconditions.checkArgument(this.optimizedSequence > 0, "optimized sequence must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
+    CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
 
-    addFiles.forEach(f -> partitionProperties.computeIfAbsent(f.partition(), k -> Maps.newHashMap())
-        .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(optimizedSequence)));
-    return partitionProperties;
+    PuffinUtil.Reader reader = PuffinUtil.reader(transaction.table());
+    StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
+    if (oldOptimizedSequence != null) {
+      optimizedSequence.putAll(oldOptimizedSequence);
+    }
+    addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
+
+    return PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+        .addOptimizedSequence(optimizedSequence)
+        .write();
   }
 
   @Override

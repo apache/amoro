@@ -11,7 +11,7 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.trace.SnapshotSummary;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -74,8 +74,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     Set<DeleteFile> addedDeleteFiles = Sets.newHashSet();
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
 
-    StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(table.asKeyedTable());
+    StructLikeMap<Long> partitionOptimizedSequence = PuffinUtil.reader(table.asKeyedTable()).readOptimizedSequence();
 
     for (TaskRuntime taskRuntime : tasks) {
       RewriteFilesInput input = taskRuntime.getInput();

@@ -20,7 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -54,7 +54,7 @@ public class TestRewritePartitions extends TableDataTestBase {
     // rewrite 1 partition by data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
+        PuffinUtil.reader(getArcticTable().asKeyedTable()).readOptimizedSequence();
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(
         txId,

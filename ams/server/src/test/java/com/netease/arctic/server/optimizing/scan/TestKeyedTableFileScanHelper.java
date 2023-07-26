@@ -30,7 +30,7 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -221,8 +221,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   protected KeyedTableFileScanHelper buildFileScanHelper() {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
-    StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
+    StructLikeMap<Long> partitionOptimizedSequence = PuffinUtil.reader(getArcticTable()).readOptimizedSequence();
     return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
         partitionOptimizedSequence));
   }
