@@ -274,6 +274,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
         .addOptimizedSequence(optimizedSequence)
         .addBaseOptimizedTime(optimizedTime)
+        .overwrite()
         .write();
   }
 
