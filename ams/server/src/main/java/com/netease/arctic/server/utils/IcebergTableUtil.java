@@ -91,12 +91,9 @@ public class IcebergTableUtil {
     } else {
       StructLikeMap<Long> partitionOptimizedSequence =
           TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
-      StructLikeMap<Long> legacyPartitionMaxTransactionId =
-          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
       return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
           tableRuntime.getCurrentChangeSnapshotId(),
-          partitionOptimizedSequence,
-          legacyPartitionMaxTransactionId);
+          partitionOptimizedSequence);
     }
   }
 

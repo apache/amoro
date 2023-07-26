@@ -223,10 +223,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
-    StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
     return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
+        partitionOptimizedSequence));
   }
 
   private void appendChange(List<DataFile> dataFiles) {
