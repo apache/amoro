@@ -25,7 +25,7 @@
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
           <a-tab-pane key="Details" tab="Details" forceRender>
-            <u-details @setBaseDetailInfo="setBaseDetailInfo"  ref="detailRef"/>
+            <u-details @setBaseDetailInfo="setBaseDetailInfo" ref="detailRef"/>
           </a-tab-pane>
           <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
@@ -142,7 +142,9 @@ export default defineComponent({
     onMounted(() => {
       state.activeKey = (route.query?.tab as string) || 'Details'
       nextTick(() => {
-        detailRef.value.getTableDetails()
+        if (detailRef.value) {
+          detailRef.value.getTableDetails()
+        }
       })
     })
 
