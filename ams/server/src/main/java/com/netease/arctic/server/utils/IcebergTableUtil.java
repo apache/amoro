@@ -34,8 +34,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.PuffinUtil;
 import com.netease.arctic.utils.TableFileUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -90,7 +90,7 @@ public class IcebergTableUtil {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
       StructLikeMap<Long> partitionOptimizedSequence =
-          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
+          PuffinUtil.reader(arcticTable.asKeyedTable()).readOptimizedSequence();
       return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
           tableRuntime.getCurrentChangeSnapshotId(),
           partitionOptimizedSequence);

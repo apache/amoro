@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.PartitionSpec;
@@ -51,6 +52,18 @@ public class PuffinUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE = "optimized-sequence";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME = "base-optimized-time";
 
+  public static Writer writer(Table table, long snapshotId, long sequenceNumber) {
+    return new Writer(table, snapshotId, sequenceNumber);
+  }
+
+  public static Reader reader(Table table) {
+    return new Reader(table);
+  }
+
+  public static Reader reader(KeyedTable keyedTable) {
+    return new Reader(keyedTable.baseTable());
+  }
+
   public static class Writer {
     private final Table table;
     private final long snapshotId;
@@ -58,7 +71,7 @@ public class PuffinUtil {
     private StructLikeMap<Long> optimizedSequence;
     private StructLikeMap<Long> baseOptimizedTime;
 
-    public Writer(Table table, long snapshotId, long sequenceNumber) {
+    private Writer(Table table, long snapshotId, long sequenceNumber) {
       this.table = table;
       this.snapshotId = snapshotId;
       this.sequenceNumber = sequenceNumber;
@@ -113,11 +126,15 @@ public class PuffinUtil {
 
   public static class Reader {
     private final Table table;
-    private final long snapshotId;
+    private Long snapshotId;
 
-    public Reader(Table table, long snapshotId) {
+    private Reader(Table table) {
       this.table = table;
+    }
+    
+    public Reader useSnapshotId(long snapshotId) {
       this.snapshotId = snapshotId;
+      return this;
     }
 
     public StructLikeMap<Long> readOptimizedSequence() {
@@ -146,13 +163,22 @@ public class PuffinUtil {
     }
 
     private StatisticsFile findStatisticsFile(String type) {
+      long snapshotId;
+      if (this.snapshotId == null) {
+        Snapshot currentSnapshot = table.currentSnapshot();
+        if (currentSnapshot == null) {
+          return null;
+        }
+        snapshotId = currentSnapshot.snapshotId();
+      } else {
+        snapshotId = this.snapshotId;
+      }
       List<StatisticsFile> statisticsFiles = table.statisticsFiles();
       if (statisticsFiles.isEmpty()) {
         return null;
       }
       Map<Long, List<StatisticsFile>> statisticsFilesBySnapshotId =
           statisticsFiles.stream().collect(Collectors.groupingBy(StatisticsFile::snapshotId));
-      long snapshotId = this.snapshotId;
       while (true) {
         List<StatisticsFile> statisticsFile = statisticsFilesBySnapshotId.get(snapshotId);
         if (statisticsFile != null) {

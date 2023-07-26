@@ -61,7 +61,7 @@ public class TestPuffinUtil extends TableTestBase {
     Table table = getArcticTable().isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
         getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
-    PuffinUtil.Reader reader = new PuffinUtil.Reader(table, table.currentSnapshot().snapshotId());
+    PuffinUtil.Reader reader = PuffinUtil.reader(table);
     Assert.assertNull(reader.readBaseOptimizedTime());
     Assert.assertNull(reader.readOptimizedSequence());
 
@@ -69,18 +69,19 @@ public class TestPuffinUtil extends TableTestBase {
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
     StructLikeMap<Long> optimizedSequence = buildPartitionOptimizedSequence();
 
-    PuffinUtil.Writer writer = new PuffinUtil.Writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
+    PuffinUtil.Writer writer = PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
         .addBaseOptimizedTime(optimizedTime)
         .addOptimizedSequence(optimizedSequence);
     StatisticsFile statisticsFile = writer.write();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
 
-    reader = new PuffinUtil.Reader(table, table.currentSnapshot().snapshotId());
+    reader = PuffinUtil.reader(table);
     assertStructLikeEquals(optimizedTime, reader.readBaseOptimizedTime());
     assertStructLikeEquals(optimizedSequence, reader.readOptimizedSequence());
 
     table.newAppend().commit();
-    reader = new PuffinUtil.Reader(table, table.currentSnapshot().snapshotId());
+    reader = PuffinUtil.reader(table)
+        .useSnapshotId(table.currentSnapshot().snapshotId());
     assertStructLikeEquals(optimizedTime, reader.readBaseOptimizedTime());
     assertStructLikeEquals(optimizedSequence, reader.readOptimizedSequence());
   }

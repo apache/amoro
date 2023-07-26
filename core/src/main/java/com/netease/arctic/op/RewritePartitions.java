@@ -3,11 +3,9 @@ package com.netease.arctic.op;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PendingUpdate;
-import org.apache.iceberg.util.StructLikeMap;
+import org.apache.iceberg.StatisticsFile;
 
-import java.util.Map;
-
-public interface RewritePartitions extends PendingUpdate<StructLikeMap<Map<String, String>>> {
+public interface RewritePartitions extends PendingUpdate<StatisticsFile> {
 
   /**
    * Add a {@link DataFile} to the table.
