@@ -33,6 +33,9 @@ public class TableProperties {
 
   private TableProperties() {
   }
+  
+  public static final String TABLE_VERSION = "table.version";
+  public static final String TABLE_VERSION_DEFAULT = "0.5.0";
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
