@@ -179,6 +179,8 @@ onMounted(() => {
   getTableDetails()
 })
 
+defineExpose({ getTableDetails })
+
 const primaryColumns: IColumns[] = shallowReactive([
   { title: t('field'), dataIndex: 'field', width: '30%' },
   { title: t('type'), dataIndex: 'type', width: '20%' },
